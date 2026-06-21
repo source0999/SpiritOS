@@ -1,0 +1,1033 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv",
+  "generated_at": "2026-06-05T11:23:12+00:00",
+  "dry_run": false,
+  "verification_needed": false,
+  "performers": [
+    {
+      "id": "yummy-couple",
+      "name": "Yummy Couple",
+      "confidence": 1.0,
+      "similarity": 1.0,
+      "status": "manual-confirmed",
+      "verification_needed": false,
+      "label": "Yummy Couple - manually confirmed; needs face enrollment"
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-05T11:23:12+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Us Risque Mega",
+        "source": "filename",
+        "confidence": 0.65,
+        "raw": "JoinUs @RisqueMega 233"
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.996,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            1613.0,
+            1034.0
+          ],
+          [
+            1914.0,
+            1038.0
+          ],
+          [
+            1914.0,
+            1075.0
+          ],
+          [
+            1613.0,
+            1071.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 1.0,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3222.58056640625,
+            603.5341186523438
+          ],
+          [
+            3828.386962890625,
+            607.4659423828125
+          ],
+          [
+            3828.386962890625,
+            682.1704711914062
+          ],
+          [
+            3222.58056640625,
+            678.2386474609375
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 1.0,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1383.0,
+            821.0
+          ],
+          [
+            1985.0,
+            827.0
+          ],
+          [
+            1984.0,
+            898.0
+          ],
+          [
+            1382.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.998,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            1611.0,
+            1032.0
+          ],
+          [
+            1914.0,
+            1038.0
+          ],
+          [
+            1914.0,
+            1077.0
+          ],
+          [
+            1611.0,
+            1072.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 1.0,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3222.58056640625,
+            603.5341186523438
+          ],
+          [
+            3830.322509765625,
+            605.5
+          ],
+          [
+            3830.322509765625,
+            684.1363525390625
+          ],
+          [
+            3222.58056640625,
+            680.2045288085938
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-02-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1380.0,
+            819.0
+          ],
+          [
+            1986.0,
+            826.0
+          ],
+          [
+            1985.0,
+            900.0
+          ],
+          [
+            1379.0,
+            893.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.998,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            1609.0,
+            1031.0
+          ],
+          [
+            1914.0,
+            1038.0
+          ],
+          [
+            1913.0,
+            1078.0
+          ],
+          [
+            1608.0,
+            1072.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3220.64501953125,
+            603.5341186523438
+          ],
+          [
+            3830.322509765625,
+            605.5
+          ],
+          [
+            3830.322509765625,
+            684.1363525390625
+          ],
+          [
+            3220.64501953125,
+            680.2045288085938
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-03-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1378.0,
+            821.0
+          ],
+          [
+            1986.0,
+            827.0
+          ],
+          [
+            1985.0,
+            898.0
+          ],
+          [
+            1377.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.995,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-04.jpg",
+        "region": "full",
+        "box": [
+          [
+            1608.0,
+            1033.0
+          ],
+          [
+            1914.0,
+            1036.0
+          ],
+          [
+            1914.0,
+            1076.0
+          ],
+          [
+            1608.0,
+            1073.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 1.0,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-04-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3222.58056640625,
+            601.5681762695312
+          ],
+          [
+            3830.322509765625,
+            607.4659423828125
+          ],
+          [
+            3830.322509765625,
+            684.1363525390625
+          ],
+          [
+            3220.64501953125,
+            678.2386474609375
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-04-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1382.0,
+            821.0
+          ],
+          [
+            1984.0,
+            827.0
+          ],
+          [
+            1983.0,
+            898.0
+          ],
+          [
+            1381.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.997,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-05.jpg",
+        "region": "full",
+        "box": [
+          [
+            1608.0,
+            1033.0
+          ],
+          [
+            1914.0,
+            1037.0
+          ],
+          [
+            1914.0,
+            1077.0
+          ],
+          [
+            1608.0,
+            1073.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 1.0,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-05-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3220.64501953125,
+            603.5341186523438
+          ],
+          [
+            3830.322509765625,
+            605.5
+          ],
+          [
+            3830.322509765625,
+            684.1363525390625
+          ],
+          [
+            3218.70947265625,
+            682.1704711914062
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-05-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1379.0,
+            821.0
+          ],
+          [
+            1986.0,
+            827.0
+          ],
+          [
+            1985.0,
+            898.0
+          ],
+          [
+            1378.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.995,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-06.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-06.jpg",
+        "region": "full",
+        "box": [
+          [
+            1608.0,
+            1033.0
+          ],
+          [
+            1915.0,
+            1037.0
+          ],
+          [
+            1915.0,
+            1077.0
+          ],
+          [
+            1608.0,
+            1073.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 1.0,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-06.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-06-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3220.64501953125,
+            603.5341186523438
+          ],
+          [
+            3830.322509765625,
+            605.5
+          ],
+          [
+            3830.322509765625,
+            684.1363525390625
+          ],
+          [
+            3220.64501953125,
+            680.2045288085938
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-06.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-06-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1379.0,
+            821.0
+          ],
+          [
+            1986.0,
+            827.0
+          ],
+          [
+            1985.0,
+            898.0
+          ],
+          [
+            1378.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.997,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-07.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-07.jpg",
+        "region": "full",
+        "box": [
+          [
+            1608.0,
+            1033.0
+          ],
+          [
+            1914.0,
+            1037.0
+          ],
+          [
+            1914.0,
+            1077.0
+          ],
+          [
+            1608.0,
+            1073.0
+          ]
+        ]
+      },
+      {
+        "text": "YummyCouple.com",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-07.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/.ocr-regions/frame-07-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3218.70947265625,
+            601.5681762695312
+          ],
+          [
+            3830.322509765625,
+            607.4659423828125
+          ],
+          [
+            3830.322509765625,
+            684.1363525390625
+          ],
+          [
+            3218.70947265625,
+            680.2045288085938
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 8,
+  "review_frames": [
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-01.jpg",
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-02.jpg",
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-03.jpg",
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-04.jpg",
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-05.jpg",
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-06.jpg",
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-07.jpg",
+    "/DATA/yes/.face-review/JoinUs @RisqueMega 233/frames/frame-08.jpg"
+  ],
+  "faces_detected": 1,
+  "faces_rejected": [
+    {
+      "frame_path": "/tmp/face-organizer-qf1s2f63/frame-02.jpg",
+      "bbox": [
+        868.78,
+        -201.08,
+        1169.69,
+        314.61
+      ],
+      "detection_score": 0.6019,
+      "reason": "low detection score 0.602 < 0.650"
+    }
+  ],
+  "duration_seconds": 413.455,
+  "processing_time_seconds": 57.069,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  },
+  "path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv",
+  "filename": "JoinUs @RisqueMega 233.mkv",
+  "organized_at": "2026-06-05T11:49:05+00:00",
+  "organization_bucket": "unknown",
+  "operator_review_notes": [
+    {
+      "noted_at": "2026-06-15T02:35:35+00:00",
+      "noted_by": "Britton notes 2026-06-14",
+      "note": "Watermark cluster: JoinUs @RisqueMega. User thinks this model may already have been verified; needs visual confirmation, do not treat watermark as performer name."
+    }
+  ],
+  "manual_cluster_review_needed": true,
+  "manual_corrections": [
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:12:17+00:00",
+      "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4",
+      "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Yurmmy Couple",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yurmmy Couple\"",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yurmmy Couple\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22%20onlyfans",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yurmmy Couple\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Yurmmy Couple\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22%20site%3Acoomer.st",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Yurmmy Couple",
+          "url": "https://coomer.st/search?q=Yurmmy%20Couple",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yurmmy\"",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%22",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yurmmy\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%22%20onlyfans",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yurmmy\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:12:17+00:00",
+      "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4",
+      "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Yurmmy Couple",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yurmmy Couple\"",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yurmmy Couple\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22%20onlyfans",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yurmmy Couple\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Yurmmy Couple\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%20Couple%22%20site%3Acoomer.st",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Yurmmy Couple",
+          "url": "https://coomer.st/search?q=Yurmmy%20Couple",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yurmmy\"",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%22",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yurmmy\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%22%20onlyfans",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yurmmy\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yurmmy%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yurmmy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:12:17+00:00"
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton typo cleanup",
+      "corrected_at": "2026-06-15T03:16:09+00:00",
+      "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv",
+      "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Yummy Couple",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yummy Couple\"",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yummy Couple\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22%20onlyfans",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yummy Couple\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Yummy Couple\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22%20site%3Acoomer.st",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Yummy Couple",
+          "url": "https://coomer.st/search?q=Yummy%20Couple",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yummy\"",
+          "url": "https://yandex.com/search/?text=%22Yummy%22",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yummy\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yummy%22%20onlyfans",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yummy\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yummy%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton typo cleanup",
+      "corrected_at": "2026-06-15T03:16:09+00:00",
+      "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv",
+      "sidecar_path": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Yummy Couple",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yummy Couple\"",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yummy Couple\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22%20onlyfans",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yummy Couple\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Yummy Couple\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Yummy%20Couple%22%20site%3Acoomer.st",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Yummy Couple",
+          "url": "https://coomer.st/search?q=Yummy%20Couple",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Yummy\"",
+          "url": "https://yandex.com/search/?text=%22Yummy%22",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Yummy\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Yummy%22%20onlyfans",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Yummy\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Yummy%22%20site%3Apimpbunny.com",
+          "candidate_name": "Yummy Couple",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:16:09+00:00"
+    }
+  ],
+  "manual_correction_pending": null,
+  "audit_events": [
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:12:17+00:00",
+      "corrected_at": "2026-06-15T03:12:17+00:00",
+      "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.MP4",
+      "previous_suggestion": null,
+      "new_canonical_name": "Yurmmy Couple",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    },
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton typo cleanup",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:16:09+00:00",
+      "corrected_at": "2026-06-15T03:16:09+00:00",
+      "source_file": "/DATA/yes/unknown/JoinUs @RisqueMega 233.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Yummy Couple",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    }
+  ],
+  "manual_confirmed_model": {
+    "schema": "media-manual-model-assignment/v1",
+    "name": "Yummy Couple",
+    "confirmed_by": "Britton",
+    "confirmed_at": "2026-06-15T03:16:09+00:00",
+    "known_performer_id": "",
+    "face_enrolled": false,
+    "move_receipt": {},
+    "next_action": "queued_for_face_enrollment"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-16T20:53:58.658Z",
+  "jobId": "mi-mqh2ypcj-4acf3bde",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/RisqueCore Vid 53.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/RisqueCore Vid 53.mkv",
+  "originalSize": 25938254,
+  "outputSize": 5335075,
+  "savingsPercent": 79.43,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-16T20:53:58.659Z"
+  }
+}

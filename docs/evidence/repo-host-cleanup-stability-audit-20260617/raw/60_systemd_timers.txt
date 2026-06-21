@@ -1,0 +1,4 @@
+$ systemctl list-timers --all | grep -Ei "spirit|proxy|source|backup|watch|monitor" || true
+# rc=0
+
+Thu 2026-06-18 00:00:00 EDT  2h 6min Wed 2026-06-17 00:00:00 EDT            - dpkg-db-backup.timer         dpkg-db-backup.service

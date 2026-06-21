@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-17T02:05:49.259Z",
+  "jobId": "mi-mqh2z80q-aaadb907",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/NotYourHoneyBB Missionary Sex.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/NotYourHoneyBB Missionary Sex.mkv",
+  "originalSize": 157758752,
+  "outputSize": 71100552,
+  "savingsPercent": 54.93,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-17T02:05:49.262Z"
+  }
+}

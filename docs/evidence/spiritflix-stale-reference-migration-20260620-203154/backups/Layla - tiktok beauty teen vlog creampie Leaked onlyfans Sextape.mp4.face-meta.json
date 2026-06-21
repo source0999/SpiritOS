@@ -1,0 +1,1004 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/mnt/spirit-8tb/media/yes/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape.mkv",
+  "generated_at": "2026-06-19T02:15:20+00:00",
+  "dry_run": false,
+  "verification_needed": true,
+  "performers": [
+    {
+      "id": null,
+      "name": "unknown performer",
+      "confidence": 0.2962,
+      "similarity": 0.2962,
+      "status": "unknown",
+      "verification_needed": true,
+      "label": "unknown performer - verification needed",
+      "face_crop_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frame-01-face-01.jpg",
+      "original_frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frame-01.jpg",
+      "bbox": [
+        216.85,
+        308.74,
+        328.82,
+        481.82
+      ],
+      "detection_score": 0.7054,
+      "model_version": "insightface:buffalo_l",
+      "supporting_faces": 6
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-19T02:15:20+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Layla Tiktok Beauty Teen",
+        "source": "filename",
+        "confidence": 0.65,
+        "raw": "Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape",
+        "variants": [
+          "Layla Tiktok Beauty Teen",
+          "Layla"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "Tiktok Beauty Teen Vlog Creampie",
+        "source": "filename",
+        "confidence": 0.65,
+        "raw": " tiktok beauty teen vlog creampie Leaked onlyfans Sextape",
+        "variants": [
+          "Tiktok Beauty Teen Vlog Creampie",
+          "tiktok"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "Onl",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "Onl",
+        "variants": [
+          "Onl"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-02.jpg",
+        "region": "bottom_strip"
+      },
+      {
+        "name": "NOTFANS",
+        "source": "watermark_ocr_text",
+        "confidence": 0.47,
+        "raw": "NOTFANS.COM",
+        "variants": [
+          "NOTFANS",
+          "NOTFANSCOM"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "NOTFANSCOM",
+        "source": "watermark_ocr_text",
+        "confidence": 0.47,
+        "raw": "NOTFANS.COM",
+        "variants": [
+          "NOTFANSCOM"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "Layla",
+        "source": "filename",
+        "confidence": 0.45,
+        "raw": "Layla ",
+        "variants": [
+          "Layla"
+        ],
+        "evidence_role": "filename_hint"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Layla Tiktok Beauty Teen\"",
+        "url": "https://yandex.com/search/?text=%22Layla%20Tiktok%20Beauty%20Teen%22",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Layla Tiktok Beauty Teen\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Layla%20Tiktok%20Beauty%20Teen%22%20onlyfans",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Layla Tiktok Beauty Teen\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Layla%20Tiktok%20Beauty%20Teen%22%20site%3Apimpbunny.com",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Layla Tiktok Beauty Teen\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Layla%20Tiktok%20Beauty%20Teen%22%20site%3Acoomer.st",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Layla Tiktok Beauty Teen",
+        "url": "https://coomer.st/search?q=Layla%20Tiktok%20Beauty%20Teen",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Layla\"",
+        "url": "https://yandex.com/search/?text=%22Layla%22",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Layla\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Layla%22%20onlyfans",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Layla\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Layla%22%20site%3Apimpbunny.com",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Layla\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Layla%22%20site%3Acoomer.st",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Layla",
+        "url": "https://coomer.st/search?q=Layla",
+        "candidate_name": "Layla Tiktok Beauty Teen",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Tiktok Beauty Teen Vlog Creampie\"",
+        "url": "https://yandex.com/search/?text=%22Tiktok%20Beauty%20Teen%20Vlog%20Creampie%22",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Tiktok Beauty Teen Vlog Creampie\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Tiktok%20Beauty%20Teen%20Vlog%20Creampie%22%20onlyfans",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Tiktok Beauty Teen Vlog Creampie\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Tiktok%20Beauty%20Teen%20Vlog%20Creampie%22%20site%3Apimpbunny.com",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Tiktok Beauty Teen Vlog Creampie\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Tiktok%20Beauty%20Teen%20Vlog%20Creampie%22%20site%3Acoomer.st",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Tiktok Beauty Teen Vlog Creampie",
+        "url": "https://coomer.st/search?q=Tiktok%20Beauty%20Teen%20Vlog%20Creampie",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"tiktok\"",
+        "url": "https://yandex.com/search/?text=%22tiktok%22",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"tiktok\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22tiktok%22%20onlyfans",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"tiktok\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22tiktok%22%20site%3Apimpbunny.com",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"tiktok\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22tiktok%22%20site%3Acoomer.st",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "tiktok",
+        "url": "https://coomer.st/search?q=tiktok",
+        "candidate_name": "Tiktok Beauty Teen Vlog Creampie",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Onl\"",
+        "url": "https://yandex.com/search/?text=%22Onl%22",
+        "candidate_name": "Onl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Onl\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Onl%22%20onlyfans",
+        "candidate_name": "Onl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Onl\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Onl%22%20site%3Apimpbunny.com",
+        "candidate_name": "Onl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Onl\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Onl%22%20site%3Acoomer.st",
+        "candidate_name": "Onl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Onl",
+        "url": "https://coomer.st/search?q=Onl",
+        "candidate_name": "Onl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"NOTFANS\"",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"NOTFANS\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22%20onlyfans",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"NOTFANS\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22%20site%3Apimpbunny.com",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"NOTFANS\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22%20site%3Acoomer.st",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "NOTFANS",
+        "url": "https://coomer.st/search?q=NOTFANS",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"NOTFANSCOM\"",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"NOTFANSCOM\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22%20onlyfans",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"NOTFANSCOM\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22%20site%3Apimpbunny.com",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"NOTFANSCOM\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22%20site%3Acoomer.st",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "NOTFANSCOM",
+        "url": "https://coomer.st/search?q=NOTFANSCOM",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.996,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            233.0,
+            685.0
+          ],
+          [
+            396.0,
+            685.0
+          ],
+          [
+            396.0,
+            715.0
+          ],
+          [
+            233.0,
+            715.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            692.0,
+            589.0
+          ],
+          [
+            1186.0,
+            589.0
+          ],
+          [
+            1186.0,
+            675.0
+          ],
+          [
+            692.0,
+            675.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            118.0,
+            808.0
+          ],
+          [
+            606.0,
+            808.0
+          ],
+          [
+            606.0,
+            892.0
+          ],
+          [
+            118.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.996,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            233.0,
+            685.0
+          ],
+          [
+            396.0,
+            685.0
+          ],
+          [
+            396.0,
+            715.0
+          ],
+          [
+            233.0,
+            715.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            693.0,
+            590.0
+          ],
+          [
+            1187.0,
+            590.0
+          ],
+          [
+            1187.0,
+            676.0
+          ],
+          [
+            693.0,
+            676.0
+          ]
+        ]
+      },
+      {
+        "text": "Onl",
+        "confidence": 0.894,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            644.0,
+            636.0
+          ],
+          [
+            710.0,
+            609.0
+          ],
+          [
+            727.0,
+            650.0
+          ],
+          [
+            661.0,
+            677.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-02-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            117.0,
+            807.0
+          ],
+          [
+            608.0,
+            807.0
+          ],
+          [
+            608.0,
+            894.0
+          ],
+          [
+            117.0,
+            894.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-03.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            233.0,
+            685.0
+          ],
+          [
+            397.0,
+            685.0
+          ],
+          [
+            397.0,
+            715.0
+          ],
+          [
+            233.0,
+            715.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.994,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-03.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            698.0,
+            591.0
+          ],
+          [
+            1190.0,
+            591.0
+          ],
+          [
+            1190.0,
+            677.0
+          ],
+          [
+            698.0,
+            677.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-03.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-03-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            117.0,
+            808.0
+          ],
+          [
+            611.0,
+            808.0
+          ],
+          [
+            611.0,
+            892.0
+          ],
+          [
+            117.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.996,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-04.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-04.jpg",
+        "region": "full",
+        "box": [
+          [
+            233.0,
+            685.0
+          ],
+          [
+            397.0,
+            685.0
+          ],
+          [
+            397.0,
+            714.0
+          ],
+          [
+            233.0,
+            715.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.991,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-04.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-04-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            699.0,
+            592.0
+          ],
+          [
+            1189.0,
+            592.0
+          ],
+          [
+            1189.0,
+            677.0
+          ],
+          [
+            699.0,
+            677.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.994,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-04.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-04-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            119.0,
+            810.0
+          ],
+          [
+            610.0,
+            810.0
+          ],
+          [
+            610.0,
+            891.0
+          ],
+          [
+            119.0,
+            891.0
+          ]
+        ]
+      },
+      {
+        "text": "Onl",
+        "confidence": 0.874,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-04.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-04-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            68.0,
+            850.0
+          ],
+          [
+            126.0,
+            850.0
+          ],
+          [
+            126.0,
+            887.0
+          ],
+          [
+            68.0,
+            887.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.996,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-05.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-05.jpg",
+        "region": "full",
+        "box": [
+          [
+            233.0,
+            685.0
+          ],
+          [
+            397.0,
+            685.0
+          ],
+          [
+            397.0,
+            715.0
+          ],
+          [
+            233.0,
+            715.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.994,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-05.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-05-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            697.0,
+            591.0
+          ],
+          [
+            1190.0,
+            591.0
+          ],
+          [
+            1190.0,
+            676.0
+          ],
+          [
+            697.0,
+            676.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.994,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-05.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-05-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            114.0,
+            808.0
+          ],
+          [
+            611.0,
+            808.0
+          ],
+          [
+            611.0,
+            892.0
+          ],
+          [
+            114.0,
+            892.0
+          ]
+        ]
+      },
+      {
+        "text": "Onl",
+        "confidence": 0.948,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-05.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-05-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            57.0,
+            859.0
+          ],
+          [
+            124.0,
+            822.0
+          ],
+          [
+            147.0,
+            866.0
+          ],
+          [
+            81.0,
+            902.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-06.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-06.jpg",
+        "region": "full",
+        "box": [
+          [
+            234.0,
+            686.0
+          ],
+          [
+            397.0,
+            686.0
+          ],
+          [
+            397.0,
+            715.0
+          ],
+          [
+            234.0,
+            715.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.992,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-06.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/.ocr-regions/frame-06-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            700.0,
+            590.0
+          ],
+          [
+            1187.0,
+            590.0
+          ],
+          [
+            1187.0,
+            675.0
+          ],
+          [
+            700.0,
+            675.0
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-01.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-02.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-03.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-04.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-05.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Layla - tiktok beauty teen vlog creampie Leaked onlyfans Sextape/frames/frame-06.jpg"
+  ],
+  "faces_detected": 6,
+  "faces_rejected": [],
+  "duration_seconds": 606.022,
+  "processing_time_seconds": 22.919,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  }
+}

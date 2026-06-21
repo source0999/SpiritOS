@@ -1,0 +1,4 @@
+$ git worktree list
+# rc=0
+
+/home/source/SpiritOS  158b489f [master]

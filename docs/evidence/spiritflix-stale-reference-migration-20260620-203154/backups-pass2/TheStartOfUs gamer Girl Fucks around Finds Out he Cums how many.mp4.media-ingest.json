@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-17T20:26:05.753Z",
+  "jobId": "mi-mqhh0py1-4c3d8e93",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/TheStartOfUs gamer Girl Fucks around Finds Out he Cums how many.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/TheStartOfUs gamer Girl Fucks around Finds Out he Cums how many.mkv",
+  "originalSize": 441718760,
+  "outputSize": 368244037,
+  "savingsPercent": 16.63,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-17T20:26:05.754Z"
+  }
+}

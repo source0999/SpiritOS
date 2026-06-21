@@ -1,0 +1,237 @@
+{
+  "status": "complete",
+  "stamp": "20260620-185045",
+  "stage": "/tmp/spiritflix-mp4-restore-20260620-184544",
+  "preserve_root": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes",
+  "remove_root": "/mnt/spirit-8tb/media-originals/removed-from-library-20260620-184733/yes",
+  "evidence_dir": "/home/source/SpiritOS/docs/evidence/spiritflix-library-mp4-replacement-resume-20260620-185045",
+  "results": [
+    {
+      "action": "already_done_or_missing",
+      "current": "/mnt/spirit-8tb/media/yes/484374_720p.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/484374_720p.mp4",
+      "target_exists": true,
+      "target_probe": {
+        "duration": 543.850667,
+        "video": "h264",
+        "audio": "aac",
+        "width": 406,
+        "height": 720
+      }
+    },
+    {
+      "action": "already_done_or_missing",
+      "current": "/mnt/spirit-8tb/media/yes/550807_720p.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/550807_720p.mp4",
+      "target_exists": true,
+      "target_probe": {
+        "duration": 888.861224,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "action": "already_done_or_missing",
+      "current": "/mnt/spirit-8tb/media/yes/432038_720p.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/432038_720p.mp4",
+      "target_exists": true,
+      "target_probe": {
+        "duration": 952.903417,
+        "video": "h264",
+        "audio": "aac",
+        "width": 406,
+        "height": 720
+      }
+    },
+    {
+      "action": "already_done_or_missing",
+      "current": "/mnt/spirit-8tb/media/yes/14318872.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/14318872.mp4",
+      "target_exists": true,
+      "target_probe": {
+        "duration": 1584.329229,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "action": "already_done_or_missing",
+      "current": "/mnt/spirit-8tb/media/yes/b072fcb9f821c935f46a4ed67477a041.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/b072fcb9f821c935f46a4ed67477a041.mp4",
+      "target_exists": true,
+      "target_probe": {
+        "duration": 536.527292,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "action": "already_done_or_missing",
+      "current": "/mnt/spirit-8tb/media/yes/513329_720p.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/513329_720p.mp4",
+      "target_exists": true,
+      "target_probe": {
+        "duration": 252.919333,
+        "video": "h264",
+        "audio": "aac",
+        "width": 608,
+        "height": 1080
+      }
+    },
+    {
+      "action": "already_done_or_missing",
+      "current": "/mnt/spirit-8tb/media/yes/models/strawberrytabby/564677_720p.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/models/strawberrytabby/564677_720p.mp4",
+      "target_exists": true,
+      "target_probe": {
+        "duration": 253.878625,
+        "video": "h264",
+        "audio": "aac",
+        "width": 608,
+        "height": 1080
+      }
+    },
+    {
+      "action": "replace",
+      "current": "/mnt/spirit-8tb/media/yes/models/cute-geekie/51591.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/models/cute-geekie/51591.mp4",
+      "target_note": "target_already_existed_from_partial_run",
+      "preserved_original": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/cute-geekie/51591.mkv",
+      "sidecars": [],
+      "target_probe": {
+        "duration": 780.446333,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1284,
+        "height": 720
+      }
+    },
+    {
+      "action": "replace",
+      "current": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 959.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 959.mp4",
+      "target_note": "copied_from_stage",
+      "preserved_original": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 959.mkv",
+      "sidecars": [
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 959.mkv.media-ingest.json",
+          "to_new": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 959.mp4.media-ingest.json",
+          "copied_to_new": true,
+          "skipped_copy": false,
+          "preserved": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 959.mkv.media-ingest.json"
+        }
+      ],
+      "target_probe": {
+        "duration": 139.732667,
+        "video": "h264",
+        "audio": "aac",
+        "width": 900,
+        "height": 720
+      }
+    },
+    {
+      "action": "replace",
+      "current": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 870.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 870.mp4",
+      "target_note": "copied_from_stage",
+      "preserved_original": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 870.mkv",
+      "sidecars": [
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 870.mkv.media-ingest.json",
+          "to_new": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 870.mp4.media-ingest.json",
+          "copied_to_new": true,
+          "skipped_copy": false,
+          "preserved": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 870.mkv.media-ingest.json"
+        }
+      ],
+      "target_probe": {
+        "duration": 82.749667,
+        "video": "h264",
+        "audio": "aac",
+        "width": 404,
+        "height": 720
+      }
+    },
+    {
+      "action": "replace",
+      "current": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(28).mkv",
+      "target": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(28).mp4",
+      "target_note": "copied_from_stage",
+      "preserved_original": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/sava-schultz/(28).mkv",
+      "sidecars": [
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(28).mkv.face-meta.json",
+          "to_new": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(28).mp4.face-meta.json",
+          "copied_to_new": true,
+          "skipped_copy": false,
+          "preserved": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/sava-schultz/(28).mkv.face-meta.json"
+        },
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(28).mkv.media-ingest.json",
+          "to_new": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(28).mp4.media-ingest.json",
+          "copied_to_new": true,
+          "skipped_copy": false,
+          "preserved": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/sava-schultz/(28).mkv.media-ingest.json"
+        }
+      ],
+      "target_probe": {
+        "duration": 20.30325,
+        "video": "h264",
+        "audio": "aac",
+        "width": 608,
+        "height": 1080
+      }
+    },
+    {
+      "action": "replace",
+      "current": "/mnt/spirit-8tb/media/yes/models/angela-white/556530_720p.mkv",
+      "target": "/mnt/spirit-8tb/media/yes/models/angela-white/556530_720p.mp4",
+      "target_note": "copied_from_stage",
+      "preserved_original": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/angela-white/556530_720p.mkv",
+      "sidecars": [
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/angela-white/556530_720p.mkv.face-meta.json",
+          "to_new": "/mnt/spirit-8tb/media/yes/models/angela-white/556530_720p.mp4.face-meta.json",
+          "copied_to_new": true,
+          "skipped_copy": false,
+          "preserved": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/angela-white/556530_720p.mkv.face-meta.json"
+        },
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/angela-white/556530_720p.mkv.media-ingest-skip.json",
+          "to_new": "/mnt/spirit-8tb/media/yes/models/angela-white/556530_720p.mp4.media-ingest-skip.json",
+          "copied_to_new": true,
+          "skipped_copy": false,
+          "preserved": "/mnt/spirit-8tb/media-originals/replaced-by-mp4-20260620-184733/yes/models/angela-white/556530_720p.mkv.media-ingest-skip.json"
+        }
+      ],
+      "target_probe": {
+        "duration": 1561.426167,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "action": "remove_preserve",
+      "current": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (86).mkv",
+      "preserved_original": "/mnt/spirit-8tb/media-originals/removed-from-library-20260620-184733/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (86).mkv",
+      "sidecars": [
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (86).mkv.face-meta.json",
+          "preserved": "/mnt/spirit-8tb/media-originals/removed-from-library-20260620-184733/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (86).mkv.face-meta.json"
+        },
+        {
+          "from": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (86).mkv.media-ingest-skip.json",
+          "preserved": "/mnt/spirit-8tb/media-originals/removed-from-library-20260620-184733/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (86).mkv.media-ingest-skip.json"
+        }
+      ]
+    }
+  ]
+}

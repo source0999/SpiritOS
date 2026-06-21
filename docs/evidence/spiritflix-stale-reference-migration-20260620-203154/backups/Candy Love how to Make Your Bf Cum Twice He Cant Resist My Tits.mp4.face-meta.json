@@ -1,0 +1,1040 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits.mkv",
+  "generated_at": "2026-06-18T02:09:53+00:00",
+  "dry_run": false,
+  "verification_needed": true,
+  "performers": [
+    {
+      "name": "unknown performer",
+      "confidence": 0.0,
+      "similarity": 0.0,
+      "status": "unknown",
+      "verification_needed": true,
+      "label": "unknown performer - verification needed",
+      "face_crop_path": null,
+      "original_frame_path": null,
+      "model_version": "insightface:buffalo_l",
+      "supporting_faces": 0
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-18T02:09:53+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Candy",
+        "source": "watermark_ocr_text",
+        "confidence": 0.84,
+        "raw": "Candy.",
+        "variants": [
+          "Candy"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "region": "top_strip"
+      },
+      {
+        "name": "Cove",
+        "source": "watermark_ocr_text",
+        "confidence": 0.83,
+        "raw": "Cove",
+        "variants": [
+          "Cove"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "region": "top_strip"
+      },
+      {
+        "name": "Porn",
+        "source": "watermark_ocr_text",
+        "confidence": 0.74,
+        "raw": "Porn Dub",
+        "variants": [
+          "Porn",
+          "Porn Dub"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "region": "top_strip"
+      },
+      {
+        "name": "Candy Love How To Make",
+        "source": "filename",
+        "confidence": 0.65,
+        "raw": "Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits",
+        "variants": [
+          "Candy Love How To Make",
+          "Candy"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "Ponn",
+        "source": "watermark_ocr_text",
+        "confidence": 0.64,
+        "raw": "Ponn mun",
+        "variants": [
+          "Ponn",
+          "Ponnmun"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-05.jpg",
+        "region": "top_strip"
+      },
+      {
+        "name": "Candy Love",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "Candy love",
+        "variants": [
+          "Candy Love",
+          "Candy"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "region": "top_right"
+      },
+      {
+        "name": "Porn Dub",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "Porn Dub",
+        "variants": [
+          "Porn Dub",
+          "Porn"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "region": "top_strip"
+      },
+      {
+        "name": "Porn Du",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "Porn Du",
+        "variants": [
+          "Porn Du",
+          "Porn"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "region": "top_left"
+      },
+      {
+        "name": "Ponn Mun",
+        "source": "watermark_ocr_text",
+        "confidence": 0.54,
+        "raw": "Ponn mun",
+        "variants": [
+          "Ponn Mun",
+          "Ponn"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-05.jpg",
+        "region": "top_strip"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candy\"",
+        "url": "https://yandex.com/search/?text=%22Candy%22",
+        "candidate_name": "Candy",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candy\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20onlyfans",
+        "candidate_name": "Candy",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candy\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candy",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candy\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20site%3Acoomer.st",
+        "candidate_name": "Candy",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candy",
+        "url": "https://coomer.st/search?q=Candy",
+        "candidate_name": "Candy",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Cove\"",
+        "url": "https://yandex.com/search/?text=%22Cove%22",
+        "candidate_name": "Cove",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Cove\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Cove%22%20onlyfans",
+        "candidate_name": "Cove",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Cove\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Cove%22%20site%3Apimpbunny.com",
+        "candidate_name": "Cove",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Cove\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Cove%22%20site%3Acoomer.st",
+        "candidate_name": "Cove",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Cove",
+        "url": "https://coomer.st/search?q=Cove",
+        "candidate_name": "Cove",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Porn\"",
+        "url": "https://yandex.com/search/?text=%22Porn%22",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Porn\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Porn%22%20onlyfans",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Porn\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Porn%22%20site%3Apimpbunny.com",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Porn\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Porn%22%20site%3Acoomer.st",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Porn",
+        "url": "https://coomer.st/search?q=Porn",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Porn Dub\"",
+        "url": "https://yandex.com/search/?text=%22Porn%20Dub%22",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Porn Dub\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Porn%20Dub%22%20onlyfans",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Porn Dub\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Porn%20Dub%22%20site%3Apimpbunny.com",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Porn Dub\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Porn%20Dub%22%20site%3Acoomer.st",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Porn Dub",
+        "url": "https://coomer.st/search?q=Porn%20Dub",
+        "candidate_name": "Porn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candy Love How To Make\"",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20How%20To%20Make%22",
+        "candidate_name": "Candy Love How To Make",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candy Love How To Make\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20How%20To%20Make%22%20onlyfans",
+        "candidate_name": "Candy Love How To Make",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candy Love How To Make\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20How%20To%20Make%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candy Love How To Make",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candy Love How To Make\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20How%20To%20Make%22%20site%3Acoomer.st",
+        "candidate_name": "Candy Love How To Make",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candy Love How To Make",
+        "url": "https://coomer.st/search?q=Candy%20Love%20How%20To%20Make",
+        "candidate_name": "Candy Love How To Make",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Ponn\"",
+        "url": "https://yandex.com/search/?text=%22Ponn%22",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Ponn\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Ponn%22%20onlyfans",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Ponn\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Ponn%22%20site%3Apimpbunny.com",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Ponn\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Ponn%22%20site%3Acoomer.st",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Ponn",
+        "url": "https://coomer.st/search?q=Ponn",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Ponnmun\"",
+        "url": "https://yandex.com/search/?text=%22Ponnmun%22",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Ponnmun\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Ponnmun%22%20onlyfans",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Ponnmun\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Ponnmun%22%20site%3Apimpbunny.com",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Ponnmun\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Ponnmun%22%20site%3Acoomer.st",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Ponnmun",
+        "url": "https://coomer.st/search?q=Ponnmun",
+        "candidate_name": "Ponn",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "Candyl",
+        "confidence": 0.97,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            1722.0,
+            58.0
+          ],
+          [
+            1806.0,
+            54.0
+          ],
+          [
+            1808.0,
+            93.0
+          ],
+          [
+            1724.0,
+            97.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.827,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            1792.0,
+            60.0
+          ],
+          [
+            1850.0,
+            60.0
+          ],
+          [
+            1850.0,
+            93.0
+          ],
+          [
+            1792.0,
+            93.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy.",
+        "confidence": 0.864,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-01-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3452.903076171875,
+            121.53408813476562
+          ],
+          [
+            3601.935302734375,
+            121.53408813476562
+          ],
+          [
+            3601.935302734375,
+            180.34091186523438
+          ],
+          [
+            3452.903076171875,
+            180.34091186523438
+          ]
+        ]
+      },
+      {
+        "text": "Cove",
+        "confidence": 0.809,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-01-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3590.322509765625,
+            125.45454406738281
+          ],
+          [
+            3700.64501953125,
+            137.21591186523438
+          ],
+          [
+            3696.774169921875,
+            184.26136779785156
+          ],
+          [
+            3584.51611328125,
+            172.5
+          ]
+        ]
+      },
+      {
+        "text": "Candy love",
+        "confidence": 0.916,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-01-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1610.0,
+            118.0
+          ],
+          [
+            1862.0,
+            120.0
+          ],
+          [
+            1862.0,
+            183.0
+          ],
+          [
+            1609.0,
+            181.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy love",
+        "confidence": 0.914,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            1724.0,
+            52.0
+          ],
+          [
+            1853.0,
+            56.0
+          ],
+          [
+            1852.0,
+            97.0
+          ],
+          [
+            1723.0,
+            93.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy Love",
+        "confidence": 0.933,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-02-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3450.967529296875,
+            119.57386016845703
+          ],
+          [
+            3702.58056640625,
+            121.53408813476562
+          ],
+          [
+            3702.58056640625,
+            182.30113220214844
+          ],
+          [
+            3450.967529296875,
+            180.34091186523438
+          ]
+        ]
+      },
+      {
+        "text": "CandyLove",
+        "confidence": 0.941,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-02-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1610.0,
+            118.0
+          ],
+          [
+            1861.0,
+            122.0
+          ],
+          [
+            1860.0,
+            184.0
+          ],
+          [
+            1609.0,
+            181.0
+          ]
+        ]
+      },
+      {
+        "text": "Candyl",
+        "confidence": 0.925,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            1722.0,
+            59.0
+          ],
+          [
+            1805.0,
+            54.0
+          ],
+          [
+            1807.0,
+            91.0
+          ],
+          [
+            1724.0,
+            96.0
+          ]
+        ]
+      },
+      {
+        "text": "love",
+        "confidence": 0.809,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            1791.0,
+            57.0
+          ],
+          [
+            1852.0,
+            64.0
+          ],
+          [
+            1848.0,
+            96.0
+          ],
+          [
+            1787.0,
+            89.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy!",
+        "confidence": 0.922,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-03-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3456.774169921875,
+            123.49431610107422
+          ],
+          [
+            3601.935302734375,
+            123.49431610107422
+          ],
+          [
+            3601.935302734375,
+            178.38067626953125
+          ],
+          [
+            3456.774169921875,
+            178.38067626953125
+          ]
+        ]
+      },
+      {
+        "text": "Cove",
+        "confidence": 0.819,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-03-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3590.322509765625,
+            123.49431610107422
+          ],
+          [
+            3702.58056640625,
+            137.21591186523438
+          ],
+          [
+            3696.774169921875,
+            184.26136779785156
+          ],
+          [
+            3584.51611328125,
+            170.53976440429688
+          ]
+        ]
+      },
+      {
+        "text": "Candylove",
+        "confidence": 0.942,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-03-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1611.0,
+            118.0
+          ],
+          [
+            1862.0,
+            122.0
+          ],
+          [
+            1861.0,
+            183.0
+          ],
+          [
+            1610.0,
+            180.0
+          ]
+        ]
+      },
+      {
+        "text": "Candylove",
+        "confidence": 0.94,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "region": "full",
+        "box": [
+          [
+            1723.0,
+            52.0
+          ],
+          [
+            1853.0,
+            56.0
+          ],
+          [
+            1852.0,
+            97.0
+          ],
+          [
+            1722.0,
+            93.0
+          ]
+        ]
+      },
+      {
+        "text": "Pon Dub",
+        "confidence": 0.744,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "region": "full",
+        "box": [
+          [
+            725.0,
+            290.0
+          ],
+          [
+            1028.0,
+            237.0
+          ],
+          [
+            1039.0,
+            298.0
+          ],
+          [
+            736.0,
+            351.0
+          ]
+        ]
+      },
+      {
+        "text": "Candyl",
+        "confidence": 0.904,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-04-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3454.838623046875,
+            119.57386016845703
+          ],
+          [
+            3609.67724609375,
+            123.49431610107422
+          ],
+          [
+            3607.741943359375,
+            184.26136779785156
+          ],
+          [
+            3452.903076171875,
+            180.34091186523438
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.866,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-04-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3586.451416015625,
+            125.45454406738281
+          ],
+          [
+            3700.64501953125,
+            129.375
+          ],
+          [
+            3698.70947265625,
+            180.34091186523438
+          ],
+          [
+            3584.51611328125,
+            176.4204559326172
+          ]
+        ]
+      },
+      {
+        "text": "Porn Dub",
+        "confidence": 0.851,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-04-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            1447.741943359375,
+            582.1875
+          ],
+          [
+            2055.48388671875,
+            470.45452880859375
+          ],
+          [
+            2076.774169921875,
+            597.8693237304688
+          ],
+          [
+            1469.0322265625,
+            688.039794921875
+          ]
+        ]
+      },
+      {
+        "text": "Porn Du",
+        "confidence": 0.842,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-04-top_left.jpg",
+        "region": "top_left",
+        "box": [
+          [
+            1443.0,
+            583.0
+          ],
+          [
+            1985.0,
+            484.0
+          ],
+          [
+            1995.0,
+            614.0
+          ],
+          [
+            1467.0,
+            713.0
+          ]
+        ]
+      },
+      {
+        "text": "Candylove",
+        "confidence": 0.941,
+        "frame_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/.ocr-regions/frame-04-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1610.0,
+            119.0
+          ],
+          [
+            1862.0,
+            122.0
+          ],
+          [
+            1862.0,
+            184.0
+          ],
+          [
+            1609.0,
+            182.0
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-01.jpg",
+    "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-02.jpg",
+    "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-03.jpg",
+    "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-04.jpg",
+    "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-05.jpg",
+    "/DATA/yes/.face-review/Candy Love how to Make Your Bf Cum Twice He Cant Resist My Tits/frames/frame-06.jpg"
+  ],
+  "faces_detected": 0,
+  "faces_rejected": [],
+  "duration_seconds": 1263.56,
+  "processing_time_seconds": 53.859,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  }
+}

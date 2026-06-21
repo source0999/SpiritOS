@@ -20,6 +20,13 @@ const SESSION_KEY = "spiritflix_private_gooner_session";
 const GOONER_ITEM_FIELDS =
   "Path,SeriesName,DateCreated,IndexNumber,ParentIndexNumber,Overview,ProductionYear,RunTimeTicks,Genres,People,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount";
 
+export interface HlsPlaybackProfile {
+  maxWidth: number;
+  maxHeight: number;
+  videoBitrate: number;
+  audioBitrate: number;
+}
+
 export function getStoredSession(): SpiritFlixSession | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(SESSION_KEY);
@@ -84,6 +91,52 @@ function toQuery(params: Record<string, string | number | boolean | undefined>):
     if (value !== undefined && value !== "") query.set(key, String(value));
   });
   return query.toString();
+}
+
+function isHttpsPage(): boolean {
+  return typeof window !== "undefined" && window.location.protocol === "https:";
+}
+
+function getDirectServerUrl(serverUrl: string): string {
+  return typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? `http://${window.location.hostname}:8096`
+    : serverUrl;
+}
+
+export function getHlsPlaybackProfile(): HlsPlaybackProfile {
+  const baseProfile: HlsPlaybackProfile = {
+    maxWidth: 1280,
+    maxHeight: 720,
+    videoBitrate: 4000000,
+    audioBitrate: 192000,
+  };
+  if (typeof window === "undefined") return baseProfile;
+
+  const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  const cssLongEdge = Math.max(window.innerWidth || 0, window.innerHeight || 0);
+  const cssShortEdge = Math.min(window.innerWidth || 0, window.innerHeight || 0);
+  const longEdge = cssLongEdge * dpr;
+  const shortEdge = cssShortEdge * dpr;
+
+  if (cssShortEdge >= 720 && longEdge >= 1800 && shortEdge >= 900) {
+    return {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      videoBitrate: 10000000,
+      audioBitrate: 256000,
+    };
+  }
+
+  if (cssShortEdge >= 600 && longEdge >= 1400 && shortEdge >= 760) {
+    return {
+      maxWidth: 1600,
+      maxHeight: 900,
+      videoBitrate: 6500000,
+      audioBitrate: 224000,
+    };
+  }
+
+  return baseProfile;
 }
 
 export class JellyfinClient {
@@ -195,6 +248,18 @@ export class JellyfinClient {
       `/Users/${this.userId}/Items?${fallbackQuery}`,
     );
     return fallbackData.Items ?? [];
+  }
+
+  async getItem(itemId: string): Promise<JellyfinItem | null> {
+    if (!this.userId || !itemId) return null;
+    const query = toQuery({
+      Fields: GOONER_ITEM_FIELDS,
+      ImageTypeLimit: 3,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+    });
+    return this.request<JellyfinItem>(
+      `/Users/${this.userId}/Items/${encodeURIComponent(itemId)}?${query}`,
+    );
   }
 
   async getPlaylistItems(playlistId: string): Promise<JellyfinItem[]> {
@@ -419,19 +484,25 @@ export class JellyfinClient {
   }
 
   getStreamUrl(itemId: string): string {
-    const directServerUrl =
-      typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
-        ? `http://${window.location.hostname}:8096`
-        : this.serverUrl;
+    const directServerUrl = getDirectServerUrl(this.serverUrl);
     const query = toQuery({
+      serverUrl: directServerUrl,
+      itemId,
+      token: this.token,
+    });
+    if (isHttpsPage()) return `/api/spiritflix/stream?${query}`;
+
+    const directQuery = toQuery({
       Static: "true",
       api_key: this.token,
       PlaySessionId: `spiritflix-${itemId}`,
     });
-    return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${query}`;
+    return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${directQuery}`;
   }
 
   getHlsUrl(itemId: string): string {
+    const directServerUrl = getDirectServerUrl(this.serverUrl);
+    const playbackProfile = getHlsPlaybackProfile();
     const query = toQuery({
       api_key: this.token,
       PlaySessionId: `spiritflix-${itemId}`,
@@ -440,8 +511,21 @@ export class JellyfinClient {
       AudioCodec: "aac,mp3,ac3",
       SegmentContainer: "ts",
       MinSegments: 1,
+      VideoBitrate: playbackProfile.videoBitrate,
+      AudioBitrate: playbackProfile.audioBitrate,
+      MaxWidth: playbackProfile.maxWidth,
+      MaxHeight: playbackProfile.maxHeight,
     });
-    return `${this.serverUrl}/Videos/${itemId}/master.m3u8?${query}`;
+    const path = `/Videos/${encodeURIComponent(itemId)}/master.m3u8?${query}`;
+    if (isHttpsPage()) {
+      const proxyQuery = toQuery({
+        serverUrl: directServerUrl,
+        token: this.token,
+        path,
+      });
+      return `/api/spiritflix/hls?${proxyQuery}`;
+    }
+    return `${directServerUrl}${path}`;
   }
 
   async reportPlayback(

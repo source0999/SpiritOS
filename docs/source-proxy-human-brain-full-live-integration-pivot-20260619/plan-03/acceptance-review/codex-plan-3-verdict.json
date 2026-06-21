@@ -1,0 +1,84 @@
+{
+  "review": "plan-03-acceptance-review",
+  "mode": "independent_acceptance_review",
+  "commit_under_review": "4c553554",
+  "verdict": "NEEDS_FIX",
+  "plan_4_readiness": "NOT_READY",
+  "scope_clean": true,
+  "plan_2_carryforward_verified": true,
+  "durable_state_verified": false,
+  "policy_gates_verified": false,
+  "retry_timeout_failure_verified": true,
+  "recovery_verified": false,
+  "repair_loop_verified": false,
+  "task_a_policy_verified": false,
+  "task_b_recovery_verified": false,
+  "task_c_repair_verified": false,
+  "operator_check": "PASS_BUT_INCOMPLETE",
+  "focused_tests": "PARTIAL",
+  "typecheck": "PASS",
+  "broad_selector": "FAIL_AMBIENT_GATE_MISMATCH",
+  "fake_go_risks": {
+    "unconsumed_output_go_detected": true,
+    "status_only_go_detected": false,
+    "policy_doc_only_go_detected": false,
+    "recovery_not_tested_go_detected": false,
+    "repair_suggestion_only_go_detected": false,
+    "preview_go_detected": false
+  },
+  "blocking_findings": [
+    {
+      "id": "P3-ACCEPT-001",
+      "area": "policy",
+      "summary": "Task A policy proof is persisted and blocked, but lacks downstream consumer evidence.",
+      "evidence": {
+        "task_id": "task_6ecf07847f44",
+        "trace_id": "trace_6d3256350cd748f2",
+        "status": "policy_blocked",
+        "consumer_events": [],
+        "latest_consumer_event_id": null
+      }
+    },
+    {
+      "id": "P3-ACCEPT-002",
+      "area": "recovery",
+      "summary": "Task B recovery proof is persisted, but lacks downstream consumer evidence.",
+      "evidence": {
+        "task_id": "task_b8e307901b22",
+        "trace_id": "trace_10a21d27c6c14f5e",
+        "status": "worker_dispatched",
+        "consumer_events": [],
+        "latest_consumer_event_id": null
+      }
+    },
+    {
+      "id": "P3-ACCEPT-003",
+      "area": "repair",
+      "summary": "Task C repair proof lacks explicit failure event typing and downstream consumer evidence.",
+      "evidence": {
+        "task_id": "task_938dad74a7d9",
+        "trace_id": "trace_31500112a69a42bf",
+        "status": "verified",
+        "has_repair_event": true,
+        "has_reverify_event": true,
+        "has_failure_event_type": false,
+        "consumer_events": [],
+        "latest_consumer_event_id": null
+      }
+    },
+    {
+      "id": "P3-ACCEPT-004",
+      "area": "operator",
+      "summary": "Plan 3 operator passes despite missing consumer/failure proof conditions."
+    },
+    {
+      "id": "P3-ACCEPT-005",
+      "area": "tests",
+      "summary": "Broad requested selector failed in the current environment due an ambient gate mismatch.",
+      "evidence": "ExternalGateError: Approved increment 'evaluation-round' does not match '1.3'"
+    }
+  ],
+  "no_plan_4_started": true,
+  "no_source_patches_performed": true,
+  "no_stage_commit_push_performed": true
+}

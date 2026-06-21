@@ -2,11 +2,20 @@
   "name": "spirit-os",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "repomix": "./scripts/repomix-llm.mjs"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 --webpack",
     "dev:https": "next dev -H 0.0.0.0 --webpack --experimental-https -p 3000",
     "dev:https:lan": "next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem",
     "dev:https:lan:watch": "bash ./scripts/spiritos-lan-watchdog.sh",
+    "lan:restart": "bash ./scripts/restart-spiritos-lan.sh",
+    "proxy:lan:restart": "bash ./scripts/restart-source-proxy-lan.sh",
+    "spiritflix:stable:restart": "bash ./scripts/restart-spiritflix-stable-3001.sh",
+    "lanes:audit": "bash ./scripts/runtime-lanes-audit.sh",
+    "spiritflix:admin:dev": "bash ./scripts/spiritflix-admin-dev.sh start",
+    "spiritflix:admin:dev:stop": "bash ./scripts/spiritflix-admin-dev.sh stop",
     "dev:turbo": "next dev -H 0.0.0.0",
     "dev:backend": "cd backend && docker compose up -d",
     "dev:all": "npm run dev:backend && npm run dev",
@@ -23,9 +32,11 @@
     "proxy:dev": "node ./scripts/source-proxy-dev.mjs",
     "proxy:https": "node ./scripts/source-proxy-dev.mjs --https",
     "proxy:https:lan": "node ./scripts/source-proxy-dev.mjs --https --lan",
-    "context:pack": "repomix --config repomix.config.json .",
-    "context:compress": "node ./scripts/source-context-compress.mjs",
-    "context:headroom": "node ./scripts/source-context-compress.mjs --headroom-only",
+    "context:pack": "node ./scripts/repomix-llm.mjs --config repomix.config.json .",
+    "context:pack:full": "node ./scripts/repomix-llm.mjs --config repomix.config.json --full .",
+    "context:compress": "node ./scripts/repomix-llm.mjs --config repomix.config.json .",
+    "context:headroom": "node ./scripts/repomix-llm.mjs --config repomix.config.json --headroom-only .",
+    "headroom:proxy": "bash ./scripts/headroom-proxy-dev.sh",
     "validate:blueprints": "node ./scripts/validate-blueprints.mjs",
     "next:mcp:ws": "node ./scripts/next-mcp-ws-bridge.mjs",
     "next:mcp:ws:probe": "node ./scripts/next-mcp-ws-probe.mjs",
@@ -40,7 +51,8 @@
     "test:coding-frontend-regression": "vitest run src/app/coding/__tests__/page.test.tsx src/components/coding/__tests__/coding-command-center-shell.test.tsx src/lib/coding/__tests__/model-provider-status.test.ts src/lib/coding/__tests__/unified-diff-paths.test.ts src/components/coding/__tests__/approval-gate-binding.test.ts src/lib/coding/__tests__/proxy-route-payload.test.ts src/app/v1/actions/execute-approved/__tests__/route.test.ts src/components/coding/__tests__/coding-workflow-step.test.ts src/components/coding/__tests__/client-fallback.test.ts src/components/coding/__tests__/proxy-safety-smoke.test.ts src/app/v1/coding/self-tests/run/__tests__/route.test.ts",
     "test:ui": "vitest --ui",
     "ytmclone:stats:smoke": "node ./scripts/ytmclone-stats-smoke.mjs",
-    "ytmclone:android:build": "cd apps/ytmclone-android && ./gradlew assembleDebug"
+    "ytmclone:android:build": "cd apps/ytmclone-android && ./gradlew assembleDebug",
+    "postinstall": "node ./scripts/postinstall-repomix-shim.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",

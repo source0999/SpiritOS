@@ -1,0 +1,4780 @@
+{
+  "generated_at": "2026-06-20T21:47:56.300Z",
+  "previous_report": "Z:\\docs\\evidence\\spiritflix-missing-mkv-review-20260620-212906\\missing-mkvs-65.json",
+  "backup_root": "D:\\tempVidStorage",
+  "total_previous_missing": 65,
+  "found_by_title_search": 60,
+  "still_not_found": 5,
+  "results": [
+    {
+      "index": 1,
+      "filename": "484374_720p.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/484374_720p.mkv",
+      "title_search_found": true,
+      "match_count": 20,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+        "filename": "207601_720p.mp4",
+        "ext": ".mp4",
+        "bytes": 393069701,
+        "title_score": 0.75,
+        "reasons": [
+          "numeric id overlap: 720"
+        ],
+        "probe": {
+          "duration": 1045.29,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+          "filename": "207601_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 393069701,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\540598_720p.mp4",
+          "filename": "540598_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 387879135,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\548555_720p.mp4",
+          "filename": "548555_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 240869964,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\487723_720p.mp4",
+          "filename": "487723_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 203563976,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\362027_720p.mp4",
+          "filename": "362027_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 191957338,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\484359_720p.mp4",
+          "filename": "484359_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 182301289,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\256433_720p.mp4",
+          "filename": "256433_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 177296903,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\442642_720p.mp4",
+          "filename": "442642_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 70762008,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\99022_720p.mp4",
+          "filename": "99022_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64218137,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\438588_720p.mp4",
+          "filename": "438588_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64060147,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "filename": "550807_720p.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/550807_720p.mkv",
+      "title_search_found": true,
+      "match_count": 20,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+        "filename": "207601_720p.mp4",
+        "ext": ".mp4",
+        "bytes": 393069701,
+        "title_score": 0.75,
+        "reasons": [
+          "numeric id overlap: 720"
+        ],
+        "probe": {
+          "duration": 1045.29,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+          "filename": "207601_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 393069701,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\540598_720p.mp4",
+          "filename": "540598_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 387879135,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\548555_720p.mp4",
+          "filename": "548555_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 240869964,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\487723_720p.mp4",
+          "filename": "487723_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 203563976,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\362027_720p.mp4",
+          "filename": "362027_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 191957338,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\484359_720p.mp4",
+          "filename": "484359_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 182301289,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\256433_720p.mp4",
+          "filename": "256433_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 177296903,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\442642_720p.mp4",
+          "filename": "442642_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 70762008,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\99022_720p.mp4",
+          "filename": "99022_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64218137,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\438588_720p.mp4",
+          "filename": "438588_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64060147,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "filename": "432038_720p.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/432038_720p.mkv",
+      "title_search_found": true,
+      "match_count": 20,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+        "filename": "207601_720p.mp4",
+        "ext": ".mp4",
+        "bytes": 393069701,
+        "title_score": 0.75,
+        "reasons": [
+          "numeric id overlap: 720"
+        ],
+        "probe": {
+          "duration": 1045.29,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+          "filename": "207601_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 393069701,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\540598_720p.mp4",
+          "filename": "540598_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 387879135,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\548555_720p.mp4",
+          "filename": "548555_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 240869964,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\487723_720p.mp4",
+          "filename": "487723_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 203563976,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\362027_720p.mp4",
+          "filename": "362027_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 191957338,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\484359_720p.mp4",
+          "filename": "484359_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 182301289,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\256433_720p.mp4",
+          "filename": "256433_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 177296903,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\442642_720p.mp4",
+          "filename": "442642_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 70762008,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\99022_720p.mp4",
+          "filename": "99022_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64218137,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\438588_720p.mp4",
+          "filename": "438588_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64060147,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "filename": "14318872.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/14318872.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\(31).MP4",
+        "filename": "(31).MP4",
+        "ext": ".mp4",
+        "bytes": 24613509,
+        "title_score": 0.88,
+        "reasons": [
+          "title contains candidate: (31).MP4"
+        ],
+        "probe": {
+          "duration": 31.364667,
+          "video": "h264",
+          "audio": "aac",
+          "width": 720,
+          "height": 1280
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(31).MP4",
+          "filename": "(31).MP4",
+          "ext": ".mp4",
+          "bytes": 24613509,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: (31).MP4"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "filename": "b072fcb9f821c935f46a4ed67477a041.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/b072fcb9f821c935f46a4ed67477a041.mkv",
+      "title_search_found": true,
+      "match_count": 2,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\(21).MP4",
+        "filename": "(21).MP4",
+        "ext": ".mp4",
+        "bytes": 35337833,
+        "title_score": 0.88,
+        "reasons": [
+          "title contains candidate: (21).MP4"
+        ],
+        "probe": {
+          "duration": 45.253542,
+          "video": "h264",
+          "audio": "aac",
+          "width": 720,
+          "height": 1280
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(21).MP4",
+          "filename": "(21).MP4",
+          "ext": ".mp4",
+          "bytes": 35337833,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: (21).MP4"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\0c194b909a8200e58550eaff39154d1faaa821f417d6a10ca949c247c50fed94.mp4",
+          "filename": "0c194b909a8200e58550eaff39154d1faaa821f417d6a10ca949c247c50fed94.mp4",
+          "ext": ".mp4",
+          "bytes": 26345752,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 821"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "filename": "513329_720p.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/513329_720p.mkv",
+      "title_search_found": true,
+      "match_count": 20,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+        "filename": "207601_720p.mp4",
+        "ext": ".mp4",
+        "bytes": 393069701,
+        "title_score": 0.75,
+        "reasons": [
+          "numeric id overlap: 720"
+        ],
+        "probe": {
+          "duration": 1045.29,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+          "filename": "207601_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 393069701,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\540598_720p.mp4",
+          "filename": "540598_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 387879135,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\548555_720p.mp4",
+          "filename": "548555_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 240869964,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\487723_720p.mp4",
+          "filename": "487723_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 203563976,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\362027_720p.mp4",
+          "filename": "362027_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 191957338,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\484359_720p.mp4",
+          "filename": "484359_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 182301289,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\256433_720p.mp4",
+          "filename": "256433_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 177296903,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\442642_720p.mp4",
+          "filename": "442642_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 70762008,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\99022_720p.mp4",
+          "filename": "99022_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64218137,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\438588_720p.mp4",
+          "filename": "438588_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64060147,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "filename": "Aaliyah Yasin Has Unprotected Sex With A Stranger.optimized.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/Aaliyah Yasin Has Unprotected Sex With A Stranger.optimized.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\Aaliyah Yasin Has Unprotected Sex With A Stranger.mp4",
+        "filename": "Aaliyah Yasin Has Unprotected Sex With A Stranger.mp4",
+        "ext": ".mp4",
+        "bytes": 519857218,
+        "title_score": 1,
+        "reasons": [
+          "exact title: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+          "soft exact title: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+          "candidate contains title: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+          "title contains candidate: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 1959.811451,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\Aaliyah Yasin Has Unprotected Sex With A Stranger.mp4",
+          "filename": "Aaliyah Yasin Has Unprotected Sex With A Stranger.mp4",
+          "ext": ".mp4",
+          "bytes": 519857218,
+          "title_score": 1,
+          "reasons": [
+            "exact title: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+            "soft exact title: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+            "candidate contains title: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+            "title contains candidate: Aaliyah Yasin Has Unprotected Sex With A Stranger",
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "filename": "OF4LM.COM is our home__406.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/OF4LM.COM is our home__406.mkv",
+      "title_search_found": true,
+      "match_count": 7,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+        "filename": "OF4LM.COM is our home__406.MP4",
+        "ext": ".mp4",
+        "bytes": 77456929,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: OF4LM.COM is our home__406",
+          "candidate contains title: OF4LM.COM is our home__406",
+          "title contains candidate: OF4LM.COM is our home__406.MP4",
+          "numeric id overlap: 406",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 99.84975,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1040,
+          "height": 760
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+          "filename": "OF4LM.COM is our home__406.MP4",
+          "ext": ".mp4",
+          "bytes": 77456929,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: OF4LM.COM is our home__406",
+            "candidate contains title: OF4LM.COM is our home__406",
+            "title contains candidate: OF4LM.COM is our home__406.MP4",
+            "numeric id overlap: 406",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+          "filename": "OF4LM.COM is our home__282.MP4",
+          "ext": ".mp4",
+          "bytes": 98930019,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+          "filename": "OF4LM.COM is our home__377.MP4",
+          "ext": ".mp4",
+          "bytes": 76815709,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+          "filename": "OF4LM.COM is our home__400.MP4",
+          "ext": ".mp4",
+          "bytes": 39434671,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+          "filename": "OF4LM.COM is our home__297.MP4",
+          "ext": ".mp4",
+          "bytes": 30120770,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+          "filename": "OF4LM.COM is our home__360.MP4",
+          "ext": ".mp4",
+          "bytes": 26694757,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__315.MP4",
+          "filename": "OF4LM.COM is our home__315.MP4",
+          "ext": ".mp4",
+          "bytes": 11518816,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "filename": "ScreenRecording_05-20-2026 23-18-19_1.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/ScreenRecording_05-20-2026 23-18-19_1.mkv",
+      "title_search_found": true,
+      "match_count": 3,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\ScreenRecording_05-20-2026 23-18-19_1.MP4",
+        "filename": "ScreenRecording_05-20-2026 23-18-19_1.MP4",
+        "ext": ".mp4",
+        "bytes": 114911439,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ScreenRecording_05-20-2026 23-18-19_1",
+          "candidate contains title: ScreenRecording_05-20-2026 23-18-19_1",
+          "title contains candidate: ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "numeric id overlap: 2026"
+        ],
+        "probe": {
+          "duration": 62.385011,
+          "video": "hevc",
+          "audio": "aac",
+          "width": 884,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "filename": "ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "ext": ".mp4",
+          "bytes": 114911439,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ScreenRecording_05-20-2026 23-18-19_1",
+            "candidate contains title: ScreenRecording_05-20-2026 23-18-19_1",
+            "title contains candidate: ScreenRecording_05-20-2026 23-18-19_1.MP4",
+            "numeric id overlap: 2026"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(19).MP4",
+          "filename": "(19).MP4",
+          "ext": ".mp4",
+          "bytes": 39064427,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: (19).MP4"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\ScreenRecording_05-20-2026 23-16-39_1.MP4",
+          "filename": "ScreenRecording_05-20-2026 23-16-39_1.MP4",
+          "ext": ".mp4",
+          "bytes": 55524763,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 2026"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "filename": "JoinUs @RisqueMega 233.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/JoinUs @RisqueMega 233.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 233.MP4",
+        "filename": "JoinUs @RisqueMega 233.MP4",
+        "ext": ".mp4",
+        "bytes": 318497028,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: JoinUs @RisqueMega 233",
+          "candidate contains title: JoinUs @RisqueMega 233",
+          "title contains candidate: JoinUs @RisqueMega 233.MP4",
+          "numeric id overlap: 233"
+        ],
+        "probe": {
+          "duration": 413.454708,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 233.MP4",
+          "filename": "JoinUs @RisqueMega 233.MP4",
+          "ext": ".mp4",
+          "bytes": 318497028,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: JoinUs @RisqueMega 233",
+            "candidate contains title: JoinUs @RisqueMega 233",
+            "title contains candidate: JoinUs @RisqueMega 233.MP4",
+            "numeric id overlap: 233"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "filename": "OF4LM.COM is our home__360.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/OF4LM.COM is our home__360.mkv",
+      "title_search_found": true,
+      "match_count": 12,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+        "filename": "OF4LM.COM is our home__360.MP4",
+        "ext": ".mp4",
+        "bytes": 26694757,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: OF4LM.COM is our home__360",
+          "candidate contains title: OF4LM.COM is our home__360",
+          "title contains candidate: OF4LM.COM is our home__360.MP4",
+          "numeric id overlap: 360",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 33.992292,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+          "filename": "OF4LM.COM is our home__360.MP4",
+          "ext": ".mp4",
+          "bytes": 26694757,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: OF4LM.COM is our home__360",
+            "candidate contains title: OF4LM.COM is our home__360",
+            "title contains candidate: OF4LM.COM is our home__360.MP4",
+            "numeric id overlap: 360",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\360.mp4",
+          "filename": "360.mp4",
+          "ext": ".mp4",
+          "bytes": 49354479,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: 360",
+            "numeric id overlap: 360",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+          "filename": "OF4LM.COM is our home__282.MP4",
+          "ext": ".mp4",
+          "bytes": 98930019,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+          "filename": "OF4LM.COM is our home__406.MP4",
+          "ext": ".mp4",
+          "bytes": 77456929,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+          "filename": "OF4LM.COM is our home__377.MP4",
+          "ext": ".mp4",
+          "bytes": 76815709,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\360 3.mp4",
+          "filename": "360 3.mp4",
+          "ext": ".mp4",
+          "bytes": 42904316,
+          "title_score": 0.82,
+          "reasons": [
+            "numeric id overlap: 360",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\360 1.mp4",
+          "filename": "360 1.mp4",
+          "ext": ".mp4",
+          "bytes": 42082287,
+          "title_score": 0.82,
+          "reasons": [
+            "numeric id overlap: 360",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+          "filename": "OF4LM.COM is our home__400.MP4",
+          "ext": ".mp4",
+          "bytes": 39434671,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\360 4.mp4",
+          "filename": "360 4.mp4",
+          "ext": ".mp4",
+          "bytes": 35128292,
+          "title_score": 0.82,
+          "reasons": [
+            "numeric id overlap: 360",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+          "filename": "OF4LM.COM is our home__297.MP4",
+          "ext": ".mp4",
+          "bytes": 30120770,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "filename": "JoinUs @RisqueMega 184.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/JoinUs @RisqueMega 184.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 184.M4V",
+        "filename": "JoinUs @RisqueMega 184.M4V",
+        "ext": ".m4v",
+        "bytes": 433398339,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: JoinUs @RisqueMega 184",
+          "candidate contains title: JoinUs @RisqueMega 184",
+          "title contains candidate: JoinUs @RisqueMega 184.M4V",
+          "numeric id overlap: 184"
+        ],
+        "probe": {
+          "duration": 561.686125,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 184.M4V",
+          "filename": "JoinUs @RisqueMega 184.M4V",
+          "ext": ".m4v",
+          "bytes": 433398339,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: JoinUs @RisqueMega 184",
+            "candidate contains title: JoinUs @RisqueMega 184",
+            "title contains candidate: JoinUs @RisqueMega 184.M4V",
+            "numeric id overlap: 184"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "filename": "OF4LM.COM is our home__315.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/OF4LM.COM is our home__315.mkv",
+      "title_search_found": true,
+      "match_count": 8,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__315.MP4",
+        "filename": "OF4LM.COM is our home__315.MP4",
+        "ext": ".mp4",
+        "bytes": 11518816,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: OF4LM.COM is our home__315",
+          "candidate contains title: OF4LM.COM is our home__315",
+          "title contains candidate: OF4LM.COM is our home__315.MP4",
+          "numeric id overlap: 315",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 14.097417,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__315.MP4",
+          "filename": "OF4LM.COM is our home__315.MP4",
+          "ext": ".mp4",
+          "bytes": 11518816,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: OF4LM.COM is our home__315",
+            "candidate contains title: OF4LM.COM is our home__315",
+            "title contains candidate: OF4LM.COM is our home__315.MP4",
+            "numeric id overlap: 315",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(31).MP4",
+          "filename": "(31).MP4",
+          "ext": ".mp4",
+          "bytes": 24613509,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: (31).MP4"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+          "filename": "OF4LM.COM is our home__282.MP4",
+          "ext": ".mp4",
+          "bytes": 98930019,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+          "filename": "OF4LM.COM is our home__406.MP4",
+          "ext": ".mp4",
+          "bytes": 77456929,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+          "filename": "OF4LM.COM is our home__377.MP4",
+          "ext": ".mp4",
+          "bytes": 76815709,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+          "filename": "OF4LM.COM is our home__400.MP4",
+          "ext": ".mp4",
+          "bytes": 39434671,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+          "filename": "OF4LM.COM is our home__297.MP4",
+          "ext": ".mp4",
+          "bytes": 30120770,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+          "filename": "OF4LM.COM is our home__360.MP4",
+          "ext": ".mp4",
+          "bytes": 26694757,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "filename": "OF4LM.COM is our home__400.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/OF4LM.COM is our home__400.mkv",
+      "title_search_found": true,
+      "match_count": 7,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+        "filename": "OF4LM.COM is our home__400.MP4",
+        "ext": ".mp4",
+        "bytes": 39434671,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: OF4LM.COM is our home__400",
+          "candidate contains title: OF4LM.COM is our home__400",
+          "title contains candidate: OF4LM.COM is our home__400.MP4",
+          "numeric id overlap: 400",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 50.633917,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1184,
+          "height": 888
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+          "filename": "OF4LM.COM is our home__400.MP4",
+          "ext": ".mp4",
+          "bytes": 39434671,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: OF4LM.COM is our home__400",
+            "candidate contains title: OF4LM.COM is our home__400",
+            "title contains candidate: OF4LM.COM is our home__400.MP4",
+            "numeric id overlap: 400",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+          "filename": "OF4LM.COM is our home__282.MP4",
+          "ext": ".mp4",
+          "bytes": 98930019,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+          "filename": "OF4LM.COM is our home__406.MP4",
+          "ext": ".mp4",
+          "bytes": 77456929,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+          "filename": "OF4LM.COM is our home__377.MP4",
+          "ext": ".mp4",
+          "bytes": 76815709,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+          "filename": "OF4LM.COM is our home__297.MP4",
+          "ext": ".mp4",
+          "bytes": 30120770,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+          "filename": "OF4LM.COM is our home__360.MP4",
+          "ext": ".mp4",
+          "bytes": 26694757,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__315.MP4",
+          "filename": "OF4LM.COM is our home__315.MP4",
+          "ext": ".mp4",
+          "bytes": 11518816,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "filename": "JoinUs @RisqueMega 64.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/JoinUs @RisqueMega 64.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 64.MP4",
+        "filename": "JoinUs @RisqueMega 64.MP4",
+        "ext": ".mp4",
+        "bytes": 629115851,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: JoinUs @RisqueMega 64",
+          "candidate contains title: JoinUs @RisqueMega 64",
+          "title contains candidate: JoinUs @RisqueMega 64.MP4"
+        ],
+        "probe": {
+          "duration": 815.606458,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 64.MP4",
+          "filename": "JoinUs @RisqueMega 64.MP4",
+          "ext": ".mp4",
+          "bytes": 629115851,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: JoinUs @RisqueMega 64",
+            "candidate contains title: JoinUs @RisqueMega 64",
+            "title contains candidate: JoinUs @RisqueMega 64.MP4"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "filename": "OF4LM.COM is our home__377.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/unknown/OF4LM.COM is our home__377.mkv",
+      "title_search_found": true,
+      "match_count": 7,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+        "filename": "OF4LM.COM is our home__377.MP4",
+        "ext": ".mp4",
+        "bytes": 76815709,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: OF4LM.COM is our home__377",
+          "candidate contains title: OF4LM.COM is our home__377",
+          "title contains candidate: OF4LM.COM is our home__377.MP4",
+          "numeric id overlap: 377",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 98.807042,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+          "filename": "OF4LM.COM is our home__377.MP4",
+          "ext": ".mp4",
+          "bytes": 76815709,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: OF4LM.COM is our home__377",
+            "candidate contains title: OF4LM.COM is our home__377",
+            "title contains candidate: OF4LM.COM is our home__377.MP4",
+            "numeric id overlap: 377",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+          "filename": "OF4LM.COM is our home__282.MP4",
+          "ext": ".mp4",
+          "bytes": 98930019,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+          "filename": "OF4LM.COM is our home__406.MP4",
+          "ext": ".mp4",
+          "bytes": 77456929,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+          "filename": "OF4LM.COM is our home__400.MP4",
+          "ext": ".mp4",
+          "bytes": 39434671,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+          "filename": "OF4LM.COM is our home__297.MP4",
+          "ext": ".mp4",
+          "bytes": 30120770,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+          "filename": "OF4LM.COM is our home__360.MP4",
+          "ext": ".mp4",
+          "bytes": 26694757,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__315.MP4",
+          "filename": "OF4LM.COM is our home__315.MP4",
+          "ext": ".mp4",
+          "bytes": 11518816,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "filename": "Visit onlyshare.io FOR MORE (8).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/leighbunbun/Visit onlyshare.io FOR MORE (8).mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io FOR MORE (8).MP4",
+        "filename": "Visit onlyshare.io FOR MORE (8).MP4",
+        "ext": ".mp4",
+        "bytes": 55332943,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io FOR MORE (8)",
+          "candidate contains title: Visit onlyshare.io FOR MORE (8)",
+          "title contains candidate: Visit onlyshare.io FOR MORE (8).MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 71.18,
+          "video": "h264",
+          "audio": "aac",
+          "width": 404,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io FOR MORE (8).MP4",
+          "filename": "Visit onlyshare.io FOR MORE (8).MP4",
+          "ext": ".mp4",
+          "bytes": 55332943,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io FOR MORE (8)",
+            "candidate contains title: Visit onlyshare.io FOR MORE (8)",
+            "title contains candidate: Visit onlyshare.io FOR MORE (8).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.92,
+          "reasons": [
+            "candidate contains title: Visit onlyshare.io FOR MORE (8)",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "filename": "@boomboomhub TG (43).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/azilia-hadid/@boomboomhub TG (43).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\@boomboomhub TG (43).MP4",
+        "filename": "@boomboomhub TG (43).MP4",
+        "ext": ".mp4",
+        "bytes": 71112035,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: @boomboomhub TG (43)",
+          "candidate contains title: @boomboomhub TG (43)",
+          "title contains candidate: @boomboomhub TG (43).MP4"
+        ],
+        "probe": {
+          "duration": 91.716625,
+          "video": "h264",
+          "audio": "aac",
+          "width": 720,
+          "height": 1280
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\@boomboomhub TG (43).MP4",
+          "filename": "@boomboomhub TG (43).MP4",
+          "ext": ".mp4",
+          "bytes": 71112035,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: @boomboomhub TG (43)",
+            "candidate contains title: @boomboomhub TG (43)",
+            "title contains candidate: @boomboomhub TG (43).MP4"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "filename": "@boomboomhub TG (50).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/azilia-hadid/@boomboomhub TG (50).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\@boomboomhub TG (50).MP4",
+        "filename": "@boomboomhub TG (50).MP4",
+        "ext": ".mp4",
+        "bytes": 106462298,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: @boomboomhub TG (50)",
+          "candidate contains title: @boomboomhub TG (50)",
+          "title contains candidate: @boomboomhub TG (50).MP4"
+        ],
+        "probe": {
+          "duration": 137.38725,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\@boomboomhub TG (50).MP4",
+          "filename": "@boomboomhub TG (50).MP4",
+          "ext": ".mp4",
+          "bytes": 106462298,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: @boomboomhub TG (50)",
+            "candidate contains title: @boomboomhub TG (50)",
+            "title contains candidate: @boomboomhub TG (50).MP4"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "filename": "@boomboomhub TG (39).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/azilia-hadid/@boomboomhub TG (39).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\@boomboomhub TG (39).MP4",
+        "filename": "@boomboomhub TG (39).MP4",
+        "ext": ".mp4",
+        "bytes": 271498774,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: @boomboomhub TG (39)",
+          "candidate contains title: @boomboomhub TG (39)",
+          "title contains candidate: @boomboomhub TG (39).MP4"
+        ],
+        "probe": {
+          "duration": 351.60125,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\@boomboomhub TG (39).MP4",
+          "filename": "@boomboomhub TG (39).MP4",
+          "ext": ".mp4",
+          "bytes": 271498774,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: @boomboomhub TG (39)",
+            "candidate contains title: @boomboomhub TG (39)",
+            "title contains candidate: @boomboomhub TG (39).MP4"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "filename": "@DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sienna-ababi/@DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\@DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.MP4",
+        "filename": "@DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.MP4",
+        "ext": ".mp4",
+        "bytes": 72994419,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: @DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3",
+          "candidate contains title: @DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3",
+          "title contains candidate: @DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.MP4",
+          "numeric id overlap: 6152622/882/155/835156"
+        ],
+        "probe": {
+          "duration": 93.676917,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\@DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.MP4",
+          "filename": "@DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.MP4",
+          "ext": ".mp4",
+          "bytes": 72994419,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: @DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3",
+            "candidate contains title: @DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3",
+            "title contains candidate: @DailyLeaksMain_5a6152622c58eb1a882b28ad94a5b92dbafc2eaa155bb35c1ce00b835156eba3.MP4",
+            "numeric id overlap: 6152622/882/155/835156"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "filename": "Visit onlyshare.io for MORE (7).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sienna-ababi/Visit onlyshare.io for MORE (7).mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (7).MP4",
+        "filename": "Visit onlyshare.io for MORE (7).MP4",
+        "ext": ".mp4",
+        "bytes": 13371987,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE (7)",
+          "candidate contains title: Visit onlyshare.io for MORE (7)",
+          "title contains candidate: Visit onlyshare.io for MORE (7).MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 16.307958,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (7).MP4",
+          "filename": "Visit onlyshare.io for MORE (7).MP4",
+          "ext": ".mp4",
+          "bytes": 13371987,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE (7)",
+            "candidate contains title: Visit onlyshare.io for MORE (7)",
+            "title contains candidate: Visit onlyshare.io for MORE (7).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.92,
+          "reasons": [
+            "candidate contains title: Visit onlyshare.io for MORE (7)",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "filename": "Visit onlyshare.io for MORE (1).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sienna-ababi/Visit onlyshare.io for MORE (1).mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (1).MP4",
+        "filename": "Visit onlyshare.io for MORE (1).MP4",
+        "ext": ".mp4",
+        "bytes": 53797624,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE (1)",
+          "candidate contains title: Visit onlyshare.io for MORE (1)",
+          "title contains candidate: Visit onlyshare.io for MORE (1).MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 69.069,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (1).MP4",
+          "filename": "Visit onlyshare.io for MORE (1).MP4",
+          "ext": ".mp4",
+          "bytes": 53797624,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE (1)",
+            "candidate contains title: Visit onlyshare.io for MORE (1)",
+            "title contains candidate: Visit onlyshare.io for MORE (1).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.92,
+          "reasons": [
+            "candidate contains title: Visit onlyshare.io for MORE (1)",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "filename": "Visit onlyshare.io for MORE (5).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sienna-ababi/Visit onlyshare.io for MORE (5).mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (5).MP4",
+        "filename": "Visit onlyshare.io for MORE (5).MP4",
+        "ext": ".mp4",
+        "bytes": 66625614,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE (5)",
+          "candidate contains title: Visit onlyshare.io for MORE (5)",
+          "title contains candidate: Visit onlyshare.io for MORE (5).MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 85.460375,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (5).MP4",
+          "filename": "Visit onlyshare.io for MORE (5).MP4",
+          "ext": ".mp4",
+          "bytes": 66625614,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE (5)",
+            "candidate contains title: Visit onlyshare.io for MORE (5)",
+            "title contains candidate: Visit onlyshare.io for MORE (5).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.92,
+          "reasons": [
+            "candidate contains title: Visit onlyshare.io for MORE (5)",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "filename": "Visit onlyshare.io for MORE (28).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sienna-ababi/Visit onlyshare.io for MORE (28).mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (28).MP4",
+        "filename": "Visit onlyshare.io for MORE (28).MP4",
+        "ext": ".mp4",
+        "bytes": 19218050,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE (28)",
+          "candidate contains title: Visit onlyshare.io for MORE (28)",
+          "title contains candidate: Visit onlyshare.io for MORE (28).MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 24.190833,
+          "video": "h264",
+          "audio": "aac",
+          "width": 672,
+          "height": 1232
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (28).MP4",
+          "filename": "Visit onlyshare.io for MORE (28).MP4",
+          "ext": ".mp4",
+          "bytes": 19218050,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE (28)",
+            "candidate contains title: Visit onlyshare.io for MORE (28)",
+            "title contains candidate: Visit onlyshare.io for MORE (28).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "filename": "Visit onlyshare.io for MORE 04419.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cutefru/Visit onlyshare.io for MORE 04419.mkv",
+      "title_search_found": true,
+      "match_count": 15,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+        "filename": "Visit onlyshare.io for MORE 04419.MP4",
+        "ext": ".mp4",
+        "bytes": 118784713,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 04419",
+          "candidate contains title: Visit onlyshare.io for MORE 04419",
+          "title contains candidate: Visit onlyshare.io for MORE 04419.MP4",
+          "numeric id overlap: 4419",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 154.320833,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1516
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 04419",
+            "candidate contains title: Visit onlyshare.io for MORE 04419",
+            "title contains candidate: Visit onlyshare.io for MORE 04419.MP4",
+            "numeric id overlap: 4419",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(19).MP4",
+          "filename": "(19).MP4",
+          "ext": ".mp4",
+          "bytes": 39064427,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: (19).MP4"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "filename": "ScreenRecording_05-20-2026 23-16-39_1.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/izzy-green/ScreenRecording_05-20-2026 23-16-39_1.mkv",
+      "title_search_found": true,
+      "match_count": 2,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\ScreenRecording_05-20-2026 23-16-39_1.MP4",
+        "filename": "ScreenRecording_05-20-2026 23-16-39_1.MP4",
+        "ext": ".mp4",
+        "bytes": 55524763,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ScreenRecording_05-20-2026 23-16-39_1",
+          "candidate contains title: ScreenRecording_05-20-2026 23-16-39_1",
+          "title contains candidate: ScreenRecording_05-20-2026 23-16-39_1.MP4",
+          "numeric id overlap: 2026"
+        ],
+        "probe": {
+          "duration": 29.741202,
+          "video": "hevc",
+          "audio": "aac",
+          "width": 884,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\ScreenRecording_05-20-2026 23-16-39_1.MP4",
+          "filename": "ScreenRecording_05-20-2026 23-16-39_1.MP4",
+          "ext": ".mp4",
+          "bytes": 55524763,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ScreenRecording_05-20-2026 23-16-39_1",
+            "candidate contains title: ScreenRecording_05-20-2026 23-16-39_1",
+            "title contains candidate: ScreenRecording_05-20-2026 23-16-39_1.MP4",
+            "numeric id overlap: 2026"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "filename": "ScreenRecording_05-20-2026 23-18-19_1.MP4",
+          "ext": ".mp4",
+          "bytes": 114911439,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 2026"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "filename": "Join ✨@ofxmega on [TELEGRAM] (218).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/izzy-green/Join ✨@ofxmega on [TELEGRAM] (218).mkv",
+      "title_search_found": true,
+      "match_count": 2,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Join ✨@ofxmega on [TELEGRAM] (218).MP4",
+        "filename": "Join ✨@ofxmega on [TELEGRAM] (218).MP4",
+        "ext": ".mp4",
+        "bytes": 54937699,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Join ✨@ofxmega on [TELEGRAM] (218)",
+          "candidate contains title: Join ✨@ofxmega on [TELEGRAM] (218)",
+          "title contains candidate: Join ✨@ofxmega on [TELEGRAM] (218).MP4",
+          "numeric id overlap: 218",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 70.445375,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Join ✨@ofxmega on [TELEGRAM] (218).MP4",
+          "filename": "Join ✨@ofxmega on [TELEGRAM] (218).MP4",
+          "ext": ".mp4",
+          "bytes": 54937699,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Join ✨@ofxmega on [TELEGRAM] (218)",
+            "candidate contains title: Join ✨@ofxmega on [TELEGRAM] (218)",
+            "title contains candidate: Join ✨@ofxmega on [TELEGRAM] (218).MP4",
+            "numeric id overlap: 218",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(21).MP4",
+          "filename": "(21).MP4",
+          "ext": ".mp4",
+          "bytes": 35337833,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: (21).MP4"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "filename": "Join ✨@ofxmega on [TELEGRAM] (283).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/izzy-green/Join ✨@ofxmega on [TELEGRAM] (283).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Join ✨@ofxmega on [TELEGRAM] (283).MP4",
+        "filename": "Join ✨@ofxmega on [TELEGRAM] (283).MP4",
+        "ext": ".mp4",
+        "bytes": 40967718,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Join ✨@ofxmega on [TELEGRAM] (283)",
+          "candidate contains title: Join ✨@ofxmega on [TELEGRAM] (283)",
+          "title contains candidate: Join ✨@ofxmega on [TELEGRAM] (283).MP4",
+          "numeric id overlap: 283",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 52.5,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1232,
+          "height": 656
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Join ✨@ofxmega on [TELEGRAM] (283).MP4",
+          "filename": "Join ✨@ofxmega on [TELEGRAM] (283).MP4",
+          "ext": ".mp4",
+          "bytes": 40967718,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Join ✨@ofxmega on [TELEGRAM] (283)",
+            "candidate contains title: Join ✨@ofxmega on [TELEGRAM] (283)",
+            "title contains candidate: Join ✨@ofxmega on [TELEGRAM] (283).MP4",
+            "numeric id overlap: 283",
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "filename": "Visit onlyshare.io for MORE 40.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 40.mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+        "filename": "Visit onlyshare.io for MORE 40.MP4",
+        "ext": ".mp4",
+        "bytes": 801621371,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 40",
+          "candidate contains title: Visit onlyshare.io for MORE 40",
+          "title contains candidate: Visit onlyshare.io for MORE 40.MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 1039.580208,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 40",
+            "candidate contains title: Visit onlyshare.io for MORE 40",
+            "title contains candidate: Visit onlyshare.io for MORE 40.MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (5).MP4",
+          "filename": "Visit onlyshare.io for MORE (5).MP4",
+          "ext": ".mp4",
+          "bytes": 66625614,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "filename": "Visit onlyshare.io for MORE 86.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 86.mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+        "filename": "Visit onlyshare.io for MORE 86.MP4",
+        "ext": ".mp4",
+        "bytes": 541491435,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 86",
+          "candidate contains title: Visit onlyshare.io for MORE 86",
+          "title contains candidate: Visit onlyshare.io for MORE 86.MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 701.992958,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 86",
+            "candidate contains title: Visit onlyshare.io for MORE 86",
+            "title contains candidate: Visit onlyshare.io for MORE 86.MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io FOR MORE (8).MP4",
+          "filename": "Visit onlyshare.io FOR MORE (8).MP4",
+          "ext": ".mp4",
+          "bytes": 55332943,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: Visit onlyshare.io FOR MORE (8).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "filename": "Visit onlyshare.io for MORE 130.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 130.mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+        "filename": "Visit onlyshare.io for MORE 130.MP4",
+        "ext": ".mp4",
+        "bytes": 91021001,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 130",
+          "candidate contains title: Visit onlyshare.io for MORE 130",
+          "title contains candidate: Visit onlyshare.io for MORE 130.MP4",
+          "numeric id overlap: 130",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 117.450667,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 130",
+            "candidate contains title: Visit onlyshare.io for MORE 130",
+            "title contains candidate: Visit onlyshare.io for MORE 130.MP4",
+            "numeric id overlap: 130",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (1).MP4",
+          "filename": "Visit onlyshare.io for MORE (1).MP4",
+          "ext": ".mp4",
+          "bytes": 53797624,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: Visit onlyshare.io for MORE (1).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "filename": "Visit onlyshare.io for MORE 62.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 62.mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+        "filename": "Visit onlyshare.io for MORE 62.MP4",
+        "ext": ".mp4",
+        "bytes": 666748232,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 62",
+          "candidate contains title: Visit onlyshare.io for MORE 62",
+          "title contains candidate: Visit onlyshare.io for MORE 62.MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 864.3635,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 62",
+            "candidate contains title: Visit onlyshare.io for MORE 62",
+            "title contains candidate: Visit onlyshare.io for MORE 62.MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (5).MP4",
+          "filename": "Visit onlyshare.io for MORE (5).MP4",
+          "ext": ".mp4",
+          "bytes": 66625614,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "filename": "Visit onlyshare.io for MORE 79.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 79.mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+        "filename": "Visit onlyshare.io for MORE 79.MP4",
+        "ext": ".mp4",
+        "bytes": 558447664,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 79",
+          "candidate contains title: Visit onlyshare.io for MORE 79",
+          "title contains candidate: Visit onlyshare.io for MORE 79.MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 723.889833,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 79",
+            "candidate contains title: Visit onlyshare.io for MORE 79",
+            "title contains candidate: Visit onlyshare.io for MORE 79.MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (7).MP4",
+          "filename": "Visit onlyshare.io for MORE (7).MP4",
+          "ext": ".mp4",
+          "bytes": 13371987,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: Visit onlyshare.io for MORE (7).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "filename": "Visit onlyshare.io for MORE 50.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/aaliyah-yasan/Visit onlyshare.io for MORE 50.mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+        "filename": "Visit onlyshare.io for MORE 50.MP4",
+        "ext": ".mp4",
+        "bytes": 746019623,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 50",
+          "candidate contains title: Visit onlyshare.io for MORE 50",
+          "title contains candidate: Visit onlyshare.io for MORE 50.MP4",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 967.341375,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 50",
+            "candidate contains title: Visit onlyshare.io for MORE 50",
+            "title contains candidate: Visit onlyshare.io for MORE 50.MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (5).MP4",
+          "filename": "Visit onlyshare.io for MORE (5).MP4",
+          "ext": ".mp4",
+          "bytes": 66625614,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: Visit onlyshare.io for MORE (5).MP4",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "filename": "564677_720p.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/strawberrytabby/564677_720p.mkv",
+      "title_search_found": true,
+      "match_count": 20,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+        "filename": "207601_720p.mp4",
+        "ext": ".mp4",
+        "bytes": 393069701,
+        "title_score": 0.75,
+        "reasons": [
+          "numeric id overlap: 720"
+        ],
+        "probe": {
+          "duration": 1045.29,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+          "filename": "207601_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 393069701,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\540598_720p.mp4",
+          "filename": "540598_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 387879135,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\548555_720p.mp4",
+          "filename": "548555_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 240869964,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\487723_720p.mp4",
+          "filename": "487723_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 203563976,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\362027_720p.mp4",
+          "filename": "362027_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 191957338,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\484359_720p.mp4",
+          "filename": "484359_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 182301289,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\256433_720p.mp4",
+          "filename": "256433_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 177296903,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\442642_720p.mp4",
+          "filename": "442642_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 70762008,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\99022_720p.mp4",
+          "filename": "99022_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64218137,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\438588_720p.mp4",
+          "filename": "438588_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64060147,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "filename": "@MLHUBOF Telegram 🌌🔥 - 793.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 793.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\@MLHUBOF Telegram 🌌🔥 - 793.M4V",
+        "filename": "@MLHUBOF Telegram 🌌🔥 - 793.M4V",
+        "ext": ".m4v",
+        "bytes": 189460157,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: @MLHUBOF Telegram 🌌🔥 - 793",
+          "candidate contains title: @MLHUBOF Telegram 🌌🔥 - 793",
+          "title contains candidate: @MLHUBOF Telegram 🌌🔥 - 793.M4V",
+          "numeric id overlap: 793"
+        ],
+        "probe": {
+          "duration": 244.786208,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\@MLHUBOF Telegram 🌌🔥 - 793.M4V",
+          "filename": "@MLHUBOF Telegram 🌌🔥 - 793.M4V",
+          "ext": ".m4v",
+          "bytes": 189460157,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: @MLHUBOF Telegram 🌌🔥 - 793",
+            "candidate contains title: @MLHUBOF Telegram 🌌🔥 - 793",
+            "title contains candidate: @MLHUBOF Telegram 🌌🔥 - 793.M4V",
+            "numeric id overlap: 793"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "filename": "Visit onlyshare.io for MORE 05135.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cute-geekie/Visit onlyshare.io for MORE 05135.mkv",
+      "title_search_found": true,
+      "match_count": 14,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+        "filename": "Visit onlyshare.io for MORE 05135.MP4",
+        "ext": ".mp4",
+        "bytes": 135836622,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Visit onlyshare.io for MORE 05135",
+          "candidate contains title: Visit onlyshare.io for MORE 05135",
+          "title contains candidate: Visit onlyshare.io for MORE 05135.MP4",
+          "numeric id overlap: 5135",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 125.5254,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 05135.MP4",
+          "filename": "Visit onlyshare.io for MORE 05135.MP4",
+          "ext": ".mp4",
+          "bytes": 135836622,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Visit onlyshare.io for MORE 05135",
+            "candidate contains title: Visit onlyshare.io for MORE 05135",
+            "title contains candidate: Visit onlyshare.io for MORE 05135.MP4",
+            "numeric id overlap: 5135",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\v.mp4",
+          "filename": "v.mp4",
+          "ext": ".mp4",
+          "bytes": 94145805,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: v"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 40.MP4",
+          "filename": "Visit onlyshare.io for MORE 40.MP4",
+          "ext": ".mp4",
+          "bytes": 801621371,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 50.MP4",
+          "filename": "Visit onlyshare.io for MORE 50.MP4",
+          "ext": ".mp4",
+          "bytes": 746019623,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 62.MP4",
+          "filename": "Visit onlyshare.io for MORE 62.MP4",
+          "ext": ".mp4",
+          "bytes": 666748232,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 79.MP4",
+          "filename": "Visit onlyshare.io for MORE 79.MP4",
+          "ext": ".mp4",
+          "bytes": 558447664,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 86.MP4",
+          "filename": "Visit onlyshare.io for MORE 86.MP4",
+          "ext": ".mp4",
+          "bytes": 541491435,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 04419.MP4",
+          "filename": "Visit onlyshare.io for MORE 04419.MP4",
+          "ext": ".mp4",
+          "bytes": 118784713,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE 130.MP4",
+          "filename": "Visit onlyshare.io for MORE 130.MP4",
+          "ext": ".mp4",
+          "bytes": 91021001,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Visit onlyshare.io for MORE (5).MP4",
+          "filename": "Visit onlyshare.io for MORE (5).MP4",
+          "ext": ".mp4",
+          "bytes": 66625614,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 100%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 39,
+      "filename": "@MLHUBOF Telegram 🌌🔥 - 537.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 537.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\@MLHUBOF Telegram 🌌🔥 - 537.M4V",
+        "filename": "@MLHUBOF Telegram 🌌🔥 - 537.M4V",
+        "ext": ".m4v",
+        "bytes": 76651228,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: @MLHUBOF Telegram 🌌🔥 - 537",
+          "candidate contains title: @MLHUBOF Telegram 🌌🔥 - 537",
+          "title contains candidate: @MLHUBOF Telegram 🌌🔥 - 537.M4V",
+          "numeric id overlap: 537"
+        ],
+        "probe": {
+          "duration": 98.681917,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1076,
+          "height": 1822
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\@MLHUBOF Telegram 🌌🔥 - 537.M4V",
+          "filename": "@MLHUBOF Telegram 🌌🔥 - 537.M4V",
+          "ext": ".m4v",
+          "bytes": 76651228,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: @MLHUBOF Telegram 🌌🔥 - 537",
+            "candidate contains title: @MLHUBOF Telegram 🌌🔥 - 537",
+            "title contains candidate: @MLHUBOF Telegram 🌌🔥 - 537.M4V",
+            "numeric id overlap: 537"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "filename": "51591.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cute-geekie/51591.mkv",
+      "title_search_found": false,
+      "match_count": 0,
+      "best_match": null,
+      "all_matches": []
+    },
+    {
+      "index": 41,
+      "filename": "@MLHUBOF Telegram 🌌🔥 - 558.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 558.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\@MLHUBOF Telegram 🌌🔥 - 558.MP4",
+        "filename": "@MLHUBOF Telegram 🌌🔥 - 558.MP4",
+        "ext": ".mp4",
+        "bytes": 58011353,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: @MLHUBOF Telegram 🌌🔥 - 558",
+          "candidate contains title: @MLHUBOF Telegram 🌌🔥 - 558",
+          "title contains candidate: @MLHUBOF Telegram 🌌🔥 - 558.MP4",
+          "numeric id overlap: 558"
+        ],
+        "probe": {
+          "duration": 66.453991,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1078,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\@MLHUBOF Telegram 🌌🔥 - 558.MP4",
+          "filename": "@MLHUBOF Telegram 🌌🔥 - 558.MP4",
+          "ext": ".mp4",
+          "bytes": 58011353,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: @MLHUBOF Telegram 🌌🔥 - 558",
+            "candidate contains title: @MLHUBOF Telegram 🌌🔥 - 558",
+            "title contains candidate: @MLHUBOF Telegram 🌌🔥 - 558.MP4",
+            "numeric id overlap: 558"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "filename": "@MLHUBOF Telegram 🌌🔥 - 959.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 959.mkv",
+      "title_search_found": false,
+      "match_count": 0,
+      "best_match": null,
+      "all_matches": []
+    },
+    {
+      "index": 43,
+      "filename": "@MLHUBOF Telegram 🌌🔥 - 870.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/cute-geekie/@MLHUBOF Telegram 🌌🔥 - 870.mkv",
+      "title_search_found": false,
+      "match_count": 0,
+      "best_match": null,
+      "all_matches": []
+    },
+    {
+      "index": 44,
+      "filename": "(21).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(21).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\(21).MP4",
+        "filename": "(21).MP4",
+        "ext": ".mp4",
+        "bytes": 35337833,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: (21)"
+        ],
+        "probe": {
+          "duration": 45.253542,
+          "video": "h264",
+          "audio": "aac",
+          "width": 720,
+          "height": 1280
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(21).MP4",
+          "filename": "(21).MP4",
+          "ext": ".mp4",
+          "bytes": 35337833,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: (21)"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 45,
+      "filename": "(28).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(28).mkv",
+      "title_search_found": false,
+      "match_count": 0,
+      "best_match": null,
+      "all_matches": []
+    },
+    {
+      "index": 46,
+      "filename": "(116).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(116).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\(116).MP4",
+        "filename": "(116).MP4",
+        "ext": ".mp4",
+        "bytes": 18785382,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: (116)",
+          "numeric id overlap: 116"
+        ],
+        "probe": {
+          "duration": 23.732042,
+          "video": "h264",
+          "audio": "aac",
+          "width": 720,
+          "height": 1280
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(116).MP4",
+          "filename": "(116).MP4",
+          "ext": ".mp4",
+          "bytes": 18785382,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: (116)",
+            "numeric id overlap: 116"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "filename": "(19).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(19).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\(19).MP4",
+        "filename": "(19).MP4",
+        "ext": ".mp4",
+        "bytes": 39064427,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: (19)"
+        ],
+        "probe": {
+          "duration": 50.175125,
+          "video": "h264",
+          "audio": "aac",
+          "width": 720,
+          "height": 1062
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(19).MP4",
+          "filename": "(19).MP4",
+          "ext": ".mp4",
+          "bytes": 39064427,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: (19)"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "filename": "(31).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sava-schultz/(31).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\(31).MP4",
+        "filename": "(31).MP4",
+        "ext": ".mp4",
+        "bytes": 24613509,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: (31)"
+        ],
+        "probe": {
+          "duration": 31.364667,
+          "video": "h264",
+          "audio": "aac",
+          "width": 720,
+          "height": 1280
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(31).MP4",
+          "filename": "(31).MP4",
+          "ext": ".mp4",
+          "bytes": 24613509,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: (31)"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "filename": "✨@ofxmega on [TELEGRAM] (288).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (288).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (288).M4V",
+        "filename": "✨@ofxmega on [TELEGRAM] (288).M4V",
+        "ext": ".m4v",
+        "bytes": 14458726,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (288)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (288)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (288).M4V",
+          "numeric id overlap: 288"
+        ],
+        "probe": {
+          "duration": 18.101417,
+          "video": "h264",
+          "audio": "aac",
+          "width": 694,
+          "height": 1232
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (288).M4V",
+          "filename": "✨@ofxmega on [TELEGRAM] (288).M4V",
+          "ext": ".m4v",
+          "bytes": 14458726,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (288)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (288)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (288).M4V",
+            "numeric id overlap: 288"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "filename": "✨@ofxmega on [TELEGRAM] (278).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (278).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (278).MP4",
+        "filename": "✨@ofxmega on [TELEGRAM] (278).MP4",
+        "ext": ".mp4",
+        "bytes": 17991480,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (278)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (278)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (278).MP4",
+          "numeric id overlap: 278"
+        ],
+        "probe": {
+          "duration": 22.77275,
+          "video": "h264",
+          "audio": "aac",
+          "width": 634,
+          "height": 1020
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (278).MP4",
+          "filename": "✨@ofxmega on [TELEGRAM] (278).MP4",
+          "ext": ".mp4",
+          "bytes": 17991480,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (278)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (278)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (278).MP4",
+            "numeric id overlap: 278"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "filename": "✨@ofxmega on [TELEGRAM] (279).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (279).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (279).MP4",
+        "filename": "✨@ofxmega on [TELEGRAM] (279).MP4",
+        "ext": ".mp4",
+        "bytes": 17527128,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (279)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (279)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (279).MP4",
+          "numeric id overlap: 279"
+        ],
+        "probe": {
+          "duration": 22.105417,
+          "video": "h264",
+          "audio": "aac",
+          "width": 672,
+          "height": 1232
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (279).MP4",
+          "filename": "✨@ofxmega on [TELEGRAM] (279).MP4",
+          "ext": ".mp4",
+          "bytes": 17527128,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (279)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (279)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (279).MP4",
+            "numeric id overlap: 279"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "filename": "✨@ofxmega on [TELEGRAM] (86).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (86).mkv",
+      "title_search_found": false,
+      "match_count": 0,
+      "best_match": null,
+      "all_matches": []
+    },
+    {
+      "index": 53,
+      "filename": "✨@ofxmega on [TELEGRAM] (274).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (274).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (274).MP4",
+        "filename": "✨@ofxmega on [TELEGRAM] (274).MP4",
+        "ext": ".mp4",
+        "bytes": 19386091,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (274)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (274)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (274).MP4",
+          "numeric id overlap: 274"
+        ],
+        "probe": {
+          "duration": 24.441083,
+          "video": "h264",
+          "audio": "aac",
+          "width": 672,
+          "height": 1232
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (274).MP4",
+          "filename": "✨@ofxmega on [TELEGRAM] (274).MP4",
+          "ext": ".mp4",
+          "bytes": 19386091,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (274)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (274)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (274).MP4",
+            "numeric id overlap: 274"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "filename": "✨@ofxmega on [TELEGRAM] (299).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (299).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (299).MP4",
+        "filename": "✨@ofxmega on [TELEGRAM] (299).MP4",
+        "ext": ".mp4",
+        "bytes": 12394400,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (299)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (299)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (299).MP4",
+          "numeric id overlap: 299"
+        ],
+        "probe": {
+          "duration": 15.390375,
+          "video": "h264",
+          "audio": "aac",
+          "width": 888,
+          "height": 1658
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (299).MP4",
+          "filename": "✨@ofxmega on [TELEGRAM] (299).MP4",
+          "ext": ".mp4",
+          "bytes": 12394400,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (299)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (299)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (299).MP4",
+            "numeric id overlap: 299"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "filename": "✨@ofxmega on [TELEGRAM] (286).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (286).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (286).MP4",
+        "filename": "✨@ofxmega on [TELEGRAM] (286).MP4",
+        "ext": ".mp4",
+        "bytes": 14668587,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (286)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (286)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (286).MP4",
+          "numeric id overlap: 286"
+        ],
+        "probe": {
+          "duration": 18.393375,
+          "video": "h264",
+          "audio": "aac",
+          "width": 680,
+          "height": 1276
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (286).MP4",
+          "filename": "✨@ofxmega on [TELEGRAM] (286).MP4",
+          "ext": ".mp4",
+          "bytes": 14668587,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (286)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (286)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (286).MP4",
+            "numeric id overlap: 286"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "filename": "✨@ofxmega on [TELEGRAM] (295).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (295).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (295).MP4",
+        "filename": "✨@ofxmega on [TELEGRAM] (295).MP4",
+        "ext": ".mp4",
+        "bytes": 12910306,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (295)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (295)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (295).MP4",
+          "numeric id overlap: 295"
+        ],
+        "probe": {
+          "duration": 16.182833,
+          "video": "h264",
+          "audio": "aac",
+          "width": 696,
+          "height": 1276
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (295).MP4",
+          "filename": "✨@ofxmega on [TELEGRAM] (295).MP4",
+          "ext": ".mp4",
+          "bytes": 12910306,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (295)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (295)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (295).MP4",
+            "numeric id overlap: 295"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "filename": "✨@ofxmega on [TELEGRAM] (276).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (276).mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (276).MP4",
+        "filename": "✨@ofxmega on [TELEGRAM] (276).MP4",
+        "ext": ".mp4",
+        "bytes": 19142368,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: ✨@ofxmega on [TELEGRAM] (276)",
+          "candidate contains title: ✨@ofxmega on [TELEGRAM] (276)",
+          "title contains candidate: ✨@ofxmega on [TELEGRAM] (276).MP4",
+          "numeric id overlap: 276"
+        ],
+        "probe": {
+          "duration": 24.232542,
+          "video": "h264",
+          "audio": "aac",
+          "width": 696,
+          "height": 1276
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\✨@ofxmega on [TELEGRAM] (276).MP4",
+          "filename": "✨@ofxmega on [TELEGRAM] (276).MP4",
+          "ext": ".mp4",
+          "bytes": 19142368,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: ✨@ofxmega on [TELEGRAM] (276)",
+            "candidate contains title: ✨@ofxmega on [TELEGRAM] (276)",
+            "title contains candidate: ✨@ofxmega on [TELEGRAM] (276).MP4",
+            "numeric id overlap: 276"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 58,
+      "filename": "556530_720p.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/angela-white/556530_720p.mkv",
+      "title_search_found": true,
+      "match_count": 20,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+        "filename": "207601_720p.mp4",
+        "ext": ".mp4",
+        "bytes": 393069701,
+        "title_score": 0.75,
+        "reasons": [
+          "numeric id overlap: 720"
+        ],
+        "probe": {
+          "duration": 1045.29,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\207601_720p.mp4",
+          "filename": "207601_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 393069701,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\540598_720p.mp4",
+          "filename": "540598_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 387879135,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\548555_720p.mp4",
+          "filename": "548555_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 240869964,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\487723_720p.mp4",
+          "filename": "487723_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 203563976,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\362027_720p.mp4",
+          "filename": "362027_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 191957338,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\484359_720p.mp4",
+          "filename": "484359_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 182301289,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\256433_720p.mp4",
+          "filename": "256433_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 177296903,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\442642_720p.mp4",
+          "filename": "442642_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 70762008,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\99022_720p.mp4",
+          "filename": "99022_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64218137,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\438588_720p.mp4",
+          "filename": "438588_720p.mp4",
+          "ext": ".mp4",
+          "bytes": 64060147,
+          "title_score": 0.75,
+          "reasons": [
+            "numeric id overlap: 720"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (224).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sendnudesx/PlugLeakz.net - Join Telegram @PlugLeaksHub (224).mkv",
+      "title_search_found": true,
+      "match_count": 2,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+        "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+        "ext": ".mp4",
+        "bytes": 528198691,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: PlugLeakz.net - Join Telegram @PlugLeaksHub (224)",
+          "candidate contains title: PlugLeakz.net - Join Telegram @PlugLeaksHub (224)",
+          "title contains candidate: PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+          "numeric id overlap: 224",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 684.558875,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+          "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+          "ext": ".mp4",
+          "bytes": 528198691,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: PlugLeakz.net - Join Telegram @PlugLeaksHub (224)",
+            "candidate contains title: PlugLeakz.net - Join Telegram @PlugLeaksHub (224)",
+            "title contains candidate: PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+            "numeric id overlap: 224",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+          "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+          "ext": ".mp4",
+          "bytes": 185587314,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 83%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 60,
+      "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (198).mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/sendnudesx/PlugLeakz.net - Join Telegram @PlugLeaksHub (198).mkv",
+      "title_search_found": true,
+      "match_count": 3,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+        "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+        "ext": ".mp4",
+        "bytes": 185587314,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: PlugLeakz.net - Join Telegram @PlugLeaksHub (198)",
+          "candidate contains title: PlugLeakz.net - Join Telegram @PlugLeaksHub (198)",
+          "title contains candidate: PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+          "numeric id overlap: 198",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 239.781208,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+          "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+          "ext": ".mp4",
+          "bytes": 185587314,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: PlugLeakz.net - Join Telegram @PlugLeaksHub (198)",
+            "candidate contains title: PlugLeakz.net - Join Telegram @PlugLeaksHub (198)",
+            "title contains candidate: PlugLeakz.net - Join Telegram @PlugLeaksHub (198).MP4",
+            "numeric id overlap: 198",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\(19).MP4",
+          "filename": "(19).MP4",
+          "ext": ".mp4",
+          "bytes": 39064427,
+          "title_score": 0.88,
+          "reasons": [
+            "title contains candidate: (19).MP4"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+          "filename": "PlugLeakz.net - Join Telegram @PlugLeaksHub (224).MP4",
+          "ext": ".mp4",
+          "bytes": 528198691,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 83%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "filename": "Ayucpl.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/yummy-couple/Ayucpl.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\Ayucpl.MP4",
+        "filename": "Ayucpl.MP4",
+        "ext": ".mp4",
+        "bytes": 500537437,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: Ayucpl"
+        ],
+        "probe": {
+          "duration": 648.939958,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\Ayucpl.MP4",
+          "filename": "Ayucpl.MP4",
+          "ext": ".mp4",
+          "bytes": 500537437,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: Ayucpl"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "filename": "OF4LM.COM is our home__297.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/kinkykttn/OF4LM.COM is our home__297.mkv",
+      "title_search_found": true,
+      "match_count": 7,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+        "filename": "OF4LM.COM is our home__297.MP4",
+        "ext": ".mp4",
+        "bytes": 30120770,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: OF4LM.COM is our home__297",
+          "candidate contains title: OF4LM.COM is our home__297",
+          "title contains candidate: OF4LM.COM is our home__297.MP4",
+          "numeric id overlap: 297",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 38.56,
+          "video": "h264",
+          "audio": "aac",
+          "width": 990,
+          "height": 588
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+          "filename": "OF4LM.COM is our home__297.MP4",
+          "ext": ".mp4",
+          "bytes": 30120770,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: OF4LM.COM is our home__297",
+            "candidate contains title: OF4LM.COM is our home__297",
+            "title contains candidate: OF4LM.COM is our home__297.MP4",
+            "numeric id overlap: 297",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+          "filename": "OF4LM.COM is our home__282.MP4",
+          "ext": ".mp4",
+          "bytes": 98930019,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+          "filename": "OF4LM.COM is our home__406.MP4",
+          "ext": ".mp4",
+          "bytes": 77456929,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+          "filename": "OF4LM.COM is our home__377.MP4",
+          "ext": ".mp4",
+          "bytes": 76815709,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+          "filename": "OF4LM.COM is our home__400.MP4",
+          "ext": ".mp4",
+          "bytes": 39434671,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+          "filename": "OF4LM.COM is our home__360.MP4",
+          "ext": ".mp4",
+          "bytes": 26694757,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__315.MP4",
+          "filename": "OF4LM.COM is our home__315.MP4",
+          "ext": ".mp4",
+          "bytes": 11518816,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 63,
+      "filename": "OF4LM.COM is our home__282.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/kinkykttn/OF4LM.COM is our home__282.mkv",
+      "title_search_found": true,
+      "match_count": 7,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+        "filename": "OF4LM.COM is our home__282.MP4",
+        "ext": ".mp4",
+        "bytes": 98930019,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: OF4LM.COM is our home__282",
+          "candidate contains title: OF4LM.COM is our home__282",
+          "title contains candidate: OF4LM.COM is our home__282.MP4",
+          "numeric id overlap: 282",
+          "word overlap 100%"
+        ],
+        "probe": {
+          "duration": 127.752625,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__282.MP4",
+          "filename": "OF4LM.COM is our home__282.MP4",
+          "ext": ".mp4",
+          "bytes": 98930019,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: OF4LM.COM is our home__282",
+            "candidate contains title: OF4LM.COM is our home__282",
+            "title contains candidate: OF4LM.COM is our home__282.MP4",
+            "numeric id overlap: 282",
+            "word overlap 100%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__406.MP4",
+          "filename": "OF4LM.COM is our home__406.MP4",
+          "ext": ".mp4",
+          "bytes": 77456929,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__377.MP4",
+          "filename": "OF4LM.COM is our home__377.MP4",
+          "ext": ".mp4",
+          "bytes": 76815709,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__400.MP4",
+          "filename": "OF4LM.COM is our home__400.MP4",
+          "ext": ".mp4",
+          "bytes": 39434671,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__297.MP4",
+          "filename": "OF4LM.COM is our home__297.MP4",
+          "ext": ".mp4",
+          "bytes": 30120770,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__360.MP4",
+          "filename": "OF4LM.COM is our home__360.MP4",
+          "ext": ".mp4",
+          "bytes": 26694757,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        },
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\OF4LM.COM is our home__315.MP4",
+          "filename": "OF4LM.COM is our home__315.MP4",
+          "ext": ".mp4",
+          "bytes": 11518816,
+          "title_score": 0.82,
+          "reasons": [
+            "word overlap 80%"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 64,
+      "filename": "JoinUs @RisqueMega 61.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/chloe-lamb/JoinUs @RisqueMega 61.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 61.M4V",
+        "filename": "JoinUs @RisqueMega 61.M4V",
+        "ext": ".m4v",
+        "bytes": 566805180,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: JoinUs @RisqueMega 61",
+          "candidate contains title: JoinUs @RisqueMega 61",
+          "title contains candidate: JoinUs @RisqueMega 61.M4V"
+        ],
+        "probe": {
+          "duration": 734.608875,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 61.M4V",
+          "filename": "JoinUs @RisqueMega 61.M4V",
+          "ext": ".m4v",
+          "bytes": 566805180,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: JoinUs @RisqueMega 61",
+            "candidate contains title: JoinUs @RisqueMega 61",
+            "title contains candidate: JoinUs @RisqueMega 61.M4V"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 65,
+      "filename": "JoinUs @RisqueMega 25.mkv",
+      "current_path": "/mnt/spirit-8tb/media/yes/models/chloe-lamb/JoinUs @RisqueMega 25.mkv",
+      "title_search_found": true,
+      "match_count": 1,
+      "best_match": {
+        "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 25.MP4",
+        "filename": "JoinUs @RisqueMega 25.MP4",
+        "ext": ".mp4",
+        "bytes": 790227436,
+        "title_score": 0.98,
+        "reasons": [
+          "soft exact title: JoinUs @RisqueMega 25",
+          "candidate contains title: JoinUs @RisqueMega 25",
+          "title contains candidate: JoinUs @RisqueMega 25.MP4"
+        ],
+        "probe": {
+          "duration": 1024.648625,
+          "video": "h264",
+          "audio": "aac",
+          "width": 1080,
+          "height": 1920
+        }
+      },
+      "all_matches": [
+        {
+          "path": "D:\\tempVidStorage\\anrdoidBackup\\JoinUs @RisqueMega 25.MP4",
+          "filename": "JoinUs @RisqueMega 25.MP4",
+          "ext": ".mp4",
+          "bytes": 790227436,
+          "title_score": 0.98,
+          "reasons": [
+            "soft exact title: JoinUs @RisqueMega 25",
+            "candidate contains title: JoinUs @RisqueMega 25",
+            "title contains candidate: JoinUs @RisqueMega 25.MP4"
+          ]
+        }
+      ]
+    }
+  ]
+}

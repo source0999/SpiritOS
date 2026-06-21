@@ -1,0 +1,1181 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/mnt/spirit-8tb/media/yes/models/sava-schultz/Sava Schultz grinding BBC so lewd leak.mp4",
+  "generated_at": "2026-06-14T21:06:55+00:00",
+  "dry_run": false,
+  "verification_needed": true,
+  "performers": [
+    {
+      "id": null,
+      "name": "unknown performer",
+      "confidence": 0.5099,
+      "similarity": 0.5099,
+      "status": "unknown",
+      "verification_needed": true,
+      "label": "unknown performer - verification needed",
+      "face_crop_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frame-17-face-01.jpg",
+      "original_frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frame-17.jpg",
+      "bbox": [
+        64.42,
+        47.13,
+        127.41,
+        139.24
+      ],
+      "detection_score": 0.8584,
+      "model_version": "insightface:buffalo_l",
+      "supporting_faces": 20
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-14T21:06:55+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Sava Schultz",
+        "source": "filename",
+        "confidence": 0.65,
+        "raw": "Sava Schultz grinding BBC so lewd leak",
+        "variants": [
+          "Sava Schultz",
+          "Sava"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "Onily",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "onilyFans.(",
+        "variants": [
+          "Onily",
+          "onilyFans"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-08.jpg",
+        "region": "bottom_left"
+      },
+      {
+        "name": "BIZHD",
+        "source": "watermark_ocr_text",
+        "confidence": 0.52,
+        "raw": "BIZHD",
+        "variants": [
+          "BIZHD"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "BIZHO",
+        "source": "watermark_ocr_text",
+        "confidence": 0.47,
+        "raw": "BIZHO",
+        "variants": [
+          "BIZHO"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-06.jpg",
+        "region": "full"
+      },
+      {
+        "name": "PORN",
+        "source": "watermark_ocr_text",
+        "confidence": 0.44,
+        "raw": "OnlyFans.PORN",
+        "variants": [
+          "PORN",
+          "Only PORN"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "Only PORN",
+        "source": "watermark_ocr_text",
+        "confidence": 0.44,
+        "raw": "OnlyFans.PORN",
+        "variants": [
+          "Only PORN"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "PORNE",
+        "source": "watermark_ocr_text",
+        "confidence": 0.42,
+        "raw": "OnlyFans.PORNE",
+        "variants": [
+          "PORNE",
+          "Only PORNE"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-04.jpg",
+        "region": "full"
+      },
+      {
+        "name": "Only PORNE",
+        "source": "watermark_ocr_text",
+        "confidence": 0.42,
+        "raw": "OnlyFans.PORNE",
+        "variants": [
+          "Only PORNE"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-04.jpg",
+        "region": "full"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Sava Schultz\"",
+        "url": "https://yandex.com/search/?text=%22Sava%20Schultz%22",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Sava Schultz\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Sava%20Schultz%22%20onlyfans",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Sava Schultz\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Sava%20Schultz%22%20site%3Apimpbunny.com",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Sava Schultz\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Sava%20Schultz%22%20site%3Acoomer.st",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Sava Schultz",
+        "url": "https://coomer.st/search?q=Sava%20Schultz",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Sava\"",
+        "url": "https://yandex.com/search/?text=%22Sava%22",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Sava\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Sava%22%20onlyfans",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Sava\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Sava%22%20site%3Apimpbunny.com",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Sava\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Sava%22%20site%3Acoomer.st",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Sava",
+        "url": "https://coomer.st/search?q=Sava",
+        "candidate_name": "Sava Schultz",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Onily\"",
+        "url": "https://yandex.com/search/?text=%22Onily%22",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Onily\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Onily%22%20onlyfans",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Onily\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Onily%22%20site%3Apimpbunny.com",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Onily\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Onily%22%20site%3Acoomer.st",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Onily",
+        "url": "https://coomer.st/search?q=Onily",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"onilyFans\"",
+        "url": "https://yandex.com/search/?text=%22onilyFans%22",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"onilyFans\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22onilyFans%22%20onlyfans",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"onilyFans\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22onilyFans%22%20site%3Apimpbunny.com",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"onilyFans\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22onilyFans%22%20site%3Acoomer.st",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "onilyFans",
+        "url": "https://coomer.st/search?q=onilyFans",
+        "candidate_name": "Onily",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"BIZHD\"",
+        "url": "https://yandex.com/search/?text=%22BIZHD%22",
+        "candidate_name": "BIZHD",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"BIZHD\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22BIZHD%22%20onlyfans",
+        "candidate_name": "BIZHD",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"BIZHD\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22BIZHD%22%20site%3Apimpbunny.com",
+        "candidate_name": "BIZHD",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"BIZHD\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22BIZHD%22%20site%3Acoomer.st",
+        "candidate_name": "BIZHD",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "BIZHD",
+        "url": "https://coomer.st/search?q=BIZHD",
+        "candidate_name": "BIZHD",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"BIZHO\"",
+        "url": "https://yandex.com/search/?text=%22BIZHO%22",
+        "candidate_name": "BIZHO",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"BIZHO\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22BIZHO%22%20onlyfans",
+        "candidate_name": "BIZHO",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"BIZHO\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22BIZHO%22%20site%3Apimpbunny.com",
+        "candidate_name": "BIZHO",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"BIZHO\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22BIZHO%22%20site%3Acoomer.st",
+        "candidate_name": "BIZHO",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "BIZHO",
+        "url": "https://coomer.st/search?q=BIZHO",
+        "candidate_name": "BIZHO",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"PORN\"",
+        "url": "https://yandex.com/search/?text=%22PORN%22",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"PORN\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22PORN%22%20onlyfans",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"PORN\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22PORN%22%20site%3Apimpbunny.com",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"PORN\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22PORN%22%20site%3Acoomer.st",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "PORN",
+        "url": "https://coomer.st/search?q=PORN",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Only PORN\"",
+        "url": "https://yandex.com/search/?text=%22Only%20PORN%22",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Only PORN\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Only%20PORN%22%20onlyfans",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Only PORN\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Only%20PORN%22%20site%3Apimpbunny.com",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Only PORN\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Only%20PORN%22%20site%3Acoomer.st",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Only PORN",
+        "url": "https://coomer.st/search?q=Only%20PORN",
+        "candidate_name": "PORN",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "OnlyFans.PORN",
+        "confidence": 0.945,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            44.0,
+            443.0
+          ],
+          [
+            183.0,
+            450.0
+          ],
+          [
+            182.0,
+            473.0
+          ],
+          [
+            43.0,
+            466.0
+          ]
+        ]
+      },
+      {
+        "text": "BIZHD",
+        "confidence": 0.967,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            187.0,
+            450.0
+          ],
+          [
+            242.0,
+            451.0
+          ],
+          [
+            242.0,
+            470.0
+          ],
+          [
+            186.0,
+            469.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.(",
+        "confidence": 0.964,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            138.0,
+            360.0
+          ],
+          [
+            387.0,
+            368.0
+          ],
+          [
+            385.0,
+            419.0
+          ],
+          [
+            136.0,
+            411.0
+          ]
+        ]
+      },
+      {
+        "text": "PORN",
+        "confidence": 0.991,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            387.0,
+            375.0
+          ],
+          [
+            539.0,
+            375.0
+          ],
+          [
+            539.0,
+            430.0
+          ],
+          [
+            387.0,
+            430.0
+          ]
+        ]
+      },
+      {
+        "text": "BIZHD",
+        "confidence": 0.975,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            564.0,
+            376.0
+          ],
+          [
+            726.0,
+            377.0
+          ],
+          [
+            725.0,
+            432.0
+          ],
+          [
+            563.0,
+            430.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.(",
+        "confidence": 0.97,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-01-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            137.0,
+            504.0
+          ],
+          [
+            388.0,
+            510.0
+          ],
+          [
+            387.0,
+            561.0
+          ],
+          [
+            136.0,
+            555.0
+          ]
+        ]
+      },
+      {
+        "text": "PORN",
+        "confidence": 0.995,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            24.0,
+            518.0
+          ],
+          [
+            179.0,
+            519.0
+          ],
+          [
+            178.0,
+            576.0
+          ],
+          [
+            24.0,
+            574.0
+          ]
+        ]
+      },
+      {
+        "text": "BIZHD",
+        "confidence": 0.982,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            201.0,
+            519.0
+          ],
+          [
+            363.0,
+            521.0
+          ],
+          [
+            363.0,
+            575.0
+          ],
+          [
+            200.0,
+            573.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.PORN",
+        "confidence": 0.947,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            43.0,
+            443.0
+          ],
+          [
+            184.0,
+            450.0
+          ],
+          [
+            183.0,
+            473.0
+          ],
+          [
+            42.0,
+            466.0
+          ]
+        ]
+      },
+      {
+        "text": "BIZHD",
+        "confidence": 0.938,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            186.0,
+            451.0
+          ],
+          [
+            242.0,
+            451.0
+          ],
+          [
+            242.0,
+            470.0
+          ],
+          [
+            186.0,
+            470.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.(",
+        "confidence": 0.989,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            135.0,
+            361.0
+          ],
+          [
+            389.0,
+            365.0
+          ],
+          [
+            389.0,
+            415.0
+          ],
+          [
+            134.0,
+            411.0
+          ]
+        ]
+      },
+      {
+        "text": "PORN",
+        "confidence": 0.99,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            385.0,
+            375.0
+          ],
+          [
+            539.0,
+            375.0
+          ],
+          [
+            539.0,
+            430.0
+          ],
+          [
+            385.0,
+            430.0
+          ]
+        ]
+      },
+      {
+        "text": "BIZHD",
+        "confidence": 0.916,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            564.0,
+            377.0
+          ],
+          [
+            725.0,
+            377.0
+          ],
+          [
+            725.0,
+            431.0
+          ],
+          [
+            564.0,
+            431.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.(",
+        "confidence": 0.99,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-02-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            135.0,
+            503.0
+          ],
+          [
+            390.0,
+            509.0
+          ],
+          [
+            389.0,
+            562.0
+          ],
+          [
+            134.0,
+            556.0
+          ]
+        ]
+      },
+      {
+        "text": "PORN",
+        "confidence": 0.987,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-02-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            21.0,
+            518.0
+          ],
+          [
+            179.0,
+            519.0
+          ],
+          [
+            179.0,
+            576.0
+          ],
+          [
+            20.0,
+            574.0
+          ]
+        ]
+      },
+      {
+        "text": "BIZHD",
+        "confidence": 0.94,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-02-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            200.0,
+            519.0
+          ],
+          [
+            363.0,
+            520.0
+          ],
+          [
+            362.0,
+            576.0
+          ],
+          [
+            199.0,
+            575.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.PORN",
+        "confidence": 0.953,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-03.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            45.0,
+            443.0
+          ],
+          [
+            184.0,
+            450.0
+          ],
+          [
+            183.0,
+            472.0
+          ],
+          [
+            44.0,
+            465.0
+          ]
+        ]
+      },
+      {
+        "text": "BIZHD",
+        "confidence": 0.971,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-03.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            186.0,
+            451.0
+          ],
+          [
+            243.0,
+            451.0
+          ],
+          [
+            243.0,
+            470.0
+          ],
+          [
+            186.0,
+            470.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.(",
+        "confidence": 0.992,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-03.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            138.0,
+            361.0
+          ],
+          [
+            389.0,
+            366.0
+          ],
+          [
+            388.0,
+            415.0
+          ],
+          [
+            137.0,
+            410.0
+          ]
+        ]
+      },
+      {
+        "text": "PORN",
+        "confidence": 0.992,
+        "frame_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-03.jpg",
+        "ocr_image_path": "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            385.0,
+            374.0
+          ],
+          [
+            539.0,
+            376.0
+          ],
+          [
+            538.0,
+            431.0
+          ],
+          [
+            385.0,
+            429.0
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 48,
+  "review_frames": [
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-01.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-02.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-03.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-04.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-05.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-06.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-07.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-08.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-09.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-10.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-11.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-12.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-13.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-14.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-15.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-16.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-17.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-18.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-19.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-20.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-21.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-22.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-23.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-24.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-25.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-26.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-27.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-28.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-29.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-30.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-31.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-32.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-33.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-34.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-35.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-36.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-37.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-38.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-39.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-40.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-41.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-42.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-43.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-44.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-45.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-46.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-47.jpg",
+    "/mnt/spirit-8tb/media/yes/.face-review/Sava Schultz grinding BBC so lewd leak/frames/frame-48.jpg"
+  ],
+  "faces_detected": 20,
+  "faces_rejected": [
+    {
+      "frame_path": "/tmp/face-organizer-xcu22l2u/frame-15.jpg",
+      "bbox": [
+        64.53,
+        -15.54,
+        130.59,
+        87.73
+      ],
+      "detection_score": 0.6188,
+      "reason": "low detection score 0.619 < 0.650"
+    },
+    {
+      "frame_path": "/tmp/face-organizer-xcu22l2u/frame-26.jpg",
+      "bbox": [
+        101.85,
+        -48.37,
+        178.72,
+        68.2
+      ],
+      "detection_score": 0.6304,
+      "reason": "low detection score 0.630 < 0.650"
+    },
+    {
+      "frame_path": "/tmp/face-organizer-xcu22l2u/frame-37.jpg",
+      "bbox": [
+        124.04,
+        20.23,
+        205.95,
+        125.12
+      ],
+      "detection_score": 0.6494,
+      "reason": "low detection score 0.649 < 0.650"
+    },
+    {
+      "frame_path": "/tmp/face-organizer-xcu22l2u/frame-38.jpg",
+      "bbox": [
+        129.36,
+        -13.47,
+        209.51,
+        105.16
+      ],
+      "detection_score": 0.5908,
+      "reason": "low detection score 0.591 < 0.650"
+    },
+    {
+      "frame_path": "/tmp/face-organizer-xcu22l2u/frame-41.jpg",
+      "bbox": [
+        84.21,
+        12.21,
+        150.28,
+        109.98
+      ],
+      "detection_score": 0.5754,
+      "reason": "low detection score 0.575 < 0.650"
+    }
+  ],
+  "duration_seconds": 58.1,
+  "processing_time_seconds": 106.507,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  }
+}

@@ -1,0 +1,7 @@
+$ du -h --max-depth=2 /mnt/spirit-8tb/ollama-models 2>/dev/null | sort -h | tail -50 || true
+# rc=0
+
+88K	/mnt/spirit-8tb/ollama-models/models/manifests
+34G	/mnt/spirit-8tb/ollama-models
+34G	/mnt/spirit-8tb/ollama-models/models
+34G	/mnt/spirit-8tb/ollama-models/models/blobs

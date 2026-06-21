@@ -63,6 +63,8 @@ interface SpiritFlixHomeProps {
   onSearch: (term: string) => void;
   onSelectHome: () => void;
   onSelectLibrary: (libraryId: string) => void;
+  initialModelName?: string | null;
+  onSelectModel: (modelName: string | null) => void;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => void;
 }
@@ -530,6 +532,8 @@ export function SpiritFlixHome({
   onSearch,
   onSelectHome,
   onSelectLibrary,
+  initialModelName = null,
+  onSelectModel,
   onOpenDetails,
   onPlay,
 }: SpiritFlixHomeProps) {
@@ -537,7 +541,7 @@ export function SpiritFlixHome({
   const [sortMode, setSortMode] = useState<LibrarySortMode>("model");
   const [sortDirection, setSortDirection] = useState<LibrarySortDirection>("desc");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(initialModelName);
   const [faceMetadata, setFaceMetadata] = useState<FaceOrganizerMetadataResponse | null>(null);
   const [faceMetadataError, setFaceMetadataError] = useState("");
   const [galleryData, setGalleryData] = useState<SpiritFlixGalleryResponse | null>(null);
@@ -724,8 +728,20 @@ export function SpiritFlixHome({
   }, [sortDirection]);
 
   useEffect(() => {
+    setSelectedModel(initialModelName);
+  }, [data.selectedLibraryId, initialModelName]);
+
+  useEffect(() => {
+    if (!selectedModel || !modelGroups.length) return;
+    if (modelGroups.some((model) => model.name === selectedModel)) return;
     setSelectedModel(null);
-  }, [data.selectedLibraryId, searchTerm]);
+    onSelectModel(null);
+  }, [modelGroups, onSelectModel, selectedModel]);
+
+  const selectModel = (modelName: string | null) => {
+    setSelectedModel(modelName);
+    onSelectModel(modelName);
+  };
 
   useEffect(() => {
     if (isHomeView || !playableLibraryItems.length) {
@@ -1126,7 +1142,7 @@ export function SpiritFlixHome({
                 <button
                   type="button"
                   className={`spiritflix-model-pill ${selectedModel === null ? "is-active" : ""}`}
-                  onClick={() => setSelectedModel(null)}
+                  onClick={() => selectModel(null)}
                 >
                   All Models
                 </button>
@@ -1138,7 +1154,7 @@ export function SpiritFlixHome({
                       key={model.name}
                       type="button"
                       className={`spiritflix-model-card ${selectedModel === model.name ? "is-active" : ""}`}
-                      onClick={() => setSelectedModel(model.name)}
+                      onClick={() => selectModel(model.name)}
                       whileTap={{ scale: 0.98 }}
                     >
                       <SpiritFlixImage client={client} item={model.representative} type="Primary" width={260} alt="" />

@@ -1,0 +1,18 @@
+{
+  "paths": [
+    {
+      "path": "/mnt/spirit-8tb/services/jellyfin/cache/transcodes",
+      "hls_files": 885,
+      "hls_size_bytes": 761140246
+    },
+    {
+      "path": "/mnt/spirit-8tb/services/jellyfin/transcodes",
+      "hls_files": 0,
+      "hls_size_bytes": 0
+    }
+  ],
+  "cleanup_performed": false,
+  "files_removed": 0,
+  "bytes_recovered": 0,
+  "reason_skipped": "Jellyfin Sessions API reported active SpiritFlix playback after scan; hard rule forbids HLS/cache cleanup during active playback."
+}

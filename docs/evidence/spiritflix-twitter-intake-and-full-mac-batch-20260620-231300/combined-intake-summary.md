@@ -1,0 +1,44 @@
+# Combined Twitter Intake Summary
+
+- Total imported: 459
+- Temp sources deleted after verify: 459
+- Total source size: 12698386729
+- Total optimized size: 14896459973
+- Total space saved: -2198073244
+- Destination MP4 count: 459
+- Remaining temp files: 33
+
+## Remaining Temp Files
+- Aaliyah Yasin - VID SOLD! Aaliyah Yasin invites a white guy to her hotel room 🔥 Check... [2021135231126798336].mp4 (3188406 bytes, age 197.3s)
+- Aaliyah Yasin - VID SOLD! The Pakistani girl next door 🔥 Check it out! #MVSales @many... [2021378025183690752].mp4 (6370599 bytes, age 71.0s)
+- Aaliyah Yasin - Wataa [2018419579194613762].mp4 (7833631 bytes, age 171.0s)
+- Aaliyah Yasin - Wataa [2020452998024200192].mp4 (49516621 bytes, age 149.0s)
+- Aaliyah Yasin - Wataa [2020812845026594816].mp4 (46597004 bytes, age 77.7s)
+- Aaliyah Yasin - Wataa [2021160380341592064].mp4 (51045610 bytes, age 179.9s)
+- Aaliyah Yasin - Wataa [2021623990368751616].mp4 (31227012 bytes, age 165.2s)
+- HD FLIX - Watta 👅 [2018491723761262592].mp4 (81065330 bytes, age 241.6s)
+- HD FLIX - Watta 👅 [2018938186387587073].mp4 (55153372 bytes, age 119.9s)
+- MARINA MAYA 🖤 - “Out with the girls” 🤫 [1994124209610514432].mp4 (12985051 bytes, age 92.8s)
+- SNEAKO Defends EDP445 on JiDion Stream #shorts [sFlDc4Mq1N4].webm (5189934 bytes, age 397.9s)
+- THE NUT EXTRACTOR 9000 - get TRIGGERED gooner [1995906765540491264].mp4 (10720444 bytes, age 160.5s)
+- Two Heads 🤤🫠 - How I low-key want my dick’s be cheated [1935027117462536194].mp4 (28988089 bytes, age 208.1s)
+- bookmarksList.txt (59740 bytes, age 11208.9s)
+- naomi! - CHUDAI [2020607116772278272].mp4 (3362066 bytes, age 35.9s)
+- sloppiananyc - Are you snoozing 😴 or waking up with me before sunrise for some slopp... [2014394554472947712].mp4 (86915074 bytes, age 47.3s)
+- ༺diosa༻ - wataa [2005344592028135424].mp4 (7325767 bytes, age 29.3s)
+- ༺diosa༻ - wataa [2015158834134720512].mp4 (6266834 bytes, age 14.2s)
+- ༺diosa༻ - wataa [2015519906981199872].mp4 (7054346 bytes, age 13.3s)
+- ༺diosa༻ - wataa [2019183740409278464].mp4 (8230144 bytes, age 12.3s)
+- ༺diosa༻ - wataa ☁️ [2013002511142031360].mp4 (484082 bytes, age 15.3s)
+- ༺diosa༻ - wataa 🌺 [2009102368495792128].mp4 (2182571 bytes, age 19.4s)
+- ༺diosa༻ - wataa 🌼 [2012590227462684672].mp4 (1311086 bytes, age 16.3s)
+- ༺diosa༻ - wataa 💓 [2011550927640219648].mp4 (7428295 bytes, age 17.4s)
+- ༺diosa༻ - wataa 💗 [2012643835713576960].mp4 (4604504 bytes, age 15.6s)
+- ༺diosa༻ - wataa 💛 [2020263215549079552].mp4 (1131569 bytes, age 11.6s)
+- ༺diosa༻ - wataa 💝 [2004281274479808513].mp4 (3767826 bytes, age 33.4s)
+- ༺diosa༻ - wataa 💝 [2008309439850225664].mp4 (14259500 bytes, age 22.0s)
+- ༺diosa༻ - wataa 🤍 [2008308156204515328].mp4 (3802215 bytes, age 26.3s)
+- 国服第一瑶姬 - Chudai..🔞 [2020731447531933696].fhls-1027.mp4.part (12632169 bytes, age 0.2s)
+- 国服第一瑶姬 - Chudai..🔞 [2020731447531933696].fhls-1027.mp4.part-Frag36 (321479 bytes, age 0.0s)
+- 国服第一瑶姬 - Chudai..🔞 [2020731447531933696].fhls-1027.mp4.ytdl (70 bytes, age 0.2s)
+- 𝔟𝔦𝔫𝔞𝔟𝔞𝔢 - Morninngggg ：3 [2020795247790292992].mp4 (239112 bytes, age 8.9s)

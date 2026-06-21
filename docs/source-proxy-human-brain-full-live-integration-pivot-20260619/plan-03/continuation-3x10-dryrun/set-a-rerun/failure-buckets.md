@@ -1,0 +1,6 @@
+# Set A Rerun Failure Buckets
+
+## NEEDS_FIX
+- A2: research_materially_changed_output; repo_context_used; a2_mv3_architecture_constraints; a2_native_messaging_permission; a2_native_host_registration; a2_service_worker_lifecycle; a2_payload_or_local_api_boundary; a2_source_proxy_endpoint_context; a2_safe_mvp_slice; a2_coding_agent_handoff; work_product_too_short
+- A5: research_materially_changed_output; repo_context_used; a5_dell_mac_windows_role_split; a5_cost_no_new_hardware_reasoning; a5_privacy_local_cloud_tradeoff; a5_model_tooling_tied_to_roles; work_product_too_short
+- A9: research_materially_changed_output; repo_context_used; a9_clean_tool_comparison; a9_current_limitations; a9_proxy_setup_recommendation; work_product_too_short

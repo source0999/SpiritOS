@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-17T22:19:31.667Z",
+  "jobId": "mi-mqhh0t32-89e550d5",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Candy Love Good Boy Gets Good Head then Good Sex Beeg.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Candy Love Good Boy Gets Good Head then Good Sex Beeg.mkv",
+  "originalSize": 485603930,
+  "outputSize": 306560818,
+  "savingsPercent": 36.87,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-17T22:19:31.667Z"
+  }
+}

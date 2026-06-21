@@ -1,0 +1,51 @@
+{
+  "at": "2026-06-19T10:06:48.323Z",
+  "jobId": "mi-mqkpcy93-31dd193b",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Aaliyah Yasin Sucks Dick And Gets Creampied UsualFans.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Aaliyah Yasin Sucks Dick And Gets Creampied UsualFans.mp4",
+  "originalSize": 297393206,
+  "outputSize": 217831388,
+  "savingsPercent": 26.75,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": true,
+    "status": "ok",
+    "at": "2026-06-19T10:10:02.597Z",
+    "command": [
+      ".venv-face-organizer/bin/python",
+      "scripts/media/face_organizer.py",
+      "--scan-video",
+      "/mnt/spirit-8tb/media/yes/Aaliyah Yasin Sucks Dick And Gets Creampied UsualFans.mp4",
+      "--source",
+      "/mnt/spirit-8tb/media/yes",
+      "--apply",
+      "--force",
+      "--frame-count",
+      "12",
+      "--ctx-id",
+      "0"
+    ],
+    "stdout": "Applied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/1k3d68.onnx landmark_3d_68 ['None', 3, 192, 192] 0.0 1.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/2d106det.onnx landmark_2d_106 ['None', 3, 192, 192] 0.0 1.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/det_10g.onnx detection [1, 3, '?', '?'] 127.5 128.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/genderage.onnx genderage ['None', 3, 96, 96] 0.0 1.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/w600k_r50.onnx recognition ['None', 3, 112, 112] 127.5 127.5\nset det-size: (640, 640)\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/1k3d68.onnx landmark_3d_68 ['None', 3, 192, 192] 0.0 1.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/2d106det.onnx landmark_2d_106 ['None', 3, 192, 192] 0.0 1.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/det_10g.onnx detection [1, 3, '?', '?'] 127.5 128.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/genderage.onnx genderage ['None', 3, 96, 96] 0.0 1.0\nApplied providers: ['CPUExecutionProvider'], with options: {'CPUExecutionProvider': {}}\nfind model: /home/source/.insightface/models/buffalo_l/w600k_r50.onnx recognition ['None', 3, 112, 112] 127.5 127.5\nset det-size: (640, 640)\n{\n  \"video_path\": \"/mnt/spirit-8tb/media/yes/Aaliyah Yasin Sucks Dick And Gets Creampied UsualFans.mkv\",\n  \"performers\": [\n    {\n      \"id\": null,\n      \"name\": \"unknown performer\",\n      \"confidence\": 0.4651,\n      \"similarity\": 0.4651,\n      \"status\": \"unknown\",\n      \"verification_needed\": true,\n      \"label\": \"unknown performer - verification needed\",\n      \"face_crop_path\": \"/mnt/spirit-8tb/media/yes/.face-review/Aaliyah Yasin Sucks Dick And Gets Creampied UsualFans/frame-01-face-01.jpg\",\n      \"original_frame_path\": \"/mnt/spirit-8tb/media/yes/.face-review/Aaliyah Yasin Sucks Dick And Gets Creampied UsualFans/frame-01.jpg\",\n      \"bbox\": [\n        755.02,\n        186.7,\n        987.08,\n        428.7\n      ],\n      \"detection_score\": 0.7696,\n      \"model_version\": \"insightface:buffalo_l\",\n      \"supporting_faces\": 3\n    }\n  ]\n}\n",
+    "stderr": "/home/source/SpiritOS/.venv-face-organizer/lib/python3.12/site-packages/onnxruntime/capi/onnxruntime_inference_collection.py:149: UserWarning: Specified provider 'CUDAExecutionProvider' is not in available provider names.Available providers: 'AzureExecutionProvider, CPUExecutionProvider'\n  warnings.warn(\n/home/source/SpiritOS/.venv-face-organizer/lib/python3.12/site-packages/insightface/utils/face_align.py:23: FutureWarning: `estimate` is deprecated since version 0.26 and will be removed in version 2.2. Please use `SimilarityTransform.from_estimate` class constructor instead.\n  tform.estimate(lmk, dst)\n06:07:49 INFO Wrote verification report: scripts/media/face_verification_report.html\n/home/source/SpiritOS/.venv-face-organizer/lib/python3.12/site-packages/onnxruntime/capi/onnxruntime_inference_collection.py:149: UserWarning: Specified provider 'CUDAExecutionProvider' is not in available provider names.Available providers: 'AzureExecutionProvider, CPUExecutionProvider'\n  warnings.warn(\n06:07:55 INFO Auto-refreshed stale enrollment recommendations for: Melissa Debling\n06:07:57 INFO Wrote face enrollment queue: scripts/media/face_enrollment_queue.html\n06:08:52 INFO Wrote enrolled performers page: scripts/media/face_enrolled_performers.html\n06:10:02 INFO Wrote gallery upload page: scripts/media/face_gallery.html\n06:10:02 INFO Wrote known DB audit page: scripts/media/known_db_audit.html\n",
+    "sidecarPath": "/mnt/spirit-8tb/media/yes/Aaliyah Yasin Sucks Dick And Gets Creampied UsualFans.mp4.face-meta.json"
+  },
+  "organizerPageRefresh": {
+    "status": "ok",
+    "at": "2026-06-19T10:12:14.910Z",
+    "command": [
+      ".venv-face-organizer/bin/python",
+      "scripts/media/face_organizer.py",
+      "--organizer-quick-refresh",
+      "--source",
+      "/mnt/spirit-8tb/media/yes",
+      "--ctx-id",
+      "0",
+      "--apply"
+    ],
+    "stdout": "",
+    "stderr": "06:10:06 INFO Wrote verification report: scripts/media/face_verification_report.html\n06:10:08 INFO Wrote face enrollment queue: scripts/media/face_enrollment_queue.html\n06:11:16 INFO Wrote enrolled performers page: scripts/media/face_enrolled_performers.html\n06:12:14 INFO Wrote gallery upload page: scripts/media/face_gallery.html\n06:12:14 INFO Wrote known DB audit page: scripts/media/known_db_audit.html\n"
+  }
+}

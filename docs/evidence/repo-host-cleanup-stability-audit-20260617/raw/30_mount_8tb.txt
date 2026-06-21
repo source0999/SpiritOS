@@ -1,0 +1,6 @@
+$ mount | grep -E "spirit-8tb|8tb|ollama" || true
+# rc=0
+
+/dev/sda1 on /mnt/spirit-8tb type ext4 (rw,relatime)
+/dev/sdb2 on /mnt/spirit-8tb/media/yes type ext4 (rw,relatime)
+/dev/sda1 on /mnt/storage8tb type ext4 (rw,relatime)

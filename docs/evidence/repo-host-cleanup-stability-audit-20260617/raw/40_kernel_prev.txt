@@ -1,0 +1,303 @@
+$ journalctl -k -b -1 --no-pager | tail -300 || true
+# rc=0
+
+Jun 17 11:52:00 source-server systemd-journald[397]: Under memory pressure, flushing caches.
+Jun 17 11:52:10 source-server systemd-journald[397]: Under memory pressure, flushing caches.
+Jun 17 11:52:13 source-server systemd-journald[397]: Under memory pressure, flushing caches.
+Jun 17 11:52:15 source-server systemd-journald[397]: Under memory pressure, flushing caches.
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.071:138): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_apt_news" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/__init__.cpython-312.pyc.129253814515504" pid=1229052 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.101:139): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_apt_news" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/apt.cpython-312.pyc.129253814672880" pid=1229052 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.132:140): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_esm_cache" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/__init__.cpython-312.pyc.139473153559984" pid=1229053 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.211:141): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_esm_cache" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/log.cpython-312.pyc.139473155127680" pid=1229053 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.248:142): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_esm_cache" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/defaults.cpython-312.pyc.139473152448560" pid=1229053 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.251:143): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_esm_cache" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/secret_manager.cpython-312.pyc.139473152448560" pid=1229053 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.264:144): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_esm_cache" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/system.cpython-312.pyc.139473152450608" pid=1229053 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.343:145): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_apt_news" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/event_logger.cpython-312.pyc.129253812852400" pid=1229052 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.347:146): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_apt_news" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/yaml.cpython-312.pyc.129253802625200" pid=1229052 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 14:17:46 source-server kernel: audit: type=1400 audit(1781720266.352:147): apparmor="DENIED" operation="mknod" class="file" profile="ubuntu_pro_apt_news" name="/usr/lib/python3/dist-packages/uaclient/__pycache__/util.cpython-312.pyc.129253802625200" pid=1229052 comm="python3" requested_mask="c" denied_mask="c" fsuid=0 ouid=0
+Jun 17 20:58:13 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:58:20 source-server kernel: python invoked oom-killer: gfp_mask=0x140cca(GFP_HIGHUSER_MOVABLE|__GFP_COMP), order=0, oom_score_adj=0
+Jun 17 20:58:21 source-server kernel: CPU: 4 PID: 275224 Comm: python Tainted: G           OE      6.8.0-124-generic #124-Ubuntu
+Jun 17 20:58:23 source-server kernel: Hardware name: Dell Inc. Precision Tower 3620/09WH54, BIOS 2.25.0 04/05/2023
+Jun 17 20:58:23 source-server kernel: Call Trace:
+Jun 17 20:58:23 source-server kernel:  <TASK>
+Jun 17 20:58:24 source-server kernel:  dump_stack_lvl+0x76/0xa0
+Jun 17 20:58:26 source-server kernel:  dump_stack+0x10/0x20
+Jun 17 20:58:27 source-server kernel:  dump_header+0x49/0x210
+Jun 17 20:58:28 source-server kernel:  oom_kill_process+0x118/0x280
+Jun 17 20:58:30 source-server kernel:  ? oom_evaluate_task+0x143/0x1e0
+Jun 17 20:58:30 source-server kernel:  out_of_memory+0x103/0x350
+Jun 17 20:58:30 source-server kernel:  __alloc_pages_may_oom+0x10c/0x1d0
+Jun 17 20:58:32 source-server kernel:  __alloc_pages_slowpath.constprop.0+0x4c9/0xa50
+Jun 17 20:58:33 source-server kernel:  __alloc_pages+0x31f/0x350
+Jun 17 20:58:34 source-server kernel:  alloc_pages_mpol+0x91/0x210
+Jun 17 20:58:34 source-server kernel:  alloc_pages+0x5b/0xd0
+Jun 17 20:58:34 source-server kernel:  folio_alloc+0x15/0x40
+Jun 17 20:58:35 source-server kernel:  filemap_alloc_folio+0xf4/0x100
+Jun 17 20:58:35 source-server kernel:  __filemap_get_folio+0x199/0x2e0
+Jun 17 20:58:35 source-server kernel:  filemap_fault+0x15c/0x8e0
+Jun 17 20:58:35 source-server kernel:  ? set_pte_range+0xfd/0x310
+Jun 17 20:58:35 source-server kernel:  __do_fault+0x3a/0x190
+Jun 17 20:58:35 source-server kernel:  do_read_fault+0x133/0x200
+Jun 17 20:58:35 source-server kernel:  do_fault+0xf0/0x260
+Jun 17 20:58:36 source-server kernel:  handle_pte_fault+0x114/0x1d0
+Jun 17 20:58:36 source-server kernel:  __handle_mm_fault+0x654/0x790
+Jun 17 20:58:36 source-server kernel:  handle_mm_fault+0x18a/0x380
+Jun 17 20:58:36 source-server kernel:  do_user_addr_fault+0x169/0x670
+Jun 17 20:58:36 source-server kernel:  exc_page_fault+0x83/0x1b0
+Jun 17 20:58:38 source-server kernel:  asm_exc_page_fault+0x27/0x30
+Jun 17 20:58:39 source-server kernel: RIP: 0033:0x7c20097606a0
+Jun 17 20:58:40 source-server kernel: Code: Unable to access opcode bytes at 0x7c2009760676.
+Jun 17 20:58:41 source-server kernel: RSP: 002b:00007fff9a79bfc8 EFLAGS: 00010202
+Jun 17 20:58:41 source-server kernel: RAX: 0000000000000002 RBX: 00007c1febc989c0 RCX: 0000000000000000
+Jun 17 20:58:41 source-server kernel: RDX: 0000000000000001 RSI: 00007c1feb5d8f80 RDI: 00007c1febc989c0
+Jun 17 20:58:42 source-server kernel: RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+Jun 17 20:58:42 source-server kernel: R10: 0000000000000000 R11: 000000000d0f9a00 R12: 00007c2009f70f40
+Jun 17 20:58:43 source-server kernel: R13: 0000000000a3f8a0 R14: 0000000000000000 R15: 00007c1ff05976f0
+Jun 17 20:58:44 source-server kernel:  </TASK>
+Jun 17 20:58:44 source-server kernel: Mem-Info:
+Jun 17 20:58:44 source-server kernel: active_anon:2192751 inactive_anon:1519972 isolated_anon:0
+                                       active_file:330 inactive_file:1865 isolated_file:0
+                                       unevictable:6901 dirty:136 writeback:0
+                                       slab_reclaimable:109257 slab_unreclaimable:49312
+                                       mapped:40829 shmem:37383 pagetables:40779
+                                       sec_pagetables:0 bounce:0
+                                       kernel_misc_reclaimable:0
+                                       free:32756 free_pcp:816 free_cma:0
+Jun 17 20:58:44 source-server kernel: Node 0 active_anon:8771004kB inactive_anon:6079888kB active_file:1320kB inactive_file:7460kB unevictable:27604kB isolated(anon):0kB isolated(file):0kB mapped:163316kB dirty:544kB writeback:0kB shmem:149532kB shmem_thp:0kB shmem_pmdmapped:0kB anon_thp:512000kB writeback_tmp:0kB kernel_stack:21120kB pagetables:163116kB sec_pagetables:0kB all_unreclaimable? yes
+Jun 17 20:58:44 source-server kernel: Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB high:96kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15988kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+Jun 17 20:58:44 source-server kernel: lowmem_reserve[]: 0 2842 15787 15787 15787
+Jun 17 20:58:44 source-server kernel: Node 0 DMA32 free:62516kB boost:0kB min:12156kB low:15192kB high:18228kB reserved_highatomic:0KB active_anon:2138768kB inactive_anon:729756kB active_file:112kB inactive_file:420kB unevictable:0kB writepending:0kB present:3051596kB managed:2985788kB mlocked:0kB bounce:0kB free_pcp:1640kB local_pcp:1640kB free_cma:0kB
+Jun 17 20:58:44 source-server kernel: lowmem_reserve[]: 0 0 12944 12944 12944
+Jun 17 20:58:44 source-server kernel: Node 0 Normal free:55196kB boost:0kB min:55360kB low:69200kB high:83040kB reserved_highatomic:0KB active_anon:6631804kB inactive_anon:5350564kB active_file:1368kB inactive_file:7092kB unevictable:27604kB writepending:544kB present:13598720kB managed:13263832kB mlocked:27480kB bounce:0kB free_pcp:1624kB local_pcp:500kB free_cma:0kB
+Jun 17 20:58:44 source-server kernel: lowmem_reserve[]: 0 0 0 0 0
+Jun 17 20:58:46 source-server kernel: Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 2*2048kB (UM) 2*4096kB (M) = 13312kB
+Jun 17 20:58:49 source-server kernel: Node 0 DMA32: 315*4kB (UE) 474*8kB (UME) 661*16kB (UME) 333*32kB (UME) 191*64kB (UE) 90*128kB (UME) 30*256kB (UME) 6*512kB (ME) 2*1024kB (M) 0*2048kB 0*4096kB = 62828kB
+Jun 17 20:58:49 source-server kernel: Node 0 Normal: 1*4kB (U) 1303*8kB (UM) 1995*16kB (UME) 389*32kB (UE) 0*64kB 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 54796kB
+Jun 17 20:58:49 source-server kernel: Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=1048576kB
+Jun 17 20:58:49 source-server kernel: Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB
+Jun 17 20:58:53 source-server kernel: 58123 total pagecache pages
+Jun 17 20:59:23 source-server kernel: 16353 pages in swap cache
+Jun 17 20:59:23 source-server kernel: Free swap  = 12kB
+Jun 17 20:59:23 source-server kernel: Total swap = 4194300kB
+Jun 17 20:59:23 source-server kernel: 4166576 pages RAM
+Jun 17 20:59:23 source-server kernel: 0 pages HighMem/MovableOnly
+Jun 17 20:59:23 source-server kernel: 100331 pages reserved
+Jun 17 20:59:23 source-server kernel: 0 pages hwpoisoned
+Jun 17 20:59:23 source-server kernel: Tasks state (memory values in pages):
+Jun 17 20:59:23 source-server kernel: [  pid  ]   uid  tgid total_vm      rss rss_anon rss_file rss_shmem pgtables_bytes swapents oom_score_adj name
+Jun 17 20:59:23 source-server kernel: [    397]     0   397    31138     1338      160     1178         0   241664      128          -250 systemd-journal
+Jun 17 20:59:23 source-server kernel: [    450]     0   450    72280     6752     4640     2112         0   114688        0         -1000 multipathd
+Jun 17 20:59:23 source-server kernel: [    464]     0   464     7516      791      128      663         0    90112      640         -1000 systemd-udevd
+Jun 17 20:59:23 source-server kernel: [    794]   998   794     5506      960      160      800         0    94208      128             0 systemd-network
+Jun 17 20:59:23 source-server kernel: [    920]   992   920     5478     1056      256      800         0    86016      384             0 systemd-resolve
+Jun 17 20:59:23 source-server kernel: [    921]   997   921    22763      864        0      864         0    81920      224             0 systemd-timesyn
+Jun 17 20:59:23 source-server kernel: [    930]     0   930    77965     1302      416      886         0   114688       32             0 accounts-daemon
+Jun 17 20:59:23 source-server kernel: [    931]   115   931     2217      896       64      832         0    61440       64             0 avahi-daemon
+Jun 17 20:59:23 source-server kernel: [    932]   101   932     2764     1280      352      928         0    69632       96          -900 dbus-daemon
+Jun 17 20:59:23 source-server kernel: [    933]   300   933     1934      480        0      480         0    57344      128             0 devmon
+Jun 17 20:59:23 source-server kernel: [    953]   991   953    96110     1341      300     1041         0   118784      448             0 polkitd
+Jun 17 20:59:23 source-server kernel: [    963]     0   963     3142     1056       96      960         0    65536      416             0 smartd
+Jun 17 20:59:23 source-server kernel: [    967]     0   967     4569      945      113      832         0    77824      160             0 systemd-logind
+Jun 17 20:59:23 source-server kernel: [    968]     0   968   105569      960      128      832         0   139264       96             0 thermald
+Jun 17 20:59:23 source-server kernel: [    969]     0   969   117247     1360      416      944         0   147456      352             0 udisksd
+Jun 17 20:59:23 source-server kernel: [    972]   103   972    55627     1120      224      896         0    81920      216             0 rsyslogd
+Jun 17 20:59:23 source-server kernel: [    978]   115   978     2106      226        2      224         0    61440       64             0 avahi-daemon
+Jun 17 20:59:23 source-server kernel: [    987]     0   987   190691     2556     2428      128         0   212992      224             0 rclone
+Jun 17 20:59:23 source-server kernel: [    989]   110   989      832      418       34      384         0    49152        0             0 nvidia-persiste
+Jun 17 20:59:23 source-server kernel: [   1171]   300  1171     2288      736        0      736         0    57344       32             0 udevil
+Jun 17 20:59:23 source-server kernel: [   1187]     0  1187    83567     1479      404     1075         0   155648      416             0 NetworkManager
+Jun 17 20:59:23 source-server kernel: [   1188]     0  1188     4346      800       64      736         0    81920      128             0 wpa_supplicant
+Jun 17 20:59:23 source-server kernel: [   1232]     0  1232    79594     1106      192      914         0   126976      352             0 ModemManager
+Jun 17 20:59:23 source-server kernel: [   1437]     0  1437   372162    10136    10072       64         0   532480     1560             0 tailscaled
+Jun 17 20:59:23 source-server kernel: [   1438]     0  1438    27422      992       64      928         0   118784     2336             0 unattended-upgr
+Jun 17 20:59:23 source-server kernel: [   1440]     0  1440   672350     7933     7485      448         0   487424     1151          -999 containerd
+Jun 17 20:59:23 source-server kernel: [   1449]     0  1449   315472     3456     3392       64         0   196608      608             0 cloudflared
+Jun 17 20:59:23 source-server kernel: [   1452]   996  1452   610563   110753   110017      736         0  1748992    47680             0 ollama
+Jun 17 20:59:23 source-server kernel: [   1464]     0  1464   309948     3142     3141        1         0   167936     2330             0 casaos-gateway
+Jun 17 20:59:23 source-server kernel: [   1500]     0  1500   313945     5809     5808        1         0   212992     3767             0 casaos-message-
+Jun 17 20:59:23 source-server kernel: [   1501]     0  1501     3037      736       64      672         0    73728      192         -1000 sshd
+Jun 17 20:59:23 source-server kernel: [   1532]     0  1532   314036     4621     4620        1         0   204800     3104             0 casaos-user-ser
+Jun 17 20:59:23 source-server kernel: [   1627]     0  1627    19522     1408      544      864         0   147456       96             0 nmbd
+Jun 17 20:59:23 source-server kernel: [   1639]     0  1639     1706      512        0      512         0    57344       32             0 cron
+Jun 17 20:59:23 source-server kernel: [   1648]     0  1648    95009      990      192      798         0   102400       96             0 lightdm
+Jun 17 20:59:23 source-server kernel: [   1651]     0  1651     1526      448       32      416         0    53248        0             0 agetty
+Jun 17 20:59:23 source-server kernel: [   1693]     0  1693   193476     6433     6432        1         0   262144    11935             0 casaos-local-st
+Jun 17 20:59:23 source-server kernel: [   1699]     0  1699    22597     1184      224      896        64   172032      576             0 smbd
+Jun 17 20:59:23 source-server kernel: [   1752]     0  1752  6519551     4183      312     3583       288   806912    10912             0 Xorg
+Jun 17 20:59:23 source-server kernel: [   1803]     0  1803    28200      762      314      448         0   151552      608             0 smbd-notifyd
+Jun 17 20:59:23 source-server kernel: [   1804]     0  1804    21952      538      186      352         0   135168      608             0 smbd-cleanupd
+Jun 17 20:59:23 source-server kernel: [   1909]   111  1909     5735      800       32      768         0    57344       64             0 rtkit-daemon
+Jun 17 20:59:23 source-server kernel: [   2080]     0  2080   966049     9966     9262      704         0   692224     1984          -500 dockerd
+Jun 17 20:59:23 source-server kernel: [   2139]  1000  2139     5178     1120      320      800         0    86016      288           100 systemd
+Jun 17 20:59:23 source-server kernel: [   2140]  1000  2140     5297      406       54      352         0    77824      384           100 (sd-pam)
+Jun 17 20:59:23 source-server kernel: [   2152]  1000  2152    26636      960       64      896         0    94208      352           200 pipewire
+Jun 17 20:59:23 source-server kernel: [   2153]  1000  2153    23784      928        0      928         0    81920      192           200 pipewire
+Jun 17 20:59:23 source-server kernel: [   2155]  1000  2155   100064     1152       96     1056         0   139264      608           200 wireplumber
+Jun 17 20:59:23 source-server kernel: [   2158]  1000  2158    26700     1056       32     1024         0    98304      320           200 pipewire-pulse
+Jun 17 20:59:23 source-server kernel: [   2196]  1000  2196     2359      992       32      960         0    61440       64           200 dbus-daemon
+Jun 17 20:59:23 source-server kernel: [   2248]     0  2248    58517     1120      288      832         0    90112       32             0 lightdm
+Jun 17 20:59:23 source-server kernel: [   2260]   113  2260     5183     1216      320      896         0    81920      320           100 systemd
+Jun 17 20:59:23 source-server kernel: [   2261]   113  2261     5297      374       22      352         0    73728      416           100 (sd-pam)
+Jun 17 20:59:23 source-server kernel: [   2272]   113  2272    29150     1184       64     1120         0   110592     1056           200 pipewire
+Jun 17 20:59:23 source-server kernel: [   2273]   113  2273    23784      928       32      896         0    73728      192           200 pipewire
+Jun 17 20:59:23 source-server kernel: [   2275]   113  2275   141260     1416      267     1149         0   307200     1696           200 wireplumber
+Jun 17 20:59:23 source-server kernel: [   2276]   113  2276    26872     1088       64     1024         0    98304      512           200 pipewire-pulse
+Jun 17 20:59:23 source-server kernel: [   2277]   113  2277    78473     1024       32      992         0   122880      224           200 gnome-keyring-d
+Jun 17 20:59:23 source-server kernel: [   2278]   113  2278     2426      992       64      928         0    61440       64           200 dbus-daemon
+Jun 17 20:59:23 source-server kernel: [   2348]   113  2348      700      448        0      448         0    49152        0             0 lightdm-greeter
+Jun 17 20:59:23 source-server kernel: [   2352]   113  2352   223803     2472     1096     1088       288   499712    10624             0 unity-greeter
+Jun 17 20:59:23 source-server kernel: [   2448]   113  2448    95727      992        0      992         0   114688      160           200 at-spi-bus-laun
+Jun 17 20:59:23 source-server kernel: [   2457]   113  2457     2323     1024       32      992         0    65536       64           200 dbus-daemon
+Jun 17 20:59:23 source-server kernel: [   2604]   113  2604    77890      832       32      800         0   118784      192           200 gvfsd
+Jun 17 20:59:23 source-server kernel: [   2641]   113  2641    57527      640       32      608         0    77824       64           200 dconf-service
+Jun 17 20:59:23 source-server kernel: [   2648]   113  2648   123653      928        0      928         0   196608     1504             0 nm-applet
+Jun 17 20:59:23 source-server kernel: [   2650]   113  2650    59017      864       32      832         0    98304      128           200 at-spi2-registr
+Jun 17 20:59:23 source-server kernel: [   2652]   113  2652   132890     1312      320      992         0   212992     1344             0 unity-settings-
+Jun 17 20:59:23 source-server kernel: [   2653]   113  2653    82093      960       64      896         0   131072      320           200 indicator-appli
+Jun 17 20:59:23 source-server kernel: [   2657]   113  2657   113932      704        0      704         0   118784      192           200 indicator-power
+Jun 17 20:59:23 source-server kernel: [   2658]   113  2658   110313     1024      160      864         0   172032      352           200 indicator-datet
+Jun 17 20:59:23 source-server kernel: [   2659]   113  2659   111200     1344      320     1024         0   192512      448           200 indicator-keybo
+Jun 17 20:59:23 source-server kernel: [   2660]   113  2660   183899     1216      448      768         0   159744      128           200 indicator-sessi
+Jun 17 20:59:23 source-server kernel: [   2661]   113  2661   131045      992       64      928         0   131072      352           200 indicator-sound
+Jun 17 20:59:23 source-server kernel: [   2720]     0  2720    78536      864      128      736         0   122880      320             0 upowerd
+Jun 17 20:59:23 source-server kernel: [   2878]   117  2878    79366     1160      188      972         0   126976     1152             0 colord
+Jun 17 20:59:23 source-server kernel: [   3172]     0  3172     3202      832       32      800         0    73728      128             0 lightdm
+Jun 17 20:59:23 source-server kernel: [   3584]  1000  3584   100065     6084     5956      128         0   503808     3424             0 codex
+Jun 17 20:59:23 source-server kernel: [   3737]     0  3737   308837     1162     1098       64         0   118784       32          -998 containerd-shim
+Jun 17 20:59:23 source-server kernel: [   3740]     0  3740   308901     1086     1054       32         0   118784       64          -998 containerd-shim
+Jun 17 20:59:23 source-server kernel: [   3744]     0  3744   308837     1101     1005       96         0   122880       32          -998 containerd-shim
+Jun 17 20:59:23 source-server kernel: [   3746]     0  3746   308901     1148     1052       96         0   135168       64          -998 containerd-shim
+Jun 17 20:59:23 source-server kernel: [   3748]     0  3748   308837     1116     1020       96         0   118784       64          -998 containerd-shim
+Jun 17 20:59:23 source-server kernel: [   3749]     0  3749   308901     1122      994      128         0   122880        0          -998 containerd-shim
+Jun 17 20:59:23 source-server kernel: [   3751]     0  3751   308837     1069     1005       64         0   122880       64          -998 containerd-shim
+Jun 17 20:59:23 source-server kernel: [   3901]     0  3901 68729569    89545    68126       64     21355  3973120     5392             0 jellyfin
+Jun 17 20:59:23 source-server kernel: [   3902]    70  3902    43636      480       32       32       416   135168      416             0 postgres
+Jun 17 20:59:23 source-server kernel: [   3913]     0  3913     1086      160       32      128         0    53248       32             0 bash
+Jun 17 20:59:23 source-server kernel: [   3921]     0  3921  2252204   292493   292429       64         0 10289152   759200             0 uvicorn
+Jun 17 20:59:23 source-server kernel: [   3931]     0  3931   430639    41935    41812      123         0   733184    14048             0 uvicorn
+Jun 17 20:59:23 source-server kernel: [   3938]     0  3938    35258      189       61      128         0   159744     4544             0 searxng
+Jun 17 20:59:23 source-server kernel: [   3999]     0  3999   436777      352        0      352         0   159744      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4005]     0  4005   436777      384        0      384         0   167936      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4045]     0  4045   436777      352        0      352         0   159744      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4052]     0  4052   418344      416       32      384         0   155648      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4101]     0  4101   455274      768      352      416         0   176128      224          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4111]     0  4111   436777      384        0      384         0   167936      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4132]     0  4132   455210      576      160      416         0   176128      224          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4138]     0  4138   418280      416       32      384         0   143360      256          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4161]     0  4161   547743     1161      777      384         0   241664      224          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4170]     0  4170   436713      416        0      416         0   163840      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4192]  1000  4192   201880      797      733       64         0   753664    32256             0 uvicorn
+Jun 17 20:59:23 source-server kernel: [   4212]     0  4212   455210      448       64      384         0   172032      256          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   4220]     0  4220   436777      416       32      384         0   163840      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   5622]     0  5622    53048    21189     6401      736     14052   360448     1216             0 smbd[10.0.0.126
+Jun 17 20:59:23 source-server kernel: [   5957]    70  5957    43659      206       46       96        64   114688      448             0 postgres
+Jun 17 20:59:23 source-server kernel: [   5958]    70  5958    43660      206       14       96        96   114688      448             0 postgres
+Jun 17 20:59:23 source-server kernel: [   6360]     0  6360     4360      160       32      128         0    81920     1632             0 python3
+Jun 17 20:59:23 source-server kernel: [   6361]     0  6361   165324     5094     5062       32         0   409600    15456             0 searxng worker-
+Jun 17 20:59:23 source-server kernel: [   6543]     0  6543   436777      384        0      384         0   167936      256          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   6549]     0  6549   418344      352        0      352         0   159744      288          -500 docker-proxy
+Jun 17 20:59:23 source-server kernel: [   6895]     0  6895   323573    16014    16014        0         0   368640    14752             0 casaos-app-mana
+Jun 17 20:59:23 source-server kernel: [   7240]     0  7240    14792     1874     1810       64         0   159744     7872             0 python
+Jun 17 20:59:23 source-server kernel: [   7253]     0  7253     3695      864      128      736         0    73728      320             0 sshd
+Jun 17 20:59:23 source-server kernel: [   7294]  1000  7294     3927      847      303      544         0    73728      352             0 sshd
+Jun 17 20:59:23 source-server kernel: [   7295]  1000  7295     2129      512       64      448         0    73728      288             0 bash
+Jun 17 20:59:23 source-server kernel: [   7708]  1000  7708   249445     4952     4248      704         0   860160      286             0 node
+Jun 17 20:59:23 source-server kernel: [   7746]  1000  7746      700      448        0      448         0    45056        0             0 sh
+Jun 17 20:59:23 source-server kernel: [   7754]  1000  7754  2959879    21863    21127      736         0  2015232     1120             0 node
+Jun 17 20:59:23 source-server kernel: [   7815]  1000  7815  2983242    22075    21339      736         0  1347584    17866             0 node
+Jun 17 20:59:23 source-server kernel: [   7856]  1000  7856 24494807   117811   117043      768         0 12828672    18967             0 node
+Jun 17 20:59:23 source-server kernel: [   7951]  1000  7951   252103     6838     6166      672         0  1114112     1024             0 node
+Jun 17 20:59:23 source-server kernel: [   7958]  1000  7958  2903877     5221     4453      768         0  1056768     1632             0 node
+Jun 17 20:59:23 source-server kernel: [   8345]  1000  8345     2870      832      288      544         0    65536      832             0 bash
+Jun 17 20:59:23 source-server kernel: [   8870]    70  8870    43652      142       14       64        64   110592      448             0 postgres
+Jun 17 20:59:23 source-server kernel: [   8871]    70  8871    44056      334       78       96       160   122880      480             0 postgres
+Jun 17 20:59:23 source-server kernel: [   8872]    70  8872    44036      206       46       64        96   114688      512             0 postgres
+Jun 17 20:59:23 source-server kernel: [  14286]  1000 14286     5067     2541     1837      704         0    69632       64             0 tmux: server
+Jun 17 20:59:23 source-server kernel: [  24188]     0 24188     3694     1056      288      768         0    69632      160             0 sshd
+Jun 17 20:59:23 source-server kernel: [  24230]  1000 24230     3759      814      270      544         0    73728      224             0 sshd
+Jun 17 20:59:23 source-server kernel: [  24231]  1000 24231     1429      352        0      352         0    61440        0             0 tail
+Jun 17 20:59:23 source-server kernel: [  25393]     0 25393   155245     2747     1649     1098         0   532480       96             0 fwupd
+Jun 17 20:59:23 source-server kernel: [  68103]  1000 68103     1835      448        0      448         0    61440       32             0 bash
+Jun 17 20:59:23 source-server kernel: [  68105]  1000 68105   323958     7384     6648      736         0   794624      444             0 node
+Jun 17 20:59:23 source-server kernel: [ 211280]  1000 211280     2741     1172      660      512         0    61440      320             0 bash
+Jun 17 20:59:23 source-server kernel: [ 211744]  1000 211744   269653    28100    27460      640         0  2740224      608             0 tsserver[5.9.2]
+Jun 17 20:59:23 source-server kernel: [ 211745]  1000 211745   475655   238028   237324      704         0 28770304      512             0 tsserver[5.9.2]
+Jun 17 20:59:23 source-server kernel: [ 211828]  1000 211828   260201    13596    12924      672         0  1462272      896             0 node
+Jun 17 20:59:23 source-server kernel: [ 215246]  1000 215246   251090     6061     5357      704         0   741376      384             0 node
+Jun 17 20:59:23 source-server kernel: [ 240435]  1000 240435   248698     3818     3146      672         0   663552       64             0 node
+Jun 17 20:59:23 source-server kernel: [ 275170]  1000 275170     1868      512       64      448         0    57344       32             0 bash
+Jun 17 20:59:23 source-server kernel: [ 275183]  1000 275183   273256     3351     2615      736         0   634880       96             0 npm run proxy:h
+Jun 17 20:59:23 source-server kernel: [ 275184]  1000 275184     1423      352        0      352         0    57344        0             0 tee
+Jun 17 20:59:23 source-server kernel: [ 275209]  1000 275209      700      416        0      416         0    45056        0             0 sh
+Jun 17 20:59:24 source-server kernel: [ 275210]  1000 275210   190347     2240     1536      704         0   434176       64             0 node
+Jun 17 20:59:24 source-server kernel: [ 275224]  1000 275224   171512    58820    57924      896         0   679936      704             0 python
+Jun 17 20:59:24 source-server kernel: [ 275439]  1000 275439     1868      576       96      480         0    65536        0             0 bash
+Jun 17 20:59:24 source-server kernel: [ 275454]  1000 275454   273193     3068     2332      736         0   630784        0             0 npm run start -
+Jun 17 20:59:24 source-server kernel: [ 275477]  1000 275477      700      416        0      416         0    49152        0             0 sh
+Jun 17 20:59:24 source-server kernel: [ 275478]  1000 275478  3409037    33448    32648      800         0  2719744        0             0 next-server (v1
+Jun 17 20:59:24 source-server kernel: [ 464390]     0 464390     3694     1184      416      768         0    69632        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [ 464467]  1000 464467     3758      974      462      512         0    69632        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [ 464482]  1000 464482     1835      512       32      480         0    57344        0             0 bash
+Jun 17 20:59:24 source-server kernel: [ 464483]  1000 464483     1673      480       32      448         0    61440        0             0 grep
+Jun 17 20:59:24 source-server kernel: [ 464718]     0 464718     3694     1152      352      800         0    73728        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [ 464805]  1000 464805     3758     1007      463      544         0    73728        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [ 464809]  1000 464809     1835      480       32      448         0    57344        0             0 bash
+Jun 17 20:59:24 source-server kernel: [ 464810]  1000 464810     1673      480       32      448         0    65536        0             0 grep
+Jun 17 20:59:24 source-server kernel: [ 622935]     0 622935     9044     1504      512      992         0   106496        0             0 cupsd
+Jun 17 20:59:24 source-server kernel: [ 622937]   119 622937    67262     1824      832      992         0   172032        0             0 cups-browsed
+Jun 17 20:59:24 source-server kernel: [ 880581]     0 880581     3694     1184      384      800         0    69632        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [ 880623]  1000 880623     3758     1006      494      512         0    69632        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [ 880624]  1000 880624     2879     1632     1088      544         0    65536        0             0 bash
+Jun 17 20:59:24 source-server kernel: [ 884972]  1000 884972   273258     2589     1885      704         0   630784      544             0 npm run dev:htt
+Jun 17 20:59:24 source-server kernel: [ 884991]  1000 884991      700      416        0      416         0    45056        0             0 sh
+Jun 17 20:59:24 source-server kernel: [ 884992]  1000 884992     1901      544       96      448         0    65536       32             0 bash
+Jun 17 20:59:24 source-server kernel: [ 885053]  1000 885053   273275     2237     1501      736         0   626688     1120             0 npm run dev:htt
+Jun 17 20:59:24 source-server kernel: [ 885067]  1000 885067      700      416        0      416         0    45056        0             0 sh
+Jun 17 20:59:24 source-server kernel: [ 885068]  1000 885068  2879735     5214     4478      736         0   802816        0             0 node
+Jun 17 20:59:24 source-server kernel: [ 913113]  1000 913113     1835      448       32      416         0    57344        0             0 bash
+Jun 17 20:59:24 source-server kernel: [ 913114]  1000 913114  1860464   409690   408794      896         0  4358144     2784             0 python
+Jun 17 20:59:24 source-server kernel: [ 913115]  1000 913115     1423      352        0      352         0    53248        0             0 tee
+Jun 17 20:59:24 source-server kernel: [1424991]     0 1424991   313446     8763     8763        0         0   192512        0             0 casaos
+Jun 17 20:59:24 source-server kernel: [1461627]     0 1461627     3752     1152      416      736         0    73728        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [1461678]  1000 1461678     3865     1026      514      512         0    73728        0             0 sshd
+Jun 17 20:59:24 source-server kernel: [1461762]  1000 1461762      700      416        0      416         0    49152        0             0 sh
+Jun 17 20:59:24 source-server kernel: [1461763]  1000 1461763  3021213    79468    78668      800         0  7999488        0             0 node
+Jun 17 20:59:24 source-server kernel: [1461835]  1000 1461835   337463    31996    31292      704         0  3424256        0             0 zcode-cli
+Jun 17 20:59:24 source-server kernel: [1462691]  1000 1462691     2870     1568     1024      544         0    65536        0             0 bash
+Jun 17 20:59:24 source-server kernel: [1466505]  1000 1466505 17115405   226708   225972      736         0 15781888        0             0 next-server (v1
+Jun 17 20:59:24 source-server kernel: [1471024]  1000 1471024   633728   124997   123973     1024         0  1773568        0             0 ffmpeg
+Jun 17 20:59:24 source-server kernel: [1472517]  1000 1472517     3183     1839     1391      448         0    61440        0             0 bash
+Jun 17 20:59:24 source-server kernel: [1472551]  1000 1472551  1309763   782186   781354      832         0  6623232        0             0 headroom
+Jun 17 20:59:24 source-server kernel: [1474303]  1000 1474303     3183     1830     1382      448         0    69632        0             0 bash
+Jun 17 20:59:24 source-server kernel: [1474317]  1000 1474317   325917     7103     6367      736         0  1159168        0             0 npm exec repomi
+Jun 17 20:59:24 source-server kernel: [1474346]  1000 1474346      701      416        0      416         0    45056        0             0 sh
+Jun 17 20:59:24 source-server kernel: [1474347]  1000 1474347  3441681   573444   572740      704         0  6447104        0             0 node
+Jun 17 20:59:24 source-server kernel: [1475150]  1000 1475150   337630    19868    19100      768         0  2777088        0             0 npm exec repomi
+Jun 17 20:59:24 source-server kernel: [1475269]  1000 1475269      701      416        0      416         0    49152        0             0 sh
+Jun 17 20:59:24 source-server kernel: [1475270]  1000 1475270   190348     2304     1632      672         0   442368        0             0 node
+Jun 17 20:59:24 source-server kernel: [1475281]  1000 1475281  1677470   190320   189680      640         0 15474688        0             0 node
+Jun 17 20:59:24 source-server kernel: [1475564]  1000 1475564     1421      384        0      384         0    53248        0             0 sleep
+Jun 17 20:59:24 source-server kernel: [1475689]  1000 1475689     1421      384        0      384         0    61440        0             0 sleep
+Jun 17 20:59:24 source-server kernel: [1475802]  1000 1475802     1421      384        0      384         0    57344        0             0 sleep
+Jun 17 20:59:24 source-server kernel: [1475877]  1000 1475877      700      416        0      416         0    45056        0             0 sh
+Jun 17 20:59:24 source-server kernel: [1475878]  1000 1475878     1835      448       32      416         0    65536        0             0 cpuUsage.sh
+Jun 17 20:59:24 source-server kernel: [1475879]  1000 1475879     1421      384        0      384         0    53248        0             0 sleep
+Jun 17 20:59:24 source-server kernel: [1475886]  1000 1475886     1421      384        0      384         0    53248        0             0 sleep
+Jun 17 20:59:24 source-server kernel: [1475887]     0 1475887     1835      480       32      448         0    61440        0             0 bash
+Jun 17 20:59:24 source-server kernel: oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=user.slice,mems_allowed=0,global_oom,task_memcg=/system.slice/docker-97882ee7c880d5e349b263f1f5e667843fd01395040ebf79111b9338fe950b73.scope,task=uvicorn,pid=3921,uid=0
+Jun 17 20:59:24 source-server kernel: Out of memory: Killed process 3921 (uvicorn) total-vm:9008816kB, anon-rss:1169716kB, file-rss:256kB, shmem-rss:0kB, UID:0 pgtables:10048kB oom_score_adj:0
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:24 source-server kernel: Purging GPU memory, 0 pages freed, 0 pages still pinned, 1 pages left available.
+Jun 17 20:59:41 source-server systemd-journald[397]: Under memory pressure, flushing caches.
+Jun 17 20:59:46 source-server systemd-journald[397]: Under memory pressure, flushing caches.
+Jun 17 21:00:05 source-server systemd-journald[397]: Under memory pressure, flushing caches.

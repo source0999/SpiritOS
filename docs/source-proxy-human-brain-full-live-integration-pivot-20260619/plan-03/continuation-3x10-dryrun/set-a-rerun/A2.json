@@ -1,0 +1,165 @@
+{
+  "auto_fix_attempts": 0,
+  "blocked_reasons": [],
+  "consumer_subsystem": "long_running_status_observer",
+  "decision_packet_attempts": 6,
+  "decision_packet_validated": false,
+  "decision_packet_validation_errors": [
+    "missing_contract_term:local api"
+  ],
+  "downstream_consumed": true,
+  "failed_gates": [
+    "research_materially_changed_output",
+    "repo_context_used",
+    "a2_mv3_architecture_constraints",
+    "a2_native_messaging_permission",
+    "a2_native_host_registration",
+    "a2_service_worker_lifecycle",
+    "a2_payload_or_local_api_boundary",
+    "a2_source_proxy_endpoint_context",
+    "a2_safe_mvp_slice",
+    "a2_coding_agent_handoff",
+    "work_product_too_short"
+  ],
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "NEEDS_FIX",
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": true,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "policy_gate"
+  ],
+  "lanes_not_required": [
+    "qwen_coder",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_72c310983b7740ce",
+  "limitations_stated": true,
+  "live_search_used": true,
+  "local_fallback_used": false,
+  "mac_evidence_signals": [],
+  "mac_invoked": false,
+  "mac_required": false,
+  "mac_status": "not_required",
+  "mac_system_status_alone_used_as_pass": false,
+  "max_auto_fix_attempts": 3,
+  "model": "gemma3n:e4b",
+  "notes": [
+    "research_materially_changed_output",
+    "repo_context_used",
+    "a2_mv3_architecture_constraints",
+    "a2_native_messaging_permission",
+    "a2_native_host_registration",
+    "a2_service_worker_lifecycle",
+    "a2_payload_or_local_api_boundary",
+    "a2_source_proxy_endpoint_context",
+    "a2_safe_mvp_slice",
+    "a2_coding_agent_handoff",
+    "work_product_too_short"
+  ],
+  "packet_lanes_available": [
+    {
+      "lane_name": "ollama_hermes4_latest",
+      "model": "hermes4:latest",
+      "provider_type": "ollama",
+      "reason": "stronger_existing_local_ollama"
+    },
+    {
+      "lane_name": "ollama_gemma3n_e4b",
+      "model": "gemma3n:e4b",
+      "provider_type": "ollama",
+      "reason": "current_default_local_model"
+    }
+  ],
+  "packet_lanes_unavailable": [
+    {
+      "lane_name": "openai",
+      "model": "gpt-4o-mini",
+      "provider_type": "openai",
+      "reason": "OPENAI_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "anthropic",
+      "model": "claude-3-5-sonnet-latest",
+      "provider_type": "anthropic",
+      "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "deepseek",
+      "model": "deepseek-chat",
+      "provider_type": "deepseek",
+      "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "litellm",
+      "model": "",
+      "provider_type": "litellm",
+      "reason": "LITELLM_API_KEY_unset_or_model_missing"
+    }
+  ],
+  "packet_model": "hermes4:latest",
+  "packet_model_lane": "ollama_hermes4_latest",
+  "packet_model_provider": "ollama",
+  "patch_bucket": "",
+  "patch_required": false,
+  "policy_event_present": true,
+  "policy_event_required": true,
+  "prompt_id": "A2",
+  "query_variant_source_counts": [
+    6
+  ],
+  "query_variants_tried": [
+    "browser extension Manifest V3 native messaging service worker local API payload size 2026",
+    "Chrome extension MV3 native messaging host registration service worker lifecycle local app API",
+    "Manifest V3 extension send selected text current tab local server native messaging payload limits"
+  ],
+  "qwen_activated": false,
+  "qwen_required": false,
+  "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": false,
+  "repo_files_read": [
+    "source_proxy/api/long_running_tasks.py",
+    "source_proxy/decision/task_spec_intake.py",
+    "src/app/v1/tasks/long-running/route.ts",
+    "source_proxy/tasks/durable_execution.py"
+  ],
+  "required_lanes": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "policy_gate"
+  ],
+  "research_marker_hits": [],
+  "research_materially_changed_output": false,
+  "reverified": false,
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "source_count": 6,
+  "task_id": "task_6d52415ef8d2",
+  "trace_id": "trace_e515b701629b4596",
+  "user_goal_reached": false,
+  "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
+  "verification_result": "not_required",
+  "verifier_required": false,
+  "work_product_summary": "Recommendation NEEDS_FIX: live decision packet did not validate, so no deterministic renderer output was accepted. Limits - The hardened grader remains authoritative. Next Handoff Goal: inspect decision packet validation errors and rerun only with valid live JSON.",
+  "work_product_type": "plan"
+}

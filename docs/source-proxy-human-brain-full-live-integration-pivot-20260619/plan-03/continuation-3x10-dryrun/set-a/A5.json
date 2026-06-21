@@ -1,0 +1,182 @@
+{
+  "auto_fix_attempts": 0,
+  "consumer_subsystem": "stage4_set_a_grading_consumer",
+  "downstream_consumed": true,
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "PASS",
+  "handoff": "Keep Dell as Source Proxy host, Windows as cockpit, Mac as explicit worker. Next proof is read-only Mac worker status consumed into task trace.",
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": true,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "decision_router",
+    "task_spec_intake",
+    "plan3_durable_task",
+    "work_product_consumer",
+    "live_search",
+    "mac_worker"
+  ],
+  "lanes_not_required": [
+    "qwen",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_8e78d90fddbf4ea4",
+  "limitations_stated": true,
+  "live_search_used": true,
+  "local_fallback_used": false,
+  "mac_invoked": true,
+  "mac_required": true,
+  "mac_status": "INTEGRATED_LIVE",
+  "max_auto_fix_attempts": 3,
+  "notes": [
+    "Use Dell as always-on Source Proxy/router/storage, Windows as cockpit, and Mac only for Mac-specific checks. Do not buy hardware until queue/readback/model routing are stable."
+  ],
+  "patch_bucket": "none",
+  "patch_required": false,
+  "policy_event_present": false,
+  "policy_event_required": false,
+  "prompt_id": "A5",
+  "qwen_activated": false,
+  "qwen_required": false,
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": {
+    "coding_ui": "src/components/coding/CodingCockpitShell.tsx already carries taskId, traceId, invocationEventId, consumerEventId, consumerSubsystem fields.",
+    "dirty_tree": "preflight found unrelated SpiritFlix/media dirty files; Set A avoided those paths.",
+    "mac": "source_proxy/decision/mac_integration.py has read-only mac_system_status and safe-check worker modes through spirit-mac-mini SSH.",
+    "policy": "source_proxy/tasks/durable_execution.py provides Plan 3 policy/recovery/repair gates and same-trace consumer evidence.",
+    "research": "source_proxy/decision/current_research.py consumes Scout/SearxNG research into task state when providers are available.",
+    "task_api": "source_proxy/api/long_running_tasks.py and src/app/v1/tasks/long-running/** expose task create/readback/stream/advance/verify.",
+    "trace_readback": "source_proxy/tasks/long_running.py exposes causal_trace, worker_lanes, plan_3_durable_state, task_id, trace_id, consumer_event_id."
+  },
+  "required_lanes": [
+    "decision_router",
+    "task_spec_intake",
+    "plan3_durable_task",
+    "work_product_consumer",
+    "live_search",
+    "mac_worker"
+  ],
+  "research_materially_changed_output": true,
+  "reverified": false,
+  "route_decision": {
+    "context_estimate": {
+      "estimated_task_tokens": 25,
+      "input_chars": 99,
+      "provided_context_tokens": 0,
+      "size_class": "small",
+      "total_estimated_tokens": 25
+    },
+    "current_agent_role": null,
+    "next_prompt_action": "run_with_coder_agent",
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "needs_current_information",
+      "needs_codebase_context",
+      "repo_first_research"
+    ],
+    "recommended_route": "local_route",
+    "research_recommended": true,
+    "research_sources": [],
+    "resolved_target": {
+      "exists": false,
+      "path": "",
+      "source": "inferred"
+    },
+    "risk_tier": "low",
+    "role_system_prompt": null,
+    "self_correction_checks": [
+      {
+        "answer": "No. This is a coding/debugging task. A proactive agent route is required.",
+        "id": "passive_check",
+        "passed": true,
+        "question": "Am I being passive?"
+      },
+      {
+        "answer": "Repo-first research is not required for this prompt.",
+        "id": "repo_first_check",
+        "passed": true,
+        "question": "Did I scan the repo first?"
+      },
+      {
+        "answer": "No active phase was specified in this task; do not inherit one from prior runs.",
+        "id": "phase_check",
+        "passed": true,
+        "question": "Am I on the correct phase?"
+      }
+    ],
+    "task_classification": "codebase_analysis"
+  },
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "source_count": 3,
+  "sources": [
+    {
+      "note": "Local agent quality depends on GPU/server quality.",
+      "title": "OpenHands local LLM docs",
+      "url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
+    },
+    {
+      "note": "Ollama desktop UX and hardware limits.",
+      "title": "Ollama Windows GUI",
+      "url": "https://www.windowscentral.com/artificial-intelligence/ollamas-new-app-makes-using-local-ai-llms-on-your-windows-11-pc-a-breeze-no-more-need-to-chat-in-the-terminal"
+    },
+    {
+      "note": "Integrated GPU/Vulkan tradeoffs on Windows.",
+      "title": "LM Studio Windows hardware note",
+      "url": "https://www.windowscentral.com/artificial-intelligence/ditch-ollama-and-use-lm-studio-for-local-ai-if-you-have-a-laptop-or-mini-pc"
+    }
+  ],
+  "task_id": "task_71840b4faea3",
+  "task_readback_status": "queued",
+  "task_spec_intake": {
+    "allowed_extensions": [],
+    "allowed_files": [],
+    "allowed_scope_source": "none",
+    "approval_level": "preview_only_no_apply",
+    "artifact_class": "",
+    "clarification_prompt": "",
+    "clarification_state": "not_needed",
+    "context_sources": [],
+    "forbidden_files": [
+      ".env",
+      ".env.*",
+      "*.pem",
+      "*.key",
+      "certificates/*"
+    ],
+    "intent": "analyze",
+    "max_file_count": 8,
+    "model_lane": "coder_agent",
+    "protected_paths": [],
+    "reason_codes": [
+      "prefer_free_or_subscription_route"
+    ],
+    "risk_level": "low",
+    "schema_version": 1,
+    "summary": "TaskSpec ready: read_only for no target.",
+    "target_paths": [],
+    "target_source": "none",
+    "task_kind": "read_only",
+    "task_shape": "",
+    "task_shape_source": "",
+    "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
+    "verification_policy": [],
+    "workspace_decision_source": "route_decision",
+    "workspace_mode": "none"
+  },
+  "trace_id": "trace_48a7fc8ae54a4f60",
+  "user_goal_reached": true,
+  "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
+  "verification_result": "not_required_for_set_a_planning_prompt",
+  "verifier_required": false,
+  "work_product": "Dell/source-server should remain the always-on Source Proxy host, task store, evidence root, and local services box. Windows stays the primary Codex/browser operator workstation. Mac should be a narrow worker for Mac-specific UI/browser/platform checks, not the default router. Spend-nothing path: stabilize task receipts, route health, and local model observability first. Limitation: this is Mac-relevant and requires real Mac worker readback to PASS.",
+  "work_product_summary": "Use Dell as always-on Source Proxy/router/storage, Windows as cockpit, and Mac only for Mac-specific checks. Do not buy hardware until queue/readback/model routing are stable.",
+  "work_product_type": "plan"
+}

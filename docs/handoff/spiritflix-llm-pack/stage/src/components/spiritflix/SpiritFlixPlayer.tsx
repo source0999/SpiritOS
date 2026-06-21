@@ -2,16 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
-  Activity,
   ChevronsDown,
   Heart,
+  ListMusic,
   Maximize,
   Minimize,
   Pause,
+  PictureInPicture2,
   Play,
   RefreshCw,
   Repeat,
   Repeat1,
+  Shuffle,
   SkipBack,
   SkipForward,
   Volume2,
@@ -30,6 +32,7 @@ interface SpiritFlixPlayerProps {
   onPlaybackProgress: (progress: SpiritFlixPlaybackProgress) => void;
   onToggleFavorite: (item: JellyfinItem, isFavorite: boolean) => void;
   onSelectItem: (item: JellyfinItem) => void;
+  onShuffleQueue: (currentItemId: string) => void;
   onClose: () => void;
 }
 
@@ -40,33 +43,56 @@ const FIT_STORAGE_KEY = "spiritflix_player_fit_mode";
 const REPEAT_STORAGE_KEY = "spiritflix_player_repeat_mode";
 const VOLUME_STORAGE_KEY = "spiritflix_player_volume";
 const MUTED_STORAGE_KEY = "spiritflix_player_muted";
-const TAP_MAX_MOVEMENT = 18;
+const TAP_MAX_MOVEMENT = 26;
 const TAP_MAX_MS = 420;
-const DOUBLE_TAP_MAX_MS = 320;
-const DOUBLE_TAP_MAX_DISTANCE = 48;
-const TOUCH_SEEK_ACTIVATION_PX = 24;
-const TOUCH_SEEK_VERTICAL_RATIO = 1.15;
-const TOUCH_SEEK_MAX_SECONDS = 240;
+const DOUBLE_TAP_MAX_MS = 480;
+const DOUBLE_TAP_MAX_DISTANCE = 96;
+const DOUBLE_TAP_EDGE_ZONE = 0.3;
+const CENTER_TAP_MIN = 0.38;
+const CENTER_TAP_MAX = 0.62;
+const TOUCH_SEEK_ACTIVATION_PX = 34;
+const TOUCH_SEEK_HOLD_MS = 90;
+const TOUCH_SEEK_VERTICAL_RATIO = 1.35;
+const TOUCH_SEEK_MAX_SECONDS = 90;
+const TOUCH_SEEK_PX_PER_SECOND = 7.5;
 const PINCH_TOGGLE_THRESHOLD = 0.08;
 const PINCH_GESTURE_SUPPRESS_MS = 450;
+const HLS_MANIFEST_TIMEOUT_MS = 8000;
+const PLAYBACK_FEEDBACK_MS = 1150;
+
+interface HlsController {
+  loadSource: (source: string) => void;
+  attachMedia: (media: HTMLMediaElement) => void;
+  on: (event: string, listener: (event: string, data?: { fatal?: boolean; details?: string }) => void) => void;
+  destroy: () => void;
+}
+
+type MiniPlayerDocument = Document;
+
+type MiniPlayerVideo = HTMLVideoElement & {
+  webkitPresentationMode?: "inline" | "picture-in-picture" | "fullscreen";
+  webkitSetPresentationMode?: (mode: "inline" | "picture-in-picture") => void;
+  webkitSupportsPresentationMode?: (mode: "picture-in-picture") => boolean;
+};
 const TOUCH_MOUSE_REVEAL_SUPPRESS_MS = 1200;
 const UI_TIME_UPDATE_MS = 500;
 const PLAYBACK_REPORT_MS = 15000;
-const DIAGNOSTIC_SAMPLE_MS = 2000;
 const DEFAULT_AUDIBLE_VOLUME = 0.8;
+const PORTRAIT_VIDEO_ASPECT_CUTOFF = 0.9;
+const PORTRAIT_SAFE_FILL_SCALE = 1.12;
+const WIDE_SAFE_FILL_SCALE = 1.24;
+const MODERATE_SAFE_FILL_SCALE = 1.34;
 
-interface PlaybackDiagnostics {
-  bufferedAheadSeconds: number;
-  droppedFrames: number;
-  decodedFrames: number;
-  networkState: number;
-  readyState: number;
-  playbackRate: number;
-  stallCount: number;
-  totalStallMs: number;
-  serverDelayMs: number | null;
-  streamMode: "direct" | "hls";
-}
+type PlaybackFeedbackInput =
+  | { kind: "play" | "pause" }
+  | { kind: "seek-back" | "seek-forward"; seconds: number };
+
+type PlaybackFeedback =
+  | { id: number; kind: "play" | "pause" }
+  | { id: number; kind: "seek-back" | "seek-forward"; seconds: number };
+
+type SeekTapZone = "left-seek" | "right-seek";
+type PlayerTapZone = SeekTapZone | "center" | "surface";
 
 function secondsToTicks(seconds: number): number {
   return Math.max(0, Math.round(seconds * 10000000));
@@ -83,10 +109,33 @@ function formatTime(seconds: number): string {
     : `${minutes}:${String(rest).padStart(2, "0")}`;
 }
 
+function renderPlaybackFeedback(feedback: PlaybackFeedback) {
+  switch (feedback.kind) {
+    case "pause":
+      return <Pause size={58} aria-hidden="true" />;
+    case "play":
+      return <Play size={58} fill="currentColor" aria-hidden="true" />;
+    case "seek-back":
+      return (
+        <>
+          <SkipBack size={36} aria-hidden="true" />
+          <strong>{feedback.seconds}s</strong>
+        </>
+      );
+    case "seek-forward":
+      return (
+        <>
+          <strong>{feedback.seconds}s</strong>
+          <SkipForward size={36} aria-hidden="true" />
+        </>
+      );
+  }
+}
+
 function getStoredFitMode(): FitMode {
   if (typeof window === "undefined") return "fit";
-  window.localStorage.setItem(FIT_STORAGE_KEY, "fit");
-  return "fit";
+  const stored = window.localStorage.getItem(FIT_STORAGE_KEY);
+  return stored === "fill" || stored === "fit" ? stored : "fit";
 }
 
 function isRepeatMode(value: string | null): value is RepeatMode {
@@ -110,6 +159,33 @@ function getStoredMuted(): boolean {
   return window.localStorage.getItem(MUTED_STORAGE_KEY) === "true";
 }
 
+export function getSmartFillScale(shellAspectRatio: number, videoAspectRatio: number): number {
+  if (
+    !Number.isFinite(shellAspectRatio) ||
+    !Number.isFinite(videoAspectRatio) ||
+    shellAspectRatio <= 0 ||
+    videoAspectRatio <= 0
+  ) {
+    return 1;
+  }
+
+  const coverScale =
+    shellAspectRatio > videoAspectRatio
+      ? shellAspectRatio / videoAspectRatio
+      : videoAspectRatio / shellAspectRatio;
+
+  if (coverScale <= 1.04) return 1;
+
+  const safeScale =
+    videoAspectRatio < PORTRAIT_VIDEO_ASPECT_CUTOFF
+      ? PORTRAIT_SAFE_FILL_SCALE
+      : coverScale >= 1.45
+        ? WIDE_SAFE_FILL_SCALE
+        : MODERATE_SAFE_FILL_SCALE;
+
+  return Math.max(1, Math.min(coverScale, safeScale));
+}
+
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof Element && Boolean(target.closest("button, input, a, [role='button']"));
 }
@@ -121,28 +197,22 @@ function getTouchAt(
   return touches.item?.(index) ?? touches[index] ?? null;
 }
 
-function getBufferedAheadSeconds(video: HTMLVideoElement): number {
-  for (let index = 0; index < video.buffered.length; index += 1) {
-    const start = video.buffered.start(index);
-    const end = video.buffered.end(index);
-    if (video.currentTime >= start && video.currentTime <= end) {
-      return Math.max(0, end - video.currentTime);
-    }
-  }
-  return 0;
+function getPlayerTapZone(x: number, shellWidth: number): PlayerTapZone {
+  const width = Math.max(1, shellWidth);
+  const ratio = x / width;
+  if (ratio <= DOUBLE_TAP_EDGE_ZONE) return "left-seek";
+  if (ratio >= 1 - DOUBLE_TAP_EDGE_ZONE) return "right-seek";
+  if (ratio >= CENTER_TAP_MIN && ratio <= CENTER_TAP_MAX) return "center";
+  return "surface";
 }
 
-function getFrameStats(video: HTMLVideoElement): { droppedFrames: number; decodedFrames: number } {
-  const qualityVideo = video as HTMLVideoElement & {
-    getVideoPlaybackQuality?: () => { droppedVideoFrames?: number; totalVideoFrames?: number };
-    webkitDroppedFrameCount?: number;
-    webkitDecodedFrameCount?: number;
-  };
-  const quality = qualityVideo.getVideoPlaybackQuality?.();
-  return {
-    droppedFrames: quality?.droppedVideoFrames ?? qualityVideo.webkitDroppedFrameCount ?? 0,
-    decodedFrames: quality?.totalVideoFrames ?? qualityVideo.webkitDecodedFrameCount ?? 0,
-  };
+function supportsMiniPlayer(video: MiniPlayerVideo | null): boolean {
+  if (typeof document === "undefined" || !video) return false;
+  const pictureDocument = document as MiniPlayerDocument;
+  return Boolean(
+    (pictureDocument.pictureInPictureEnabled && typeof video.requestPictureInPicture === "function") ||
+      video.webkitSupportsPresentationMode?.("picture-in-picture"),
+  );
 }
 
 export function SpiritFlixPlayer({
@@ -153,6 +223,7 @@ export function SpiritFlixPlayer({
   onPlaybackProgress,
   onToggleFavorite,
   onSelectItem,
+  onShuffleQueue,
   onClose,
 }: SpiritFlixPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -165,15 +236,13 @@ export function SpiritFlixPlayer({
   const endedRef = useRef(false);
   const hideTimer = useRef<number | null>(null);
   const feedbackTimer = useRef<number | null>(null);
-  const diagnosticTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tapRevealTimer = useRef<number | null>(null);
+  const feedbackIdRef = useRef(0);
   const usingHlsRef = useRef(false);
   const waitingSinceRef = useRef<number | null>(null);
-  const stallCountRef = useRef(0);
-  const totalStallMsRef = useRef(0);
-  const serverDelayMsRef = useRef<number | null>(null);
   const itemRef = useRef(item);
   const pointerStartRef = useRef<{ x: number; y: number; time: number; currentTime: number } | null>(null);
-  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
+  const lastTapRef = useRef<{ time: number; x: number; y: number; zone: SeekTapZone } | null>(null);
   const lastPointerTapAtRef = useRef(0);
   const touchTapStartRef = useRef<{ x: number; y: number; time: number; currentTime: number; isSeeking: boolean } | null>(null);
   const pinchStartRef = useRef<{ startDistance: number; currentDistance: number } | null>(null);
@@ -202,20 +271,10 @@ export function SpiritFlixPlayer({
   const [retryCount, setRetryCount] = useState(0);
   const [endedAtQueueEnd, setEndedAtQueueEnd] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>(() => getStoredRepeatMode());
-  const [tapFeedback, setTapFeedback] = useState<"play" | "pause" | null>(null);
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-  const [diagnostics, setDiagnostics] = useState<PlaybackDiagnostics>({
-    bufferedAheadSeconds: 0,
-    droppedFrames: 0,
-    decodedFrames: 0,
-    networkState: 0,
-    readyState: 0,
-    playbackRate: 1,
-    stallCount: 0,
-    totalStallMs: 0,
-    serverDelayMs: null,
-    streamMode: "direct",
-  });
+  const [miniPlayerSupported, setMiniPlayerSupported] = useState(false);
+  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [playbackFeedback, setPlaybackFeedback] = useState<PlaybackFeedback | null>(null);
 
   const queueItems = queue?.items ?? [item];
   const queueIndex = queueItems.findIndex((queueItem) => queueItem.Id === item.Id);
@@ -226,6 +285,11 @@ export function SpiritFlixPlayer({
   const isFavorite = Boolean(item.UserData?.IsFavorite);
   const repeatLabel =
     repeatMode === "one" ? "Repeat current video" : repeatMode === "queue" ? "Repeat queue" : "Repeat off";
+  const isShuffled = Boolean(queue?.isShuffled);
+  const shuffleLabel = isShuffled
+    ? `Shuffle on for ${queue?.sourceTitle ?? "current queue"}`
+    : `Shuffle off for ${queue?.sourceTitle ?? "current queue"}`;
+  const miniPlayerLabel = miniPlayerSupported ? (isMiniPlayer ? "Exit mini player" : "Mini player") : "Mini player unavailable";
 
   useEffect(() => {
     itemRef.current = item;
@@ -282,6 +346,20 @@ export function SpiritFlixPlayer({
     [isPlaying],
   );
 
+  const clearTapRevealTimer = useCallback(() => {
+    if (!tapRevealTimer.current) return;
+    window.clearTimeout(tapRevealTimer.current);
+    tapRevealTimer.current = null;
+  }, []);
+
+  const scheduleTapReveal = useCallback(() => {
+    clearTapRevealTimer();
+    tapRevealTimer.current = window.setTimeout(() => {
+      tapRevealTimer.current = null;
+      revealControls();
+    }, DOUBLE_TAP_MAX_MS);
+  }, [clearTapRevealTimer, revealControls]);
+
   const hideControls = useCallback(() => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
     const activeElement = document.activeElement;
@@ -292,11 +370,30 @@ export function SpiritFlixPlayer({
     setShowControls(false);
   }, []);
 
-  const flashTapFeedback = useCallback((kind: "play" | "pause") => {
-    setTapFeedback(kind);
+  const flashPlaybackFeedback = useCallback((feedback: PlaybackFeedbackInput) => {
+    feedbackIdRef.current += 1;
+    setPlaybackFeedback({ id: feedbackIdRef.current, ...feedback } as PlaybackFeedback);
     if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
-    feedbackTimer.current = window.setTimeout(() => setTapFeedback(null), 850);
+    feedbackTimer.current = window.setTimeout(() => setPlaybackFeedback(null), PLAYBACK_FEEDBACK_MS);
   }, []);
+
+  const flashTapFeedback = useCallback(
+    (kind: "play" | "pause") => {
+      flashPlaybackFeedback({ kind });
+    },
+    [flashPlaybackFeedback],
+  );
+
+  const flashSeekFeedback = useCallback(
+    (seconds: number) => {
+      const roundedSeconds = Math.max(1, Math.abs(Math.round(seconds)));
+      flashPlaybackFeedback({
+        kind: seconds < 0 ? "seek-back" : "seek-forward",
+        seconds: roundedSeconds,
+      });
+    },
+    [flashPlaybackFeedback],
+  );
 
   const seekTo = useCallback((seconds: number) => {
     const video = videoRef.current;
@@ -306,13 +403,26 @@ export function SpiritFlixPlayer({
   }, []);
 
   const seekBy = useCallback(
-    (seconds: number) => {
+    (seconds: number, options: { feedback?: boolean } = {}) => {
       const video = videoRef.current;
       if (!video) return;
       seekTo(video.currentTime + seconds);
+      if (options.feedback !== false) flashSeekFeedback(seconds);
       revealControls();
     },
-    [revealControls, seekTo],
+    [flashSeekFeedback, revealControls, seekTo],
+  );
+
+  const seekFromTouchDelta = useCallback(
+    (startTime: number, dx: number) => {
+      const secondsDelta = Math.max(
+        -TOUCH_SEEK_MAX_SECONDS,
+        Math.min(TOUCH_SEEK_MAX_SECONDS, dx / TOUCH_SEEK_PX_PER_SECOND),
+      );
+      seekTo(startTime + secondsDelta);
+      flashSeekFeedback(secondsDelta || (dx < 0 ? -1 : 1));
+    },
+    [flashSeekFeedback, seekTo],
   );
 
   const togglePlay = useCallback(() => {
@@ -350,6 +460,47 @@ export function SpiritFlixPlayer({
     video?.webkitEnterFullscreen?.();
   }, []);
 
+  const toggleMiniPlayer = useCallback(() => {
+    const video = videoRef.current as MiniPlayerVideo | null;
+    if (!video) return;
+    const pictureDocument = document as MiniPlayerDocument;
+
+    const toggle = async () => {
+      if (pictureDocument.pictureInPictureElement) {
+        await pictureDocument.exitPictureInPicture?.();
+        setIsMiniPlayer(false);
+        revealControls(true);
+        return;
+      }
+
+      if (video.webkitPresentationMode === "picture-in-picture") {
+        video.webkitSetPresentationMode?.("inline");
+        setIsMiniPlayer(false);
+        revealControls(true);
+        return;
+      }
+
+      if (pictureDocument.pictureInPictureEnabled && video.requestPictureInPicture) {
+        await video.requestPictureInPicture();
+        setIsMiniPlayer(true);
+        revealControls(true);
+        return;
+      }
+
+      if (video.webkitSupportsPresentationMode?.("picture-in-picture")) {
+        video.webkitSetPresentationMode?.("picture-in-picture");
+        setIsMiniPlayer(true);
+        revealControls(true);
+      }
+    };
+
+    void toggle().catch(() => {
+      setMiniPlayerSupported(false);
+      setIsMiniPlayer(false);
+      revealControls(true);
+    });
+  }, [revealControls]);
+
   const selectQueueItem = useCallback(
     (target: JellyfinItem | null) => {
       if (!target) return;
@@ -367,6 +518,16 @@ export function SpiritFlixPlayer({
       if (videoRef.current) videoRef.current.loop = next === "one";
       return next;
     });
+    revealControls(true);
+  };
+
+  const shuffleCurrentQueue = () => {
+    onShuffleQueue(item.Id);
+    revealControls(true);
+  };
+
+  const toggleQueueDrawer = () => {
+    setIsQueueOpen((open) => !open);
     revealControls(true);
   };
 
@@ -429,47 +590,16 @@ export function SpiritFlixPlayer({
     revealControls(true);
   }, [revealControls, updateMuted]);
 
-  const collectDiagnostics = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const frameStats = getFrameStats(video);
-    setDiagnostics({
-      bufferedAheadSeconds: getBufferedAheadSeconds(video),
-      droppedFrames: frameStats.droppedFrames,
-      decodedFrames: frameStats.decodedFrames,
-      networkState: video.networkState,
-      readyState: video.readyState,
-      playbackRate: video.playbackRate,
-      stallCount: stallCountRef.current,
-      totalStallMs: totalStallMsRef.current,
-      serverDelayMs: serverDelayMsRef.current,
-      streamMode: usingHlsRef.current ? "hls" : "direct",
-    });
-  }, []);
-
-  const runServerDiagnostic = useCallback(async () => {
-    const startedAt = performance.now();
-    try {
-      await client.checkPublicInfo();
-      serverDelayMsRef.current = Math.round(performance.now() - startedAt);
-    } catch {
-      serverDelayMsRef.current = -1;
-    }
-    collectDiagnostics();
-  }, [client, collectDiagnostics]);
-
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return undefined;
     const directUrl = client.getStreamUrl(item.Id);
-    let hlsInstance: {
-      loadSource: (source: string) => void;
-      attachMedia: (media: HTMLMediaElement) => void;
-      destroy: () => void;
-    } | null = null;
+    const hlsUrl = client.getHlsUrl(item.Id);
+    const preferHls = typeof window !== "undefined" && window.location.protocol === "https:";
+    let hlsInstance: HlsController | null = null;
     let cancelled = false;
 
-    const setup = async () => {
+    const resetVideo = () => {
       setStreamError("");
       setUsingHls(false);
       setIsLoading(true);
@@ -481,23 +611,98 @@ export function SpiritFlixPlayer({
       firstNonZeroReportRef.current = false;
       usingHlsRef.current = false;
       waitingSinceRef.current = null;
-      stallCountRef.current = 0;
-      totalStallMsRef.current = 0;
       video.pause();
       video.removeAttribute("src");
       video.load();
-      video.src = directUrl;
       video.volume = volumeRef.current;
       video.muted = mutedRef.current;
       video.loop = repeatModeRef.current === "one";
-      video.load();
+    };
+
+    const startHls = async (): Promise<boolean> => {
+      if (cancelled || usingHlsRef.current) return usingHlsRef.current;
+      try {
+        const { default: Hls } = await import("hls.js");
+        if (Hls.isSupported()) {
+          const instance = new Hls();
+          const controller = instance as unknown as HlsController;
+          const manifestReady = new Promise<void>((resolve, reject) => {
+            const timeoutId = window.setTimeout(() => reject(new Error("HLS manifest timed out.")), HLS_MANIFEST_TIMEOUT_MS);
+            controller.on(Hls.Events.MANIFEST_PARSED, () => {
+              window.clearTimeout(timeoutId);
+              resolve();
+            });
+            controller.on(Hls.Events.ERROR, (_event, data) => {
+              if (!data?.fatal) return;
+              window.clearTimeout(timeoutId);
+              reject(new Error(data.details ?? "HLS playback failed."));
+            });
+          });
+          controller.loadSource(hlsUrl);
+          controller.attachMedia(video);
+          hlsInstance = controller;
+          await manifestReady;
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = hlsUrl;
+          video.load();
+        } else {
+          setStreamError("This browser could not play the Jellyfin stream.");
+          setIsLoading(false);
+          return false;
+        }
+        usingHlsRef.current = true;
+        setUsingHls(true);
+        setStreamError("");
+        return true;
+      } catch (error) {
+        hlsInstance?.destroy();
+        hlsInstance = null;
+        setStreamError(error instanceof Error ? error.message : "Direct playback failed and HLS fallback could not start.");
+        setIsLoading(false);
+        return false;
+      }
+    };
+
+    const startPlayback = async () => {
+      try {
+        await video.play();
+      } catch (error) {
+        if (preferHls && !video.muted) {
+          video.muted = true;
+          mutedRef.current = true;
+          setIsMuted(true);
+          window.localStorage.setItem(MUTED_STORAGE_KEY, "true");
+          await video.play().catch(() => undefined);
+        }
+        setShowControls(true);
+        if (error instanceof DOMException && error.name !== "NotAllowedError") {
+          setStreamError(error.message);
+        }
+      }
+    };
+
+    const setup = async () => {
+      resetVideo();
+      if (preferHls) {
+        const hlsReady = await startHls();
+        if (!hlsReady) {
+          video.src = directUrl;
+          video.load();
+          setStreamError("");
+          setUsingHls(false);
+          usingHlsRef.current = false;
+        }
+      } else {
+        video.src = directUrl;
+        video.load();
+      }
       const resumeAt = ticksToSeconds(startPositionTicks ?? item.UserData?.PlaybackPositionTicks);
       if (resumeAt) video.currentTime = resumeAt;
       const startTicks = resumeAt ? secondsToTicks(resumeAt) : 0;
       lastReportedTicksRef.current = startTicks;
       await client.reportPlayback(item.Id, "Start", startTicks, false);
       emitPlaybackProgress(startTicks, false);
-      await video.play().catch(() => setShowControls(true));
+      await startPlayback();
     };
 
     setup().catch(() => {
@@ -507,23 +712,8 @@ export function SpiritFlixPlayer({
 
     const handleDirectError = async () => {
       if (cancelled || usingHlsRef.current) return;
-      try {
-        const { default: Hls } = await import("hls.js");
-        if (!Hls.isSupported()) {
-          setStreamError("This browser could not play the Jellyfin stream.");
-          setIsLoading(false);
-          return;
-        }
-        hlsInstance = new Hls();
-        hlsInstance.loadSource(client.getHlsUrl(item.Id));
-        hlsInstance.attachMedia(video);
-        usingHlsRef.current = true;
-        setUsingHls(true);
-        setStreamError("");
-      } catch {
-        setStreamError("Direct playback failed and HLS fallback could not start.");
-        setIsLoading(false);
-      }
+      const hlsReady = await startHls();
+      if (hlsReady) await startPlayback();
     };
 
     video.addEventListener("error", handleDirectError);
@@ -557,21 +747,6 @@ export function SpiritFlixPlayer({
   }, [flushPlaybackProgress]);
 
   useEffect(() => {
-    if (!diagnosticsOpen) {
-      if (diagnosticTimer.current) clearInterval(diagnosticTimer.current);
-      diagnosticTimer.current = null;
-      return undefined;
-    }
-    collectDiagnostics();
-    void runServerDiagnostic();
-    diagnosticTimer.current = setInterval(collectDiagnostics, DIAGNOSTIC_SAMPLE_MS);
-    return () => {
-      if (diagnosticTimer.current) clearInterval(diagnosticTimer.current);
-      diagnosticTimer.current = null;
-    };
-  }, [collectDiagnostics, diagnosticsOpen, runServerDiagnostic]);
-
-  useEffect(() => {
     repeatModeRef.current = repeatMode;
     window.localStorage.setItem(REPEAT_STORAGE_KEY, repeatMode);
     if (videoRef.current) videoRef.current.loop = repeatMode === "one";
@@ -585,6 +760,29 @@ export function SpiritFlixPlayer({
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, [revealControls]);
+
+  useEffect(() => {
+    const video = videoRef.current as MiniPlayerVideo | null;
+    const pictureDocument = document as MiniPlayerDocument;
+
+    const updateMiniPlayerState = () => {
+      setMiniPlayerSupported(supportsMiniPlayer(video));
+      setIsMiniPlayer(
+        Boolean(pictureDocument.pictureInPictureElement && pictureDocument.pictureInPictureElement === video) ||
+          video?.webkitPresentationMode === "picture-in-picture",
+      );
+    };
+
+    updateMiniPlayerState();
+    video?.addEventListener("enterpictureinpicture", updateMiniPlayerState);
+    video?.addEventListener("leavepictureinpicture", updateMiniPlayerState);
+    video?.addEventListener("webkitpresentationmodechanged", updateMiniPlayerState);
+    return () => {
+      video?.removeEventListener("enterpictureinpicture", updateMiniPlayerState);
+      video?.removeEventListener("leavepictureinpicture", updateMiniPlayerState);
+      video?.removeEventListener("webkitpresentationmodechanged", updateMiniPlayerState);
+    };
+  }, [item.Id, retryCount]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -614,6 +812,7 @@ export function SpiritFlixPlayer({
     return () => {
       if (hideTimer.current) window.clearTimeout(hideTimer.current);
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+      if (tapRevealTimer.current) window.clearTimeout(tapRevealTimer.current);
     };
   }, []);
 
@@ -661,6 +860,7 @@ export function SpiritFlixPlayer({
   const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch") {
       lastTouchInteractionAtRef.current = Date.now();
+      return;
     }
     if (Date.now() < suppressPointerUntilRef.current || pinchStartRef.current) return;
     if (isInteractiveTarget(event.target)) return;
@@ -676,46 +876,69 @@ export function SpiritFlixPlayer({
   const handlePlayerTap = useCallback(
     (x: number, y: number) => {
       const shellWidth = shellRef.current?.clientWidth ?? window.innerWidth;
-      const isCenterTap = x > shellWidth * 0.32 && x < shellWidth * 0.68;
+      const zone = getPlayerTapZone(x, shellWidth);
       const activeElement = document.activeElement;
       const controlsHaveFocus =
         activeElement instanceof HTMLElement &&
         Boolean(activeElement.closest(".spiritflix-player__top, .spiritflix-player__controls"));
+      const controlsAreVisible = !controlsHiddenByUser && (showControls || !isPlaying || controlsHaveFocus);
 
       const lastTap = lastTapRef.current;
       if (
+        (zone === "left-seek" || zone === "right-seek") &&
         lastTap &&
+        lastTap.zone === zone &&
         Date.now() - lastTap.time < DOUBLE_TAP_MAX_MS &&
         Math.abs(x - lastTap.x) < DOUBLE_TAP_MAX_DISTANCE &&
         Math.abs(y - lastTap.y) < DOUBLE_TAP_MAX_DISTANCE
       ) {
         lastTapRef.current = null;
-        if (x < shellWidth * 0.4) {
-          seekBy(-10);
-        } else if (x > shellWidth * 0.6) {
-          seekBy(10);
-        } else {
-          togglePlay();
-        }
+        clearTapRevealTimer();
+        seekBy(zone === "left-seek" ? -10 : 10);
         return;
       }
 
-      lastTapRef.current = { time: Date.now(), x, y };
-      if (isCenterTap) {
+      if (zone === "center") {
+        lastTapRef.current = null;
+        clearTapRevealTimer();
         setControlsHiddenByUser(false);
+        revealControls();
         togglePlay();
-      } else if (showControls || controlsHaveFocus) {
+      } else if (controlsAreVisible) {
+        clearTapRevealTimer();
+        if (zone === "left-seek" || zone === "right-seek") {
+          lastTapRef.current = { time: Date.now(), x, y, zone };
+        } else {
+          lastTapRef.current = null;
+        }
         hideControls();
+      } else if (zone === "left-seek" || zone === "right-seek") {
+        lastTapRef.current = { time: Date.now(), x, y, zone };
+        scheduleTapReveal();
       } else {
+        lastTapRef.current = null;
+        clearTapRevealTimer();
         revealControls();
       }
     },
-    [hideControls, revealControls, seekBy, showControls, togglePlay],
+    [
+      clearTapRevealTimer,
+      controlsHiddenByUser,
+      hideControls,
+      isPlaying,
+      revealControls,
+      scheduleTapReveal,
+      seekBy,
+      showControls,
+      togglePlay,
+    ],
   );
 
   const handlePointerUp = (event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch") {
       lastTouchInteractionAtRef.current = Date.now();
+      pointerStartRef.current = null;
+      return;
     }
     if (Date.now() < suppressPointerUntilRef.current || pinchStartRef.current) {
       pointerStartRef.current = null;
@@ -744,8 +967,7 @@ export function SpiritFlixPlayer({
 
     if (absX > 70 && absX > absY * 1.35) {
       const seconds = Math.max(-45, Math.min(45, Math.round(dx / 8)));
-      seekTo(start.currentTime + seconds);
-      revealControls();
+      seekBy(seconds);
       return;
     }
 
@@ -770,10 +992,7 @@ export function SpiritFlixPlayer({
     () => {
       const shellAspectRatio =
         shellSize.width > 0 && shellSize.height > 0 ? shellSize.width / shellSize.height : videoAspectRatio;
-      const neededFillScale =
-        shellAspectRatio > videoAspectRatio
-          ? shellAspectRatio / videoAspectRatio
-          : videoAspectRatio / shellAspectRatio;
+      const neededFillScale = getSmartFillScale(shellAspectRatio, videoAspectRatio);
 
       return {
         "--spiritflix-fill-scale": neededFillScale.toFixed(3),
@@ -849,19 +1068,16 @@ export function SpiritFlixPlayer({
         const dy = touch.clientY - start.y;
         const absX = Math.abs(dx);
         const absY = Math.abs(dy);
-        const isHorizontalSeek = start.isSeeking || (absX >= TOUCH_SEEK_ACTIVATION_PX && absX > absY * TOUCH_SEEK_VERTICAL_RATIO);
+        const hasHeldLongEnough = Date.now() - start.time >= TOUCH_SEEK_HOLD_MS;
+        const isHorizontalSeek =
+          start.isSeeking ||
+          (hasHeldLongEnough && absX >= TOUCH_SEEK_ACTIVATION_PX && absX > absY * TOUCH_SEEK_VERTICAL_RATIO);
         if (!isHorizontalSeek) return;
 
         event.preventDefault();
-        const video = videoRef.current;
-        const playableDuration = video?.duration || duration || ticksToSeconds(item.RunTimeTicks);
-        const shellWidth = Math.max(1, shellRef.current?.clientWidth ?? window.innerWidth);
-        const secondsDelta = Number.isFinite(playableDuration)
-          ? Math.max(-TOUCH_SEEK_MAX_SECONDS, Math.min(TOUCH_SEEK_MAX_SECONDS, (dx / shellWidth) * playableDuration))
-          : dx / 4;
         touchTapStartRef.current = { ...start, isSeeking: true };
         lastTapRef.current = null;
-        seekTo(start.currentTime + secondsDelta);
+        seekFromTouchDelta(start.currentTime, dx);
         revealControls(true);
       }}
       onTouchEnd={(event) => {
@@ -914,21 +1130,18 @@ export function SpiritFlixPlayer({
           playsInline
           controls={false}
           loop={repeatMode === "one"}
-          disablePictureInPicture
           controlsList="nodownload noplaybackrate noremoteplayback"
           preload="metadata"
           onWaiting={() => {
             setIsLoading(true);
             if (!waitingSinceRef.current) {
               waitingSinceRef.current = performance.now();
-              stallCountRef.current += 1;
             }
           }}
           onCanPlay={() => {
             setStreamError("");
             setIsLoading(false);
             if (waitingSinceRef.current) {
-              totalStallMsRef.current += performance.now() - waitingSinceRef.current;
               waitingSinceRef.current = null;
             }
           }}
@@ -936,7 +1149,6 @@ export function SpiritFlixPlayer({
             setIsPlaying(true);
             setIsLoading(false);
             if (waitingSinceRef.current) {
-              totalStallMsRef.current += performance.now() - waitingSinceRef.current;
               waitingSinceRef.current = null;
             }
           }}
@@ -1006,9 +1218,13 @@ export function SpiritFlixPlayer({
         </div>
       ) : null}
 
-      {tapFeedback ? (
-        <div className="spiritflix-player__tap-feedback" aria-hidden="true" key={tapFeedback}>
-          {tapFeedback === "pause" ? <Pause size={58} aria-hidden="true" /> : <Play size={58} fill="currentColor" aria-hidden="true" />}
+      {playbackFeedback ? (
+        <div
+          className={`spiritflix-player__tap-feedback is-${playbackFeedback.kind}`}
+          aria-hidden="true"
+          key={playbackFeedback.id}
+        >
+          {renderPlaybackFeedback(playbackFeedback)}
         </div>
       ) : null}
 
@@ -1052,51 +1268,6 @@ export function SpiritFlixPlayer({
         </div>
       ) : null}
 
-      {diagnosticsOpen ? (
-        <div className="spiritflix-player__diagnostics" aria-label="Playback diagnostics">
-          <div>
-            <strong>Playback diagnostics</strong>
-            <button type="button" onClick={runServerDiagnostic}>Refresh</button>
-          </div>
-          <dl>
-            <div>
-              <dt>Mode</dt>
-              <dd>{diagnostics.streamMode.toUpperCase()}</dd>
-            </div>
-            <div>
-              <dt>Buffer</dt>
-              <dd>{diagnostics.bufferedAheadSeconds.toFixed(1)}s</dd>
-            </div>
-            <div>
-              <dt>Dropped</dt>
-              <dd>{diagnostics.droppedFrames} / {diagnostics.decodedFrames}</dd>
-            </div>
-            <div>
-              <dt>Stalls</dt>
-              <dd>{diagnostics.stallCount} ({Math.round(diagnostics.totalStallMs)}ms)</dd>
-            </div>
-            <div>
-              <dt>Ready</dt>
-              <dd>{diagnostics.readyState}</dd>
-            </div>
-            <div>
-              <dt>Network</dt>
-              <dd>{diagnostics.networkState}</dd>
-            </div>
-            <div>
-              <dt>Server</dt>
-              <dd>
-                {diagnostics.serverDelayMs === null
-                  ? "not checked"
-                  : diagnostics.serverDelayMs < 0
-                    ? "offline"
-                    : `${diagnostics.serverDelayMs}ms`}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      ) : null}
-
       <div className="spiritflix-player__controls">
         <div className="spiritflix-player__scrub-row">
           <span className="spiritflix-player__time">{formatTime(currentTime)}</span>
@@ -1134,6 +1305,17 @@ export function SpiritFlixPlayer({
               title={repeatLabel}
             >
               {repeatMode === "one" ? <Repeat1 size={20} aria-hidden="true" /> : <Repeat size={20} aria-hidden="true" />}
+            </button>
+            <button
+              className={isShuffled ? "is-active" : undefined}
+              type="button"
+              onClick={shuffleCurrentQueue}
+              disabled={queueItems.length < 2}
+              aria-label={shuffleLabel}
+              aria-pressed={isShuffled}
+              title={shuffleLabel}
+            >
+              <Shuffle size={20} aria-hidden="true" />
             </button>
             <button
               className={isFavorite ? "is-active" : undefined}
@@ -1183,17 +1365,27 @@ export function SpiritFlixPlayer({
             </div>
 
             <button
-              className={diagnosticsOpen ? "is-active" : undefined}
+              className={isMiniPlayer ? "is-active" : undefined}
               type="button"
-              onClick={() => {
-                setDiagnosticsOpen((open) => !open);
-                revealControls(true);
-              }}
-              aria-label="Playback diagnostics"
-              aria-pressed={diagnosticsOpen}
-              title="Playback diagnostics"
+              onClick={toggleMiniPlayer}
+              disabled={!miniPlayerSupported}
+              aria-label={miniPlayerLabel}
+              aria-pressed={isMiniPlayer}
+              title={miniPlayerLabel}
             >
-              <Activity size={20} aria-hidden="true" />
+              <PictureInPicture2 size={20} aria-hidden="true" />
+            </button>
+            <button
+              className={isQueueOpen ? "is-active" : undefined}
+              type="button"
+              onClick={toggleQueueDrawer}
+              disabled={queueItems.length < 2}
+              aria-label={isQueueOpen ? "Close queue" : "Open queue"}
+              aria-expanded={isQueueOpen}
+              aria-controls="spiritflix-player-queue"
+              title={isQueueOpen ? "Close queue" : "Open queue"}
+            >
+              <ListMusic size={20} aria-hidden="true" />
             </button>
             <button type="button" onClick={toggleFullscreen} aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
               {isFullscreen ? <Minimize size={20} aria-hidden="true" /> : <Maximize size={20} aria-hidden="true" />}
@@ -1208,6 +1400,40 @@ export function SpiritFlixPlayer({
           </div>
         ) : null}
       </div>
+
+      {isQueueOpen ? (
+        <aside className="spiritflix-player__queue" id="spiritflix-player-queue" aria-label="Playback queue">
+          <div className="spiritflix-player__queue-header">
+            <div>
+              <span>{queue?.sourceTitle ?? "Queue"}</span>
+              <strong>{queueItems.length} videos</strong>
+            </div>
+            <button type="button" onClick={() => setIsQueueOpen(false)} aria-label="Close queue" title="Close queue">
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
+          <div className="spiritflix-player__queue-list">
+            {queueItems.map((queueItem, index) => {
+              const isCurrent = queueItem.Id === item.Id;
+              return (
+                <button
+                  className={isCurrent ? "is-current" : undefined}
+                  type="button"
+                  key={`${queueItem.Id}-${index}`}
+                  onClick={() => {
+                    if (!isCurrent) selectQueueItem(queueItem);
+                    setIsQueueOpen(false);
+                  }}
+                  aria-current={isCurrent ? "true" : undefined}
+                >
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <strong>{queueItem.Name}</strong>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+      ) : null}
     </section>
   );
 }

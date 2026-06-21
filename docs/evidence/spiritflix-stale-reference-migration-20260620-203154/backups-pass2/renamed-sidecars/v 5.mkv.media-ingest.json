@@ -1,0 +1,13 @@
+{
+  "at": "2026-06-14T05:12:31.022Z",
+  "jobId": "mi-mqd5kw3h-c78618f8",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/v 5.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/models/chloe-lamb/v 5.mp4",
+  "originalSize": 229963559,
+  "outputSize": 76572292,
+  "savingsPercent": 66.7,
+  "profile": "balanced_1080p",
+  "encoder": "mac-videotoolbox-hevc",
+  "deletedOriginal": true
+}

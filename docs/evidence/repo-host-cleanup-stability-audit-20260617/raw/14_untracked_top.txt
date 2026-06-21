@@ -1,0 +1,6 @@
+$ git status --short --untracked-files=all | sed -n "s/^?? //p" | awk -F/ '{print $1}' | sort | uniq -c | sort -nr | head -80
+# rc=0
+
+     46 docs
+      6 src
+      4 scripts

@@ -1,0 +1,652 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/unknown/107016.mkv",
+  "generated_at": "2026-06-14T11:13:07+00:00",
+  "dry_run": false,
+  "verification_needed": true,
+  "performers": [
+    {
+      "name": "unknown performer",
+      "confidence": 0.0,
+      "similarity": 0.0,
+      "status": "unknown",
+      "verification_needed": true,
+      "label": "unknown performer - verification needed",
+      "face_crop_path": null,
+      "original_frame_path": null,
+      "model_version": "insightface:buffalo_l",
+      "supporting_faces": 0
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-14T11:13:07+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "NOTFANS",
+        "source": "watermark_ocr_text",
+        "confidence": 0.46,
+        "raw": "NOTFANS.COM",
+        "variants": [
+          "NOTFANS",
+          "NOTFANSCOM"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "NOTFANSCOM",
+        "source": "watermark_ocr_text",
+        "confidence": 0.46,
+        "raw": "NOTFANS.COM",
+        "variants": [
+          "NOTFANSCOM"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-01.jpg",
+        "region": "full"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"NOTFANS\"",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"NOTFANS\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22%20onlyfans",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"NOTFANS\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22%20site%3Apimpbunny.com",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"NOTFANS\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22NOTFANS%22%20site%3Acoomer.st",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "NOTFANS",
+        "url": "https://coomer.st/search?q=NOTFANS",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"NOTFANSCOM\"",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"NOTFANSCOM\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22%20onlyfans",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"NOTFANSCOM\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22%20site%3Apimpbunny.com",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"NOTFANSCOM\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22NOTFANSCOM%22%20site%3Acoomer.st",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "NOTFANSCOM",
+        "url": "https://coomer.st/search?q=NOTFANSCOM",
+        "candidate_name": "NOTFANS",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.991,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            5.0,
+            376.0
+          ],
+          [
+            136.0,
+            376.0
+          ],
+          [
+            136.0,
+            400.0
+          ],
+          [
+            5.0,
+            400.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.987,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            13.064516067504883,
+            301.3636169433594
+          ],
+          [
+            408.2661437988281,
+            303.57952880859375
+          ],
+          [
+            408.2661437988281,
+            382.2442932128906
+          ],
+          [
+            11.975807189941406,
+            380.02838134765625
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.989,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-01-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            17.0,
+            428.0
+          ],
+          [
+            404.0,
+            428.0
+          ],
+          [
+            404.0,
+            498.0
+          ],
+          [
+            17.0,
+            498.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.992,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            5.0,
+            376.0
+          ],
+          [
+            136.0,
+            376.0
+          ],
+          [
+            136.0,
+            400.0
+          ],
+          [
+            5.0,
+            400.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.989,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            13.064516067504883,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            381.1363525390625
+          ],
+          [
+            13.064516067504883,
+            381.1363525390625
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.989,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-02-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            17.0,
+            429.0
+          ],
+          [
+            402.0,
+            427.0
+          ],
+          [
+            402.0,
+            495.0
+          ],
+          [
+            17.0,
+            497.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.992,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            5.0,
+            376.0
+          ],
+          [
+            136.0,
+            376.0
+          ],
+          [
+            136.0,
+            400.0
+          ],
+          [
+            5.0,
+            400.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.988,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            13.064516067504883,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            381.1363525390625
+          ],
+          [
+            13.064516067504883,
+            381.1363525390625
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.989,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-03-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            16.0,
+            428.0
+          ],
+          [
+            404.0,
+            428.0
+          ],
+          [
+            404.0,
+            498.0
+          ],
+          [
+            16.0,
+            498.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.991,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-04.jpg",
+        "region": "full",
+        "box": [
+          [
+            4.0,
+            375.0
+          ],
+          [
+            136.0,
+            375.0
+          ],
+          [
+            136.0,
+            401.0
+          ],
+          [
+            4.0,
+            401.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.986,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-04-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            13.064516067504883,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            381.1363525390625
+          ],
+          [
+            13.064516067504883,
+            381.1363525390625
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.989,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-04-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            16.0,
+            428.0
+          ],
+          [
+            403.0,
+            428.0
+          ],
+          [
+            403.0,
+            498.0
+          ],
+          [
+            16.0,
+            498.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.991,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-05.jpg",
+        "region": "full",
+        "box": [
+          [
+            5.0,
+            376.0
+          ],
+          [
+            136.0,
+            376.0
+          ],
+          [
+            136.0,
+            400.0
+          ],
+          [
+            5.0,
+            400.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.986,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-05-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            13.064516067504883,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            304.6875
+          ],
+          [
+            407.17742919921875,
+            381.1363525390625
+          ],
+          [
+            13.064516067504883,
+            381.1363525390625
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.987,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-05-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            17.0,
+            429.0
+          ],
+          [
+            402.0,
+            427.0
+          ],
+          [
+            402.0,
+            495.0
+          ],
+          [
+            17.0,
+            497.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.991,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-06.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-06.jpg",
+        "region": "full",
+        "box": [
+          [
+            5.0,
+            375.0
+          ],
+          [
+            136.0,
+            375.0
+          ],
+          [
+            136.0,
+            401.0
+          ],
+          [
+            5.0,
+            401.0
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.987,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-06.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-06-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            11.975807189941406,
+            304.6875
+          ],
+          [
+            408.2661437988281,
+            304.6875
+          ],
+          [
+            408.2661437988281,
+            382.2442932128906
+          ],
+          [
+            11.975807189941406,
+            382.2442932128906
+          ]
+        ]
+      },
+      {
+        "text": "NOTFANS.COM",
+        "confidence": 0.989,
+        "frame_path": "/DATA/yes/unknown/.face-review/107016/frames/frame-06.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/107016/frames/.ocr-regions/frame-06-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            17.0,
+            428.0
+          ],
+          [
+            403.0,
+            428.0
+          ],
+          [
+            403.0,
+            497.0
+          ],
+          [
+            17.0,
+            497.0
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/unknown/.face-review/107016/frames/frame-01.jpg",
+    "/DATA/yes/unknown/.face-review/107016/frames/frame-02.jpg",
+    "/DATA/yes/unknown/.face-review/107016/frames/frame-03.jpg",
+    "/DATA/yes/unknown/.face-review/107016/frames/frame-04.jpg",
+    "/DATA/yes/unknown/.face-review/107016/frames/frame-05.jpg",
+    "/DATA/yes/unknown/.face-review/107016/frames/frame-06.jpg"
+  ],
+  "faces_detected": 0,
+  "faces_rejected": [],
+  "duration_seconds": 44.497,
+  "processing_time_seconds": 33.936,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  }
+}

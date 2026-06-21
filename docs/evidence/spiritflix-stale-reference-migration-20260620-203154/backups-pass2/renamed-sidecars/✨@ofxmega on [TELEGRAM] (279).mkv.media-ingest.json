@@ -1,0 +1,13 @@
+{
+  "at": "2026-06-14T05:16:24.618Z",
+  "jobId": "mi-mqd5l2bf-add56cfb",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/✨@ofxmega on [TELEGRAM] (279).MP4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/models/jazmen-jafar/✨@ofxmega on [TELEGRAM] (279).mp4",
+  "originalSize": 17527128,
+  "outputSize": 1834473,
+  "savingsPercent": 89.53,
+  "profile": "balanced_1080p",
+  "encoder": "mac-videotoolbox-hevc",
+  "deletedOriginal": true
+}

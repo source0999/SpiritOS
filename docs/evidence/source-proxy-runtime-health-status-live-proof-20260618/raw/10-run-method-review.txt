@@ -1,0 +1,329 @@
+=== candidate files ===
+./ai_runtime
+./_blueprints/components/chat_runtime_architecture.md
+./_blueprints/proposals/applied/bp-spiritos-source-proxy-component-code-changed-910c5702.json
+./_blueprints/proposals/applied/bp-spiritos-source-proxy-component-code-changed-f3b95047.json
+./cartogrpaherPlanAuto.md
+./.codex-7r-live-source-proxy-8787.err.log
+./.codex-7r-live-source-proxy-8787.log
+./.codex-coding-next-3032-restart.err.log
+./.codex-coding-next-3032-restart.log
+./.codex-evaluation-source-proxy-8787.err.log
+./.codex-evaluation-source-proxy-8787.log
+./.codex-evaluation-source-proxy-8787-qwen2.5-coder-14b.err.log
+./.codex-evaluation-source-proxy-8787-qwen2.5-coder-14b.log
+./.codex-evaluation-source-proxy-8787-qwen2.5-coder-7b.err.log
+./.codex-evaluation-source-proxy-8787-qwen2.5-coder-7b.log
+./.codex-gate7-source-proxy-8787.err.log
+./.codex-gate7-source-proxy-8787.log
+./.codex-lan-3000-repair.err.log
+./.codex-lan-3000-repair.log
+./.codex-lane-plumbing-repair-8777.err.log
+./.codex-lane-plumbing-repair-8777.log
+./.codex-next-3000-restart.err.log
+./.codex-next-3000-restart.log
+./.codex-next-3027.restart.err.log
+./.codex-next-3027.restart.out.log
+./.codex-preflight-source-proxy-8787.err.log
+./.codex-preflight-source-proxy-8787.log
+./.codex-qwen14b-route-truth-source-proxy-8787.err.log
+./.codex-qwen14b-route-truth-source-proxy-8787.log
+./.codex-smoke/coding-plan1-runner-desktop.png
+./.codex-smoke/coding-plan1-runner-tablet.png
+./.codex-smoke/media-ingest-next-start-3001.err.log
+./.codex-smoke/media-ingest-next-start-3001.out.log
+./.codex-smoke/media-ingest-next-start-3002.err.log
+./.codex-smoke/media-ingest-next-start-3002.out.log
+./.codex-smoke/plan1-coding-desktop.png
+./.codex-smoke/plan1-coding-tablet.png
+./.codex-smoke/plan1-proxy-backend-desktop.png
+./.codex-smoke/plan2-2.3.1-coding-desktop.png
+./.codex-smoke/plan2-2.3.2-coding-tablet.png
+./.codex-smoke/plan2-2.3.3-coding-mobile.png
+./.codex-smoke/plan3-3.1.4-runner-desktop.png
+./.codex-smoke/plan3-3.1.4-runner-tablet.png
+./.codex-smoke/plan3-3.3-coding-trial.png
+./.codex-smoke/plan3-3.3-combined-trial.png
+./.codex-smoke/plan3-3.3-design-trial.png
+./.codex-smoke/plan4-4.2-backend-api.png
+./.codex-smoke/plan4-4.2-frontend-ui.png
+./.codex-smoke/plan4-4.2-messy-no-target.png
+./.codex-smoke/plan4-4.2-noop.png
+./.codex-smoke/plan4-4.2-test-writing.png
+./.codex-smoke/plan5-5.1-component-handoff.png
+./.codex-smoke/plan5-5.1-responsive-mobile.png
+./.codex-smoke/plan5-5.1-visual-critique.png
+./.codex-smoke/plan6-6.2-combined-desktop.png
+./.codex-smoke/plan6-6.2-combined-mobile.png
+./.codex-spiritflix-next-3000-restart.err.log
+./.codex-spiritflix-next-3000-restart.log
+./.codex-spiritflix-next-start-3031.err.log
+./.codex-spiritflix-next-start-3031.log
+./.codex-spiritflix-next-start-3036.err.log
+./.codex-spiritflix-next-start-3036.log
+./config/source-proxy.example.env
+./.cursor/rules/runtime-servers.mdc
+./data/source-proxy/.gitkeep
+./data/source-proxy/user_cost.json
+./docs/agent-ecosystem-plan-1-phase-10-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-11-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-12-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-13-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-14-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-15-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-16-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-17-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-18-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-19-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-1-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-20-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-2-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-3-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-4-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-5-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-6-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-7-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-8-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-phase-9-closeout-v0.1.md
+./docs/agent-ecosystem-plan-1-start-handoff-v0.1.md
+./docs/agent-factory-plan-1-new-chat-start-prompt-v0.1.md
+./docs/agent-factory-planning-package-closeout-v0.1.md
+./docs/agent-runtime-trial-harness-mac-subagent-port-master-plan-v0.1.md
+./docs/agent-runtime-trial-harness-mac-subagent-port-new-chat-handoff-v0.1.md
+./docs/backend-console-reset-phase-0-1-baseline-and-lane-boundary.md
+./docs/backend-console-reset-phase-3-static-usability-shell-plan.md
+./docs/backend-console-usability-reset-plan-v0.1.md
+./docs/backup-system/backup-system-v0.1-plan.md
+./docs/cartographer-a-grade-daily-driver-activation-pivot-plan-v0.1.md
+./docs/cartographer-auto-plan-10-true-auto-soak-and-promotion-closeout-v0.1.md
+./docs/cartographer-daily-driver-autonomy-plan-1-phase-1-live-state-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-2-phase-1-approval-token-runtime-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-2-phase-1-new-chat-handoff.md
+./docs/cartographer-daily-driver-autonomy-plan-2-phase-2-approval-token-consumption-boundary-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-2-phase-3-token-storage-or-durable-record-decision-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-3-phase-1-safe-write-negative-tests-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-3-phase-2-safe-write-service-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-3-phase-3-safe-write-api-endpoint-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-3-phase-4-first-live-approved-safe-write-proof-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-4-phase-1-exact-argv-command-allowlist-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-4-phase-2-verification-runner-tests-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-4-phase-3-verification-api-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-4-phase-4-verification-receipt-attached-to-safe-write-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-5-phase-1-workflow-state-model-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-5-phase-2-event-ledger-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-5-phase-3-workflow-controls-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-5-phase-4-first-workflow-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-6-phase-1-queue-model-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-6-phase-2-trust-tier-safe-task-classes-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-6-phase-3-run-next-one-task-only-endpoint-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-6-phase-4-kill-switch-drill-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-6-phase-5-first-auto-selected-safe-task-run-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-7-new-chat-handoff.md
+./docs/cartographer-daily-driver-autonomy-plan-7-phase-1-map-ia-reset-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-7-phase-2-live-state-panel-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-7-phase-3-approval-token-panel-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-7-phase-4-queue-panel-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-7-phase-5-workflow-run-panel-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-7-phase-6-kill-switch-stop-controls-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-7-phase-7-receipt-evidence-browser-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-8-phase-1-worker-contract-model-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-8-phase-2-file-ownership-and-locks-closeout.md
+./docs/cartographer-daily-driver-autonomy-plan-8-phase-3-conflict-detection-closeout.md
+./docs/cartographer-full-auto-plan-1-implementation-decision-read-only-map-wiring.md
+./docs/cartographer-full-auto-plan-1-limited-operator-v0.1.md
+./docs/cartographer-full-auto-plan-1-operator-review-read-only-map-wiring-acceptance-and-step-2-permission-gate.md
+./docs/cartographer-full-auto-plan-1-read-only-map-wiring-implementation-closeout.md
+./docs/cartographer-full-auto-plan-1-step-2-read-only-map-packet-shape-hardening-and-fallback-proof.md
+./docs/cartographer-full-auto-plan-1-step-3-1-restart-dev-server-and-rerun-read-only-map-browser-acceptance.md
+./docs/cartographer-full-auto-plan-1-step-3-read-only-map-manual-browser-acceptance-and-phase-closeout-gate.md
+./docs/cartographer-full-auto-plan-1-step-4-read-only-map-phase-closeout-decision-and-next-plan-gate.md
+./docs/cartographer-full-auto-plan-2-human-approved-operator-v0-2-decision-packet.md
+./docs/cartographer-full-auto-plan-2-human-approved-operator-v0-2-implementation-closeout.md
+./docs/cartographer-full-auto-plan-2-human-approved-operator-v0-2-implementation-decision.md
+./docs/cartographer-full-auto-plan-2-operator-review-display-only-human-approval-requirements-acceptance-and-step-2-permission-gate.md
+./docs/cartographer-full-auto-plan-2-operator-review-human-approval-packet-shape-hardening-and-fallback-proof-acceptance-and-step-3-permission-gate.md
+./docs/cartographer-full-auto-plan-2-operator-review-human-approved-operator-v0-2-no-go-acceptance-and-implementation-decision-gate.md
+./docs/cartographer-full-auto-plan-2-step-2-human-approval-packet-shape-hardening-and-fallback-proof.md
+./docs/cartographer-full-auto-plan-2-step-3-manual-browser-acceptance-and-human-approved-operator-display-phase-closeout-gate.md
+./docs/cartographer-full-auto-plan-3-approval-token-runtime-scope-or-no-go-decision-packet.md
+./docs/cartographer-greenlight-readiness-limited-daily-driver-plan-v0.1.md
+./docs/cartographer-level-10-operator-dashboard-polish-plan.md
+./docs/cartographer-level-11-1-runtime-authority-baseline-audit.md
+./docs/cartographer-level-11-2-approval-token-runtime-schema-and-validation-dry-run-audit.md
+./docs/cartographer-level-11-3-event-ledger-runtime-model-dry-run-audit.md
+./docs/cartographer-level-11-4-approved-receipt-write-dry-run-runtime-audit.md
+./docs/cartographer-level-11-5-approved-evidence-write-dry-run-runtime-audit.md
+./docs/cartographer-level-11-to-14-runtime-upgrade-plan.md
+./docs/cartographer-level-12-1-through-12-10-workflow-runtime-dry-run-closeout-and-level-13-access-check.md
+./docs/cartographer-level-13-1-through-13-9-worker-runtime-dry-run-closeout-and-level-14-access-check.md
+./docs/cartographer-level-14-1-through-14-9-autonomy-runtime-dry-run-final-closeout.md
+./docs/cartographer-level-1-autonomy-plan.md
+./docs/cartographer-level-2-autonomy-plan.md
+./docs/cartographer-level-3-autonomy-plan.md
+./docs/cartographer-level-3-to-6-master-plan.md
+./docs/cartographer-level-7-to-10-autopilot-plan.md
+./docs/cartographer-live-evidence/cartographer-auto-plan-11-24h-soak-evidence-v0.1.md
+./docs/cartographer-live-evidence/cartographer-auto-plan-11-72h-soak-drill-decision-evidence-v0.1.md
+./docs/cartographer-live-evidence/cartographer-auto-plan-11-soak-drills-promotion-decision-closeout-v0.1.md
+./docs/cartographer-live-evidence/cartographer-auto-plan-12-level-8-activation-validation-blocked-v0.1.md
+./docs/cartographer-live-evidence/cartographer-auto-plan-12-limited-daily-driver-activation-gate-closeout-blocked-v0.1.md
+./docs/cartographer-live-evidence/cartographer-plan-1-24-post-soak-acceptance-promotion-audit-v0.1.md
+./docs/cartographer-live-evidence/cartographer-plan-7-24-activation-boundary-resoak-decision-v0.1.md
+./docs/cartographer-live-operation-step-10-3-operator-decision-packet-plan.md
+./docs/cartographer-live-operation-step-10-limited-autonomous-operator-readiness-decision-plan.md
+./docs/cartographer-live-operation-step-3-3-blocked-action-classifier-plan.md
+./docs/cartographer-live-operation-step-3-4-operator-review-packet-plan.md
+./docs/cartographer-live-operation-step-3-lane-boundary.md
+./docs/cartographer-live-operation-step-3-read-only-live-mode-plan.md
+./docs/cartographer-live-operation-step-4-2-event-record-schema-plan.md
+./docs/cartographer-live-operation-step-4-3-queue-preview-record-schema-plan.md
+./docs/cartographer-live-operation-step-4-durable-queue-event-storage-plan.md
+./docs/cartographer-live-operation-step-5-3-self-approval-barrier-plan.md
+./docs/cartographer-live-operation-step-5-human-approval-token-flow-plan.md
+./docs/cartographer-live-operation-step-6-3-protected-lane-write-barrier.md
+./docs/cartographer-live-operation-step-6-first-safe-write-class-plan.md
+./docs/cartographer-live-operation-step-7-controlled-command-execution-plan.md
+./docs/cartographer-live-operation-step-8-operator-dashboard-controls-plan.md
+./docs/cartographer-live-operation-step-9-3-soak-stop-conditions-and-escalation-plan.md
+./docs/cartographer-live-operation-step-9-live-shadow-soak-operator-rehearsal-plan.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-01-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-02-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-03-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-04-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-05-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-06-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-07-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-08-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-09-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-10-supervised-task-10-receipt-v0.1.md
+./docs/cartographer-live-receipts/cartographer-auto-plan-12-limited-auto-loop-blocked-receipt-v0.1.md
+./docs/cartographer-live-receipts/plan-3-phase-4-first-live-approved-safe-write-proof.md
+./docs/cartographer-map-route-manual-control-plan-v0.1.md
+=== run method rg ===
+=== running source proxy candidates ===
+root        3062  0.2  0.0 7248196 7452 ?        SLsl Jun17   3:12 /usr/local/bin/python /usr/local/bin/uvicorn main:app --host 0.0.0.0 --port 80
+root        3073  1.1  0.8 985120 134080 ?       Ssl  Jun17  17:26 /usr/local/bin/python3.12 /usr/local/bin/uvicorn scout.main:app --host 0.0.0.0 --port 8077
+source      3436  0.6  0.0 807552  2484 ?        Ssl  Jun17   9:05 /home/ubuntu/faster-whisper-server/.venv/bin/python /home/ubuntu/faster-whisper-server/.venv/bin/uvicorn --factory faster_whisper_server.main:create_app
+source     35537  0.0  0.0  17232  6924 ?        Ss   Jun17   0:00 tmux new-session -d -s source-proxy-lan cd '/home/source/SpiritOS' && bash ./scripts/source-proxy-lan-watchdog.sh
+source    297277  0.0  0.0   7340  3728 ?        Ss   03:56   0:00 bash -c cd ~/SpiritOS && grep -Ei oom|out of memory|killed process|memory cgroup|uvicorn|python|node|next|npm|source proxy|source-proxy|8787|3000|ollama|docker|jellyfin|thermal|temperature|mount|mnt-spirit|tailscale|failed|timeout|reset|refused|closed socket docs/evidence/live-hiccup-triage-20260617/raw/30-journal-last-60m.txt | tail -160
+source   1034310  0.0  0.0   7340  3684 ?        Ss   20:31   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n FastAPI|APIRouter|@.*get|health|status|runtime|openapi|docs|decision|model-lanes|productive|Cartographer|dirty|watcher|ollama|Next|next source_proxy source_proxy/tests || true
+source   1034912  0.0  0.0   7340  3560 ?        Ss   20:32   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n --glob !**/__pycache__/** --glob *.py FastAPI|APIRouter|@.*get|health|status|runtime|dirty|systemctl|subprocess|TestClient source_proxy source_proxy/tests | sed -n 1,260p | tee docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/10-api-rg.txt
+source   1235970  0.0  0.0   7340  3720 ?        Ss   20:52   0:00 bash -c cd ~/SpiritOS && sed -n 1,180p source_proxy/approval/external_gate.py && ~/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT|SOURCE_PROXY_INCREMENT|DEFAULT_INCREMENT_ENV|evaluation-round|approved_increment|central_gate_check source_proxy/tests source_proxy/approval source_proxy | sed -n 1,200p
+source   1235974  0.0  0.0   9900  4480 ?        S    20:52   0:00 /home/source/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT
+source   1355953  0.0  0.0   7340  3692 ?        Ss   21:11   0:00 bash -c cd ~/SpiritOS && { ~/.local/bin/rg -n env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt 2>&1; code=$?; tail -120 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt; exit $code
+source   1378036  0.0  0.0   7340  3700 ?        Ss   21:35   0:00 bash -c cd ~/SpiritOS && { echo === corrected rg safety scan ===; ~/.local/bin/rg -n -e env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt 2>&1; code=$?; tail -160 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt; exit $code
+source   1399162  0.0  0.0   8120  4452 pts/0    Ss+  21:51   0:00 bash ./scripts/source-proxy-lan-watchdog.sh
+source   1404432  0.0  0.0   5692  1996 pts/0    S+   21:54   0:00 tee -a /home/source/source-proxy-https-lan.log
+source   1404449  0.0  0.0   2800  1852 pts/0    S+   21:54   0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source   1404450  0.0  0.2 761388 42908 pts/0    Sl+  21:54   0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source   1404461  0.8  1.4 585332 237056 pts/0   Sl+  21:54   0:07 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+source   1438516  0.0  0.0   5692  1992 ?        S    22:10   0:00 tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/10-run-method-review.txt?
+source   1439147  0.0  0.0   6692  2384 ?        S    22:10   0:00 grep -Ei [u]vicorn|[s]ource_proxy|[s]ource-proxy|8787
+=== port 8787 owner ===
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=1404461,fd=14))
+=== source-proxy tmux panes ===
+0 1399162 bash /home/source/SpiritOS
+=== source-proxy tmux capture ===
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on https://0.0.0.0:8787 (Press CTRL+C to quit)
+INFO:     127.0.0.1:60376 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35770 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41158 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37070 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37086 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37098 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37100 - "GET /v1/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56930 - "GET /v1/runtime/status HTTP/1.1" 200 OK
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_live_state_
+v1_cartographer_live_state_get for function cartographer_live_state at /home/sou
+rce/SpiritOS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_approval_to
+ken_validate_preview_v1_cartographer_approval_token_validate_get for function ca
+rtographer_approval_token_validate_preview at /home/source/SpiritOS/source_proxy
+/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_approval_to
+ken_validate_v1_cartographer_approval_token_validate_post for function cartograp
+her_approval_token_validate at /home/source/SpiritOS/source_proxy/api/cartograph
+er.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_approval_to
+ken_consume_preview_demo_v1_cartographer_approval_token_consume_preview_get for
+function cartographer_approval_token_consume_preview_demo at /home/source/Spirit
+OS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_approval_to
+ken_consume_preview_v1_cartographer_approval_token_consume_preview_post for func
+tion cartographer_approval_token_consume_preview at /home/source/SpiritOS/source
+_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_safe_write_
+status_v1_cartographer_safe_write_get for function cartographer_safe_write_statu
+s at /home/source/SpiritOS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_safe_write_
+v1_cartographer_safe_write_post for function cartographer_safe_write at /home/so
+urce/SpiritOS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_verificatio
+n_run_status_v1_cartographer_verification_run_get for function cartographer_veri
+fication_run_status at /home/source/SpiritOS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_verificatio
+n_run_v1_cartographer_verification_run_post for function cartographer_verificati
+on_run at /home/source/SpiritOS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_queue_run_n
+ext_status_v1_cartographer_queue_run_next_get for function cartographer_queue_ru
+n_next_status at /home/source/SpiritOS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+/home/source/SpiritOS/.venv-source-proxy/lib/python3.12/site-packages/fastapi/op
+enapi/utils.py:252: UserWarning: Duplicate Operation ID cartographer_queue_run_n
+ext_v1_cartographer_queue_run_next_post for function cartographer_queue_run_next
+ at /home/source/SpiritOS/source_proxy/api/cartographer.py
+  warnings.warn(message, stacklevel=1)
+INFO:     127.0.0.1:56936 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59818 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49238 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49246 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49262 - "GET /v1/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44580 - "GET /v1/runtime/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44596 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33462 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51630 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51620 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32778 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59856 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52260 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44184 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53840 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49734 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52964 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33832 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44280 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47114 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51742 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33250 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45606 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57534 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48446 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44548 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53666 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53902 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56782 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50036 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43760 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36718 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53698 - "GET /healthcheck HTTP/1.1" 200 OK

@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-15T23:54:55.598Z",
+  "jobId": "mi-mqfrfj5b-f205d5ea",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Devdildo02.mp4.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Devdildo02.mp4.mkv",
+  "originalSize": 57023429,
+  "outputSize": 13388158,
+  "savingsPercent": 76.52,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-15T23:54:55.600Z"
+  }
+}

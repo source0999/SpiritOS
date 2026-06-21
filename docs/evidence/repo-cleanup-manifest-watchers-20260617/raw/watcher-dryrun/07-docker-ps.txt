@@ -1,0 +1,11 @@
+$ docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' || true
+NAMES                    STATUS                         PORTS
+spirit-jellyfin          Up About an hour (healthy)     0.0.0.0:8096->8096/tcp, [::]:8096->8096/tcp
+scout_v0_1               Up About an hour (healthy)     0.0.0.0:8077->8077/tcp, [::]:8077->8077/tcp
+spirit-searxng           Up About an hour (healthy)     0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+source-postgres          Up About an hour (healthy)     0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+spirit-openedai-speech   Up About an hour (healthy)     0.0.0.0:5200->8000/tcp, [::]:5200->8000/tcp
+spirit-whisper           Up About an hour (unhealthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+spirit-xtts              Up About an hour (healthy)     0.0.0.0:8020->80/tcp, [::]:8020->80/tcp
+
+[exit 0]

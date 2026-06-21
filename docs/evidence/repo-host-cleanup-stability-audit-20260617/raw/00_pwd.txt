@@ -1,0 +1,4 @@
+$ pwd
+# rc=0
+
+/home/source/SpiritOS

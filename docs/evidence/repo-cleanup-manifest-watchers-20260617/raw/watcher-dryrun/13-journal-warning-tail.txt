@@ -1,0 +1,196 @@
+$ journalctl -b -0 -p warning..alert --since "4 hours ago" --no-pager | tail -200 || true
+Jun 17 21:07:20 source-server kernel: x86/cpu: SGX disabled by BIOS.
+Jun 17 21:07:20 source-server kernel: Transient Scheduler Attacks: MDS CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/mds.html for more details.
+Jun 17 21:07:20 source-server kernel: Transient Scheduler Attacks: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+Jun 17 21:07:20 source-server kernel: Transient Scheduler Attacks: VMSCAPE: SMT on, STIBP is required for full protection. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/vmscape.html for more details.
+Jun 17 21:07:20 source-server kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+Jun 17 21:07:20 source-server kernel: ENERGY_PERF_BIAS: Set to 'normal', was 'performance'
+Jun 17 21:07:20 source-server kernel: wmi_bus wmi_bus-PNP0C14:01: WQBC data block query control method not found
+Jun 17 21:07:20 source-server kernel: pstore: backend 'erst' already in use: ignoring 'efi_pstore'
+Jun 17 21:07:32 source-server systemd-journald[398]: File /var/log/journal/fdf9c5317dea491980c6866513254417/system.journal corrupted or uncleanly shut down, renaming and replacing.
+Jun 17 21:07:32 source-server kernel: resource: resource sanity check: requesting [mem 0x00000000fdffe800-0x00000000fe0007ff], which spans more than pnp 00:08 [mem 0xfdb00000-0xfdffffff]
+Jun 17 21:07:32 source-server kernel: caller get_primary_reg_base+0x4f/0xb0 [intel_pmc_core] mapping multiple BARs
+Jun 17 21:07:32 source-server kernel: nvidia: loading out-of-tree module taints kernel.
+Jun 17 21:07:32 source-server kernel:
+Jun 17 21:07:32 source-server kernel: NVRM: loading NVIDIA UNIX Open Kernel Module for x86_64  580.159.03  Release Build  (dvs-builder@U22-I3-AM27-29-6)  Fri Apr 24 06:03:03 UTC 2026
+Jun 17 21:07:48 source-server kernel: kauditd_printk_skb: 117 callbacks suppressed
+Jun 17 21:07:48 source-server (smartd)[964]: smartmontools.service: Referenced but unset environment variable evaluates to an empty string: smartd_opts
+Jun 17 21:08:12 source-server NetworkManager[1188]: <warn>  [1781744892.9028] dns-mgr: update-pending changed: DNS plugin did not become ready again. Assume something is wrong
+Jun 17 21:08:24 source-server ModemManager[1205]: <wrn> [plugin/generic] could not grab port ttyS4: Cannot add port 'tty/ttyS4', unhandled port type
+Jun 17 21:08:24 source-server ModemManager[1205]: <wrn> [base-manager] couldn't create modem for device '/sys/devices/pci0000:00/0000:00:16.3': Failed to find primary AT port
+Jun 17 21:08:27 source-server (nmbd)[1619]: nmbd.service: Referenced but unset environment variable evaluates to an empty string: NMBDOPTIONS
+Jun 17 21:08:28 source-server kernel: CIFS: VFS: Error connecting to socket. Aborting operation.
+Jun 17 21:08:28 source-server kernel: CIFS: VFS: cifs_mount failed w/return code = -115
+Jun 17 21:08:28 source-server systemd[1]: mnt-spirit\x2dprojects.mount: Failed with result 'exit-code'.
+Jun 17 21:08:28 source-server systemd[1]: Failed to mount mnt-spirit\x2dprojects.mount - /mnt/spirit-projects.
+Jun 17 21:08:28 source-server systemd[1]: Dependency failed for remote-fs.target - Remote File Systems.
+Jun 17 21:08:28 source-server (cron)[1651]: cron.service: Referenced but unset environment variable evaluates to an empty string: EXTRA_OPTS
+Jun 17 21:08:29 source-server (smbd)[1706]: smbd.service: Referenced but unset environment variable evaluates to an empty string: SMBDOPTIONS
+Jun 17 21:08:31 source-server lightdm[1661]: Seat type 'xlocal' is deprecated, use 'type=local' instead
+Jun 17 21:08:54 source-server pipewire[1835]: mod.jackdbus-detect: Failed to receive jackdbus reply: org.freedesktop.DBus.Error.ServiceUnknown: The name org.jackaudio.service was not provided by any .service files
+Jun 17 21:09:22 source-server pipewire[2074]: mod.jackdbus-detect: Failed to receive jackdbus reply: org.freedesktop.DBus.Error.ServiceUnknown: The name org.jackaudio.service was not provided by any .service files
+Jun 17 21:09:22 source-server lightdm[2050]: gkr-pam: couldn't unlock the login keyring.
+Jun 17 21:09:31 source-server at-spi-bus-laun[2137]: Failed to register client: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such method “RegisterClient”
+Jun 17 21:09:32 source-server indicator-keybo[2187]: gtk_icon_theme_get_for_screen: assertion 'GDK_IS_SCREEN (screen)' failed
+Jun 17 21:09:33 source-server indicator-sound[2192]: volume-control-pulse.vala:741: unable to get pulse unix socket: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.PulseAudio1 was not provided by any .service files
+Jun 17 21:09:33 source-server indicator-sound[2192]: media-player-list-greeter.vala:55: Unable to get active entry: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name com.canonical.UnityGreeter was not provided by any .service files
+Jun 17 21:09:35 source-server indicator-datet[2186]: could not find the desktop file for 'org.gnome.Calendar.desktop'
+Jun 17 21:25:25 source-server xfce4-notifyd[13927]: cannot open display:
+Jun 17 21:25:25 source-server systemd[2056]: xfce4-notifyd.service: Failed with result 'exit-code'.
+Jun 17 21:25:25 source-server systemd[2056]: Failed to start xfce4-notifyd.service - XFCE notifications service.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:32.933640,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.130326,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.274893,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.279635,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.400244,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.404771,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.417973,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.424377,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.560396,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:33 source-server smbd[1888]: [2026/06/17 21:38:33.565901,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:33 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:45 source-server smbd[1888]: [2026/06/17 21:38:45.996079,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:45 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.059576,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.098512,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.122727,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.129576,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.131709,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.157279,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.205008,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.209690,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:46 source-server smbd[1888]: [2026/06/17 21:38:46.218295,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:46 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:56 source-server smbd[1888]: [2026/06/17 21:38:56.928958,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:56 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:56 source-server smbd[1888]: [2026/06/17 21:38:56.942283,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:56 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.003547,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.010986,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.014628,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.073244,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.198531,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.201370,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.298291,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:38:57 source-server smbd[1888]: [2026/06/17 21:38:57.299776,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:38:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.100156,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.129528,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.162583,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.169120,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.191012,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.235162,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.344184,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.350273,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.412148,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:12 source-server smbd[1888]: [2026/06/17 21:39:12.415871,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:12 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:29 source-server smbd[1888]: [2026/06/17 21:39:29.751762,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:29 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:29 source-server smbd[1888]: [2026/06/17 21:39:29.782037,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:29 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:29 source-server smbd[1888]: [2026/06/17 21:39:29.783708,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:29 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:39:29 source-server smbd[1888]: [2026/06/17 21:39:29.807603,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:29 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:29 source-server smbd[1888]: [2026/06/17 21:39:29.846548,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:29 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:39:29 source-server smbd[1888]: [2026/06/17 21:39:29.850141,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:39:29 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.796534,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.816050,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.841956,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.859735,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.876164,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.876369,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.896273,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.901258,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.942839,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:37 source-server smbd[1888]: [2026/06/17 21:41:37.969354,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:37 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:45 source-server smbd[1888]: [2026/06/17 21:41:45.454939,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:45 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:45 source-server smbd[1888]: [2026/06/17 21:41:45.472123,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:45 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:45 source-server smbd[1888]: [2026/06/17 21:41:45.508738,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:45 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:45 source-server smbd[1888]: [2026/06/17 21:41:45.523374,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:45 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:57 source-server smbd[1888]: [2026/06/17 21:41:57.538214,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:57 source-server smbd[1888]: [2026/06/17 21:41:57.544875,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:41:57 source-server smbd[1888]: [2026/06/17 21:41:57.598784,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:41:57 source-server smbd[1888]: [2026/06/17 21:41:57.609248,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:41:57 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:42:03 source-server smbd[1888]: [2026/06/17 21:42:03.691018,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:42:03 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:42:03 source-server smbd[1888]: [2026/06/17 21:42:03.697309,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:42:03 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:42:03 source-server smbd[1888]: [2026/06/17 21:42:03.754658,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:42:03 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:42:03 source-server smbd[1888]: [2026/06/17 21:42:03.757466,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:42:03 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.165017,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.173366,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.182627,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.199852,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-454355343-3176600638-1622726219-1008 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.221551,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.230900,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.237148,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:44:19 source-server smbd[1888]: [2026/06/17 21:44:19.259296,  0] source3/smbd/posix_acls.c:2025(create_canon_ace_lists)
+Jun 17 21:44:19 source-server smbd[1888]:   create_canon_ace_lists: unable to map SID S-1-5-21-4258706223-659879830-2287457262-2283895837 to uid or gid.
+Jun 17 21:47:32 source-server sudo[24502]:   source : a password is required ; PWD=/home/source/SpiritOS ; USER=ollama ; COMMAND=/usr/bin/test -r /mnt/spirit-8tb/ollama-models
+Jun 17 21:47:32 source-server sudo[24513]:   source : a password is required ; PWD=/home/source/SpiritOS ; USER=ollama ; COMMAND=/usr/bin/test -w /mnt/spirit-8tb/ollama-models
+
+[exit 0]

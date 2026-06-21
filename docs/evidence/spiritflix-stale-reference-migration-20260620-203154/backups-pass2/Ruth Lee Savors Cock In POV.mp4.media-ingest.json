@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-18T00:31:25.097Z",
+  "jobId": "mi-mqhhjejz-d8f3ff6f",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Ruth Lee Savors Cock In POV.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Ruth Lee Savors Cock In POV.mkv",
+  "originalSize": 310659988,
+  "outputSize": 183184376,
+  "savingsPercent": 41.03,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-18T00:31:25.098Z"
+  }
+}

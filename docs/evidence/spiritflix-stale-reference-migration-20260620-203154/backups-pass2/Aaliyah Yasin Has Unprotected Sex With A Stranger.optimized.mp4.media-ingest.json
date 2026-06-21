@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-15T23:04:42.273Z",
+  "jobId": "mi-mqfrfcxw-65330397",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Aaliyah Yasin Has Unprotected Sex With A Stranger.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Aaliyah Yasin Has Unprotected Sex With A Stranger.optimized.mkv",
+  "originalSize": 519857218,
+  "outputSize": 327185017,
+  "savingsPercent": 37.06,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-15T23:04:42.274Z"
+  }
+}

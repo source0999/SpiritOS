@@ -1,0 +1,9 @@
+$ systemctl list-units --type=service --all | grep -Ei "spirit|proxy|source|ollama|next|watch|monitor|backup|jellyfin|docker" || true
+# rc=0
+
+  docker.service                                                                            loaded    active   running Docker Application Container Engine
+  dpkg-db-backup.service                                                                    loaded    inactive dead    Daily dpkg database backup service
+  lm-sensors.service                                                                        loaded    active   exited  Initialize hardware monitoring sensors
+  lvm2-monitor.service                                                                      loaded    active   exited  Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling
+  ollama.service                                                                            loaded    active   running Ollama Service
+  smartmontools.service                                                                     loaded    active   running Self Monitoring and Reporting Technology (SMART) Daemon

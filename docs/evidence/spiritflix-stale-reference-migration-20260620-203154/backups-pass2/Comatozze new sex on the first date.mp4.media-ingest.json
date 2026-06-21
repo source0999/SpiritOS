@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-15T23:48:26.461Z",
+  "jobId": "mi-mqfrff9g-42d54782",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Comatozze new sex on the first date.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Comatozze new sex on the first date.mkv",
+  "originalSize": 760715142,
+  "outputSize": 328020209,
+  "savingsPercent": 56.88,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-15T23:48:26.462Z"
+  }
+}

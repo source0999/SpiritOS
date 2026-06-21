@@ -2171,6 +2171,102 @@
   white-space: nowrap;
 }
 
+.spiritflix-player__queue {
+  position: absolute;
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 4;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(24rem, calc(100vw - 1.5rem));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.7rem;
+  background: rgba(5, 7, 13, 0.9);
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(22px);
+}
+
+.spiritflix-player__queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.8rem;
+}
+
+.spiritflix-player__queue-header div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.spiritflix-player__queue-header span {
+  overflow: hidden;
+  color: rgba(226, 232, 240, 0.68);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.spiritflix-player__queue-header strong {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.spiritflix-player__queue-header button {
+  width: 2.4rem;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  min-height: 2.4rem;
+}
+
+.spiritflix-player__queue-list {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  overflow-y: auto;
+  padding: 0.6rem;
+}
+
+.spiritflix-player__queue-list button {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 3.1rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.055);
+  text-align: left;
+}
+
+.spiritflix-player__queue-list button.is-current {
+  border-color: rgba(34, 211, 238, 0.55);
+  background: rgba(34, 211, 238, 0.16);
+  box-shadow: 0 0 1.4rem rgba(34, 211, 238, 0.14);
+}
+
+.spiritflix-player__queue-list span {
+  color: rgba(226, 232, 240, 0.54);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.spiritflix-player__queue-list strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .spiritflix-player__loading,
 .spiritflix-player__tap-feedback,
 .spiritflix-player__error,
@@ -2184,8 +2280,11 @@
 
 .spiritflix-player__tap-feedback {
   display: grid;
+  grid-auto-flow: column;
+  gap: 0.55rem;
   width: 6.8rem;
   height: 6.8rem;
+  align-items: center;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
@@ -2195,6 +2294,30 @@
   animation: spiritflix-tap-feedback 850ms ease forwards;
   backdrop-filter: blur(14px);
   box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.38), 0 0 2rem rgba(255, 255, 255, 0.12);
+}
+
+.spiritflix-player__tap-feedback.is-seek-back,
+.spiritflix-player__tap-feedback.is-seek-forward {
+  width: auto;
+  min-width: 6.7rem;
+  height: 4.8rem;
+  padding: 0 1.05rem;
+  background: rgba(2, 6, 23, 0.62);
+}
+
+.spiritflix-player__tap-feedback.is-seek-back {
+  left: 29%;
+}
+
+.spiritflix-player__tap-feedback.is-seek-forward {
+  left: 71%;
+}
+
+.spiritflix-player__tap-feedback strong {
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .spiritflix-player__loading {
@@ -2501,22 +2624,23 @@
   }
 
   .spiritflix-player__controls {
-    left: max(0.55rem, env(safe-area-inset-left));
-    right: max(0.55rem, env(safe-area-inset-right));
-    bottom: max(0.45rem, env(safe-area-inset-bottom));
-    gap: 0.38rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0.75rem;
-    padding: 0.5rem 0.55rem;
-    background: rgba(24, 20, 18, 0.7);
-    box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.38);
-    backdrop-filter: blur(20px) saturate(170%);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    gap: 0.48rem;
+    border: 0;
+    border-radius: 0;
+    padding: 3.15rem max(0.65rem, env(safe-area-inset-right)) max(0.6rem, env(safe-area-inset-bottom)) max(0.65rem, env(safe-area-inset-left));
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.58) 56%, rgba(0, 0, 0, 0));
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
   .spiritflix-player__scrub-row {
     display: grid;
     grid-template-columns: 2.7rem minmax(0, 1fr) 2.7rem;
     gap: 0.45rem;
+    align-items: center;
   }
 
   .spiritflix-player__button-row {
@@ -2525,6 +2649,7 @@
     justify-content: space-between;
     gap: 0.45rem;
     min-width: 0;
+    border-radius: 999px;
   }
 
   .spiritflix-player__transport,
@@ -2552,6 +2677,9 @@
     min-width: 2.75rem;
     height: 2.75rem;
     min-height: 2.75rem;
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(8, 10, 18, 0.48);
+    box-shadow: 0 0.55rem 1.4rem rgba(0, 0, 0, 0.22);
     padding: 0;
   }
 
@@ -2771,4 +2899,1339 @@
   .spiritflix-player__up-next {
     display: none;
   }
+}
+
+.spiritflix-admin-shell {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: 0;
+  min-height: 100dvh;
+  background: linear-gradient(180deg, #08090d 0%, #0d0f14 100%);
+}
+
+.spiritflix-admin-shell.has-details {
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) minmax(18rem, 24rem);
+}
+
+.spiritflix-admin-sidebar,
+.spiritflix-admin-details {
+  min-width: 0;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(8, 9, 13, 0.86);
+}
+
+.spiritflix-admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+}
+
+.spiritflix-admin-nav,
+.spiritflix-admin-root-list,
+.spiritflix-admin-detail-actions {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.spiritflix-admin-sidebar-footer {
+  margin-top: auto;
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.spiritflix-admin-debug-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.spiritflix-admin-debug-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.spiritflix-admin-debug-status {
+  margin: 0;
+  padding: 0 0.55rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.spiritflix-admin-nav button,
+.spiritflix-admin-root-list button,
+.spiritflix-admin-source-toggle button,
+.spiritflix-admin-view-toggle button,
+.spiritflix-admin-check,
+.spiritflix-admin-disabled-action,
+.spiritflix-admin-detail-actions button,
+.spiritflix-admin-detail-actions a,
+.spiritflix-admin-icon-button,
+.spiritflix-admin-status button,
+.spiritflix-admin-details__header button,
+.spiritflix-admin-breadcrumbs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 2.35rem;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.045);
+  color: #f8fafc;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.spiritflix-admin-nav button,
+.spiritflix-admin-root-list button {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+}
+
+.spiritflix-admin-root-list button {
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-admin-nav button.is-active,
+.spiritflix-admin-root-list button.is-active,
+.spiritflix-admin-source-toggle button.is-active,
+.spiritflix-admin-view-toggle button.is-active {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.12);
+  color: #f8fafc;
+}
+
+.spiritflix-admin-workspace {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 100dvh;
+}
+
+.spiritflix-admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(13, 15, 20, 0.92);
+}
+
+.spiritflix-admin-source-toggle {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.spiritflix-admin-source-toggle button,
+.spiritflix-admin-view-toggle button,
+.spiritflix-admin-icon-button,
+.spiritflix-admin-status button,
+.spiritflix-admin-details__header button {
+  justify-content: center;
+  padding: 0.5rem 0.65rem;
+}
+
+.spiritflix-admin-view-toggle {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.spiritflix-admin-check {
+  justify-content: center;
+  padding: 0.45rem 0.65rem;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 0.84rem;
+}
+
+.spiritflix-admin-check input {
+  inline-size: 1rem;
+  block-size: 1rem;
+  accent-color: #22d3ee;
+}
+
+.spiritflix-admin-disabled-action {
+  justify-content: center;
+  padding: 0.5rem 0.65rem;
+  color: rgba(226, 232, 240, 0.46);
+  cursor: not-allowed;
+}
+
+.spiritflix-admin-search {
+  display: flex;
+  align-items: center;
+  flex: 1 1 18rem;
+  min-width: 12rem;
+  min-height: 2.4rem;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.45rem;
+  padding: 0 0.75rem;
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.spiritflix-admin-search input,
+.spiritflix-admin-select select {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f8fafc;
+}
+
+.spiritflix-admin-search input::placeholder {
+  color: rgba(226, 232, 240, 0.58);
+}
+
+.spiritflix-admin-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.45rem;
+  padding: 0 0.65rem;
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.spiritflix-admin-select span {
+  color: rgba(226, 232, 240, 0.68);
+  font-size: 0.8rem;
+}
+
+.spiritflix-admin-select select option {
+  background: #11131a;
+}
+
+.spiritflix-admin-explorer {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.spiritflix-admin-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.75rem 0.85rem 0;
+}
+
+.spiritflix-admin-breadcrumbs button {
+  min-height: 2rem;
+  padding: 0.35rem 0.55rem;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 0.82rem;
+}
+
+.spiritflix-admin-table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+
+.spiritflix-admin-items.is-grid .spiritflix-admin-table {
+  display: none;
+}
+
+.spiritflix-admin-items.is-list .spiritflix-admin-card-list {
+  display: none;
+}
+
+.spiritflix-admin-table th,
+.spiritflix-admin-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  padding: 0.72rem 0.85rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.spiritflix-admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #11131a;
+  color: rgba(226, 232, 240, 0.64);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.spiritflix-admin-table tr {
+  cursor: pointer;
+}
+
+.spiritflix-admin-table tr:hover,
+.spiritflix-admin-table tr.is-selected,
+.spiritflix-admin-card.is-selected {
+  background: rgba(34, 211, 238, 0.09);
+}
+
+.spiritflix-admin-table tr.is-selected,
+.spiritflix-admin-card.is-selected {
+  outline: 2px solid rgba(34, 211, 238, 0.55);
+  outline-offset: -2px;
+}
+
+.spiritflix-admin-name-button {
+  display: inline-flex;
+  align-items: center;
+  max-width: 28rem;
+  gap: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.spiritflix-admin-name-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-admin-state-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #facc15;
+}
+
+.spiritflix-admin-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.7rem;
+  padding: 0.85rem;
+}
+
+.spiritflix-admin-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  align-content: start;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 13.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.45rem;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(226, 232, 240, 0.74);
+  text-align: left;
+  cursor: pointer;
+}
+
+.spiritflix-admin-card:hover {
+  border-color: rgba(34, 211, 238, 0.35);
+}
+
+.spiritflix-admin-card:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.65);
+  outline-offset: 2px;
+}
+
+.spiritflix-admin-card-menu {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.4rem;
+  background: rgba(8, 9, 13, 0.82);
+  color: #e2e8f0;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.spiritflix-admin-card:hover .spiritflix-admin-card-menu,
+.spiritflix-admin-card:focus-within .spiritflix-admin-card-menu,
+.spiritflix-admin-card.is-selected .spiritflix-admin-card-menu,
+.spiritflix-admin-card-menu[aria-expanded="true"] {
+  opacity: 1;
+}
+
+.spiritflix-admin-context-menu {
+  position: fixed;
+  z-index: 150;
+  min-width: 11rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.5rem;
+  background: #0f172a;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.spiritflix-admin-context-menu button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 0.86rem;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.spiritflix-admin-context-menu button:hover,
+.spiritflix-admin-context-menu button:focus-visible {
+  background: rgba(34, 211, 238, 0.12);
+}
+
+.spiritflix-admin-context-menu button.is-destructive {
+  color: #fca5a5;
+}
+
+.spiritflix-admin-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  justify-content: end;
+  background: rgb(2 6 23 / 55%);
+}
+
+.spiritflix-admin-details.is-overlay {
+  width: min(24rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - 1.5rem);
+  margin: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.65rem;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  overflow: auto;
+}
+
+.spiritflix-admin-card-title {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: #f8fafc;
+  font-weight: 750;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-admin-card-meta {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-admin-toolbar__title {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.spiritflix-admin-action-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+}
+
+.spiritflix-admin-action-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(2 6 23 / 72%);
+  cursor: pointer;
+}
+
+.spiritflix-admin-action-dialog__panel {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100vw - 2rem));
+  max-height: min(90dvh, 720px);
+  overflow-y: auto;
+  padding: 1rem 1.1rem 0.85rem;
+  border: 1px solid rgb(148 163 184 / 20%);
+  border-radius: 14px;
+  background: #0f172a;
+  color: #e2e8f0;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+.spiritflix-admin-action-dialog__source {
+  margin: 0.55rem 0 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.45rem;
+  background: rgba(15, 23, 42, 0.65);
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.spiritflix-admin-action-dialog__status {
+  margin: 0.5rem 0 0;
+  color: #a5f3fc;
+  font-size: 0.9rem;
+}
+
+.spiritflix-admin-action-dialog__error {
+  margin: 0.5rem 0 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 0.45rem;
+  background: rgba(127, 29, 29, 0.35);
+  color: #fecaca;
+  font-size: 0.9rem;
+}
+
+.spiritflix-admin-action-dialog__path-list {
+  margin: 0.35rem 0 1rem;
+  padding-left: 1.1rem;
+  padding-bottom: 0.35rem;
+  word-break: break-all;
+}
+
+.spiritflix-admin-action-dialog__path-list li {
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.spiritflix-admin-action-dialog__fields,
+.spiritflix-admin-action-dialog__buttons,
+.spiritflix-admin-action-dialog__preview {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.spiritflix-admin-action-dialog__buttons {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.spiritflix-admin-action-dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.35), #0f172a 28%);
+}
+
+.spiritflix-admin-action-dialog__primary {
+  border-color: rgba(34, 211, 238, 0.45) !important;
+  background: rgba(34, 211, 238, 0.16) !important;
+  color: #ecfeff !important;
+  font-weight: 700;
+}
+
+.spiritflix-admin-action-dialog__primary.is-confirm {
+  border-color: rgba(248, 113, 113, 0.5) !important;
+  background: rgba(127, 29, 29, 0.45) !important;
+  color: #fecaca !important;
+}
+
+.spiritflix-admin-thumbnail {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 0.4rem;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.82));
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.spiritflix-admin-thumbnail img,
+.spiritflix-admin-thumbnail > span:not(.spiritflix-admin-thumbnail__play):not(.spiritflix-admin-thumbnail__fallback) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spiritflix-admin-thumbnail.is-compact {
+  width: 2.6rem;
+  height: 2.1rem;
+  aspect-ratio: auto;
+  flex: 0 0 2.6rem;
+  border-radius: 0.32rem;
+}
+
+.spiritflix-admin-thumbnail__fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.spiritflix-admin-thumbnail__play {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+.spiritflix-admin-thumbnail.is-compact .spiritflix-admin-thumbnail__play {
+  right: 0.2rem;
+  bottom: 0.2rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.spiritflix-admin-details {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  overflow: auto;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+}
+
+.spiritflix-admin-details__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.spiritflix-admin-details__header > .spiritflix-admin-thumbnail {
+  width: 5.4rem;
+  flex: 0 0 5.4rem;
+}
+
+.spiritflix-admin-details__header p {
+  margin: 0 0 0.25rem;
+  color: rgba(226, 232, 240, 0.58);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.spiritflix-admin-details__header h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.spiritflix-admin-detail-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.spiritflix-admin-detail-actions button,
+.spiritflix-admin-detail-actions a {
+  justify-content: center;
+  padding: 0.55rem;
+  font-size: 0.82rem;
+}
+
+.spiritflix-admin-detail-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.spiritflix-admin-detail-list div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.spiritflix-admin-detail-list dt {
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.spiritflix-admin-detail-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #f8fafc;
+  font-size: 0.9rem;
+}
+
+.spiritflix-admin-toast {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.12);
+  color: #cffafe;
+  font-size: 0.9rem;
+}
+
+.spiritflix-admin-empty,
+.spiritflix-admin-error {
+  margin: 0;
+  padding: 1rem;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.spiritflix-admin-error {
+  color: #fecaca;
+}
+
+.spiritflix-admin-status {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 3rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.55rem 0.85rem;
+  background: rgba(8, 9, 13, 0.92);
+  color: rgba(226, 232, 240, 0.68);
+  font-size: 0.82rem;
+}
+
+.spiritflix-admin-status span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.is-spinning {
+  animation: spiritflix-admin-spin 900ms linear infinite;
+}
+
+@keyframes spiritflix-admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 980px) {
+  .spiritflix-admin-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .spiritflix-admin-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .spiritflix-admin-nav,
+  .spiritflix-admin-root-list {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+  }
+
+  .spiritflix-admin-nav button,
+  .spiritflix-admin-root-list button {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .spiritflix-admin-workspace {
+    min-height: 0;
+  }
+
+  .spiritflix-admin-table {
+    display: none;
+  }
+
+  .spiritflix-admin-card-list {
+    display: grid;
+  }
+
+  .spiritflix-admin-items.is-list .spiritflix-admin-card-list {
+    display: grid;
+  }
+
+  .spiritflix-admin-details {
+    position: sticky;
+    bottom: 0;
+    max-height: 62dvh;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-left: 0;
+  }
+
+  .spiritflix-admin-details:not(.is-open) {
+    display: none;
+  }
+
+  .spiritflix-admin-status {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .spiritflix-admin-status span:nth-child(3),
+  .spiritflix-admin-status span:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .spiritflix-admin-toolbar {
+    align-items: stretch;
+  }
+
+  .spiritflix-admin-source-toggle,
+  .spiritflix-admin-view-toggle,
+  .spiritflix-admin-search,
+  .spiritflix-admin-select,
+  .spiritflix-admin-check,
+  .spiritflix-admin-disabled-action {
+    width: 100%;
+  }
+
+  .spiritflix-admin-source-toggle button,
+  .spiritflix-admin-view-toggle button {
+    flex: 1 1 0;
+  }
+
+  .spiritflix-admin-detail-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── SpiritFlix Smart Review (S4) ─────────────────────────────────── */
+.spiritflix-smart-review {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  justify-content: end;
+  pointer-events: none;
+}
+
+.spiritflix-smart-batch {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  justify-content: end;
+  pointer-events: none;
+}
+
+.spiritflix-smart-review__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(2 6 23 / 58%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.spiritflix-smart-review__panel {
+  position: relative;
+  z-index: 1;
+  width: min(28rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - 1rem);
+  margin: 0.5rem;
+  padding: 1rem;
+  overflow: auto;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.75rem;
+  background: #0b1220;
+  color: #e2e8f0;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.spiritflix-smart-batch__panel {
+  position: relative;
+  z-index: 1;
+  width: min(34rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - 1rem);
+  margin: 0.5rem;
+  padding: 1rem;
+  overflow: auto;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.75rem;
+  background: #0b1220;
+  color: #e2e8f0;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.spiritflix-smart-review__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.spiritflix-smart-review__header h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.spiritflix-smart-review__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: #a5f3fc;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.spiritflix-smart-review__close {
+  border: 0;
+  border-radius: 0.4rem;
+  background: rgb(148 163 184 / 12%);
+  color: #e2e8f0;
+  padding: 0.35rem;
+  cursor: pointer;
+}
+
+.spiritflix-smart-review__path {
+  margin: 0.55rem 0 0.75rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.spiritflix-smart-review__status {
+  margin: 0.5rem 0;
+  color: #a5f3fc;
+}
+
+.spiritflix-smart-review__error {
+  margin: 0.5rem 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.45rem;
+  background: rgb(127 29 29 / 35%);
+  color: #fecaca;
+}
+
+.spiritflix-smart-review__section {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgb(148 163 184 / 14%);
+}
+
+.spiritflix-smart-review__section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.86rem;
+  color: #cbd5e1;
+}
+
+.spiritflix-smart-review__grid {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.spiritflix-smart-review__grid div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.spiritflix-smart-review__grid dt {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.spiritflix-smart-review__grid dd {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.86rem;
+  word-break: break-word;
+}
+
+.spiritflix-smart-review__grid dd.is-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+.spiritflix-smart-review__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.spiritflix-smart-review__notes {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.spiritflix-smart-review__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgb(148 163 184 / 14%);
+}
+
+.spiritflix-smart-review__primary,
+.spiritflix-smart-review__secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.84rem;
+  line-height: 1.2;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.spiritflix-smart-review__primary {
+  background: linear-gradient(180deg, #0ea5e9, #0284c7);
+  border-color: rgb(14 165 233 / 45%);
+  color: #f8fafc;
+}
+
+.spiritflix-smart-review__primary:disabled,
+.spiritflix-smart-review__secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spiritflix-smart-review__secondary {
+  background: rgb(15 23 42 / 70%);
+  color: #e2e8f0;
+}
+
+.spiritflix-smart-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 999px;
+  background: rgb(30 41 59 / 70%);
+  color: #e2e8f0;
+  font-size: 0.76rem;
+}
+
+.spiritflix-smart-tag-pill.is-review-required {
+  border-color: rgb(251 191 36 / 45%);
+}
+
+.spiritflix-smart-tag-pill__label {
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-smart-tag-pill__meta {
+  color: #94a3b8;
+}
+
+.spiritflix-smart-tag-pill__flag {
+  color: #fcd34d;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.spiritflix-smart-review__boundary {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.45rem;
+  background: rgb(14 116 144 / 18%);
+  color: #bae6fd;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.spiritflix-smart-review__field {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.65rem;
+}
+
+.spiritflix-smart-review__field span {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.spiritflix-smart-review__field input,
+.spiritflix-smart-review__field textarea {
+  width: 100%;
+  border: 1px solid rgb(148 163 184 / 22%);
+  border-radius: 0.4rem;
+  background: rgb(15 23 42 / 75%);
+  color: #f8fafc;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+}
+
+.spiritflix-smart-review__field small {
+  color: #fbbf24;
+  font-size: 0.72rem;
+}
+
+/* ── S6 approved metadata + rename preview ──────────────────────────── */
+.spiritflix-smart-review__section--approved {
+  border-color: #22c55e;
+}
+
+.spiritflix-smart-review__section--export-result {
+  border-color: #3b82f6;
+}
+
+.spiritflix-smart-review__section--rename-preview {
+  border-color: #a855f7;
+}
+
+.spiritflix-smart-review__section--actions .spiritflix-smart-review__action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.spiritflix-smart-review__warning {
+  color: #fbbf24;
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.spiritflix-smart-batch__items {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.spiritflix-smart-batch__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.55rem;
+  border: 1px solid rgb(148 163 184 / 14%);
+  border-radius: 0.45rem;
+  background: rgb(15 23 42 / 45%);
+  min-width: 0;
+}
+
+.spiritflix-smart-batch__item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.spiritflix-smart-batch__title-block {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.spiritflix-smart-batch__name {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.spiritflix-smart-batch__meta,
+.spiritflix-smart-batch__reason,
+.spiritflix-smart-batch__empty {
+  margin: 0.15rem 0 0;
+  color: #94a3b8;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.spiritflix-smart-batch__status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.16rem 0.45rem;
+  background: rgb(148 163 184 / 12%);
+  color: #cbd5e1;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.spiritflix-smart-batch__status.is-analyzed,
+.spiritflix-smart-batch__status.is-reviewed,
+.spiritflix-smart-batch__item > span.is-ready {
+  background: rgb(34 197 94 / 16%);
+  color: #bbf7d0;
+}
+
+.spiritflix-smart-batch__status.is-needs-review {
+  background: rgb(251 191 36 / 16%);
+  color: #fde68a;
+}
+
+.spiritflix-smart-batch__status.is-failed {
+  background: rgb(248 113 113 / 16%);
+  color: #fecaca;
+}
+
+.spiritflix-smart-batch__hint {
+  margin: 0.45rem 0 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.spiritflix-smart-batch__operator-section {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.spiritflix-smart-batch__operator-section h4 {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.spiritflix-smart-batch__recommended-name,
+.spiritflix-smart-batch__blocker {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.spiritflix-smart-batch__blocker {
+  color: #fca5a5;
+}
+
+.spiritflix-smart-batch__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.spiritflix-smart-batch__actions .spiritflix-smart-review__secondary {
+  flex: 1 1 9.25rem;
+}
+
+.spiritflix-smart-batch__advanced {
+  min-width: 0;
+  border-top: 1px solid rgb(148 163 184 / 12%);
+  padding-top: 0.55rem;
+}
+
+.spiritflix-smart-batch__advanced summary {
+  cursor: pointer;
+  color: #a5f3fc;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.spiritflix-smart-batch__advanced[open] {
+  display: grid;
+  gap: 0.5rem;
+}
+
+@media (max-width: 520px) {
+  .spiritflix-smart-batch__item-header {
+    display: grid;
+  }
+
+  .spiritflix-smart-batch__status {
+    justify-self: start;
+  }
+}
+
+.spiritflix-smart-tag-pill-wrap {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.spiritflix-smart-tag-pill-wrap.is-approved .spiritflix-smart-tag-pill {
+  border-color: rgb(74 222 128 / 45%);
+  background: rgb(20 83 45 / 35%);
+}
+
+.spiritflix-smart-tag-pill-wrap.is-rejected .spiritflix-smart-tag-pill {
+  opacity: 0.55;
+  border-color: rgb(148 163 184 / 18%);
+}
+
+.spiritflix-smart-tag-pill-wrap.is-pending .spiritflix-smart-tag-pill {
+  border-color: rgb(251 191 36 / 35%);
+}
+
+.spiritflix-smart-tag-pill__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.spiritflix-smart-tag-pill__actions button {
+  border: 1px solid rgb(148 163 184 / 20%);
+  border-radius: 0.35rem;
+  background: rgb(15 23 42 / 70%);
+  color: #e2e8f0;
+  font-size: 0.68rem;
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+}
+
+.spiritflix-admin-context-menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

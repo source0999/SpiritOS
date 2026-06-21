@@ -1,0 +1,541 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/unknown/3888823_hq.mkv",
+  "generated_at": "2026-06-14T11:13:44+00:00",
+  "dry_run": false,
+  "verification_needed": false,
+  "performers": [
+    {
+      "id": "realtoxxxmaria",
+      "name": "Realtoxxxmaria",
+      "confidence": 1.0,
+      "similarity": 1.0,
+      "status": "manual-confirmed",
+      "verification_needed": false,
+      "label": "Realtoxxxmaria - manually confirmed; needs face enrollment"
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-14T11:13:43+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [],
+    "text_verification_queries": [],
+    "watermark_ocr": [],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/unknown/.face-review/3888823_hq/frames/frame-01.jpg",
+    "/DATA/yes/unknown/.face-review/3888823_hq/frames/frame-02.jpg",
+    "/DATA/yes/unknown/.face-review/3888823_hq/frames/frame-03.jpg",
+    "/DATA/yes/unknown/.face-review/3888823_hq/frames/frame-04.jpg",
+    "/DATA/yes/unknown/.face-review/3888823_hq/frames/frame-05.jpg",
+    "/DATA/yes/unknown/.face-review/3888823_hq/frames/frame-06.jpg"
+  ],
+  "faces_detected": 5,
+  "faces_rejected": [
+    {
+      "frame_path": "/tmp/face-organizer-lbc7cvel/frame-03.jpg",
+      "bbox": [
+        238.17,
+        -101.32,
+        411.94,
+        126.33
+      ],
+      "detection_score": 0.6252,
+      "reason": "low detection score 0.625 < 0.650"
+    }
+  ],
+  "duration_seconds": 999.061,
+  "processing_time_seconds": 36.39,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  },
+  "manual_corrections": [
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "sidecar_path": "/DATA/yes/unknown/3888823_hq.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Realtoxxxmaria\"",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Realtoxxxmaria\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20onlyfans",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Realtoxxxmaria\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Apimpbunny.com",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Realtoxxxmaria\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Acoomer.st",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Realtoxxxmaria",
+          "url": "https://coomer.st/search?q=Realtoxxxmaria",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "sidecar_path": "/DATA/yes/unknown/3888823_hq.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Realtoxxxmaria\"",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Realtoxxxmaria\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20onlyfans",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Realtoxxxmaria\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Apimpbunny.com",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Realtoxxxmaria\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Acoomer.st",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Realtoxxxmaria",
+          "url": "https://coomer.st/search?q=Realtoxxxmaria",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:35:34+00:00"
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "sidecar_path": "/DATA/yes/unknown/3888823_hq.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Realtoxxxmaria\"",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Realtoxxxmaria\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20onlyfans",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Realtoxxxmaria\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Apimpbunny.com",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Realtoxxxmaria\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Acoomer.st",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Realtoxxxmaria",
+          "url": "https://coomer.st/search?q=Realtoxxxmaria",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "sidecar_path": "/DATA/yes/unknown/3888823_hq.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Realtoxxxmaria\"",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Realtoxxxmaria\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20onlyfans",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Realtoxxxmaria\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Apimpbunny.com",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Realtoxxxmaria\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Acoomer.st",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Realtoxxxmaria",
+          "url": "https://coomer.st/search?q=Realtoxxxmaria",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:41:18+00:00"
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:11:06+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "sidecar_path": "/DATA/yes/unknown/3888823_hq.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Realtoxxxmaria\"",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Realtoxxxmaria\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20onlyfans",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Realtoxxxmaria\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Apimpbunny.com",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Realtoxxxmaria\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Acoomer.st",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Realtoxxxmaria",
+          "url": "https://coomer.st/search?q=Realtoxxxmaria",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:11:06+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "sidecar_path": "/DATA/yes/unknown/3888823_hq.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Realtoxxxmaria\"",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Realtoxxxmaria\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20onlyfans",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Realtoxxxmaria\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Apimpbunny.com",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Realtoxxxmaria\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Realtoxxxmaria%22%20site%3Acoomer.st",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Realtoxxxmaria",
+          "url": "https://coomer.st/search?q=Realtoxxxmaria",
+          "candidate_name": "Realtoxxxmaria",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:06+00:00"
+    }
+  ],
+  "manual_correction_pending": null,
+  "audit_events": [
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:35:34+00:00",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    },
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:41:18+00:00",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    },
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:06+00:00",
+      "corrected_at": "2026-06-15T03:11:06+00:00",
+      "source_file": "/DATA/yes/unknown/3888823_hq.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Realtoxxxmaria",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    }
+  ],
+  "path": "/DATA/yes/unknown/3888823_hq.mkv",
+  "filename": "3888823_hq.mkv",
+  "manual_confirmed_model": {
+    "schema": "media-manual-model-assignment/v1",
+    "name": "Realtoxxxmaria",
+    "confirmed_by": "Britton",
+    "confirmed_at": "2026-06-15T03:11:06+00:00",
+    "known_performer_id": "",
+    "face_enrolled": false,
+    "move_receipt": {},
+    "next_action": "queued_for_face_enrollment"
+  }
+}

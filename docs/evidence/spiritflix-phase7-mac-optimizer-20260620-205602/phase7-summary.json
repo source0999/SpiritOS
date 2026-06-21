@@ -1,0 +1,14 @@
+{
+  "candidate_count": 9,
+  "optimized_count": 9,
+  "source_total": 468113173,
+  "optimized_total": 178986291,
+  "space_saved": 289126882,
+  "counts": {
+    "remux-faststart-only": 1,
+    "mobile-720p": 8
+  },
+  "worker_hosts": [
+    "spirit-mac-mini"
+  ]
+}

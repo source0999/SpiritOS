@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-16T00:39:20.168Z",
+  "jobId": "mi-mqfrfx4x-a99e3512",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Devorah Roloff Pussy.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Devorah Roloff Pussy.mkv",
+  "originalSize": 15056399,
+  "outputSize": 7359317,
+  "savingsPercent": 51.12,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-16T00:39:20.170Z"
+  }
+}

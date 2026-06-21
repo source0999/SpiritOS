@@ -1,0 +1,8 @@
+$ tailscale status 2>/dev/null || true
+100.111.32.31   spirit            smith.britton999@  linux    -
+100.78.185.122  brittons-z-fold7  smith.britton999@  android  idle, tx 5908 rx 10460
+100.73.44.110   iphone171         smith.britton999@  iOS      offline, last seen 10h ago
+100.117.164.42  sources-mac-mini  smith.britton999@  macOS    -
+100.82.31.124   spiritdesktop     smith.britton999@  windows  active; direct [2601:cd:c982:e6d0:b423:3dd4:c13:6372]:41641, tx 114608248 rx 7390536
+
+[exit 0]

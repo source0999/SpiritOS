@@ -1,0 +1,28 @@
+=== status counts normal ===
+=== status counts all ===
+=== raw grep liveness HTTP ===
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+LISTEN 0      511                        0.0.0.0:3000       0.0.0.0:*    users:(("next-server (v1",pid=939993,fd=19))
+LISTEN 0      4096                       0.0.0.0:8096       0.0.0.0:*
+LISTEN 0      4096                     127.0.0.1:11434      0.0.0.0:*
+LISTEN 0      4096                          [::]:8096          [::]:*
+face-organizer-8765: 1 windows (created Wed Jun 17 22:01:46 2026)
+source-proxy-lan: 1 windows (created Wed Jun 17 21:57:57 2026)
+spiritos-lan: 1 windows (created Thu Jun 18 07:46:21 2026)
+--- https://127.0.0.1:8787/docs
+HTTP=200 time_total=0.004102 connect=0.000099 starttransfer=0.004074
+--- https://127.0.0.1:8787/openapi.json
+HTTP=200 time_total=0.007202 connect=0.000098 starttransfer=0.006990
+--- https://127.0.0.1:8787/health
+HTTP=404 time_total=0.004247 connect=0.000112 starttransfer=0.004199
+--- https://127.0.0.1:8787/v1/health
+HTTP=404 time_total=0.005609 connect=0.000135 starttransfer=0.005578
+HTTP=200 time_total=0.055512 connect=0.000099 starttransfer=0.053928
+HTTP=200 time_total=0.139527 connect=0.000102 starttransfer=0.139477
+=== openapi safe status paths ===
+/healthcheck get
+/v1/cartographer/live-state get
+/v1/cartographer/status get
+/v1/decisions/model-lanes/preview post
+/v1/models get
+/v1/self/status get

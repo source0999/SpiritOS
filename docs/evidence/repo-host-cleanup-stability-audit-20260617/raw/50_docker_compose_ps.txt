@@ -1,0 +1,2 @@
+$ docker compose ps 2>/dev/null || true
+# rc=0

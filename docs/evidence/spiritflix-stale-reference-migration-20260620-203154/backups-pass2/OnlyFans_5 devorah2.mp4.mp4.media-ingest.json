@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-16T21:18:09.507Z",
+  "jobId": "mi-mqh2ysgh-c8087a55",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/OnlyFans_5 devorah2.mp4.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/OnlyFans_5 devorah2.mp4.mkv",
+  "originalSize": 42070874,
+  "outputSize": 16978493,
+  "savingsPercent": 59.64,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-16T21:18:09.509Z"
+  }
+}

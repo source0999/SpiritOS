@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-16T03:10:11.568Z",
+  "jobId": "mi-mqfrgmqv-c4ef9eab",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Katiana Kay Needs To Suck A Cock.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Katiana Kay Needs To Suck A Cock.mkv",
+  "originalSize": 38251307,
+  "outputSize": 26011623,
+  "savingsPercent": 32,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-16T03:10:11.569Z"
+  }
+}

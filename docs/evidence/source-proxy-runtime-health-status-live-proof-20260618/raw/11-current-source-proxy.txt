@@ -1,0 +1,157 @@
+=== tmux panes ===
+face-organizer-8765:0.0 pid=43680 cmd=bash path=/home/source/SpiritOS
+source-proxy-lan:0.0 pid=35538 cmd=bash path=/home/source/SpiritOS
+spiritos-lan:0.0 pid=496527 cmd=npm path=/home/source/SpiritOS
+=== source-proxy capture ===
+INFO:     127.0.0.1:59392 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41848 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45488 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48538 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52660 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47046 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48552 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46466 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49158 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57646 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53218 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43718 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47730 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48644 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35542 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52588 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41292 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33422 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41116 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52500 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43398 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59994 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50406 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42190 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43746 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51666 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54480 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56934 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58760 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46800 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51994 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55052 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44520 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44796 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58454 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55684 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33950 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49596 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45362 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57976 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57984 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57994 - "GET /v1/health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58002 - "GET /v1/runtime/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58018 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48758 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40404 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34860 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43834 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49868 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51826 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34262 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56812 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51670 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58902 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58912 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37762 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46984 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53938 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33630 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44068 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39328 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33404 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58712 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48608 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40786 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47754 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33942 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60396 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52342 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42086 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40768 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53364 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36756 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45724 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38594 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36156 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48450 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48054 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55810 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58690 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57350 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58354 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33304 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59600 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35380 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49020 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45908 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33798 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42134 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58724 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57686 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38942 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43040 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58094 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51626 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44310 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34836 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59538 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37680 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43594 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48688 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34352 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52476 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57544 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45838 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42264 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46838 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55662 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57566 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41350 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39166 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36952 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39582 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56702 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60806 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60554 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58482 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38058 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38072 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33304 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50306 - "GET /healthcheck HTTP/1.1" 200 OK
+
+=== process ===
+UID          PID    PPID  C STIME TTY          TIME CMD
+source     35581   35570  0 Jun17 pts/0    00:04:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+root        3062  0.2  0.0 7248196 7452 ?        SLsl Jun17   3:10 /usr/local/bin/python /usr/local/bin/uvicorn main:app --host 0.0.0.0 --port 80
+root        3073  1.1  0.8 985120 134032 ?       Ssl  Jun17  17:23 /usr/local/bin/python3.12 /usr/local/bin/uvicorn scout.main:app --host 0.0.0.0 --port 8077
+source      3436  0.6  0.0 807552  2484 ?        Ssl  Jun17   8:59 /home/ubuntu/faster-whisper-server/.venv/bin/python /home/ubuntu/faster-whisper-server/.venv/bin/uvicorn --factory faster_whisper_server.main:create_app
+source     35537  0.0  0.0  17288  8620 ?        Ss   Jun17   0:00 tmux new-session -d -s source-proxy-lan cd '/home/source/SpiritOS' && bash ./scripts/source-proxy-lan-watchdog.sh
+source     35538  0.0  0.0   7476  3900 pts/0    Ss+  Jun17   0:03 bash ./scripts/source-proxy-lan-watchdog.sh
+source     35550  0.0  0.0   5696  1900 pts/0    S+   Jun17   0:00 tee -a /home/source/source-proxy-https-lan.log
+source     35569  0.0  0.0   2804  1764 pts/0    S+   Jun17   0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570  0.0  0.2 761392 37272 pts/0    Sl+  Jun17   0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581  0.3  0.4 587612 68916 pts/0    Sl+  Jun17   4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+source    297277  0.0  0.0   7340  3728 ?        Ss   03:56   0:00 bash -c cd ~/SpiritOS && grep -Ei oom|out of memory|killed process|memory cgroup|uvicorn|python|node|next|npm|source proxy|source-proxy|8787|3000|ollama|docker|jellyfin|thermal|temperature|mount|mnt-spirit|tailscale|failed|timeout|reset|refused|closed socket docs/evidence/live-hiccup-triage-20260617/raw/30-journal-last-60m.txt | tail -160
+source   1034310  0.0  0.0   7340  3684 ?        Ss   20:31   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n FastAPI|APIRouter|@.*get|health|status|runtime|openapi|docs|decision|model-lanes|productive|Cartographer|dirty|watcher|ollama|Next|next source_proxy source_proxy/tests || true
+source   1034912  0.0  0.0   7340  3560 ?        Ss   20:32   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n --glob !**/__pycache__/** --glob *.py FastAPI|APIRouter|@.*get|health|status|runtime|dirty|systemctl|subprocess|TestClient source_proxy source_proxy/tests | sed -n 1,260p | tee docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/10-api-rg.txt
+source   1235970  0.0  0.0   7340  3720 ?        Ss   20:52   0:00 bash -c cd ~/SpiritOS && sed -n 1,180p source_proxy/approval/external_gate.py && ~/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT|SOURCE_PROXY_INCREMENT|DEFAULT_INCREMENT_ENV|evaluation-round|approved_increment|central_gate_check source_proxy/tests source_proxy/approval source_proxy | sed -n 1,200p
+source   1235974  0.0  0.0   9900  4480 ?        S    20:52   0:00 /home/source/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT
+source   1355953  0.0  0.0   7340  3692 ?        Ss   21:11   0:00 bash -c cd ~/SpiritOS && { ~/.local/bin/rg -n env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt 2>&1; code=$?; tail -120 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt; exit $code
+source   1378036  0.0  0.0   7340  3700 ?        Ss   21:35   0:00 bash -c cd ~/SpiritOS && { echo === corrected rg safety scan ===; ~/.local/bin/rg -n -e env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt 2>&1; code=$?; tail -160 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt; exit $code
+source   1396185  0.0  0.0   7340  3668 ?        Ss   21:48   0:00 bash -c cd ~/SpiritOS && { echo '=== candidate files ==='; find . -maxdepth 4 -type f | grep -Ei 'source.*proxy|proxy.*source|runtime|tmux|lan|start|restart|8787|uvicorn' | sort | head -200; echo '=== rg ==='; ~/.local/bin/rg -n -e 'source-proxy|source proxy|uvicorn|8787|tmux|lan|restart|runtime' scripts source_proxy docs/evidence docs README.md package.json 2>/dev/null || true; } | tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/10-run-method-review.txt
+source   1396186  0.0  0.0   7340  2012 ?        S    21:48   0:00 bash -c cd ~/SpiritOS && { echo '=== candidate files ==='; find . -maxdepth 4 -type f | grep -Ei 'source.*proxy|proxy.*source|runtime|tmux|lan|start|restart|8787|uvicorn' | sort | head -200; echo '=== rg ==='; ~/.local/bin/rg -n -e 'source-proxy|source proxy|uvicorn|8787|tmux|lan|restart|runtime' scripts source_proxy docs/evidence docs README.md package.json 2>/dev/null || true; } | tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/10-run-method-review.txt
+source   1396187  0.0  0.0   5692  1992 ?        S    21:48   0:00 tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/10-run-method-review.txt
+source   1396189  0.0  0.0   6964  2788 ?        S    21:48   0:00 grep -Ei source.*proxy|proxy.*source|runtime|tmux|lan|start|restart|8787|uvicorn
+source   1396192  0.0  0.0   7340  3688 ?        Ss   21:48   0:00 bash -c cd ~/SpiritOS && { echo '=== tmux panes ==='; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} pid=#{pane_pid} cmd=#{pane_current_command} path=#{pane_current_path}' || true; echo '=== source-proxy capture ==='; tmux capture-pane -pt source-proxy-lan -S -100 || true; echo '=== process ==='; ps -fp 35581 || true; ps aux | grep -Ei '[u]vicorn|[s]ource_proxy|[s]ource-proxy|8787' || true; ss -ltnp | grep ':8787' || true; } | tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/11-current-source-proxy.txt
+source   1396193  0.0  0.0   7340  2192 ?        S    21:48   0:00 bash -c cd ~/SpiritOS && { echo '=== tmux panes ==='; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} pid=#{pane_pid} cmd=#{pane_current_command} path=#{pane_current_path}' || true; echo '=== source-proxy capture ==='; tmux capture-pane -pt source-proxy-lan -S -100 || true; echo '=== process ==='; ps -fp 35581 || true; ps aux | grep -Ei '[u]vicorn|[s]ource_proxy|[s]ource-proxy|8787' || true; ss -ltnp | grep ':8787' || true; } | tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/11-current-source-proxy.txt
+source   1396194  0.0  0.0   5692  1996 ?        S    21:48   0:00 tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/11-current-source-proxy.txt
+source   1396199  0.0  0.0   6692  2388 ?        S    21:48   0:00 grep -Ei [u]vicorn|[s]ource_proxy|[s]ource-proxy|8787
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))

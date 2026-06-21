@@ -1,0 +1,113 @@
+{
+  "preserve_root": "/mnt/spirit-8tb/media-originals/final-ts-remux-20260620-200357/yes",
+  "results": [
+    {
+      "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-46-04.726Z.ts",
+      "mp4": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-46-04.726Z.mp4",
+      "status": "remuxed",
+      "source_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-46-04.726Z.ts",
+        "exists": true,
+        "format": "mpegts",
+        "duration": 283.089889,
+        "video": "h264",
+        "audio": "aac",
+        "width": 408,
+        "height": 720
+      },
+      "mp4_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-46-04.726Z.mp4",
+        "exists": true,
+        "format": "mov,mp4,m4a,3gp,3g2,mj2",
+        "duration": 283.089667,
+        "video": "h264",
+        "audio": "aac",
+        "width": 408,
+        "height": 720
+      },
+      "preserved": "/mnt/spirit-8tb/media-originals/final-ts-remux-20260620-200357/yes/video-2026-06-19T09-46-04.726Z.ts",
+      "sidecars": []
+    },
+    {
+      "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-52-32.645Z.ts",
+      "mp4": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-52-32.645Z.mp4",
+      "status": "remuxed",
+      "source_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-52-32.645Z.ts",
+        "exists": true,
+        "format": "mpegts",
+        "duration": 1580.628744,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1280,
+        "height": 720
+      },
+      "mp4_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T09-52-32.645Z.mp4",
+        "exists": true,
+        "format": "mov,mp4,m4a,3gp,3g2,mj2",
+        "duration": 1580.675193,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1280,
+        "height": 720
+      },
+      "preserved": "/mnt/spirit-8tb/media-originals/final-ts-remux-20260620-200357/yes/video-2026-06-19T09-52-32.645Z.ts",
+      "sidecars": []
+    },
+    {
+      "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-12-48.740Z.ts",
+      "mp4": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-12-48.740Z.mp4",
+      "status": "remuxed",
+      "source_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-12-48.740Z.ts",
+        "exists": true,
+        "format": "mpegts",
+        "duration": 1482.769266,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1290,
+        "height": 720
+      },
+      "mp4_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-12-48.740Z.mp4",
+        "exists": true,
+        "format": "mov,mp4,m4a,3gp,3g2,mj2",
+        "duration": 1482.794667,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1290,
+        "height": 720
+      },
+      "preserved": "/mnt/spirit-8tb/media-originals/final-ts-remux-20260620-200357/yes/video-2026-06-19T10-12-48.740Z.ts",
+      "sidecars": []
+    },
+    {
+      "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.ts",
+      "mp4": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.mp4",
+      "status": "remuxed",
+      "source_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.ts",
+        "exists": true,
+        "format": "mpegts",
+        "duration": 1148.6475,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1280,
+        "height": 720
+      },
+      "mp4_probe": {
+        "path": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.mp4",
+        "exists": true,
+        "format": "mov,mp4,m4a,3gp,3g2,mj2",
+        "duration": 1148.6475,
+        "video": "h264",
+        "audio": "aac",
+        "width": 1280,
+        "height": 720
+      },
+      "preserved": "/mnt/spirit-8tb/media-originals/final-ts-remux-20260620-200357/yes/video-2026-06-19T10-42-52.202Z.ts",
+      "sidecars": []
+    }
+  ]
+}

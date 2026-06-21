@@ -1,0 +1,4 @@
+2026-06-18T22:11:14-04:00
+method=kill -TERM exact uvicorn PID; source-proxy-lan watchdog restarts npm run proxy:https:lan
+before_pid=1404461
+before_command=/home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem

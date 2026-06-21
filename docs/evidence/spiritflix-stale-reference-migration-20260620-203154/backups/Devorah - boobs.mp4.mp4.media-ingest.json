@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-15T23:55:36.640Z",
+  "jobId": "mi-mqfrfjxb-6b366448",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Devorah - boobs.mp4.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Devorah - boobs.mp4.mkv",
+  "originalSize": 21782635,
+  "outputSize": 3653595,
+  "savingsPercent": 83.23,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-15T23:55:36.641Z"
+  }
+}

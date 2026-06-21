@@ -1,0 +1,4 @@
+$ du -h --max-depth=2 /usr/share/ollama/.ollama 2>/dev/null | sort -h | tail -50 || true
+# rc=0
+
+0	/usr/share/ollama/.ollama

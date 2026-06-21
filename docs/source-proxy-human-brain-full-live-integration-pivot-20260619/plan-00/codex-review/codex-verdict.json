@@ -1,0 +1,19 @@
+{
+  "plan": "Plan 0/6",
+  "review_verdict": "GO",
+  "artifact_completeness": "GO",
+  "operator_check": "PASS",
+  "causal_identifier_finding_confirmed": true,
+  "active_route_confirmed": true,
+  "decision_route_advisory_confirmed": true,
+  "long_running_apply_path_confirmed": true,
+  "central_gate_fail_closed_confirmed": true,
+  "cd_0_recommendation": "APPROVE_WITH_NOTES",
+  "source_edits_performed": false,
+  "plan_1_started": false,
+  "commit_or_push_performed": false,
+  "required_britton_decisions": [
+    "Approve CD-0 compression decision with the consumer-of-record note.",
+    "Approve GLM Plan 1/6 only after CD-0 is approved."
+  ]
+}

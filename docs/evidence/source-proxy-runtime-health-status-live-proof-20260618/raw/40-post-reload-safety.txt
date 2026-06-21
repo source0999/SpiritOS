@@ -1,0 +1,115 @@
+=== source proxy and protected service ports ===
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=1440463,fd=14))
+LISTEN 0      511                        0.0.0.0:3000       0.0.0.0:*    users:(("next-server (v1",pid=1382185,fd=19))
+LISTEN 0      4096                     127.0.0.1:11434      0.0.0.0:*
+=== source proxy candidates ===
+root        3062  0.2  0.0 7248196 7452 ?        SLsl Jun17   3:12 /usr/local/bin/python /usr/local/bin/uvicorn main:app --host 0.0.0.0 --port 80
+root        3073  1.1  0.8 985120 134080 ?       Ssl  Jun17  17:27 /usr/local/bin/python3.12 /usr/local/bin/uvicorn scout.main:app --host 0.0.0.0 --port 8077
+source      3436  0.6  0.0 807552  2484 ?        Ssl  Jun17   9:06 /home/ubuntu/faster-whisper-server/.venv/bin/python /home/ubuntu/faster-whisper-server/.venv/bin/uvicorn --factory faster_whisper_server.main:create_app
+source     35537  0.0  0.0  17232  6924 ?        Ss   Jun17   0:00 tmux new-session -d -s source-proxy-lan cd '/home/source/SpiritOS' && bash ./scripts/source-proxy-lan-watchdog.sh
+source    297277  0.0  0.0   7340  3728 ?        Ss   03:56   0:00 bash -c cd ~/SpiritOS && grep -Ei oom|out of memory|killed process|memory cgroup|uvicorn|python|node|next|npm|source proxy|source-proxy|8787|3000|ollama|docker|jellyfin|thermal|temperature|mount|mnt-spirit|tailscale|failed|timeout|reset|refused|closed socket docs/evidence/live-hiccup-triage-20260617/raw/30-journal-last-60m.txt | tail -160
+source   1034310  0.0  0.0   7340  3684 ?        Ss   20:31   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n FastAPI|APIRouter|@.*get|health|status|runtime|openapi|docs|decision|model-lanes|productive|Cartographer|dirty|watcher|ollama|Next|next source_proxy source_proxy/tests || true
+source   1034912  0.0  0.0   7340  3560 ?        Ss   20:32   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n --glob !**/__pycache__/** --glob *.py FastAPI|APIRouter|@.*get|health|status|runtime|dirty|systemctl|subprocess|TestClient source_proxy source_proxy/tests | sed -n 1,260p | tee docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/10-api-rg.txt
+source   1235970  0.0  0.0   7340  3720 ?        Ss   20:52   0:00 bash -c cd ~/SpiritOS && sed -n 1,180p source_proxy/approval/external_gate.py && ~/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT|SOURCE_PROXY_INCREMENT|DEFAULT_INCREMENT_ENV|evaluation-round|approved_increment|central_gate_check source_proxy/tests source_proxy/approval source_proxy | sed -n 1,200p
+source   1235974  0.0  0.0   9900  4480 ?        S    20:52   0:00 /home/source/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT
+source   1355953  0.0  0.0   7340  3692 ?        Ss   21:11   0:00 bash -c cd ~/SpiritOS && { ~/.local/bin/rg -n env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt 2>&1; code=$?; tail -120 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt; exit $code
+source   1378036  0.0  0.0   7340  3700 ?        Ss   21:35   0:00 bash -c cd ~/SpiritOS && { echo === corrected rg safety scan ===; ~/.local/bin/rg -n -e env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt 2>&1; code=$?; tail -160 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt; exit $code
+source   1399162  0.0  0.0   8120  4452 pts/0    Ss+  21:51   0:00 bash ./scripts/source-proxy-lan-watchdog.sh
+source   1440433  0.0  0.0   5692  1996 pts/0    S+   22:11   0:00 tee -a /home/source/source-proxy-https-lan.log
+source   1440451  0.0  0.0   2800  1848 pts/0    S+   22:11   0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source   1440452  0.0  0.2 761388 42932 pts/0    Sl+  22:11   0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source   1440463  9.9  1.4 585276 237244 pts/0   Sl+  22:11   0:05 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+source   1441790  0.0  0.0   5692  1996 ?        S    22:12   0:00 tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/40-post-reload-safety.txt?
+source   1441794  0.0  0.0   6692  2388 ?        S    22:12   0:00 grep -Ei [u]vicorn|[s]ource_proxy|[s]ource-proxy|8787
+=== watcher recent files ===
+2026-06-18 19:39 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T19-39-22-04-00.log
+2026-06-18 19:39 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T19-39-37-04-00.log
+2026-06-18 19:40 /mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-39-39-04-00.log
+2026-06-18 19:40 /mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T19-40-14-04-00.log
+2026-06-18 19:40 /mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T19-40-15-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/locks/spiritos-boot-postmortem.sh.lock
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-45-46-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T19-45-10-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T19-45-10-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T19-45-10-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T19-45-10-04-00.log
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T20-15-11-04-00.log
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T20-15-12-04-00.log
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T20-15-12-04-00.log
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T20-15-11-04-00.log
+2026-06-18 20:45 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T20-45-13-04-00.log
+2026-06-18 20:45 /mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T20-45-14-04-00.log
+2026-06-18 20:45 /mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T20-45-14-04-00.log
+2026-06-18 20:45 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T20-45-13-04-00.log
+2026-06-18 21:15 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T21-15-16-04-00.log
+2026-06-18 21:15 /mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T21-15-32-04-00.log
+2026-06-18 21:15 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T21-15-30-04-00.log
+2026-06-18 21:16 /mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T21-15-32-04-00.log
+2026-06-18 21:45 /mnt/spirit-8tb/spiritos-health/locks/spiritos-host-health-snapshot.sh.lock
+2026-06-18 21:47 /mnt/spirit-8tb/spiritos-health/locks/spiritos-model-storage-guard.sh.lock
+2026-06-18 21:47 /mnt/spirit-8tb/spiritos-health/locks/spiritos-repo-bloat-report.sh.lock
+2026-06-18 21:47 /mnt/spirit-8tb/spiritos-health/locks/spiritos-service-health-snapshot.sh.lock
+2026-06-18 21:47 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T21-45-19-04-00.log
+2026-06-18 21:47 /mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T21-47-44-04-00.log
+2026-06-18 21:47 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T21-47-32-04-00.log
+2026-06-18 21:54 /mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T21-47-44-04-00.log
+=== recent warnings after reload ===
+-- No entries --
+=== git status ===
+## master
+ M README.md
+ M package-lock.json
+ M package.json
+ M scripts/media-ingest-worker.mjs
+ M scripts/media/face_enrolled_performers.html
+ M scripts/media/face_enrolled_performers.json
+ M scripts/media/face_enrollment_queue.html
+ M scripts/media/face_enrollment_queue.json
+ M scripts/media/face_gallery.html
+ M scripts/media/face_gallery.json
+ M scripts/media/face_organizer.py
+ M scripts/media/face_verification_full_audit.html
+ M scripts/media/known_db_audit.html
+ M scripts/media/known_db_audit.json
+ M scripts/media/manual_crop.html
+ M scripts/media/model_index.json
+ M scripts/media/performer_verification.json
+ M scripts/media/test_face_organizer_schema.py
+ M scripts/runtime-port-guard.sh
+ M scripts/source-context-compress.mjs
+ M scripts/spiritos-lan-watchdog.sh
+ M source_proxy/api/decision.py
+ M src/app/layout.tsx
+ M src/components/spiritflix/SpiritFlixPlayer.tsx
+ M src/components/spiritflix/admin/SpiritFlixAdminApp.tsx
+ M src/components/spiritflix/admin/SpiritFlixAdminToolbar.tsx
+ M src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx
+ M src/lib/spiritflix-jellyfin-client.ts
+ M src/lib/spiritflix/admin/smart/index.ts
+ M src/lib/spiritflix/jellyfin-client.ts
+ M src/styles/spiritflix.css
+?? docs/evidence/live-hiccup-triage-20260617/
+?? docs/evidence/repo-cleanup-manifest-watchers-20260617/
+?? docs/evidence/repo-host-cleanup-stability-audit-20260617/
+?? docs/evidence/source-proxy-browser-verifier-hardening-20260618/
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-54c0f44cc0a7a4a9.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-701f9c2e9284296f.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-7a529ebb43342143.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-7e95ea289935d428.json
+?? docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/fip0-c19c477cba35858e.json
+?? docs/evidence/source-proxy-glm-3x10-audit-20260617/
+?? docs/evidence/source-proxy-return-checkpoint-20260618/
+?? docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/
+?? docs/evidence/spiritflix-smart-tagging-s7-batch-20260618-214438/
+?? scripts/headroom-proxy-dev.sh
+?? scripts/media/face_verification_report.json
+?? scripts/postinstall-repomix-shim.mjs
+?? scripts/repomix-llm.mjs
+?? scripts/spiritos-health/README.md
+?? src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts
+?? src/app/api/spiritflix/admin/smart/batch/
+?? src/app/api/spiritflix/hls/
+?? src/components/spiritflix/admin/SpiritFlixSmartBatchPanel.tsx
+?? src/lib/spiritflix-jellyfin-client.test.ts
+?? src/lib/spiritflix/admin/smart/__tests__/batch.test.ts
+?? src/lib/spiritflix/admin/smart/batch.ts

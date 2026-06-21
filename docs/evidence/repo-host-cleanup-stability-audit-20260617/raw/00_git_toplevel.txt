@@ -1,0 +1,4 @@
+$ git rev-parse --show-toplevel
+# rc=0
+
+/home/source/SpiritOS

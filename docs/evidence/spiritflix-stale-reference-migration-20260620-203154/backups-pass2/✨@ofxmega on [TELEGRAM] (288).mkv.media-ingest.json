@@ -1,0 +1,13 @@
+{
+  "at": "2026-06-14T05:16:34.024Z",
+  "jobId": "mi-mqd5l3vd-4a8e21cb",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/✨@ofxmega on [TELEGRAM] (288).M4V",
+  "finalPath": "/mnt/spirit-8tb/media/yes/✨@ofxmega on [TELEGRAM] (288).mkv",
+  "originalSize": 14458726,
+  "outputSize": 1506193,
+  "savingsPercent": 89.58,
+  "profile": "balanced_1080p",
+  "encoder": "mac-videotoolbox-hevc",
+  "deletedOriginal": true
+}

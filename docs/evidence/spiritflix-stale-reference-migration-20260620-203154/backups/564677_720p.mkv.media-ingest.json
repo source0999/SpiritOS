@@ -1,0 +1,13 @@
+{
+  "at": "2026-06-14T02:34:21.756Z",
+  "jobId": "mi-mqd5ia8e-e88cfbf0",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/564677_720p.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/564677_720p.mkv",
+  "originalSize": 38214197,
+  "outputSize": 20099625,
+  "savingsPercent": 47.4,
+  "profile": "balanced_1080p",
+  "encoder": "mac-videotoolbox-hevc",
+  "deletedOriginal": true
+}

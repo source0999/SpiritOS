@@ -1,0 +1,1609 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/unknown/407017_720p.mkv",
+  "generated_at": "2026-06-14T11:14:02+00:00",
+  "dry_run": false,
+  "verification_needed": false,
+  "performers": [
+    {
+      "id": "mulan-vuitton",
+      "name": "Mulan Vuitton",
+      "confidence": 1.0,
+      "similarity": 1.0,
+      "status": "manual-confirmed",
+      "verification_needed": false,
+      "label": "Mulan Vuitton - manually confirmed; needs face enrollment"
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-14T11:14:02+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Onlyi",
+        "source": "watermark_ocr_text",
+        "confidence": 0.84,
+        "raw": "Onlyi",
+        "variants": [
+          "Onlyi"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "region": "bottom_right"
+      },
+      {
+        "name": "M Anyuitto",
+        "source": "watermark_ocr_text",
+        "confidence": 0.84,
+        "raw": "m.anyuitto",
+        "variants": [
+          "M Anyuitto",
+          "Anyuitto"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "region": "bottom_right"
+      },
+      {
+        "name": "Mlanyuitr",
+        "source": "watermark_ocr_text",
+        "confidence": 0.84,
+        "raw": "Mlanyuitr",
+        "variants": [
+          "Mlanyuitr"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "region": "bottom_strip"
+      },
+      {
+        "name": "Ly Fansco",
+        "source": "watermark_ocr_text",
+        "confidence": 0.74,
+        "raw": "lyFans.co",
+        "variants": [
+          "Ly Fansco"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-02.jpg",
+        "region": "bottom_strip"
+      },
+      {
+        "name": "Ony Fml",
+        "source": "watermark_ocr_text",
+        "confidence": 0.66,
+        "raw": "OnyFml",
+        "variants": [
+          "Ony Fml"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "region": "bottom_strip"
+      },
+      {
+        "name": "Oniy Fm",
+        "source": "watermark_ocr_text",
+        "confidence": 0.65,
+        "raw": "OniyFm",
+        "variants": [
+          "Oniy Fm"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "region": "bottom_right"
+      },
+      {
+        "name": "Mtto",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "mtto",
+        "variants": [
+          "Mtto"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-04.jpg",
+        "region": "bottom_right"
+      },
+      {
+        "name": "Mlanyuit",
+        "source": "watermark_ocr_text",
+        "confidence": 0.6,
+        "raw": "Mlanyuit\"",
+        "variants": [
+          "Mlanyuit"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "region": "bottom_right"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Onlyi\"",
+        "url": "https://yandex.com/search/?text=%22Onlyi%22",
+        "candidate_name": "Onlyi",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Onlyi\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Onlyi%22%20onlyfans",
+        "candidate_name": "Onlyi",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Onlyi\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Onlyi%22%20site%3Apimpbunny.com",
+        "candidate_name": "Onlyi",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Onlyi\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Onlyi%22%20site%3Acoomer.st",
+        "candidate_name": "Onlyi",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Onlyi",
+        "url": "https://coomer.st/search?q=Onlyi",
+        "candidate_name": "Onlyi",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"M Anyuitto\"",
+        "url": "https://yandex.com/search/?text=%22M%20Anyuitto%22",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"M Anyuitto\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22M%20Anyuitto%22%20onlyfans",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"M Anyuitto\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22M%20Anyuitto%22%20site%3Apimpbunny.com",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"M Anyuitto\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22M%20Anyuitto%22%20site%3Acoomer.st",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "M Anyuitto",
+        "url": "https://coomer.st/search?q=M%20Anyuitto",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Anyuitto\"",
+        "url": "https://yandex.com/search/?text=%22Anyuitto%22",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Anyuitto\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Anyuitto%22%20onlyfans",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Anyuitto\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Anyuitto%22%20site%3Apimpbunny.com",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Anyuitto\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Anyuitto%22%20site%3Acoomer.st",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Anyuitto",
+        "url": "https://coomer.st/search?q=Anyuitto",
+        "candidate_name": "M Anyuitto",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Mlanyuitr\"",
+        "url": "https://yandex.com/search/?text=%22Mlanyuitr%22",
+        "candidate_name": "Mlanyuitr",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Mlanyuitr\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Mlanyuitr%22%20onlyfans",
+        "candidate_name": "Mlanyuitr",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Mlanyuitr\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Mlanyuitr%22%20site%3Apimpbunny.com",
+        "candidate_name": "Mlanyuitr",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Mlanyuitr\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Mlanyuitr%22%20site%3Acoomer.st",
+        "candidate_name": "Mlanyuitr",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Mlanyuitr",
+        "url": "https://coomer.st/search?q=Mlanyuitr",
+        "candidate_name": "Mlanyuitr",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Ly Fansco\"",
+        "url": "https://yandex.com/search/?text=%22Ly%20Fansco%22",
+        "candidate_name": "Ly Fansco",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Ly Fansco\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Ly%20Fansco%22%20onlyfans",
+        "candidate_name": "Ly Fansco",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Ly Fansco\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Ly%20Fansco%22%20site%3Apimpbunny.com",
+        "candidate_name": "Ly Fansco",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Ly Fansco\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Ly%20Fansco%22%20site%3Acoomer.st",
+        "candidate_name": "Ly Fansco",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Ly Fansco",
+        "url": "https://coomer.st/search?q=Ly%20Fansco",
+        "candidate_name": "Ly Fansco",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Ony Fml\"",
+        "url": "https://yandex.com/search/?text=%22Ony%20Fml%22",
+        "candidate_name": "Ony Fml",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Ony Fml\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Ony%20Fml%22%20onlyfans",
+        "candidate_name": "Ony Fml",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Ony Fml\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Ony%20Fml%22%20site%3Apimpbunny.com",
+        "candidate_name": "Ony Fml",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Ony Fml\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Ony%20Fml%22%20site%3Acoomer.st",
+        "candidate_name": "Ony Fml",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Ony Fml",
+        "url": "https://coomer.st/search?q=Ony%20Fml",
+        "candidate_name": "Ony Fml",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "Onlyl",
+        "confidence": 0.875,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            166.0,
+            598.0
+          ],
+          [
+            206.0,
+            598.0
+          ],
+          [
+            206.0,
+            619.0
+          ],
+          [
+            166.0,
+            619.0
+          ]
+        ]
+      },
+      {
+        "text": "m.anvuitto",
+        "confidence": 0.885,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            273.0,
+            603.0
+          ],
+          [
+            359.0,
+            602.0
+          ],
+          [
+            359.0,
+            615.0
+          ],
+          [
+            274.0,
+            616.0
+          ]
+        ]
+      },
+      {
+        "text": "Onlyl",
+        "confidence": 0.874,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            505.0,
+            496.0
+          ],
+          [
+            618.0,
+            503.0
+          ],
+          [
+            615.0,
+            561.0
+          ],
+          [
+            501.0,
+            554.0
+          ]
+        ]
+      },
+      {
+        "text": "m.anvuitto",
+        "confidence": 0.88,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            820.0,
+            512.0
+          ],
+          [
+            1078.0,
+            510.0
+          ],
+          [
+            1078.0,
+            551.0
+          ],
+          [
+            820.0,
+            554.0
+          ]
+        ]
+      },
+      {
+        "text": "Onlyi",
+        "confidence": 0.88,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            0.0,
+            692.0
+          ],
+          [
+            107.0,
+            695.0
+          ],
+          [
+            105.0,
+            751.0
+          ],
+          [
+            0.0,
+            748.0
+          ]
+        ]
+      },
+      {
+        "text": "m.anyuitto",
+        "confidence": 0.82,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            296.0,
+            704.0
+          ],
+          [
+            560.0,
+            700.0
+          ],
+          [
+            560.0,
+            744.0
+          ],
+          [
+            296.0,
+            748.0
+          ]
+        ]
+      },
+      {
+        "text": "lyFans,",
+        "confidence": 0.876,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            185.0,
+            599.0
+          ],
+          [
+            242.0,
+            600.0
+          ],
+          [
+            241.0,
+            618.0
+          ],
+          [
+            184.0,
+            617.0
+          ]
+        ]
+      },
+      {
+        "text": "lyFans.co",
+        "confidence": 0.885,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            550.0,
+            502.0
+          ],
+          [
+            761.0,
+            507.0
+          ],
+          [
+            760.0,
+            557.0
+          ],
+          [
+            549.0,
+            552.0
+          ]
+        ]
+      },
+      {
+        "text": "lyFans.co",
+        "confidence": 0.906,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-02-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            34.0,
+            695.0
+          ],
+          [
+            247.0,
+            695.0
+          ],
+          [
+            247.0,
+            745.0
+          ],
+          [
+            34.0,
+            745.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.com/m",
+        "confidence": 0.983,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            167.0,
+            599.0
+          ],
+          [
+            288.0,
+            599.0
+          ],
+          [
+            288.0,
+            617.0
+          ],
+          [
+            167.0,
+            617.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.com/m",
+        "confidence": 0.982,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            505.0,
+            502.0
+          ],
+          [
+            865.0,
+            508.0
+          ],
+          [
+            865.0,
+            558.0
+          ],
+          [
+            504.0,
+            552.0
+          ]
+        ]
+      },
+      {
+        "text": "OnlyFans.com/m",
+        "confidence": 0.928,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-03-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            6.0,
+            697.0
+          ],
+          [
+            347.0,
+            699.0
+          ],
+          [
+            347.0,
+            745.0
+          ],
+          [
+            5.0,
+            743.0
+          ]
+        ]
+      },
+      {
+        "text": "rtto",
+        "confidence": 0.947,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-04.jpg",
+        "region": "full",
+        "box": [
+          [
+            334.0,
+            603.0
+          ],
+          [
+            359.0,
+            603.0
+          ],
+          [
+            359.0,
+            615.0
+          ],
+          [
+            334.0,
+            615.0
+          ]
+        ]
+      },
+      {
+        "text": "mito",
+        "confidence": 0.684,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-04-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            994.0,
+            514.0
+          ],
+          [
+            1079.0,
+            514.0
+          ],
+          [
+            1079.0,
+            550.0
+          ],
+          [
+            994.0,
+            550.0
+          ]
+        ]
+      },
+      {
+        "text": "mtto",
+        "confidence": 0.883,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-04-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            480.0,
+            706.0
+          ],
+          [
+            563.0,
+            704.0
+          ],
+          [
+            563.0,
+            739.0
+          ],
+          [
+            481.0,
+            741.0
+          ]
+        ]
+      },
+      {
+        "text": "OniyF",
+        "confidence": 0.781,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "region": "full",
+        "box": [
+          [
+            167.0,
+            598.0
+          ],
+          [
+            213.0,
+            599.0
+          ],
+          [
+            213.0,
+            618.0
+          ],
+          [
+            167.0,
+            616.0
+          ]
+        ]
+      },
+      {
+        "text": "ulanvuir",
+        "confidence": 0.843,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "region": "full",
+        "box": [
+          [
+            287.0,
+            599.0
+          ],
+          [
+            354.0,
+            601.0
+          ],
+          [
+            354.0,
+            618.0
+          ],
+          [
+            286.0,
+            615.0
+          ]
+        ]
+      },
+      {
+        "text": "OnyFml",
+        "confidence": 0.642,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-05-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            507.0,
+            496.0
+          ],
+          [
+            732.0,
+            520.0
+          ],
+          [
+            727.0,
+            570.0
+          ],
+          [
+            501.0,
+            546.0
+          ]
+        ]
+      },
+      {
+        "text": "Mlanyuitr",
+        "confidence": 0.829,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-05-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            861.0,
+            504.0
+          ],
+          [
+            1056.0,
+            513.0
+          ],
+          [
+            1054.0,
+            558.0
+          ],
+          [
+            859.0,
+            549.0
+          ]
+        ]
+      },
+      {
+        "text": "OniyFm",
+        "confidence": 0.633,
+        "frame_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/unknown/.face-review/407017_720p/frames/.ocr-regions/frame-05-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            4.0,
+            690.0
+          ],
+          [
+            199.0,
+            707.0
+          ],
+          [
+            194.0,
+            759.0
+          ],
+          [
+            0.0,
+            742.0
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-01.jpg",
+    "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-02.jpg",
+    "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-03.jpg",
+    "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-04.jpg",
+    "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-05.jpg",
+    "/DATA/yes/unknown/.face-review/407017_720p/frames/frame-06.jpg"
+  ],
+  "faces_detected": 0,
+  "faces_rejected": [],
+  "duration_seconds": 280.384,
+  "processing_time_seconds": 18.022,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  },
+  "manual_corrections": [
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "sidecar_path": "/DATA/yes/unknown/407017_720p.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan Vuitton\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan Vuitton\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan Vuitton\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Mulan Vuitton\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Acoomer.st",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Mulan Vuitton",
+          "url": "https://coomer.st/search?q=Mulan%20Vuitton",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "sidecar_path": "/DATA/yes/unknown/407017_720p.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan Vuitton\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan Vuitton\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan Vuitton\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Mulan Vuitton\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Acoomer.st",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Mulan Vuitton",
+          "url": "https://coomer.st/search?q=Mulan%20Vuitton",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:35:34+00:00"
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "sidecar_path": "/DATA/yes/unknown/407017_720p.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan Vuitton\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan Vuitton\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan Vuitton\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Mulan Vuitton\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Acoomer.st",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Mulan Vuitton",
+          "url": "https://coomer.st/search?q=Mulan%20Vuitton",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "sidecar_path": "/DATA/yes/unknown/407017_720p.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan Vuitton\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan Vuitton\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan Vuitton\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Mulan Vuitton\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Acoomer.st",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Mulan Vuitton",
+          "url": "https://coomer.st/search?q=Mulan%20Vuitton",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:41:18+00:00"
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:11:21+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "sidecar_path": "/DATA/yes/unknown/407017_720p.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan Vuitton\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan Vuitton\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan Vuitton\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Mulan Vuitton\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Acoomer.st",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Mulan Vuitton",
+          "url": "https://coomer.st/search?q=Mulan%20Vuitton",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:11:21+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "sidecar_path": "/DATA/yes/unknown/407017_720p.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan Vuitton\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan Vuitton\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan Vuitton\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Mulan Vuitton\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Mulan%20Vuitton%22%20site%3Acoomer.st",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Mulan Vuitton",
+          "url": "https://coomer.st/search?q=Mulan%20Vuitton",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Mulan\"",
+          "url": "https://yandex.com/search/?text=%22Mulan%22",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Mulan\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20onlyfans",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Mulan\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Mulan%22%20site%3Apimpbunny.com",
+          "candidate_name": "Mulan Vuitton",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:21+00:00"
+    }
+  ],
+  "manual_correction_pending": null,
+  "audit_events": [
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:35:34+00:00",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    },
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:41:18+00:00",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    },
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:21+00:00",
+      "corrected_at": "2026-06-15T03:11:21+00:00",
+      "source_file": "/DATA/yes/unknown/407017_720p.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Mulan Vuitton",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    }
+  ],
+  "path": "/DATA/yes/unknown/407017_720p.mkv",
+  "filename": "407017_720p.mkv",
+  "manual_confirmed_model": {
+    "schema": "media-manual-model-assignment/v1",
+    "name": "Mulan Vuitton",
+    "confirmed_by": "Britton",
+    "confirmed_at": "2026-06-15T03:11:21+00:00",
+    "known_performer_id": "",
+    "face_enrolled": false,
+    "move_receipt": {},
+    "next_action": "queued_for_face_enrollment"
+  }
+}

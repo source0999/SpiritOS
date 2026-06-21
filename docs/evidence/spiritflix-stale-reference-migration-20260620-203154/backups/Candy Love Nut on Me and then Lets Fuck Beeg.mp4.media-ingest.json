@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-17T18:11:03.560Z",
+  "jobId": "mi-mqhh0k7j-168d2bb9",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Candy Love Nut on Me and then Lets Fuck Beeg.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Candy Love Nut on Me and then Lets Fuck Beeg.mkv",
+  "originalSize": 914697,
+  "outputSize": 110731,
+  "savingsPercent": 87.89,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-17T18:11:03.561Z"
+  }
+}

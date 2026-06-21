@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-15T23:49:39.413Z",
+  "jobId": "mi-mqfrfg1f-9984e217",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/DR 023.mp4.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/DR 023.mp4.mkv",
+  "originalSize": 18329470,
+  "outputSize": 10093088,
+  "savingsPercent": 44.94,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-15T23:49:39.414Z"
+  }
+}

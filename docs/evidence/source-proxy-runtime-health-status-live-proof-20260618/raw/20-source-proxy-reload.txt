@@ -1,0 +1,290 @@
+=== before reload ===
+2026-06-18T21:50:25-04:00
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35538   35537  0 Jun17 pts/0    Ss+    0:03 bash ./scripts/source-proxy-lan-watchdog.sh
+source     35549   35538  0 Jun17 pts/0    Sl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+=== terminate current source-proxy app pipeline only ===
+--- wait 2s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 4s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 6s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 8s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 10s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 12s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 14s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35569   35549  0 Jun17 pts/0    S+     0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source     35570   35569  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 16s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35570       1  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 18s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35570       1  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 20s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35570       1  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 22s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35570       1  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- wait 24s ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35549   35538  0 Jun17 pts/0    Dl+    0:00 npm run proxy:https:lan
+source     35570       1  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+=== after reload tree ===
+bash,35538 ./scripts/source-proxy-lan-watchdog.sh
+  |-npm run proxy:h,35549
+  |   |-{npm run proxy:h},35553
+  |   |-{npm run proxy:h},35554
+  |   |-{npm run proxy:h},35555
+  |   |-{npm run proxy:h},35556
+  |   |-{npm run proxy:h},35557
+  |   |-{npm run proxy:h},35563
+  |   |-{npm run proxy:h},35565
+  |   |-{npm run proxy:h},35566
+  |   |-{npm run proxy:h},35567
+  |   `-{npm run proxy:h},35568
+  |-sleep,1397961 30
+  `-tee,35550 -a /home/source/source-proxy-https-lan.log
+=== source-proxy pane tail ===
+INFO:     127.0.0.1:43746 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51666 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54480 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56934 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58760 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46800 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51994 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55052 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44520 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44796 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58454 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55684 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33950 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49596 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45362 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57976 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57984 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57994 - "GET /v1/health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58002 - "GET /v1/runtime/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58018 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48758 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40404 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34860 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43834 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49868 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51826 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34262 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56812 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51670 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58902 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58912 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37762 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46984 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53938 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33630 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44068 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39328 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33404 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58712 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48608 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40786 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47754 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33942 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60396 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52342 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42086 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40768 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53364 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36756 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45724 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38594 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36156 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48450 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48054 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55810 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58690 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57350 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58354 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33304 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59600 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35380 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49020 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45908 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33798 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42134 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58724 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57686 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38942 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43040 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58094 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51626 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44310 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34836 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59538 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37680 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43594 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48688 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34352 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52476 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57544 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45838 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42264 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46838 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55662 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57566 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41350 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39166 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36952 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39582 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56702 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60806 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60554 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58482 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38058 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38072 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33304 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50306 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39156 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52766 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36242 - "GET /healthcheck HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41884 - "GET /healthcheck HTTP/1.1" 200 OK
+
+=== source-proxy controlled restart after wrapper did not exit ===
+2026-06-18T21:51:15-04:00
+--- before controlled restart ---
+face-organizer-8765: 1 windows (created Wed Jun 17 22:01:46 2026)
+source-proxy-lan: 1 windows (created Wed Jun 17 21:57:57 2026)
+spiritos-lan: 1 windows (created Thu Jun 18 07:46:21 2026)
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35537       1  0 Jun17 ?        Ss     0:00 tmux new-session -d -s source-proxy-lan cd '/home/source/SpiritOS' && bash ./scripts/source-proxy-lan-watchdog.sh
+source     35538   35537  0 Jun17 pts/0    Ss+    0:03 bash ./scripts/source-proxy-lan-watchdog.sh
+source     35550   35538  0 Jun17 pts/0    S+     0:00 tee -a /home/source/source-proxy-https-lan.log
+source     35570       1  0 Jun17 pts/0    Sl+    0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     35581   35570  0 Jun17 pts/0    Sl+    4:19 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+--- kill source-proxy-lan tmux session only ---
+--- terminate remaining old Source Proxy node/uvicorn only if still present ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+--- after graceful termination ---
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+source     35537       1  0 Jun17 ?        Ss     0:00 tmux new-session -d -s source-proxy-lan cd '/home/source/SpiritOS' && bash ./scripts/source-proxy-lan-watchdog.sh
+--- start source-proxy-lan tmux watchdog only ---
+--- start wait 2s healthcheck=000000 ---
+--- start wait 4s healthcheck=000000 ---
+--- start wait 6s healthcheck=000000 ---
+--- start wait 8s healthcheck=000000 ---
+--- start wait 10s healthcheck=000000 ---
+--- start wait 12s healthcheck=000000 ---
+--- start wait 14s healthcheck=000000 ---
+--- start wait 16s healthcheck=000000 ---
+--- start wait 18s healthcheck=000000 ---
+--- start wait 20s healthcheck=000000 ---
+--- start wait 22s healthcheck=000000 ---
+--- start wait 24s healthcheck=000000 ---
+--- start wait 26s healthcheck=000000 ---
+--- start wait 28s healthcheck=000000 ---
+--- start wait 30s healthcheck=000000 ---
+--- after controlled restart ---
+source-proxy-lan:0.0 pid=1399162 cmd=bash path=/home/source/SpiritOS
+bash,1399162 ./scripts/source-proxy-lan-watchdog.sh
+  |-npm run proxy:h,1399176
+  |   |-sh,1399214 -c node ./scripts/source-proxy-dev.mjs --https --lan
+  |   |   `-node,1399215 ./scripts/source-proxy-dev.mjs --https --lan
+  |   |       |-python,1399226 -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile/home
+  |   |       |   `-{python},1399501
+  |   |       |-{node},1399216
+  |   |       |-{node},1399217
+  |   |       |-{node},1399218
+  |   |       |-{node},1399219
+  |   |       |-{node},1399220
+  |   |       |-{node},1399221
+  |   |       |-{node},1399222
+  |   |       |-{node},1399223
+  |   |       |-{node},1399224
+  |   |       `-{node},1399225
+  |   |-{npm run proxy:h},1399180
+  |   |-{npm run proxy:h},1399181
+  |   |-{npm run proxy:h},1399182
+  |   |-{npm run proxy:h},1399183
+  |   |-{npm run proxy:h},1399184
+  |   |-{npm run proxy:h},1399189
+  |   |-{npm run proxy:h},1399208
+  |   |-{npm run proxy:h},1399209
+  |   |-{npm run proxy:h},1399210
+  |   `-{npm run proxy:h},1399211
+  |-sleep,1399966 30
+  `-tee,1399177 -a /home/source/source-proxy-https-lan.log
+source     35537  0.0  0.0  17356  9164 ?        Ss   Jun17   0:00 tmux new-session -d -s source-proxy-lan cd '/home/source/SpiritOS' && bash ./scripts/source-proxy-lan-watchdog.sh
+source   1399162  0.0  0.0   7472  3888 pts/0    Ss+  21:51   0:00 bash ./scripts/source-proxy-lan-watchdog.sh
+source   1399214  0.0  0.0   2800  1852 pts/0    S+   21:51   0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source   1399215  0.1  0.2 761388 42896 pts/0    Sl+  21:51   0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source   1399226  1.4  0.2  52988 41220 pts/0    Dl+  21:51   0:00 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+--- source-proxy pane tail ---
+[2026-06-18T21:51:26-04:00] Source Proxy LAN watchdog starting (health=https://1
+27.0.0.1:8787/healthcheck)
+[2026-06-18T21:51:26-04:00] starting Source Proxy: npm run proxy:https:lan
+[2026-06-18T21:51:26-04:00] proxy :8787 health failed 1/3
+
+> spirit-os@0.1.0 proxy:https:lan
+> node ./scripts/source-proxy-dev.mjs --https --lan
+
+Source proxy: https://0.0.0.0:8787
+[2026-06-18T21:51:56-04:00] proxy :8787 health failed 2/3

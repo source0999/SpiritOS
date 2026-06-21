@@ -1,0 +1,162 @@
+{
+  "auto_fix_attempts": 0,
+  "consumer_subsystem": "stage4_set_a_grading_consumer",
+  "downstream_consumed": true,
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "PASS",
+  "handoff": "Patch target after review: Source Proxy receipt/readback normalization, not new model execution. Preserve Plan 1-3 gates.",
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": false,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "decision_router",
+    "task_spec_intake",
+    "plan3_durable_task",
+    "work_product_consumer"
+  ],
+  "lanes_not_required": [
+    "qwen",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_a475d93ce4dc4ae9",
+  "limitations_stated": true,
+  "live_search_used": false,
+  "local_fallback_used": false,
+  "mac_invoked": false,
+  "mac_required": false,
+  "mac_status": "",
+  "max_auto_fix_attempts": 3,
+  "notes": [
+    "Highest leverage next move: normalize 3x10 grading records into a first-class receipt surface so daily-driver output cannot look green without consumed evidence."
+  ],
+  "patch_bucket": "none",
+  "patch_required": false,
+  "policy_event_present": false,
+  "policy_event_required": false,
+  "prompt_id": "A7",
+  "qwen_activated": false,
+  "qwen_required": false,
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": {
+    "coding_ui": "src/components/coding/CodingCockpitShell.tsx already carries taskId, traceId, invocationEventId, consumerEventId, consumerSubsystem fields.",
+    "dirty_tree": "preflight found unrelated SpiritFlix/media dirty files; Set A avoided those paths.",
+    "mac": "source_proxy/decision/mac_integration.py has read-only mac_system_status and safe-check worker modes through spirit-mac-mini SSH.",
+    "policy": "source_proxy/tasks/durable_execution.py provides Plan 3 policy/recovery/repair gates and same-trace consumer evidence.",
+    "research": "source_proxy/decision/current_research.py consumes Scout/SearxNG research into task state when providers are available.",
+    "task_api": "source_proxy/api/long_running_tasks.py and src/app/v1/tasks/long-running/** expose task create/readback/stream/advance/verify.",
+    "trace_readback": "source_proxy/tasks/long_running.py exposes causal_trace, worker_lanes, plan_3_durable_state, task_id, trace_id, consumer_event_id."
+  },
+  "required_lanes": [
+    "decision_router",
+    "task_spec_intake",
+    "plan3_durable_task",
+    "work_product_consumer"
+  ],
+  "research_materially_changed_output": true,
+  "reverified": false,
+  "route_decision": {
+    "context_estimate": {
+      "estimated_task_tokens": 27,
+      "input_chars": 109,
+      "provided_context_tokens": 0,
+      "size_class": "small",
+      "total_estimated_tokens": 27
+    },
+    "current_agent_role": null,
+    "next_prompt_action": "run_with_coder_agent",
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "needs_codebase_context",
+      "repo_first_research"
+    ],
+    "recommended_route": "local_route",
+    "research_recommended": true,
+    "research_sources": [],
+    "resolved_target": {
+      "exists": false,
+      "path": "",
+      "source": "inferred"
+    },
+    "risk_tier": "low",
+    "role_system_prompt": null,
+    "self_correction_checks": [
+      {
+        "answer": "No. This is a coding/debugging task. A proactive agent route is required.",
+        "id": "passive_check",
+        "passed": true,
+        "question": "Am I being passive?"
+      },
+      {
+        "answer": "Yes. repo_first_research is active, so repository sources are gathered before web sources.",
+        "id": "repo_first_check",
+        "passed": true,
+        "question": "Did I scan the repo first?"
+      },
+      {
+        "answer": "No active phase was specified in this task; do not inherit one from prior runs.",
+        "id": "phase_check",
+        "passed": true,
+        "question": "Am I on the correct phase?"
+      }
+    ],
+    "task_classification": "codebase_analysis"
+  },
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "source_count": 0,
+  "sources": [],
+  "task_id": "task_92f302dee870",
+  "task_readback_status": "queued",
+  "task_spec_intake": {
+    "allowed_extensions": [],
+    "allowed_files": [],
+    "allowed_scope_source": "none",
+    "approval_level": "preview_only_no_apply",
+    "artifact_class": "",
+    "clarification_prompt": "",
+    "clarification_state": "not_needed",
+    "context_sources": [],
+    "forbidden_files": [
+      ".env",
+      ".env.*",
+      "*.pem",
+      "*.key",
+      "certificates/*"
+    ],
+    "intent": "analyze",
+    "max_file_count": 8,
+    "model_lane": "coder_agent",
+    "protected_paths": [],
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "repo_first_research"
+    ],
+    "risk_level": "low",
+    "schema_version": 1,
+    "summary": "TaskSpec ready: read_only for no target.",
+    "target_paths": [],
+    "target_source": "none",
+    "task_kind": "read_only",
+    "task_shape": "",
+    "task_shape_source": "",
+    "user_prompt": "look at my source proxy context and tell me the next highest leverage thing to make it closer to daily driver",
+    "verification_policy": [],
+    "workspace_decision_source": "route_decision",
+    "workspace_mode": "none"
+  },
+  "trace_id": "trace_577825fe46e54bd6",
+  "user_goal_reached": true,
+  "user_prompt": "look at my source proxy context and tell me the next highest leverage thing to make it closer to daily driver",
+  "verification_result": "not_required_for_set_a_planning_prompt",
+  "verifier_required": false,
+  "work_product": "The next improvement is a durable run receipt, not another model lane. Plan 3 fixed same-trace consumer evidence and Stage 3 selected a harness. The daily-driver blocker is honest aggregation: task_id, trace_id, invocation/consumer IDs, required/invoked lanes, blocked lanes, limitations, and final status in one compact receipt that `/coding` can show.",
+  "work_product_summary": "Highest leverage next move: normalize 3x10 grading records into a first-class receipt surface so daily-driver output cannot look green without consumed evidence.",
+  "work_product_type": "plan"
+}

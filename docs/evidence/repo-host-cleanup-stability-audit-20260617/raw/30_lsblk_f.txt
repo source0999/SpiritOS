@@ -1,0 +1,11 @@
+$ lsblk -f || true
+# rc=0
+
+NAME   FSTYPE FSVER LABEL      UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+sda
+└─sda1 ext4   1.0   spirit-8tb 89266aec-4ec8-4aa8-bf4b-dd08e8699ed3    6.7T     2% /mnt/storage8tb
+                                                                                   /mnt/spirit-8tb
+sdb
+├─sdb1 vfat   FAT32            45B7-F176                                 1G     1% /boot/efi
+└─sdb2 ext4   1.0              fa1fa908-2de6-4c7f-b844-e53bdc22002c  152.3G    62% /mnt/spirit-8tb/media/yes
+                                                                                   /

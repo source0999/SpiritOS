@@ -1,0 +1,303 @@
+$ rg -n "OLLAMA|ollama|8tb|/mnt/spirit-8tb|model path|symlink" docs source_proxy backend scripts config . --glob '!.git/**' --glob '!node_modules/**' --glob '!.next/**' 2>/dev/null | head -300 || true
+# rc=0
+
+config/backup.env.example:8:RESTIC_REPOSITORY=/mnt/spirit-8tb/spiritos-backups/restic-repos/source-server
+config/backup.env.example:12:SPIRIT_MAC_RESTIC_REPOSITORY=/mnt/spirit-8tb/spiritos-backups/restic-repos/spirit-mac-mini
+config/backup.env.example:17:SPIRIT_WINDOWS_RESTIC_REPOSITORY=/mnt/spirit-8tb/spiritos-backups/restic-repos/spirit-windows
+config/source-proxy.example.env:16:# 8TB drive, prove `OLLAMA_MODELS` or the Ollama home symlink/service path
+config/source-proxy.example.env:17:# resolves to `/mnt/spirit-8tb/ollama-models`.
+config/source-proxy.example.env:18:SOURCE_PROXY_OLLAMA_MODEL=hermes4
+config/source-proxy.example.env:19:SOURCE_PROXY_CODER_OLLAMA_MODEL=qwen2.5-coder:7b
+config/source-proxy.example.env:20:SOURCE_PROXY_CLASSIFIER_OLLAMA_MODEL=phi4-mini:latest
+config/source-proxy.example.env:27:# Host-run proxy: http://127.0.0.1:11434. Docker same-network: http://spirit-ollama:11434
+config/source-proxy.example.env:28:SOURCE_PROXY_OLLAMA_BASE_URL=http://127.0.0.1:11434
+config/source-proxy.example.env:30:SOURCE_PROXY_OLLAMA_KEEP_ALIVE=-1
+config/source-proxy.example.env:35:OLLAMA_KEEP_ALIVE=-1
+./README.md:16:- `/mnt/spirit-8tb/converter/authorized-imports`
+./README.md:17:- `/mnt/spirit-8tb/converter/audio`
+./README.md:18:- `/mnt/spirit-8tb/converter/transcripts`
+./README.md:19:- `/mnt/spirit-8tb/converter/knowledge`
+./README.md:20:- `/mnt/spirit-8tb/converter/logs`
+./README.md:43:ollama pull hermes4
+./README.md:71:Hermes 4 is the default local intelligence model for SpiritOS chat and Source Proxy local routing. The expected local IDs are `hermes4:latest` and `hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M`; keep `hermes3:8b-abliterated` available as the fast `/oracle`/voice-friendly fallback and keep `qwen2.5-coder:7b` selectable for explicit coding experiments. If Ollama models are intended to live on the 8TB drive, verify `OLLAMA_MODELS` or the Ollama service/home symlink resolves to `/mnt/spirit-8tb/ollama-models` before calling storage configured.
+./README.md:338:**Brain vs TTS (do not conflate them):** `/api/spirit` uses `OLLAMA_MODEL` for `/chat` text generation. `/oracle` can use `ORACLE_OLLAMA_MODEL` when set. Voice is synthesized via same-origin **`/api/tts`** (`TTS_PROVIDER=piper` or `elevenlabs`); the browser never sees `ELEVENLABS_API_KEY`. Optional `ELEVENLABS_VOICE_SPEED` (default 1.12, clamped 0.7–1.2) sets ElevenLabs cadence; Voice settings can send a per-request `speed` override. **`GET /api/tts/voices`** feeds the Voice picker. **`ELEVENLABS_VOICE_ALLOWLIST`** supports **`Clarice:voice_id`** (recommended, no catalog read) or comma-separated **names only** (needs catalog + `voices_read`; if the catalog fails, switch to `Name:voice_id`). When any allowlist is set, the API returns **only** those voices - never the full catalog. Defaults prefer **`ELEVENLABS_DEFAULT_VOICE_ID`**, then **Clarice** by name, then **`ELEVENLABS_VOICE_ID`**. Response **`X-Spirit-TTS-Voice-Name-Encoded`** keeps display names ASCII-safe for Tailscale.
+./README.md:400:SPIRIT_OLLAMA_SUPPORTS_TOOLS=false
+./scoutRefinemint.md:2211:- `spirit-ollama` is not attached to `scout_default` in the observed Docker inspect output.
+./scoutRefinemint.md:2212:- `docker port spirit-ollama` reports no published port.
+./scoutRefinemint.md:2269:docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Networks}}' | grep -E 'scout|ollama|searxng|spirit' || true
+./scoutRefinemint.md:2271:docker inspect spirit-ollama --format '{{json .NetworkSettings.Networks}}' 2>/dev/null | jq . || true
+./scoutRefinemint.md:2272:docker port spirit-ollama 2>/dev/null || true
+./scoutRefinemint.md:2275:docker logs --tail=300 scout_v0_1 2>&1 | grep -E 'packet_synthesis_model_failed|ollama|11434|model' || true
+./scoutRefinemint.md:2287:- `http://spirit-ollama:11434/api/tags`
+docs/hermes4-full-integration-closeout.md:20:8TB model storage is proven GO. `/mnt/spirit-8tb` is mounted and `/usr/share/ollama/.ollama` resolves to `/mnt/spirit-8tb/ollama-models`. Direct running-process `OLLAMA_MODELS` proof was blocked by `/proc` permissions, so the accepted proof is the mounted drive plus active Ollama home symlink.
+docs/hermes4-full-integration-closeout.md:26:- Source Proxy local model: `ollama_chat/hermes4:latest`.
+docs/hermes4-full-integration-closeout.md:34:- Ollama service/storage/model path checks.
+docs/hermes4-full-integration-closeout.md:57:- Frontend chat: set `OLLAMA_MODEL=hermes3:8b-abliterated` or `OLLAMA_MODEL=qwen2.5-coder:7b` in the live frontend environment and restart Next when approved.
+docs/hermes4-full-integration-closeout.md:58:- Source Proxy local route: set `SOURCE_PROXY_OLLAMA_MODEL=hermes3:8b-abliterated` or `SOURCE_PROXY_OLLAMA_MODEL=qwen2.5-coder:7b` and restart Source Proxy when approved.
+docs/hermes4-full-integration-closeout.md:59:- Keep `ORACLE_OLLAMA_MODEL=hermes3:8b-abliterated` for fast oracle/voice-friendly use.
+docs/hermes4-full-integration-closeout.md:66:- No `/mnt/spirit-8tb` ownership or symlink changes were made.
+./productionProxy.md:1877:symlink-like path patterns if relevant
+./productionProxy.md:2029:docs/local-ollama-provider-study.md
+./productionProxy.md:2037:git diff -- docs/local-ollama-provider-study.md
+./productionProxy.md:2054:git restore docs/local-ollama-provider-study.md source_proxy/agents source_proxy/tests
+./services/jellyfin/docker-compose.yml:14:      - /mnt/spirit-8tb/services/jellyfin/config:/config
+./services/jellyfin/docker-compose.yml:15:      - /mnt/spirit-8tb/services/jellyfin/cache:/cache
+./services/jellyfin/docker-compose.yml:16:      - /mnt/spirit-8tb/services/jellyfin/transcodes:/transcodes
+./services/jellyfin/docker-compose.yml:17:      - /mnt/spirit-8tb/services/jellyfin/web-overrides/index.html:/jellyfin/jellyfin-web/index.html:ro
+./services/jellyfin/docker-compose.yml:18:      - /mnt/spirit-8tb/services/jellyfin/web-overrides/spirit-player-enhancer.js:/jellyfin/jellyfin-web/spirit-player-enhancer.js:ro
+./services/jellyfin/docker-compose.yml:19:      - /mnt/spirit-8tb/services/jellyfin/web-overrides/spirit-player-enhancer.css:/jellyfin/jellyfin-web/spirit-player-enhancer.css:ro
+./services/jellyfin/docker-compose.yml:20:      - /mnt/spirit-8tb/services/jellyfin/web-overrides/spiritos-mobile-swipes.js:/jellyfin/jellyfin-web/spiritos-mobile-swipes.js:ro
+./services/jellyfin/docker-compose.yml:21:      - /mnt/spirit-8tb/media/movies:/media/movies:ro
+./services/jellyfin/docker-compose.yml:22:      - /mnt/spirit-8tb/media/tv:/media/tv:ro
+./services/jellyfin/docker-compose.yml:23:      - /mnt/spirit-8tb/media/music:/media/music:ro
+./services/jellyfin/docker-compose.yml:24:      - /mnt/spirit-8tb/media/anime:/media/anime:ro
+./services/jellyfin/docker-compose.yml:25:      - /mnt/spirit-8tb/media/other:/media/other:ro
+./services/jellyfin/docker-compose.yml:26:      - /mnt/spirit-8tb/media/optimized-test:/media/optimized-test:ro
+./services/jellyfin/sync_folder_playlists.py:22:JELLYFIN_DB = "/mnt/spirit-8tb/services/jellyfin/config/data/jellyfin.db"
+source_proxy/tasks/long_running.py:30:from source_proxy.routing.ollama_route import (
+source_proxy/tasks/long_running.py:33:    ollama_route_status_entry,
+source_proxy/tasks/long_running.py:34:    resolve_classifier_ollama_model_name,
+source_proxy/tasks/long_running.py:35:    resolve_coder_ollama_model_name,
+source_proxy/tasks/long_running.py:36:    resolve_ollama_route,
+source_proxy/tasks/long_running.py:3554:    classifier_model = route_model_for_alias("classifier") or f"ollama_chat/{resolve_classifier_ollama_model_name(probe=False)}"
+source_proxy/tasks/long_running.py:3570:        "classifier_provider": route_provider_for_alias("classifier") or "ollama",
+source_proxy/tasks/long_running.py:4318:                        f"(host={payload['api_base_host']}, model={payload['ollama_model']})"
+source_proxy/tasks/long_running.py:5176:    provider = route_provider_for_alias(selected_alias) or ("ollama" if selected_alias == "local" else "")
+source_proxy/tasks/long_running.py:5209:    local_route_status = ollama_route_status_entry() if provider == "ollama" else {}
+source_proxy/tasks/long_running.py:5211:        "providerId": "local" if provider == "ollama" else provider or "unknown",
+source_proxy/tasks/long_running.py:5212:        "providerLabel": "Local / Ollama" if provider == "ollama" else provider or "unknown",
+source_proxy/tasks/long_running.py:5214:        "modelLabel": model.removeprefix("ollama_chat/") if model else "Unknown local model",
+source_proxy/tasks/long_running.py:5215:        "family": "local/ollama/hermes" if provider == "ollama" else "unknown",
+source_proxy/tasks/long_running.py:5220:        "externalCallAvailable": False if provider == "ollama" else bool(provider),
+source_proxy/tasks/long_running.py:5231:        "configuredOllamaModel": local_route_status.get("ollama_model"),
+source_proxy/tasks/long_running.py:5772:    ollama_route = resolve_ollama_route(probe=False)
+source_proxy/tasks/long_running.py:5773:    coder_ollama_model = resolve_coder_ollama_model_name(probe=False)
+source_proxy/tasks/long_running.py:5794:        ollama_base=ollama_route.api_base,
+source_proxy/tasks/long_running.py:5795:        coder_ollama_model=coder_ollama_model,
+scripts/media/import_extension_downloads.ps1:6:  [string]$RemoteInboxRoot = "/mnt/spirit-8tb/media-inbox/anime",
+scripts/media/import_extension_downloads.ps1:83:  $remoteStageDir = "/mnt/spirit-8tb/media-processing/extension-import-stage"
+scripts/backups/spiritos-backup-manifest.sh:41:ollama_data
+scripts/media/recover_media_ingest_failures.mjs:5:const ROOT = process.env.MEDIA_INGEST_ROOT || "/mnt/spirit-8tb";
+scripts/backups/spiritos-backup-docker-volumes.sh:20:  [ollama_data]="large runtime/model state"
+scripts/backups/spiritos-backup-docker-volumes.sh:32:for volume in source_postgres_data ollama_data whisper_cache openedai_voices searxng_data; do
+scripts/backups/spiritos-backup-docker-volumes.sh:34:  print_command docker run --rm -v "${volume}:/volume:ro" -v /mnt/spirit-8tb/spiritos-backups/docker-volumes:/backup alpine tar -C /volume -cf "/backup/${volume}.tar" .
+scripts/backups/spiritos-backup-windows.ps1:19:$ResticRepository = if ($env:RESTIC_REPOSITORY) { $env:RESTIC_REPOSITORY } else { "/mnt/spirit-8tb/spiritos-backups/restic-repos/spirit-windows" }
+scripts/backups/spiritos-backup-mac.sh:18:MAC_RESTIC_REPOSITORY="${SPIRIT_MAC_RESTIC_REPOSITORY:-/mnt/spirit-8tb/spiritos-backups/restic-repos/spirit-mac-mini}"
+source_proxy/routing/ollama_route.py:12:_DEFAULT_OLLAMA_MODEL = "hermes4"
+source_proxy/routing/ollama_route.py:13:_DEFAULT_OLLAMA_BASE = "http://127.0.0.1:11434"
+source_proxy/routing/ollama_route.py:14:_DEFAULT_OLLAMA_HOME = "/usr/share/ollama/.ollama"
+source_proxy/routing/ollama_route.py:15:_SPIRIT_8TB_ROOT = "/mnt/spirit-8tb"
+source_proxy/routing/ollama_route.py:34:def ollama_base_url_candidates() -> list[str]:
+source_proxy/routing/ollama_route.py:38:        "SOURCE_PROXY_OLLAMA_BASE_URL",
+source_proxy/routing/ollama_route.py:39:        "OLLAMA_BASE_URL",
+source_proxy/routing/ollama_route.py:40:        "OLLAMA_URL",
+source_proxy/routing/ollama_route.py:48:        ordered.append(_DEFAULT_OLLAMA_BASE)
+source_proxy/routing/ollama_route.py:52:def resolve_ollama_model_name() -> str:
+source_proxy/routing/ollama_route.py:54:        os.getenv("SOURCE_PROXY_OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:55:        or os.getenv("OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:59:    return _DEFAULT_OLLAMA_MODEL
+source_proxy/routing/ollama_route.py:77:def resolve_coder_ollama_model_name(*, probe: bool = True) -> str:
+source_proxy/routing/ollama_route.py:79:    explicit = os.getenv("SOURCE_PROXY_CODER_OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:82:    route = resolve_ollama_route(probe=probe)
+source_proxy/routing/ollama_route.py:87:    return resolve_ollama_model_name()
+source_proxy/routing/ollama_route.py:90:def resolve_classifier_ollama_model_name(*, probe: bool = True) -> str:
+source_proxy/routing/ollama_route.py:92:    explicit = os.getenv("SOURCE_PROXY_CLASSIFIER_OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:95:    route = resolve_ollama_route(probe=probe)
+source_proxy/routing/ollama_route.py:103:def _ollama_model_available(model: str, available_models: tuple[str, ...]) -> bool | None:
+source_proxy/routing/ollama_route.py:115:def _first_available_ollama_model(available_models: tuple[str, ...]) -> str | None:
+source_proxy/routing/ollama_route.py:131:def _ollama_missing_model_reason(model: str, available_models: tuple[str, ...]) -> str:
+source_proxy/routing/ollama_route.py:133:        return "ollama_models_unavailable"
+source_proxy/routing/ollama_route.py:135:    return f"ollama_model_missing:{model}; available={sample}"
+source_proxy/routing/ollama_route.py:138:def safe_ollama_host_label(api_base: str) -> str:
+source_proxy/routing/ollama_route.py:147:def clear_ollama_route_cache() -> None:
+source_proxy/routing/ollama_route.py:152:def resolve_ollama_route(*, probe: bool = True) -> OllamaRouteResolution:
+source_proxy/routing/ollama_route.py:153:    candidates = ollama_base_url_candidates()
+source_proxy/routing/ollama_route.py:154:    model = resolve_ollama_model_name()
+source_proxy/routing/ollama_route.py:156:        os.getenv("SOURCE_PROXY_OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:157:        or os.getenv("OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:178:        requested_model=resolve_ollama_model_name(),
+source_proxy/routing/ollama_route.py:180:        litellm_model=f"ollama_chat/{model}",
+source_proxy/routing/ollama_route.py:207:        "ollama_chatexception",
+source_proxy/routing/ollama_route.py:208:        "ollamaexception",
+source_proxy/routing/ollama_route.py:221:    route = resolve_ollama_route(probe=False)
+source_proxy/routing/ollama_route.py:222:    host = safe_ollama_host_label(route.api_base)
+source_proxy/routing/ollama_route.py:226:        "provider": "ollama",
+source_proxy/routing/ollama_route.py:228:        "ollama_model": route.model,
+source_proxy/routing/ollama_route.py:239:def ollama_coder_route_status_entry() -> dict[str, str | bool | None]:
+source_proxy/routing/ollama_route.py:240:    chat_route = resolve_ollama_route(probe=True)
+source_proxy/routing/ollama_route.py:241:    coder_model = resolve_coder_ollama_model_name(probe=True)
+source_proxy/routing/ollama_route.py:242:    model_available = _ollama_model_available(coder_model, chat_route.available_models)
+source_proxy/routing/ollama_route.py:249:    storage = _ollama_model_storage_proof()
+source_proxy/routing/ollama_route.py:252:        "provider": "ollama",
+source_proxy/routing/ollama_route.py:253:        "model": f"ollama_chat/{coder_model}",
+source_proxy/routing/ollama_route.py:254:        "requested_ollama_model": os.getenv("SOURCE_PROXY_CODER_OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:256:        "ollama_model": coder_model,
+source_proxy/routing/ollama_route.py:257:        "api_base_host": safe_ollama_host_label(chat_route.api_base),
+source_proxy/routing/ollama_route.py:262:        "available_ollama_model_fallback": fallback_model,
+source_proxy/routing/ollama_route.py:270:            else "ollama_unreachable"
+source_proxy/routing/ollama_route.py:272:            else _ollama_missing_model_reason(coder_model, chat_route.available_models)
+source_proxy/routing/ollama_route.py:277:def ollama_classifier_route_status_entry() -> dict[str, str | bool | None]:
+source_proxy/routing/ollama_route.py:278:    chat_route = resolve_ollama_route(probe=True)
+source_proxy/routing/ollama_route.py:279:    classifier_model = resolve_classifier_ollama_model_name(probe=True)
+source_proxy/routing/ollama_route.py:280:    model_available = _ollama_model_available(classifier_model, chat_route.available_models)
+source_proxy/routing/ollama_route.py:287:    storage = _ollama_model_storage_proof()
+source_proxy/routing/ollama_route.py:290:        "provider": "ollama",
+source_proxy/routing/ollama_route.py:291:        "model": f"ollama_chat/{classifier_model}",
+source_proxy/routing/ollama_route.py:292:        "requested_ollama_model": os.getenv("SOURCE_PROXY_CLASSIFIER_OLLAMA_MODEL", "").strip()
+source_proxy/routing/ollama_route.py:294:        "ollama_model": classifier_model,
+source_proxy/routing/ollama_route.py:295:        "api_base_host": safe_ollama_host_label(chat_route.api_base),
+source_proxy/routing/ollama_route.py:300:        "available_ollama_model_fallback": fallback_model,
+source_proxy/routing/ollama_route.py:308:            else "ollama_unreachable"
+source_proxy/routing/ollama_route.py:310:            else _ollama_missing_model_reason(classifier_model, chat_route.available_models)
+source_proxy/routing/ollama_route.py:315:def ollama_route_status_entry() -> dict[str, str | bool | None]:
+source_proxy/routing/ollama_route.py:316:    route = resolve_ollama_route(probe=True)
+source_proxy/routing/ollama_route.py:317:    model_available = _ollama_model_available(route.model, route.available_models)
+source_proxy/routing/ollama_route.py:319:    fallback_model = _first_available_ollama_model(route.available_models)
+source_proxy/routing/ollama_route.py:320:    storage = _ollama_model_storage_proof()
+source_proxy/routing/ollama_route.py:323:        "provider": "ollama",
+source_proxy/routing/ollama_route.py:325:        "requested_ollama_model": route.requested_model,
+source_proxy/routing/ollama_route.py:326:        "ollama_model": route.model,
+source_proxy/routing/ollama_route.py:327:        "api_base_host": safe_ollama_host_label(route.api_base),
+source_proxy/routing/ollama_route.py:332:        "available_ollama_model_fallback": fallback_model,
+source_proxy/routing/ollama_route.py:340:            else "ollama_unreachable"
+source_proxy/routing/ollama_route.py:342:            else _ollama_missing_model_reason(route.model, route.available_models)
+source_proxy/routing/ollama_route.py:347:def _ollama_model_storage_proof() -> dict[str, str]:
+source_proxy/routing/ollama_route.py:348:    env_path = os.getenv("OLLAMA_MODELS", "").strip()
+source_proxy/routing/ollama_route.py:354:                "proof": "OLLAMA_MODELS",
+source_proxy/routing/ollama_route.py:360:            "proof": "OLLAMA_MODELS",
+source_proxy/routing/ollama_route.py:363:    real_home = os.path.realpath(_DEFAULT_OLLAMA_HOME)
+source_proxy/routing/ollama_route.py:364:    if real_home != _DEFAULT_OLLAMA_HOME:
+source_proxy/routing/ollama_route.py:368:            "proof": f"{_DEFAULT_OLLAMA_HOME} symlink",
+source_proxy/routing/ollama_route.py:374:        "proof": "default_ollama_home",
+source_proxy/routing/ollama_route.py:388:        if _ollama_model_names_equivalent(candidate, selected_model):
+source_proxy/routing/ollama_route.py:390:        if _ollama_model_available(candidate, available_models):
+source_proxy/routing/ollama_route.py:395:def _ollama_model_names_equivalent(left: str, right: str) -> bool:
+source_proxy/routing/ollama_route.py:415:        ok, models = _probe_ollama_tags(candidate)
+source_proxy/routing/ollama_route.py:418:                "SOURCE_PROXY_OLLAMA_BASE_URL"
+source_proxy/routing/ollama_route.py:419:                if index == 0 and os.getenv("SOURCE_PROXY_OLLAMA_BASE_URL", "").strip()
+source_proxy/routing/ollama_route.py:421:                    "OLLAMA_BASE_URL"
+source_proxy/routing/ollama_route.py:422:                    if candidate == os.getenv("OLLAMA_BASE_URL", "").strip().rstrip("/")
+source_proxy/routing/ollama_route.py:424:                        "OLLAMA_URL"
+source_proxy/routing/ollama_route.py:425:                        if candidate == os.getenv("OLLAMA_URL", "").strip().rstrip("/")
+source_proxy/routing/ollama_route.py:444:def _probe_ollama_tags(api_base: str) -> tuple[bool, tuple[str, ...]]:
+scripts/backups/spiritos-backup-dell.sh:16:RESTIC_REPOSITORY="${RESTIC_REPOSITORY:-/mnt/spirit-8tb/spiritos-backups/restic-repos/source-server}"
+scripts/backups/spiritos-backup-dell.sh:23:findmnt /mnt/spirit-8tb >/dev/null 2>&1 || warn "/mnt/spirit-8tb is not mounted or not visible"
+scripts/backups/spiritos-restore-drill.sh:16:RESTIC_REPOSITORY="${RESTIC_REPOSITORY:-/mnt/spirit-8tb/spiritos-backups/restic-repos/source-server}"
+scripts/backups/spiritos-restore-drill.sh:19:DRILL_ROOT="${SPIRIT_RESTORE_DRILL_ROOT:-/mnt/spirit-8tb/spiritos-backups/restore-drills/$(date +%F)/$(date -u +%H%M%SZ)}"
+scripts/backups/spiritos-restore-drill.sh:26:require_path_under "${resolved_target}" "/mnt/spirit-8tb/spiritos-backups/restore-drills"
+scripts/backups/spiritos-backup-inventory.sh:26:  findmnt /mnt/spirit-8tb 2>&1 || true
+scripts/backups/spiritos-backup-inventory.sh:27:  df -h /mnt/spirit-8tb 2>&1 || true
+source_proxy/routing/litellm_router.py:8:from source_proxy.routing.ollama_route import (
+source_proxy/routing/litellm_router.py:9:    clear_ollama_route_cache,
+source_proxy/routing/litellm_router.py:10:    ollama_coder_route_status_entry,
+source_proxy/routing/litellm_router.py:11:    ollama_classifier_route_status_entry,
+source_proxy/routing/litellm_router.py:12:    ollama_route_status_entry,
+source_proxy/routing/litellm_router.py:13:    resolve_classifier_ollama_model_name,
+source_proxy/routing/litellm_router.py:14:    resolve_coder_ollama_model_name,
+source_proxy/routing/litellm_router.py:15:    resolve_ollama_model_name,
+source_proxy/routing/litellm_router.py:16:    resolve_ollama_route,
+source_proxy/routing/litellm_router.py:30:    ollama_resolution = resolve_ollama_route(probe=True)
+source_proxy/routing/litellm_router.py:31:    ollama_model = ollama_resolution.model
+source_proxy/routing/litellm_router.py:32:    coder_ollama_model = resolve_coder_ollama_model_name(probe=True)
+source_proxy/routing/litellm_router.py:33:    classifier_ollama_model = resolve_classifier_ollama_model_name(probe=True)
+source_proxy/routing/litellm_router.py:34:    local_status = ollama_route_status_entry()
+source_proxy/routing/litellm_router.py:35:    coder_status = ollama_coder_route_status_entry()
+source_proxy/routing/litellm_router.py:36:    classifier_status = ollama_classifier_route_status_entry()
+source_proxy/routing/litellm_router.py:46:            provider="ollama",
+source_proxy/routing/litellm_router.py:47:            model=f"ollama_chat/{ollama_model}",
+source_proxy/routing/litellm_router.py:53:            provider="ollama",
+source_proxy/routing/litellm_router.py:54:            model=f"ollama_chat/{coder_ollama_model}",
+source_proxy/routing/litellm_router.py:60:            provider="ollama",
+source_proxy/routing/litellm_router.py:61:            model=f"ollama_chat/{classifier_ollama_model}",
+source_proxy/routing/litellm_router.py:105:        if route_model.provider == "ollama":
+source_proxy/routing/litellm_router.py:106:            litellm_params["api_base"] = resolve_ollama_route(probe=True).api_base
+source_proxy/routing/litellm_router.py:107:            litellm_params["keep_alive"] = _parse_ollama_keep_alive(
+source_proxy/routing/litellm_router.py:109:                    "SOURCE_PROXY_OLLAMA_KEEP_ALIVE",
+source_proxy/routing/litellm_router.py:110:                    os.getenv("OLLAMA_KEEP_ALIVE", "-1"),
+source_proxy/routing/litellm_router.py:165:    local_status = ollama_route_status_entry()
+source_proxy/routing/litellm_router.py:174:        if route_model.alias == "local" and route_model.provider == "ollama":
+source_proxy/routing/litellm_router.py:176:        if route_model.alias == "coder" and route_model.provider == "ollama":
+source_proxy/routing/litellm_router.py:177:            item.update(ollama_coder_route_status_entry())
+source_proxy/routing/litellm_router.py:178:        if route_model.alias == "classifier" and route_model.provider == "ollama":
+source_proxy/routing/litellm_router.py:179:            item.update(ollama_classifier_route_status_entry())
+source_proxy/routing/litellm_router.py:186:    clear_ollama_route_cache()
+source_proxy/routing/litellm_router.py:189:def configured_local_ollama_model() -> str:
+source_proxy/routing/litellm_router.py:190:    return resolve_ollama_model_name()
+source_proxy/routing/litellm_router.py:193:def configured_local_ollama_base_url() -> str:
+source_proxy/routing/litellm_router.py:194:    return resolve_ollama_route(probe=False).api_base
+source_proxy/routing/litellm_router.py:197:def _parse_ollama_keep_alive(value: str) -> int | str:
+scripts/media-ingest-worker.mjs:6:const ROOT = process.env.MEDIA_INGEST_ROOT || "/mnt/spirit-8tb";
+scripts/agent-trials/run-aider-goose-local-agent-smoke.py:247:    shell_capture("ollama list || true", ENV_DIR / "ollama-list.txt")
+scripts/agent-trials/run-aider-goose-local-agent-smoke.py:248:    shell_capture("ollama ps || true", ENV_DIR / "ollama-ps-before.txt")
+scripts/agent-trials/run-aider-goose-local-agent-smoke.py:301:    result = run_cmd(["timeout", "30s", "ollama", "run", model, "say MODEL_READY in one line"], cwd=REPO, timeout=35)
+scripts/agent-trials/run-aider-goose-local-agent-smoke.py:311:        ps = run_cmd(["ollama", "ps"], cwd=REPO, timeout=10)
+scripts/agent-trials/run-aider-goose-local-agent-smoke.py:313:            second = run_cmd(["timeout", "60s", "ollama", "run", model, "say MODEL_READY in one line"], cwd=REPO, timeout=65)
+scripts/agent-trials/run-aider-goose-local-agent-smoke.py:385:        cmd = ["aider", "--model", f"ollama_chat/{model}", "--yes", "--no-gitignore", "--no-auto-commits", "--message", PROMPT]
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:20:ROOT = REPO / "docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/qwen-ollama-runtime-diagnostic"
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:25:CLEAN_COMMAND = "python3 scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py --clean"
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:70:        "env_ollama": shell("env | grep -E 'OLLAMA|CUDA|NVIDIA' || true", ENV / "env-ollama.txt"),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:71:        "docker_ollama": shell("docker ps | grep -i ollama || true", ENV / "docker-ollama.txt"),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:72:        "system_ollama": shell("systemctl status ollama --no-pager || true", ENV / "system-ollama.txt"),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:73:        "ps_before": shell("ps -ef | grep -E 'ollama|cn|aider|goose|continue|node' | grep -v grep || true", ENV / "ps-ollama-before.txt"),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:74:        "ollama_list": shell("ollama list || true", ENV / "ollama-list.txt"),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:75:        "ollama_ps_before": shell("ollama ps || true", ENV / "ollama-ps-before.txt"),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:78:        "disk": shell("df -h / /mnt/spirit-8tb || true", ENV / "disk.txt"),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:80:    ollama_list = captures["ollama_list"]["stdout"]
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:81:    docker_text = captures["docker_ollama"]["stdout"]
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:82:    system_text = captures["system_ollama"]["stdout"] + captures["system_ollama"]["stderr"]
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:90:        "qwen_installed": MODEL in ollama_list,
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:91:        "docker_ollama_running": "ollama" in docker_text.lower(),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:92:        "spirit_ollama_container": "spirit-ollama" in docker_text,
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:93:        "system_ollama_exists": "ollama.service" in system_text,
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:94:        "system_ollama_running": "Active: active (running)" in system_text,
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:95:        "duplicate_ollama_warning": ("ollama" in docker_text.lower()) and ("Active: active (running)" in system_text),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:96:        "qwen_loaded_before": MODEL in captures["ollama_ps_before"]["stdout"],
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:97:        "gpu_runner_before": "ollama" in nvidia_text.lower(),
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:99:        "stale_runner_processes": any(token in ps_text for token in ["ollama runner", "ollama_llama_server"]) and MODEL not in captures["ollama_ps_before"]["stdout"],
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:113:    before = run(["ollama", "ps"], timeout=20)
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:115:        ["timeout", "120s", "ollama", "run", MODEL, PROMPT],
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:122:    during_ps = run(["bash", "-lc", "ps -ef | grep -E 'ollama|cn|aider|goose|continue|node' | grep -v grep || true"], timeout=20)
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:125:        (ENV / "ps-ollama-during.txt").write_text(during_ps["stdout"] + during_ps["stderr"])
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:139:    after = run(["ollama", "ps"], timeout=20)
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:142:        "command": f'timeout 120s ollama run {MODEL} "{PROMPT}"',
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:148:        "ollama_ps_before": before["stdout"],
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:149:        "ollama_ps_after": after["stdout"],
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:245:        status = "BLOCKED_OLLAMA_UNREACHABLE"
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:246:    elif env["duplicate_ollama_warning"]:
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:258:    if env["duplicate_ollama_warning"]:
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:264:    if env["gpu_runner_before"] or any("ollama" in r.get("nvidia_smi_during", "").lower() for r in [cli_cold, cli_warm]):
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:271:    recommendation = "OPERATOR_DECISION_REQUIRED" if env["duplicate_ollama_warning"] else "NO_CHANGE_NEEDED"
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:278:            "systemctl status ollama --no-pager",
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:279:            "docker ps | grep -i ollama",
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:287:        "clean_duplicate_ollama": recommendation == "OPERATOR_DECISION_REQUIRED",
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:302:Duplicate Ollama should be cleaned first: {summary['clean_duplicate_ollama']}
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:329:<tr><th>Duplicate Ollama warning</th><td>{yesno(manifest['environment']['duplicate_ollama_warning'])}</td></tr>
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:370:    shell("ps -ef | grep -E 'ollama|cn|aider|goose|continue|node' | grep -v grep || true", ENV / "ps-ollama-after.txt")
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:371:    shell("ollama ps || true", ENV / "ollama-ps-after.txt")
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:401:Duplicate Ollama warning: {env['duplicate_ollama_warning']}
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:402:System Ollama running: {env['system_ollama_running']}
+scripts/agent-trials/run-qwen-ollama-runtime-diagnostic.py:403:Docker Ollama running: {env['docker_ollama_running']}
+scripts/agent-trials/run-lane-plumbing-repair.py:43:OLLAMA_API = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
+scripts/agent-trials/run-lane-plumbing-repair.py:106:    raw_trace = load_json(ROUND1_ROOT / "lanes/raw-ollama-qwen/path-trace.json")
+scripts/agent-trials/run-lane-plumbing-repair.py:110:    raw_text = read(ROUND1_ROOT / "lanes/raw-ollama-qwen/raw-transcript.txt")
+scripts/agent-trials/run-lane-plumbing-repair.py:163:    qwen_smoke = ollama_generate("say READY in one line", timeout=30, num_predict=8)
+scripts/agent-trials/run-lane-plumbing-repair.py:210:    result = ollama_generate(prompt, timeout=240, num_predict=1200)
+scripts/agent-trials/run-lane-plumbing-repair.py:216:        "selected_model_call": "ollama /api/generate",
+scripts/agent-trials/run-lane-plumbing-repair.py:518:    provider: ollama
+scripts/agent-trials/run-lane-plumbing-repair.py:519:    apiBase: {OLLAMA_API}
+scripts/agent-trials/run-lane-plumbing-repair.py:530:def ollama_generate(prompt: str, timeout: int, num_predict: int) -> CmdResult:
+scripts/agent-trials/run-lane-plumbing-repair.py:531:    command = ["ollama-api-generate", OLLAMA_API, TARGET_MODEL]
+scripts/agent-trials/run-lane-plumbing-repair.py:534:    request = urllib.request.Request(f"{OLLAMA_API}/api/generate", data=payload, headers={"Content-Type": "application/json"}, method="POST")
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:33:OLLAMA_API = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:183:        ["ollama", "list"],
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:184:        ["ollama", "ps"],
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:193:    write(ENV_DIR / "ollama-list.txt", results[7].text)
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:194:    write(ENV_DIR / "ollama-ps-before.txt", results[8].text)
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:222:    result = ollama_generate_smoke(
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:228:    write(ENV_DIR / "ollama-ps-during.txt", run_capture(["ollama", "ps"], timeout=20, missing_ok=True).text)
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:237:        "model_observed": TARGET_MODEL in read(ENV_DIR / "ollama-ps-during.txt") or TARGET_MODEL in output,
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:286:        "model_observed": TARGET_MODEL if TARGET_MODEL in read(ENV_DIR / "ollama-ps-during.txt") or "qwen" in (result.stdout + result.stderr).lower() else "unknown",
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:458:def ollama_generate_smoke(
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:467:    command = ["ollama-api-generate", OLLAMA_API, TARGET_MODEL]
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:478:        f"{OLLAMA_API}/api/generate",
+scripts/agent-trials/run-continue-qwen-real-env-debug.py:486:        events.write(json.dumps({"ts": utc_now(), "event": "OLLAMA_API_GENERATE_START", "model": TARGET_MODEL}) + "\n")

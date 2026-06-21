@@ -19,6 +19,14 @@ const historyItem: JellyfinItem = {
   },
 };
 
+const modelItem: JellyfinItem = {
+  Id: "model-1",
+  Name: "Scene One",
+  Type: "Video",
+  MediaType: "Video",
+  SeriesName: "Sava Schultz",
+};
+
 const emptyGallery: SpiritFlixGalleryResponse = {
   schema: "spiritflix-model-gallery/v1",
   generatedAt: "2026-06-06T12:31:00.000Z",
@@ -90,6 +98,7 @@ describe("SpiritFlixHome watch history", () => {
         onSearch={vi.fn()}
         onSelectHome={vi.fn()}
         onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
         onOpenDetails={vi.fn()}
         onPlay={onPlay}
       />,
@@ -138,6 +147,7 @@ describe("SpiritFlixHome watch history", () => {
         onSearch={vi.fn()}
         onSelectHome={vi.fn()}
         onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
         onOpenDetails={vi.fn()}
         onPlay={vi.fn()}
       />,
@@ -198,6 +208,7 @@ describe("SpiritFlixHome watch history", () => {
         onSearch={vi.fn()}
         onSelectHome={vi.fn()}
         onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
         onOpenDetails={vi.fn()}
         onPlay={vi.fn()}
       />,
@@ -212,5 +223,40 @@ describe("SpiritFlixHome watch history", () => {
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByLabelText("Gallery seconds per picture")).toHaveValue(5);
+  });
+
+  it("restores the selected model view from the route state", async () => {
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraryItems: [modelItem, historyItem],
+          continueWatching: [],
+          watchHistory: [],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        initialModelName="Sava Schultz"
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Sava Schultz" })).toBeInTheDocument();
+    expect(screen.queryByText("Watched On Fold")).not.toBeInTheDocument();
   });
 });

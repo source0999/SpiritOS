@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-16T01:00:21.781Z",
+  "jobId": "mi-mqfrg1sy-1027e2af",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Emilla Official Takes Boyfriend Hug dick.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Emilla Official Takes Boyfriend Hug dick.mkv",
+  "originalSize": 300824609,
+  "outputSize": 144220015,
+  "savingsPercent": 52.06,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-16T01:00:21.783Z"
+  }
+}

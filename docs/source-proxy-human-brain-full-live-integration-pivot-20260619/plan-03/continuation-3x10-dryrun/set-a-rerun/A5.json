@@ -1,0 +1,168 @@
+{
+  "auto_fix_attempts": 0,
+  "blocked_reasons": [],
+  "consumer_subsystem": "long_running_status_observer",
+  "decision_packet_attempts": 6,
+  "decision_packet_validated": false,
+  "decision_packet_validation_errors": [
+    "decision_field_too_thin:1:decision",
+    "decision_no_action_verb:0",
+    "evidence_finding_too_thin:4",
+    "fabricated_host:0:ollama.ai",
+    "insufficient_source_refs:2",
+    "non_json_wrapping_text",
+    "source_url_not_from_raw_sources:0",
+    "source_url_not_from_raw_sources:1"
+  ],
+  "downstream_consumed": true,
+  "failed_gates": [
+    "research_materially_changed_output",
+    "repo_context_used",
+    "a5_dell_mac_windows_role_split",
+    "a5_cost_no_new_hardware_reasoning",
+    "a5_privacy_local_cloud_tradeoff",
+    "a5_model_tooling_tied_to_roles",
+    "work_product_too_short"
+  ],
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "NEEDS_FIX",
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": true,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "mac_worker"
+  ],
+  "lanes_not_required": [
+    "qwen_coder",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_32857e3d11fb4e46",
+  "limitations_stated": true,
+  "live_search_used": true,
+  "local_fallback_used": false,
+  "mac_evidence_signals": [
+    "cpu_or_architecture",
+    "disk_or_free_space",
+    "gpu_or_metal",
+    "installed_ai_runtime",
+    "memory_or_ram",
+    "safe_ai_worker_task"
+  ],
+  "mac_invoked": true,
+  "mac_required": true,
+  "mac_status": "INTEGRATED_LIVE",
+  "mac_system_status_alone_used_as_pass": false,
+  "max_auto_fix_attempts": 3,
+  "model": "gemma3n:e4b",
+  "notes": [
+    "research_materially_changed_output",
+    "repo_context_used",
+    "a5_dell_mac_windows_role_split",
+    "a5_cost_no_new_hardware_reasoning",
+    "a5_privacy_local_cloud_tradeoff",
+    "a5_model_tooling_tied_to_roles",
+    "work_product_too_short"
+  ],
+  "packet_lanes_available": [
+    {
+      "lane_name": "ollama_hermes4_latest",
+      "model": "hermes4:latest",
+      "provider_type": "ollama",
+      "reason": "stronger_existing_local_ollama"
+    },
+    {
+      "lane_name": "ollama_gemma3n_e4b",
+      "model": "gemma3n:e4b",
+      "provider_type": "ollama",
+      "reason": "current_default_local_model"
+    }
+  ],
+  "packet_lanes_unavailable": [
+    {
+      "lane_name": "openai",
+      "model": "gpt-4o-mini",
+      "provider_type": "openai",
+      "reason": "OPENAI_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "anthropic",
+      "model": "claude-3-5-sonnet-latest",
+      "provider_type": "anthropic",
+      "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "deepseek",
+      "model": "deepseek-chat",
+      "provider_type": "deepseek",
+      "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "litellm",
+      "model": "",
+      "provider_type": "litellm",
+      "reason": "LITELLM_API_KEY_unset_or_model_missing"
+    }
+  ],
+  "packet_model": "hermes4:latest",
+  "packet_model_lane": "ollama_hermes4_latest",
+  "packet_model_provider": "ollama",
+  "patch_bucket": "",
+  "patch_required": false,
+  "policy_event_present": false,
+  "policy_event_required": false,
+  "prompt_id": "A5",
+  "query_variant_source_counts": [
+    6
+  ],
+  "query_variants_tried": [
+    "local AI workstation setup Ollama LM Studio Windows Mac Linux homelab 2026"
+  ],
+  "qwen_activated": false,
+  "qwen_required": false,
+  "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": false,
+  "repo_files_read": [
+    "source_proxy/decision/mac_integration.py",
+    "src/app/api/coding/mac-worker/route.ts",
+    "source_proxy/routing/ollama_route.py"
+  ],
+  "required_lanes": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "mac_worker"
+  ],
+  "research_marker_hits": [],
+  "research_materially_changed_output": false,
+  "reverified": false,
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "source_count": 6,
+  "task_id": "task_598464a43b4f",
+  "trace_id": "trace_d370e6b8e30743ef",
+  "user_goal_reached": false,
+  "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
+  "verification_result": "not_required",
+  "verifier_required": false,
+  "work_product_summary": "Recommendation NEEDS_FIX: live decision packet did not validate, so no deterministic renderer output was accepted. Limits - The hardened grader remains authoritative. Next Handoff Goal: inspect decision packet validation errors and rerun only with valid live JSON.",
+  "work_product_type": "plan"
+}

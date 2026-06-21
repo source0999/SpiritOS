@@ -1,0 +1,39 @@
+{
+  "plan": "Plan 2/6",
+  "review_scope": "Patch 3 independent acceptance review",
+  "implementation_commit": "1b27661d",
+  "review_verdict": "NEEDS_FIX",
+  "accepted_as_true_plan_2_go": false,
+  "source_edits_performed_by_review": false,
+  "commit_or_push_performed_by_review": false,
+  "plan_3_started": false,
+  "operator_check": "PASS",
+  "focused_tests": "PARTIAL",
+  "hardline_no_preview_go_verified": false,
+  "mac_write_integration_verified": true,
+  "mac_search_check_integration_verified": true,
+  "research_integration_verified": true,
+  "specialist_lane_integration_verified": false,
+  "task_a_verified": false,
+  "task_b_verified": true,
+  "task_c_verified": true,
+  "preview_go_detected": true,
+  "advisory_go_detected": true,
+  "status_only_go_detected": true,
+  "read_only_action_go_detected": false,
+  "mock_go_detected": false,
+  "fixture_only_go_detected": false,
+  "unconsumed_output_go_detected": false,
+  "required_fixes_before_plan_3": [
+    "Do not let advisory or UNVERIFIED verifier output satisfy specialist INTEGRATED_LIVE.",
+    "Provide real consumed Qwen coder and browser/functional verifier proof, or remove those lanes from required Plan 2 GO criteria.",
+    "Harden operator and closeout checks so specialist GO requires live non-advisory verifier proof, qwen_coder_activated truth when Qwen is required, and no stale failed test strings.",
+    "Resolve or machine-exempt the current coding cockpit Trial Runner Vitest failures before claiming focused tests PASS."
+  ],
+  "carryforward_known_issues": [
+    "Large unrelated dirty tree exists in SpiritFlix, media, handoff, and package files.",
+    "The requested Vitest coding cockpit target has 9 known Trial Runner/current-shell failures; the Plan 2 truth visibility test inside it passes.",
+    "Remote Mac checkout retains untracked .spiritos-backups/ and scripts/mac-worker/ paths from the approved sync evidence.",
+    "Patch 3 committed artifact names differ from some review-prompt filenames."
+  ]
+}

@@ -1,0 +1,310 @@
+=== healthcheck ===
+{"vram_used":"0.4 GB","vram_total":"12 GB","budget_remaining":"$3.50"}
+HTTP=200 time_total=0.029066
+=== requested cleanup/watcher packet files ===
+--- docs/evidence/repo-cleanup-finish-phase-20260618/index.md
+# Repo Cleanup Finish Phase Evidence
+
+- `00-baseline.md` / `raw/00-baseline.txt`: baseline host, git, watcher, failed-unit, and health-log capture.
+- `01-current-state-summary.md`: current S6/watcher/repo state summary.
+- `10-prior-evidence-review.md`: prior audit review and boundaries.
+- `20-current-dirty-manifest.json`: structured dirty tree manifest.
+- `21-current-dirty-manifest.md`: readable dirty tree manifest.
+- `22-bucket-summary.md`: bucket counts and staging decisions.
+- `30-post-commit-evidence-result.md`: closeout evidence commit result.
+- `40-repomix-ignore-patch.md`: repomix diff evidence.
+- `41-repomix-validation.md`: repomix validation evidence.
+- `50-final-archive-move-manifest.json`: approval-only archive/move candidates.
+- `51-final-archive-move-manifest.md`: readable archive/move candidates.
+- `52-final-delete-hold.md`: delete hold.
+- `60-final-health-checks.md`: final status/typecheck/watcher health checks.
+- `summary.json`: machine-readable verdict summary.
+- `final-verdict.md`: final GO/PARTIAL/approval verdict.
+- `operator-summary.md`: short handoff summary.
+--- docs/evidence/repo-cleanup-finish-phase-20260618/final-verdict.md
+# Final Verdict
+
+- Repo cleanup finish: PARTIAL-GO
+- Dirty tree understood: GO
+- Repomix cleanup: GO
+- Archive/move readiness: NEEDS_APPROVAL
+- Delete readiness: NONE
+- Watcher state: GO
+- Proxy return readiness: GO
+
+## Basis
+
+- S6 commit remains preserved: `111d4fe9`.
+- Watcher commit remains preserved: `372e6c1e`.
+- Closeout evidence commit created: `e2e2af4f`.
+- Repomix cleanup commit created: `43e20706`.
+- Watcher timer is active and boot postmortem is enabled with a recent successful run.
+- Remaining dirty/untracked items are classified in `20-current-dirty-manifest.json` and `21-current-dirty-manifest.md`.
+- `npm run typecheck` passed.
+- `git diff --check` fails only on generated media report HTML whitespace that was classified and left untouched.
+
+## Not touched
+
+- No push.
+- No delete, archive, move, stash, reset, checkout, restore, process kill, service restart, Docker/container change, media mutation, Jellyfin config/SQLite mutation, mount repair, proxy benchmark, Source Proxy implementation, or SpiritFlix S7 work.
+
+## Next approval request
+
+C. approve Source Proxy return checkpoint.
+
+Optional later approvals remain available for archive/move manifest execution, failed mount investigation, or pushing cleanup commits.
+--- docs/evidence/repo-cleanup-finish-phase-20260618/operator-summary.md
+# Operator Summary
+
+Cleanup finished within the allowed boundary.
+
+Commits created:
+
+- `e2e2af4f Add post-commit closeout evidence`
+- `43e20706 Tighten repomix cleanup ignores`
+
+Current remaining dirty/untracked count at report generation: 249.
+
+Non-destructive cleanup completed:
+
+- Preserved the two post-commit closeout evidence files in Git.
+- Tightened `repomix.config.json` ignores for raw/generated evidence, receipts/traces/smokes/trials/debug/tmp JSON, backups, data/volume directories, build outputs, venvs, caches, pyc files, and nested dependency/build directories.
+- Produced a refreshed dirty-tree manifest and final archive/move/delete approval manifests.
+
+Not touched:
+
+- Active app/source changes, media face-organizer work, generated media reports, package/script helper changes outside `repomix.config.json`, Source Proxy receipts/evidence, service state, Docker, systemd units, media files, Jellyfin SQLite/config, and failed mount state.
+
+Validation:
+
+- `python3 -m json.tool repomix.config.json`: passed.
+- `git diff --check -- repomix.config.json`: passed before commit.
+- `npm run typecheck`: passed.
+- Overall `git diff --check`: failed on unrelated generated media report HTML trailing whitespace; left untouched.
+- Watcher timer: active.
+- Boot postmortem: enabled and recently successful.
+
+Approval still required:
+
+- Archive/move execution: yes.
+- Delete execution: no candidates; still no approval to delete anything.
+- Push cleanup commits: requires approval.
+- Failed mount investigation: requires approval.
+--- docs/evidence/repo-cleanup-finish-phase-20260618/summary.json
+{
+  "generated_at": "2026-06-18T20:11:33.871140-04:00",
+  "commits_created": [
+    "e2e2af4f Add post-commit closeout evidence",
+    "43e20706 Tighten repomix cleanup ignores"
+  ],
+  "remaining_dirty_untracked_count": 249,
+  "repo_cleanup_finish": "PARTIAL-GO",
+  "dirty_tree_understood": "GO",
+  "repomix_cleanup": "GO",
+  "archive_move_readiness": "NEEDS_APPROVAL",
+  "delete_readiness": "NONE",
+  "watcher_state": "GO",
+  "proxy_return_readiness": "GO",
+  "notes": [
+    "git diff --check fails on generated media report HTML trailing whitespace left untouched",
+    "npm run typecheck passed",
+    "failed mnt-spirit-projects mount remains out of scope"
+  ]
+}--- docs/evidence/spiritos-readonly-watchers-install-20260617/final-verdict.md
+# Final Verdict
+
+Watcher install verdict: **GO**
+
+Manual watcher scripts: **GO**
+Systemd health snapshot timer: **GO**
+Boot postmortem service: **GO**
+Automatic outage snapshots: **enabled**
+
+The approved health directory exists and is writable at `/mnt/spirit-8tb/spiritos-health/`. The read-only watcher scripts under `scripts/spiritos-health/` were reviewed, danger-scanned, made executable, and manually run once by Codex. Britton then completed the sudo/systemd install manually from an interactive SSH terminal and provided terminal proof.
+
+The original Codex/systemd install attempt was PARTIAL-GO because non-interactive sudo was blocked. Britton later completed the sudo unit install manually from an interactive SSH terminal and provided terminal proof.
+
+## Installed Script Paths
+
+- `scripts/spiritos-health/spiritos-host-health-snapshot.sh`
+- `scripts/spiritos-health/spiritos-service-health-snapshot.sh`
+- `scripts/spiritos-health/spiritos-boot-postmortem.sh`
+- `scripts/spiritos-health/spiritos-model-storage-guard.sh`
+- `scripts/spiritos-health/spiritos-repo-bloat-report.sh`
+- `scripts/spiritos-health/spiritos-health-lib.sh`
+
+## Installed Unit / Timer Names
+
+- `spiritos-health-snapshot.service`
+- `spiritos-health-snapshot.timer`
+- `spiritos-boot-postmortem.service`
+
+## Health Output Path
+
+`/mnt/spirit-8tb/spiritos-health/`
+
+## Manual Run Result
+
+`GO`: all watcher scripts exited `0`.
+
+Manual logs:
+
+- `/mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T19-39-22-04-00.log`
+- `/mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T19-39-37-04-00.log`
+- `/mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-39-39-04-00.log`
+- `/mnt/spirit-8tb/spiritos-health/spiritos-model-storage-guard.sh.2026-06-18T19-40-14-04-00.log`
+- `/mnt/spirit-8tb/spiritos-health/spiritos-repo-bloat-report.sh.2026-06-18T19-40-15-04-00.log`
+
+## Systemd Run Result
+
+`GO`: Britton provided manual terminal proof that:
+
+- `spiritos-health-snapshot.timer` is loaded, enabled, and active waiting.
+- `spiritos-health-snapshot.service` is inactive dead after a successful oneshot run.
+- `spiritos-health-snapshot.service` ExecStart results exited `0/SUCCESS` for:
+  - `spiritos-host-health-snapshot.sh`
+  - `spiritos-service-health-snapshot.sh`
+  - `spiritos-model-storage-guard.sh`
+  - `spiritos-repo-bloat-report.sh`
+- `spiritos-boot-postmortem.service` is loaded and enabled.
+- `spiritos-boot-postmortem.service` was manually started and exited `0/SUCCESS`.
+- Boot postmortem wrote `/mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-45-46-04-00.log`.
+
+## Current Runtime Status
+
+- Source Proxy: **UP**. `:8787` is listening; `/docs` and `/openapi.json` returned HTTP 200.
+- Next: **UP**. `:3000` is listening; HTTPS `/spiritflix/admin` returned HTTP 200.
+- Ollama: **UP**. `127.0.0.1:11434` is listening; `/api/tags` returned HTTP 200; `/api/ps` reported no loaded models.
+
+## Known Unresolved Issues Recorded But Not Fixed
+
+- `mnt-spirit\x2dprojects.mount` remains failed.
+- CasaOS crash/restart from prior logs remains unresolved.
+- `spirit-whisper` unhealthy remains unresolved.
+- Docker healthcheck missing `curl` remains unresolved.
+
+## Safety Confirmation
+
+- no cleanup
+- no app/source patch
+- no process kill
+- no service restart except approved watcher service starts
+- no Docker mutation
+- no media mutation
+- no Jellyfin mutation
+- no git stage/commit/push/reset/checkout/clean/stash
+
+## Next Recommended Action
+
+Recommended next step: **A. S6-only staging/commit**.
+--- docs/evidence/spiritos-readonly-watchers-install-20260617/operator-summary.md
+# Operator Summary
+
+Watcher install is **GO** after Britton's manual interactive sudo/systemd completion.
+
+The scheduled health snapshot timer is enabled and active waiting. The health snapshot service ran successfully and wrote logs. The boot postmortem service is enabled and was manually tested successfully.
+
+Health logs are under `/mnt/spirit-8tb/spiritos-health/`.
+
+Current probes are healthy: Source Proxy `/docs` and `/openapi.json` are HTTP 200, Next HTTPS `/spiritflix/admin` is HTTP 200, and Ollama `/api/tags` is HTTP 200.
+
+Only unrelated failed unit seen in proof was `mnt-spirit\x2dprojects.mount`. It remains unresolved and separate from watcher install GO.
+
+Known unresolved issues were recorded but not fixed: CasaOS prior crash/restart, `spirit-whisper` unhealthy, Docker missing-curl healthcheck noise, and failed `mnt-spirit\x2dprojects.mount`.
+
+Safety: no cleanup, no app/source patch, no process kill, no service recovery beyond approved watcher starts, no Docker/media/Jellyfin mutation, and no git operation.
+--- docs/evidence/live-hiccup-triage-20260617/final-verdict.md
+# Final Verdict
+
+1. Runtime status now: `PARTIAL-GO`
+2. Hiccup cause: `POSSIBLE`
+3. Watcher coverage: `DRAFTS_ONLY`
+4. Immediate risk: `MEDIUM`
+
+## Direct Answers
+
+- Source Proxy is currently up/listening on `:8787`; `/docs` was HTTP 200 in 0.005s and `/openapi.json` was HTTP 200 in 0.265s. `/health` and `/v1/health` return 404, matching the known invalid health endpoint issue.
+- Next is currently up/listening on `:3000`; HTTPS `/spiritflix/admin` was HTTP 200 in 0.100s. HTTP returned an empty reply because this lane is HTTPS.
+- Logs do not show a new OOM/killed-process event in the last 60 minutes, so this does not look like the same confirmed OOM class as the earlier 20:59 event.
+- Logs do show CasaOS crashed/restarted at 03:46:18, Docker is repeatedly logging one container healthcheck failure due missing `curl`, `spirit-whisper` is unhealthy, and the known `mnt-spirit\x2dprojects.mount` failed unit remains.
+- Ollama was not under active model load at snapshot time (`/api/ps` empty) and `/api/tags` was fast.
+- Tailscale had normal endpoint churn logs, but `tailscale status` showed active/direct desktop connectivity.
+- Watchers are drafts only, not installed.
+
+No cleanup, source patch, process kill, service restart, watcher install, git operation, benchmark, or media mutation was performed.
+
+## Recommended Next Approval
+
+A. install safe read-only watchers. If the slowdown repeats, also approve C. investigate OOM/memory pressure deeper.
+--- docs/evidence/live-hiccup-triage-20260617/operator-summary.md
+# Operator Summary
+
+- Runtime status now: `PARTIAL-GO`.
+- Hiccup cause: `POSSIBLE`, not confirmed.
+- Watcher coverage: `DRAFTS_ONLY`.
+- Immediate risk: `MEDIUM`.
+- Source Proxy `:8787`: up/listening; `/docs` HTTP 200 in 0.005s and `/openapi.json` HTTP 200 in 0.265s.
+- Next `:3000`: up/listening; HTTPS `/spiritflix/admin` HTTP 200 in 0.100s. Plain HTTP returns empty reply because the lane is HTTPS.
+- OOM in last 60m: no actual OOM/killed-process line found.
+- Logs do show a CasaOS crash/restart at 03:46:18, persistent failed `mnt-spirit\x2dprojects.mount`, repeated Docker healthcheck errors for a container missing `curl`, and an unhealthy `spirit-whisper` container.
+- Ollama pressure: no loaded model in `/api/ps`; `/api/tags` responded in 0.001s.
+- Tailscale: endpoint churn logs, but status showed active/direct desktop connectivity.
+
+Recommended next approval: `A. install safe read-only watchers`. If slowness repeats, approve `C. investigate OOM/memory pressure deeper`; this snapshot does not prove a fresh OOM.
+--- docs/evidence/repo-host-cleanup-stability-audit-20260617/final-verdict.md
+# Final Verdict
+
+1. Repo cleanup readiness: **PARTIAL-GO**
+2. Model storage on 8TB: **PARTIAL-GO**
+3. Dell stability: **PARTIAL-GO**
+4. Source Proxy/dev server runtime reliability: **NO-GO**
+5. Watcher readiness: **PARTIAL-GO**
+
+## Exact Next Approval Request for Britton
+
+Approve a manifest-first, no-delete cleanup planning pass plus manual watcher dry-runs; separately approve any repomix ignore changes, archive/move/compress actions, and systemd/timer installs.
+
+## Notes
+
+- No cleanup was performed.
+- No Source Proxy fixes or benchmark reruns were performed.
+- No services were restarted or killed.
+- Raw command output is preserved under `raw/`.
+
+
+## Short Evidence Summary
+
+- Repo raw file count is `219798`; biggest bloat classes are virtualenvs, `node_modules`, `.git`, `docs/evidence`, `.spirit-backups`, generated logs, caches, and repomix outputs.
+- Model storage points to 8TB paths, but passwordless sudo could not prove `ollama` user read/write permissions, so this is `PARTIAL-GO` rather than `GO`.
+- Dell/runtime drop has a strong OOM clue: `uvicorn` was killed at `2026-06-17 20:59:24 EDT`, then boot `-1` ended at `21:00:11`, and boot `0` started at `21:07:20` with an unclean journal warning.
+- Source Proxy and Next were down during the audit: no `:8787` or `:3000` listener, empty curl responses, and no tmux server.
+--- docs/evidence/repo-host-cleanup-stability-audit-20260617/operator-summary.md
+# Operator Summary
+
+Audited the SpiritOS repo, Dell host state, Ollama model storage, recent shutdown/runtime clues, Source Proxy/dev server health, and watcher readiness.
+
+Strongest evidence:
+
+- Repo inventory and bloat signals: `10-repo-inventory.md`, `11-bloat-map.json`, `12-cleanup-candidates.md`.
+- Model storage verdict: `PARTIAL-GO` in `30-model-storage-audit.md`.
+- Dell crash/runtime evidence: `40-dell-stability-audit.md`, `41-crash-signals.json`, `50-runtime-health-audit.md`.
+- Watcher state/design: `60-watcher-existing-state.md`, `61-watcher-design.md`.
+
+Likely shutdown/server-drop cause:
+
+- Not proven unless the filtered journal evidence in `40-dell-stability-audit.md` shows a direct power, OOM, disk, thermal, GPU, or service-failure chain. The audit records suspicious signals and unknowns separately.
+
+Top cleanup candidates:
+
+- Closed `docs/evidence/*` proof folders for repomix exclusion or archive review.
+- Generated receipt/trace/smoke/trial/debug/tmp naming classes.
+- Backup/old duplicated plans only after human review.
+
+Approval request:
+
+Approve a manifest-first, no-delete cleanup planning pass plus manual watcher dry-runs; separately approve any repomix ignore changes, archive/move/compress actions, and systemd/timer installs.
+
+
+## Bottom Line For Britton
+
+The Dell did not merely have an app hiccup: the journal shows an OOM kill of `uvicorn` immediately before the previous boot ended, followed by an unclean reboot window. Source Proxy and the Next/dev server were still down when audited. Ollama model paths resolve to the 8TB mount and the model tree is there, but the final user-level permission proof is blocked by sudo requiring a password.

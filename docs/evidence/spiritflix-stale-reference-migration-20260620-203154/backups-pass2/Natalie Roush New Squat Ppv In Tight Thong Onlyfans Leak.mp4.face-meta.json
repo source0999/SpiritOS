@@ -1,0 +1,239 @@
+{
+  "manual_corrections": [
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-16T19:20:20+00:00",
+      "source_file": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+      "sidecar_path": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Natalie Roush",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Natalie Roush\"",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Natalie Roush\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22%20onlyfans",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Natalie Roush\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22%20site%3Apimpbunny.com",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Natalie Roush\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22%20site%3Acoomer.st",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Natalie Roush",
+          "url": "https://coomer.st/search?q=Natalie%20Roush",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Natalie\"",
+          "url": "https://yandex.com/search/?text=%22Natalie%22",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Natalie\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Natalie%22%20onlyfans",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Natalie\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Natalie%22%20site%3Apimpbunny.com",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-16T19:20:20+00:00",
+      "source_file": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+      "sidecar_path": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Natalie Roush",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Natalie Roush\"",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Natalie Roush\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22%20onlyfans",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Natalie Roush\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22%20site%3Apimpbunny.com",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Natalie Roush\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Natalie%20Roush%22%20site%3Acoomer.st",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Natalie Roush",
+          "url": "https://coomer.st/search?q=Natalie%20Roush",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Natalie\"",
+          "url": "https://yandex.com/search/?text=%22Natalie%22",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Natalie\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Natalie%22%20onlyfans",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Natalie\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Natalie%22%20site%3Apimpbunny.com",
+          "candidate_name": "Natalie Roush",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:20:20+00:00"
+    }
+  ],
+  "manual_correction_pending": null,
+  "audit_events": [
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-16T19:20:20+00:00",
+      "corrected_at": "2026-06-16T19:20:20+00:00",
+      "source_file": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Natalie Roush",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    }
+  ],
+  "verification_needed": false,
+  "video_path": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+  "path": "/DATA/yes/Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+  "filename": "Natalie Roush New Squat Ppv In Tight Thong Onlyfans Leak.mkv",
+  "performers": [
+    {
+      "id": "natalie-roush",
+      "name": "Natalie Roush",
+      "confidence": 1.0,
+      "similarity": 1.0,
+      "status": "manual-confirmed",
+      "verification_needed": false,
+      "label": "Natalie Roush - manually confirmed; needs face enrollment"
+    }
+  ],
+  "manual_confirmed_model": {
+    "schema": "media-manual-model-assignment/v1",
+    "name": "Natalie Roush",
+    "confirmed_by": "Britton",
+    "confirmed_at": "2026-06-16T19:20:20+00:00",
+    "known_performer_id": "",
+    "face_enrolled": false,
+    "move_receipt": {},
+    "next_action": "queued_for_face_enrollment"
+  }
+}

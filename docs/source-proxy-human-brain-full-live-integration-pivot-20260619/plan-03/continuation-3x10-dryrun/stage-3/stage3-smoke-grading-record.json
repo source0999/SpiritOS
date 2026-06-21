@@ -1,0 +1,161 @@
+{
+  "auto_fix_attempts": 0,
+  "causal_trace_event_types": [
+    "invocation",
+    "status_transition",
+    "policy",
+    "status_transition",
+    "consumer"
+  ],
+  "consumer_subsystem": "source_proxy_plan3_policy_acceptance_consumer",
+  "counts_toward_3x10": false,
+  "downstream_consumed": true,
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "blocked_human",
+  "handoff_or_context_prompt_created_when_useful": false,
+  "internet_required": false,
+  "invocation_event_id": "invocation_da8cc3f1663f4825",
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "decision_router",
+    "task_spec_intake",
+    "long_running_task_store",
+    "plan3_policy_gate",
+    "same_trace_consumer_readback"
+  ],
+  "lanes_not_required": [
+    "live_search",
+    "mac_worker",
+    "qwen_coder",
+    "browser_functional_verifier",
+    "repair_loop"
+  ],
+  "latest_consumer_event_id": "consumer_bd9dce4bea844197",
+  "limitations_stated": true,
+  "live_search_used": false,
+  "local_fallback_used": false,
+  "mac_invoked": false,
+  "mac_required": false,
+  "max_auto_fix_attempts": 3,
+  "notes": [
+    "Disposable Stage 3 smoke only; not a battery prompt.",
+    "Used isolated evidence DB path to avoid polluting live task queue while calling real task/durable code.",
+    "Did not execute external research; policy gate blocked as human-required and produced same-trace consumer evidence.",
+    "Future battery prompts still need real live-search/Mac/Qwen/verifier lane execution when required by prompt expectations."
+  ],
+  "patch_bucket": "none",
+  "patch_required": false,
+  "policy_acceptance_evidence": "PASS",
+  "policy_event_present": true,
+  "policy_event_required": true,
+  "prompt": "stage 3 harness smoke: create a harmless operator receipt for current source proxy status",
+  "prompt_id": "STAGE3_SMOKE_NOT_BATTERY",
+  "qwen_activated": false,
+  "qwen_required": false,
+  "recommendation_pack_created_when_useful": false,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "required_lanes": [
+    "decision_router",
+    "task_spec_intake",
+    "long_running_task_store",
+    "plan3_policy_gate",
+    "same_trace_consumer_readback"
+  ],
+  "research_materially_changed_output": false,
+  "reverified": false,
+  "route_decision": {
+    "context_estimate": {
+      "estimated_task_tokens": 22,
+      "input_chars": 89,
+      "provided_context_tokens": 0,
+      "size_class": "small",
+      "total_estimated_tokens": 22
+    },
+    "current_agent_role": null,
+    "next_prompt_action": "run_with_coder_agent",
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "needs_codebase_context",
+      "repo_first_research"
+    ],
+    "recommended_route": "local_route",
+    "research_recommended": true,
+    "research_sources": [],
+    "resolved_target": {
+      "exists": false,
+      "path": "",
+      "source": "inferred"
+    },
+    "risk_tier": "low",
+    "role_system_prompt": null,
+    "self_correction_checks": [
+      {
+        "answer": "No. This is a coding/debugging task. A proactive agent route is required.",
+        "id": "passive_check",
+        "passed": true,
+        "question": "Am I being passive?"
+      },
+      {
+        "answer": "Yes. repo_first_research is active, so repository sources are gathered before web sources.",
+        "id": "repo_first_check",
+        "passed": true,
+        "question": "Did I scan the repo first?"
+      },
+      {
+        "answer": "No active phase was specified in this task; do not inherit one from prior runs.",
+        "id": "phase_check",
+        "passed": true,
+        "question": "Am I on the correct phase?"
+      }
+    ],
+    "task_classification": "codebase_analysis"
+  },
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "task_id": "task_853c5e83eeba",
+  "task_spec_intake": {
+    "allowed_extensions": [],
+    "allowed_files": [],
+    "allowed_scope_source": "none",
+    "approval_level": "preview_only_no_apply",
+    "artifact_class": "",
+    "clarification_prompt": "",
+    "clarification_state": "not_needed",
+    "context_sources": [],
+    "forbidden_files": [
+      ".env",
+      ".env.*",
+      "*.pem",
+      "*.key",
+      "certificates/*"
+    ],
+    "intent": "create",
+    "max_file_count": 8,
+    "model_lane": "coder_agent",
+    "protected_paths": [],
+    "reason_codes": [
+      "prefer_free_or_subscription_route",
+      "repo_first_research"
+    ],
+    "risk_level": "low",
+    "schema_version": 1,
+    "summary": "TaskSpec ready: read_only for no target.",
+    "target_paths": [],
+    "target_source": "none",
+    "task_kind": "read_only",
+    "task_shape": "",
+    "task_shape_source": "",
+    "user_prompt": "stage 3 harness smoke: create a harmless operator receipt for current source proxy status",
+    "verification_policy": [],
+    "workspace_decision_source": "route_decision",
+    "workspace_mode": "none"
+  },
+  "trace_id": "trace_6643706c87744657",
+  "verification_result": "not_required_for_smoke",
+  "verifier_required": false,
+  "work_product_type": "operator_receipt_smoke"
+}

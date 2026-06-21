@@ -1,0 +1,19 @@
+{
+  "at": "2026-06-16T01:20:35.687Z",
+  "jobId": "mi-mqfrg80c-e9549d40",
+  "sourceKind": "library",
+  "sourcePath": "/mnt/spirit-8tb/media/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mp4",
+  "finalPath": "/mnt/spirit-8tb/media/yes/Heyimbee 49.95 Ppv Floor Cam And Spreading Leak Video.mkv",
+  "originalSize": 1935936,
+  "outputSize": 1826630,
+  "savingsPercent": 5.65,
+  "profile": "balanced_1080p",
+  "encoder": "cpu-x265",
+  "deletedOriginal": false,
+  "faceOrganizerScan": {
+    "enabled": false,
+    "status": "skipped",
+    "reason": "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+    "at": "2026-06-16T01:20:35.687Z"
+  }
+}

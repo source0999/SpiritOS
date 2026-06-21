@@ -1,0 +1,56 @@
+2026-06-18T22:11:14-04:00
+=== before restart ps ===
+root        3062  0.2  0.0 7248196 7452 ?        SLsl Jun17   3:12 /usr/local/bin/python /usr/local/bin/uvicorn main:app --host 0.0.0.0 --port 80
+root        3073  1.1  0.8 985120 134080 ?       Ssl  Jun17  17:27 /usr/local/bin/python3.12 /usr/local/bin/uvicorn scout.main:app --host 0.0.0.0 --port 8077
+source      3436  0.6  0.0 807552  2484 ?        Ssl  Jun17   9:06 /home/ubuntu/faster-whisper-server/.venv/bin/python /home/ubuntu/faster-whisper-server/.venv/bin/uvicorn --factory faster_whisper_server.main:create_app
+source     35537  0.0  0.0  17232  6924 ?        Ss   Jun17   0:00 tmux new-session -d -s source-proxy-lan cd '/home/source/SpiritOS' && bash ./scripts/source-proxy-lan-watchdog.sh
+source    297277  0.0  0.0   7340  3728 ?        Ss   03:56   0:00 bash -c cd ~/SpiritOS && grep -Ei oom|out of memory|killed process|memory cgroup|uvicorn|python|node|next|npm|source proxy|source-proxy|8787|3000|ollama|docker|jellyfin|thermal|temperature|mount|mnt-spirit|tailscale|failed|timeout|reset|refused|closed socket docs/evidence/live-hiccup-triage-20260617/raw/30-journal-last-60m.txt | tail -160
+source   1034310  0.0  0.0   7340  3684 ?        Ss   20:31   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n FastAPI|APIRouter|@.*get|health|status|runtime|openapi|docs|decision|model-lanes|productive|Cartographer|dirty|watcher|ollama|Next|next source_proxy source_proxy/tests || true
+source   1034912  0.0  0.0   7340  3560 ?        Ss   20:32   0:00 bash -c cd ~/SpiritOS && ~/.local/bin/rg -n --glob !**/__pycache__/** --glob *.py FastAPI|APIRouter|@.*get|health|status|runtime|dirty|systemctl|subprocess|TestClient source_proxy source_proxy/tests | sed -n 1,260p | tee docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/10-api-rg.txt
+source   1235970  0.0  0.0   7340  3720 ?        Ss   20:52   0:00 bash -c cd ~/SpiritOS && sed -n 1,180p source_proxy/approval/external_gate.py && ~/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT|SOURCE_PROXY_INCREMENT|DEFAULT_INCREMENT_ENV|evaluation-round|approved_increment|central_gate_check source_proxy/tests source_proxy/approval source_proxy | sed -n 1,200p
+source   1235974  0.0  0.0   9900  4480 ?        S    20:52   0:00 /home/source/.local/bin/rg -n --glob *.py SOURCE_PROXY_APPROVED_INCREMENT
+source   1355953  0.0  0.0   7340  3692 ?        Ss   21:11   0:00 bash -c cd ~/SpiritOS && { ~/.local/bin/rg -n env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt 2>&1; code=$?; tail -120 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt; exit $code
+source   1378036  0.0  0.0   7340  3700 ?        Ss   21:35   0:00 bash -c cd ~/SpiritOS && { echo === corrected rg safety scan ===; ~/.local/bin/rg -n -e env|printenv|os\.environ|token|secret|password|rm |rm -rf|git clean|git reset|git checkout|git restore|kill|pkill|systemctl restart|docker restart|reboot|shutdown|jellyfin|sqlite|/mnt/spirit-8tb/media source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618 || true; echo === diff check ===; git diff --check -- source_proxy/api/runtime_status.py source_proxy/decision/runtime_health.py source_proxy/main.py source_proxy/tests/test_runtime_health_status.py docs/evidence/source-proxy-runtime-health-status-patch-20260618; } > docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt 2>&1; code=$?; tail -160 docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt; exit $code
+source   1399162  0.0  0.0   8120  4452 pts/0    Ss+  21:51   0:00 bash ./scripts/source-proxy-lan-watchdog.sh
+source   1404432  0.0  0.0   5692  1996 pts/0    S+   21:54   0:00 tee -a /home/source/source-proxy-https-lan.log
+source   1404449  0.0  0.0   2800  1852 pts/0    S+   21:54   0:00 sh -c node ./scripts/source-proxy-dev.mjs --https --lan
+source   1404450  0.0  0.2 761388 42908 pts/0    Sl+  21:54   0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source   1404461  0.7  1.4 585332 237056 pts/0   Sl+  21:54   0:07 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+source   1440271  0.0  0.0   5692  1996 ?        S    22:11   0:00 tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/20-before-source-proxy-reload.txt
+source   1440274  0.0  0.0   6692  2388 ?        S    22:11   0:00 grep -Ei [u]vicorn|[s]ource_proxy|[s]ource-proxy|8787
+=== before restart port ===
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=1404461,fd=14))
+=== before pstree ===
+bash,1399162 ./scripts/source-proxy-lan-watchdog.sh
+  |-npm run proxy:h,1404431
+  |   |-sh,1404449 -c node ./scripts/source-proxy-dev.mjs --https --lan
+  |   |   `-node,1404450 ./scripts/source-proxy-dev.mjs --https --lan
+  |   |       |-python,1404461 -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile/home
+  |   |       |   |-{python},1404462
+  |   |       |   |-{python},1404475
+  |   |       |   |-{python},1404476
+  |   |       |   |-{python},1404477
+  |   |       |   |-{python},1404478
+  |   |       |   `-{python},1405241
+  |   |       |-{node},1404451
+  |   |       |-{node},1404452
+  |   |       |-{node},1404453
+  |   |       |-{node},1404454
+  |   |       |-{node},1404455
+  |   |       |-{node},1404456
+  |   |       |-{node},1404457
+  |   |       |-{node},1404458
+  |   |       |-{node},1404459
+  |   |       `-{node},1404460
+  |   |-{npm run proxy:h},1404435
+  |   |-{npm run proxy:h},1404439
+  |   |-{npm run proxy:h},1404440
+  |   |-{npm run proxy:h},1404441
+  |   |-{npm run proxy:h},1404442
+  |   |-{npm run proxy:h},1404444
+  |   |-{npm run proxy:h},1404445
+  |   |-{npm run proxy:h},1404446
+  |   |-{npm run proxy:h},1404447
+  |   `-{npm run proxy:h},1404448
+  |-sleep,1439454 30
+  `-tee,1404432 -a /home/source/source-proxy-https-lan.log

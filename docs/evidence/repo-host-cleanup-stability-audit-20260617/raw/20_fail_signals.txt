@@ -1,0 +1,403 @@
+$ rg -n "NO-GO|CONFIG-BLOCKED|blocked|shutdown|crash|reboot|oom|killed|timeout|socket|port" docs/evidence docs source_proxy scripts . --glob '!.git/**' --glob '!node_modules/**' --glob '!.next/**' 2>/dev/null | head -400 || true
+# rc=0
+
+./scoutRefinemint.md:22:- 1 blocked candidate.
+./scoutRefinemint.md:78:- call a budget-blocked search smoke "normal pass"
+./scoutRefinemint.md:103:- view poller support
+./scoutRefinemint.md:123:What search jobs are queued, running, blocked, duplicate, stale, or over budget?
+./scoutRefinemint.md:145:5. Search smoke reports BLOCKED_BY_BUDGET instead of generic FAIL when daily cap is reached.
+./scoutRefinemint.md:146:6. Queued discovery jobs show stale, duplicate, blocked, running, failed, or completed status.
+./scoutRefinemint.md:152:12. Approved unsupported source types show poller_supported false as an info state, not an error.
+./scoutRefinemint.md:204:    "blocked_reason": "daily_limit_reached",
+./scoutRefinemint.md:274:blocked_by_budget
+./scoutRefinemint.md:460:blocked_reason: daily_limit_reached
+./scoutRefinemint.md:484:Move to Phase 1 runner/report polish.
+./scoutRefinemint.md:490:Phase 1: Runner and Diagnostic Report Polish
+./scoutRefinemint.md:518:Every report should include:
+./scoutRefinemint.md:535:All profiles use the same report structure.
+./scoutRefinemint.md:540:Check profile-specific report builders.
+./scoutRefinemint.md:544:Revert report formatting changes only.
+./scoutRefinemint.md:810:May show poller_supported false.
+./scoutRefinemint.md:870:poller support prediction
+./scoutRefinemint.md:928:Show who approved, rejected, or blocked a candidate, when, and why.
+./scoutRefinemint.md:997:"poller_supported": false,
+./scoutRefinemint.md:1001:Unsupported source type should not look scary.
+./scoutRefinemint.md:1029:Add source health and poller support labels.
+./scoutRefinemint.md:1035:Increment 3.4: Source health and poller support labels
+./scoutRefinemint.md:1044:poller_supported true/false
+./scoutRefinemint.md:1056:Do not treat poller_supported false as failure.
+./scoutRefinemint.md:1071:    poller:.poller_supported,
+./scoutRefinemint.md:1083:Check poller support mapping.
+./scoutRefinemint.md:1241:Keep blocked sources blocked.
+./scoutRefinemint.md:1255:Check blocked source lookup.
+./scoutRefinemint.md:1522:manual_import_only
+./scoutRefinemint.md:1594:Check blocked/rejected override.
+./scoutRefinemint.md:1675:UI must show poller support.
+./scoutRefinemint.md:1677:No blocked/rejected candidates can be batch approved.
+./scoutRefinemint.md:1702:Check partial failure reporting.
+./scoutRefinemint.md:1728:Add a dry-run report:
+./scoutRefinemint.md:1737:not blocked
+./scoutRefinemint.md:1740:not unsupported unless explicitly allowed
+./scoutRefinemint.md:1758:Check blocked/rejected filters.
+./scoutRefinemint.md:1872:Rejected and blocked decisions stay durable.
+./scoutRefinemint.md:1987:"Search smoke is blocked because the daily discovery job limit has been reached. Active sources were not changed. Candidates were not changed. Next safe step: inspect queued jobs, cancel stale duplicates, or wait for budget reset."
+./scoutRefinemint.md:2019:Expose a clear discovery budget summary so Scout can explain when scout-search-smoke is blocked by the daily discovery job limit.
+./scoutRefinemint.md:2048:blocked_reason
+./scoutRefinemint.md:2101:budget.blocked_reason is daily_limit_reached when cap is exhausted.
+./scoutRefinemint.md:2102:scout-search-smoke reports BLOCKED_BY_BUDGET or a clearer budget-blocked state instead of vague FAIL if you touch the runner.
+./scoutRefinemint.md:2144:- `scout_v0_1` is up and Docker reports it as healthy.
+./scoutRefinemint.md:2147:- Candidate counts are bounded: `needs_review: 2`, `approved: 2`, `recommended: 12`, `rejected: 1`, `blocked: 1`, `stored: 0`.
+./scoutRefinemint.md:2174:- `blocked`: 1
+./scoutRefinemint.md:2212:- `docker port spirit-ollama` reports no published port.
+./scoutRefinemint.md:2251:- whether Ollama should be reached through a published host port or shared Docker network DNS
+./scoutRefinemint.md:2272:docker port spirit-ollama 2>/dev/null || true
+./vitest.config.mjs:1:import { defineConfig } from "vitest/config";
+./vitest.config.mjs:2:import react from "@vitejs/plugin-react";
+./vitest.config.mjs:3:import path from "path";
+./vitest.config.mjs:4:import { fileURLToPath } from "url";
+./vitest.config.mjs:6:const __dirname = path.dirname(fileURLToPath(import.meta.url));
+./vitest.config.mjs:8:export default defineConfig({
+./postcss.config.mjs:7:export default config;
+./basic.js:1:export default class BasicReporter {
+./basic.js:5:    console.log(`\nBasic reporter: ${passedFiles} passed files, ${failedFiles} failed files, ${errors.length} errors`);
+./post-v1-diag.md:225:- dashboard reports ready with valid freeze marker
+./services/jellyfin/docker-compose.yml:6:    ports:
+./services/jellyfin/docker-compose.yml:33:      timeout: 10s
+./services/jellyfin/sync_folder_playlists.py:9:from __future__ import annotations
+./services/jellyfin/sync_folder_playlists.py:11:import json
+./services/jellyfin/sync_folder_playlists.py:12:import sqlite3
+./services/jellyfin/sync_folder_playlists.py:13:import sys
+./services/jellyfin/sync_folder_playlists.py:14:import time
+./services/jellyfin/sync_folder_playlists.py:15:import urllib.error
+./services/jellyfin/sync_folder_playlists.py:16:import urllib.parse
+./services/jellyfin/sync_folder_playlists.py:17:import urllib.request
+./services/jellyfin/sync_folder_playlists.py:18:from dataclasses import dataclass
+./services/jellyfin/sync_folder_playlists.py:79:            with urllib.request.urlopen(request, timeout=60) as response:
+./productionProxy.md:17:- protected paths and traversal are blocked
+./productionProxy.md:88:- live port 3000 route checks reliable
+./productionProxy.md:91:- fresh closeout report is readable and honest
+./productionProxy.md:98:- dangerous flags blocked
+./productionProxy.md:99:- protected/secret paths blocked
+./productionProxy.md:101:- live route is either safely enabled or cleanly config-blocked
+./productionProxy.md:158:- report findings
+./productionProxy.md:204:docs/spirit-cowork-gap-report.md
+./productionProxy.md:345:If broad failures appear, stop and report.
+./productionProxy.md:398:routes return JSON or a clear service-unavailable/config-blocked response
+./productionProxy.md:408:If route crashes, isolate route handler.
+./productionProxy.md:449:runner reports expected snapshot writes clearly
+./productionProxy.md:478:Define exactly when /v1/coding/codex should return config-blocked versus run a safe readonly/proposal task.
+./productionProxy.md:488:The route must support:
+./productionProxy.md:490:config-blocked
+./productionProxy.md:493:explicit blocked state for apply/commit/push
+./productionProxy.md:511:route returns evidence or config-blocked
+./productionProxy.md:512:no crash
+./productionProxy.md:518:If env flag missing, return config-blocked with exact reason.
+./productionProxy.md:573:unsafe route inputs blocked
+./productionProxy.md:574:missing allowed_files blocked for proposal mode
+./productionProxy.md:637:from source_proxy.codex.evidence import summarize_codex_evidence
+./productionProxy.md:638:print("evidence summary import ok")
+./productionProxy.md:800:blocked warning signs
+./productionProxy.md:874:If runner mutates unexpectedly, classify output as blocked.
+./productionProxy.md:982:If UI gets noisy, group by active, blocked, completed.
+./productionProxy.md:1011:test report
+./productionProxy.md:1052:Make blocked tasks explain what to do next.
+./productionProxy.md:1063:config_blocked
+./productionProxy.md:1087:blocked tasks say why
+./productionProxy.md:1126:test reports
+./productionProxy.md:1202:missing target is blocked
+./productionProxy.md:1203:protected target is blocked
+./productionProxy.md:1357:approval unavailable when blocked
+./productionProxy.md:1650:If it says "blocked" for expected evidence only, refine reason code.
+./productionProxy.md:1796:one readable PASS/WARN/BLOCKED report
+./productionProxy.md:1803:If report too long, add summary plus detail sections.
+./productionProxy.md:2003:missing provider is config-blocked
+./productionProxy.md:2049:If model lacks tool support, classify as planning/review only.
+./productionProxy.md:2272:"Do not patch. Confirm proxyCLI.md is retired, scan stale plan references, classify active vs historical docs, and report exactly what should become the new source-of-truth plan file."
+./scout/scripts/import_promotion_dry_run.py:1:from __future__ import annotations
+./scout/scripts/import_promotion_dry_run.py:3:import argparse
+./scout/scripts/import_promotion_dry_run.py:4:import json
+./scout/scripts/import_promotion_dry_run.py:5:import sys
+./scout/scripts/import_promotion_dry_run.py:6:import urllib.error
+./scout/scripts/import_promotion_dry_run.py:7:import urllib.request
+./scout/scripts/import_promotion_dry_run.py:13:def _blocked_payload(detail: str, requested_by: str, status_code: int | None = None) -> dict:
+./scout/scripts/import_promotion_dry_run.py:15:        "result": "blocked",
+./scout/scripts/import_promotion_dry_run.py:40:        description="Dry-run one approved Scout promotion import without proxy writes.",
+./scout/scripts/import_promotion_dry_run.py:47:        "--allow-blocked",
+./scout/scripts/import_promotion_dry_run.py:60:        f"{args.base_url.rstrip('/')}/v1/scout/promotions/import-dry-run",
+./scout/scripts/import_promotion_dry_run.py:66:        with urllib.request.urlopen(request, timeout=10) as response:
+./scout/scripts/import_promotion_dry_run.py:75:            _blocked_payload(detail, args.requested_by, exc.code),
+./scout/scripts/import_promotion_dry_run.py:78:        return 0 if args.allow_blocked else 2
+./scout/scripts/import_promotion_dry_run.py:81:            _blocked_payload(str(exc), args.requested_by),
+./scout/scripts/import_promotion_dry_run.py:84:        return 0 if args.allow_blocked else 2
+./scout/scripts/review_promotions.py:1:from __future__ import annotations
+./scout/scripts/review_promotions.py:3:import argparse
+./scout/scripts/review_promotions.py:4:import os
+./scout/scripts/review_promotions.py:5:import sys
+./scout/scripts/review_promotions.py:6:from pathlib import Path
+./scout/scripts/review_promotions.py:13:from scout.config import get_settings
+./scout/scripts/review_promotions.py:14:from scout.packets.promotions import (
+./scout/scripts/receipt_preview_harness.py:1:from __future__ import annotations
+./scout/scripts/receipt_preview_harness.py:3:from datetime import datetime, timezone
+./scout/scripts/receipt_preview_harness.py:4:import json
+./scout/scripts/receipt_preview_harness.py:5:from pathlib import Path
+./scout/scripts/receipt_preview_harness.py:6:import sys
+./scout/scripts/receipt_preview_harness.py:7:from tempfile import TemporaryDirectory
+./scout/scripts/receipt_preview_harness.py:14:from scout.config import ScoutSettings
+./scout/scripts/receipt_preview_harness.py:15:from scout.debugger.verdict import DebuggerVerdict
+./scout/scripts/receipt_preview_harness.py:16:from scout.packets.promotions import approve_promotion, dry_run_proxy_import, queue_promotion
+./scout/scripts/receipt_preview_harness.py:17:from scout.packets.storage import insert_packet
+./scout/scripts/receipt_preview_harness.py:18:from scout.storage.db import init_database, open_connection
+./scout/scripts/receipt_preview_harness.py:19:from scout.storage.migrations import apply_migrations
+./scout/scripts/receipt_preview_harness.py:20:from scout.tests.test_packet_schema import make_packet
+./scout/scripts/receipt_preview_harness.py:87:        result = dry_run_proxy_import(settings, promotion_id)
+./scout/scripts/receipt_preview_harness.py:91:            "import_ready": result["import_ready"] is True,
+./scout/scripts/receipt_preview_harness.py:94:            == "scout_manual_import_receipt_preview",
+./scout/scripts/receipt_preview_harness.py:95:            "receipt_not_imported": receipt.get("imported") is False,
+./scout/scripts/receipt_preview_harness.py:104:            == "scout_manual_import_tombstone",
+./scout/scripts/receipt_preview_harness.py:120:                "imported": receipt.get("imported"),
+./scout/THREAT_MODEL.md:11:| Stale information presented as current | Old releases, old docs, or old reports may be surfaced as if they are fresh. | Phase 5.2 adds a staleness flag with per-source TTL rules. Packet timestamps are preserved for consumers. |
+./scout/THREAT_MODEL.md:12:| LLM hallucination in packet summaries or impact analysis | Summaries may contain claims not supported by the source text. | Phase 5.4 Tier 3 hallucination check compares summary claims against wrapped raw extracted text. |
+./scout/THREAT_MODEL.md:13:| Resource exhaustion from very large pages, very large repos, or deeply paginated feeds | Scout could consume excessive CPU, memory, disk, or network budget. | `SCOUT_FETCH_MAX_BYTES`, request timeouts, and per-source poll budgets bound external fetches. Phase 2 polling persists state and rate-limit metadata. |
+./scout/THREAT_MODEL.md:30:Phase 5 keeps `sentence-transformers` optional for the CPU-only v0.1 image. The debugger imports it lazily only when a packet reaches Tier 3 embedding storage; if the package is unavailable, the embedding subcheck records a skipped finding and the verdict still completes. This avoids pulling CUDA Torch wheels into the default Scout container and preserves the Phase 1 CPU-only decision.
+./scout/SCOPE.md:10:2. Structured extraction from fetched content under bounded timeout and size limits.
+./scout/SCOPE.md:26:Scout v0.1 runs CPU-only. GPU scheduling is deferred so Scout does not contend with the proxy's local LLM for VRAM on the Dell workstation. GPU profiles belong to the portability phase once the basic local service is stable.
+./chatDesign/styles/spirit-trinity-chat.css:2: * The imported zip is visual reference only; this layer keeps live SpiritChat runtime intact.
+./chatDesign/styles/spirit-trinity-chat.css:95:    linear-gradient(135deg, #d9e3ea 0%, #aebcca 45%, #8495a5 100%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:265:  backdrop-filter: blur(var(--spirit-blur)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:266:  -webkit-backdrop-filter: blur(var(--spirit-blur)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:327:  max-width: 780px !important;
+./chatDesign/styles/spirit-trinity-chat.css:332:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:337:  color: rgba(15, 23, 42, 0.78) !important;
+./chatDesign/styles/spirit-trinity-chat.css:354:  max-width: 690px !important;
+./chatDesign/styles/spirit-trinity-chat.css:355:  border-radius: 18px !important;
+./chatDesign/styles/spirit-trinity-chat.css:383:  border-color: rgba(255, 255, 255, 0.10) !important;
+./chatDesign/styles/spirit-trinity-chat.css:384:  background: transparent !important;
+./chatDesign/styles/spirit-trinity-chat.css:388:  max-width: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:389:  border-color: var(--trinity-line-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:390:  background: rgba(255, 255, 255, 0.24) !important;
+./chatDesign/styles/spirit-trinity-chat.css:391:  color: rgba(15, 23, 42, 0.82) !important;
+./chatDesign/styles/spirit-trinity-chat.css:405:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:406:  font-size: 16px !important;
+./chatDesign/styles/spirit-trinity-chat.css:407:  min-height: 44px !important;
+./chatDesign/styles/spirit-trinity-chat.css:411:  color: rgba(51, 65, 85, 0.62) !important;
+./chatDesign/styles/spirit-trinity-chat.css:417:  color: rgba(15, 23, 42, 0.76) !important;
+./chatDesign/styles/spirit-trinity-chat.css:422:  border-color: rgba(255, 255, 255, 0.42) !important;
+./chatDesign/styles/spirit-trinity-chat.css:423:  background: rgba(255, 255, 255, 0.16) !important;
+./chatDesign/styles/spirit-trinity-chat.css:430:  border-color: rgba(30, 41, 59, 0.34) !important;
+./chatDesign/styles/spirit-trinity-chat.css:431:  background: rgba(255, 255, 255, 0.34) !important;
+./chatDesign/styles/spirit-trinity-chat.css:451:  background: rgba(52, 58, 68, 0.42) !important;
+./chatDesign/styles/spirit-trinity-chat.css:452:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:460:  color: rgba(30, 41, 59, 0.68) !important;
+./chatDesign/styles/spirit-trinity-chat.css:464:  color: var(--trinity-text-soft) !important;
+./chatDesign/styles/spirit-trinity-chat.css:470:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:476:  color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:479:    0 0 14px rgba(186, 240, 255, 0.28) !important;
+./chatDesign/styles/spirit-trinity-chat.css:483:  color: color-mix(in oklab, var(--trinity-liquid-muted) 92%, rgba(13, 24, 38, 0.85)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:484:  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.48) !important;
+./chatDesign/styles/spirit-trinity-chat.css:489:  border-color: var(--trinity-line) !important;
+./chatDesign/styles/spirit-trinity-chat.css:500:  background: rgba(255, 255, 255, 0.08) !important;
+./chatDesign/styles/spirit-trinity-chat.css:504:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:529:  position: relative !important;
+./chatDesign/styles/spirit-trinity-chat.css:530:  isolation: isolate !important;
+./chatDesign/styles/spirit-trinity-chat.css:531:  overflow: hidden !important;
+./chatDesign/styles/spirit-trinity-chat.css:532:  border-radius: 999px !important;
+./chatDesign/styles/spirit-trinity-chat.css:533:  border-width: 1px !important;
+./chatDesign/styles/spirit-trinity-chat.css:534:  border-style: solid !important;
+./chatDesign/styles/spirit-trinity-chat.css:535:  border-color: color-mix(in oklab, var(--trinity-liquid-cyan-edge) 68%, rgba(255, 255, 255, 0.72) 32%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:536:  background-color: var(--trinity-liquid-clear-center) !important;
+./chatDesign/styles/spirit-trinity-chat.css:551:    radial-gradient(ellipse 80% 55% at 12% 100%, rgba(168, 228, 255, 0.32) 0%, transparent 60%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:552:  background-blend-mode: screen, screen, soft-light, normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:553:  color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:554:  font-weight: 650 !important;
+./chatDesign/styles/spirit-trinity-chat.css:555:  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+./chatDesign/styles/spirit-trinity-chat.css:563:    0 2px 8px -4px rgba(15, 23, 42, 0.07) !important;
+./chatDesign/styles/spirit-trinity-chat.css:566:  filter: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:567:  outline: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:613:  color: rgba(8, 18, 30, 0.92) !important;
+./chatDesign/styles/spirit-trinity-chat.css:614:  stroke: currentColor !important;
+./chatDesign/styles/spirit-trinity-chat.css:615:  fill: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:616:  opacity: 1 !important;
+./chatDesign/styles/spirit-trinity-chat.css:617:  filter: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:621:  width: 0.875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:622:  height: 0.875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:623:  flex-shrink: 0 !important;
+./chatDesign/styles/spirit-trinity-chat.css:642:  border-color: color-mix(in oklab, var(--trinity-liquid-cyan-edge) 78%, rgba(255, 255, 255, 0.88) 22%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:643:  background-color: var(--trinity-liquid-clear-fill) !important;
+./chatDesign/styles/spirit-trinity-chat.css:658:    radial-gradient(ellipse 82% 52% at 14% 100%, rgba(158, 226, 255, 0.34) 0%, transparent 58%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:659:  background-blend-mode: screen, screen, soft-light, normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:666:    0 4px 14px -6px rgba(15, 23, 42, 0.08) !important;
+./chatDesign/styles/spirit-trinity-chat.css:667:  filter: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:672:  border-color: rgba(186, 245, 255, 0.98) !important;
+./chatDesign/styles/spirit-trinity-chat.css:678:    inset 0 -3px 14px -5px rgba(72, 198, 238, 0.34) !important;
+./chatDesign/styles/spirit-trinity-chat.css:683:  opacity: 1 !important;
+./chatDesign/styles/spirit-trinity-chat.css:684:  cursor: not-allowed !important;
+./chatDesign/styles/spirit-trinity-chat.css:685:  border-color: color-mix(in oklab, var(--trinity-liquid-cyan-edge) 62%, rgba(255, 255, 255, 0.48) 38%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:686:  background-color: color-mix(in oklab, var(--trinity-liquid-clear-center) 85%, transparent) !important;
+./chatDesign/styles/spirit-trinity-chat.css:701:    radial-gradient(ellipse 78% 50% at 12% 100%, rgba(158, 228, 255, 0.22) 0%, transparent 62%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:702:  background-blend-mode: screen, screen, soft-light, normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:703:  color: color-mix(in oklab, var(--trinity-liquid-text-strong) 72%, var(--trinity-liquid-muted)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:704:  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+./chatDesign/styles/spirit-trinity-chat.css:705:  filter: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:711:    0 4px 14px -10px var(--trinity-liquid-blue-shadow) !important;
+./chatDesign/styles/spirit-trinity-chat.css:732:    display: flex !important;
+./chatDesign/styles/spirit-trinity-chat.css:733:    flex-direction: column !important;
+./chatDesign/styles/spirit-trinity-chat.css:734:    width: var(--chat-thread-rail-width) !important;
+./chatDesign/styles/spirit-trinity-chat.css:738:    height: calc(100% - 2.25rem) !important;
+./chatDesign/styles/spirit-trinity-chat.css:741:    border: 1px solid var(--trinity-sidebar-border) !important;
+./chatDesign/styles/spirit-trinity-chat.css:742:    border-radius: 1rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:743:    background: var(--trinity-sidebar-glass) !important;
+./chatDesign/styles/spirit-trinity-chat.css:748:      inset 0 -1px 0 rgba(255, 255, 255, 0.05) !important;
+./chatDesign/styles/spirit-trinity-chat.css:754:    gap: 0.625rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:755:    border-bottom: 1px solid rgba(52, 62, 76, 0.18) !important;
+./chatDesign/styles/spirit-trinity-chat.css:756:    padding: 0.7rem 0.7rem 0.75rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:760:    display: flex !important;
+./chatDesign/styles/spirit-trinity-chat.css:761:    align-items: center !important;
+./chatDesign/styles/spirit-trinity-chat.css:762:    gap: 0.5rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:766:    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+./chatDesign/styles/spirit-trinity-chat.css:767:    font-size: 0.6875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:768:    font-weight: 600 !important;
+./chatDesign/styles/spirit-trinity-chat.css:769:    letter-spacing: 0.08em !important;
+./chatDesign/styles/spirit-trinity-chat.css:770:    text-transform: uppercase !important;
+./chatDesign/styles/spirit-trinity-chat.css:774:    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+./chatDesign/styles/spirit-trinity-chat.css:775:    font-size: 0.625rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:776:    font-weight: 500 !important;
+./chatDesign/styles/spirit-trinity-chat.css:777:    letter-spacing: 0.02em !important;
+./chatDesign/styles/spirit-trinity-chat.css:781:    justify-content: stretch !important;
+./chatDesign/styles/spirit-trinity-chat.css:782:    flex-wrap: nowrap !important;
+./chatDesign/styles/spirit-trinity-chat.css:783:    gap: 0.5rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:788:    flex: 1 1 auto !important;
+./chatDesign/styles/spirit-trinity-chat.css:789:    min-width: 0 !important;
+./chatDesign/styles/spirit-trinity-chat.css:790:    min-height: 2.15rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:791:    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+./chatDesign/styles/spirit-trinity-chat.css:792:    font-size: 0.75rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:793:    font-weight: 700 !important;
+./chatDesign/styles/spirit-trinity-chat.css:794:    letter-spacing: 0.01em !important;
+./chatDesign/styles/spirit-trinity-chat.css:795:    text-transform: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:799:    flex: 0 0 auto !important;
+./chatDesign/styles/spirit-trinity-chat.css:800:    min-height: 2.15rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:801:    padding-inline: 0.7rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:802:    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+./chatDesign/styles/spirit-trinity-chat.css:803:    font-size: 0.6875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:804:    font-weight: 700 !important;
+./chatDesign/styles/spirit-trinity-chat.css:805:    letter-spacing: 0.015em !important;
+./chatDesign/styles/spirit-trinity-chat.css:806:    text-transform: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:810:    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif !important;
+./chatDesign/styles/spirit-trinity-chat.css:811:    font-size: 0.625rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:812:    font-weight: 600 !important;
+./chatDesign/styles/spirit-trinity-chat.css:813:    letter-spacing: 0.08em !important;
+./chatDesign/styles/spirit-trinity-chat.css:814:    text-transform: uppercase !important;
+./chatDesign/styles/spirit-trinity-chat.css:815:    color: color-mix(in oklab, var(--trinity-liquid-text-strong) 90%, rgba(100, 200, 228, 0.18)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:819:    font-size: 0.875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:820:    font-weight: 600 !important;
+./chatDesign/styles/spirit-trinity-chat.css:821:    line-height: 1.32 !important;
+./chatDesign/styles/spirit-trinity-chat.css:822:    color: rgba(22, 30, 42, 0.94) !important;
+./chatDesign/styles/spirit-trinity-chat.css:826:    font-size: 0.6875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:827:    font-weight: 500 !important;
+./chatDesign/styles/spirit-trinity-chat.css:828:    color: rgba(52, 62, 74, 0.72) !important;
+./chatDesign/styles/spirit-trinity-chat.css:834:    font-size: 0.875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:835:    line-height: 1.32 !important;
+./chatDesign/styles/spirit-trinity-chat.css:836:    color: rgba(22, 30, 42, 0.92) !important;
+./chatDesign/styles/spirit-trinity-chat.css:840:    font-size: 0.6875rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:841:    color: rgba(52, 62, 74, 0.7) !important;
+./chatDesign/styles/spirit-trinity-chat.css:846:  padding-inline: 1.25rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:850:  color: var(--trinity-text-muted) !important;
+./chatDesign/styles/spirit-trinity-chat.css:854:  border-radius: 0.5rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:858:  color: inherit !important;
+./chatDesign/styles/spirit-trinity-chat.css:863:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:868:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:944:  border: 1px solid rgba(42, 54, 68, 0.2) !important;
+./chatDesign/styles/spirit-trinity-chat.css:947:    rgba(255, 255, 255, 0.05) !important;
+./chatDesign/styles/spirit-trinity-chat.css:951:    0 26px 80px -56px rgba(15, 23, 42, 0.38) !important;
+./chatDesign/styles/spirit-trinity-chat.css:960:    border-right: 1px solid var(--trinity-sidebar-border) !important;
+./chatDesign/styles/spirit-trinity-chat.css:961:    background: var(--trinity-sidebar-glass) !important;
+./chatDesign/styles/spirit-trinity-chat.css:966:      var(--trinity-sidebar-inner-shadow) !important;
+./chatDesign/styles/spirit-trinity-chat.css:973:    min-height: 2.1rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:974:    font-size: 0.8125rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:975:    font-weight: 600 !important;
+./chatDesign/styles/spirit-trinity-chat.css:979:    min-height: 2.1rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:980:    font-size: 0.75rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:981:    font-weight: 600 !important;
+./chatDesign/styles/spirit-trinity-chat.css:986:  gap: 0.65rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:987:  padding: 0.85rem 0.75rem 0.7rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:991:  flex-direction: row !important;
+./chatDesign/styles/spirit-trinity-chat.css:992:  align-items: stretch !important;
+./chatDesign/styles/spirit-trinity-chat.css:993:  gap: 0.5rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:998:  border: 1px solid rgba(255, 255, 255, 0.38) !important;
+./chatDesign/styles/spirit-trinity-chat.css:999:  border-radius: 999px !important;
+./chatDesign/styles/spirit-trinity-chat.css:1002:    rgba(255, 255, 255, 0.12) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1003:  color: var(--trinity-text) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1010:  color: rgba(30, 41, 59, 0.66) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1016:    border: 1px solid color-mix(in oklab, var(--trinity-liquid-cyan-edge) 62%, rgba(255, 255, 255, 0.66) 38%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1017:    background-color: var(--trinity-liquid-clear-center) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1032:      radial-gradient(ellipse 72% 48% at 8% 100%, rgba(158, 228, 255, 0.22) 0%, transparent 58%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1033:    background-blend-mode: screen, screen, soft-light, normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:1034:    color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1039:      0 8px 22px -14px var(--trinity-liquid-blue-shadow) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1045:    color: color-mix(in oklab, var(--trinity-liquid-muted) 88%, rgba(13, 24, 38, 0.5)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1049:    border-color: rgba(255, 255, 255, 0.9) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1053:      inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1054:    outline: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:1058:    border-radius: 0.65rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1059:    border: 1px solid color-mix(in oklab, var(--trinity-liquid-cyan-edge) 64%, rgba(255, 255, 255, 0.62) 36%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1060:    background-color: var(--trinity-liquid-clear-center) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1074:      radial-gradient(ellipse 74% 54% at 94% 90%, rgba(84, 206, 248, 0.38) 0%, transparent 54%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1075:    background-blend-mode: screen, soft-light, normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:1080:      0 12px 30px -18px var(--trinity-liquid-blue-shadow) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1083:    color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1087:    color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1088:    font-weight: 650 !important;
+./chatDesign/styles/spirit-trinity-chat.css:1092:    color: var(--trinity-liquid-muted) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1099:    border-radius: 999px !important;
+./chatDesign/styles/spirit-trinity-chat.css:1100:    padding: 0.45rem 0.65rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1101:    border: 1px solid color-mix(in oklab, var(--trinity-liquid-cyan-edge) 64%, rgba(255, 255, 255, 0.72) 36%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1102:    background-color: var(--trinity-liquid-clear-center) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1112:      radial-gradient(ellipse 68% 44% at 10% 100%, rgba(158, 228, 255, 0.22) 0%, transparent 56%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1113:    background-blend-mode: screen, screen, soft-light, normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:1114:    color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1121:      inset 0 9px 22px -16px rgba(255, 255, 255, 0.14) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1127:    color: color-mix(in oklab, var(--trinity-liquid-muted) 86%, rgba(13, 24, 38, 0.45)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1131:    border-color: rgba(255, 255, 255, 0.9) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1136:      inset 0 0 0 1px rgba(255, 255, 255, 0.22) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1137:    outline: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:1141:    padding-top: 0 !important;
+./chatDesign/styles/spirit-trinity-chat.css:1145:    border-radius: 0.65rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1146:    padding: 0.6rem 0.7rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1147:    border: 1px solid color-mix(in oklab, var(--trinity-liquid-cyan-edge) 62%, rgba(255, 255, 255, 0.66) 38%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1148:    background-color: var(--trinity-liquid-clear-center) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1157:      radial-gradient(ellipse 62% 44% at 92% 94%, rgba(84, 206, 248, 0.4) 0%, transparent 54%) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1158:    background-blend-mode: screen, soft-light, normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:1163:      inset 0 0 0 1px rgba(255, 255, 255, 0.26) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1166:    color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1170:    color: var(--trinity-liquid-text-strong) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1171:    font-weight: 650 !important;
+./chatDesign/styles/spirit-trinity-chat.css:1175:    color: var(--trinity-liquid-muted) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1181:  padding: 0.42rem 0.5rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1182:  border-color: transparent !important;
+./chatDesign/styles/spirit-trinity-chat.css:1183:  border-radius: 0.55rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1184:  background: transparent !important;
+./chatDesign/styles/spirit-trinity-chat.css:1185:  box-shadow: none !important;
+./chatDesign/styles/spirit-trinity-chat.css:1189:  border-color: transparent !important;
+./chatDesign/styles/spirit-trinity-chat.css:1192:    color-mix(in oklab, var(--trinity-liquid-clear-center) 48%, rgba(13, 24, 38, 0.04)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1193:  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1197:  border-color: transparent !important;
+./chatDesign/styles/spirit-trinity-chat.css:1200:    color-mix(in oklab, var(--trinity-liquid-clear-fill) 56%, rgba(13, 24, 38, 0.06)) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1203:    inset 2px 0 0 color-mix(in oklab, var(--trinity-liquid-cyan-edge) 70%, transparent) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1207:  row-gap: 0 !important;
+./chatDesign/styles/spirit-trinity-chat.css:1208:  column-gap: 0.35rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1212:  display: block !important;
+./chatDesign/styles/spirit-trinity-chat.css:1213:  flex: 1 1 0% !important;
+./chatDesign/styles/spirit-trinity-chat.css:1214:  min-width: 0 !important;
+./chatDesign/styles/spirit-trinity-chat.css:1215:  overflow: hidden !important;
+./chatDesign/styles/spirit-trinity-chat.css:1216:  text-overflow: ellipsis !important;
+./chatDesign/styles/spirit-trinity-chat.css:1217:  white-space: nowrap !important;
+./chatDesign/styles/spirit-trinity-chat.css:1218:  word-break: normal !important;
+./chatDesign/styles/spirit-trinity-chat.css:1219:  -webkit-box-orient: unset !important;
+./chatDesign/styles/spirit-trinity-chat.css:1220:  -webkit-line-clamp: unset !important;
+./chatDesign/styles/spirit-trinity-chat.css:1221:  line-clamp: unset !important;
+./chatDesign/styles/spirit-trinity-chat.css:1225:  margin: 0.14rem 0 0.06rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1226:  padding-inline: 0.48rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1227:  color: color-mix(in oklab, var(--trinity-liquid-muted) 68%, transparent) !important;
+./chatDesign/styles/spirit-trinity-chat.css:1228:  font-size: 0.58rem !important;
+./chatDesign/styles/spirit-trinity-chat.css:1229:  font-weight: 650 !important;
+./chatDesign/styles/spirit-trinity-chat.css:1230:  letter-spacing: 0.18em !important;
+./chatDesign/styles/spirit-trinity-chat.css:1234:  flex-wrap: nowrap !important;

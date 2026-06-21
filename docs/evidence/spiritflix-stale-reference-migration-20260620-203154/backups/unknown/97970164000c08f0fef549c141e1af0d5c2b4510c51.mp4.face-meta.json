@@ -1,0 +1,709 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+  "generated_at": "2026-06-14T11:14:20+00:00",
+  "dry_run": false,
+  "verification_needed": false,
+  "performers": [
+    {
+      "id": "isabelle-eleanore",
+      "name": "Isabelle Eleanore",
+      "confidence": 1.0,
+      "similarity": 1.0,
+      "status": "manual-confirmed",
+      "verification_needed": false,
+      "label": "Isabelle Eleanore - manually confirmed; needs face enrollment"
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-14T11:14:20+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [],
+    "text_verification_queries": [],
+    "watermark_ocr": [],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/unknown/.face-review/97970164000c08f0fef549c141e1af0d5c2b4510c51/frames/frame-01.jpg",
+    "/DATA/yes/unknown/.face-review/97970164000c08f0fef549c141e1af0d5c2b4510c51/frames/frame-02.jpg",
+    "/DATA/yes/unknown/.face-review/97970164000c08f0fef549c141e1af0d5c2b4510c51/frames/frame-03.jpg",
+    "/DATA/yes/unknown/.face-review/97970164000c08f0fef549c141e1af0d5c2b4510c51/frames/frame-04.jpg",
+    "/DATA/yes/unknown/.face-review/97970164000c08f0fef549c141e1af0d5c2b4510c51/frames/frame-05.jpg",
+    "/DATA/yes/unknown/.face-review/97970164000c08f0fef549c141e1af0d5c2b4510c51/frames/frame-06.jpg"
+  ],
+  "faces_detected": 1,
+  "faces_rejected": [],
+  "duration_seconds": 926.405,
+  "processing_time_seconds": 17.922,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  },
+  "manual_corrections": [
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle Eleanore\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle Eleanore\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle Eleanore\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Isabelle Eleanore\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Acoomer.st",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Isabelle Eleanore",
+          "url": "https://coomer.st/search?q=Isabelle%20Eleanore",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle Eleanore\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle Eleanore\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle Eleanore\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Isabelle Eleanore\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Acoomer.st",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Isabelle Eleanore",
+          "url": "https://coomer.st/search?q=Isabelle%20Eleanore",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:35:34+00:00"
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle Eleanore\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle Eleanore\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle Eleanore\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Isabelle Eleanore\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Acoomer.st",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Isabelle Eleanore",
+          "url": "https://coomer.st/search?q=Isabelle%20Eleanore",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mp4.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": false,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle Eleanore\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle Eleanore\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle Eleanore\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Isabelle Eleanore\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Acoomer.st",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Isabelle Eleanore",
+          "url": "https://coomer.st/search?q=Isabelle%20Eleanore",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:41:18+00:00"
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "pending",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:11:36+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle Eleanore\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle Eleanore\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle Eleanore\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Isabelle Eleanore\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Acoomer.st",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Isabelle Eleanore",
+          "url": "https://coomer.st/search?q=Isabelle%20Eleanore",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly."
+    },
+    {
+      "schema": "media-manual-correction/v1",
+      "status": "confirmed",
+      "corrected_by": "Britton",
+      "corrected_at": "2026-06-15T03:11:36+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "sidecar_path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv.face-meta.json",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "belongs_to_existing": true,
+      "face_enrollment_performed": false,
+      "text_verification_queries": [
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle Eleanore\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle Eleanore\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle Eleanore\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex Coomer",
+          "query": "\"Isabelle Eleanore\" site:coomer.st",
+          "url": "https://yandex.com/search/?text=%22Isabelle%20Eleanore%22%20site%3Acoomer.st",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "coomer-url",
+          "label": "Coomer",
+          "query": "Isabelle Eleanore",
+          "url": "https://coomer.st/search?q=Isabelle%20Eleanore",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex",
+          "query": "\"Isabelle\"",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-url",
+          "label": "Yandex OnlyFans",
+          "query": "\"Isabelle\" onlyfans",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20onlyfans",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "manual_text_search",
+          "text_only": true
+        },
+        {
+          "provider": "yandex-site-url",
+          "label": "Yandex PimpBunny",
+          "query": "\"Isabelle\" site:pimpbunny.com",
+          "url": "https://yandex.com/search/?text=%22Isabelle%22%20site%3Apimpbunny.com",
+          "candidate_name": "Isabelle Eleanore",
+          "candidate_source": "manual",
+          "evidence_role": "site_scoped_text_search",
+          "text_only": true
+        }
+      ],
+      "limitations": "Pending evidence only. Registry/model index and face embeddings are unchanged until confirm-correction is run explicitly.",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:36+00:00"
+    }
+  ],
+  "manual_correction_pending": null,
+  "audit_events": [
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:35:34+00:00",
+      "corrected_at": "2026-06-15T02:35:34+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    },
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton notes 2026-06-14",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T02:41:18+00:00",
+      "corrected_at": "2026-06-15T02:41:18+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    },
+    {
+      "event": "manual_correction_confirmed",
+      "corrected_by": "Britton",
+      "confirmed_by": "Britton",
+      "confirmed_at": "2026-06-15T03:11:36+00:00",
+      "corrected_at": "2026-06-15T03:11:36+00:00",
+      "source_file": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+      "previous_suggestion": null,
+      "new_canonical_name": "Isabelle Eleanore",
+      "evidence_role": "user_confirmed_correction",
+      "face_enrollment_performed": false,
+      "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+    }
+  ],
+  "path": "/DATA/yes/unknown/97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+  "filename": "97970164000c08f0fef549c141e1af0d5c2b4510c51.mkv",
+  "manual_confirmed_model": {
+    "schema": "media-manual-model-assignment/v1",
+    "name": "Isabelle Eleanore",
+    "confirmed_by": "Britton",
+    "confirmed_at": "2026-06-15T03:11:36+00:00",
+    "known_performer_id": "",
+    "face_enrolled": false,
+    "move_receipt": {},
+    "next_action": "queued_for_face_enrollment"
+  }
+}

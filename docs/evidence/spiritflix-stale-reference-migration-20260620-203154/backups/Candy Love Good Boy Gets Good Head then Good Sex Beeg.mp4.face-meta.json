@@ -1,0 +1,899 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/Candy Love Good Boy Gets Good Head then Good Sex Beeg.mkv",
+  "generated_at": "2026-06-19T01:29:38+00:00",
+  "dry_run": false,
+  "verification_needed": true,
+  "performers": [
+    {
+      "name": "unknown performer",
+      "confidence": 0.0,
+      "similarity": 0.0,
+      "status": "unknown",
+      "verification_needed": true,
+      "label": "unknown performer - verification needed",
+      "face_crop_path": null,
+      "original_frame_path": null,
+      "model_version": "insightface:buffalo_l",
+      "supporting_faces": 0
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-19T01:29:16+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Candy Love Good Boy Gets",
+        "source": "filename",
+        "confidence": 0.65,
+        "raw": "Candy Love Good Boy Gets Good Head then Good Sex Beeg",
+        "variants": [
+          "Candy Love Good Boy Gets",
+          "Candy"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "Candy",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "Candy!",
+        "variants": [
+          "Candy"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "region": "top_strip"
+      },
+      {
+        "name": "Candy Love",
+        "source": "watermark_ocr_text",
+        "confidence": 0.62,
+        "raw": "Candy love",
+        "variants": [
+          "Candy Love",
+          "Candy"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "region": "top_right"
+      },
+      {
+        "name": "Candyl",
+        "source": "watermark_ocr_text",
+        "confidence": 0.49,
+        "raw": "Candyl",
+        "variants": [
+          "Candyl"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "Love",
+        "source": "watermark_ocr_text",
+        "confidence": 0.4,
+        "raw": "love",
+        "variants": [
+          "Love"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "Hoy",
+        "source": "watermark_ocr_text",
+        "confidence": 0.38,
+        "raw": "hoy",
+        "variants": [
+          "Hoy"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+        "region": "bottom_left"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candy Love Good Boy Gets\"",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Good%20Boy%20Gets%22",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candy Love Good Boy Gets\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Good%20Boy%20Gets%22%20onlyfans",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candy Love Good Boy Gets\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Good%20Boy%20Gets%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candy Love Good Boy Gets\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Good%20Boy%20Gets%22%20site%3Acoomer.st",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candy Love Good Boy Gets",
+        "url": "https://coomer.st/search?q=Candy%20Love%20Good%20Boy%20Gets",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candy\"",
+        "url": "https://yandex.com/search/?text=%22Candy%22",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candy\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20onlyfans",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candy\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candy\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20site%3Acoomer.st",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candy",
+        "url": "https://coomer.st/search?q=Candy",
+        "candidate_name": "Candy Love Good Boy Gets",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candy Love\"",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%22",
+        "candidate_name": "Candy Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candy Love\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%22%20onlyfans",
+        "candidate_name": "Candy Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candy Love\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candy Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candy Love\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%22%20site%3Acoomer.st",
+        "candidate_name": "Candy Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candy Love",
+        "url": "https://coomer.st/search?q=Candy%20Love",
+        "candidate_name": "Candy Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candyl\"",
+        "url": "https://yandex.com/search/?text=%22Candyl%22",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candyl\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candyl%22%20onlyfans",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candyl\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candyl%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candyl\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candyl%22%20site%3Acoomer.st",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candyl",
+        "url": "https://coomer.st/search?q=Candyl",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Love\"",
+        "url": "https://yandex.com/search/?text=%22Love%22",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Love\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Love%22%20onlyfans",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Love\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Love%22%20site%3Apimpbunny.com",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Love\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Love%22%20site%3Acoomer.st",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Love",
+        "url": "https://coomer.st/search?q=Love",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "Candyl",
+        "confidence": 0.911,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            1717.0,
+            94.0
+          ],
+          [
+            1799.0,
+            91.0
+          ],
+          [
+            1800.0,
+            127.0
+          ],
+          [
+            1718.0,
+            129.0
+          ]
+        ]
+      },
+      {
+        "text": "love",
+        "confidence": 0.752,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            1783.0,
+            92.0
+          ],
+          [
+            1845.0,
+            96.0
+          ],
+          [
+            1842.0,
+            130.0
+          ],
+          [
+            1780.0,
+            125.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy!",
+        "confidence": 0.92,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-01-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3441.290283203125,
+            190.1420440673828
+          ],
+          [
+            3586.451416015625,
+            194.0625
+          ],
+          [
+            3584.51611328125,
+            252.8693084716797
+          ],
+          [
+            3441.290283203125,
+            250.90908813476562
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.815,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-01-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3580.64501953125,
+            190.1420440673828
+          ],
+          [
+            3690.967529296875,
+            203.86363220214844
+          ],
+          [
+            3683.2255859375,
+            258.75
+          ],
+          [
+            3574.838623046875,
+            245.02841186523438
+          ]
+        ]
+      },
+      {
+        "text": "Candy love",
+        "confidence": 0.918,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-01-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1599.0,
+            189.0
+          ],
+          [
+            1846.0,
+            191.0
+          ],
+          [
+            1846.0,
+            253.0
+          ],
+          [
+            1598.0,
+            251.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy love",
+        "confidence": 0.907,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            1716.0,
+            87.0
+          ],
+          [
+            1847.0,
+            90.0
+          ],
+          [
+            1846.0,
+            131.0
+          ],
+          [
+            1715.0,
+            129.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy.",
+        "confidence": 0.908,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-02-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3437.419189453125,
+            190.1420440673828
+          ],
+          [
+            3586.451416015625,
+            188.18182373046875
+          ],
+          [
+            3588.386962890625,
+            258.75
+          ],
+          [
+            3437.419189453125,
+            262.6704406738281
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.772,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-02-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3580.64501953125,
+            192.10226440429688
+          ],
+          [
+            3687.0966796875,
+            199.94317626953125
+          ],
+          [
+            3683.2255859375,
+            254.8295440673828
+          ],
+          [
+            3576.774169921875,
+            246.98863220214844
+          ]
+        ]
+      },
+      {
+        "text": "Candyl",
+        "confidence": 0.96,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-02-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1598.0,
+            192.0
+          ],
+          [
+            1757.0,
+            190.0
+          ],
+          [
+            1758.0,
+            249.0
+          ],
+          [
+            1599.0,
+            252.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.828,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-02-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1733.0,
+            191.0
+          ],
+          [
+            1848.0,
+            205.0
+          ],
+          [
+            1842.0,
+            257.0
+          ],
+          [
+            1727.0,
+            243.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy love",
+        "confidence": 0.898,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            1716.0,
+            87.0
+          ],
+          [
+            1847.0,
+            90.0
+          ],
+          [
+            1846.0,
+            131.0
+          ],
+          [
+            1715.0,
+            129.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy.",
+        "confidence": 0.906,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-03-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3439.354736328125,
+            190.1420440673828
+          ],
+          [
+            3592.258056640625,
+            190.1420440673828
+          ],
+          [
+            3592.258056640625,
+            260.7102355957031
+          ],
+          [
+            3439.354736328125,
+            260.7102355957031
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.812,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-03-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3578.70947265625,
+            192.10226440429688
+          ],
+          [
+            3687.0966796875,
+            199.94317626953125
+          ],
+          [
+            3683.2255859375,
+            254.8295440673828
+          ],
+          [
+            3574.838623046875,
+            246.98863220214844
+          ]
+        ]
+      },
+      {
+        "text": "Candy love",
+        "confidence": 0.927,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-03-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1598.0,
+            188.0
+          ],
+          [
+            1848.0,
+            191.0
+          ],
+          [
+            1847.0,
+            254.0
+          ],
+          [
+            1597.0,
+            251.0
+          ]
+        ]
+      },
+      {
+        "text": "Candylove",
+        "confidence": 0.93,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+        "region": "full",
+        "box": [
+          [
+            1716.0,
+            89.0
+          ],
+          [
+            1847.0,
+            89.0
+          ],
+          [
+            1847.0,
+            130.0
+          ],
+          [
+            1716.0,
+            130.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy!",
+        "confidence": 0.912,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-04-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3435.48388671875,
+            190.1420440673828
+          ],
+          [
+            3592.258056640625,
+            186.22158813476562
+          ],
+          [
+            3592.258056640625,
+            260.7102355957031
+          ],
+          [
+            3437.419189453125,
+            264.63067626953125
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.828,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-04-top_strip.jpg",
+        "region": "top_strip",
+        "box": [
+          [
+            3578.70947265625,
+            192.10226440429688
+          ],
+          [
+            3689.0322265625,
+            205.82386779785156
+          ],
+          [
+            3681.290283203125,
+            258.75
+          ],
+          [
+            3572.903076171875,
+            245.02841186523438
+          ]
+        ]
+      },
+      {
+        "text": "hoy",
+        "confidence": 0.508,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-04-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            1784.0,
+            137.0
+          ],
+          [
+            1830.0,
+            134.0
+          ],
+          [
+            1831.0,
+            160.0
+          ],
+          [
+            1786.0,
+            163.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy love",
+        "confidence": 0.927,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/.ocr-regions/frame-04-top_right.jpg",
+        "region": "top_right",
+        "box": [
+          [
+            1598.0,
+            188.0
+          ],
+          [
+            1846.0,
+            191.0
+          ],
+          [
+            1845.0,
+            254.0
+          ],
+          [
+            1597.0,
+            251.0
+          ]
+        ]
+      },
+      {
+        "text": "Candylove",
+        "confidence": 0.93,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-05.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-05.jpg",
+        "region": "full",
+        "box": [
+          [
+            1716.0,
+            88.0
+          ],
+          [
+            1848.0,
+            91.0
+          ],
+          [
+            1847.0,
+            131.0
+          ],
+          [
+            1715.0,
+            129.0
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-01.jpg",
+    "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-02.jpg",
+    "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-03.jpg",
+    "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-04.jpg",
+    "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-05.jpg",
+    "/DATA/yes/.face-review/Candy Love Good Boy Gets Good Head then Good Sex Beeg/frames/frame-06.jpg"
+  ],
+  "faces_detected": 0,
+  "faces_rejected": [],
+  "duration_seconds": 846.4,
+  "processing_time_seconds": 86.512,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  }
+}

@@ -24,9 +24,11 @@ import { SpiritFlixPlayer } from "./SpiritFlixPlayer";
 
 export interface SpiritFlixPlaybackQueue {
   items: JellyfinItem[];
+  originalItems?: JellyfinItem[];
   currentIndex: number;
   sourceTitle: string;
   startPositionTicks?: number;
+  isShuffled?: boolean;
 }
 
 export interface SpiritFlixPlaybackProgress {
@@ -70,6 +72,19 @@ function uniqueItems(items: JellyfinItem[]): JellyfinItem[] {
     seen.add(item.Id);
     return true;
   });
+}
+
+function shuffleItems(items: JellyfinItem[]): JellyfinItem[] {
+  return items
+    .map((item) => ({ item, sort: Math.random() }))
+    .sort((left, right) => left.sort - right.sort)
+    .map(({ item }) => item);
+}
+
+function shuffleQueueAfterCurrent(items: JellyfinItem[], currentItemId: string): JellyfinItem[] {
+  const currentItem = items.find((item) => item.Id === currentItemId);
+  const remainingItems = items.filter((item) => item.Id !== currentItemId);
+  return currentItem ? [currentItem, ...shuffleItems(remainingItems)] : shuffleItems(items);
 }
 
 function getLastPlayedMs(item: JellyfinItem): number {
@@ -156,6 +171,60 @@ function upsertFavoriteItem(items: JellyfinItem[], item: JellyfinItem): Jellyfin
   return [item, ...nextItems].sort((left, right) => left.Name.localeCompare(right.Name));
 }
 
+export function inferPlaybackQueueForItem(
+  item: JellyfinItem,
+  homeData: SpiritFlixHomeData,
+): { items: JellyfinItem[]; sourceTitle: string } | null {
+  const sources: Array<{ items: JellyfinItem[]; sourceTitle: string }> = [
+    { items: homeData.continueWatching, sourceTitle: "Continue Watching" },
+    { items: homeData.latestAdded, sourceTitle: "Latest Added" },
+    { items: homeData.featuredItems, sourceTitle: "Featured Anime" },
+    { items: homeData.favorites, sourceTitle: "Favorites" },
+    { items: homeData.watchHistory, sourceTitle: "Watch History" },
+    { items: homeData.libraryItems, sourceTitle: "Library" },
+  ];
+
+  return sources.find((source) => source.items.some((sourceItem) => sourceItem.Id === item.Id)) ?? null;
+}
+
+interface SpiritFlixBrowseRoute {
+  libraryId: string | null;
+  modelName: string | null;
+}
+
+function getSpiritFlixBrowseRoute(): SpiritFlixBrowseRoute {
+  if (typeof window === "undefined") {
+    return { libraryId: null, modelName: null };
+  }
+  const query = new URLSearchParams(window.location.search);
+  return {
+    libraryId: query.get("library"),
+    modelName: query.get("model"),
+  };
+}
+
+export function buildSpiritFlixBrowsePath({ libraryId, modelName }: SpiritFlixBrowseRoute): string {
+  const query = new URLSearchParams();
+  if (libraryId) query.set("library", libraryId);
+  if (libraryId && modelName) query.set("model", modelName);
+  const queryText = query.toString();
+  return queryText ? `/spiritflix?${queryText}` : "/spiritflix";
+}
+
+function setSpiritFlixBrowseRoute(
+  { libraryId, modelName }: SpiritFlixBrowseRoute,
+  mode: "push" | "replace" = "push",
+) {
+  if (typeof window === "undefined") return;
+  const nextPath = buildSpiritFlixBrowsePath({ libraryId, modelName });
+  if (`${window.location.pathname}${window.location.search}` === nextPath) return;
+  if (mode === "replace") {
+    window.history.replaceState(window.history.state, "", nextPath);
+    return;
+  }
+  window.history.pushState(window.history.state, "", nextPath);
+}
+
 export function SpiritFlixApp() {
   const [session, setSession] = useState<SpiritFlixSession | null>(null);
   const [isRestoringSession, setIsRestoringSession] = useState(true);
@@ -170,6 +239,7 @@ export function SpiritFlixApp() {
   const [loadingHome, setLoadingHome] = useState(false);
   const [homeError, setHomeError] = useState("");
   const loadedSessionKeyRef = useRef<string | null>(null);
+  const initialBrowseRouteRef = useRef<SpiritFlixBrowseRoute | null>(null);
 
   const client = useMemo(
     () => new JellyfinClient(session?.serverUrl ?? serverUrl, session?.accessToken, session?.userId),
@@ -249,6 +319,10 @@ export function SpiritFlixApp() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      initialBrowseRouteRef.current = getSpiritFlixBrowseRoute();
+      if (window.location.pathname.startsWith("/spiritflix/watch/")) {
+        setSpiritFlixBrowseRoute(initialBrowseRouteRef.current, "replace");
+      }
       const stored = getStoredSession();
       if (stored) {
         setSession(stored);
@@ -276,7 +350,7 @@ export function SpiritFlixApp() {
     if (loadedSessionKeyRef.current === sessionKey) return undefined;
     loadedSessionKeyRef.current = sessionKey;
     const timer = window.setTimeout(() => {
-      void loadHome(null);
+      void loadHome(initialBrowseRouteRef.current?.libraryId ?? null);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadHome, session]);
@@ -309,6 +383,7 @@ export function SpiritFlixApp() {
   };
 
   const handleLogout = () => {
+    setSpiritFlixBrowseRoute({ libraryId: null, modelName: null }, "replace");
     clearStoredSession();
     loadedSessionKeyRef.current = null;
     setSession(null);
@@ -328,9 +403,11 @@ export function SpiritFlixApp() {
     const queueItems = playableItems.some((queueItem) => queueItem.Id === item.Id) ? playableItems : [item, ...playableItems];
     return {
       items: queueItems,
+      originalItems: queueItems,
       currentIndex: Math.max(0, queueItems.findIndex((queueItem) => queueItem.Id === item.Id)),
       sourceTitle,
       startPositionTicks,
+      isShuffled: false,
     };
   };
 
@@ -352,6 +429,21 @@ export function SpiritFlixApp() {
       };
     });
   };
+
+  const handleShuffleQueue = useCallback((currentItemId: string) => {
+    setPlayingQueue((current) => {
+      if (!current || current.items.length < 2) return current;
+      const originalItems = current.originalItems?.length ? current.originalItems : current.items;
+      const items = current.isShuffled ? originalItems : shuffleQueueAfterCurrent(originalItems, currentItemId);
+      return {
+        ...current,
+        originalItems,
+        items,
+        currentIndex: Math.max(0, items.findIndex((queueItem) => queueItem.Id === currentItemId)),
+        isShuffled: !current.isShuffled,
+      };
+    });
+  }, []);
 
   const handlePlaybackProgress = useCallback(
     (progress: SpiritFlixPlaybackProgress) => {
@@ -436,9 +528,39 @@ export function SpiritFlixApp() {
     setSelectedItem(item);
   };
 
+  const handleDetailsPlay = (item: JellyfinItem) => {
+    const inferredQueue = inferPlaybackQueueForItem(item, homeData);
+    setSelectedItem(null);
+    handlePlay(
+      item,
+      inferredQueue?.items,
+      inferredQueue?.sourceTitle,
+      item.UserData?.PlaybackPositionTicks,
+    );
+  };
+
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     void loadHome(homeData.selectedLibraryId, term);
+  };
+
+  const handleSelectHome = () => {
+    initialBrowseRouteRef.current = { libraryId: null, modelName: null };
+    setSpiritFlixBrowseRoute({ libraryId: null, modelName: null });
+    void loadHome(null);
+  };
+
+  const handleSelectLibrary = (libraryId: string) => {
+    initialBrowseRouteRef.current = { libraryId, modelName: null };
+    setSpiritFlixBrowseRoute({ libraryId, modelName: null });
+    void loadHome(libraryId);
+  };
+
+  const handleSelectModel = (modelName: string | null) => {
+    const libraryId = homeData.selectedLibraryId;
+    if (!libraryId) return;
+    initialBrowseRouteRef.current = { libraryId, modelName };
+    setSpiritFlixBrowseRoute({ libraryId, modelName });
   };
 
   return (
@@ -471,8 +593,10 @@ export function SpiritFlixApp() {
           onLogout={handleLogout}
           onRefresh={() => loadHome(homeData.selectedLibraryId)}
           onSearch={handleSearch}
-          onSelectHome={() => loadHome(null)}
-          onSelectLibrary={(libraryId) => loadHome(libraryId)}
+          onSelectHome={handleSelectHome}
+          onSelectLibrary={handleSelectLibrary}
+          initialModelName={initialBrowseRouteRef.current?.modelName ?? null}
+          onSelectModel={handleSelectModel}
           onOpenDetails={handleOpenDetails}
           onPlay={handlePlay}
         />
@@ -483,10 +607,7 @@ export function SpiritFlixApp() {
           client={client}
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
-          onPlay={(item) => {
-            setSelectedItem(null);
-            handlePlay(item, undefined, undefined, item.UserData?.PlaybackPositionTicks);
-          }}
+          onPlay={handleDetailsPlay}
         />
       ) : null}
 
@@ -499,6 +620,7 @@ export function SpiritFlixApp() {
           onPlaybackProgress={handlePlaybackProgress}
           onToggleFavorite={handleToggleFavorite}
           onSelectItem={handleQueueSelect}
+          onShuffleQueue={handleShuffleQueue}
           onClose={() => {
             setPlayingItem(null);
             setPlayingQueue(null);

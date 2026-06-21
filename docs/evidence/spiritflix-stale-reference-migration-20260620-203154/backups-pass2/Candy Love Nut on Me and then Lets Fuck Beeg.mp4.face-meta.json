@@ -1,0 +1,883 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/Candy Love Nut on Me and then Lets Fuck Beeg.mkv",
+  "generated_at": "2026-06-19T01:54:06+00:00",
+  "dry_run": false,
+  "verification_needed": true,
+  "performers": [
+    {
+      "name": "unknown performer",
+      "confidence": 0.0,
+      "similarity": 0.0,
+      "status": "unknown",
+      "verification_needed": true,
+      "label": "unknown performer - verification needed",
+      "face_crop_path": null,
+      "original_frame_path": null,
+      "model_version": "insightface:buffalo_l",
+      "supporting_faces": 0
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-19T01:54:06+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Candyl",
+        "source": "watermark_ocr_text",
+        "confidence": 0.84,
+        "raw": "Candyl",
+        "variants": [
+          "Candyl"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "region": "bottom_strip"
+      },
+      {
+        "name": "Candy Love Nut On Me",
+        "source": "filename",
+        "confidence": 0.65,
+        "raw": "Candy Love Nut on Me and then Lets Fuck Beeg",
+        "variants": [
+          "Candy Love Nut On Me",
+          "Candy"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "ZONOOT",
+        "source": "watermark_ocr_text",
+        "confidence": 0.52,
+        "raw": "ZONOOT",
+        "variants": [
+          "ZONOOT"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "region": "bottom_left"
+      },
+      {
+        "name": "Love",
+        "source": "watermark_ocr_text",
+        "confidence": 0.5,
+        "raw": "Love",
+        "variants": [
+          "Love"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "region": "full"
+      },
+      {
+        "name": "Candy",
+        "source": "watermark_ocr_text",
+        "confidence": 0.47,
+        "raw": "Candy.",
+        "variants": [
+          "Candy"
+        ],
+        "evidence_role": "ocr_text",
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "region": "full"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candyl\"",
+        "url": "https://yandex.com/search/?text=%22Candyl%22",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candyl\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candyl%22%20onlyfans",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candyl\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candyl%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candyl\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candyl%22%20site%3Acoomer.st",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candyl",
+        "url": "https://coomer.st/search?q=Candyl",
+        "candidate_name": "Candyl",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candy Love Nut On Me\"",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Nut%20On%20Me%22",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candy Love Nut On Me\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Nut%20On%20Me%22%20onlyfans",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candy Love Nut On Me\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Nut%20On%20Me%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candy Love Nut On Me\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candy%20Love%20Nut%20On%20Me%22%20site%3Acoomer.st",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candy Love Nut On Me",
+        "url": "https://coomer.st/search?q=Candy%20Love%20Nut%20On%20Me",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Candy\"",
+        "url": "https://yandex.com/search/?text=%22Candy%22",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Candy\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20onlyfans",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Candy\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20site%3Apimpbunny.com",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Candy\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Candy%22%20site%3Acoomer.st",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Candy",
+        "url": "https://coomer.st/search?q=Candy",
+        "candidate_name": "Candy Love Nut On Me",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"ZONOOT\"",
+        "url": "https://yandex.com/search/?text=%22ZONOOT%22",
+        "candidate_name": "ZONOOT",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"ZONOOT\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22ZONOOT%22%20onlyfans",
+        "candidate_name": "ZONOOT",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"ZONOOT\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22ZONOOT%22%20site%3Apimpbunny.com",
+        "candidate_name": "ZONOOT",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"ZONOOT\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22ZONOOT%22%20site%3Acoomer.st",
+        "candidate_name": "ZONOOT",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "ZONOOT",
+        "url": "https://coomer.st/search?q=ZONOOT",
+        "candidate_name": "ZONOOT",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Love\"",
+        "url": "https://yandex.com/search/?text=%22Love%22",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Love\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Love%22%20onlyfans",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Love\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Love%22%20site%3Apimpbunny.com",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Love\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Love%22%20site%3Acoomer.st",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Love",
+        "url": "https://coomer.st/search?q=Love",
+        "candidate_name": "Love",
+        "candidate_source": "watermark_ocr_text",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": "Candy.",
+        "confidence": 0.891,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            1700.0,
+            964.0
+          ],
+          [
+            1780.0,
+            957.0
+          ],
+          [
+            1783.0,
+            994.0
+          ],
+          [
+            1703.0,
+            1001.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.93,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "region": "full",
+        "box": [
+          [
+            1774.0,
+            962.0
+          ],
+          [
+            1829.0,
+            962.0
+          ],
+          [
+            1829.0,
+            997.0
+          ],
+          [
+            1774.0,
+            997.0
+          ]
+        ]
+      },
+      {
+        "text": "Candyl",
+        "confidence": 0.878,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3412.258056640625,
+            460.0227355957031
+          ],
+          [
+            3570.967529296875,
+            465.92047119140625
+          ],
+          [
+            3569.0322265625,
+            524.8977661132812
+          ],
+          [
+            3410.322509765625,
+            519.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.846,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3543.870849609375,
+            460.0227355957031
+          ],
+          [
+            3660.0,
+            473.7840881347656
+          ],
+          [
+            3654.193359375,
+            524.8977661132812
+          ],
+          [
+            3538.064453125,
+            511.1363830566406
+          ]
+        ]
+      },
+      {
+        "text": "ZONOOT",
+        "confidence": 0.509,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-01-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            1256.0,
+            65.0
+          ],
+          [
+            1312.0,
+            149.0
+          ],
+          [
+            1283.0,
+            168.0
+          ],
+          [
+            1228.0,
+            84.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy",
+        "confidence": 0.999,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1568.0,
+            677.0
+          ],
+          [
+            1716.0,
+            679.0
+          ],
+          [
+            1715.0,
+            736.0
+          ],
+          [
+            1567.0,
+            733.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.89,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-01-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1712.0,
+            679.0
+          ],
+          [
+            1816.0,
+            693.0
+          ],
+          [
+            1810.0,
+            741.0
+          ],
+          [
+            1706.0,
+            727.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy.",
+        "confidence": 0.896,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            1700.0,
+            964.0
+          ],
+          [
+            1780.0,
+            957.0
+          ],
+          [
+            1783.0,
+            994.0
+          ],
+          [
+            1703.0,
+            1001.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.919,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "region": "full",
+        "box": [
+          [
+            1774.0,
+            962.0
+          ],
+          [
+            1829.0,
+            962.0
+          ],
+          [
+            1829.0,
+            997.0
+          ],
+          [
+            1774.0,
+            997.0
+          ]
+        ]
+      },
+      {
+        "text": "Candyl",
+        "confidence": 0.879,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3412.258056640625,
+            460.0227355957031
+          ],
+          [
+            3570.967529296875,
+            465.92047119140625
+          ],
+          [
+            3569.0322265625,
+            524.8977661132812
+          ],
+          [
+            3410.322509765625,
+            519.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.839,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3543.870849609375,
+            460.0227355957031
+          ],
+          [
+            3658.064453125,
+            473.7840881347656
+          ],
+          [
+            3652.258056640625,
+            524.8977661132812
+          ],
+          [
+            3538.064453125,
+            511.1363830566406
+          ]
+        ]
+      },
+      {
+        "text": "ZONOOT",
+        "confidence": 0.531,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-02-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            1256.0,
+            65.0
+          ],
+          [
+            1312.0,
+            149.0
+          ],
+          [
+            1283.0,
+            168.0
+          ],
+          [
+            1228.0,
+            84.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy",
+        "confidence": 0.998,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-02-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1569.0,
+            678.0
+          ],
+          [
+            1717.0,
+            678.0
+          ],
+          [
+            1717.0,
+            735.0
+          ],
+          [
+            1569.0,
+            735.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.872,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-02-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1712.0,
+            679.0
+          ],
+          [
+            1816.0,
+            693.0
+          ],
+          [
+            1810.0,
+            741.0
+          ],
+          [
+            1706.0,
+            727.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy.",
+        "confidence": 0.896,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            1700.0,
+            964.0
+          ],
+          [
+            1780.0,
+            957.0
+          ],
+          [
+            1783.0,
+            994.0
+          ],
+          [
+            1703.0,
+            1001.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.919,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "region": "full",
+        "box": [
+          [
+            1774.0,
+            962.0
+          ],
+          [
+            1829.0,
+            962.0
+          ],
+          [
+            1829.0,
+            997.0
+          ],
+          [
+            1774.0,
+            997.0
+          ]
+        ]
+      },
+      {
+        "text": "Candyl",
+        "confidence": 0.879,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3412.258056640625,
+            460.0227355957031
+          ],
+          [
+            3570.967529296875,
+            465.92047119140625
+          ],
+          [
+            3569.0322265625,
+            524.8977661132812
+          ],
+          [
+            3410.322509765625,
+            519.0
+          ]
+        ]
+      },
+      {
+        "text": "Love",
+        "confidence": 0.839,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-03-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3543.870849609375,
+            460.0227355957031
+          ],
+          [
+            3658.064453125,
+            473.7840881347656
+          ],
+          [
+            3652.258056640625,
+            524.8977661132812
+          ],
+          [
+            3538.064453125,
+            511.1363830566406
+          ]
+        ]
+      },
+      {
+        "text": "ZONOOT",
+        "confidence": 0.531,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-03-bottom_left.jpg",
+        "region": "bottom_left",
+        "box": [
+          [
+            1256.0,
+            65.0
+          ],
+          [
+            1312.0,
+            149.0
+          ],
+          [
+            1283.0,
+            168.0
+          ],
+          [
+            1228.0,
+            84.0
+          ]
+        ]
+      },
+      {
+        "text": "Candy",
+        "confidence": 0.998,
+        "frame_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg",
+        "ocr_image_path": "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/.ocr-regions/frame-03-bottom_right.jpg",
+        "region": "bottom_right",
+        "box": [
+          [
+            1569.0,
+            678.0
+          ],
+          [
+            1717.0,
+            678.0
+          ],
+          [
+            1717.0,
+            735.0
+          ],
+          [
+            1569.0,
+            735.0
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-01.jpg",
+    "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-02.jpg",
+    "/DATA/yes/.face-review/Candy Love Nut on Me and then Lets Fuck Beeg/frames/frame-03.jpg"
+  ],
+  "faces_detected": 0,
+  "faces_rejected": [],
+  "duration_seconds": 3.56,
+  "processing_time_seconds": 63.473,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  }
+}

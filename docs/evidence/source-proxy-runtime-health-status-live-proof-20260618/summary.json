@@ -1,0 +1,63 @@
+{
+  "task": "source-proxy-runtime-health-status-live-proof",
+  "commit_under_test": "ae2afdca12c8214275e6f7db8ec569404c76a07d",
+  "source_proxy_reload": "GO",
+  "live_route_proof": "GO",
+  "runtime_status_truth": "GO",
+  "safe_for_next_proxy_patch": "PARTIAL-GO",
+  "restart_method": "TERM exact uvicorn source_proxy.main:app PID on :8787; source-proxy-lan watchdog restarted npm run proxy:https:lan",
+  "before_pid": "1404461",
+  "after_pid": "1440463",
+  "routes": {
+    "/health": {
+      "http": 200
+    },
+    "/v1/health": {
+      "http": 200
+    },
+    "/v1/runtime/status": {
+      "http": 200
+    }
+  },
+  "openapi_lists_new_routes": true,
+  "runtime_payload_status": "NO_GO",
+  "runtime_check_groups": [
+    "api",
+    "failed_units",
+    "git_authority",
+    "next",
+    "ollama",
+    "recent_crash_signals",
+    "watchers"
+  ],
+  "code_patched": false,
+  "model_calls_run": false,
+  "benchmark_batteries_run": false,
+  "git_commit_created": false,
+  "git_push_performed": false,
+  "other_services_restarted": false,
+  "evidence_files": [
+    "00-baseline.md",
+    "10-run-method-review.md",
+    "20-source-proxy-reload.md",
+    "30-live-route-smoke.md",
+    "40-post-reload-safety.md",
+    "index.md",
+    "final-verdict.md",
+    "operator-summary.md",
+    "summary.json",
+    "raw/00-baseline.txt",
+    "raw/10-run-method-review.txt",
+    "raw/20-before-source-proxy-reload.txt",
+    "raw/20-reload-command.txt",
+    "raw/20-after-source-proxy-reload.txt",
+    "raw/30-live-route-smoke.txt",
+    "raw/openapi.json",
+    "raw/40-post-reload-safety.txt"
+  ],
+  "notes": [
+    "All required live routes returned HTTP 200 after Source Proxy reload.",
+    "Runtime status truthfully reports top-level NO_GO because dirty authority/recent crash-signal checks are not green.",
+    "Safe for browser verifier hardening gate is PARTIAL-GO because route proof is live but wider runtime authority is not fully clean."
+  ]
+}

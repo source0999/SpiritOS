@@ -1,0 +1,181 @@
+=== date ===
+2026-06-18T03:56:12-04:00
+=== uptime/load ===
+ 03:56:12 up  6:49,  9 users,  load average: 1.03, 1.09, 0.70
+=== memory ===
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       6.8Gi       1.1Gi       148Mi       8.1Gi       8.8Gi
+Swap:          4.0Gi       1.8Gi       2.2Gi
+=== top memory ===
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+source    285267 32.4  7.5 100143080 1225208 pts/3 Sl+ 03:51   1:25 next-server (v16.2.4)
+root        3062  0.3  7.1 7248196 1170572 ?     SLsl Jun17   1:22 /usr/local/bin/python /usr/local/bin/uvicorn main:app --host 0.0.0.0 --port 80
+source     43681  8.5  5.3 4966256 864196 pts/4  Sl+  Jun17  30:10 .venv-face-organizer/bin/python -u scripts/media/face_organizer.py --serve-review --source /DATA/yes --host 0.0.0.0 --port 8765 --ctx-id -1 --apply
+source     34177  4.1  3.2 97832784 522276 ?     Sl   Jun17  15:00 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node --dns-result-order=ipv4first --inspect-port=0 --experimental-network-inspection /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/bootstrap-fork --type=extensionHost --transformURIs --useHostProxy=false
+source     14017  1.9  2.3 12078376 376868 ?     Sl   Jun17   7:44 /home/source/.zcode/server/node /home/source/.zcode/server/zcode-server.cjs
+root        3049  9.2  2.0 273932300 331904 ?    Ssl  Jun17  37:34 /jellyfin/jellyfin
+source     35581  0.2  1.4 584580 237252 pts/0   Sl+  Jun17   0:59 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+source      9253  0.8  1.3 930436 223972 pts/2   Sl+  Jun17   3:19 /home/source/SpiritOS/.venv-headroom/bin/python3 /home/source/SpiritOS/.venv-headroom/bin/headroom proxy --host 127.0.0.1 --port 8797
+source     34188  0.0  1.2 11989540 207248 ?     Sl   Jun17   0:16 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/bootstrap-fork --type=fileWatcher
+root        3073  0.7  1.2 909692 199932 ?       Ssl  Jun17   3:11 /usr/local/bin/python3.12 /usr/local/bin/uvicorn scout.main:app --host 0.0.0.0 --port 8077
+source     14108  0.0  1.1 1282056 180760 ?      Ssl  Jun17   0:04 zcode-cli
+source     37816  0.8  0.7 461444 125668 ?       Sl   Jun17   3:09 /usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex app-server --listen unix://
+source      4824  0.3  0.6 11814048 107012 ?     Sl   Jun17   1:35 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/server-main.js --start-server --host 127.0.0.1 --port 0 --connection-token-file /run/user/1000/cursor-remote-code.token.19454fe0852788c8224fe18079719738 --telemetry-level off --enable-remote-auto-shutdown --accept-server-license-terms
+source      1888  3.5  0.5 196268 84196 ?        Sl   Jun17  14:39 smbd: client [10.0.0.126]
+source      3436  0.6  0.4 807552 79332 ?        Ssl  Jun17   2:31 /home/ubuntu/faster-whisper-server/.venv/bin/python /home/ubuntu/faster-whisper-server/.venv/bin/uvicorn --factory faster_whisper_server.main:create_app
+lightdm     2106  0.0  0.4 895220 70108 ?        Sl   Jun17   0:01 /usr/sbin/unity-greeter
+source      5667  0.1  0.4 11682432 69360 ?      Sl   Jun17   0:36 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/bootstrap-fork --type=ptyHost --logsPath /home/source/.cursor-server/data/logs/20260617T211018
+root        1749  0.0  0.4 26002696 67704 tty7   Ssl+ Jun17   0:01 /usr/lib/xorg/Xorg -core :0 -seat seat0 -auth /var/run/lightdm/root/:0 -nolisten tcp vt7 -novtswitch
+source     34365  0.0  0.3 1003424 64632 ?       Sl   Jun17   0:01 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/extensions/css-language-features/server/dist/node/cssServerMain --node-ipc --clientProcessId=34177
+source     36188  0.0  0.3 11519172 60428 pts/3  Sl+  Jun17   0:00 node /home/source/SpiritOS/node_modules/.bin/../next/dist/bin/next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https --experimental-https-key ./certificates/spirit-dev-key.pem --experimental-https-cert ./certificates/spirit-dev.pem
+root        2004  0.3  0.3 3502380 57732 ?       Ssl  Jun17   1:28 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+source     34371  0.0  0.3 997224 57592 ?        Sl   Jun17   0:01 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/extensions/markdown-language-features/dist/serverWorkerMain --node-ipc --clientProcessId=34177
+root        1436  2.0  0.3 1421312 57316 ?       Ssl  Jun17   8:31 /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
+source     35549  0.0  0.3 1093292 54568 pts/0   Sl+  Jun17   0:00 npm run proxy:https:lan
+source      9241  0.0  0.3 1093012 54288 pts/2   Sl+  Jun17   0:00 npm run headroom:proxy
+source     34469  0.0  0.3 994536 54144 ?        Sl   Jun17   0:01 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/extensions/json-language-features/server/dist/node/jsonServerMain --node-ipc --clientProcessId=34177
+source     36168  0.0  0.3 1093412 53784 pts/3   Sl+  Jun17   0:00 npm run dev:https:lan
+source      4189  0.0  0.3 994036 53624 ?        Sl   Jun17   0:02 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/multiplex-server/123cc5ffb7498a31f4e8e7bd38493b242868aa65b5035edad965fd5c419c5c96.js b75301ab-8c9d-41c4-b4ff-91034184d839 0
+source     36067  0.0  0.3 1093036 53152 pts/3   Ssl+ Jun17   0:00 npm run dev:https:lan:watch
+root        6499  0.0  0.3 1293972 49628 ?       Ssl  Jun17   0:11 /usr/bin/casaos-app-management -c /etc/casaos/app-management.conf
+root        5863  0.0  0.3 660268 49492 ?        Sl   Jun17   0:04 searxng worker-1
+root        6675  0.0  0.2 620668 42892 ?        Ssl  Jun17   0:03 /usr/libexec/fwupd/fwupd
+source     35570  0.0  0.2 761392 42620 pts/0    Sl+  Jun17   0:00 node ./scripts/source-proxy-dev.mjs --https --lan
+source     37800  0.0  0.2 761388 42292 ?        Sl   Jun17   0:00 node /home/source/.local/bin/codex app-server --listen unix://
+source     47018  0.0  0.2 761388 42292 ?        Sl   Jun17   0:00 node /home/source/.local/bin/codex app-server proxy
+root         398  0.0  0.2  83584 39680 ?        S<s  Jun17   0:12 /usr/lib/systemd/systemd-journald
+root      279590  0.2  0.2 1259096 36024 ?       Ssl  03:46   0:01 /usr/bin/casaos -c /etc/casaos/casaos.conf
+root        1440  0.2  0.1 2320292 32204 ?       Ssl  Jun17   0:58 /usr/bin/containerd
+root        1446  0.3  0.1 1261888 30596 ?       Ssl  Jun17   1:23 /usr/bin/cloudflared --no-autoupdate tunnel run --token [REDACTED_SECRET]
+=== top cpu ===
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+source    285267 32.4  7.5 100143080 1225208 pts/3 Sl+ 03:51   1:25 next-server (v16.2.4)
+root        3049  9.2  2.0 273932300 331904 ?    Ssl  Jun17  37:34 /jellyfin/jellyfin
+source     43681  8.5  5.3 4966256 864196 pts/4  Sl+  Jun17  30:10 .venv-face-organizer/bin/python -u scripts/media/face_organizer.py --serve-review --source /DATA/yes --host 0.0.0.0 --port 8765 --ctx-id -1 --apply
+source    296855  6.8  0.0  21276 13552 ?        Ss   03:56   0:00 python3 -
+source     34177  4.1  3.2 97832784 522276 ?     Sl   Jun17  15:00 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node --dns-result-order=ipv4first --inspect-port=0 --experimental-network-inspection /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/bootstrap-fork --type=extensionHost --transformURIs --useHostProxy=false
+source      1888  3.5  0.5 196268 84196 ?        Sl   Jun17  14:39 smbd: client [10.0.0.126]
+root        1436  2.0  0.3 1421312 57316 ?       Ssl  Jun17   8:31 /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
+root      296804  2.0  0.0  14776 10572 ?        Ss   03:56   0:00 sshd: source [priv]
+source     14017  1.9  2.3 12078376 376868 ?     Sl   Jun17   7:44 /home/source/.zcode/server/node /home/source/.zcode/server/zcode-server.cjs
+source     37816  0.8  0.7 461444 125668 ?       Sl   Jun17   3:09 /usr/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex app-server --listen unix://
+source      9253  0.8  1.3 930436 223972 pts/2   Sl+  Jun17   3:19 /home/source/SpiritOS/.venv-headroom/bin/python3 /home/source/SpiritOS/.venv-headroom/bin/headroom proxy --host 127.0.0.1 --port 8797
+root        3073  0.7  1.2 909692 199932 ?       Ssl  Jun17   3:11 /usr/local/bin/python3.12 /usr/local/bin/uvicorn scout.main:app --host 0.0.0.0 --port 8077
+source      3436  0.6  0.4 807552 79332 ?        Ssl  Jun17   2:31 /home/ubuntu/faster-whisper-server/.venv/bin/python /home/ubuntu/faster-whisper-server/.venv/bin/uvicorn --factory faster_whisper_server.main:create_app
+source      4824  0.3  0.6 11814048 107012 ?     Sl   Jun17   1:35 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/server-main.js --start-server --host 127.0.0.1 --port 0 --connection-token-file /run/user/1000/cursor-remote-code.token.19454fe0852788c8224fe18079719738 --telemetry-level off --enable-remote-auto-shutdown --accept-server-license-terms
+root        2004  0.3  0.3 3502380 57732 ?       Ssl  Jun17   1:28 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+root        1446  0.3  0.1 1261888 30596 ?       Ssl  Jun17   1:23 /usr/bin/cloudflared --no-autoupdate tunnel run --token [REDACTED_SECRET]
+root        3062  0.3  7.1 7248196 1170572 ?     SLsl Jun17   1:22 /usr/local/bin/python /usr/local/bin/uvicorn main:app --host 0.0.0.0 --port 80
+avahi        934  0.3  0.0   8900  4312 ?        Ss   Jun17   1:14 avahi-daemon: running [source-server.local]
+source     35581  0.2  1.4 584580 237252 pts/0   Sl+  Jun17   0:59 /home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem
+root        1440  0.2  0.1 2320292 32204 ?       Ssl  Jun17   0:58 /usr/bin/containerd
+root      279590  0.2  0.2 1259096 36024 ?       Ssl  03:46   0:01 /usr/bin/casaos -c /etc/casaos/casaos.conf
+root        6641  0.2  0.1  59168 24496 ?        S    Jun17   0:51 python speech.py --xtts_device none
+source      5667  0.1  0.4 11682432 69360 ?      Sl   Jun17   0:36 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/bootstrap-fork --type=ptyHost --logsPath /home/source/.cursor-server/data/logs/20260617T211018
+root        1644  0.0  0.1 774160 22144 ?        Ssl  Jun17   0:19 /usr/bin/casaos-local-storage -c /etc/casaos/local-storage.conf
+root          17  0.0  0.0      0     0 ?        I    Jun17   0:19 [rcu_preempt]
+source     34188  0.0  1.2 11989540 207248 ?     Sl   Jun17   0:16 /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/node /home/source/.cursor-server/bin/linux-x64/5702c9cfca656d8710fad58402fe37f14345e3a0/out/bootstrap-fork --type=fileWatcher
+root        1790  0.0  0.0 104340  6332 ?        S    Jun17   0:18 smbd: notifyd .
+root        2897  0.0  0.0 1235412 9192 ?        Sl   Jun17   0:15 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 20ba507f2f53ede7721a4476162d9ce39fa346a287e21ea6584715067603d8e5 -address /run/containerd/containerd.sock
+root      278236  0.0  0.0      0     0 ?        I    03:44   0:00 [kworker/6:2-i915-unordered]
+root      271170  0.0  0.0      0     0 ?        I    03:33   0:00 [kworker/6:1-i915-unordered]
+root         398  0.0  0.2  83584 39680 ?        S<s  Jun17   0:12 /usr/lib/systemd/systemd-journald
+root        6499  0.0  0.3 1293972 49628 ?       Ssl  Jun17   0:11 /usr/bin/casaos-app-management -c /etc/casaos/app-management.conf
+root      294760  0.0  0.0      0     0 ?        I    03:55   0:00 [kworker/6:0-events]
+root        1503  0.0  0.1 1255780 24916 ?       Ssl  Jun17   0:09 /usr/bin/casaos-message-bus -c /etc/casaos/message-bus.conf
+source     34003  0.0  0.0  15388  7572 ?        S    Jun17   0:07 sshd: source@notty
+root        2892  0.0  0.0 1235604 7376 ?        Sl   Jun17   0:07 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 4955c93c2195fa2b6d79437fd8cb7fdbc5dae7f7a323d428cb0d7e7f211c9a89 -address /run/containerd/containerd.sock
+root        2890  0.0  0.0 1235348 7568 ?        Sl   Jun17   0:07 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 97882ee7c880d5e349b263f1f5e667843fd01395040ebf79111b9338fe950b73 -address /run/containerd/containerd.sock
+root        2908  0.0  0.0 1235348 7376 ?        Sl   Jun17   0:07 /usr/bin/containerd-shim-runc-v2 -namespace moby -id dcce797e03cd7d65a82ceceecd644303b42f665f666dad45a54decea6888c70c -address /run/containerd/containerd.sock
+root        2895  0.0  0.0 1235604 7632 ?        Sl   Jun17   0:07 /usr/bin/containerd-shim-runc-v2 -namespace moby -id 1c1c012e5446db884aae93e5d39995ad793eab48e54afd8b9eaa575aa6e89546 -address /run/containerd/containerd.sock
+=== ports ===
+LISTEN 0      2048                       0.0.0.0:8787       0.0.0.0:*    users:(("python",pid=35581,fd=14))
+LISTEN 0      511                        0.0.0.0:3000       0.0.0.0:*    users:(("next-server (v1",pid=285267,fd=19))
+LISTEN 0      2048                     127.0.0.1:8797       0.0.0.0:*    users:(("headroom",pid=9253,fd=8))
+LISTEN 0      4096                       0.0.0.0:8096       0.0.0.0:*
+LISTEN 0      4096                     127.0.0.1:11434      0.0.0.0:*
+LISTEN 0      4096                          [::]:8096          [::]:*
+=== tmux ===
+face-organizer-8765: 1 windows (created Wed Jun 17 22:01:46 2026)
+source-proxy-lan: 1 windows (created Wed Jun 17 21:57:57 2026)
+spiritos-lan: 1 windows (created Wed Jun 17 21:58:12 2026)
+=== failed units ===
+  UNIT                         LOAD   ACTIVE SUB    DESCRIPTION
+● mnt-spirit\x2dprojects.mount loaded failed failed /mnt/spirit-projects
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+1 loaded units listed.
+=== key service status ===
+● ollama.service - Ollama Service
+     Loaded: loaded (/etc/systemd/system/ollama.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2026-06-17 21:08:13 EDT; 6h ago
+   Main PID: 1448 (ollama)
+      Tasks: 13 (limit: 18962)
+     Memory: 37.8M (peak: 441.6M)
+        CPU: 2.766s
+     CGroup: /system.slice/ollama.service
+             └─1448 /usr/local/bin/ollama serve
+
+Jun 17 21:09:04 source-server ollama[1448]: time=2026-06-17T21:09:04.909-04:00 level=INFO source=runner.go:106 msg="experimental Vulkan support disabled.  To enable, set OLLAMA_VULKAN=1"
+Jun 17 21:09:04 source-server ollama[1448]: time=2026-06-17T21:09:04.909-04:00 level=INFO source=server.go:444 msg="starting runner" cmd="/usr/local/bin/ollama runner --ollama-engine --port 35011"
+Jun 17 21:09:04 source-server ollama[1448]: time=2026-06-17T21:09:04.909-04:00 level=INFO source=server.go:444 msg="starting runner" cmd="/usr/local/bin/ollama runner --ollama-engine --port 43967"
+Jun 17 21:09:05 source-server ollama[1448]: time=2026-06-17T21:09:05.158-04:00 level=INFO source=types.go:42 msg="inference compute" id=GPU-bd0daa29-1aa2-b006-4f01-a3b10d85b36a filter_id="" library=CUDA compute=8.6 name=CUDA0 description="NVIDIA GeForce RTX 3060" libdirs=ollama,cuda_v13 driver=13.0 pci_id=0000:01:00.0 type=discrete total="12.0 GiB" available="11.6 GiB"
+Jun 17 21:09:05 source-server ollama[1448]: time=2026-06-17T21:09:05.158-04:00 level=INFO source=routes.go:1860 msg="vram-based default context" total_vram="12.0 GiB" default_num_ctx=4096
+Jun 17 21:47:31 source-server ollama[1448]: [GIN] 2026/06/17 - 21:47:31 | 200 |   112.54033ms |       127.0.0.1 | HEAD     "/"
+Jun 17 21:47:31 source-server ollama[1448]: [GIN] 2026/06/17 - 21:47:31 | 200 |  184.986867ms |       127.0.0.1 | GET      "/api/tags"
+Jun 17 21:53:51 source-server ollama[1448]: [GIN] 2026/06/17 - 21:53:51 | 200 |     2.54148ms |       127.0.0.1 | GET      "/api/tags"
+Jun 17 21:58:09 source-server ollama[1448]: [GIN] 2026/06/17 - 21:58:09 | 200 |     1.39627ms |       127.0.0.1 | GET      "/api/tags"
+Jun 17 22:13:55 source-server ollama[1448]: [GIN] 2026/06/17 - 22:13:55 | 200 |   25.427924ms |       127.0.0.1 | GET      "/api/tags"
+
+● docker.service - Docker Application Container Engine
+     Loaded: loaded (/usr/lib/systemd/system/docker.service; enabled; preset: enabled)
+    Drop-In: /etc/systemd/system/docker.service.d
+             └─override.conf
+     Active: active (running) since Wed 2026-06-17 21:11:29 EDT; 6h ago
+TriggeredBy: ● docker.socket
+       Docs: https://docs.docker.com
+   Main PID: 2004 (dockerd)
+      Tasks: 145
+     Memory: 105.7M (peak: 181.3M swap: 17.3M swap peak: 18.6M)
+        CPU: 1min 34.831s
+     CGroup: /system.slice/docker.service
+             ├─2004 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+             ├─3152 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8080 -container-ip 172.18.0.2 -container-port 8080 -use-listen-fd
+             ├─3159 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8080 -container-ip 172.18.0.2 -container-port 8080 -use-listen-fd
+             ├─3195 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 5200 -container-ip 172.18.0.3 -container-port 8000 -use-listen-fd
+             ├─3204 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 5200 -container-ip 172.18.0.3 -container-port 8000 -use-listen-fd
+             ├─3241 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 5432 -container-ip 172.18.0.4 -container-port 5432 -use-listen-fd
+             ├─3248 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 5432 -container-ip 172.18.0.4 -container-port 5432 -use-listen-fd
+             ├─3270 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8096 -container-ip 172.20.0.2 -container-port 8096 -use-listen-fd
+             ├─3277 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8096 -container-ip 172.20.0.2 -container-port 8096 -use-listen-fd
+             ├─3301 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8077 -container-ip 172.18.0.5 -container-port 8077 -use-listen-fd
+             ├─3310 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8077 -container-ip 172.18.0.5 -container-port 8077 -use-listen-fd
+             ├─3350 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8020 -container-ip 172.18.0.6 -container-port 80 -use-listen-fd
+             ├─3358 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8020 -container-ip 172.18.0.6 -container-port 80 -use-listen-fd
+             ├─6213 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8000 -container-ip 172.18.0.7 -container-port 8000 -use-listen-fd
+             └─6220 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8000 -container-ip 172.18.0.7 -container-port 8000 -use-listen-fd
+
+Jun 18 03:54:17 source-server dockerd[2004]: time="2026-06-18T03:54:17.482452915-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 03:54:47 source-server dockerd[2004]: time="2026-06-18T03:54:47.542581650-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 03:54:47 source-server dockerd[2004]: time="2026-06-18T03:54:47.542580683-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 03:54:47 source-server dockerd[2004]: time="2026-06-18T03:54:47.544019425-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 03:55:17 source-server dockerd[2004]: time="2026-06-18T03:55:17.603043934-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 03:55:17 source-server dockerd[2004]: time="2026-06-18T03:55:17.603048059-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 03:55:17 source-server dockerd[2004]: time="2026-06-18T03:55:17.604517596-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 03:55:47 source-server dockerd[2004]: time="2026-06-18T03:55:47.678472135-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 03:55:47 source-server dockerd[2004]: time="2026-06-18T03:55:47.678516711-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 03:55:47 source-server dockerd[2004]: time="2026-06-18T03:55:47.679711219-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+=== docker ps ===
+NAMES                    STATUS                   PORTS
+spirit-jellyfin          Up 7 hours (healthy)     0.0.0.0:8096->8096/tcp, [::]:8096->8096/tcp
+scout_v0_1               Up 7 hours (healthy)     0.0.0.0:8077->8077/tcp, [::]:8077->8077/tcp
+spirit-searxng           Up 7 hours (healthy)     0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+source-postgres          Up 7 hours (healthy)     0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+spirit-openedai-speech   Up 7 hours (healthy)     0.0.0.0:5200->8000/tcp, [::]:5200->8000/tcp
+spirit-whisper           Up 7 hours (unhealthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+spirit-xtts              Up 7 hours (healthy)     0.0.0.0:8020->80/tcp, [::]:8020->80/tcp
+
+[exit 0]

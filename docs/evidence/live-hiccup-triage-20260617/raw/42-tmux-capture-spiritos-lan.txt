@@ -1,0 +1,26 @@
+
+> spirit-os@0.1.0 dev:https:lan:watch
+> bash ./scripts/spiritos-lan-watchdog.sh
+
+[2026-06-17T21:58:13-04:00] watchdog starting in /home/source/SpiritOS (health=h
+ttps://127.0.0.1:3000/ grace=180s)
+[2026-06-17T21:58:14-04:00] clearing Next dev cache before frontend start
+[2026-06-17T21:58:14-04:00] starting frontend: npm run dev:https:lan
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[exit 0]

@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-06-17T22:15:47.020103",
+  "evidence_root": "docs/evidence/repo-cleanup-manifest-watchers-20260617",
+  "repo": "/home/source/SpiritOS",
+  "head": "158b489fcf813a701f8a7a1bf3f8be5770511448",
+  "total_classified": 207,
+  "modified_tracked": 34,
+  "untracked": 173,
+  "bucket_counts": {
+    "J": 2,
+    "A": 17,
+    "I": 3,
+    "E": 7,
+    "H": 13,
+    "B": 2,
+    "G": 51,
+    "F": 91,
+    "D": 5,
+    "C": 16
+  },
+  "verdicts": {
+    "dirty_tree_split": "PARTIAL-GO",
+    "cleanup_readiness": "PARTIAL-GO",
+    "watcher_dry_run": "PARTIAL-GO",
+    "runtime_current_status": "PARTIAL-GO"
+  },
+  "actions_executed": [
+    "created evidence folder",
+    "wrote reports/manifests/drafts under evidence folder",
+    "ran read-only git/runtime checks"
+  ],
+  "actions_not_executed": [
+    "cleanup",
+    "delete",
+    "move/archive",
+    "repomix patch apply",
+    "watcher install",
+    "service restart"
+  ]
+}

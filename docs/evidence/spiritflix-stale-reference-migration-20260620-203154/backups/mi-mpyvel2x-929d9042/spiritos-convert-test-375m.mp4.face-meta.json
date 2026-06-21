@@ -1,0 +1,315 @@
+{
+  "schema": "media-face-organizer/v1",
+  "video_path": "/DATA/yes/mi-mpyvel2x-929d9042/spiritos-convert-test-375m.mkv",
+  "generated_at": "2026-06-17T10:00:50+00:00",
+  "dry_run": false,
+  "verification_needed": true,
+  "performers": [
+    {
+      "id": null,
+      "name": "unknown performer",
+      "confidence": 0.2503,
+      "similarity": 0.2503,
+      "status": "unknown",
+      "verification_needed": true,
+      "label": "unknown performer - verification needed",
+      "face_crop_path": "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frame-03-face-01.jpg",
+      "original_frame_path": "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frame-03.jpg",
+      "bbox": [
+        774.75,
+        -70.03,
+        1054.13,
+        295.86
+      ],
+      "detection_score": 0.7881,
+      "model_version": "insightface:buffalo_l",
+      "supporting_faces": 5
+    }
+  ],
+  "metadata_hints": {
+    "generated_at": "2026-06-17T10:00:48+00:00",
+    "status": "candidate_hints_only",
+    "candidate_names": [
+      {
+        "name": "Spiritos",
+        "source": "filename",
+        "confidence": 0.45,
+        "raw": "spiritos",
+        "variants": [
+          "Spiritos"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "Convert",
+        "source": "filename",
+        "confidence": 0.45,
+        "raw": "convert",
+        "variants": [
+          "Convert"
+        ],
+        "evidence_role": "filename_hint"
+      },
+      {
+        "name": "375m",
+        "source": "filename",
+        "confidence": 0.45,
+        "raw": "375m",
+        "variants": [
+          "375m"
+        ],
+        "evidence_role": "filename_hint"
+      }
+    ],
+    "text_verification_queries": [
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Spiritos\"",
+        "url": "https://yandex.com/search/?text=%22Spiritos%22",
+        "candidate_name": "Spiritos",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Spiritos\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Spiritos%22%20onlyfans",
+        "candidate_name": "Spiritos",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Spiritos\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Spiritos%22%20site%3Apimpbunny.com",
+        "candidate_name": "Spiritos",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Spiritos\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Spiritos%22%20site%3Acoomer.st",
+        "candidate_name": "Spiritos",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Spiritos",
+        "url": "https://coomer.st/search?q=Spiritos",
+        "candidate_name": "Spiritos",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"Convert\"",
+        "url": "https://yandex.com/search/?text=%22Convert%22",
+        "candidate_name": "Convert",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"Convert\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22Convert%22%20onlyfans",
+        "candidate_name": "Convert",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"Convert\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22Convert%22%20site%3Apimpbunny.com",
+        "candidate_name": "Convert",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"Convert\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22Convert%22%20site%3Acoomer.st",
+        "candidate_name": "Convert",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "Convert",
+        "url": "https://coomer.st/search?q=Convert",
+        "candidate_name": "Convert",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex",
+        "query": "\"375m\"",
+        "url": "https://yandex.com/search/?text=%22375m%22",
+        "candidate_name": "375m",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-url",
+        "label": "Yandex OnlyFans",
+        "query": "\"375m\" onlyfans",
+        "url": "https://yandex.com/search/?text=%22375m%22%20onlyfans",
+        "candidate_name": "375m",
+        "candidate_source": "filename",
+        "evidence_role": "manual_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex PimpBunny",
+        "query": "\"375m\" site:pimpbunny.com",
+        "url": "https://yandex.com/search/?text=%22375m%22%20site%3Apimpbunny.com",
+        "candidate_name": "375m",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "yandex-site-url",
+        "label": "Yandex Coomer",
+        "query": "\"375m\" site:coomer.st",
+        "url": "https://yandex.com/search/?text=%22375m%22%20site%3Acoomer.st",
+        "candidate_name": "375m",
+        "candidate_source": "filename",
+        "evidence_role": "site_scoped_text_search",
+        "text_only": true
+      },
+      {
+        "provider": "coomer-url",
+        "label": "Coomer",
+        "query": "375m",
+        "url": "https://coomer.st/search?q=375m",
+        "candidate_name": "375m",
+        "candidate_source": "filename",
+        "evidence_role": "site_text_search",
+        "text_only": true
+      }
+    ],
+    "watermark_ocr": [
+      {
+        "text": ".mm",
+        "confidence": 0.7,
+        "frame_path": "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-01.jpg",
+        "ocr_image_path": "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/.ocr-regions/frame-01-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3530.322509765625,
+            310.6136474609375
+          ],
+          [
+            3809.0322265625,
+            395.1477355957031
+          ],
+          [
+            3780.0,
+            497.375
+          ],
+          [
+            3501.290283203125,
+            410.875
+          ]
+        ]
+      },
+      {
+        "text": "183",
+        "confidence": 0.517,
+        "frame_path": "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-02.jpg",
+        "ocr_image_path": "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/.ocr-regions/frame-02-bottom_strip.jpg",
+        "region": "bottom_strip",
+        "box": [
+          [
+            3435.48388671875,
+            249.6704559326172
+          ],
+          [
+            3592.258056640625,
+            285.05682373046875
+          ],
+          [
+            3572.903076171875,
+            367.625
+          ],
+          [
+            3418.064453125,
+            332.2386474609375
+          ]
+        ]
+      }
+    ],
+    "providers": {
+      "filename": {
+        "enabled": true
+      },
+      "watermark_ocr": {
+        "enabled": true,
+        "configured": true
+      },
+      "papi": {
+        "enabled": false,
+        "configured": false
+      },
+      "apify": {
+        "enabled": false,
+        "reason": "provider hook reserved; needs explicit token and dataset mapping"
+      },
+      "ofauth": {
+        "enabled": false,
+        "reason": "provider hook reserved for authorized account metadata only"
+      }
+    },
+    "biometric_boundary": "Internet metadata is not imported as face identity. Confirm a local crop before adding embeddings."
+  },
+  "suggested_organization": {
+    "eligible": false,
+    "strategy": "none",
+    "target_dir": null,
+    "reason": "requires verification or has too many/too few high-confidence performers"
+  },
+  "frames_analyzed": 6,
+  "review_frames": [
+    "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-01.jpg",
+    "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-02.jpg",
+    "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-03.jpg",
+    "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-04.jpg",
+    "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-05.jpg",
+    "/DATA/yes/mi-mpyvel2x-929d9042/.face-review/spiritos-convert-test-375m/frames/frame-06.jpg"
+  ],
+  "faces_detected": 5,
+  "faces_rejected": [],
+  "duration_seconds": 594.484,
+  "processing_time_seconds": 62.534,
+  "model_version": "insightface:buffalo_l",
+  "thresholds": {
+    "auto": 0.8,
+    "possible": 0.55
+  }
+}

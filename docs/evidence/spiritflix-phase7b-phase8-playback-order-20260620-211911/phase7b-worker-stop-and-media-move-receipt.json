@@ -1,0 +1,64 @@
+[
+  {
+    "action": "sigterm",
+    "pid": 3848932,
+    "name": "active ffmpeg libx265",
+    "ok": true
+  },
+  {
+    "action": "sigterm",
+    "pid": 1856187,
+    "name": "media-ingest-worker node",
+    "ok": true
+  },
+  {
+    "action": "stopped_after_sigterm",
+    "pid": 3848932,
+    "name": "active ffmpeg libx265"
+  },
+  {
+    "action": "stopped_after_sigterm",
+    "pid": 1856187,
+    "name": "media-ingest-worker node"
+  },
+  {
+    "action": "moved_lock_or_pid",
+    "from": "/mnt/spirit-8tb/media-processing/logs/media-ingest-worker.lock",
+    "to": "/mnt/spirit-8tb/media-originals/retired-dell-mkv-worker-20260620-211911/logs/media-ingest-worker.lock"
+  },
+  {
+    "action": "moved_lock_or_pid",
+    "from": "/mnt/spirit-8tb/media-processing/logs/media-ingest-worker.pid",
+    "to": "/mnt/spirit-8tb/media-originals/retired-dell-mkv-worker-20260620-211911/logs/media-ingest-worker.pid"
+  },
+  {
+    "action": "copied_preserved_mp4_to_live",
+    "from": "/mnt/spirit-8tb/media-originals/keep-for-30-days/yes/mi-mqn1p1zn-32ba330e/video-2026-06-19T10-42-52.202Z.mp4",
+    "to": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.mp4"
+  },
+  {
+    "action": "moved_live_mkv_artifact",
+    "from": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.mkv",
+    "to": "/mnt/spirit-8tb/media-originals/retired-dell-mkv-worker-20260620-211911/live-mkv-artifact/video-2026-06-19T10-42-52.202Z.mkv"
+  },
+  {
+    "action": "moved_live_mkv_artifact",
+    "from": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.mkv.media-ingest.json",
+    "to": "/mnt/spirit-8tb/media-originals/retired-dell-mkv-worker-20260620-211911/live-mkv-artifact/video-2026-06-19T10-42-52.202Z.mkv.media-ingest.json"
+  },
+  {
+    "action": "moved_live_mkv_artifact",
+    "from": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-42-52.202Z.mkv.face-meta.json",
+    "to": "/mnt/spirit-8tb/media-originals/retired-dell-mkv-worker-20260620-211911/live-mkv-artifact/video-2026-06-19T10-42-52.202Z.mkv.face-meta.json"
+  },
+  {
+    "action": "restored_active_source_mp4_to_live",
+    "from": "/mnt/spirit-8tb/media-processing/active/mi-mqn1p2rn-9f81ddb3/video-2026-06-19T10-12-48.740Z.mp4",
+    "to": "/mnt/spirit-8tb/media/yes/video-2026-06-19T10-12-48.740Z.mp4"
+  },
+  {
+    "action": "moved_active_job_residue",
+    "from": "/mnt/spirit-8tb/media-processing/active/mi-mqn1p2rn-9f81ddb3",
+    "to": "/mnt/spirit-8tb/media-originals/retired-dell-mkv-worker-20260620-211911/active-job-quarantine/mi-mqn1p2rn-9f81ddb3"
+  }
+]

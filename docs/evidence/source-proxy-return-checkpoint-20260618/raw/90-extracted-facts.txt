@@ -1,0 +1,149 @@
+=== status counts ===
+staged=0
+tracked_dirty=30
+untracked=19
+total=49
+source_proxy_dirty=0
+=== status source proxy ===
+=== raw grep liveness HTTP ===
+=== raw grep host statuses ===
+● spiritos-health-snapshot.timer - Run SpiritOS health snapshot periodically
+     Loaded: loaded (/etc/systemd/system/spiritos-health-snapshot.timer; enabled; preset: enabled)
+     Active: active (waiting) since Thu 2026-06-18 19:44:21 EDT; 38min ago
+   Triggers: ● spiritos-health-snapshot.service
+Jun 18 19:44:21 source-server systemd[1]: Started spiritos-health-snapshot.timer - Run SpiritOS health snapshot periodically.
+○ spiritos-health-snapshot.service - SpiritOS health snapshot (safe read-only)
+     Loaded: loaded (/etc/systemd/system/spiritos-health-snapshot.service; static)
+     Active: inactive (dead) since Thu 2026-06-18 20:15:15 EDT; 7min ago
+TriggeredBy: ● spiritos-health-snapshot.timer
+    Process: 1021459 ExecStart=/home/source/SpiritOS/scripts/spiritos-health/spiritos-host-health-snapshot.sh (code=exited, status=0/SUCCESS)
+    Process: 1021479 ExecStart=/home/source/SpiritOS/scripts/spiritos-health/spiritos-service-health-snapshot.sh (code=exited, status=0/SUCCESS)
+Jun 18 20:15:11 source-server systemd[1]: Starting spiritos-health-snapshot.service - SpiritOS health snapshot (safe read-only)...
+Jun 18 20:15:11 source-server spiritos-host-health-snapshot.sh[1021459]: /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T20-15-11-04-00.log
+Jun 18 20:15:12 source-server spiritos-service-health-snapshot.sh[1021479]: /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T20-15-11-04-00.log
+Jun 18 20:15:15 source-server systemd[1]: spiritos-health-snapshot.service: Deactivated successfully.
+Jun 18 20:15:15 source-server systemd[1]: Finished spiritos-health-snapshot.service - SpiritOS health snapshot (safe read-only).
+Jun 18 20:15:15 source-server systemd[1]: spiritos-health-snapshot.service: Consumed 3.268s CPU time.
+○ spiritos-boot-postmortem.service - SpiritOS boot postmortem snapshot (safe read-only)
+     Loaded: loaded (/etc/systemd/system/spiritos-boot-postmortem.service; enabled; preset: enabled)
+     Active: inactive (dead) since Thu 2026-06-18 19:45:47 EDT; 36min ago
+    Process: 997753 ExecStart=/home/source/SpiritOS/scripts/spiritos-health/spiritos-boot-postmortem.sh (code=exited, status=0/SUCCESS)
+Jun 18 19:45:46 source-server systemd[1]: Starting spiritos-boot-postmortem.service - SpiritOS boot postmortem snapshot (safe read-only)...
+Jun 18 19:45:47 source-server spiritos-boot-postmortem.sh[997753]: /mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-45-46-04-00.log
+Jun 18 19:45:47 source-server systemd[1]: spiritos-boot-postmortem.service: Deactivated successfully.
+Jun 18 19:45:47 source-server systemd[1]: Finished spiritos-boot-postmortem.service - SpiritOS boot postmortem snapshot (safe read-only).
+● mnt-spirit\x2dprojects.mount loaded failed failed /mnt/spirit-projects
+2026-06-18 19:39 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T19-39-22-04-00.log
+2026-06-18 19:39 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T19-39-37-04-00.log
+2026-06-18 19:40 /mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-39-39-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/locks/spiritos-boot-postmortem.sh.lock
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-boot-postmortem.sh.2026-06-18T19-45-46-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T19-45-10-04-00.log
+2026-06-18 19:45 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T19-45-10-04-00.log
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/locks/spiritos-host-health-snapshot.sh.lock
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/locks/spiritos-service-health-snapshot.sh.lock
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/spiritos-host-health-snapshot.sh.2026-06-18T20-15-11-04-00.log
+2026-06-18 20:15 /mnt/spirit-8tb/spiritos-health/spiritos-service-health-snapshot.sh.2026-06-18T20-15-11-04-00.log
+Jun 18 17:13:43 source-server systemd[1]: casaos.service: Failed with result 'exit-code'.
+Jun 18 17:13:43 source-server systemd[1]: casaos.service: Failed with result 'exit-code'.
+Jun 18 17:13:43 source-server systemd[1]: Failed to start casaos.service - CasaOS Main Service.
+Jun 18 19:44:21 source-server systemd[1]: spiritos-health-snapshot.service: Failed with result 'exit-code'.
+Jun 18 19:44:21 source-server systemd[1]: Failed to start spiritos-health-snapshot.service - SpiritOS health snapshot (safe read-only).
+Jun 18 19:44:21 source-server systemd[1]: spiritos-health-snapshot.service: Failed with result 'exit-code'.
+Jun 18 19:44:21 source-server systemd[1]: Failed to start spiritos-health-snapshot.service - SpiritOS health snapshot (safe read-only).
+=== OOM/crash/stall grep last 4h ===
+Jun 18 16:22:45 source-server dockerd[2004]: time="2026-06-18T16:22:45.168925665-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:22:45 source-server dockerd[2004]: time="2026-06-18T16:22:45.168929233-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:22:45 source-server dockerd[2004]: time="2026-06-18T16:22:45.170111773-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:23:15 source-server dockerd[2004]: time="2026-06-18T16:23:15.247480310-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:23:15 source-server dockerd[2004]: time="2026-06-18T16:23:15.247503141-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:23:15 source-server dockerd[2004]: time="2026-06-18T16:23:15.248560329-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:23:45 source-server dockerd[2004]: time="2026-06-18T16:23:45.319676300-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:23:45 source-server dockerd[2004]: time="2026-06-18T16:23:45.319684196-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:23:45 source-server dockerd[2004]: time="2026-06-18T16:23:45.320772926-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:24:15 source-server dockerd[2004]: time="2026-06-18T16:24:15.396144455-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:24:15 source-server dockerd[2004]: time="2026-06-18T16:24:15.396146263-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:24:15 source-server dockerd[2004]: time="2026-06-18T16:24:15.397298985-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:24:45 source-server dockerd[2004]: time="2026-06-18T16:24:45.485055149-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:24:45 source-server dockerd[2004]: time="2026-06-18T16:24:45.485055153-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:24:45 source-server dockerd[2004]: time="2026-06-18T16:24:45.486917111-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:25:15 source-server dockerd[2004]: time="2026-06-18T16:25:15.557138162-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:25:15 source-server dockerd[2004]: time="2026-06-18T16:25:15.557155328-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:25:15 source-server dockerd[2004]: time="2026-06-18T16:25:15.558289487-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:25:45 source-server dockerd[2004]: time="2026-06-18T16:25:45.615251676-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:25:45 source-server dockerd[2004]: time="2026-06-18T16:25:45.615293256-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:25:45 source-server dockerd[2004]: time="2026-06-18T16:25:45.616434433-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:26:15 source-server dockerd[2004]: time="2026-06-18T16:26:15.728069191-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:26:15 source-server dockerd[2004]: time="2026-06-18T16:26:15.728094274-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:26:15 source-server dockerd[2004]: time="2026-06-18T16:26:15.729167990-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:26:45 source-server dockerd[2004]: time="2026-06-18T16:26:45.798814667-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:26:45 source-server dockerd[2004]: time="2026-06-18T16:26:45.798851343-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:26:45 source-server dockerd[2004]: time="2026-06-18T16:26:45.799925754-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:27:15 source-server dockerd[2004]: time="2026-06-18T16:27:15.923864158-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:27:15 source-server dockerd[2004]: time="2026-06-18T16:27:15.923864209-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:27:15 source-server dockerd[2004]: time="2026-06-18T16:27:15.926231642-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:27:46 source-server dockerd[2004]: time="2026-06-18T16:27:46.017003671-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:27:46 source-server dockerd[2004]: time="2026-06-18T16:27:46.017013804-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:27:46 source-server dockerd[2004]: time="2026-06-18T16:27:46.018143388-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:28:16 source-server dockerd[2004]: time="2026-06-18T16:28:16.091107109-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:28:16 source-server dockerd[2004]: time="2026-06-18T16:28:16.091114044-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:28:16 source-server dockerd[2004]: time="2026-06-18T16:28:16.092378982-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:28:46 source-server dockerd[2004]: time="2026-06-18T16:28:46.179981609-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:28:46 source-server dockerd[2004]: time="2026-06-18T16:28:46.179993355-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:28:46 source-server dockerd[2004]: time="2026-06-18T16:28:46.181241589-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:29:16 source-server dockerd[2004]: time="2026-06-18T16:29:16.249530580-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:29:16 source-server dockerd[2004]: time="2026-06-18T16:29:16.249588573-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:29:16 source-server dockerd[2004]: time="2026-06-18T16:29:16.251811014-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:29:46 source-server dockerd[2004]: time="2026-06-18T16:29:46.337707623-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:29:46 source-server dockerd[2004]: time="2026-06-18T16:29:46.337712455-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:29:46 source-server dockerd[2004]: time="2026-06-18T16:29:46.338945340-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:30:16 source-server dockerd[2004]: time="2026-06-18T16:30:16.437472189-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:30:16 source-server dockerd[2004]: time="2026-06-18T16:30:16.437487866-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:30:16 source-server dockerd[2004]: time="2026-06-18T16:30:16.438780199-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:30:46 source-server dockerd[2004]: time="2026-06-18T16:30:46.511070465-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:30:46 source-server dockerd[2004]: time="2026-06-18T16:30:46.511101396-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:30:46 source-server dockerd[2004]: time="2026-06-18T16:30:46.512557039-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:31:16 source-server dockerd[2004]: time="2026-06-18T16:31:16.565632610-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:31:16 source-server dockerd[2004]: time="2026-06-18T16:31:16.565639159-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:31:16 source-server dockerd[2004]: time="2026-06-18T16:31:16.566716495-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:31:46 source-server dockerd[2004]: time="2026-06-18T16:31:46.652185800-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:31:46 source-server dockerd[2004]: time="2026-06-18T16:31:46.652186114-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:31:46 source-server dockerd[2004]: time="2026-06-18T16:31:46.653465901-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:32:16 source-server dockerd[2004]: time="2026-06-18T16:32:16.753867884-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:32:16 source-server dockerd[2004]: time="2026-06-18T16:32:16.753864056-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:32:16 source-server dockerd[2004]: time="2026-06-18T16:32:16.755078997-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:32:46 source-server dockerd[2004]: time="2026-06-18T16:32:46.849905176-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:32:46 source-server dockerd[2004]: time="2026-06-18T16:32:46.849905194-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:32:46 source-server dockerd[2004]: time="2026-06-18T16:32:46.850985017-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:33:16 source-server dockerd[2004]: time="2026-06-18T16:33:16.921602114-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:33:16 source-server dockerd[2004]: time="2026-06-18T16:33:16.921618514-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:33:16 source-server dockerd[2004]: time="2026-06-18T16:33:16.922905086-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:33:46 source-server dockerd[2004]: time="2026-06-18T16:33:46.995434112-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:33:46 source-server dockerd[2004]: time="2026-06-18T16:33:46.995467011-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:33:46 source-server dockerd[2004]: time="2026-06-18T16:33:46.996718129-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:34:17 source-server dockerd[2004]: time="2026-06-18T16:34:17.063903389-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:34:17 source-server dockerd[2004]: time="2026-06-18T16:34:17.063963000-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:34:17 source-server dockerd[2004]: time="2026-06-18T16:34:17.065216451-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+Jun 18 16:34:47 source-server dockerd[2004]: time="2026-06-18T16:34:47.145901437-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stdout
+Jun 18 16:34:47 source-server dockerd[2004]: time="2026-06-18T16:34:47.145916217-04:00" level=error msg="copy stream failed" error="reading from a closed fifo" stream=stderr
+Jun 18 16:34:47 source-server dockerd[2004]: time="2026-06-18T16:34:47.147304298-04:00" level=warning msg="Health check for container 892c03f267e642503edabbdd3a17dd78e410aea368697db793ca020a3d39169e error: OCI runtime exec failed: exec failed: unable to start container process: exec: \"curl\": executable file not found in $PATH"
+=== raw grep models ===
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:NAME                                                     ID              SIZE      MODIFIED
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:gemma3n:e4b                                              15cb39fd9394    7.5 GB    8 days ago
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:hermes4:latest                                           3e79497c9643    9.0 GB    2 weeks ago
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M    ce5cb56a7898    9.0 GB    2 weeks ago
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:hermes3:8b-abliterated                                   621eb9c2e65e    4.7 GB    3 weeks ago
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:qwen2.5-coder:7b                                         dae161e27b0e    4.7 GB    4 weeks ago
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:llama3.1:8b                                              46e0c10c039e    4.9 GB    4 weeks ago
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:llama3:latest                                            365c0bd3c000    4.7 GB    2 months ago
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:NAME    ID    SIZE    PROCESSOR    CONTEXT    UNTIL
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:/mnt/spirit-8tb/ollama-models
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:/mnt/spirit-8tb/ollama-models/models
+docs/evidence/source-proxy-return-checkpoint-20260618/raw/40-model-inventory.txt:Filesystem      Size  Used Avail Use% Mounted on
+=== openapi safe status paths ===
+/healthcheck get
+/v1/cartographer/live-state get
+/v1/cartographer/status get
+/v1/decisions/model-lanes/preview post
+/v1/models get
+/v1/self/status get

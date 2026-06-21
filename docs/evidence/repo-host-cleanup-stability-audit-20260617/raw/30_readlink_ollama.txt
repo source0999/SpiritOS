@@ -1,0 +1,4 @@
+$ readlink -f /usr/share/ollama/.ollama || true
+# rc=0
+
+/mnt/spirit-8tb/ollama-models

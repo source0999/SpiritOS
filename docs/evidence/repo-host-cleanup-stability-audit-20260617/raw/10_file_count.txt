@@ -1,0 +1,4 @@
+$ find . -type f | wc -l
+# rc=0
+
+219798
