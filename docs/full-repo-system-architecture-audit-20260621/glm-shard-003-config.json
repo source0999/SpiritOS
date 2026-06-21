@@ -1,0 +1,42 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": { "maxFileSize": 300000 },
+  "output": {
+    "filePath": "docs/full-repo-system-architecture-audit-20260621/glm-full-repo-freeze-20260621-shard-003.xml",
+    "style": "xml",
+    "parsableStyle": true,
+    "compress": true,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    "truncateBase64": true,
+    "topFilesLength": 10,
+    "headerText": "GLM full-repo freeze shard 3/3 — ARCHITECTURE DOCS: _blueprints/** + top-level *.md plan docs + docs/source-proxy-human-brain pivot + docs/context-export + key cartographer docs. Excludes evidence dumps, receipts, traces, handoff, media backups.",
+    "git": { "sortByChanges": true, "sortByChangesMaxCommits": 80, "includeDiffs": false, "includeLogs": false }
+  },
+  "include": [
+    "_blueprints/**/*.md",
+    "_blueprints/**/*.json",
+    "*.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/**/*.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/**/*.json",
+    "docs/context-export/**",
+    "docs/cartographer-live-receipts/**/*.md",
+    "docs/media/**/*.md",
+    "docs/dependency-audit*.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "docs/evidence/**",
+      "docs/handoff/**",
+      "docs/full-repo-system-architecture-audit-20260621/**",
+      "docs/source-proxy-system-freeze-audit-20260621/**",
+      "**/__pycache__/**", "**/*.log", "**/*.sqlite", "**/*.db",
+      "*.xml", "repomix-output*", "nohup.out"
+    ]
+  },
+  "security": { "enableSecurityCheck": true },
+  "tokenCount": { "encoding": "o200k_base" }
+}

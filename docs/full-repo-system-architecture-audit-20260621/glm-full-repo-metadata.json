@@ -1,0 +1,128 @@
+{
+  "reviewer": "GLM",
+  "audit_type": "full_repo_second_audit_against_supplied_benchmark",
+  "created_at": "2026-06-21T14:11:22-04:00",
+  "host": "Spirit",
+  "repo_path": "Z:\\ (~/SpiritOS on the Dell/source-server; git working root)",
+  "branch": "master",
+  "head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
+  "staged_files_count": 0,
+  "dirty_paths_count_note": "dirty tree GREW during the audit window due to concurrent external edits (Britton's active Cursor session editing SpiritFlix); GLM caused NONE of these — all GLM commands were read-only on source (git read, curl, repomix which only reads inputs, sha256sum, python validation). Timestamps confirm SpiritFlix files changed 14:39-14:44 while GLM's metadata.json was written at 14:38.",
+  "dirty_paths_count_at_start": 2,
+  "dirty_paths_count_at_end": 7,
+  "untracked_paths_count": 4,
+  "dirty_paths_by_subsystem_at_start": {
+    "source_proxy": [],
+    "spiritflix": [
+      "docs/media/spiritflix-anime-importer.md (M, +57 lines; pre-existing Britton WIP, not this audit)",
+      "scripts/media/spiritflix_anime_import.py (M, +1 line; pre-existing Britton WIP, not this audit)"
+    ],
+    "media": [
+      "scripts/media/spiritflix_dual_audio_anime_import.py (?? untracked, new Britton WIP, not this audit)"
+    ],
+    "coding_ui": [],
+    "docs": [],
+    "other": [
+      "NDH6SA~M (?? 0-byte Windows 8.3 temp artifact, pre-existing, outside scope)",
+      "docs/source-proxy-system-freeze-audit-20260621/ (?? the prior GLM audit dir, this audit's sibling, not source)",
+      "docs/full-repo-system-architecture-audit-20260621/ (?? THIS audit output dir)"
+    ]
+  },
+  "dirty_paths_by_subsystem_at_end": {
+    "source_proxy": [],
+    "spiritflix": [
+      "docs/media/spiritflix-anime-importer.md (M; pre-existing Britton WIP)",
+      "scripts/media/spiritflix_anime_import.py (M; pre-existing Britton WIP)",
+      "src/components/spiritflix/SpiritFlixApp.tsx (M; CONCURRENT external edit 14:39, not GLM)",
+      "src/components/spiritflix/SpiritFlixPlayer.tsx (M; CONCURRENT external edit 14:42, not GLM)",
+      "src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx (M; CONCURRENT external edit, not GLM)",
+      "src/lib/spiritflix-types.ts (M; CONCURRENT external edit 14:39, not GLM)",
+      "src/styles/spiritflix.css (M; CONCURRENT external edit 14:44, not GLM)"
+    ],
+    "media": [
+      "scripts/media/spiritflix_dual_audio_anime_import.py (?? untracked, Britton WIP, not GLM)"
+    ],
+    "coding_ui": [],
+    "docs": [],
+    "other": [
+      "NDH6SA~M (?? 0-byte Windows 8.3 temp artifact, pre-existing, outside scope)",
+      "docs/source-proxy-system-freeze-audit-20260621/ (?? prior GLM audit dir, not source)",
+      "docs/full-repo-system-architecture-audit-20260621/ (?? THIS audit output dir)"
+    ]
+  },
+  "review_only": true,
+  "source_mutation": false,
+  "headroom_repair_attempted": true,
+  "headroom_final_status": "BLOCKED_ENV",
+  "headroom_blocker": "Port 8797 is held by Cursor.exe (PID 10596, editor), not Headroom; the only installed Headroom binary is a Linux venv (.venv-headroom/bin/headroom with #!/home/source/... shebang) that cannot execute under Windows git-bash; rebuilding the venv would require pip install which the task forbids. Bounded 12s start attempt on alt port 8798 failed with 'cannot execute: required file not found'. Cursor was NOT killed (unrelated service). See glm-headroom-repair-log.md.",
+  "freeze_scope": "full code/docs repo excluding binary/media/build/runtime/secrets bloat",
+  "benchmark_source": "supplied_by_britton_chatgpt_research_preplan",
+  "freeze_delivery": "shards (3) — a single full-repo XML was 38MB/6,630 files and unusable on mobile; per the task's shard provision, GLM delivered 3 focused shards each under 2MB",
+  "shards": [
+    {
+      "name": "glm-full-repo-freeze-20260621-shard-001.xml",
+      "purpose": "Core OS code: source_proxy/**/*.py + src/** (Coding UI, SpiritFlix code, media code, spirit, dashboard, chat)",
+      "bytes": 1769609,
+      "files": 816,
+      "sha256": "fbe676b55f4a4ceb550cea3f0f73567d605ace25c06f1a18cd5c1cf4efc8b82b"
+    },
+    {
+      "name": "glm-full-repo-freeze-20260621-shard-002.xml",
+      "purpose": "Tooling: scout/** + scripts/** (ops, mac-worker, context, media tooling code) + root configs",
+      "bytes": 550807,
+      "files": 189,
+      "sha256": "4666eb61e8a396130011af03f5ab70325299395dd04765c38c7a8e063adff530"
+    },
+    {
+      "name": "glm-full-repo-freeze-20260621-shard-003.xml",
+      "purpose": "Architecture docs: _blueprints/** + top-level *.md plan docs + source-proxy-human-brain pivot + context-export + cartographer-live-receipts docs",
+      "bytes": 1883468,
+      "files": 431,
+      "sha256": "2f18e3b1d51f3f177684b162263f812ef750e51e89bd22f073f5a8c2a33db34e"
+    }
+  ],
+  "shard_totals": {
+    "total_bytes": 4203884,
+    "total_files": 1436,
+    "compression": "tree-sitter (repomix --compress); Headroom pass skipped (proxy BLOCKED_ENV)"
+  },
+  "excluded_categories": [
+    "node_modules / .next / dist / build",
+    ".git / .venv / .venv-headroom / venv / __pycache__ / *.pyc",
+    "*.sqlite / *.db / *.log / nohup.out / tsconfig.tsbuildinfo",
+    "binary media: *.png *.jpg *.jpeg *.gif *.webp *.mp4 *.mov *.mkv *.wav *.mp3 *.flac *.aac",
+    "archives: *.zip *.tar *.gz *.7z *.pdf *.icns *.ico *.woff* *.ttf *.otf",
+    "secrets/env: config/*.env **/.env* backend/.env certificates/*.pem|*.key|*.crt",
+    "runtime data: .spirit-backups, source_proxy/data, backend/searxng_data, backend/volumes, .codex-smoke, .probe-*.log, .source-proxy-*.log",
+    "local scratch: _reference/ chatDesign/ data/ tmp/ fold7-media-grabber/",
+    "evidence bloat: docs/evidence/**/raw|artifacts|backups|receipts|traces|smoke|trial|debug|tmp json + *.xml + handoff",
+    "SpiritFlix media galleries: scripts/media/model_gallery/** + scripts/media/**/*.json",
+    "soak logs: scout/soak-logs, source_proxy/cartographer/soak-logs",
+    "both GLM audit output dirs (avoid recursion)",
+    "repomix security auto-excluded: source_proxy/tests/test_bubblewrap_sandbox.py (2 issues), docs/evidence/.../increment-2.1-local-default-patch.md (1 issue)"
+  ],
+  "caveats": [
+    "This is a SHARD freeze, not a literal single-file 'entire repo' dump. Each shard is a clean repomix run scoped to one area; together they cover all code + architecture docs. Binary/media/build/runtime/secrets/evidence-raw were excluded per the task's bloat rules. Caveat: a reviewer wanting byte-exact full-tree should regenerate with repomix.config.json (warned at 321MB pre-ignore in docs/context-export/repomix-headroom-preflight.md).",
+    "Headroom compression was NOT applied (BLOCKED_ENV). Tree-sitter AST compression from repomix --compress WAS applied. Token counts would be lower with Headroom up.",
+    "2 SpiritFlix/media files are dirty and 1 is newly untracked — these are Britton's pre-existing WIP (anime importer), NOT created by this audit, and were not touched (task forbids SpiritFlix/media mutation). Recorded for honesty only.",
+    "Host git root is Z:\\ (mapped to ~/SpiritOS). Same repo as the prior source-proxy-min audit.",
+    "CONCURRENT EDIT WARNING: the dirty SpiritFlix tree grew from 2 to 7 files DURING the audit window (14:38-14:46) due to Britton's active Cursor session editing SpiritFlix in parallel. GLM caused NONE of these — all GLM source operations were read-only. Timestamps (SpiritFlix files 14:39-14:44 vs GLM metadata.json 14:38) confirm concurrent external activity. The freeze shards were generated at 14:15-14:18, before most of these concurrent edits, so shards reflect the slightly-earlier SpiritFlix state; this does not affect the architecture audit conclusions (SpiritFlix is out of OS-brain scope per §14)."
+  ],
+  "commands_run": [
+    "git status/rev-parse/log/diff (read-only)",
+    "curl http://127.0.0.1:8797/health (Headroom check)",
+    "bash ./scripts/context/headroom-check.sh",
+    "HEADROOM_PORT=8798 timeout 12 bash scripts/headroom-proxy-dev.sh (bounded repair attempt, failed)",
+    "node node_modules/repomix/bin/repomix.cjs --config <shard-config>.json -o <shard>.xml . (x3)",
+    "sha256sum (audit output files only)"
+  ],
+  "commands_not_run": [
+    "no source code patches/refactor/move/delete",
+    "no git add/commit/push",
+    "no service restart (except the self-terminating 12s headroom attempt)",
+    "no Cursor kill, no systemd/launchd mutation, no package install, no venv rebuild",
+    "no Set B/C, Stage 5, Plan 4, new engine/route",
+    "no SpiritFlix/media/Jellyfin mutation",
+    "no secret printing"
+  ]
+}

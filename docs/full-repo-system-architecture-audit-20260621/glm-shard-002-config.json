@@ -1,0 +1,55 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": { "maxFileSize": 300000 },
+  "output": {
+    "filePath": "docs/full-repo-system-architecture-audit-20260621/glm-full-repo-freeze-20260621-shard-002.xml",
+    "style": "xml",
+    "parsableStyle": true,
+    "compress": true,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    "truncateBase64": true,
+    "topFilesLength": 10,
+    "headerText": "GLM full-repo freeze shard 2/3 — TOOLING: scout/** + scripts/** (ops, mac-worker, context, media tooling code) + root configs. Excludes media galleries and soak-logs.",
+    "git": { "sortByChanges": true, "sortByChangesMaxCommits": 80, "includeDiffs": false, "includeLogs": false }
+  },
+  "include": [
+    "scout/**/*.py",
+    "scout/**/*.ts",
+    "scout/**/*.tsx",
+    "scout/**/*.json",
+    "scout/**/*.md",
+    "scripts/**/*.py",
+    "scripts/**/*.mjs",
+    "scripts/**/*.js",
+    "scripts/**/*.sh",
+    "scripts/**/*.ts",
+    "scripts/mac-worker/**",
+    "scripts/context/**",
+    "scripts/agent-trials/**",
+    "package.json",
+    "repomix*.config.json",
+    ".repomixignore",
+    "tsconfig.json",
+    "next.config.ts",
+    "eslint.config.mjs",
+    "vitest.config.mjs",
+    "playwright.config.mjs",
+    "requirements*.txt",
+    "middleware.ts",
+    "README.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "**/__pycache__/**", "**/*.pyc", "**/*.log", "**/*.sqlite", "**/*.db",
+      "scripts/media/model_gallery/**", "scripts/media/**/*.json",
+      "scout/soak-logs/**", "scout/**/__pycache__/**",
+      "**/node_modules/**", "*.xml", "repomix-output*", "nohup.out"
+    ]
+  },
+  "security": { "enableSecurityCheck": true },
+  "tokenCount": { "encoding": "o200k_base" }
+}

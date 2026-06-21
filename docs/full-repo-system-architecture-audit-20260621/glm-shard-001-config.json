@@ -1,0 +1,38 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": { "maxFileSize": 400000 },
+  "output": {
+    "filePath": "docs/full-repo-system-architecture-audit-20260621/glm-full-repo-freeze-20260621-shard-001.xml",
+    "style": "xml",
+    "parsableStyle": true,
+    "compress": true,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    "truncateBase64": true,
+    "topFilesLength": 10,
+    "headerText": "GLM full-repo freeze shard 1/3 — CORE OS CODE: source_proxy/** + src/** (Coding UI, SpiritFlix code, media code, spirit, dashboard, chat). Tree-sitter compressed.",
+    "git": { "sortByChanges": true, "sortByChangesMaxCommits": 80, "includeDiffs": false, "includeLogs": false }
+  },
+  "include": [
+    "source_proxy/**/*.py",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.js",
+    "src/**/*.mjs",
+    "src/**/*.css"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "**/__pycache__/**", "**/*.pyc", "**/*.log", "**/*.sqlite", "**/*.db",
+      "**/node_modules/**", "**/.next/**", "**/dist/**",
+      "src/components/dashboard/demo-v4/**", "src/app/design-demo/**",
+      "**/*demo*.*", "spirit_oracle_fairy_demo*", "spiritos_dashboard_finished_demo*",
+      "tsconfig.tsbuildinfo", "*.xml", "repomix-output*"
+    ]
+  },
+  "security": { "enableSecurityCheck": true },
+  "tokenCount": { "encoding": "o200k_base" }
+}

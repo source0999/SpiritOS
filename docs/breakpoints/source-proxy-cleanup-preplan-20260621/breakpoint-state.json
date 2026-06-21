@@ -1,0 +1,156 @@
+{
+  "breakpoint": "source-proxy-cleanup-preplan-20260621",
+  "created_at": "2026-06-21T15:00:26-04:00",
+  "repo": {
+    "host": "source-server",
+    "path": "/home/source/SpiritOS",
+    "head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
+    "branch": "master",
+    "staged_files_count": 0,
+    "tracked_dirty_files_count": 8,
+    "dirty_paths_count": 13,
+    "preflight_tracked_dirty_files_count": 7,
+    "preflight_dirty_paths_count": 12,
+    "dirty_path_summary": {
+      "source_proxy": [],
+      "spiritflix_media_tracked_wip": [
+        "docs/media/spiritflix-anime-importer.md",
+        "scripts/media/spiritflix_anime_import.py",
+        "src/components/spiritflix/SpiritFlixApp.tsx",
+        "src/components/spiritflix/SpiritFlixHome.tsx",
+        "src/components/spiritflix/SpiritFlixPlayer.tsx",
+        "src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx",
+        "src/lib/spiritflix-types.ts",
+        "src/styles/spiritflix.css"
+      ],
+      "breakpoint_docs": [
+        "docs/breakpoints/"
+      ],
+      "glm_audit_outputs": [
+        "docs/source-proxy-system-freeze-audit-20260621/",
+        "docs/full-repo-system-architecture-audit-20260621/"
+      ],
+      "other_untracked": [
+        "nul",
+        "scripts/media/spiritflix_dual_audio_anime_import.py"
+      ]
+    }
+  },
+  "last_active_work": {
+    "area": "Source Proxy",
+    "plan": "Plan 3",
+    "stage": "Set A rerun / 4R7 structured packet model-lane escalation",
+    "status": "NEEDS_FIX",
+    "accepted": false,
+    "blockers": [
+      "A2",
+      "A5",
+      "A9"
+    ],
+    "pass_count": 7,
+    "failed_count": 3,
+    "blocked_count": 0
+  },
+  "not_approved": {
+    "stage_5": true,
+    "set_b": true,
+    "set_c": true,
+    "plan_4": true,
+    "cleanup_implementation": true
+  },
+  "freeze_audits": {
+    "source_proxy_min_glm_audit": {
+      "status": "complete",
+      "path": "docs/source-proxy-system-freeze-audit-20260621/",
+      "main_audit": "docs/source-proxy-system-freeze-audit-20260621/glm-source-proxy-audit-20260621.md",
+      "mobile_index": "docs/source-proxy-system-freeze-audit-20260621/glm-mobile-download-index.md",
+      "metadata": "docs/source-proxy-system-freeze-audit-20260621/glm-freeze-metadata.json"
+    },
+    "full_repo_glm_audit": {
+      "status": "complete",
+      "path": "docs/full-repo-system-architecture-audit-20260621/",
+      "main_audit": "docs/full-repo-system-architecture-audit-20260621/glm-full-repo-audit-20260621.md",
+      "mobile_index": "docs/full-repo-system-architecture-audit-20260621/glm-full-repo-mobile-index.md",
+      "metadata": "docs/full-repo-system-architecture-audit-20260621/glm-full-repo-metadata.json",
+      "headroom_status": "BLOCKED_ENV",
+      "headroom_log": "docs/full-repo-system-architecture-audit-20260621/glm-headroom-repair-log.md"
+    }
+  },
+  "cleanup_roadmap": {
+    "source": "GLM full-repo audit section 17",
+    "stages": [
+      {
+        "id": "F0",
+        "title": "Preserve full-repo freeze + audit comparison"
+      },
+      {
+        "id": "F1",
+        "title": "Failure taxonomy + debug receipt unification"
+      },
+      {
+        "id": "F2",
+        "title": "Anti-cheat detector registry + independent selftests"
+      },
+      {
+        "id": "F3",
+        "title": "Model lane / brain-switch verdict contract"
+      },
+      {
+        "id": "F4",
+        "title": "Local-model packet-generation decomposition"
+      },
+      {
+        "id": "F5",
+        "title": "Architecture split: API transport vs domain services"
+      },
+      {
+        "id": "F6",
+        "title": "Long-running task engine split"
+      },
+      {
+        "id": "F7",
+        "title": "Coding UI shell split + canonical UI decision"
+      },
+      {
+        "id": "F8",
+        "title": "Context / memory / Headroom strategy cleanup"
+      },
+      {
+        "id": "F9",
+        "title": "Worker / tool contract cleanup"
+      },
+      {
+        "id": "F10",
+        "title": "Full-loop requalification battery"
+      }
+    ],
+    "total_stages": 11,
+    "remaining_before_implementation_if_f0_complete": 10,
+    "remaining_before_implementation_if_f0_not_complete": 11,
+    "implementation_started": false,
+    "requires_britton_approval": true,
+    "first_recommended_stage_after_review": "F1"
+  },
+  "remaining_original_plan_queue": {
+    "plan3_remaining": [
+      "Set A: NEEDS_FIX",
+      "Set B: not run",
+      "Set C: not run",
+      "Final 3x10 verdict: not complete",
+      "GLM anti-cheat re-review: not accepted"
+    ],
+    "major_plan_dirs_after_plan3": [
+      "plan-04",
+      "plan-05",
+      "plan-06"
+    ],
+    "count_major_plan_dirs_after_plan3": 3
+  },
+  "resume_rules": [
+    "Read this breakpoint directory before continuing Source Proxy Plan 3 or cleanup.",
+    "Do not run Set B, Set C, Stage 5, or Plan 4 from memory.",
+    "Do not implement cleanup from the GLM audit alone; write and approve a cleanup plan first.",
+    "If old Plan 3 resumes, address A2/A5/A9 Set A NEEDS_FIX first.",
+    "Do not mutate SpiritFlix/media/Jellyfin as part of Source Proxy cleanup."
+  ]
+}

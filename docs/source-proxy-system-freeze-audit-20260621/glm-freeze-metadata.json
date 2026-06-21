@@ -1,0 +1,71 @@
+{
+  "reviewer": "GLM",
+  "created_at": "2026-06-21T13:36:43-04:00",
+  "host": "Spirit",
+  "repo_path": "Z:\\ (~/SpiritOS on the Dell/source-server; git working root)",
+  "branch": "master",
+  "head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
+  "staged_files_count": 0,
+  "dirty_paths_count": 0,
+  "untracked_paths_count": 1,
+  "untracked_paths": [
+    "NDH6SA~M (empty 8.3 temp artifact, 0 bytes, pre-existing; outside audit output and outside source_proxy/spiritflix scope)"
+  ],
+  "source_proxy_dirty_paths": [],
+  "spiritflix_or_media_dirty_paths": [],
+  "audit_output_paths": [
+    "docs/source-proxy-system-freeze-audit-20260621/glm-source-proxy-freeze-20260621.xml",
+    "docs/source-proxy-system-freeze-audit-20260621/glm-source-proxy-audit-20260621.md",
+    "docs/source-proxy-system-freeze-audit-20260621/glm-mobile-download-index.md",
+    "docs/source-proxy-system-freeze-audit-20260621/glm-freeze-metadata.json",
+    "docs/source-proxy-system-freeze-audit-20260621/glm-checksums.sha256"
+  ],
+  "freeze_scope": "Source Proxy / coding lane / Mac worker / research / model lanes / traces / debugging / anti-cheat",
+  "review_only": true,
+  "no_source_mutation": true,
+  "context_xml": {
+    "original_xml_path": "Z:\\repomix-output.source-proxy-min.xml",
+    "copied_xml_path": "docs/source-proxy-system-freeze-audit-20260621/glm-source-proxy-freeze-20260621.xml",
+    "xml_byte_size": 1600235,
+    "xml_file_count": 414,
+    "xml_token_count": 380479,
+    "sha256": "a46936756a0caa8343e7ae65477b7a7523b4515907a9035c6d025d79b16d6241",
+    "headroom_status": "proxy_not_reachable (http://127.0.0.1:8797/health down); headroom_present=true (venv/cli may exist); fallback tree-sitter profile used per design",
+    "repomix_profile": "source-proxy-min (repomix.source-proxy-min.config.json)",
+    "verification_result": "PASS (scripts/context/verify-repomix-context.sh source-proxy-min; 1.6M under 2MB target; bloat exclusions all OK; security check excluded 1 file: source_proxy/tests/test_bubblewrap_sandbox.py with 2 security issues)",
+    "fallbacks_used": [
+      "headroom proxy down -> tight tree-sitter repomix profile (documented fallback in headroom-check.sh and verify-repomix-context.sh)"
+    ],
+    "security_note": "repomix security check flagged source_proxy/tests/test_bubblewrap_sandbox.py and EXCLUDED it from the freeze XML automatically. The file is a sandbox-probe test (bwrap invocation). No secrets observed in included files; no media/Jellyfin bloat included."
+  },
+  "commands_run": [
+    "git status --branch --short --untracked-files=normal",
+    "git rev-parse HEAD",
+    "git log --oneline -80",
+    "git diff --name-status / --stat / --cached --name-status",
+    "npm run context:source-proxy-min",
+    "bash ./scripts/context/headroom-check.sh",
+    "bash ./scripts/context/verify-repomix-context.sh source-proxy-min",
+    "sha256sum (audit output files only)"
+  ],
+  "commands_not_run": [
+    "no source code patches",
+    "no refactor",
+    "no file move/delete",
+    "no git add/commit/push",
+    "no service restart",
+    "no Set B/C",
+    "no Stage 5",
+    "no Plan 4",
+    "no new engine/route",
+    "no package install",
+    "no SpiritFlix/media/Jellyfin mutation",
+    "no secret printing"
+  ],
+  "caveats": [
+    "Host git root is Z:\\ (mapped to ~/SpiritOS). Task text referenced ~/SpiritOS; same repository.",
+    "Headroom proxy was not running during the freeze; the documented tight-profile fallback was used and verified PASS. This does not change the included file set (both paths use the same source-proxy-min include/ignore rules); it only skips an additional Headroom compression pass.",
+    "No Codex/system self-assessment markdown of identical scope exists for a direct 1:1 comparison; the Stage 9 comparison table uses Codex deep-review artifacts under plan-00..03 plus repo claims as the best-available baseline, and marks gaps as INSUFFICIENT_EVIDENCE rather than assuming parity.",
+    "The single untracked file (NDH6SA~M) is a 0-byte Windows 8.3 temp artifact that predates this audit; it is outside the source_proxy/spiritflix scope and was not created by this audit."
+  ]
+}
