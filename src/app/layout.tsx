@@ -42,13 +42,6 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var h=location.hostname;if(location.protocol==='http:'&&h!=='localhost'&&h!=='127.0.0.1'){location.replace('https://'+location.host+location.pathname+location.search+location.hash);}}catch(e){}})();`,
-          }}
-        />
-      </head>
       <body
         className="min-h-[100dvh] min-h-dvh antialiased"
         suppressHydrationWarning
