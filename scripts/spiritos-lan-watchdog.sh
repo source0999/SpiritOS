@@ -91,10 +91,15 @@ cleanup_orphan_next_smoke_ports
 snapshot
 
 restart_count=0
+skip_next_cache_clear=0
 
 while true; do
   stop_frontend_processes ""
-  if (( restart_count % CACHE_CLEAR_EVERY == 0 )); then
+  if (( skip_next_cache_clear )); then
+    log "skipping cache clear after fast-fail restart"
+    skip_next_cache_clear=0
+    rm -f .next/dev/lock 2>/dev/null || true
+  elif (( restart_count % CACHE_CLEAR_EVERY == 0 )); then
     clean_next_dev_cache
   else
     rm -f .next/dev/lock 2>/dev/null || true
@@ -135,6 +140,12 @@ while true; do
   else
     wait "$app_pid"
     status=$?
+    if (( status == 1 )) && (( $(date +%s) - started_at < 45 )); then
+      log "frontend failed fast (likely EADDRINUSE); force-clearing :3000 listeners"
+      force_kill_spiritos_lan_listeners
+      wait_for_port_free 3000 15 || true
+      skip_next_cache_clear=1
+    fi
     log "frontend exited with status $status"
     snapshot
   fi

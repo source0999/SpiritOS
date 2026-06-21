@@ -90,6 +90,25 @@ kill_listeners_on_ports() {
   done
 }
 
+kill_spiritos_lan_listener_tree() {
+  local pid="$1"
+  local signal="${2:-TERM}"
+  local current="$pid"
+  local depth=0
+  local args
+
+  while [[ -n "$current" && "$current" != "1" && depth -lt 12 ]]; do
+    kill "-$signal" "$current" 2>/dev/null || true
+    pkill "-$signal" -P "$current" 2>/dev/null || true
+    args="$(ps -p "$current" -o args= 2>/dev/null || true)"
+    if is_spiritos_lan_dev_args "$args"; then
+      break
+    fi
+    current="$(ps -p "$current" -o ppid= 2>/dev/null | tr -d ' ')"
+    depth=$((depth + 1))
+  done
+}
+
 kill_spiritos_lan_listeners() {
   local pid port_pids
   port_pids="$(listener_pids_on_port 3000)"
@@ -97,11 +116,13 @@ kill_spiritos_lan_listeners() {
   while IFS= read -r pid; do
     [[ -z "$pid" ]] && continue
     if is_spiritos_lan_tree_pid "$pid"; then
-      kill -TERM "$pid" 2>/dev/null || true
+      kill_spiritos_lan_listener_tree "$pid" TERM
     else
       printf 'refusing to kill foreign listener on :3000 pid=%s\n' "$pid" >&2
     fi
   done <<< "$port_pids"
+  # Orphaned next dev parents can survive listener-only kills and block restarts.
+  pkill -TERM -f "next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https" 2>/dev/null || true
 }
 
 force_kill_spiritos_lan_listeners() {
@@ -111,9 +132,10 @@ force_kill_spiritos_lan_listeners() {
   while IFS= read -r pid; do
     [[ -z "$pid" ]] && continue
     if is_spiritos_lan_tree_pid "$pid"; then
-      kill -KILL "$pid" 2>/dev/null || true
+      kill_spiritos_lan_listener_tree "$pid" KILL
     fi
   done <<< "$port_pids"
+  pkill -KILL -f "next dev -H 0.0.0.0 --webpack -p 3000 --experimental-https" 2>/dev/null || true
 }
 
 cleanup_orphan_next_smoke_ports() {
