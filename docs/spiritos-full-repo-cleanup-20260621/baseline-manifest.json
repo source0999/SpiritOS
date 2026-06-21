@@ -1,0 +1,156 @@
+{
+  "manifest_version": "1",
+  "stage": "P0",
+  "created_at": "2026-06-21",
+  "operator": "GLM",
+  "operator_role": "cleanup_planning_owner_NOT_acceptance_authority",
+  "verdict": "BLOCKED_HUMAN",
+  "blocker": "frozen-audit shard checksums do not verify against committed bytes",
+
+  "primary_repo": {
+    "task_body_name": "~/SpiritOS",
+    "harness_working_dir": "Z:\\",
+    "resolved_toplevel": "//10.0.0.186/SpiritOS",
+    "resolved_branch": "master",
+    "resolved_head": "728a7c82b8d36662087792b307f703d5f00d699d",
+    "note": "Z:\\ SMB share is the repo matching the task git snapshot (master/728a7c82). ~/SpiritOS on the Dell is a divergent clone (main/563dd79, sparse, dirty) and was NOT used as primary.",
+    "current_dirty_files_count": 0
+  },
+
+  "dell_local_clone_not_primary": {
+    "path": "C:/Users/smith/SpiritOS",
+    "branch": "main",
+    "head": "563dd79",
+    "sparse_checkout": true,
+    "tracked_dirty": true,
+    "used_as_primary": false
+  },
+
+  "breakpoint": {
+    "approved_head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
+    "approved_head_subject": "docs: normalize Windows-safe evidence filenames",
+    "breakpoint_json_parses": true,
+    "required_breakpoint_files_present": [
+      "README.md",
+      "breakpoint-state.md",
+      "breakpoint-state.json",
+      "resume-map.md",
+      "evidence-index.md",
+      "validation.md"
+    ],
+    "expected_state_confirmed": {
+      "f0_complete": true,
+      "f1_through_f10_started": false,
+      "plan3_status": "NEEDS_FIX",
+      "plan3_accepted": false,
+      "unresolved_set_a": ["A2", "A5", "A9"],
+      "set_b_run": false,
+      "set_c_run": false,
+      "stage_5_approved": false,
+      "plan_4_approved": false
+    }
+  },
+
+  "commit_gap_breakpoint_to_current": {
+    "from": "927055e489eb1dc9a263bf3a80cde53869e274ce",
+    "to": "728a7c82b8d36662087792b307f703d5f00d699d",
+    "linear_descendant": true,
+    "commits": [
+      {
+        "sha": "1f1d3e818319d04bd4e18b0a298d0b920f36877d",
+        "subject": "feat: add anime series playback and dual-audio import",
+        "time": "2026-06-21 15:23:07 -0400"
+      },
+      {
+        "sha": "728a7c82b8d36662087792b307f703d5f00d699d",
+        "subject": "docs: preserve proxy freeze and cleanup breakpoints",
+        "time": "2026-06-21 15:23:42 -0400"
+      }
+    ],
+    "cleanup_owned_source_paths_touched": [],
+    "cleanup_owned_source_touched_summary": "NONE — verified by git diff --name-only across source_proxy/ src/app/coding/ src/app/v1/ src/app/api/coding/ src/components/coding/ src/lib/coding/ src/lib/mac-worker/ scripts/context/ scripts/mac-worker/ -> empty",
+    "paths_touched_classification": {
+      "docs": ["docs/breakpoints/...", "docs/full-repo-system-architecture-audit-20260621/...", "docs/source-proxy-system-freeze-audit-20260621/...", "docs/media/spiritflix-anime-importer.md"],
+      "protected_spiritflix_media": ["scripts/media/spiritflix_anime_import.py", "scripts/media/spiritflix_dual_audio_anime_import.py", "src/components/spiritflix/*", "src/lib/spiritflix-types.ts", "src/styles/spiritflix.css"]
+    }
+  },
+
+  "audit_checksum_verification": {
+    "command": "cd /z && sha256sum -c docs/full-repo-system-architecture-audit-20260621/glm-full-repo-checksums.sha256",
+    "exit_code": 1,
+    "overall": "FAILED",
+    "passed": [
+      "glm-full-repo-audit-20260621.md: OK",
+      "glm-full-repo-mobile-index.md: OK",
+      "glm-full-repo-metadata.json: OK",
+      "glm-headroom-repair-log.md: OK",
+      "glm-full-repo-freeze-20260621-shard-index.md: OK"
+    ],
+    "failed": [
+      {
+        "file": "glm-full-repo-freeze-20260621-shard-001.xml",
+        "recorded_sha256": "fbe676b55f4a4ceb550cea3f0f73567d605ace25c06f1a18cd5c1cf4efc8b82b",
+        "actual_sha256": "d1e6f74e2059aaafbee537be5348c92082d1547fd0e7edd0145c41dae8f143fd",
+        "recorded_bytes": 1769609,
+        "actual_bytes": 1769550
+      },
+      {
+        "file": "glm-full-repo-freeze-20260621-shard-002.xml",
+        "recorded_sha256": "4666eb61e8a396130011af03f5ab70325299395dd04765c38c7a8e063adff530",
+        "actual_sha256": "bff9c938755a69ec3f7290f1c506ef9854a08089bc98a5f73eadc12286b57d19",
+        "recorded_bytes": 550807,
+        "actual_bytes": 550808
+      },
+      {
+        "file": "glm-full-repo-freeze-20260621-shard-003.xml",
+        "recorded_sha256": "2f18e3b1d51f3f177684b162263f812ef750e51e89bd22f073f5a8c2a33db34e",
+        "actual_sha256": "04c831ce91e7959a9cb62b54665d9e59ad2cce8bb8b67eb910119626cecc6130",
+        "recorded_bytes": 1883468,
+        "actual_bytes": 1883447
+      }
+    ],
+    "independent_records_all_agree_on_recorded_hashes": [
+      "glm-full-repo-checksums.sha256",
+      "glm-full-repo-metadata.json (shards[].sha256)",
+      "glm-full-repo-freeze-20260621-shard-index.md table"
+    ],
+    "root_cause_timeline": {
+      "checksum_file_mtime": "2026-06-21 14:49:15 -0400",
+      "metadata_json_mtime": "2026-06-21 14:47:01 -0400",
+      "shard_xml_mtime": "2026-06-21 15:23:35 -0400",
+      "commit_728a7c82_time": "2026-06-21 15:23:42 -0400",
+      "explanation": "The three shard XMLs were regenerated at 15:23:35 (~34 min after the checksum file at 14:49 was written) and committed 7s later in 728a7c82; the stale 14:49 checksum file was committed alongside without being updated to the new shard bytes."
+    }
+  },
+
+  "prior_source_proxy_focused_audit": {
+    "exists": true,
+    "path": "docs/source-proxy-system-freeze-audit-20260621/",
+    "files": ["glm-checksums.sha256", "glm-freeze-metadata.json", "glm-mobile-download-index.md", "glm-source-proxy-audit-20260621.md", "glm-source-proxy-freeze-20260621.xml"]
+  },
+
+  "evidence_root": {
+    "preferred": "/home/source/spiritos-evidence/full-repo-cleanup-20260621/",
+    "fallback": "/tmp/spiritos-full-repo-cleanup-20260621/",
+    "chosen_this_stage": "neither — no raw evidence generated in P0; all verification used in-tree committed files only",
+    "note": "No raw logs written. P0 was entirely read-only verification against committed in-tree evidence."
+  },
+
+  "not_done_held_at_gate": [
+    "no cleanup branch/worktree created",
+    "no acceptance contracts frozen",
+    "no holdout manifests frozen",
+    "no P1 plan packet written",
+    "no source edits",
+    "no git add/commit/push/branch",
+    "protected paths untouched"
+  ],
+
+  "files_written_this_stage": [
+    "docs/spiritos-full-repo-cleanup-20260621/breakpoint-readback.md",
+    "docs/spiritos-full-repo-cleanup-20260621/baseline-manifest.json"
+  ],
+  "files_committed_this_stage": [],
+
+  "human_decision_requested": "Reconcile the frozen-audit shard checksum contract: (1) Britton re-issues checksums/metadata/index against current shard bytes, (2) restore originally-hashed shard bytes, or (3) cleanly re-run the full-repo freeze. GLM must not self-repair the frozen audit evidence."
+}

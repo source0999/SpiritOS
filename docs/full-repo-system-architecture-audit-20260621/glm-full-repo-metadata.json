@@ -62,27 +62,27 @@
     {
       "name": "glm-full-repo-freeze-20260621-shard-001.xml",
       "purpose": "Core OS code: source_proxy/**/*.py + src/** (Coding UI, SpiritFlix code, media code, spirit, dashboard, chat)",
-      "bytes": 1769609,
+      "bytes": 1769550,
       "files": 816,
-      "sha256": "fbe676b55f4a4ceb550cea3f0f73567d605ace25c06f1a18cd5c1cf4efc8b82b"
+      "sha256": "d1e6f74e2059aaafbee537be5348c92082d1547fd0e7edd0145c41dae8f143fd"
     },
     {
       "name": "glm-full-repo-freeze-20260621-shard-002.xml",
       "purpose": "Tooling: scout/** + scripts/** (ops, mac-worker, context, media tooling code) + root configs",
-      "bytes": 550807,
+      "bytes": 550808,
       "files": 189,
-      "sha256": "4666eb61e8a396130011af03f5ab70325299395dd04765c38c7a8e063adff530"
+      "sha256": "bff9c938755a69ec3f7290f1c506ef9854a08089bc98a5f73eadc12286b57d19"
     },
     {
       "name": "glm-full-repo-freeze-20260621-shard-003.xml",
       "purpose": "Architecture docs: _blueprints/** + top-level *.md plan docs + source-proxy-human-brain pivot + context-export + cartographer-live-receipts docs",
-      "bytes": 1883468,
+      "bytes": 1883447,
       "files": 431,
-      "sha256": "2f18e3b1d51f3f177684b162263f812ef750e51e89bd22f073f5a8c2a33db34e"
+      "sha256": "04c831ce91e7959a9cb62b54665d9e59ad2cce8bb8b67eb910119626cecc6130"
     }
   ],
   "shard_totals": {
-    "total_bytes": 4203884,
+    "total_bytes": 4203805,
     "total_files": 1436,
     "compression": "tree-sitter (repomix --compress); Headroom pass skipped (proxy BLOCKED_ENV)"
   },

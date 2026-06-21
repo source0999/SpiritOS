@@ -5,10 +5,10 @@ A single full-repo XML was 38 MB / 6,630 files (unusable on mobile). Per the tas
 
 | Shard | Scope | Bytes | Files | SHA-256 |
 |---|---|---|---|---|
-| `glm-full-repo-freeze-20260621-shard-001.xml` | **Core OS code** — `source_proxy/**/*.py` + `src/**` (Coding UI, SpiritFlix code, media code, spirit, dashboard, chat) | 1,769,609 | 816 | `fbe676b55f4a4ceb550cea3f0f73567d605ace25c06f1a18cd5c1cf4efc8b82b` |
-| `glm-full-repo-freeze-20260621-shard-002.xml` | **Tooling** — `scout/**` + `scripts/**` (ops, mac-worker, context, media tooling code) + root configs | 550,807 | 189 | `4666eb61e8a396130011af03f5ab70325299395dd04765c38c7a8e063adff530` |
-| `glm-full-repo-freeze-20260621-shard-003.xml` | **Architecture docs** — `_blueprints/**` + top-level `*.md` plan docs + source-proxy-human-brain pivot + context-export + cartographer-live-receipts docs | 1,883,468 | 431 | `2f18e3b1d51f3f177684b162263f812ef750e51e89bd22f073f5a8c2a33db34e` |
-| **Total** | | **4,203,884** | **1,436** | (per-file hashes above) |
+| `glm-full-repo-freeze-20260621-shard-001.xml` | **Core OS code** — `source_proxy/**/*.py` + `src/**` (Coding UI, SpiritFlix code, media code, spirit, dashboard, chat) | 1,769,550 | 816 | `d1e6f74e2059aaafbee537be5348c92082d1547fd0e7edd0145c41dae8f143fd` |
+| `glm-full-repo-freeze-20260621-shard-002.xml` | **Tooling** — `scout/**` + `scripts/**` (ops, mac-worker, context, media tooling code) + root configs | 550,808 | 189 | `bff9c938755a69ec3f7290f1c506ef9854a08089bc98a5f73eadc12286b57d19` |
+| `glm-full-repo-freeze-20260621-shard-003.xml` | **Architecture docs** — `_blueprints/**` + top-level `*.md` plan docs + source-proxy-human-brain pivot + context-export + cartographer-live-receipts docs | 1,883,447 | 431 | `04c831ce91e7959a9cb62b54665d9e59ad2cce8bb8b67eb910119626cecc6130` |
+| **Total** | | **4,203,805** | **1,436** | (per-file hashes above) |
 
 ## How the shards were made
 - Tool: `node node_modules/repomix/bin/repomix.cjs --config <shard-config>.json -o <shard>.xml .`

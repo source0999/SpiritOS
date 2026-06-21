@@ -20,22 +20,22 @@ How to use on Britton's Samsung Fold 7 (mobile Codex): open the audit `.md` firs
 ### 2. `glm-full-repo-freeze-20260621-shard-001.xml` — CORE OS CODE
 - **Purpose:** Source Proxy + Coding UI + SpiritFlix code + media code + spirit/dashboard/chat — the OS brain + human face.
 - **Repo path:** `docs/full-repo-system-architecture-audit-20260621/glm-full-repo-freeze-20260621-shard-001.xml`
-- **Size:** 1,769,609 bytes · 816 files.
-- **SHA-256:** `fbe676b55f4a4ceb550cea3f0f73567d605ace25c06f1a18cd5c1cf4efc8b82b`
+- **Size:** 1,769,550 bytes · 816 files.
+- **SHA-256:** `d1e6f74e2059aaafbee537be5348c92082d1547fd0e7edd0145c41dae8f143fd`
 - **How to use on Fold 7:** Upload/paste into another AI chat (Codex, Claude) for a second opinion on Source Proxy architecture, `decision.py`, the Coding UI shells, or the durable engine. Primary shard for coding-loop questions.
 
 ### 3. `glm-full-repo-freeze-20260621-shard-002.xml` — TOOLING
 - **Purpose:** Scout (read-only intel) + scripts (ops, mac-worker, context, media tooling code) + root configs (package.json, repomix configs, tsconfig, etc.).
 - **Repo path:** `docs/full-repo-system-architecture-audit-20260621/glm-full-repo-freeze-20260621-shard-002.xml`
-- **Size:** 550,807 bytes · 189 files.
-- **SHA-256:** `4666eb61e8a396130011af03f5ab70325299395dd04765c38c7a8e063adff530`
+- **Size:** 550,808 bytes · 189 files.
+- **SHA-256:** `bff9c938755a69ec3f7290f1c506ef9854a08089bc98a5f73eadc12286b57d19`
 - **How to use on Fold 7:** Use for Scout bounded-contract questions, Mac worker bridge, context/Headroom tooling, ops scripts. Includes the exemplary `scout/SCOPE.md` (Permitted/Prohibited/Kill-Switch) — a model Source Proxy could learn from.
 
 ### 4. `glm-full-repo-freeze-20260621-shard-003.xml` — ARCHITECTURE DOCS
 - **Purpose:** `_blueprints/**` + top-level plan `.md` docs + source-proxy-human-brain pivot + context-export + cartographer-live-receipts docs.
 - **Repo path:** `docs/full-repo-system-architecture-audit-20260621/glm-full-repo-freeze-20260621-shard-003.xml`
-- **Size:** 1,883,468 bytes · 431 files.
-- **SHA-256:** `2f18e3b1d51f3f177684b162263f812ef750e51e89bd22f073f5a8c2a33db34e`
+- **Size:** 1,883,447 bytes · 431 files.
+- **SHA-256:** `04c831ce91e7959a9cb62b54665d9e59ad2cce8bb8b67eb910119626cecc6130`
 - **How to use on Fold 7:** Use for Blueprint/Cartographer intent questions, plan history, contracts. Compare intent (docs) vs implementation (shard-001).
 
 ### 5. `glm-full-repo-freeze-20260621-shard-index.md`
