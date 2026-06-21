@@ -1,7 +1,7 @@
 {
   "schema": "media-performer-verification/v1",
   "generated_at": "2026-06-05T20:58:47+00:00",
-  "updated_at": "2026-06-17T01:23:06+00:00",
+  "updated_at": "2026-06-19T08:27:17+00:00",
   "performers": {
     "aaliyah-yasan": {
       "name": "Aaliyah Yasan",
@@ -10,14 +10,6 @@
       "profile_handles": [],
       "status": "user-confirmed",
       "evidence": [
-        {
-          "video_path": "/DATA/yes/models/aaliyah-yasan/540598_720p.mp4",
-          "source": "watermark_ocr_text",
-          "name": "THATBRITISHGIRL",
-          "raw": "THATBRITISHGIRL",
-          "confidence": 0.64,
-          "frame_path": "/DATA/yes/.face-review/540598_720p/frames/frame-01.jpg"
-        },
         {
           "video_path": "/DATA/yes/models/aaliyah-yasan/540598_720p.mp4",
           "source": "watermark_ocr_text",
@@ -137,11 +129,51 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/models/aaliyah-yasan/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mkv",
+          "source": "watermark_ocr_text",
+          "name": "PRODUCTIO",
+          "raw": "PRODUCTIO",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/models/aaliyah-yasan/.face-review/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/aaliyah-yasan/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mkv",
+          "source": "watermark_ocr_text",
+          "name": "YSPRINGB",
+          "raw": "YSPRINGB",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/models/aaliyah-yasan/.face-review/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/aaliyah-yasan/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mkv",
+          "source": "watermark_ocr_text",
+          "name": "YSPRINGBOK",
+          "raw": "YSPRINGBOK",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/models/aaliyah-yasan/.face-review/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/aaliyah-yasan/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mkv",
+          "source": "watermark_ocr_text",
+          "name": "PRODUCTIONS",
+          "raw": "PRODUCTIONS",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/models/aaliyah-yasan/.face-review/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking/frames/frame-01.jpg"
+        },
+        {
+          "video_path": "/DATA/yes/models/aaliyah-yasan/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking.mkv",
+          "source": "watermark_ocr_text",
+          "name": "SPRINGB",
+          "raw": "SPRINGB",
+          "confidence": 0.84,
+          "frame_path": "/DATA/yes/models/aaliyah-yasan/.face-review/Naughty Aaliyah Yasin Sucks A Big Cock While Smoking/frames/frame-02.jpg"
         }
       ],
-      "video_count": 2,
+      "video_count": 3,
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-16T03:38:51+00:00",
+      "confirmed_at": "2026-06-19T08:27:17+00:00",
       "audit_events": [
         {
           "event": "manual_correction_confirmed",
@@ -259,8 +291,43 @@
           "evidence_role": "user_confirmed_correction",
           "face_enrollment_performed": false,
           "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "schema": "media-face-enrolled-video-match-decision/v1",
+          "decision": "accepted",
+          "performer_name": "Aaliyah Yasan",
+          "performer_id": "aaliyah-yasan",
+          "confidence": 0.55,
+          "visual_confirmed": true,
+          "match_evidence_type": "metadata_only",
+          "decided_by": "Britton",
+          "decided_at": "2026-06-19T08:27:17+00:00"
         }
-      ]
+      ],
+      "web_text_evidence_summary": {
+        "schema": "media-web-text-evidence/v1",
+        "count": 0,
+        "providers": [],
+        "source_trust_counts": {},
+        "review_required": false
+      },
+      "identity_trace_summary": {
+        "schema": "media-identity-trace/v1",
+        "count": 0,
+        "review_required": true
+      },
+      "assignment_decision": {
+        "schema": "media-assignment-decision/v1",
+        "suggested_slug": null,
+        "suggested_name": null,
+        "confidence": 0.0,
+        "auto_assign_allowed": false,
+        "review_required": true,
+        "why": "",
+        "blocking_reasons": [],
+        "supporting_signal_ids": []
+      },
+      "enrolled_face_samples": []
     },
     "alannasworldx": {
       "name": "Alannasworldx",
@@ -2223,8 +2290,19 @@
           "evidence_role": "user_confirmed_correction",
           "face_enrollment_performed": false,
           "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "performer_marked_faceless",
+          "performer_name": "Katievaynes",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-19T08:10:01+00:00",
+          "reason": "User confirmed current content does not show a usable face."
         }
-      ]
+      ],
+      "faceless": true,
+      "face_enrollment_status": "faceless",
+      "faceless_confirmed_by": "Britton",
+      "faceless_confirmed_at": "2026-06-19T08:10:01+00:00"
     },
     "kinkykttn": {
       "name": "Kinkykttn",
@@ -8597,64 +8675,6 @@
         }
       ]
     },
-    "emilia-bunny": {
-      "name": "Emilia Bunny",
-      "slug": "emilia-bunny",
-      "aliases": [],
-      "profile_handles": [],
-      "status": "user-confirmed",
-      "evidence": [
-        {
-          "video_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
-          "source": "manual_correction",
-          "name": "Emilia Bunny",
-          "confidence": 1.0,
-          "evidence_role": "user_confirmed_correction",
-          "sidecar_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv.face-meta.json"
-        }
-      ],
-      "web_text_evidence_summary": {
-        "schema": "media-web-text-evidence/v1",
-        "count": 0,
-        "providers": [],
-        "source_trust_counts": {},
-        "review_required": false
-      },
-      "identity_trace_summary": {
-        "schema": "media-identity-trace/v1",
-        "count": 0,
-        "review_required": true
-      },
-      "assignment_decision": {
-        "schema": "media-assignment-decision/v1",
-        "suggested_slug": null,
-        "suggested_name": null,
-        "confidence": 0.0,
-        "auto_assign_allowed": false,
-        "review_required": true,
-        "why": "",
-        "blocking_reasons": [],
-        "supporting_signal_ids": []
-      },
-      "video_count": 0,
-      "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-16T19:22:01+00:00",
-      "audit_events": [
-        {
-          "event": "manual_correction_confirmed",
-          "corrected_by": "Britton",
-          "confirmed_by": "Britton",
-          "confirmed_at": "2026-06-16T19:22:01+00:00",
-          "corrected_at": "2026-06-16T19:22:01+00:00",
-          "source_file": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
-          "previous_suggestion": null,
-          "new_canonical_name": "Emilia Bunny",
-          "evidence_role": "user_confirmed_correction",
-          "face_enrollment_performed": false,
-          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
-        }
-      ]
-    },
     "luxury-girl": {
       "name": "Luxury Girl",
       "slug": "luxury-girl",
@@ -8716,7 +8736,10 @@
     "emiliaofficial": {
       "name": "Emiliaofficial",
       "slug": "emiliaofficial",
-      "aliases": [],
+      "aliases": [
+        "Emilia Bunny",
+        "emilia-bunny"
+      ],
       "profile_handles": [],
       "status": "user-confirmed",
       "evidence": [
@@ -8727,6 +8750,118 @@
           "confidence": 1.0,
           "evidence_role": "user_confirmed_correction",
           "sidecar_path": "/DATA/yes/Emilla Official Takes Boyfriend Hug dick.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
+          "source": "manual_correction",
+          "name": "Emilia Bunny",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny 2 Cumshots. Feet Ride. the Wettest Pussy Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny 2 Cumshots. Feet Ride. the Wettest Pussy Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny A Playful Evening with a Natural Beauty Who Always.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny A Playful Evening with a Natural Beauty Who Always.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Help Me with the Game and Ill Help You Cum Step Sis.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Help Me with the Game and Ill Help You Cum Step Sis.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Horny Girl Takes It Deep Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Horny Girl Takes It Deep Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Model Encounter Exceeds Expectations Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Model Encounter Exceeds Expectations Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Model in Bodysuit Receives Facial After Passionate.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Model in Bodysuit Receives Facial After Passionate.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny POV Woman Rubs Clit Receives Cum on Panties Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny POV Woman Rubs Clit Receives Cum on Panties Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Pov Your Sexy Gf Cant Leave the House until You Mak.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Pov Your Sexy Gf Cant Leave the House until You Mak.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Schoolgirl Plays Hooky and gets Naughty on Camera B.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Schoolgirl Plays Hooky and gets Naughty on Camera B.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Sexy Schoolgirl in Pantyhose Helps with Homework Be.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Sexy Schoolgirl in Pantyhose Helps with Homework Be.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilia Bunny Strict Teachers Private Lesson Beeg.mp4",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilia Bunny Strict Teachers Private Lesson Beeg.mp4.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Emilla Official Takes Boyfriend Hug dick.mkv",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Emilla Official Takes Boyfriend Hug dick.mkv.face-meta.json"
+        },
+        {
+          "video_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
+          "source": "manual_correction",
+          "name": "Emiliaofficial",
+          "confidence": 1.0,
+          "evidence_role": "user_confirmed_correction",
+          "sidecar_path": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv.face-meta.json"
         }
       ],
       "web_text_evidence_summary": {
@@ -8754,7 +8889,7 @@
       },
       "video_count": 0,
       "confirmed_by": "Britton",
-      "confirmed_at": "2026-06-16T19:52:19+00:00",
+      "confirmed_at": "2026-06-17T03:17:38+00:00",
       "audit_events": [
         {
           "event": "manual_correction_confirmed",
@@ -8768,8 +8903,198 @@
           "evidence_role": "user_confirmed_correction",
           "face_enrollment_performed": false,
           "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-16T19:22:01+00:00",
+          "corrected_at": "2026-06-16T19:22:01+00:00",
+          "source_file": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emilia Bunny",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "duplicate_creator_merged",
+          "source_name": "Emilia Bunny",
+          "target_name": "Emiliaofficial",
+          "confirmed_by": "Britton",
+          "at": "2026-06-17T02:58:34+00:00"
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny 2 Cumshots. Feet Ride. the Wettest Pussy Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny A Playful Evening with a Natural Beauty Who Always.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Help Me with the Game and Ill Help You Cum Step Sis.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Horny Girl Takes It Deep Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Model Encounter Exceeds Expectations Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Model in Bodysuit Receives Facial After Passionate.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny POV Woman Rubs Clit Receives Cum on Panties Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Pov Your Sexy Gf Cant Leave the House until You Mak.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Schoolgirl Plays Hooky and gets Naughty on Camera B.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Sexy Schoolgirl in Pantyhose Helps with Homework Be.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:37+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilia Bunny Strict Teachers Private Lesson Beeg.mp4",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:38+00:00",
+          "corrected_at": "2026-06-17T03:17:37+00:00",
+          "source_file": "/DATA/yes/Emilla Official Takes Boyfriend Hug dick.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
+        },
+        {
+          "event": "manual_correction_confirmed",
+          "corrected_by": "Britton",
+          "confirmed_by": "Britton",
+          "confirmed_at": "2026-06-17T03:17:38+00:00",
+          "corrected_at": "2026-06-17T03:17:38+00:00",
+          "source_file": "/DATA/yes/Строгая учительница… но после уроков разрешено всё 💦 - EmiliaBunny - Pornhub.com.mkv",
+          "previous_suggestion": null,
+          "new_canonical_name": "Emiliaofficial",
+          "evidence_role": "user_confirmed_correction",
+          "face_enrollment_performed": false,
+          "limitations": "Registry/model index text identity update only; no face enrollment was performed."
         }
-      ]
+      ],
+      "enrolled_face_samples": []
     },
     "tru-kait": {
       "name": "Tru Kait",
@@ -8971,7 +9296,7 @@
     "leximarvel": "Lexi Marvel",
     "sakurairena": "Sakurai Rena",
     "katievaynes": "Katievaynes",
-    "emiliabunny": "Emilia Bunny",
+    "emiliabunny": "Emiliaofficial",
     "luxurygirl": "Luxury Girl",
     "emiliaofficial": "Emiliaofficial",
     "trukait": "Tru Kait",

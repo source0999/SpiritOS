@@ -1,9 +1,9 @@
 {
   "schema": "spiritflix-model-gallery/v1",
-  "generated_at": "2026-06-17T01:54:22+00:00",
+  "generated_at": "2026-06-19T10:12:14+00:00",
   "gallery_root": "scripts/media/model_gallery",
   "summary": {
-    "enrolled_models": 30,
+    "enrolled_models": 42,
     "models_with_gallery": 1,
     "gallery_items": 923
   },
@@ -81,10 +81,26 @@
       "items": []
     },
     {
+      "name": "Bonnie Blue",
+      "model_key": "bonnieblue",
+      "model_slug": "bonnie-blue",
+      "known_performer_id": "bonnie-blue",
+      "item_count": 0,
+      "items": []
+    },
+    {
       "name": "Brenda Trindade",
       "model_key": "brendatrindade",
       "model_slug": "brenda-trindade",
       "known_performer_id": "brenda-trindade",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Ce Ce Rose",
+      "model_key": "cecerose",
+      "model_slug": "ce-ce-rose",
+      "known_performer_id": "ce-ce-rose",
       "item_count": 0,
       "items": []
     },
@@ -101,6 +117,14 @@
       "model_key": "comatozze",
       "model_slug": "comatozze",
       "known_performer_id": "comatozze",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Dana De Armond",
+      "model_key": "danadearmond",
+      "model_slug": "dana-de-armond",
+      "known_performer_id": "dana-de-armond",
       "item_count": 0,
       "items": []
     },
@@ -12113,6 +12137,30 @@
       ]
     },
     {
+      "name": "Emiliaofficial",
+      "model_key": "emiliaofficial",
+      "model_slug": "emiliaofficial",
+      "known_performer_id": "emiliaofficial",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Eve",
+      "model_key": "eve",
+      "model_slug": "eve",
+      "known_performer_id": "eve",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "F1nn5ter",
+      "model_key": "f1nn5ter",
+      "model_slug": "f1nn5ter",
+      "known_performer_id": "f1nn5ter",
+      "item_count": 0,
+      "items": []
+    },
+    {
       "name": "Gem The Jewels",
       "model_key": "gemthejewels",
       "model_slug": "gem-the-jewels",
@@ -12133,6 +12181,14 @@
       "model_key": "heyimbee",
       "model_slug": "heyimbee",
       "known_performer_id": "heyimbee",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Isabelle Eleanore",
+      "model_key": "isabelleeleanore",
+      "model_slug": "isabelle-eleanore",
+      "known_performer_id": "isabelle-eleanore",
       "item_count": 0,
       "items": []
     },
@@ -12161,10 +12217,26 @@
       "items": []
     },
     {
+      "name": "Katiana Kay",
+      "model_key": "katianakay",
+      "model_slug": "katiana-kay",
+      "known_performer_id": "katiana-kay",
+      "item_count": 0,
+      "items": []
+    },
+    {
       "name": "Kylie Island",
       "model_key": "kylieisland",
       "model_slug": "kylie-island",
       "known_performer_id": "kylie-island",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Leighbunbun",
+      "model_key": "leighbunbun",
+      "model_slug": "leighbunbun",
+      "known_performer_id": "leighbunbun",
       "item_count": 0,
       "items": []
     },
@@ -12189,6 +12261,14 @@
       "model_key": "misslilu",
       "model_slug": "miss-lilu",
       "known_performer_id": "miss-lilu",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Natalie Roush",
+      "model_key": "natalieroush",
+      "model_slug": "natalie-roush",
+      "known_performer_id": "natalie-roush",
       "item_count": 0,
       "items": []
     },
@@ -12237,6 +12317,22 @@
       "model_key": "strawberrytabby",
       "model_slug": "strawberrytabby",
       "known_performer_id": "strawberrytabby",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Tru Kait",
+      "model_key": "trukait",
+      "model_slug": "tru-kait",
+      "known_performer_id": "tru-kait",
+      "item_count": 0,
+      "items": []
+    },
+    {
+      "name": "Urfavbella",
+      "model_key": "urfavbella",
+      "model_slug": "urfavbella",
+      "known_performer_id": "urfavbella",
       "item_count": 0,
       "items": []
     },

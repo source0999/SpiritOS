@@ -21,7 +21,8 @@ const LOCK_PATH = path.join(LOG_ROOT, "media-ingest-worker.lock");
 const POLL_MS = Number(process.env.MEDIA_INGEST_POLL_MS || 30000);
 const STABLE_MS = Number(process.env.MEDIA_INGEST_STABLE_MS || 120000);
 const EXTENSIONS = new Set([".mkv", ".mp4", ".mov", ".m4v", ".webm"]);
-const ENCODER = process.env.MEDIA_INGEST_ENCODER || "cpu-x265";
+const ENCODER = process.env.MEDIA_INGEST_ENCODER || "disabled";
+const ALLOW_LEGACY_MKV_OUTPUT = process.env.MEDIA_INGEST_ALLOW_LEGACY_MKV_OUTPUT === "1";
 const MAC_ENCODER_SCRIPT =
   process.env.MEDIA_INGEST_MAC_ENCODER_SCRIPT ||
   path.resolve("scripts/media/mac_videotoolbox_encode.py");
@@ -40,12 +41,25 @@ const FACE_ORGANIZER_SCRIPT = process.env.MEDIA_INGEST_FACE_ORGANIZER_SCRIPT || 
 const FACE_ORGANIZER_SOURCE = process.env.MEDIA_INGEST_FACE_ORGANIZER_SOURCE || LIBRARY_WATCH_ROOTS[0] || path.join(MEDIA_ROOT, "yes");
 const FACE_ORGANIZER_CTX_ID = process.env.MEDIA_INGEST_FACE_ORGANIZER_CTX_ID || "0";
 const FACE_ORGANIZER_FRAME_COUNT = process.env.MEDIA_INGEST_FACE_ORGANIZER_FRAME_COUNT || "12";
+const CPU_ENCODER_THREADS = Math.max(1, Number(process.env.MEDIA_INGEST_CPU_THREADS || 2));
+const CPU_ENCODER_NICE = Number(process.env.MEDIA_INGEST_CPU_NICE || 12);
+const CPU_ENCODER_CPUSET = process.env.MEDIA_INGEST_CPUSET ?? (process.platform === "linux" ? "0,1" : "");
+const POST_PROCESS_THREADS = String(Math.max(1, Number(process.env.MEDIA_INGEST_POST_THREADS || CPU_ENCODER_THREADS)));
+const POST_PROCESS_NICE = Number(process.env.MEDIA_INGEST_POST_NICE || CPU_ENCODER_NICE);
+const POST_PROCESS_CPUSET = process.env.MEDIA_INGEST_POST_CPUSET ?? CPU_ENCODER_CPUSET;
 
 const state = {
   version: 2,
   queueState: "running",
   jobs: [],
 };
+
+class LegacyMkvOutputDisabledError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "LegacyMkvOutputDisabledError";
+  }
+}
 
 class NotWorthConvertingError extends Error {
   constructor(message) {
@@ -108,13 +122,78 @@ function run(command, args) {
   });
 }
 
+function quoteCommandArg(arg) {
+  return arg.includes(" ") ? JSON.stringify(arg) : arg;
+}
+
+function buildBackgroundCommand(baseCommand, args, options = {}) {
+  const nice = options.nice ?? CPU_ENCODER_NICE;
+  const cpuset = options.cpuset ?? CPU_ENCODER_CPUSET;
+  let command = baseCommand;
+  let spawnArgs = args;
+  let display = [baseCommand, ...args];
+
+  if (cpuset && process.platform === "linux") {
+    command = "taskset";
+    spawnArgs = ["-c", cpuset, baseCommand, ...spawnArgs];
+    display = ["taskset", "-c", cpuset, ...display];
+  }
+
+  if (Number.isFinite(nice) && nice !== 0 && process.platform !== "win32") {
+    spawnArgs = ["-n", String(nice), command, ...spawnArgs];
+    display = ["nice", "-n", String(nice), ...display];
+    command = "nice";
+  }
+
+  return { command, spawnArgs, display };
+}
+
+function buildCpuEncoderCommand(args) {
+  return buildBackgroundCommand("ffmpeg", args, { nice: CPU_ENCODER_NICE, cpuset: CPU_ENCODER_CPUSET });
+}
+
+function runPostProcess(command, args) {
+  return new Promise((resolve, reject) => {
+    const background = buildBackgroundCommand(command, args, { nice: POST_PROCESS_NICE, cpuset: POST_PROCESS_CPUSET });
+    const child = spawn(background.command, background.spawnArgs, {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        OMP_NUM_THREADS: process.env.OMP_NUM_THREADS || POST_PROCESS_THREADS,
+        OPENBLAS_NUM_THREADS: process.env.OPENBLAS_NUM_THREADS || POST_PROCESS_THREADS,
+        MKL_NUM_THREADS: process.env.MKL_NUM_THREADS || POST_PROCESS_THREADS,
+        NUMEXPR_NUM_THREADS: process.env.NUMEXPR_NUM_THREADS || POST_PROCESS_THREADS,
+      },
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr, command: background.display });
+      } else {
+        reject(new Error(`${background.display.join(" ")} exited ${code}: ${stderr || stdout}`));
+      }
+    });
+  });
+}
+
 async function runFaceOrganizerScan(finalPath) {
-  if (!FACE_SCAN_ON_INGEST) {
+  const sidecarPath = `${finalPath}.face-meta.json`;
+  const hasSidecar = await exists(sidecarPath);
+  if (!FACE_SCAN_ON_INGEST && hasSidecar) {
     return {
       enabled: false,
       status: "skipped",
-      reason: "MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
+      reason: "sidecar already exists and MEDIA_INGEST_FACE_SCAN_ON_INGEST=0",
       at: now(),
+      sidecarPath,
     };
   }
   const args = [
@@ -131,12 +210,12 @@ async function runFaceOrganizerScan(finalPath) {
     FACE_ORGANIZER_CTX_ID,
   ];
   try {
-    const result = await run(FACE_ORGANIZER_PYTHON, args);
+    const result = await runPostProcess(FACE_ORGANIZER_PYTHON, args);
     return {
       enabled: true,
       status: "ok",
       at: now(),
-      command: [FACE_ORGANIZER_PYTHON, ...args],
+      command: result.command,
       stdout: result.stdout.slice(-4000),
       stderr: result.stderr.slice(-4000),
       sidecarPath: `${finalPath}.face-meta.json`,
@@ -146,9 +225,45 @@ async function runFaceOrganizerScan(finalPath) {
       enabled: true,
       status: "failed",
       at: now(),
-      command: [FACE_ORGANIZER_PYTHON, ...args],
+      command: buildBackgroundCommand(FACE_ORGANIZER_PYTHON, args, { nice: POST_PROCESS_NICE, cpuset: POST_PROCESS_CPUSET }).display,
       error: error instanceof Error ? error.message : String(error),
       sidecarPath: `${finalPath}.face-meta.json`,
+    };
+  }
+}
+
+async function refreshOrganizerPages() {
+  if (process.env.MEDIA_INGEST_REFRESH_ORGANIZER_ON_INGEST === "0") {
+    return {
+      status: "skipped",
+      reason: "MEDIA_INGEST_REFRESH_ORGANIZER_ON_INGEST=0",
+      at: now(),
+    };
+  }
+  const args = [
+    FACE_ORGANIZER_SCRIPT,
+    "--organizer-quick-refresh",
+    "--source",
+    FACE_ORGANIZER_SOURCE,
+    "--ctx-id",
+    FACE_ORGANIZER_CTX_ID,
+    "--apply",
+  ];
+  try {
+    const result = await runPostProcess(FACE_ORGANIZER_PYTHON, args);
+    return {
+      status: "ok",
+      at: now(),
+      command: result.command,
+      stdout: result.stdout.slice(-2000),
+      stderr: result.stderr.slice(-2000),
+    };
+  } catch (error) {
+    return {
+      status: "failed",
+      at: now(),
+      command: buildBackgroundCommand(FACE_ORGANIZER_PYTHON, args, { nice: POST_PROCESS_NICE, cpuset: POST_PROCESS_CPUSET }).display,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -351,6 +466,11 @@ async function scan() {
 }
 
 async function processJob(job) {
+  if (!ALLOW_LEGACY_MKV_OUTPUT) {
+    throw new LegacyMkvOutputDisabledError(
+      "Legacy Dell HEVC/MKV media-ingest output is disabled. Use scripts/spiritflix-mobile-optimize.mjs for Mac MP4 derivatives.",
+    );
+  }
   job.status = "running";
   job.startedAt = now();
   await jobLog(job, "Moving source into active processing.");
@@ -368,6 +488,11 @@ async function processJob(job) {
   await jobLog(job, `Source codec: ${videoCodec(job.probe)}`);
 
   const outputRelative = job.relativeInCategory.replace(/\.[^.]+$/, ".mkv");
+  if (!ALLOW_LEGACY_MKV_OUTPUT && outputRelative.toLowerCase().endsWith(".mkv")) {
+    throw new LegacyMkvOutputDisabledError(
+      `Blocked legacy MKV live output candidate: ${path.join(job.category, outputRelative)}`,
+    );
+  }
   const tempOutputPath = path.join(activeDir, path.basename(outputRelative).replace(/\.mkv$/, ".tmp.mkv"));
   job.tempOutputPath = tempOutputPath;
   if (ENCODER === "mac-videotoolbox-hevc") {
@@ -419,17 +544,22 @@ async function processJob(job) {
       "22",
       "-pix_fmt",
       "yuv420p10le",
+      "-threads",
+      String(CPU_ENCODER_THREADS),
+      "-x265-params",
+      `pools=${CPU_ENCODER_THREADS}`,
       "-c:a",
       "copy",
       "-c:s",
       "copy",
       tempOutputPath,
     ];
-    job.command = ["ffmpeg", ...args];
-    await jobLog(job, `ffmpeg ${args.map((arg) => (arg.includes(" ") ? JSON.stringify(arg) : arg)).join(" ")}`);
+    const cpuEncoder = buildCpuEncoderCommand(args);
+    job.command = cpuEncoder.display;
+    await jobLog(job, cpuEncoder.display.map(quoteCommandArg).join(" "));
 
     await new Promise((resolve, reject) => {
-      const child = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(cpuEncoder.command, cpuEncoder.spawnArgs, { stdio: ["ignore", "pipe", "pipe"] });
       let progress = 0;
       child.stdout.on("data", (chunk) => {
         const text = chunk.toString();
@@ -499,6 +629,10 @@ async function processJob(job) {
   receipt.faceOrganizerScan = await runFaceOrganizerScan(finalPath);
   await fs.writeFile(receiptPathFor(finalPath), `${JSON.stringify(receipt, null, 2)}\n`);
   await jobLog(job, `Face organizer scan ${receipt.faceOrganizerScan.status}.`);
+  await jobLog(job, "Refreshing organizer verification/enrollment HTML pages.");
+  receipt.organizerPageRefresh = await refreshOrganizerPages();
+  await fs.writeFile(receiptPathFor(finalPath), `${JSON.stringify(receipt, null, 2)}\n`);
+  await jobLog(job, `Organizer page refresh ${receipt.organizerPageRefresh.status}.`);
   if (job.deleteOriginalOnSuccess) {
     await fs.rm(activePath, { force: true });
     job.originalDeleted = true;

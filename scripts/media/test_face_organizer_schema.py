@@ -1080,6 +1080,31 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertIn("Manual crop this still", html)
         self.assertIn("Merge duplicate creator / alias", html)
         self.assertIn("/api/enrollment/merge-creator", html)
+        self.assertIn("Rescan all models", html)
+        self.assertIn("Scan missing/new linked videos", html)
+
+    def test_missing_enrollment_video_paths_selects_only_unscanned_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            first = root / "first.mp4"
+            second = root / "second.mp4"
+            first.write_bytes(b"first")
+            second.write_bytes(b"second")
+
+            missing = fo.missing_enrollment_video_paths([first, second], {fo.video_path_key(first)})
+
+        self.assertEqual(missing, [second])
+
+    def test_enrollment_accept_success_navigates_to_enrolled_page(self) -> None:
+        script = fo.enrollment_page_script()
+
+        self.assertIn("function goToEnrolledAfterRefresh", script)
+        self.assertIn("window.location.href = '/enrolled';", script)
+        self.assertIn("goToEnrolledAfterRefresh(result, 1700)", script)
+        self.assertIn("goToEnrolledAfterRefresh(result, 2500)", script)
+        self.assertIn("page-rescan-all-models", script)
+        self.assertIn("all_models: true", script)
+        self.assertIn("missing_only: true", script)
 
     def test_merge_duplicate_creator_dry_run_requires_confirmation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -1700,6 +1725,52 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertTrue(updated["faceless_video"])
         self.assertFalse(updated["verification_needed"])
 
+    def test_mark_performer_faceless_updates_model_index_and_audit_pressure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            registry_path = root / "performer_verification.json"
+            registry_path.write_text(
+                json.dumps(
+                    {
+                        "schema": "media-performer-verification/v1",
+                        "performers": {
+                            "sava-schultz": {
+                                "name": "Sava Schultz",
+                                "slug": "sava-schultz",
+                                "status": "user-confirmed",
+                                "aliases": [],
+                                "profile_handles": [],
+                                "video_count": 1,
+                                "evidence": [],
+                            }
+                        },
+                        "aliases": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            config = dataclasses.replace(make_test_config(root, registry_path), apply=True)
+
+            result = fo.mark_performer_faceless(
+                config,
+                {
+                    "performer_name": "Sava Schultz",
+                    "confirmation": "Sava Schultz",
+                    "confirmed_by": "Britton",
+                },
+            )
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            model_index = json.loads(registry_path.with_name("model_index.json").read_text(encoding="utf-8"))
+            audit = fo.audit_known_db(config)
+
+        self.assertTrue(result["applied"])
+        self.assertTrue(registry["performers"]["sava-schultz"]["faceless"])
+        self.assertEqual(registry["performers"]["sava-schultz"]["face_enrollment_status"], "faceless")
+        model = next(item for item in model_index["models"] if item["slug"] == "sava-schultz")
+        self.assertTrue(model["faceless"])
+        self.assertEqual(model["face_enrollment_status"], "faceless")
+        self.assertNotIn("sava-schultz", {item["slug"] for item in audit["performers_missing_known_record"]})
+
     def test_faceless_video_is_not_pending_enrolled_action(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             root = Path(temp_name)
@@ -1787,6 +1858,39 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertTrue(records[0]["unscanned"])
         self.assertEqual(records[0]["video_path"], str(video))
+
+    def test_models_folder_sidecarless_video_is_in_verification_queue(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            model_dir = root / "models" / "ce-ce-rose"
+            model_dir.mkdir(parents=True)
+            video = model_dir / "Cece Rose Practices BJ Skills With A Dildo.mp4"
+            video.write_bytes(b"video")
+            config = make_test_config(root, root / "performer_verification.json")
+
+            records = fo.verification_queue_records(config)
+            fo.generate_report(config)
+            html = config.report_path.read_text(encoding="utf-8")
+
+        self.assertEqual(len(records), 1)
+        self.assertTrue(records[0]["unscanned"])
+        self.assertEqual(records[0]["video_path"], str(video))
+        self.assertIn("Cece Rose Practices BJ Skills With A Dildo.mp4", html)
+
+    def test_verification_queue_status_detects_new_unscanned_upload(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            video = root / "Fresh Upload.mp4"
+            video.write_bytes(b"video")
+            config = make_test_config(root, root / "performer_verification.json")
+            fo.generate_report(config)
+            stored = json.loads(config.report_path.with_suffix(".json").read_text(encoding="utf-8"))
+
+            status = fo.build_verification_queue_status(config)
+
+        self.assertEqual(stored["review_count"], 1)
+        self.assertEqual(status["review_count"], 1)
+        self.assertFalse(status["report_stale"])
 
     def test_unscanned_unknown_preview_frames_are_saved_when_apply_is_enabled(self) -> None:
         def fake_extract_preview_frames(video_path: Path, review_dir: Path, frame_count: int) -> list[Path]:
@@ -1915,6 +2019,32 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertIn('<details class="video-match-panel">', html)
         self.assertNotIn('<details class="video-match-panel" open>', html)
         self.assertIn("0 need action", html)
+
+    def test_video_match_panel_tolerates_blank_model_sidecar_path(self) -> None:
+        html = fo.render_enrolled_video_matches(
+            {
+                "name": "Sava Schultz",
+                "known_performer_id": "sava-schultz",
+                "auto_video_matches": [],
+                "pending_video_matches": [],
+                "library_video_matches": [],
+                "missing_video_matches": [],
+                "source_of_truth_ledger": {
+                    "rows": [
+                        {
+                            "model_folder_path": "/DATA/yes/models/sava-schultz/sample.mkv",
+                            "sidecar_path": "",
+                            "basename": "sample.mkv",
+                            "match_evidence_type": "metadata",
+                            "sync_mismatch_reasons": [],
+                        }
+                    ]
+                },
+            }
+        )
+
+        self.assertIn("No scan preview saved", html)
+        self.assertIn("sample.mkv", html)
 
     def test_scan_sidecar_write_preserves_user_video_decisions(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -2423,6 +2553,52 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
 
         self.assertEqual(result["selection_count"], 5)
         self.assertEqual(len(result["enrollment"]["embedding_row_indexes_added"]), 5)
+
+    def test_smart_accept_resolves_known_media_root_crop_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            config = dataclasses.replace(make_test_config(root, root / "performer_verification.json"), apply=True)
+            db = fo.KnownPerformersDB(config.db_dir)
+            db.ensure()
+            candidate_dir = fo.enrollment_review_dir(config) / "leighbunbun" / "crops"
+            candidate_dir.mkdir(parents=True)
+            crop = candidate_dir / "visit-onlyshare-io-for-more-8-06-000023-face-14cfdd.jpg"
+            crop.write_bytes(b"crop")
+            alias_crop = str(crop).replace(str(root), "/mnt/spirit-8tb/media/yes").replace("\\", "/")
+            fo.json_dump(
+                fo.enrollment_review_dir(config) / "enrollment_candidates.json",
+                {
+                    "groups": [
+                        {
+                            "name": "Leighbunbun",
+                            "slug": "leighbunbun",
+                            "recommended_crops": [
+                                {
+                                    "crop_path": alias_crop,
+                                    "source_video": str(root / "video.mkv"),
+                                    "quality_score": 0.99,
+                                    "detection_score": 0.99,
+                                }
+                            ],
+                        }
+                    ]
+                },
+            )
+
+            with (
+                patch.object(fo, "InsightFaceRecognizer", return_value=FakeRecognizer()),
+                patch.object(fo, "rescan_unidentified_videos_after_enrollment", return_value={"scanned": 0, "matched_new_performer": 0}),
+            ):
+                result = fo.smart_accept_best_crops(
+                    config,
+                    {"performer_name": "Leighbunbun", "confirmation": "Leighbunbun", "target_count": 1},
+                )
+            updated_candidates = json.loads((fo.enrollment_review_dir(config) / "enrollment_candidates.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(result["selection_count"], 1)
+        self.assertEqual(len(result["enrollment"]["embedding_row_indexes_added"]), 1)
+        self.assertEqual(result["enrollment"]["removed_recommendations"], 1)
+        self.assertEqual(updated_candidates["groups"][0]["recommended_crops"], [])
 
     def test_enrolled_groups_keep_recommendations_visible_after_optimal_screen_count(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:

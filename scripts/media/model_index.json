@@ -1,14 +1,24 @@
 {
   "schema": "spiritflix-model-index/v1",
-  "generated_at": "2026-06-17T01:23:06+00:00",
+  "generated_at": "2026-06-19T08:27:18+00:00",
   "source_dir": "/DATA/yes",
   "models": [
     {
-      "name": "Aaliyah Yasan",
-      "slug": "aaliyah-yasan",
-      "aliases": [],
+      "name": "Aaliyah Yasin",
+      "slug": "aaliyah-yasin",
+      "aliases": [
+        "Aaliyah Yasan",
+        "aaliyah-yasan",
+        "aaliyah yasan",
+        "Aaliyah Yassan",
+        "aaliyah-yassan",
+        "aaliyah yassan",
+        "Aaliyah Yasin",
+        "aaliyah-yasin",
+        "aaliyah yasin"
+      ],
       "status": "user-confirmed",
-      "video_count": 2,
+      "video_count": 28,
       "profile_handles": [],
       "assignment_status": "user-confirmed",
       "identity_confidence": 0.0,
@@ -220,6 +230,10 @@
       "aliases": [
         "cutefru",
         "Cutefru",
+        "cut fru",
+        "Cut Fru",
+        "cute fru",
+        "Cute Fru",
         "cutefruit"
       ],
       "status": "user-confirmed",
@@ -258,7 +272,11 @@
       "identity_confidence": 0.0,
       "primary_evidence_role": "user-confirmed",
       "review_required": true,
-      "why": ""
+      "why": "",
+      "faceless": true,
+      "face_enrollment_status": "faceless",
+      "faceless_confirmed_by": "Britton",
+      "faceless_confirmed_at": "2026-06-15T23:39:00+00:00"
     },
     {
       "name": "Dana De Armond",
@@ -287,22 +305,12 @@
       "why": ""
     },
     {
-      "name": "Emilia Bunny",
-      "slug": "emilia-bunny",
-      "aliases": [],
-      "status": "user-confirmed",
-      "video_count": 0,
-      "profile_handles": [],
-      "assignment_status": "user-confirmed",
-      "identity_confidence": 0.0,
-      "primary_evidence_role": "user-confirmed",
-      "review_required": true,
-      "why": ""
-    },
-    {
       "name": "Emiliaofficial",
       "slug": "emiliaofficial",
-      "aliases": [],
+      "aliases": [
+        "Emilia Bunny",
+        "emilia-bunny"
+      ],
       "status": "user-confirmed",
       "video_count": 0,
       "profile_handles": [],
@@ -510,7 +518,11 @@
       "identity_confidence": 0.0,
       "primary_evidence_role": "user-confirmed",
       "review_required": true,
-      "why": ""
+      "why": "",
+      "faceless": true,
+      "face_enrollment_status": "faceless",
+      "faceless_confirmed_by": "Britton",
+      "faceless_confirmed_at": "2026-06-19T08:10:01+00:00"
     },
     {
       "name": "Kinkykttn",
@@ -531,7 +543,11 @@
       "identity_confidence": 0.0,
       "primary_evidence_role": "user-confirmed",
       "review_required": true,
-      "why": ""
+      "why": "",
+      "faceless": true,
+      "face_enrollment_status": "faceless",
+      "faceless_confirmed_by": "Britton",
+      "faceless_confirmed_at": "2026-06-16T01:43:01+00:00"
     },
     {
       "name": "Kylie Island",

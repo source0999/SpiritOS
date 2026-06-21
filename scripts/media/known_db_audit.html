@@ -19,6 +19,15 @@
     .summary span, .presence span, .mini-metrics span { border-radius: .25rem; background: rgba(255,255,255,.07); padding: .35rem .5rem; color: #e4e4e7; }
     .grid { display: grid; gap: 1rem; padding-bottom: 3rem; }
     .enroll-card { border-radius: .45rem; background: rgba(255,255,255,.045); outline: 1px solid rgba(255,255,255,.08); padding: 1rem; }
+    .model-card-collapse { display: block; }
+    .model-card-collapse > summary.model-card-summary { list-style: none; cursor: pointer; }
+    .model-card-collapse > summary.model-card-summary::-webkit-details-marker { display: none; }
+    .model-card-collapse > summary.model-card-summary::marker { content: ''; }
+    .model-card-collapse[open] > summary .collapse-chevron { transform: rotate(90deg); }
+    .collapse-chevron { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: .25rem; background: rgba(103,232,249,.12); color: #67e8f9; font-size: .95rem; line-height: 1; transition: transform .15s ease; }
+    .enroll-card-body { padding-top: .15rem; }
+    .page-collapse-controls { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    .page-collapse-controls button { background: rgba(255,255,255,.08); color: #e4e4e7; }
     .enroll-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
     .enroll-head p { margin: 0 0 .25rem; color: #a7f3d0; font-size: .75rem; text-transform: uppercase; }
     .enroll-head h2 { margin: 0; overflow-wrap: anywhere; letter-spacing: 0; }
@@ -43,6 +52,8 @@
     .enroll-form { display: grid; gap: .65rem; margin-top: .9rem; }
     input { width: 100%; margin-top: .25rem; border: 1px solid rgba(255,255,255,.16); border-radius: .25rem; background: #18181b; color: #fff; padding: .5rem; }
     button { border: 0; border-radius: .25rem; background: rgba(96,165,250,.18); color: #dbeafe; padding: .55rem .7rem; cursor: pointer; }
+    button.primary-action { background: rgba(16,185,129,.28); color: #ecfdf5; outline: 1px solid rgba(52,211,153,.35); font-weight: 700; }
+    button.primary-action:hover { background: rgba(16,185,129,.4); }
     button:hover { background: rgba(96,165,250,.28); }
     .empty-crop { color: #a1a1aa; border-radius: .35rem; background: rgba(255,255,255,.04); padding: 1rem; }
     .merge-panel { border-radius: .35rem; background: rgba(255,255,255,.035); padding: .65rem; outline: 1px solid rgba(255,255,255,.08); }
@@ -120,17 +131,17 @@
   <header>
     <p class="muted">Media Face Organizer v1</p>
     <h1>Known DB Audit</h1>
-    <p class="muted">Generated 2026-06-17T01:55:09+00:00</p>
+    <p class="muted">Generated 2026-06-19T10:12:14+00:00</p>
     <nav class="report-nav"><a class="" href="face_verification_report.html">Verification Queue</a><a class="" href="face_enrollment_queue.html">Face Enrollment Queue</a><a class="" href="face_enrolled_performers.html">Enrolled</a><a class="" href="face_gallery.html">Gallery Upload</a><a class="active" href="known_db_audit.html">Known DB Audit</a><a class="" href="face_verification_full_audit.html">Report All / Full Audit</a></nav>
     <div class="summary">
-      <span>registry: 60</span>
-      <span>model index: 60</span>
-      <span>known performers: 30</span>
-      <span>embedding shape: (155, 512)</span>
+      <span>registry: 59</span>
+      <span>model index: 59</span>
+      <span>known performers: 42</span>
+      <span>embedding shape: (219, 512)</span>
     </div>
   </header>
   <main class="grid">
-    <article class="enroll-card"><h2>Missing known performer records</h2><ul><li>Bonnie Blue: in registry/model index, not face-enrolled</li><li>Ce Ce Rose: in registry/model index, not face-enrolled</li><li>Cute Geekie: in registry/model index, not face-enrolled</li><li>Dana De Armond: in registry/model index, not face-enrolled</li><li>Emilia Bunny: in registry/model index, not face-enrolled</li><li>Emiliaofficial: in registry/model index, not face-enrolled</li><li>Eve: in registry/model index, not face-enrolled</li><li>F1nn5ter: in registry/model index, not face-enrolled</li><li>Isabelle Eleanore: in registry/model index, not face-enrolled</li><li>Katiana Kay: in registry/model index, not face-enrolled</li><li>Katievaynes: in registry/model index, not face-enrolled</li><li>Kinkykttn: in registry/model index, not face-enrolled</li><li>Leighbunbun: in registry/model index, not face-enrolled</li><li>Lena The Plug: in registry/model index, not face-enrolled</li><li>Lexi Marvel: in registry/model index, not face-enrolled</li><li>Lustcnotal: in registry/model index, not face-enrolled</li><li>Luxury Girl: in registry/model index, not face-enrolled</li><li>Mackzjones: in registry/model index, not face-enrolled</li><li>Melissa Debling: in registry/model index, not face-enrolled</li><li>Mulai: in registry/model index, not face-enrolled</li><li>Mulan Vuitton: in registry/model index, not face-enrolled</li><li>Natalie Roush: in registry/model index, not face-enrolled</li><li>Sakhovanski: in registry/model index, not face-enrolled</li><li>Sakurai Rena: in registry/model index, not face-enrolled</li><li>Sendnudesx: in registry/model index, not face-enrolled</li><li>Sienna Ababi: in registry/model index, not face-enrolled</li><li>Tru Kait: in registry/model index, not face-enrolled</li><li>Urfavbella: in registry/model index, not face-enrolled</li><li>Yummy Couple: in registry/model index, not face-enrolled</li><li>Zoey Uso: in registry/model index, not face-enrolled</li></ul></article>
+    <article class="enroll-card"><h2>Missing known performer records</h2><ul><li>Lena The Plug: in registry/model index, not face-enrolled</li><li>Lexi Marvel: in registry/model index, not face-enrolled</li><li>Lustcnotal: in registry/model index, not face-enrolled</li><li>Luxury Girl: in registry/model index, not face-enrolled</li><li>Mackzjones: in registry/model index, not face-enrolled</li><li>Melissa Debling: in registry/model index, not face-enrolled</li><li>Mulai: in registry/model index, not face-enrolled</li><li>Mulan Vuitton: in registry/model index, not face-enrolled</li><li>Sakhovanski: in registry/model index, not face-enrolled</li><li>Sakurai Rena: in registry/model index, not face-enrolled</li><li>Sendnudesx: in registry/model index, not face-enrolled</li><li>Sienna Ababi: in registry/model index, not face-enrolled</li><li>Yummy Couple: in registry/model index, not face-enrolled</li><li>Zoey Uso: in registry/model index, not face-enrolled</li></ul></article>
     <article class="enroll-card"><h2>Known records missing embedding rows</h2><ul><li>None.</li></ul></article>
   </main>
 </body>

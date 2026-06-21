@@ -19,6 +19,15 @@
     .summary span, .presence span, .mini-metrics span { border-radius: .25rem; background: rgba(255,255,255,.07); padding: .35rem .5rem; color: #e4e4e7; }
     .grid { display: grid; gap: 1rem; padding-bottom: 3rem; }
     .enroll-card { border-radius: .45rem; background: rgba(255,255,255,.045); outline: 1px solid rgba(255,255,255,.08); padding: 1rem; }
+    .model-card-collapse { display: block; }
+    .model-card-collapse > summary.model-card-summary { list-style: none; cursor: pointer; }
+    .model-card-collapse > summary.model-card-summary::-webkit-details-marker { display: none; }
+    .model-card-collapse > summary.model-card-summary::marker { content: ''; }
+    .model-card-collapse[open] > summary .collapse-chevron { transform: rotate(90deg); }
+    .collapse-chevron { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: .25rem; background: rgba(103,232,249,.12); color: #67e8f9; font-size: .95rem; line-height: 1; transition: transform .15s ease; }
+    .enroll-card-body { padding-top: .15rem; }
+    .page-collapse-controls { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    .page-collapse-controls button { background: rgba(255,255,255,.08); color: #e4e4e7; }
     .enroll-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
     .enroll-head p { margin: 0 0 .25rem; color: #a7f3d0; font-size: .75rem; text-transform: uppercase; }
     .enroll-head h2 { margin: 0; overflow-wrap: anywhere; letter-spacing: 0; }
@@ -43,6 +52,8 @@
     .enroll-form { display: grid; gap: .65rem; margin-top: .9rem; }
     input { width: 100%; margin-top: .25rem; border: 1px solid rgba(255,255,255,.16); border-radius: .25rem; background: #18181b; color: #fff; padding: .5rem; }
     button { border: 0; border-radius: .25rem; background: rgba(96,165,250,.18); color: #dbeafe; padding: .55rem .7rem; cursor: pointer; }
+    button.primary-action { background: rgba(16,185,129,.28); color: #ecfdf5; outline: 1px solid rgba(52,211,153,.35); font-weight: 700; }
+    button.primary-action:hover { background: rgba(16,185,129,.4); }
     button:hover { background: rgba(96,165,250,.28); }
     .empty-crop { color: #a1a1aa; border-radius: .35rem; background: rgba(255,255,255,.04); padding: 1rem; }
     .merge-panel { border-radius: .35rem; background: rgba(255,255,255,.035); padding: .65rem; outline: 1px solid rgba(255,255,255,.08); }

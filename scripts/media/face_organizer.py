@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import base64
 import dataclasses
+import hashlib
 import html
 import http.server
 import json
@@ -86,6 +87,8 @@ VIDEO_EXTENSIONS = {
     ".flv",
 }
 EXCLUDED_SCAN_DIRS = {".face-review", "models", "unknown", "backups", "review_exports", "known_performers"}
+# Model-folder and unknown-folder uploads still need human verification before trust.
+VERIFICATION_QUEUE_EXCLUDED_DIRS = EXCLUDED_SCAN_DIRS - {"unknown", "models"}
 GALLERY_DIR_NAME = "model_gallery"
 GALLERY_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 GALLERY_SIDECAR_SUFFIX = ".gallery.json"
@@ -1495,7 +1498,7 @@ def model_index_entry(slug: str, entry: dict[str, Any]) -> dict[str, Any]:
         primary_evidence_role = "identity_trace"
     else:
         primary_evidence_role = entry.get("status", "needs-review")
-    return {
+    row = {
         "name": entry.get("name"),
         "slug": slug,
         "aliases": entry.get("aliases", []),
@@ -1508,6 +1511,12 @@ def model_index_entry(slug: str, entry: dict[str, Any]) -> dict[str, Any]:
         "review_required": decision.get("review_required"),
         "why": decision.get("why"),
     }
+    if entry.get("faceless") or entry.get("face_enrollment_status") == "faceless":
+        row["faceless"] = True
+        row["face_enrollment_status"] = "faceless"
+        row["faceless_confirmed_by"] = entry.get("faceless_confirmed_by")
+        row["faceless_confirmed_at"] = entry.get("faceless_confirmed_at")
+    return row
 
 
 def require_ffmpeg() -> None:
@@ -2350,13 +2359,12 @@ def find_videos(source_dir: Path, recursive: bool) -> list[Path]:
 
 def find_verification_queue_videos(source_dir: Path, recursive: bool) -> list[Path]:
     pattern = "**/*" if recursive else "*"
-    excluded_dirs = EXCLUDED_SCAN_DIRS - {"unknown"}
     videos = [
         path
         for path in source_dir.glob(pattern)
         if path.is_file()
         and path.suffix.lower() in VIDEO_EXTENSIONS
-        and not any(part in excluded_dirs for part in path.relative_to(source_dir).parts[:-1])
+        and not any(part in VERIFICATION_QUEUE_EXCLUDED_DIRS for part in path.relative_to(source_dir).parts[:-1])
     ]
     return sorted(videos)
 
@@ -2744,7 +2752,38 @@ def scan(config: OrganizerConfig) -> list[dict[str, Any]]:
     return results
 
 
-def scan_single_video(config: OrganizerConfig, video_path: Path) -> dict[str, Any]:
+def scan_recent_unscanned_videos(config: OrganizerConfig, *, limit: int = 12, max_age_hours: int = 72) -> list[str]:
+    """Face-scan freshly uploaded library files that never received a sidecar."""
+    if limit <= 0:
+        return []
+    cutoff = time.time() - max(1, int(max_age_hours)) * 3600
+    scanned: list[str] = []
+    candidates: list[tuple[float, Path]] = []
+    for video_path in find_verification_queue_videos(config.source_dir, config.recursive):
+        if meta_path_for(video_path).exists():
+            continue
+        try:
+            mtime = float(video_path.stat().st_mtime)
+        except Exception:
+            continue
+        if mtime < cutoff:
+            continue
+        candidates.append((mtime, video_path))
+    for _, video_path in sorted(candidates, key=lambda item: item[0], reverse=True):
+        try:
+            scan_single_video(config, video_path, refresh_pages=False)
+            scanned.append(str(video_path))
+        except Exception as exc:
+            logging.warning("Failed auto-scan for recent upload %s: %s", video_path, exc)
+        if len(scanned) >= limit:
+            break
+    if scanned:
+        logging.info("Auto-scanned %s recent upload(s) without face sidecars", len(scanned))
+        refresh_organizer_pages(config, refresh_stale_enrollment=True, include_verification_report=True, scan_recent_uploads=False)
+    return scanned
+
+
+def scan_single_video(config: OrganizerConfig, video_path: Path, *, refresh_pages: bool = True) -> dict[str, Any]:
     if not video_path.exists() or not video_path.is_file() or video_path.suffix.lower() not in VIDEO_EXTENSIONS:
         raise RuntimeError(f"Video does not exist or is unsupported: {video_path}")
     require_ffmpeg()
@@ -2757,6 +2796,8 @@ def scan_single_video(config: OrganizerConfig, video_path: Path) -> dict[str, An
         meta = write_scan_sidecar(meta_path_for(video_path), meta)
         if config.write_nfo:
             write_nfo(video_path, meta["performers"])
+        if refresh_pages:
+            refresh_organizer_pages(config, refresh_stale_enrollment=True, scan_recent_uploads=False)
     else:
         logging.info("dry-run: would write %s", meta_path_for(video_path))
     return meta
@@ -3924,17 +3965,22 @@ def performer_presence(name: str, registry: dict[str, Any], model_lookup: dict[s
         if performer_id == known_id:
             if str(row).isdigit():
                 embedding_rows.append(int(row))
+    is_faceless = bool((registry_entry or {}).get("faceless")) or (registry_entry or {}).get("face_enrollment_status") == "faceless"
     return {
         "name": name,
         "registry_match": bool(registry_entry),
         "registry_entry": registry_entry,
         "model_index_match": bool(model_entry),
+        "faceless": is_faceless,
         "known_performers_record": bool(known_record),
         "known_performer_id": known_id,
         "embedding_row": str(sorted(embedding_rows)[0]) if embedding_rows else None,
         "embedding_rows": sorted(embedding_rows),
         "known_record": known_record,
         "status": (
+            "faceless performer"
+            if is_faceless
+            else
             "face-enrolled"
             if known_record and embedding_rows
             else "in registry/model index, not face-enrolled"
@@ -3975,6 +4021,8 @@ def audit_known_db(config: OrganizerConfig, expected_files: dict[str, str] | Non
     for slug, entry in sorted((registry.get("performers") or {}).items()):
         name = str(entry.get("name") or slug) if isinstance(entry, dict) else str(slug)
         presence = performer_presence(name, registry, model_lookup, known)
+        if presence.get("faceless"):
+            continue
         if not presence["known_performers_record"]:
             missing_known.append({"slug": slug, "name": name, "status": "in registry/model index, not face-enrolled"})
     known_missing_rows = [
@@ -4924,6 +4972,18 @@ def scanned_video_keys(video_paths: list[Path]) -> list[str]:
     return sorted(keys)
 
 
+def missing_enrollment_video_paths(video_paths: list[Path], scanned_keys: set[str]) -> list[Path]:
+    missing: list[Path] = []
+    seen: set[str] = set()
+    for video_path in video_paths:
+        key = video_path_key(video_path)
+        if key in scanned_keys or key in seen:
+            continue
+        seen.add(key)
+        missing.append(video_path)
+    return missing
+
+
 def prioritize_enrollment_videos(video_paths: list[Path], already_scanned_keys: set[str]) -> list[Path]:
     unscanned: list[Path] = []
     scanned: list[Path] = []
@@ -4988,6 +5048,7 @@ def generate_enrollment_candidates(
     frames_per_group: int = 18,
     target_name: str | None = None,
     refresh_pages: bool = True,
+    missing_only: bool = False,
 ) -> dict[str, Any]:
     groups_payload = build_enrollment_groups(config)
     registry = load_performer_registry(config.verification_registry_path)
@@ -5029,6 +5090,16 @@ def generate_enrollment_candidates(
         existing_crops = list(existing_group.get("recommended_crops") or [])
         existing_stills = list(existing_group.get("recommended_stills") or [])
         existing_scanned_keys = {str(item) for item in (existing_group.get("recommendation_source_videos") or [])}
+        if missing_only:
+            video_paths = missing_enrollment_video_paths(video_paths, existing_scanned_keys)
+            if not video_paths:
+                group["recommended_crops"] = existing_crops
+                group["recommended_stills"] = existing_stills
+                group["candidate_face_crops"] = len(enrollable_candidate_crops(existing_crops, config))
+                group["blocked_reason"] = ""
+                group["recommendation_scan_summary"] = list(existing_group.get("recommendation_scan_summary") or [])
+                generated_groups.append(group)
+                continue
         group_dir = out_dir / slugify(name)
         still_dir = group_dir / "stills"
         crop_dir = group_dir / "crops"
@@ -5038,7 +5109,7 @@ def generate_enrollment_candidates(
         stills: list[dict[str, Any]] = []
         failures: list[str] = []
         scan_summary: list[dict[str, Any]] = []
-        video_limit = len(video_paths) if target_key else min(len(video_paths), 3)
+        video_limit = len(video_paths) if (target_key or missing_only) else min(len(video_paths), 3)
         ordered_video_paths = prioritize_enrollment_videos(video_paths, existing_scanned_keys) if not target_key else video_paths
         scanned_video_paths = ordered_video_paths[:video_limit]
         scanned_path_strings = {str(path) for path in scanned_video_paths}
@@ -5346,6 +5417,23 @@ def resolve_artifact_path(value: str | Path, config: OrganizerConfig) -> Path:
     if path.exists() or path.is_absolute():
         return path
     return Path.cwd() / path
+
+
+def equivalent_artifact_key(value: str | Path, config: OrganizerConfig) -> str:
+    resolved = resolve_artifact_path(value, config)
+    return path_key(resolved if resolved else value)
+
+
+def resolve_enrollment_crop_path(value: str | Path, config: OrganizerConfig) -> Path:
+    crop_path = resolve_artifact_path(value, config)
+    if not crop_path.exists() or not crop_path.is_file():
+        raise RuntimeError(f"crop does not exist: {value}")
+    review_dir = enrollment_review_dir(config)
+    try:
+        crop_path.relative_to(review_dir)
+    except ValueError as exc:
+        raise RuntimeError(f"crop is outside the enrollment review folder: {value}") from exc
+    return crop_path
 
 
 def copy_manifest_file(source: Path, backup_root: Path, file_type: str, manifest: dict[str, Any], *, base: Path | None = None) -> None:
@@ -5881,7 +5969,8 @@ def phase3_sava_6513_bucket_closeout(config: OrganizerConfig, *, backup_root: st
 def enroll_selected_crops(config: OrganizerConfig, payload: dict[str, Any]) -> dict[str, Any]:
     performer_name = str(payload.get("performer_name") or "").strip()
     confirmation = str(payload.get("confirmation") or "").strip()
-    crop_paths = [Path(str(item)) for item in payload.get("crop_paths") or []]
+    requested_crop_paths = [str(item) for item in payload.get("crop_paths") or []]
+    crop_paths: list[Path] = []
     create_new = bool(payload.get("create_new"))
     add_to_existing = bool(payload.get("add_to_existing"))
     confirmed_by = str(payload.get("confirmed_by") or "Britton").strip()
@@ -5889,7 +5978,7 @@ def enroll_selected_crops(config: OrganizerConfig, payload: dict[str, Any]) -> d
         raise RuntimeError("performer_name is required")
     if confirmation != performer_name and confirmation != slugify(performer_name):
         raise RuntimeError("confirmation field must match the performer name or slug")
-    if not crop_paths:
+    if not requested_crop_paths:
         raise RuntimeError("at least one crop must be selected")
     if not confirmed_by:
         raise RuntimeError("confirmed_by is required")
@@ -5910,13 +5999,8 @@ def enroll_selected_crops(config: OrganizerConfig, payload: dict[str, Any]) -> d
         raise RuntimeError("existing performer found; explicit add_to_existing confirmation is required")
     if not existing and not create_new and not add_to_existing:
         raise RuntimeError("select create_new or add_to_existing before enrollment")
-    for crop_path in crop_paths:
-        if not crop_path.exists() or not crop_path.is_file():
-            raise RuntimeError(f"crop does not exist: {crop_path}")
-        try:
-            crop_path.relative_to(enrollment_review_dir(config))
-        except ValueError as exc:
-            raise RuntimeError(f"crop is outside the enrollment review folder: {crop_path}") from exc
+    for crop_path in requested_crop_paths:
+        crop_paths.append(resolve_enrollment_crop_path(crop_path, config))
     if not config.apply:
         return {"dry_run": True, "would_enroll": len(crop_paths), "performer_name": performer_name}
 
@@ -6878,7 +6962,12 @@ def dedupe_video_match_rows(matches: list[dict[str, Any]]) -> list[dict[str, Any
 
 
 def sidecar_preview_paths(meta_path: str, limit: int = 4) -> list[str]:
-    sidecar = load_json(Path(str(meta_path or "")), {})
+    if not str(meta_path or "").strip():
+        return []
+    sidecar_path = Path(str(meta_path))
+    if not sidecar_path.is_file():
+        return []
+    sidecar = load_json(sidecar_path, {})
     performers = [item for item in sidecar.get("performers") or [] if isinstance(item, dict)]
     paths: list[str] = []
     for performer in performers:
@@ -7763,6 +7852,52 @@ def unscanned_unknown_record(video_path: Path, config: OrganizerConfig) -> dict[
     }
 
 
+def verification_attention_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        record
+        for record in records
+        if record.get("verification_needed") or record_has_unknown_model(record)
+    ]
+
+
+def verification_queue_fingerprint_from_attention(attention: list[dict[str, Any]]) -> str:
+    parts: list[str] = []
+    for record in sorted(
+        attention,
+        key=lambda item: str(item.get("_resolved_video_path") or item.get("video_path") or item.get("path") or ""),
+    ):
+        path = str(record.get("_resolved_video_path") or record.get("video_path") or record.get("path") or "")
+        meta_path = str(record.get("_meta_path") or "")
+        parts.append(
+            "|".join(
+                [
+                    path,
+                    meta_path,
+                    f"unscanned={int(bool(record.get('unscanned')))}",
+                    f"vn={int(bool(record.get('verification_needed')))}",
+                ]
+            )
+        )
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:20]
+
+
+def build_verification_queue_status(config: OrganizerConfig) -> dict[str, Any]:
+    records = verification_queue_records(config)
+    attention = verification_attention_records(records)
+    fingerprint = verification_queue_fingerprint_from_attention(attention)
+    stored = load_json(config.report_path.with_suffix(".json"), {})
+    report_fingerprint = str(stored.get("fingerprint") or "")
+    return {
+        "schema": "media-face-verification-queue-status/v1",
+        "fingerprint": fingerprint,
+        "report_fingerprint": report_fingerprint,
+        "review_count": len(attention),
+        "total_count": len(records),
+        "report_stale": fingerprint != report_fingerprint,
+        "generated_at": utc_now(),
+    }
+
+
 def verification_queue_records(config: OrganizerConfig) -> list[dict[str, Any]]:
     records = collect_metadata(config.source_dir, config.recursive)
     by_video_key = {
@@ -7861,6 +7996,27 @@ def render_enrollment_still(still: dict[str, Any]) -> str:
     """
 
 
+def enrollment_card_should_expand(group: dict[str, Any], *, enrolled: bool = False) -> bool:
+    if enrollment_missing_video_count(group) > 0:
+        return True
+    if str(group.get("blocked_reason") or "").strip():
+        return True
+    if enrolled:
+        confidence = group.get("confidence_estimate") or enrolled_confidence_estimate(group)
+        return int(confidence.get("percent") or 0) < 90
+    return False
+
+
+def render_page_collapse_controls() -> str:
+    return """
+    <div class="page-collapse-controls">
+      <button type="button" class="page-expand-all">Expand all models</button>
+      <button type="button" class="page-collapse-all">Collapse all models</button>
+      <button type="button" class="page-rescan-all-models">Rescan all models</button>
+    </div>
+    """
+
+
 def render_enrollment_group(group: dict[str, Any]) -> str:
     crops = group.get("recommended_crops") or []
     stills = group.get("recommended_stills") or []
@@ -7870,27 +8026,40 @@ def render_enrollment_group(group: dict[str, Any]) -> str:
         for record in group.get("records", [])[:5]
     )
     blocked = str(group.get("blocked_reason") or "")
+    missing_videos = enrollment_missing_video_count(group)
+    stale_banner = ""
+    if missing_videos > 0:
+        stale_banner = (
+            f'<p class="blocked">'
+            f"{missing_videos} linked video(s) not face-scanned yet — use Rescan all model videos."
+            f"</p>"
+        )
     flags = [
         f"registry: {'yes' if group.get('registry_present') else 'no'}",
         f"model_index: {'yes' if group.get('model_index_present') else 'no'}",
         f"known record: {'yes' if group.get('known_performers_record') else 'no'}",
         f"embedding rows: {len(group.get('embedding_rows') or [])}",
     ]
+    open_attr = " open" if enrollment_card_should_expand(group) else ""
     return f"""
-      <article class="enroll-card" data-status="{html.escape(str(group.get('status') or ''))}">
-        <div class="enroll-head">
-          <div>
-            <p>{html.escape(str(group.get("status") or ""))}</p>
-            <h2>{html.escape(str(group.get("name") or ""))}</h2>
-            <small>{html.escape(str(group.get("why") or ""))}</small>
-          </div>
-          <div class="mini-metrics">
-            <span>{html.escape(str(group.get("candidate_videos") or 0))} videos</span>
-            <span>{html.escape(str(group.get("candidate_face_crops") or 0))} crops</span>
-          </div>
-        </div>
+      <article class="enroll-card" data-status="{html.escape(str(group.get('status') or ''))}" data-performer="{html.escape(str(group.get("name") or ""), quote=True)}">
+        <details class="model-card-collapse"{open_attr}>
+          <summary class="enroll-head model-card-summary">
+            <div>
+              <p>{html.escape(str(group.get("status") or ""))}</p>
+              <h2>{html.escape(str(group.get("name") or ""))}</h2>
+              <small>{html.escape(str(group.get("why") or ""))}</small>
+            </div>
+            <div class="mini-metrics">
+              <span>{html.escape(str(group.get("candidate_videos") or 0))} videos</span>
+              <span>{html.escape(str(group.get("candidate_face_crops") or 0))} crops</span>
+              <span class="collapse-chevron" aria-hidden="true">▸</span>
+            </div>
+          </summary>
+          <div class="enroll-card-body">
         <div class="presence">{"".join(f"<span>{html.escape(flag)}</span>" for flag in flags)}</div>
         <p class="exists">Why this candidate exists: {html.escape(", ".join(group.get("exists_because") or []))}</p>
+        {stale_banner}
         {f'<p class="blocked">Limited: {html.escape(blocked)}</p>' if blocked else ''}
         {render_recommendation_video_summary(group)}
         {render_scan_coverage(group)}
@@ -7907,10 +8076,11 @@ def render_enrollment_group(group: dict[str, Any]) -> str:
             <button type="button" data-action="merge-creator">Merge source into correct creator</button>
           </details>
           <div class="button-row">
+            <button type="button" class="primary-action" data-action="more">Rescan all model videos</button>
+            <button type="button" {'class="primary-action"' if missing_videos else ''} data-action="missing-videos">Scan missing/new linked videos</button>
             <button type="button" data-action="reject">Reject crop</button>
             <button type="button" data-action="better">Needs better sample</button>
             <button type="button" data-action="faceless">Mark model faceless</button>
-            <button type="button" data-action="more">Generate more candidates</button>
             <button type="button" data-action="manual">Manual crop from still</button>
             <button type="button" data-action="smart-accept">Smart accept best 5</button>
             <button type="button" data-action="enroll-existing">Enroll selected crops as existing performer</button>
@@ -7918,6 +8088,8 @@ def render_enrollment_group(group: dict[str, Any]) -> str:
           </div>
         </form>
         <details><summary>Source records</summary><ul>{records or '<li>No associated sidecars yet.</li>'}</ul></details>
+          </div>
+        </details>
       </article>
     """
 
@@ -7934,6 +8106,15 @@ def enrollment_page_css() -> str:
     .summary span, .presence span, .mini-metrics span { border-radius: .25rem; background: rgba(255,255,255,.07); padding: .35rem .5rem; color: #e4e4e7; }
     .grid { display: grid; gap: 1rem; padding-bottom: 3rem; }
     .enroll-card { border-radius: .45rem; background: rgba(255,255,255,.045); outline: 1px solid rgba(255,255,255,.08); padding: 1rem; }
+    .model-card-collapse { display: block; }
+    .model-card-collapse > summary.model-card-summary { list-style: none; cursor: pointer; }
+    .model-card-collapse > summary.model-card-summary::-webkit-details-marker { display: none; }
+    .model-card-collapse > summary.model-card-summary::marker { content: ''; }
+    .model-card-collapse[open] > summary .collapse-chevron { transform: rotate(90deg); }
+    .collapse-chevron { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: .25rem; background: rgba(103,232,249,.12); color: #67e8f9; font-size: .95rem; line-height: 1; transition: transform .15s ease; }
+    .enroll-card-body { padding-top: .15rem; }
+    .page-collapse-controls { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    .page-collapse-controls button { background: rgba(255,255,255,.08); color: #e4e4e7; }
     .enroll-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
     .enroll-head p { margin: 0 0 .25rem; color: #a7f3d0; font-size: .75rem; text-transform: uppercase; }
     .enroll-head h2 { margin: 0; overflow-wrap: anywhere; letter-spacing: 0; }
@@ -7958,6 +8139,8 @@ def enrollment_page_css() -> str:
     .enroll-form { display: grid; gap: .65rem; margin-top: .9rem; }
     input { width: 100%; margin-top: .25rem; border: 1px solid rgba(255,255,255,.16); border-radius: .25rem; background: #18181b; color: #fff; padding: .5rem; }
     button { border: 0; border-radius: .25rem; background: rgba(96,165,250,.18); color: #dbeafe; padding: .55rem .7rem; cursor: pointer; }
+    button.primary-action { background: rgba(16,185,129,.28); color: #ecfdf5; outline: 1px solid rgba(52,211,153,.35); font-weight: 700; }
+    button.primary-action:hover { background: rgba(16,185,129,.4); }
     button:hover { background: rgba(96,165,250,.28); }
     .empty-crop { color: #a1a1aa; border-radius: .35rem; background: rgba(255,255,255,.04); padding: 1rem; }
     .merge-panel { border-radius: .35rem; background: rgba(255,255,255,.035); padding: .65rem; outline: 1px solid rgba(255,255,255,.08); }
@@ -8072,6 +8255,12 @@ def enrollment_page_script() -> str:
       const delay = result?.refresh_deferred ? Math.max(delayMs, 12000) : delayMs;
       setTimeout(() => location.reload(), delay);
     }
+    function goToEnrolledAfterRefresh(result, delayMs = 2500) {
+      const delay = result?.refresh_deferred ? Math.max(delayMs, 12000) : delayMs;
+      setTimeout(() => {
+        window.location.href = '/enrolled';
+      }, delay);
+    }
     function persistCardStatus(card, message, kind = 'ok') {
       const performer = card?.dataset.performer || card?.querySelector('[name=performer_name]')?.value || '';
       if (!performer) return;
@@ -8085,7 +8274,34 @@ def enrollment_page_script() -> str:
       try {
         const status = JSON.parse(saved);
         setCardStatus(card, status.message || '', status.kind || 'ok');
+        const collapse = card.querySelector('.model-card-collapse');
+        if (collapse) collapse.open = true;
       } catch (_) {}
+    });
+    document.querySelectorAll('.page-expand-all').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.model-card-collapse').forEach((collapse) => { collapse.open = true; });
+      });
+    });
+    document.querySelectorAll('.page-collapse-all').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.model-card-collapse').forEach((collapse) => { collapse.open = false; });
+      });
+    });
+    document.querySelectorAll('.page-rescan-all-models').forEach((button) => {
+      button.addEventListener('click', async () => {
+        try {
+          const buttons = [...document.querySelectorAll('button')];
+          setBusy(button, buttons, 'Rescanning all models...');
+          const result = await postJson('/api/enrollment/generate-candidates', {all_models: true});
+          const summary = result.summary || {};
+          button.textContent = 'Rescan complete: ' + (summary.groups_generated_this_run ?? '?') + ' model(s)';
+          reloadAfterRefresh(result, 1200);
+        } catch (error) {
+          button.textContent = 'NEEDS_FIX: ' + error.message;
+          button.disabled = false;
+        }
+      });
     });
     document.addEventListener('click', (event) => {
       const card = event.target.closest('.crop-card');
@@ -8193,7 +8409,7 @@ def enrollment_page_script() -> str:
               cropCard.style.pointerEvents = 'none';
             }
           });
-          reloadAfterRefresh(result, 1700);
+          goToEnrolledAfterRefresh(result, 1700);
         } else if (button.dataset.action === 'remove-accepted') {
           const samples = [...card.querySelectorAll('input[name=accepted_sample]:checked')].map(input => input.value);
           if (!samples.length) {
@@ -8224,11 +8440,18 @@ def enrollment_page_script() -> str:
           });
           setTimeout(() => location.reload(), 1700);
         } else if (button.dataset.action === 'more') {
-          setCardStatus(card, 'Scanning current videos for ' + performer + '. This can take around 1-2 minutes...', 'warn');
-          setBusy(button, buttons, 'Scanning...');
+          setCardStatus(card, 'Rescanning all videos for ' + performer + '. This can take 1-3 minutes...', 'warn');
+          setBusy(button, buttons, 'Rescanning...');
           const result = await postJson('/api/enrollment/generate-candidates', {performer_name: performer});
           const summary = result.summary || {};
-          setCardStatus(card, 'Candidate generation complete: ' + (summary.candidate_crops_generated ?? '?') + ' total crops now saved.', 'ok');
+          setCardStatus(card, 'Rescan complete: ' + (summary.candidate_crops_generated ?? '?') + ' total crops saved across this model.', 'ok');
+          location.reload();
+        } else if (button.dataset.action === 'missing-videos') {
+          setCardStatus(card, 'Scanning only missing/new linked videos for ' + performer + '...', 'warn');
+          setBusy(button, buttons, 'Scanning missing/new...');
+          const result = await postJson('/api/enrollment/generate-candidates', {performer_name: performer, missing_only: true});
+          const summary = result.summary || {};
+          setCardStatus(card, 'Missing/new scan complete: ' + (summary.candidate_crops_generated ?? '?') + ' total crops now saved. Refreshing...', 'ok');
           location.reload();
         } else if (button.dataset.action === 'smart-accept') {
           const confirmation = form.querySelector('[name=confirmation]')?.value || performer;
@@ -8246,7 +8469,7 @@ def enrollment_page_script() -> str:
           const message = 'Smart accept picked ' + picked + ' screen(s), enrolled ' + added + ', skipped ' + skipped + ', removed ' + ((result.enrollment || {}).removed_recommendations || 0) + ' stale recommendation(s). Refreshing...';
           setCardStatus(card, message, skipped ? 'warn' : 'ok');
           persistCardStatus(card, message, skipped ? 'warn' : 'ok');
-          reloadAfterRefresh(result, 2500);
+          goToEnrolledAfterRefresh(result, 2500);
         } else if (button.dataset.action === 'scan-library-matches') {
           setCardStatus(card, 'Running face-rec scan on linked videos for ' + performer + '. This can take a few minutes...', 'warn');
           setBusy(button, buttons, 'Scanning...');
@@ -8261,7 +8484,7 @@ def enrollment_page_script() -> str:
           const decision = button.dataset.action === 'video-match-accept' ? 'accepted' : 'rejected';
           setCardStatus(card, (decision === 'accepted' ? 'Confirming' : 'Denying') + ' video match...', 'warn');
           setBusy(button, buttons, decision === 'accepted' ? 'Confirming...' : 'Denying...');
-          await postJson('/api/enrolled/video-match-decision', {
+          const result = await postJson('/api/enrolled/video-match-decision', {
             performer_name: button.dataset.performer || performer,
             performer_id: button.dataset.performerId || '',
             meta_path: button.dataset.meta || '',
@@ -8270,7 +8493,7 @@ def enrollment_page_script() -> str:
             confirmed_by: 'Britton'
           });
           setCardStatus(card, 'Video match ' + decision + '. Refreshing...', 'ok');
-          setTimeout(() => location.reload(), 900);
+          reloadAfterRefresh(result, 1200);
         } else if (button.dataset.action === 'video-mark-faceless') {
           setCardStatus(card, 'Marking video as faceless...', 'warn');
           setBusy(button, buttons, 'Marking...');
@@ -8407,6 +8630,7 @@ def generate_enrollment_queue_page(
     <p class="muted">Generated {html.escape(utc_now())} from {html.escape(str(config.source_dir))}</p>
     {report_nav_html("Face Enrollment Queue", out_path)}
     <div class="summary">{stats}</div>
+    {render_page_collapse_controls()}
   </header>
   <main class="grid">{rows or '<div class="empty-crop">No enrollment groups found.</div>'}</main>
   <script>{enrollment_page_script()}</script>
@@ -8821,26 +9045,30 @@ def render_enrolled_group(group: dict[str, Any]) -> str:
     review_match_count = len(group.get("auto_video_matches") or []) + len(group.get("pending_video_matches") or [])
     gallery_count = len(group.get("gallery_items") or [])
     header_image = enrolled_group_header_image(group, samples)
+    open_attr = " open" if enrollment_card_should_expand(group, enrolled=True) else ""
     return f"""
       <article class="enroll-card enrolled-card" data-performer="{html.escape(str(group.get("name") or ""), quote=True)}">
-        <div class="enroll-head">
-          <div class="model-title">
-            {header_image}
-            <div>
-              <p>{html.escape(card_state)}</p>
-              <h2>{html.escape(str(group.get("name") or ""))}</h2>
-              <small>{html.escape(str(group.get("known_performer_id") or ""))}</small>
+        <details class="model-card-collapse"{open_attr}>
+          <summary class="enroll-head model-card-summary">
+            <div class="model-title">
+              {header_image}
+              <div>
+                <p>{html.escape(card_state)}</p>
+                <h2>{html.escape(str(group.get("name") or ""))}</h2>
+                <small>{html.escape(str(group.get("known_performer_id") or ""))}</small>
+              </div>
             </div>
-          </div>
-          <div class="mini-metrics">
-            <span>{len(samples)} enrolled screens</span>
-            <span>{len(group.get("embedding_rows") or [])} embedding rows</span>
-            <span>{library_match_count} model-folder files</span>
-            <span>{gallery_count} gallery pics</span>
-            <span>{missing_match_count} missing source</span>
-            <span>{review_match_count} scan matches</span>
-          </div>
-        </div>
+            <div class="mini-metrics">
+              <span>{len(samples)} enrolled screens</span>
+              <span>{len(group.get("embedding_rows") or [])} embedding rows</span>
+              <span>{library_match_count} model-folder files</span>
+              <span>{gallery_count} gallery pics</span>
+              <span>{missing_match_count} missing source</span>
+              <span>{review_match_count} scan matches</span>
+              <span class="collapse-chevron" aria-hidden="true">▸</span>
+            </div>
+          </summary>
+          <div class="enroll-card-body">
         <div class="presence">
           <span>registry: {'yes' if group.get('registry_present') else 'no'}</span>
           <span>model_index: {'yes' if group.get('model_index_present') else 'no'}</span>
@@ -8888,6 +9116,8 @@ def render_enrolled_group(group: dict[str, Any]) -> str:
               <button type="button" data-action="more">Scan current videos again</button>
             </div>
           </form>
+        </details>
+          </div>
         </details>
       </article>
     """
@@ -9021,6 +9251,7 @@ def generate_enrolled_page(config: OrganizerConfig, *, refresh_recommendations: 
     <p class="muted">Generated {html.escape(utc_now())} from live registry, model index, sidecars, and known performer DB.</p>
     {report_nav_html("Enrolled", out_path)}
     <div class="summary">{stats}</div>
+    {render_page_collapse_controls()}
   </header>
   <main class="grid">{rows or '<div class="empty-crop">No enrolled performers found.</div>'}</main>
   <script>{enrollment_page_script()}</script>
@@ -9201,9 +9432,9 @@ def generate_known_db_audit_page(config: OrganizerConfig) -> dict[str, Any]:
     return audit
 
 
-def generate_report(config: OrganizerConfig) -> None:
+def generate_report(config: OrganizerConfig, *, refresh_related_pages: bool = True) -> None:
     records = verification_queue_records(config)
-    attention = [record for record in records if record.get("verification_needed") or record_has_unknown_model(record)]
+    attention = verification_attention_records(records)
     auto = [record for record in records if not record.get("verification_needed")]
     display_records = records if config.report_all else attention
     rows = []
@@ -9296,6 +9527,7 @@ def generate_report(config: OrganizerConfig) -> None:
             """
         )
     generated = utc_now()
+    queue_fingerprint = verification_queue_fingerprint_from_attention(attention)
     report_title = "All Records Audit" if config.report_all else "Verification Queue"
     empty_message = "No records matched this report mode." if config.report_all else "No videos need review. Auto-approved items have left this queue."
     report_css = """
@@ -9414,6 +9646,7 @@ def generate_report(config: OrganizerConfig) -> None:
     .empty-report { border: 1px solid rgba(255,255,255,.1); border-radius: .5rem; background: #09090b; padding: 2rem; color: #a1a1aa; }
     .lightbox { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 100; background: rgba(0,0,0,.9); padding: 1rem; }
     .lightbox.is-open { display: flex; }
+    .live-status { color: #67e8f9; font-size: .8rem; }
     .lightbox img { max-width: min(96vw, 1400px); max-height: 92vh; object-fit: contain; border-radius: .35rem; box-shadow: 0 24px 80px rgba(0,0,0,.8); }
     @media (min-width: 768px) {
       header { flex-direction: row; align-items: flex-end; justify-content: space-between; }
@@ -9439,6 +9672,7 @@ def generate_report(config: OrganizerConfig) -> None:
         <p class="kicker">Media Face Organizer v1</p>
         <h1>{html.escape(report_title)}</h1>
         <p class="muted">Generated {html.escape(generated)} from {html.escape(str(config.source_dir))}</p>
+        {'' if config.report_all else '<p id="queueLiveStatus" class="muted live-status">Live queue — auto-refreshes when new uploads need verification.</p>'}
         {report_nav_html("Report All / Full Audit" if config.report_all else "Verification Queue", config.report_path)}
       </div>
       <div class="stats">
@@ -9494,6 +9728,38 @@ def generate_report(config: OrganizerConfig) -> None:
         lightboxImage.removeAttribute('src');
       }}
     }});
+    {'' if config.report_all else f'''
+    const queueFingerprint = {json.dumps(queue_fingerprint)};
+    let queueRefreshInFlight = false;
+    async function pollVerificationQueue() {{
+      try {{
+        const response = await fetch('/api/verification/queue-status', {{ cache: 'no-store' }});
+        const status = await response.json();
+        if (!response.ok) return;
+        if (status.fingerprint !== queueFingerprint && !queueRefreshInFlight) {{
+          queueRefreshInFlight = true;
+          const indicator = document.getElementById('queueLiveStatus');
+          if (indicator) indicator.textContent = 'New uploads detected — refreshing verification queue...';
+          await fetch('/api/verification/refresh-queue', {{ method: 'POST' }});
+          let attempts = 0;
+          const waitForRefresh = window.setInterval(async () => {{
+            attempts += 1;
+            try {{
+              const next = await (await fetch('/api/verification/queue-status', {{ cache: 'no-store' }})).json();
+              if (next.fingerprint === status.fingerprint || attempts >= 24) {{
+                window.clearInterval(waitForRefresh);
+                window.location.reload();
+              }}
+            }} catch (_) {{
+              if (attempts >= 24) window.location.reload();
+            }}
+          }}, 1500);
+        }}
+      }} catch (_) {{}}
+    }}
+    window.setInterval(pollVerificationQueue, 30000);
+    window.setTimeout(pollVerificationQueue, 5000);
+    '''}
     const lookupTimers = new WeakMap();
     document.querySelectorAll('.manual-name').forEach((input) => {{
       input.addEventListener('input', () => {{
@@ -9623,12 +9889,37 @@ def generate_report(config: OrganizerConfig) -> None:
 """
     config.report_path.parent.mkdir(parents=True, exist_ok=True)
     config.report_path.write_text(html_payload, encoding="utf-8")
+    if not config.report_all:
+        json_dump(
+            config.report_path.with_suffix(".json"),
+            {
+                "schema": "media-face-verification-queue/v1",
+                "fingerprint": queue_fingerprint,
+                "generated_at": generated,
+                "review_count": len(attention),
+                "total_count": len(records),
+            },
+        )
     logging.info("Wrote verification report: %s", config.report_path)
-    if config.report_path.name in {"face_verification_report.html", "report.html"}:
-        generate_enrollment_queue_page(config)
-        generate_enrolled_page(config)
-        generate_gallery_page(config)
-        generate_known_db_audit_page(config)
+    if refresh_related_pages and config.report_path.name in {"face_verification_report.html", "report.html"}:
+        refresh_organizer_pages(config, refresh_stale_enrollment=True, include_verification_report=False)
+
+
+def refresh_organizer_pages(
+    config: OrganizerConfig,
+    *,
+    refresh_stale_enrollment: bool = True,
+    include_verification_report: bool = True,
+    scan_recent_uploads: bool = True,
+) -> None:
+    if scan_recent_uploads:
+        scan_recent_unscanned_videos(config)
+    if include_verification_report:
+        generate_report(config, refresh_related_pages=False)
+    generate_enrollment_queue_page(config, refresh_stale=refresh_stale_enrollment)
+    generate_enrolled_page(config)
+    generate_gallery_page(config)
+    generate_known_db_audit_page(config)
 
 
 def add_performer_from_image(
@@ -9871,7 +10162,10 @@ def candidate_crop_lookup(config: OrganizerConfig) -> dict[str, dict[str, Any]]:
             continue
         for crop in group.get("recommended_crops") or []:
             if isinstance(crop, dict) and crop.get("crop_path"):
-                lookup[str(crop.get("crop_path"))] = crop
+                crop_path = str(crop.get("crop_path"))
+                lookup[crop_path] = crop
+                lookup[str(resolve_artifact_path(crop_path, config))] = crop
+                lookup[equivalent_artifact_key(crop_path, config)] = crop
     return lookup
 
 
@@ -9895,6 +10189,7 @@ def remove_candidate_crops_from_queue(config: OrganizerConfig, performer_name: s
     payload = load_json(candidate_path, {"groups": []})
     target_slug = slugify(canonical_performer_name(performer_name, load_performer_registry(config.verification_registry_path)))
     remove_paths = {str(path) for path in crop_paths if path}
+    remove_keys = {equivalent_artifact_key(path, config) for path in crop_paths if path}
     removed = 0
     for group in payload.get("groups") or []:
         if not isinstance(group, dict):
@@ -9906,7 +10201,7 @@ def remove_candidate_crops_from_queue(config: OrganizerConfig, performer_name: s
         removed_stills = set()
         for crop in group.get("recommended_crops") or []:
             crop_path = str((crop or {}).get("crop_path") or "")
-            if crop_path in remove_paths:
+            if crop_path in remove_paths or equivalent_artifact_key(crop_path, config) in remove_keys:
                 removed += 1
                 removed_stills.add(str((crop or {}).get("still_path") or ""))
                 continue
@@ -9932,8 +10227,9 @@ def smart_candidate_crops(group: dict[str, Any], config: OrganizerConfig, target
         for crop in group.get("recommended_crops") or []
         if isinstance(crop, dict)
         and crop.get("crop_path")
-        and Path(str(crop.get("crop_path"))).exists()
+        and resolve_artifact_path(str(crop.get("crop_path")), config).exists()
         and str(crop.get("crop_path")) not in rejected_paths
+        and equivalent_artifact_key(str(crop.get("crop_path")), config) not in rejected_paths
         and crop_recommendation_signature(crop) not in rejected_signatures
     ]
     crops = enrollable_candidate_crops(dedupe_candidate_crops(crops), config)
@@ -10018,10 +10314,18 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
     source_dir = config.source_dir.resolve()
     db_dir = config.db_dir.resolve()
 
-    def refresh_review_outputs_async(reason: str, *, enrollment_target: str | None = None) -> None:
+    def refresh_review_outputs_async(
+        reason: str,
+        *,
+        enrollment_target: str | None = None,
+        enrolled_only: bool = False,
+    ) -> None:
         def worker() -> None:
             try:
                 logging.info("Refreshing face organizer review outputs after %s", reason)
+                if enrolled_only:
+                    generate_enrolled_page(config)
+                    return
                 if enrollment_target:
                     generate_enrollment_candidates(
                         config,
@@ -10029,6 +10333,7 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                         target_name=enrollment_target,
                         refresh_pages=False,
                     )
+                scan_recent_unscanned_videos(config)
                 generate_report(config)
                 generate_enrollment_queue_page(config)
                 generate_enrolled_page(config)
@@ -10100,6 +10405,9 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                         generate_known_db_audit_page(config)
                     self._serve_file(config.report_path.with_name("known_db_audit.html"))
                     return
+                if path == "/api/verification/queue-status":
+                    write_json_response(self, HTTPStatus.OK, build_verification_queue_status(config))
+                    return
                 if path == "/api/enrollment/groups":
                     write_json_response(self, HTTPStatus.OK, build_enrollment_groups(config))
                     return
@@ -10131,6 +10439,10 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
             parsed = urllib.parse.urlparse(self.path)
             payload = {} if parsed.path == "/api/gallery/upload" else read_json_body(self)
             try:
+                if parsed.path == "/api/verification/refresh-queue":
+                    refresh_review_outputs_async("queue-refresh-api")
+                    write_json_response(self, HTTPStatus.ACCEPTED, {"status": "refreshing"})
+                    return
                 if parsed.path == "/api/gallery/upload":
                     fields, files = read_multipart_form(self)
                     result = save_gallery_uploads(config, fields, files)
@@ -10142,7 +10454,13 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                     write_json_response(self, HTTPStatus.OK, build_enrollment_groups(config))
                     return
                 if parsed.path == "/api/enrollment/generate-candidates":
-                    result = generate_enrollment_candidates(config, max_groups=None, target_name=str(payload.get("performer_name") or ""))
+                    target_name = "" if payload.get("all_models") else str(payload.get("performer_name") or "")
+                    result = generate_enrollment_candidates(
+                        config,
+                        max_groups=0 if payload.get("all_models") else None,
+                        target_name=target_name,
+                        missing_only=bool(payload.get("missing_only")),
+                    )
                     write_json_response(self, HTTPStatus.OK, result)
                     return
                 if parsed.path == "/api/enrollment/manual-crop":
@@ -10185,12 +10503,14 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                     return
                 if parsed.path == "/api/enrollment/enroll":
                     result = enroll_selected_crops(config, payload)
+                    generate_enrollment_queue_page(config, refresh_stale=False)
                     result["refresh_deferred"] = True
                     refresh_review_outputs_async("enrollment-enroll")
                     write_json_response(self, HTTPStatus.OK, result)
                     return
                 if parsed.path == "/api/enrollment/smart-accept":
                     result = smart_accept_best_crops(config, payload)
+                    generate_enrollment_queue_page(config, refresh_stale=False)
                     result["refresh_deferred"] = True
                     refresh_review_outputs_async("enrollment-smart-accept")
                     write_json_response(self, HTTPStatus.OK, result)
@@ -10207,13 +10527,12 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
                     return
                 if parsed.path == "/api/enrolled/video-match-decision":
                     result = set_enrolled_video_match_decision(config, payload)
-                    if str(result.get("decision") or "") == "accepted":
-                        refresh_review_outputs_async(
-                            "video-match-accepted",
-                            enrollment_target=str(result.get("performer_name") or payload.get("performer_name") or ""),
-                        )
-                    generate_enrolled_page(config)
+                    result["refresh_deferred"] = True
                     write_json_response(self, HTTPStatus.OK, result)
+                    refresh_review_outputs_async(
+                        f"video-match-{result.get('decision') or 'decision'}",
+                        enrolled_only=True,
+                    )
                     return
                 if parsed.path == "/api/enrolled/video-faceless":
                     result = mark_video_faceless(config, payload)
@@ -10249,14 +10568,23 @@ def make_review_handler(config: OrganizerConfig) -> type[http.server.BaseHTTPReq
 
 
 def serve_review(config: OrganizerConfig, host: str, port: int) -> None:
-    generate_report(config)
-    generate_enrollment_queue_page(config)
-    generate_enrolled_page(config)
-    generate_gallery_page(config)
-    generate_known_db_audit_page(config)
-    generate_manual_crop_page(config)
     server = http.server.ThreadingHTTPServer((host, port), make_review_handler(config))
     logging.info("Serving face organizer review at http://%s:%s/face_verification_report.html", host, port)
+
+    def startup_refresh() -> None:
+        try:
+            logging.info("Background startup refresh for face organizer review pages")
+            generate_report(config)
+            generate_enrollment_queue_page(config, refresh_stale=False)
+            generate_enrolled_page(config)
+            generate_gallery_page(config)
+            generate_known_db_audit_page(config)
+            generate_manual_crop_page(config)
+            logging.info("Background startup refresh complete")
+        except Exception as exc:
+            logging.warning("Background startup refresh failed: %s", exc)
+
+    threading.Thread(target=startup_refresh, name="face-organizer-startup-refresh", daemon=True).start()
     try:
         server.serve_forever()
     finally:
@@ -10276,6 +10604,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     mode.add_argument("--backfill-review-frames", action="store_true", help="extract general review frames for existing sidecars")
     mode.add_argument("--verify-performers", action="store_true", help="build/update canonical performer registry and repair duplicate names")
     mode.add_argument("--audit-known-db", action="store_true", help="read-only audit of registry/model index versus known face embeddings")
+    mode.add_argument("--organizer-quick-refresh", action="store_true", help="regenerate organizer HTML pages without heavy enrollment rescans")
     mode.add_argument("--generate-enrollment-candidates", action="store_true", help="generate local review-only face enrollment candidates")
     mode.add_argument("--enrollment-queue", action="store_true", help="generate the static face enrollment queue page")
     mode.add_argument("--enrolled-page", action="store_true", help="generate the enrolled performers page")
@@ -10401,7 +10730,7 @@ def main(argv: list[str] | None = None) -> int:
         generate_report(full_config)
         return 0
     if args.enrollment_queue:
-        generate_enrollment_queue_page(config)
+        generate_enrollment_queue_page(config, refresh_stale=False)
         return 0
     if args.enrolled_page:
         generate_enrolled_page(config)
@@ -10412,6 +10741,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.known_db_audit_page:
         generate_known_db_audit_page(config)
+        return 0
+    if args.organizer_quick_refresh:
+        refresh_organizer_pages(config, refresh_stale_enrollment=False)
         return 0
     if args.generate_enrollment_candidates:
         payload = generate_enrollment_candidates(
@@ -10426,8 +10758,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.scan_video:
         meta = scan_single_video(config, args.scan_video)
         print(json.dumps({"video_path": meta.get("video_path"), "performers": meta.get("performers", [])}, indent=2, ensure_ascii=False))
-        if config.apply:
-            generate_report(config)
         return 0
     if args.enrich_metadata:
         if config.apply:
