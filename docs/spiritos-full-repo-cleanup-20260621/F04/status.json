@@ -1,21 +1,77 @@
 {
   "stage": "F04",
   "title": "Generic local packet decomposition",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
-  "baseline_captured": false,
-  "dependencies_satisfied": {"F03": false},
+  "acceptance_contract_sha256": "1b3fc787788a501166ee70519e86eec719dca64de21e5a2a6666b86dab087018",
+  "holdout_manifest_sha256": "43f3fb76ed9d16cc3c23755b978770960fe227d840a2d04ff9f3193c771df06b",
+  "baseline_head": "588e0ff5cffe36fd046b77c3c0adc20d9e07a003",
+  "baseline_captured": true,
+  "dependencies_satisfied": {
+    "F03": true
+  },
   "increments": [
-    {"id": "4.1", "title": "packet_templates generic decomposer (comparison shape first) + sub-packet validator + unseen tests", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "4.2", "title": "remaining shapes + prompt_packet wiring + regression references (test-only)", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "4.1",
+      "title": "generic decomposer, sub-packet validator, and unseen tests",
+      "status": "COMPLETE",
+      "files_touched": [
+        "source_proxy/decision/packet_decomposition.py",
+        "source_proxy/decision/packet_templates/__init__.py",
+        "source_proxy/tests/test_packet_decomposition.py"
+      ]
+    },
+    {
+      "id": "4.2",
+      "title": "prompt_packet dry-run decomposition wiring and API passthrough",
+      "status": "COMPLETE",
+      "files_touched": [
+        "source_proxy/decision/prompt_packet.py",
+        "source_proxy/api/decision.py",
+        "source_proxy/tests/test_packet_decomposition.py"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "pre_f4_manual_verification": {
+      "status": "PASS",
+      "note": "docs/spiritos-full-repo-cleanup-20260621/F04/pre-f4-manual-verification.md",
+      "focused_f1_f2_f3_tests": "PASS: 32 passed in 0.56s under /home/source/SpiritOS/.venv-source-proxy/bin/python",
+      "system_python_pytest": "BLOCKED_ENV: /usr/bin/python3 has no pytest; not counted as PASS"
+    },
+    "baseline": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest -q source_proxy/tests/test_prompt_packet_context_metadata.py",
+      "status": "PASS",
+      "summary": "78 passed, 2 skipped in 23.10s"
+    },
+    "focused_source_proxy_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_packet_decomposition.py source_proxy/tests/test_prompt_packet_context_metadata.py source_proxy/tests/test_brain_switch_contract.py source_proxy/tests/test_status_codes.py source_proxy/tests/test_anticheat_registry.py -q",
+      "status": "PASS",
+      "summary": "118 passed, 2 skipped in 31.62s"
+    },
+    "py_compile": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m py_compile source_proxy/decision/packet_decomposition.py source_proxy/decision/prompt_packet.py source_proxy/api/decision.py",
+      "status": "PASS"
+    },
+    "tailoring_scan": {
+      "status": "PASS",
+      "summary": "No A2/A5/A9/Set A/4R/4R7 literals in F4 production files; historical labels appear only in tests/docs."
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    "operator_check": {
+      "command": "bash docs/spiritos-full-repo-cleanup-20260621/F04/operator-check.sh",
+      "status": "PASS",
+      "summary": "F04 operator check: PASS"
+    }
+  },
+  "caveats": [
+    "Broad source_proxy/tests timed out in F1/F2/F3 and remains a carried F10 requalification caveat; F4 did not count broad suite as PASS."
+  ],
+  "next_stage_handoff_updated": true
 }

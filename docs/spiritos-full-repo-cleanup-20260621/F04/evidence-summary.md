@@ -1,18 +1,20 @@
 # F04 Evidence Summary
 
-**Status:** NOT_STARTED. Populated during F04 execution.
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Will record
-- baseline (test_prompt_packet_context_metadata.py) outputs + hashes
-- decompose-vs-monolithic comparison on unseen same-shape prompts (per shape)
-- sub-packet independent-validation results
-- no-API proof (network disabled, decomposition succeeds)
-- label-invariance result (same shape, benchmark-like vs neutral label → identical)
-- operator-check.sh output
-- stage verdict derivation → INTERNAL_GO_PENDING_SECONDARY_REVIEW
+## Evidence captured
+- Pre-F4 manual verification: `pre-f4-manual-verification.md`.
+- Baseline prompt packet tests: PASS, 78 passed and 2 skipped.
+- F4 focused plus F1-F3 compatibility tests: PASS, 118 passed and 2 skipped.
+- Py compile for changed Python modules: PASS.
+- Tailoring scan over F4 production files: PASS, no named benchmark labels.
+- `git diff --check`: PASS.
+- Operator check: recorded in `status.json` after live run.
 
-## Raw evidence
-`<evidence_root>/F04/raw/<increment>/...` (outside Git).
+## Manual inspection
+- `source_proxy/decision/packet_decomposition.py` implements generic task-shape decomposition, not prompt-label tailoring.
+- `source_proxy/decision/prompt_packet.py` adds local decomposition only when the dry-run recommendation asks for it.
+- `source_proxy/api/decision.py` adds optional prompt-packet request fields only.
 
-## Not yet captured
-(none — stage not started)
+## Not counted as PASS
+- Broad `source_proxy/tests`; previous timeout caveat carries forward to F10.

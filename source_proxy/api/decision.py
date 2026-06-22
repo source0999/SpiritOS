@@ -220,6 +220,9 @@ class PromptPacketRequest(RouteDecisionRequest):
     forbidden_files: list[str] = Field(default_factory=list)
     selected_prompt_id: str | None = None
     trial_prompt_id: str | None = None
+    brain_switch_recommendation: str | None = None
+    task_shape: str | None = None
+    evidence_ids: list[str] = Field(default_factory=list)
 
 
 class ApiVsManualPreviewRequest(PromptPacketRequest):
@@ -6979,6 +6982,9 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             needs_codebase_context=reset_request.needs_codebase_context,
             wants_implementation=reset_request.wants_implementation,
             prefer_free=reset_request.prefer_free,
+            brain_switch_recommendation=reset_request.brain_switch_recommendation,
+            task_shape=reset_request.task_shape,
+            evidence_ids=tuple(reset_request.evidence_ids),
         )
     )
     payload = packet.as_payload()
