@@ -80,6 +80,7 @@ from source_proxy.decision.lanes.status_helpers import (
     receipt_failure_event as _receipt_failure_event,
     valid_lane_status_value as _valid_lane_status_value,
 )
+from source_proxy.decision.worker_tool_adapters import run_process_adapter
 from source_proxy.decision.model_lanes import (
     build_fip3_model_lane_packet,
     build_model_lanes_preview,
@@ -288,13 +289,13 @@ def _fip0_receipt_root() -> Path:
 
 def _safe_dirty_tree_status() -> dict[str, Any]:
     try:
-        result = subprocess.run(
-            ["git", "status", "--short", "--untracked-files=no"],
+        result = run_process_adapter(
+            adapter_id="git_status_dirty_tree",
+            command=("git", "status", "--short", "--untracked-files=no"),
             cwd=str(_workspace_root()),
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=5,
+            timeout_seconds=5,
+            owner="source_proxy.api.decision",
+            evidence_ref="fip0_dirty_tree_status",
         )
     except Exception as error:
         return {

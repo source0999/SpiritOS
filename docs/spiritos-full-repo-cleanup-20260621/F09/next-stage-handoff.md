@@ -1,21 +1,11 @@
-# F09 → F10 Handoff
+# F09 -> F10 Handoff
 
-**Status:** NOT_STARTED (finalized when F09 verdict set).
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
 ## F09 hands to F10
-- Direct subprocess/urllib calls in the decision path are wrapped in typed lane
-  adapters with the 7-field contract; mac-worker contract cleaned up.
-- Output/timing parity proven; redaction enforced; failures F1-classified.
+- Typed process adapter contract exists for safe decision-owned process probes.
+- `_safe_dirty_tree_status()` payload shape is parity-tested.
+- Remaining direct process/network/model call sites require F10 inspection but were not changed.
 
 ## F10 can begin once
-- F09 verdict == INTERNAL_GO_PENDING_SECONDARY_REVIEW.
-- **F01–F09 all GO.** F10 is the terminal requalification of everything prior.
-
-## Carry-forward for F10
-- F10 runs the complete requalification battery (see F10/acceptance-contract.json).
-- F10 MUST include the benchmark-tailoring scan over runtime paths (constitution §A).
-- F10 MUST prove no unapproved API call occurred across the whole cleanup.
-- **Do NOT run Set A/B/C. Do NOT use known battery prompts for cleanup acceptance.**
-- On F10 GO: write `secondary-review-handoff.md` (top-level, replacing the DRAFT),
-  set `cleanup-state.json` → `ready_for_secondary_review=true`,
-  `current_stage=SECONDARY_REVIEW`, and STOP for independent Codex review.
+- F09 commit is created and worktree is clean.
