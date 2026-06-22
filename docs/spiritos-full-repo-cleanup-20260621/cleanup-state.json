@@ -2,23 +2,24 @@
   "cleanup_id": "full-repo-20260621",
   "packet_version": "1",
   "last_updated": "2026-06-21",
-  "last_updated_by": "Codex F02",
+  "last_updated_by": "Codex F03",
   "operator_role": "cleanup_planning_and_implementation_owner_NOT_acceptance_authority",
   "planning_packet": "GO",
   "implementation_started": true,
-  "current_stage": "F03",
+  "current_stage": "F04",
   "current_stage_status": "NOT_STARTED",
   "ready_for_secondary_review": false,
   "secondary_review_completed": false,
   "old_plan_resumed": false,
   "completed_stages": [
     "F01",
-    "F02"
+    "F02",
+    "F03"
   ],
   "stage_verdicts": {
     "F01": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
     "F02": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
-    "F03": "NOT_STARTED",
+    "F03": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
     "F04": "NOT_STARTED",
     "F05": "NOT_STARTED",
     "F06": "NOT_STARTED",
@@ -33,7 +34,7 @@
     "cleanup_branch": "cleanup/full-repo-20260621",
     "starting_breakpoint_head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
     "planning_commit": null,
-    "cleanup_starting_head": null,
+    "cleanup_starting_head": "6cc3916864c86f181e0bd27a29f2aa1912782938",
     "current_cleanup_head": null,
     "primary_worktree_touched": false,
     "note": "Branch/worktree are created AFTER P2 commits the planning packet. Fields null until then."
@@ -93,7 +94,14 @@
     "CLEANUP_MERGED"
   ],
   "only_permitted_terminal_state": "READY_FOR_SECONDARY_REVIEW",
-  "stage_commit_chain": [],
+  "stage_commit_chain": [
+    {
+      "stage": "F03",
+      "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+      "commit": null,
+      "note": "final F03 commit is reported by git/final verdict; commit cannot self-reference its own hash"
+    }
+  ],
   "safety_guards_active": {
     "no_set_a_b_c": true,
     "no_plan_4": true,

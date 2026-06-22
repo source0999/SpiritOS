@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
 
+from source_proxy.decision.escalation_contract import advisory_from_route_statuses
 from source_proxy.routing.ollama_route import (
     clear_ollama_route_cache,
     ollama_coder_route_status_entry,
@@ -24,6 +25,24 @@ class RouteModel:
     model: str
     enabled: bool
     reason: str | None = None
+
+
+def brain_switch_advisory_for_route_statuses(
+    route_statuses: list[dict[str, Any]],
+    *,
+    task_shape: str = "unknown",
+    evidence_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    """Return a dry-run escalation advisory from supplied route status snapshots.
+
+    This helper deliberately does not call route_models(), get_router(), LiteLLM,
+    Ollama, or external providers. Callers must supply already-collected status.
+    """
+    return advisory_from_route_statuses(
+        route_statuses=route_statuses,
+        task_shape=task_shape,
+        evidence_ids=evidence_ids or [],
+    )
 
 
 def route_models() -> list[RouteModel]:
