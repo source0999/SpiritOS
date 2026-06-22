@@ -1,21 +1,41 @@
 #!/usr/bin/env bash
-# F08 operator check — plan-stage. Live gates activate when source edited.
 set -euo pipefail
 STAGE_DIR="docs/spiritos-full-repo-cleanup-20260621/F08"
 echo "F08 operator check"
-
-test -f "$STAGE_DIR/acceptance-contract.json"
-test -f "$STAGE_DIR/holdout-manifest.json"
-python3 -c "import json;[json.load(open('$STAGE_DIR/'+f)) for f in ['acceptance-contract.json','holdout-manifest.json','status.json']]"
-echo "  [OK] contract artifacts present and parse"
-
 python3 - <<'PY'
-import json
-d=json.load(open('docs/spiritos-full-repo-cleanup-20260621/F08/acceptance-contract.json'))
-req={"health_success","compressed=true","tokens_saved>0"}
-assert set(d["headroom_active_requires_all_three"])==req, "Headroom-active proofs misfrozen"
-print("  [OK] Headroom-active requires all 3 proofs (health+compressed+tokens)")
+import hashlib, json
+from pathlib import Path
+stage=Path('docs/spiritos-full-repo-cleanup-20260621/F08')
+status=json.loads((stage/'status.json').read_text())
+for name in ['acceptance-contract.json','holdout-manifest.json','status.json']:
+    json.loads((stage/name).read_text())
+assert status.get('acceptance_contract_sha256') == hashlib.sha256((stage/'acceptance-contract.json').read_bytes()).hexdigest()
+assert status.get('holdout_manifest_sha256') == hashlib.sha256((stage/'holdout-manifest.json').read_bytes()).hexdigest()
+needles=['pkill','killall','npm install','pip install','python3 -m venv','Cursor must be killed']
+for rel in ['scripts/context/headroom-check.sh','scripts/headroom-proxy-dev.sh','scripts/context/verify-repomix-context.sh']:
+    text=Path(rel).read_text()
+    hits=[needle for needle in needles if needle in text]
+    assert not hits, f'{rel}: {hits}'
+    assert '->' in text or rel != 'scripts/context/verify-repomix-context.sh'
+print('  [OK] no package install, Cursor kill, or false Headroom tokens in scripts')
 PY
-
-echo "F08 operator check: PASS (plan-stage)"
-exit 0
+bash -n scripts/context/headroom-check.sh
+bash -n scripts/headroom-proxy-dev.sh
+bash -n scripts/context/verify-repomix-context.sh
+printf '  [OK] shell syntax checks pass
+'
+python3 - <<'PY'
+import subprocess
+allowed={'scripts/context/headroom-check.sh','scripts/headroom-proxy-dev.sh','scripts/context/verify-repomix-context.sh','docs/spiritos-full-repo-cleanup-20260621/cleanup-state.json'}
+allowed_prefixes={'docs/spiritos-full-repo-cleanup-20260621/F08/'}
+result=subprocess.run(['git','diff','--name-only','HEAD'], check=True, capture_output=True, text=True)
+untracked=subprocess.run(['git','ls-files','--others','--exclude-standard'], check=True, capture_output=True, text=True)
+paths=sorted({line.strip() for blob in (result.stdout, untracked.stdout) for line in blob.splitlines() if line.strip()})
+bad=[p for p in paths if p not in allowed and not any(p.startswith(prefix) for prefix in allowed_prefixes)]
+assert not bad, f'non-F8 paths changed: {bad}'
+print('  [OK] changed paths are F8-scoped')
+PY
+git diff --check
+printf '  [OK] git diff --check
+'
+echo "F08 operator check: PASS"

@@ -1,21 +1,14 @@
 # F08 Status
 
-**Stage:** F08 — Context / memory / Headroom / repomix consistency
-**Status:** NOT_STARTED · **Verdict:** (pending)
+**Stage:** F08 - Context, memory, Headroom, Repomix contract
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
+**Verdict:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Frozen artifacts
-- `acceptance-contract.json` — frozen (3-proof Headroom gate; context shape; 4 gates).
-- `holdout-manifest.json` — frozen (6 honest-fallback checks).
+## Completed
+- `headroom-proxy-dev.sh` no longer bootstraps a venv or installs packages.
+- `headroom-check.sh` reports active only after health success.
+- `verify-repomix-context.sh` requires positive `tokens_saved` before accepting `compressed=true`.
 
-## Baseline
-`headroom-check.sh` (expect BLOCKED_ENV) + `verify-repomix-context.sh`.
-
-## Increments
-- 8.1 — HEADROOM_PORT consistency + Cursor/8797 documentation
-- 8.2 — context/memory digest consistency + honest headroom_status probe
-
-## Expected minor caveat
-Headroom runtime BLOCKED_ENV while config/docs consistent + tree-sitter honestly labeled (owner: Britton; next: real Headroom enablement, separate decision).
-
-## Gate results / Caveats
-(populated during execution)
+## Current state
+- Headroom health probe on `127.0.0.1:8797` is inactive.
+- Fallback is explicitly labelled tree-sitter-only.
