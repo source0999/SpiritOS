@@ -1,18 +1,16 @@
 # F06 Evidence Summary
 
-**Status:** NOT_STARTED. Populated during F06 execution.
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Will record
-- baseline: long_running.py line count (6,513), test_long_running_tasks + test_diff_verification outputs + hashes
-- per-increment apply/recovery/trace parity (old vs new path) on unseen tasks
-- idempotence + duplicate-action protection proof
-- causal ordering + consumer semantics parity
-- transition-set identity proof (no add/remove/rename)
-- operator-check.sh output
-- stage verdict derivation → INTERNAL_GO_PENDING_SECONDARY_REVIEW
+## Evidence captured
+- F06 acceptance and holdout hashes recorded in `status.json`.
+- F6 state/readback parity tests: PASS, 9 passed.
+- Py compile of changed modules: PASS.
+- `git diff --check`: PASS.
+- Representative apply-route baseline on pre-F6 archive: FAIL with `approved_diff_blocked`, matching current full-suite failures.
+- Operator check: recorded in `status.json` after live run.
 
-## Raw evidence
-`<evidence_root>/F06/raw/<increment>/...` (outside Git).
-
-## Not yet captured
-(none — stage not started)
+## Manual inspection
+- `source_proxy/tasks/long_running.py` before/after: transition/apply/recovery bodies remain local to the file.
+- `source_proxy/tasks/engine/state.py`: pure state/readback helpers only.
+- `source_proxy/tests/test_long_running_engine_state.py`: alias/parity tests for extracted helpers.

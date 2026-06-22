@@ -62,6 +62,14 @@ from source_proxy.verification.diff import (
     sanitize_unified_diff_for_git_apply,
     task_spec_diff_check,
 )
+from source_proxy.tasks.engine.state import (
+    append_unique_steps as _append_unique_steps,
+    has_approved_execution as _has_approved_execution,
+    task_blocker_reason_code as _task_blocker_reason_code,
+    task_is_waiting_for_coder_output as _task_is_waiting_for_coder_output_state,
+    task_queue_title as _task_queue_title,
+    terminal_or_waiting_statuses as _terminal_or_waiting_statuses,
+)
 
 # Mid-file ``patch does not apply``: try whitespace relaxations only. Do **not** use
 # ``--3way`` here — it requires blobs in the git index; untracked or odd trees get
@@ -809,10 +817,10 @@ def get_long_running_task(task_id: str) -> dict[str, Any]:
 
 
 def _task_is_waiting_for_coder_output(task: LongRunningTask) -> bool:
-    return (
-        task.current_agent_role == "coder"
-        and task.architect_status == "planned"
-        and not task.open_diffs
+    return _task_is_waiting_for_coder_output_state(
+        current_agent_role=task.current_agent_role,
+        architect_status=task.architect_status,
+        open_diffs=task.open_diffs,
     )
 
 
@@ -2382,45 +2390,6 @@ def _set_task_role(
     task.ast_snapshot = snapshot
 
 
-def _append_unique_steps(current_steps: list[str], next_steps: list[str]) -> list[str]:
-    merged = list(current_steps)
-    for step in next_steps:
-        if step not in merged:
-            merged.append(step)
-    return merged[:12]
-
-
-def _has_approved_execution(open_diffs: list[dict[str, Any]]) -> bool:
-    return any(
-        str(diff.get("status") or "")
-        in {
-            "executing",
-            "applied",
-            "applied_needs_verification",
-            "applied_verification_failed",
-            "verification_failed",
-            "verified",
-        }
-        for diff in open_diffs
-    )
-
-
-def _terminal_or_waiting_statuses() -> set[str]:
-    return {
-        "blocked",
-        "blocked_after_retries",
-        "blocked_by_review",
-        "cancelled",
-        "completed",
-        "coder_config_blocked",
-        "failed_needs_human",
-        "needs_context",
-        "applied_needs_verification",
-        "applied_verification_failed",
-        "verification_failed",
-    }
-
-
 def _first_target_rel_from_changed_or_diff(
     changed_files: list[dict[str, Any]],
     unified_diff: str,
@@ -3144,25 +3113,6 @@ def _task_queue_blocker(task: LongRunningTask) -> str | None:
             or task.status
         )
     return None
-
-
-def _task_blocker_reason_code(value: str) -> str | None:
-    text = value.strip()
-    if not text:
-        return None
-    for pattern in (
-        r"reason_code[:=]\s*([A-Za-z0-9_-]+)",
-        r"^([A-Za-z0-9_-]+):",
-    ):
-        match = re.search(pattern, text)
-        if match:
-            return match.group(1)
-    return None
-
-
-def _task_queue_title(description: str) -> str:
-    first_line = next((line.strip() for line in description.splitlines() if line.strip()), "")
-    return first_line[:120] if first_line else "Untitled task"
 
 
 def _run_architect_handoff(task: LongRunningTask) -> None:
