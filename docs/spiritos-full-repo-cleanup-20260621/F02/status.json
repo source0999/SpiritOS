@@ -1,20 +1,109 @@
 {
   "stage": "F02",
   "title": "Independent anti-cheat registry",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
-  "baseline_captured": false,
+  "acceptance_contract_sha256": "1f9ccaeaa823e3a019b517feda24416f312ef1af05fbbe24a89b9d944a1b4052",
+  "holdout_manifest_sha256": "fc86ba510f92dbaa256ede9d6f27b3f697deb097da04dbeaf065147691563aeb",
+  "baseline_head": "b483cc5c7b769b45f6c3be4a25dca9dde4ccad4e",
+  "baseline_captured": true,
   "increments": [
-    {"id": "2.1", "title": "create anticheat package, copy detectors, parity harness", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "2.2", "title": "new negative-corpus detectors + Set A runner import", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "2.1",
+      "title": "create anticheat package, copy detectors, parity harness",
+      "status": "GO",
+      "files_touched": [
+        "source_proxy/verification/anticheat/__init__.py",
+        "source_proxy/verification/anticheat/types.py",
+        "source_proxy/verification/anticheat/detectors.py",
+        "source_proxy/verification/anticheat/registry.py",
+        "source_proxy/verification/anticheat/legacy.py",
+        "source_proxy/tests/test_anticheat_registry.py"
+      ]
+    },
+    {
+      "id": "2.2",
+      "title": "new negative-corpus detectors + Set A runner import",
+      "status": "GO",
+      "files_touched": [
+        "source_proxy/verification/anticheat/detectors.py",
+        "source_proxy/verification/anticheat/registry.py",
+        "source_proxy/tests/test_anticheat_registry.py",
+        "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/_stage4r_runner.py"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "contract_freeze": {
+      "status": "PASS",
+      "acceptance_contract_sha256": "1f9ccaeaa823e3a019b517feda24416f312ef1af05fbbe24a89b9d944a1b4052",
+      "holdout_manifest_sha256": "fc86ba510f92dbaa256ede9d6f27b3f697deb097da04dbeaf065147691563aeb",
+      "contract_changed_after_freeze": false
+    },
+    "baseline": {
+      "system_python_status_codes": "BLOCKED_ENV: /usr/bin/python3 has no pytest",
+      "venv_status_codes": "PASS: 15 passed",
+      "anticheat_package_preexisting": false
+    },
+    "anticheat_registry_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_anticheat_registry.py -q",
+      "status": "PASS",
+      "summary": "6 passed"
+    },
+    "status_code_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_status_codes.py -q",
+      "status": "PASS",
+      "summary": "15 passed"
+    },
+    "focused_source_proxy_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest -q test_anticheat_registry + F1 relevant focused tests",
+      "status": "PASS",
+      "summary": "115 passed, 2 skipped"
+    },
+    "optional_verification_contracts_subset": {
+      "status": "BLOCKED_ENV_NOT_F2_FAILURE",
+      "summary": "1 existing verification_contracts test failed because node could not resolve typescript from a temp dir."
+    },
+    "broad_source_proxy_tests": {
+      "command": "timeout 300 /home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests -q",
+      "status": "TIMEOUT_NOT_PASS",
+      "exit_code": 124,
+      "summary": "Timed out at 300s with broad failures visible; not counted as PASS."
+    },
+    "operator_check": {
+      "command": "bash docs/spiritos-full-repo-cleanup-20260621/F02/operator-check.sh",
+      "status": "PASS"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    "safety": {
+      "legacy_behavior_removed": false,
+      "legacy_verification_modules_modified": false,
+      "fake_go_detected_weakened": false,
+      "api_cloud_call": false,
+      "set_a_run": false,
+      "set_b_run": false,
+      "set_c_run": false,
+      "plan_4_started": false,
+      "protected_paths_changed": false
+    }
+  },
+  "caveats": [
+    {
+      "id": "F02-BROAD-SOURCE-PROXY-TIMEOUT",
+      "classification": "pre-existing broad-suite instability or scale; not counted as PASS",
+      "details": "Broad source_proxy suite timed out at 300s with broad failures visible. F2 focused gates passed."
+    },
+    {
+      "id": "F02-OPTIONAL-VERIFICATION-CONTRACTS-TYPESCRIPT",
+      "classification": "environment caveat outside F2 touched paths",
+      "details": "Optional focused verification_contracts subset had one failure because Node could not resolve typescript from a temp dir."
+    }
+  ],
+  "next_stage_handoff_updated": true
 }

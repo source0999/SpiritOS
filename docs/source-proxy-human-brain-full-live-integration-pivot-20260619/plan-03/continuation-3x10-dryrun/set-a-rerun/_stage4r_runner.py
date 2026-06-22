@@ -20,6 +20,7 @@ for parent in ROOT.parents:
         sys.path.insert(0, str(parent))
         break
 
+from source_proxy.verification.anticheat import detector_registry as f2_anticheat_detector_registry
 from source_proxy.decision.current_research import run_current_research_for_task
 from source_proxy.decision.mac_integration import run_mac_worker_for_task
 from source_proxy.decision.router import DecisionInput, decide_route
