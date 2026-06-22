@@ -1,20 +1,17 @@
 # F05 Evidence Summary
 
-**Status:** NOT_STARTED. Populated during F05 execution.
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Will record
-- baseline: decision.py line count (7,971), test_proxy_runner + test_prompt_packet_context_metadata outputs + hashes
-- per-increment receipt/FIP parity comparison (existing fields, old vs new path)
-- multi-shape receipt parity holdout results
-- trace ordering / consumer_event_id / preview-advisory-write boundary parity
-- lane-isolation test results
-- no-hidden-consumer grep after each retirement
-- single-decision-path proof
-- operator-check.sh output
-- stage verdict derivation → INTERNAL_GO_PENDING_SECONDARY_REVIEW
+## Evidence captured
+- Frozen F05 acceptance and holdout hashes recorded in `status.json`.
+- Baseline focused checks before extraction: PASS, 101 passed and 2 skipped.
+- F5 focused parity plus F1-F4 compatibility tests: PASS, 105 passed and 2 skipped.
+- Py compile of changed modules: PASS.
+- Manual import/route check: PASS.
+- `git diff --check`: PASS.
+- Operator check: recorded in `status.json` after live run.
 
-## Raw evidence
-`<evidence_root>/F05/raw/<increment>/...` (outside Git).
-
-## Not yet captured
-(none — stage not started)
+## Manual inspection
+- `source_proxy/api/decision.py` before/after: only status helper implementation moved; route handlers and public surfaces remain.
+- `source_proxy/decision/lanes/status_helpers.py`: pure serializers/status helpers only.
+- `source_proxy/tests/test_decision_lane_status_helpers.py`: parity coverage for private helper aliases and extracted module.

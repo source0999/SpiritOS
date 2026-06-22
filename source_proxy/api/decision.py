@@ -72,12 +72,13 @@ from source_proxy.decision.preview import (
     ApiVsManualPreviewInput,
     build_api_vs_manual_preview,
 )
-from source_proxy.diagnostics.status_codes import (
-    classify_failure,
-    is_failure_status,
-    no_failure_classification,
-    receipt_failure_classification_from_lanes,
-    serialize_failure_classification,
+from source_proxy.diagnostics.status_codes import no_failure_classification
+from source_proxy.decision.lanes.status_helpers import (
+    lane_status as _lane_status,
+    packet_lane_status as _packet_lane_status,
+    receipt_failure_classification as _lane_receipt_failure_classification,
+    receipt_failure_event as _receipt_failure_event,
+    valid_lane_status_value as _valid_lane_status_value,
 )
 from source_proxy.decision.model_lanes import (
     build_fip3_model_lane_packet,
@@ -311,67 +312,8 @@ def _safe_dirty_tree_status() -> dict[str, Any]:
     }
 
 
-def _lane_status(status: str, reason: str, **extra: Any) -> dict[str, Any]:
-    payload = {"status": status, "reason": reason, **extra}
-    if is_failure_status(status):
-        classification = classify_failure(
-            status=status,
-            reason=reason,
-            source=str(extra.get("source") or extra.get("lane") or "fip0_lane"),
-            provider_errors=extra.get("provider_errors", []),
-        )
-        payload["reason_code"] = classification.reason_code
-        payload["failure_classification"] = serialize_failure_classification(classification)
-    return payload
-
-
 def _receipt_failure_classification(receipt: dict[str, Any]) -> dict[str, Any]:
-    lanes = {
-        field: receipt.get(field)
-        for field in FIP0_LANE_STATUS_FIELDS
-        if isinstance(receipt.get(field), dict)
-    }
-    return receipt_failure_classification_from_lanes(lanes)
-
-
-def _receipt_failure_event(receipt: dict[str, Any]) -> dict[str, Any]:
-    classification = receipt.get("failure_classification")
-    if not isinstance(classification, dict) or not classification.get("failure_present"):
-        return {"failure_present": False}
-    return {
-        "event_type": "failure",
-        "failure_present": True,
-        "failure_class": classification.get("failure_class"),
-        "reason_code": classification.get("reason_code"),
-        "legacy_compat_string": classification.get("legacy_compat_string"),
-        "lane": classification.get("lane", ""),
-    }
-
-
-def _valid_lane_status_value(value: str) -> bool:
-    return value in {"used", "skipped", "blocked", "failed", "timed_out", "config_blocked"}
-
-
-def _packet_lane_status(packet: dict[str, Any], *, fallback_reason: str) -> dict[str, Any]:
-    status = str(packet.get("status") or "")
-    reason = str(packet.get("reason") or fallback_reason)
-    if not _valid_lane_status_value(status):
-        return _lane_status(
-            "failed",
-            "context_lane_returned_invalid_status",
-            source=packet.get("source"),
-            raw_status=status,
-            raw_reason=reason,
-        )
-    return _lane_status(
-        status,
-        reason,
-        source=packet.get("source"),
-        diagnostics=packet.get("diagnostics") if isinstance(packet.get("diagnostics"), dict) else {},
-        packet=packet.get("packet") if isinstance(packet.get("packet"), dict) else {},
-        authority=packet.get("authority") if isinstance(packet.get("authority"), dict) else {},
-    )
-
+    return _lane_receipt_failure_classification(receipt, FIP0_LANE_STATUS_FIELDS)
 
 def _blocked_context_packet(source: str, error: Exception) -> dict[str, Any]:
     return {

@@ -1,23 +1,66 @@
 {
   "stage": "F05",
   "title": "Split decision transport from domain lanes",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
+  "acceptance_contract_sha256": "66fd7c5ef5f5fa1bd5e18bcc7dbfea5dc1289ae68dec244850be583491721b31",
+  "holdout_manifest_sha256": "3a23f95c3cd5d2c02d39c8e1ed3d5f2b6d19b119520aff538061f2e75bf12f19",
+  "baseline_head": "f2c864e742e91077977a76a0a5aafbfc00b90a25",
   "baseline_decision_py_lines": 7971,
-  "baseline_captured": false,
-  "dependencies_satisfied": {"F01": false},
+  "baseline_captured": true,
+  "dependencies_satisfied": {
+    "F01": true,
+    "F02": true,
+    "F03": true,
+    "F04": true
+  },
   "increments": [
-    {"id": "5.1", "title": "lanes/receipts.py (FIP0 serialize) extract + parity + switch + retire", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "5.2", "title": "lanes/context.py + lanes/research.py", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "5.3", "title": "lanes/coder.py + lanes/verifier.py + lanes/trace.py + slim router", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "5.1",
+      "title": "pure lane status/receipt helper extraction with parity tests",
+      "status": "COMPLETE",
+      "files_touched": [
+        "source_proxy/api/decision.py",
+        "source_proxy/decision/lanes/__init__.py",
+        "source_proxy/decision/lanes/status_helpers.py",
+        "source_proxy/tests/test_decision_lane_status_helpers.py"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "baseline": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_prompt_packet_context_metadata.py source_proxy/tests/test_status_codes.py source_proxy/tests/test_packet_decomposition.py -q",
+      "status": "PASS",
+      "summary": "101 passed, 2 skipped in 48.00s"
+    },
+    "focused_source_proxy_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_decision_lane_status_helpers.py source_proxy/tests/test_prompt_packet_context_metadata.py source_proxy/tests/test_status_codes.py source_proxy/tests/test_packet_decomposition.py -q",
+      "status": "PASS",
+      "summary": "105 passed, 2 skipped in 84.61s"
+    },
+    "manual_import_route_check": {
+      "status": "PASS",
+      "summary": "Extracted helpers import without circularity; route/prompt/recommend handlers still present exactly once."
+    },
+    "py_compile": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m py_compile source_proxy/api/decision.py source_proxy/decision/lanes/status_helpers.py source_proxy/decision/lanes/__init__.py",
+      "status": "PASS"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    "operator_check": {
+      "command": "bash docs/spiritos-full-repo-cleanup-20260621/F05/operator-check.sh",
+      "status": "PASS",
+      "summary": "F05 operator check: PASS"
+    }
+  },
+  "caveats": [
+    "Broad source_proxy/tests timeout from F1-F3 remains carried to F10; F5 focused parity tests passed."
+  ],
+  "next_stage_handoff_updated": true
 }
