@@ -72,6 +72,13 @@ from source_proxy.decision.preview import (
     ApiVsManualPreviewInput,
     build_api_vs_manual_preview,
 )
+from source_proxy.diagnostics.status_codes import (
+    classify_failure,
+    is_failure_status,
+    no_failure_classification,
+    receipt_failure_classification_from_lanes,
+    serialize_failure_classification,
+)
 from source_proxy.decision.model_lanes import (
     build_fip3_model_lane_packet,
     build_model_lanes_preview,
@@ -302,7 +309,40 @@ def _safe_dirty_tree_status() -> dict[str, Any]:
 
 
 def _lane_status(status: str, reason: str, **extra: Any) -> dict[str, Any]:
-    return {"status": status, "reason": reason, **extra}
+    payload = {"status": status, "reason": reason, **extra}
+    if is_failure_status(status):
+        classification = classify_failure(
+            status=status,
+            reason=reason,
+            source=str(extra.get("source") or extra.get("lane") or "fip0_lane"),
+            provider_errors=extra.get("provider_errors", []),
+        )
+        payload["reason_code"] = classification.reason_code
+        payload["failure_classification"] = serialize_failure_classification(classification)
+    return payload
+
+
+def _receipt_failure_classification(receipt: dict[str, Any]) -> dict[str, Any]:
+    lanes = {
+        field: receipt.get(field)
+        for field in FIP0_LANE_STATUS_FIELDS
+        if isinstance(receipt.get(field), dict)
+    }
+    return receipt_failure_classification_from_lanes(lanes)
+
+
+def _receipt_failure_event(receipt: dict[str, Any]) -> dict[str, Any]:
+    classification = receipt.get("failure_classification")
+    if not isinstance(classification, dict) or not classification.get("failure_present"):
+        return {"failure_present": False}
+    return {
+        "event_type": "failure",
+        "failure_present": True,
+        "failure_class": classification.get("failure_class"),
+        "reason_code": classification.get("reason_code"),
+        "legacy_compat_string": classification.get("legacy_compat_string"),
+        "lane": classification.get("lane", ""),
+    }
 
 
 def _valid_lane_status_value(value: str) -> bool:
@@ -1005,6 +1045,10 @@ def _fip6_operator_trace_from_receipt(
             "repair_packets": _bounded_trace_value(receipt.get("repair_packets", [])),
             "qwen_repair_outputs": _bounded_trace_value(receipt.get("qwen_repair_outputs", [])),
             "verifier_result": _bounded_trace_value(fip5_result.get("final_verifier_result", {})),
+        },
+        "failure_trace": {
+            "failure_event": receipt.get("failure_event", {"failure_present": False}),
+            "failure_classification": receipt.get("failure_classification", no_failure_classification()),
         },
         "verdict_trace": {
             "final_verdict": receipt.get("final_verdict"),
@@ -4527,6 +4571,8 @@ def _attach_fip0_truth_receipt(
             or fip5_result.get("reason")
             or "NO-GO: fip5_verifier_missing_final_verdict"
         )
+    receipt["failure_classification"] = _receipt_failure_classification(receipt)
+    receipt["failure_event"] = _receipt_failure_event(receipt)
     degraded_lanes = _lane_degradation_for_receipt(receipt)
     if degraded_lanes and str(receipt.get("final_verdict") or "").startswith("GO:"):
         receipt["final_verdict"] = "NO-GO: expected_degraded_lane"

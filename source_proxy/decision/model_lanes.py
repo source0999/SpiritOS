@@ -9,6 +9,12 @@ from typing import Any
 
 import httpx
 
+from source_proxy.diagnostics.status_codes import (
+    classify_failure,
+    is_failure_status,
+    serialize_failure_classification,
+)
+
 
 MODEL_LANE_REGISTRY_VERSION = "source-proxy-model-lane-registry-v0.1"
 FIP3_MODEL_PACKET_VERSION = "source-proxy-fip3-local-model-lanes-v0.1"
@@ -725,7 +731,17 @@ def _reserved_hermes_verifier(model: str = "") -> dict[str, Any]:
 
 
 def _model_lane_status(status: str, reason: str, **extra: Any) -> dict[str, Any]:
-    return {"status": status, "reason": reason, **extra}
+    payload = {"status": status, "reason": reason, **extra}
+    if is_failure_status(status):
+        classification = classify_failure(
+            status=status,
+            reason=reason,
+            source=str(extra.get("lane") or extra.get("source") or "model_lane"),
+            provider_errors=extra.get("provider_errors", []),
+        )
+        payload["reason_code"] = classification.reason_code
+        payload["failure_classification"] = serialize_failure_classification(classification)
+    return payload
 
 
 def _ollama_base_url() -> str:

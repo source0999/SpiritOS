@@ -1,20 +1,88 @@
 {
   "stage": "F01",
   "title": "Failure taxonomy + debug receipts",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
-  "baseline_captured": false,
+  "acceptance_contract_sha256": "ac596b5e2870c6007f063fe5131004db7c941ac5b6467c67a5339c53cec60d5f",
+  "holdout_manifest_sha256": "2d0535fa945b01626202c0f80304208c142704c01e096aefa7c5d0bdd2cebadf",
+  "baseline_head": "ea7aac94d65ab8e06717efeb57399e514772815b",
+  "baseline_captured": true,
   "increments": [
-    {"id": "1.1", "title": "taxonomy module + qwen lane + additive receipt field + test_status_codes", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "1.2", "title": "expand to remaining lanes + trace event", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "1.1",
+      "title": "taxonomy module + qwen lane + additive receipt field + test_status_codes",
+      "status": "GO",
+      "files_touched": [
+        "source_proxy/diagnostics/status_codes.py",
+        "source_proxy/decision/model_lanes.py",
+        "source_proxy/api/decision.py",
+        "source_proxy/tests/test_status_codes.py"
+      ]
+    },
+    {
+      "id": "1.2",
+      "title": "expand to remaining lanes + trace event",
+      "status": "GO",
+      "files_touched": [
+        "source_proxy/decision/model_lanes.py",
+        "source_proxy/api/decision.py",
+        "source_proxy/tests/test_status_codes.py"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "contract_freeze": {
+      "status": "PASS",
+      "acceptance_contract_sha256": "ac596b5e2870c6007f063fe5131004db7c941ac5b6467c67a5339c53cec60d5f",
+      "holdout_manifest_sha256": "2d0535fa945b01626202c0f80304208c142704c01e096aefa7c5d0bdd2cebadf",
+      "contract_changed_after_freeze": false
+    },
+    "baseline": {
+      "python3_pytest_source_proxy_tests": "BLOCKED_ENV: /usr/bin/python3 has no pytest",
+      "venv_broad_source_proxy_tests_baseline": "TIMEOUT_180_EXIT_124 with pre-existing failures visible by 18 percent",
+      "focused_existing_baseline": "PASS: 83 passed, 2 skipped"
+    },
+    "taxonomy_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_status_codes.py -q",
+      "status": "PASS",
+      "summary": "15 passed"
+    },
+    "focused_source_proxy_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest -q source_proxy/tests/test_status_codes.py source_proxy/tests/test_prompt_packet_context_metadata.py source_proxy/tests/test_model_lanes.py source_proxy/tests/test_model_lane_observability.py source_proxy/tests/test_model_lane_preview_api.py source_proxy/tests/test_decision_api_request_reset.py",
+      "status": "PASS",
+      "summary": "109 passed, 2 skipped"
+    },
+    "broad_source_proxy_tests": {
+      "command": "timeout 300 /home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests -q",
+      "status": "TIMEOUT_NOT_PASS",
+      "exit_code": 124,
+      "summary": "Timed out at 300s with broad pre-existing failures visible; not counted as PASS."
+    },
+    "operator_check": {
+      "command": "bash docs/spiritos-full-repo-cleanup-20260621/F01/operator-check.sh",
+      "status": "PASS"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    "anti_cheat": {
+      "benchmark_specific_branches": false,
+      "fake_go_detected_changed": false,
+      "default_pass_introduced": false,
+      "renderer_substance_introduced": false,
+      "fallback_counted_as_primary": false
+    }
+  },
+  "caveats": [
+    {
+      "id": "F01-BROAD-SOURCE-PROXY-TIMEOUT",
+      "classification": "pre-existing broad-suite instability or scale; not counted as PASS",
+      "details": "Broad source_proxy suite timed out at 300s under the shared venv with failures visible in the same early bands as baseline. F1 focused gates passed."
+    }
+  ],
+  "next_stage_handoff_updated": true
 }
