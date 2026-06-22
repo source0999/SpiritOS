@@ -1,21 +1,55 @@
 {
   "stage": "F07",
   "title": "Coding UI shell cleanup",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
-  "baseline_captured": false,
-  "dependencies_satisfied": {"shared_contracts_stable": false},
+  "acceptance_contract_sha256": "6e000504177c5d72f4dda9e8e9d6a142666fdff1cfaf895cbb3f3b52a80b101e",
+  "holdout_manifest_sha256": "1cece9c4b0d8f35d4ff9c385315b8c5f1ddd841480d00e3348023c59aa0fc937",
+  "baseline_head": "770ed0d073958baa322e718f697ed2fa45c4bbee",
+  "baseline_captured": true,
+  "dependencies_satisfied": {
+    "F06": true
+  },
   "increments": [
-    {"id": "7.1", "title": "classify shells + reversible feature metadata + shared types", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "7.2", "title": "extract shared timeline/receipt/debug components", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "7.1",
+      "title": "coding shell registry and active /coding metadata",
+      "status": "COMPLETE",
+      "files_touched": [
+        "src/app/coding/page.tsx",
+        "src/lib/coding/shell-registry.ts",
+        "src/lib/coding/__tests__/shell-registry.test.ts"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "static_shell_check": {
+      "status": "PASS",
+      "summary": "/coding imports CodingCockpitShell and activeCodingShell; registry marks cockpit active and command-center experimental."
+    },
+    "frontend_vitest": {
+      "status": "BLOCKED_ENV_NOT_PASS",
+      "summary": "cleanup worktree has no node_modules; vitest cannot resolve vitest/config or @vitejs/plugin-react. No package install performed."
+    },
+    "frontend_typecheck": {
+      "status": "BLOCKED_ENV_NOT_PASS",
+      "summary": "cleanup worktree has no node_modules; tsc not found locally, and primary binary cannot resolve cleanup dependencies."
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    "operator_check": {
+      "command": "bash docs/spiritos-full-repo-cleanup-20260621/F07/operator-check.sh",
+      "status": "PASS",
+      "summary": "F07 operator check: PASS"
+    }
+  },
+  "caveats": [
+    "Frontend Vitest/typecheck blocked because cleanup worktree has no node_modules; static shell checks and diff hygiene passed."
+  ],
+  "next_stage_handoff_updated": true
 }

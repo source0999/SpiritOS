@@ -1,19 +1,14 @@
 # F07 Evidence Summary
 
-**Status:** NOT_STARTED. Populated during F07 execution.
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Will record
-- baseline: test:coding-frontend-regression + typecheck outputs + hashes
-- canonical-shell proof (page.tsx import unchanged)
-- no-deletion proof (git diff --name-status D check)
-- multi-state UI holdout results (idle/running/approval/failed)
-- feature-flag default proof
-- build result
-- operator-check.sh output
-- stage verdict derivation → INTERNAL_GO_PENDING_SECONDARY_REVIEW
+## Evidence captured
+- Static shell check: PASS.
+- `git diff --check`: PASS.
+- Vitest/typecheck: BLOCKED_ENV due missing cleanup `node_modules`.
+- Operator check: recorded in `status.json` after live run.
 
-## Raw evidence
-`<evidence_root>/F07/raw/<increment>/...` (outside Git).
-
-## Not yet captured
-(none — stage not started)
+## Manual inspection
+- `/coding/page.tsx` still imports and renders `CodingCockpitShell`.
+- No alternate coding shell was deleted or made canonical.
+- Registry entries include rollback notes.

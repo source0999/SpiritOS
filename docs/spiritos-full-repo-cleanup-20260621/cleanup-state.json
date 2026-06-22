@@ -6,7 +6,7 @@
   "operator_role": "cleanup_planning_and_implementation_owner_NOT_acceptance_authority",
   "planning_packet": "GO",
   "implementation_started": true,
-  "current_stage": "F07",
+  "current_stage": "F08",
   "current_stage_status": "NOT_STARTED",
   "ready_for_secondary_review": false,
   "secondary_review_completed": false,
@@ -17,7 +17,8 @@
     "F03",
     "F04",
     "F05",
-    "F06"
+    "F06",
+    "F07"
   ],
   "stage_verdicts": {
     "F01": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",

@@ -1,18 +1,14 @@
 # F07 Status
 
-**Stage:** F07 — Coding UI shell cleanup
-**Status:** NOT_STARTED · **Verdict:** (pending) · **Depends on:** shared contracts stable (F01+F05+F06)
+**Stage:** F07 - Coding UI shell cleanup
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
+**Verdict:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Frozen artifacts
-- `acceptance-contract.json` — frozen (canonical = CodingCockpitShell; no deletion; 6 gates).
-- `holdout-manifest.json` — frozen (5 generic UI-state checks).
+## Completed
+- Added reversible `src/lib/coding/shell-registry.ts` metadata.
+- Confirmed `/coding` remains `CodingCockpitShell`.
+- Classified `CodingCommandCenterShell` as experimental/alternate, not deleted.
+- Added non-visible `data-coding-shell-id` metadata to `/coding` receipt/trace controls.
 
-## Baseline
-`npm run test:coding-frontend-regression` + `typecheck` green set.
-
-## Increments
-- 7.1 — classify shells + reversible feature metadata + shared types
-- 7.2 — extract shared timeline/receipt/debug components
-
-## Gate results / Caveats
-(populated during execution)
+## Caveat
+- Frontend Vitest/typecheck could not run in the cleanup worktree because `node_modules` is absent. No package install was performed.
