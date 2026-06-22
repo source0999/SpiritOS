@@ -6,9 +6,9 @@
   "operator_role": "cleanup_planning_and_implementation_owner_NOT_acceptance_authority",
   "planning_packet": "GO",
   "implementation_started": true,
-  "current_stage": "F10",
-  "current_stage_status": "NOT_STARTED",
-  "ready_for_secondary_review": false,
+  "current_stage": "SECONDARY_REVIEW",
+  "current_stage_status": "READY_FOR_GLM_SECONDARY_AUDIT",
+  "ready_for_secondary_review": true,
   "secondary_review_completed": false,
   "old_plan_resumed": false,
   "completed_stages": [
@@ -20,7 +20,8 @@
     "F06",
     "F07",
     "F08",
-    "F09"
+    "F09",
+    "F10"
   ],
   "stage_verdicts": {
     "F01": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
@@ -117,5 +118,6 @@
     "no_push": true,
     "no_merge": true,
     "no_old_plan_resume": true
-  }
+  },
+  "final_cleanup_head": "VERIFY_WITH_GIT_REV_PARSE_HEAD_AFTER_F10_COMMIT"
 }
