@@ -23,6 +23,7 @@ for parent in ROOT.parents:
 from source_proxy.verification.anticheat import detector_registry as f2_anticheat_detector_registry
 from source_proxy.decision.current_research import run_current_research_for_task
 from source_proxy.decision.mac_integration import run_mac_worker_for_task
+from source_proxy.decision.model_lanes import configured_fip3_models
 from source_proxy.decision.router import DecisionInput, decide_route
 from source_proxy.decision.task_spec_intake import build_task_spec_intake
 from source_proxy.tasks.durable_execution import (
@@ -510,6 +511,7 @@ def packet_model_lanes() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
 
     if PACKET_MODEL:
         add_ollama(PACKET_MODEL, "PLAN3_STAGE4R_PACKET_MODEL")
+    add_ollama(configured_fip3_models().get("qwen_coder", ""), "structured_packet_author_primary_local_coder")
     add_ollama("hermes4:latest", "stronger_existing_local_ollama")
     add_ollama(MODEL, "current_default_local_model")
 
@@ -744,6 +746,28 @@ def build_packet_evidence_items(digest: dict[str, Any]) -> list[dict[str, Any]]:
     return items
 
 
+def packet_ready_evidence_items(digest: dict[str, Any]) -> list[dict[str, Any]]:
+    ready: list[dict[str, Any]] = []
+    for item in build_packet_evidence_items(digest):
+        finding = str(item.get("finding_excerpt") or item.get("fact") or item.get("source_title") or "").strip()
+        if len(finding) < 30:
+            finding = (
+                f"{item.get('source_title') or item.get('evidence_id')} evidence from "
+                f"{item.get('source_host') or item.get('evidence_type')} is available for this packet."
+            )
+        ready.append({
+            "evidence_id": item.get("evidence_id"),
+            "finding": finding,
+            "source_title": item.get("source_title") or item.get("evidence_id"),
+            "source_host": item.get("source_host") or item.get("evidence_type"),
+            "source_url": item.get("source_url") or item.get("evidence_id"),
+            "evidence_type": item.get("evidence_type"),
+            "confidence": "high" if item.get("evidence_type") != "mac" else "medium",
+            "why_relevant": "This evidence changes a concrete architecture, routing, machine-role, or tooling decision.",
+        })
+    return ready
+
+
 def prompt_decision_questions(pid: str) -> list[str]:
     if pid == "A2":
         return [
@@ -934,6 +958,7 @@ def decision_packet_prompt(pid: str, item: dict[str, Any], digest: dict[str, Any
     mac_facts = json.dumps(digest.get("mac_capability_evidence") or {}, indent=2)[:3000]
     mac_summary = "\n".join(f"- {line}" for line in digest.get("mac_evidence_summary", []) or [])
     evidence_items = json.dumps(digest.get("evidence_items") or [], indent=2, ensure_ascii=False)[:14000]
+    packet_evidence_items = json.dumps(packet_ready_evidence_items(digest), indent=2, ensure_ascii=False)[:16000]
     return f"""You are the live Source Proxy evidence-to-decision packet writer for Plan 3 Stage 4R7.
 
 Return JSON only. No markdown, no code fences, no prose before or after JSON.
@@ -958,6 +983,9 @@ Canonical evidence:
 Canonical evidence IDs. Use only these IDs in evidence_that_changed_it:
 {evidence_items}
 
+Packet-ready evidence_items. Copy this exact JSON array into the output `evidence_items` field. Do not rewrite, summarize, add, remove, reorder, respell, or invent evidence objects:
+{packet_evidence_items}
+
 Prompt-specific required gates:
 {prompt_specific_guidance(pid)}
 
@@ -974,8 +1002,9 @@ Required JSON shape:
 {json.dumps(schema, indent=2)}
 
 Rules:
-- Use at least five evidence_items.
+- Use at least five evidence_items by copying from the packet-ready evidence_items array.
 - Use at least five decisions_changed_by_evidence.
+- The output evidence_items field must contain only objects copied from packet-ready evidence_items.
 - Copy evidence_id values exactly from the canonical evidence IDs list.
 - evidence_that_changed_it entries must be valid evidence_id values only, for example research:1, repo:2, mac:ram.
 - Do not put raw URLs, hosts, repo paths, or Mac facts in evidence_that_changed_it; put those only in evidence_items.

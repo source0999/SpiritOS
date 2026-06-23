@@ -2,12 +2,14 @@
   "auto_fix_attempts": 0,
   "blocked_reasons": [],
   "consumer_subsystem": "long_running_status_observer",
-  "decision_packet_attempts": 6,
+  "decision_packet_attempts": 9,
   "decision_packet_validated": false,
   "decision_packet_validation_errors": [
-    "decision_no_action_verb:2",
+    "decision_no_action_verb:4",
+    "fabricated_host:2:cwskit.com",
     "missing_contract_term:local api",
     "non_json_wrapping_text",
+    "source_url_not_from_raw_sources:0",
     "source_url_not_from_raw_sources:1",
     "source_url_not_from_raw_sources:2"
   ],
@@ -20,6 +22,12 @@
     },
     "browser_functional_verifier_result": "not_required",
     "candidate_lanes": [
+      {
+        "lane_name": "ollama_qwen2.5-coder_7b",
+        "model": "qwen2.5-coder:7b",
+        "provider_type": "ollama",
+        "reason": "structured_packet_author_primary_local_coder"
+      },
       {
         "lane_name": "ollama_hermes4_latest",
         "model": "hermes4:latest",
@@ -92,6 +100,12 @@
     "provider_availability": {
       "available": [
         {
+          "lane_name": "ollama_qwen2.5-coder_7b",
+          "model": "qwen2.5-coder:7b",
+          "provider_type": "ollama",
+          "reason": "structured_packet_author_primary_local_coder"
+        },
+        {
           "lane_name": "ollama_hermes4_latest",
           "model": "hermes4:latest",
           "provider_type": "ollama",
@@ -142,7 +156,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "plan",
-    "task_id": "task_07b08b268075",
+    "task_id": "task_f2232af48edc",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": true,
@@ -193,7 +207,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_d6b9c087b9894e10",
+  "latest_consumer_event_id": "consumer_191ff5d17bfe4c0a",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -218,6 +232,12 @@
     "work_product_too_short"
   ],
   "packet_lanes_available": [
+    {
+      "lane_name": "ollama_qwen2.5-coder_7b",
+      "model": "qwen2.5-coder:7b",
+      "provider_type": "ollama",
+      "reason": "structured_packet_author_primary_local_coder"
+    },
     {
       "lane_name": "ollama_hermes4_latest",
       "model": "hermes4:latest",
@@ -304,8 +324,8 @@
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_07b08b268075",
-  "trace_id": "trace_cec03d4e46454a5a",
+  "task_id": "task_f2232af48edc",
+  "trace_id": "trace_7415ff944f944adc",
   "user_goal_reached": false,
   "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
   "verification_result": "not_required",

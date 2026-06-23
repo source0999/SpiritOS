@@ -2,17 +2,17 @@
   "auto_fix_attempts": 0,
   "blocked_reasons": [],
   "consumer_subsystem": "long_running_status_observer",
-  "decision_packet_attempts": 6,
+  "decision_packet_attempts": 9,
   "decision_packet_validated": false,
   "decision_packet_validation_errors": [
-    "a9_test_later",
-    "a9_use_now",
+    "decision_field_too_thin:0:default_without_evidence",
+    "decision_field_too_thin:1:default_without_evidence",
+    "decision_field_too_thin:2:default_without_evidence",
+    "decision_field_too_thin:3:default_without_evidence",
+    "decision_field_too_thin:4:default_without_evidence",
     "decision_no_action_verb:1",
     "decision_no_action_verb:2",
-    "garbled_or_fabricated_tokens_detected",
-    "missing_contract_term:test later",
-    "missing_contract_term:use now",
-    "non_json_wrapping_text"
+    "decision_no_action_verb:4"
   ],
   "diagnostic_debugger": {
     "anti_cheat_flags": {
@@ -23,6 +23,12 @@
     },
     "browser_functional_verifier_result": "not_required",
     "candidate_lanes": [
+      {
+        "lane_name": "ollama_qwen2.5-coder_7b",
+        "model": "qwen2.5-coder:7b",
+        "provider_type": "ollama",
+        "reason": "structured_packet_author_primary_local_coder"
+      },
       {
         "lane_name": "ollama_hermes4_latest",
         "model": "hermes4:latest",
@@ -90,6 +96,12 @@
     "provider_availability": {
       "available": [
         {
+          "lane_name": "ollama_qwen2.5-coder_7b",
+          "model": "qwen2.5-coder:7b",
+          "provider_type": "ollama",
+          "reason": "structured_packet_author_primary_local_coder"
+        },
+        {
           "lane_name": "ollama_hermes4_latest",
           "model": "hermes4:latest",
           "provider_type": "ollama",
@@ -133,17 +145,17 @@
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A9.json",
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A9",
-    "selected_lane": "ollama_hermes4_latest",
+    "selected_lane": "ollama_qwen2.5-coder_7b",
     "selected_model_provider_tool": {
-      "model": "hermes4:latest",
+      "model": "qwen2.5-coder:7b",
       "provider": "ollama",
       "tool": "stage4r_live_work_product"
     },
     "task_class": "research_pack",
-    "task_id": "task_94ecaf357e44",
+    "task_id": "task_42352035080c",
     "timeout_empty_parse_policy": {
       "empty_output": false,
-      "parse_failure": true,
+      "parse_failure": false,
       "policy_block": false,
       "timeout": false
     },
@@ -185,7 +197,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_55b4c92b6c4c44ad",
+  "latest_consumer_event_id": "consumer_1043948bfb894e29",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -205,6 +217,12 @@
     "work_product_too_short"
   ],
   "packet_lanes_available": [
+    {
+      "lane_name": "ollama_qwen2.5-coder_7b",
+      "model": "qwen2.5-coder:7b",
+      "provider_type": "ollama",
+      "reason": "structured_packet_author_primary_local_coder"
+    },
     {
       "lane_name": "ollama_hermes4_latest",
       "model": "hermes4:latest",
@@ -244,8 +262,8 @@
       "reason": "LITELLM_API_KEY_unset_or_model_missing"
     }
   ],
-  "packet_model": "hermes4:latest",
-  "packet_model_lane": "ollama_hermes4_latest",
+  "packet_model": "qwen2.5-coder:7b",
+  "packet_model_lane": "ollama_qwen2.5-coder_7b",
   "packet_model_provider": "ollama",
   "patch_bucket": "",
   "patch_required": false,
@@ -289,8 +307,8 @@
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_94ecaf357e44",
-  "trace_id": "trace_1fea14f882104261",
+  "task_id": "task_42352035080c",
+  "trace_id": "trace_05c40481fcc941e9",
   "user_goal_reached": false,
   "user_prompt": "research current local llm tools and tell me what is worth using for my proxy setup this month",
   "verification_result": "not_required",

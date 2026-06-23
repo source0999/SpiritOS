@@ -1,6 +1,7 @@
 # Stage 4R7 Packet Model-Lane Escalation
 
 ## Available lanes
+- ollama_qwen2.5-coder_7b provider=ollama model=qwen2.5-coder:7b reason=structured_packet_author_primary_local_coder
 - ollama_hermes4_latest provider=ollama model=hermes4:latest reason=stronger_existing_local_ollama
 - ollama_gemma3n_e4b provider=ollama model=gemma3n:e4b reason=current_default_local_model
 ## Unavailable lanes

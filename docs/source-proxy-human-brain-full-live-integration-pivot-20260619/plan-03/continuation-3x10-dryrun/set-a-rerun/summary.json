@@ -3,7 +3,7 @@
   "failed_count": 3,
   "fake_go_detected_computed": true,
   "final_status_derived_by_grader": true,
-  "generated_at": "2026-06-23T05:02:12.503832+00:00",
+  "generated_at": "2026-06-23T12:37:14.764822+00:00",
   "hardcoded_plans_used": false,
   "hardcoded_sources_used": false,
   "model": "gemma3n:e4b",
@@ -95,12 +95,14 @@
       "auto_fix_attempts": 0,
       "blocked_reasons": [],
       "consumer_subsystem": "long_running_status_observer",
-      "decision_packet_attempts": 6,
+      "decision_packet_attempts": 9,
       "decision_packet_validated": false,
       "decision_packet_validation_errors": [
-        "decision_no_action_verb:2",
+        "decision_no_action_verb:4",
+        "fabricated_host:2:cwskit.com",
         "missing_contract_term:local api",
         "non_json_wrapping_text",
+        "source_url_not_from_raw_sources:0",
         "source_url_not_from_raw_sources:1",
         "source_url_not_from_raw_sources:2"
       ],
@@ -113,6 +115,12 @@
         },
         "browser_functional_verifier_result": "not_required",
         "candidate_lanes": [
+          {
+            "lane_name": "ollama_qwen2.5-coder_7b",
+            "model": "qwen2.5-coder:7b",
+            "provider_type": "ollama",
+            "reason": "structured_packet_author_primary_local_coder"
+          },
           {
             "lane_name": "ollama_hermes4_latest",
             "model": "hermes4:latest",
@@ -185,6 +193,12 @@
         "provider_availability": {
           "available": [
             {
+              "lane_name": "ollama_qwen2.5-coder_7b",
+              "model": "qwen2.5-coder:7b",
+              "provider_type": "ollama",
+              "reason": "structured_packet_author_primary_local_coder"
+            },
+            {
               "lane_name": "ollama_hermes4_latest",
               "model": "hermes4:latest",
               "provider_type": "ollama",
@@ -235,7 +249,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "plan",
-        "task_id": "task_07b08b268075",
+        "task_id": "task_f2232af48edc",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": true,
@@ -286,7 +300,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_d6b9c087b9894e10",
+      "latest_consumer_event_id": "consumer_191ff5d17bfe4c0a",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -311,6 +325,12 @@
         "work_product_too_short"
       ],
       "packet_lanes_available": [
+        {
+          "lane_name": "ollama_qwen2.5-coder_7b",
+          "model": "qwen2.5-coder:7b",
+          "provider_type": "ollama",
+          "reason": "structured_packet_author_primary_local_coder"
+        },
         {
           "lane_name": "ollama_hermes4_latest",
           "model": "hermes4:latest",
@@ -397,8 +417,8 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_07b08b268075",
-      "trace_id": "trace_cec03d4e46454a5a",
+      "task_id": "task_f2232af48edc",
+      "trace_id": "trace_7415ff944f944adc",
       "user_goal_reached": false,
       "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
       "verification_result": "not_required",
@@ -579,23 +599,16 @@
       "auto_fix_attempts": 0,
       "blocked_reasons": [],
       "consumer_subsystem": "long_running_status_observer",
-      "decision_packet_attempts": 6,
+      "decision_packet_attempts": 9,
       "decision_packet_validated": false,
       "decision_packet_validation_errors": [
-        "a5_do_not_buy",
-        "a5_no_new_hardware",
+        "decision_field_too_thin:2:decision",
+        "decision_field_too_thin:2:default_without_evidence",
         "decision_no_action_verb:0",
-        "decision_no_action_verb:1",
-        "decision_no_action_verb:2",
-        "decision_no_action_verb:3",
-        "evidence_finding_too_thin:4",
         "fabricated_host:0:ollama.ai",
-        "insufficient_source_refs:2",
-        "missing_contract_term:avoid buying",
-        "missing_contract_term:no new hardware",
+        "insufficient_source_refs:1",
         "non_json_wrapping_text",
-        "source_url_not_from_raw_sources:0",
-        "source_url_not_from_raw_sources:1"
+        "source_url_not_from_raw_sources:0"
       ],
       "diagnostic_debugger": {
         "anti_cheat_flags": {
@@ -606,6 +619,12 @@
         },
         "browser_functional_verifier_result": "not_required",
         "candidate_lanes": [
+          {
+            "lane_name": "ollama_qwen2.5-coder_7b",
+            "model": "qwen2.5-coder:7b",
+            "provider_type": "ollama",
+            "reason": "structured_packet_author_primary_local_coder"
+          },
           {
             "lane_name": "ollama_hermes4_latest",
             "model": "hermes4:latest",
@@ -674,6 +693,12 @@
         "provider_availability": {
           "available": [
             {
+              "lane_name": "ollama_qwen2.5-coder_7b",
+              "model": "qwen2.5-coder:7b",
+              "provider_type": "ollama",
+              "reason": "structured_packet_author_primary_local_coder"
+            },
+            {
               "lane_name": "ollama_hermes4_latest",
               "model": "hermes4:latest",
               "provider_type": "ollama",
@@ -724,7 +749,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "plan",
-        "task_id": "task_5cab1f3accb6",
+        "task_id": "task_c315acb749f3",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": true,
@@ -771,7 +796,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_5fc0e87fd8404b05",
+      "latest_consumer_event_id": "consumer_4af8cbf0d3214364",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -799,6 +824,12 @@
         "work_product_too_short"
       ],
       "packet_lanes_available": [
+        {
+          "lane_name": "ollama_qwen2.5-coder_7b",
+          "model": "qwen2.5-coder:7b",
+          "provider_type": "ollama",
+          "reason": "structured_packet_author_primary_local_coder"
+        },
         {
           "lane_name": "ollama_hermes4_latest",
           "model": "hermes4:latest",
@@ -882,8 +913,8 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_5cab1f3accb6",
-      "trace_id": "trace_747aa2bab1ba41a4",
+      "task_id": "task_c315acb749f3",
+      "trace_id": "trace_04cbd7de1d234b77",
       "user_goal_reached": false,
       "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
       "verification_result": "not_required",
@@ -1140,17 +1171,17 @@
       "auto_fix_attempts": 0,
       "blocked_reasons": [],
       "consumer_subsystem": "long_running_status_observer",
-      "decision_packet_attempts": 6,
+      "decision_packet_attempts": 9,
       "decision_packet_validated": false,
       "decision_packet_validation_errors": [
-        "a9_test_later",
-        "a9_use_now",
+        "decision_field_too_thin:0:default_without_evidence",
+        "decision_field_too_thin:1:default_without_evidence",
+        "decision_field_too_thin:2:default_without_evidence",
+        "decision_field_too_thin:3:default_without_evidence",
+        "decision_field_too_thin:4:default_without_evidence",
         "decision_no_action_verb:1",
         "decision_no_action_verb:2",
-        "garbled_or_fabricated_tokens_detected",
-        "missing_contract_term:test later",
-        "missing_contract_term:use now",
-        "non_json_wrapping_text"
+        "decision_no_action_verb:4"
       ],
       "diagnostic_debugger": {
         "anti_cheat_flags": {
@@ -1161,6 +1192,12 @@
         },
         "browser_functional_verifier_result": "not_required",
         "candidate_lanes": [
+          {
+            "lane_name": "ollama_qwen2.5-coder_7b",
+            "model": "qwen2.5-coder:7b",
+            "provider_type": "ollama",
+            "reason": "structured_packet_author_primary_local_coder"
+          },
           {
             "lane_name": "ollama_hermes4_latest",
             "model": "hermes4:latest",
@@ -1228,6 +1265,12 @@
         "provider_availability": {
           "available": [
             {
+              "lane_name": "ollama_qwen2.5-coder_7b",
+              "model": "qwen2.5-coder:7b",
+              "provider_type": "ollama",
+              "reason": "structured_packet_author_primary_local_coder"
+            },
+            {
               "lane_name": "ollama_hermes4_latest",
               "model": "hermes4:latest",
               "provider_type": "ollama",
@@ -1271,17 +1314,17 @@
         "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A9.json",
         "route_type": "plan3_stage4r_set_a",
         "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A9",
-        "selected_lane": "ollama_hermes4_latest",
+        "selected_lane": "ollama_qwen2.5-coder_7b",
         "selected_model_provider_tool": {
-          "model": "hermes4:latest",
+          "model": "qwen2.5-coder:7b",
           "provider": "ollama",
           "tool": "stage4r_live_work_product"
         },
         "task_class": "research_pack",
-        "task_id": "task_94ecaf357e44",
+        "task_id": "task_42352035080c",
         "timeout_empty_parse_policy": {
           "empty_output": false,
-          "parse_failure": true,
+          "parse_failure": false,
           "policy_block": false,
           "timeout": false
         },
@@ -1323,7 +1366,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_55b4c92b6c4c44ad",
+      "latest_consumer_event_id": "consumer_1043948bfb894e29",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -1343,6 +1386,12 @@
         "work_product_too_short"
       ],
       "packet_lanes_available": [
+        {
+          "lane_name": "ollama_qwen2.5-coder_7b",
+          "model": "qwen2.5-coder:7b",
+          "provider_type": "ollama",
+          "reason": "structured_packet_author_primary_local_coder"
+        },
         {
           "lane_name": "ollama_hermes4_latest",
           "model": "hermes4:latest",
@@ -1382,8 +1431,8 @@
           "reason": "LITELLM_API_KEY_unset_or_model_missing"
         }
       ],
-      "packet_model": "hermes4:latest",
-      "packet_model_lane": "ollama_hermes4_latest",
+      "packet_model": "qwen2.5-coder:7b",
+      "packet_model_lane": "ollama_qwen2.5-coder_7b",
       "packet_model_provider": "ollama",
       "patch_bucket": "",
       "patch_required": false,
@@ -1427,8 +1476,8 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_94ecaf357e44",
-      "trace_id": "trace_1fea14f882104261",
+      "task_id": "task_42352035080c",
+      "trace_id": "trace_05c40481fcc941e9",
       "user_goal_reached": false,
       "user_prompt": "research current local llm tools and tell me what is worth using for my proxy setup this month",
       "verification_result": "not_required",
