@@ -28,6 +28,7 @@ export function resolveContextProfile(options = {}) {
     configPath,
     slug,
     llmOutput: resolve(repoRoot, `repomix-output${slug}.xml`),
+    visibleOutput: resolve(repoRoot, `${profile}-context.xml`),
     astOutput: resolve(repoRoot, `repomix-output${slug}.ast.xml`),
     headroomOutput: resolve(repoRoot, `repomix-output${slug}.headroom.xml`),
     innerOutput: resolve(repoRoot, `repomix-output${slug}.ast-inner.xml`),
@@ -48,6 +49,7 @@ export async function buildRepositoryContextBundle(options = {}) {
     configPath,
     innerOutput,
     llmOutput,
+    visibleOutput,
     astOutput,
     headroomOutput,
     fullOutput,
@@ -159,6 +161,7 @@ export async function buildRepositoryContextBundle(options = {}) {
   });
 
   writeFileSync(llmOutput, wrappedXml, "utf8");
+  writeFileSync(visibleOutput, wrappedXml, "utf8");
   writeFileSync(astOutput, wrappedXml, "utf8");
   writeFileSync(
     headroomOutput,
@@ -179,8 +182,9 @@ export async function buildRepositoryContextBundle(options = {}) {
   const llmBytes = readFileSync(llmOutput).byteLength;
   console.log(`Profile: ${profile} (config: ${configPath})`);
   console.log(`Repo root: ${repoRoot}`);
-  console.log(`Open in repo root: ${llmOutput}`);
-  console.log(`LLM context written to ${llmOutput} (${formatBytes(llmBytes)})`);
+  console.log(`Open visible repo-root XML: ${visibleOutput}`);
+  console.log(`Ignored verifier XML: ${llmOutput}`);
+  console.log(`LLM context written to ${visibleOutput} (${formatBytes(llmBytes)})`);
   console.log(`AST mirror written to ${astOutput}`);
   console.log(
     headroomActuallyCompressed
@@ -192,6 +196,7 @@ export async function buildRepositoryContextBundle(options = {}) {
     profile,
     configPath,
     llmOutput,
+    visibleOutput,
     astOutput,
     headroomOutput,
     headroomActuallyCompressed,
