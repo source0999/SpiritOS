@@ -37,6 +37,7 @@ function createClient(): JellyfinClient {
     checkPublicInfo: vi.fn().mockResolvedValue({}),
     getHlsUrl: vi.fn(() => "https://media.example/hls.m3u8"),
     getMobileOptimizedSource: vi.fn().mockResolvedValue({ available: false }),
+    getCachedMobileOptimizedSource: vi.fn(() => null),
     getSystemDiagnostics: vi.fn().mockResolvedValue({ dellFfmpegActive: false, dellFfmpegProcesses: [], checkedAt: "2026-06-20T00:00:00.000Z" }),
     getStreamUrl: vi.fn(() => "https://media.example/video.mp4"),
     getFaceOrganizerMetadata: vi.fn().mockResolvedValue({
@@ -216,6 +217,63 @@ describe("SpiritFlixPlayer mobile controls", () => {
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     expect(screen.getByText("Selected source")).toBeInTheDocument();
     expect(screen.getByText("canonical_mp4")).toBeInTheDocument();
+  });
+
+  it("uses cached mobile optimized source immediately without waiting on network", async () => {
+    const client = {
+      ...createClient(),
+      getStreamUrl: vi.fn(() => "/api/spiritflix/stream?itemId=video-1"),
+      getCachedMobileOptimizedSource: vi.fn(() => ({
+        available: true,
+        mode: "mobile optimized",
+        url: "/api/spiritflix/mobile-optimized?stream=1&key=video-1",
+      })),
+      getMobileOptimizedSource: vi.fn(),
+    } as unknown as JellyfinClient;
+
+    renderPlayer({ client });
+
+    const video = document.querySelector("video");
+    await waitFor(() => expect(video?.getAttribute("src")).toBe("/api/spiritflix/mobile-optimized?stream=1&key=video-1"));
+    expect(client.getMobileOptimizedSource).not.toHaveBeenCalled();
+  });
+
+  it("assigns direct MP4 immediately and upgrades to mobile optimized when receipt resolves on desktop", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+    let resolveMobile: (value: { available: boolean; url?: string; mode?: string }) => void = () => undefined;
+    const mobilePromise = new Promise<{ available: boolean; url?: string; mode?: string }>((resolve) => {
+      resolveMobile = resolve;
+    });
+    const client = {
+      ...createClient(),
+      getStreamUrl: vi.fn(() => "/api/spiritflix/stream?itemId=video-1"),
+      getCachedMobileOptimizedSource: vi.fn(() => null),
+      getMobileOptimizedSource: vi.fn(() => mobilePromise),
+    } as unknown as JellyfinClient;
+
+    renderPlayer({ client });
+
+    const video = document.querySelector("video");
+    await waitFor(() => expect(video?.getAttribute("src")).toBe("/api/spiritflix/stream?itemId=video-1"));
+    resolveMobile({
+      available: true,
+      mode: "mobile optimized",
+      url: "/api/spiritflix/mobile-optimized?stream=1&key=video-1",
+    });
+    await waitFor(() => expect(video?.getAttribute("src")).toBe("/api/spiritflix/mobile-optimized?stream=1&key=video-1"));
   });
 
   it("prefers a Mac-created mobile optimized MP4 receipt when available", async () => {

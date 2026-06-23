@@ -16,6 +16,7 @@
     "lanes:audit": "bash ./scripts/runtime-lanes-audit.sh",
     "spiritflix:admin:dev": "bash ./scripts/spiritflix-admin-dev.sh start",
     "spiritflix:admin:dev:stop": "bash ./scripts/spiritflix-admin-dev.sh stop",
+    "spiritflix:benchmark:mobile": "node ./scripts/spiritflix-mobile-benchmark.mjs",
     "dev:turbo": "next dev -H 0.0.0.0",
     "dev:backend": "cd backend && docker compose up -d",
     "dev:all": "npm run dev:backend && npm run dev",

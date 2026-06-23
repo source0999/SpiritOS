@@ -116,6 +116,27 @@ export function isContainedMobileOutput(outputPath: string): boolean {
   return isInside(MOBILE_OPTIMIZED_ROOT, outputPath);
 }
 
+interface ReceiptIndex {
+  fingerprint: string;
+  builtAt: number;
+  byItemId: Map<string, MobileOptimizedMatch>;
+  byKey: Map<string, MobileOptimizedMatch>;
+  bySourcePathSha256: Map<string, MobileOptimizedMatch>;
+}
+
+const RECEIPT_INDEX_TTL_MS = 30_000;
+let receiptIndexCache: ReceiptIndex | null = null;
+
+async function getReceiptRootFingerprint(): Promise<string> {
+  try {
+    const stat = await fs.stat(MOBILE_OPTIMIZED_ROOT);
+    const entries = await fs.readdir(MOBILE_OPTIMIZED_ROOT);
+    return `${stat.mtimeMs}:${entries.length}`;
+  } catch {
+    return "missing";
+  }
+}
+
 async function collectReceiptPaths(dir: string): Promise<string[]> {
   let entries: Array<import("node:fs").Dirent>;
   try {
@@ -134,17 +155,58 @@ async function collectReceiptPaths(dir: string): Promise<string[]> {
   return nested.flat();
 }
 
+async function buildReceiptIndex(): Promise<ReceiptIndex> {
+  const fingerprint = await getReceiptRootFingerprint();
+  const receiptPaths = await collectReceiptPaths(MOBILE_OPTIMIZED_ROOT);
+  const matches = await Promise.all(receiptPaths.map((receiptPath) => readReceipt(receiptPath, { skipOutputAccess: true })));
+  const byItemId = new Map<string, MobileOptimizedMatch>();
+  const byKey = new Map<string, MobileOptimizedMatch>();
+  const bySourcePathSha256 = new Map<string, MobileOptimizedMatch>();
+  for (const match of matches) {
+    if (!match) continue;
+    byKey.set(match.key, match);
+    if (match.receipt.itemId) byItemId.set(match.receipt.itemId, match);
+    if (match.receipt.sourcePathSha256) bySourcePathSha256.set(match.receipt.sourcePathSha256, match);
+  }
+  return { fingerprint, builtAt: Date.now(), byItemId, byKey, bySourcePathSha256 };
+}
+
+async function getReceiptIndex(): Promise<ReceiptIndex> {
+  const fingerprint = await getReceiptRootFingerprint();
+  const now = Date.now();
+  if (
+    receiptIndexCache &&
+    receiptIndexCache.fingerprint === fingerprint &&
+    now - receiptIndexCache.builtAt < RECEIPT_INDEX_TTL_MS
+  ) {
+    return receiptIndexCache;
+  }
+  receiptIndexCache = await buildReceiptIndex();
+  return receiptIndexCache;
+}
+
+export function scheduleMobileOptimizedReceiptIndexWarmup(): void {
+  void getReceiptIndex().catch(() => undefined);
+}
+
+/** Test-only: bust the in-memory receipt index between cases. */
+export function clearMobileOptimizedReceiptIndexCache(): void {
+  receiptIndexCache = null;
+}
+
 function keyFromReceipt(receipt: MobileOptimizedReceipt, receiptPath: string): string {
   return receipt.outputKey || receipt.sourcePathSha256 || path.basename(receiptPath, ".json");
 }
 
-async function readReceipt(receiptPath: string): Promise<MobileOptimizedMatch | null> {
+async function readReceipt(receiptPath: string, options: { skipOutputAccess?: boolean } = {}): Promise<MobileOptimizedMatch | null> {
   try {
     const receipt = JSON.parse(await fs.readFile(receiptPath, "utf8")) as MobileOptimizedReceipt;
     if (receipt.status !== "ok" || !receipt.outputPath || !isContainedMobileOutput(receipt.outputPath)) {
       return null;
     }
-    await fs.access(receipt.outputPath);
+    if (!options.skipOutputAccess) {
+      await fs.access(receipt.outputPath);
+    }
     return { key: keyFromReceipt(receipt, receiptPath), receiptPath, receipt };
   } catch {
     return null;
@@ -157,20 +219,23 @@ export async function findMobileOptimizedReceipt(criteria: {
   sourcePath?: string;
   key?: string;
 }): Promise<MobileOptimizedMatch | null> {
-  const receiptPaths = await collectReceiptPaths(MOBILE_OPTIMIZED_ROOT);
+  const index = await getReceiptIndex();
+  if (criteria.key) {
+    const byKey = index.byKey.get(criteria.key);
+    if (byKey) return byKey;
+  }
+  if (criteria.itemId) {
+    const byItemId = index.byItemId.get(criteria.itemId);
+    if (byItemId) return byItemId;
+  }
   const sourcePathShaCandidates = new Set<string>();
   if (criteria.sourcePathSha256) sourcePathShaCandidates.add(criteria.sourcePathSha256);
   for (const sourcePath of expandSpiritFlixSourcePathAliases(criteria.sourcePath ?? "")) {
     sourcePathShaCandidates.add(getSourcePathSha256(sourcePath));
   }
-  for (const receiptPath of receiptPaths) {
-    const match = await readReceipt(receiptPath);
-    if (!match) continue;
-    if (criteria.key && match.key === criteria.key) return match;
-    if (criteria.itemId && match.receipt.itemId === criteria.itemId) return match;
-    if (match.receipt.sourcePathSha256 && sourcePathShaCandidates.has(match.receipt.sourcePathSha256)) {
-      return match;
-    }
+  for (const sha of sourcePathShaCandidates) {
+    const bySha = index.bySourcePathSha256.get(sha);
+    if (bySha) return bySha;
   }
   return null;
 }

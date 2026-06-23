@@ -139,6 +139,71 @@ const SHOW_PLAYER_DIAGNOSTICS = process.env.NODE_ENV !== "production";
 const MANUAL_TAG_CHANGED_EVENT = "spiritflix:manual-tags-changed";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
 
+function markSpiritFlixPerf(name: string, detail?: Record<string, unknown>): void {
+  if (typeof performance === "undefined") return;
+  performance.mark(`spiritflix:${name}`);
+  if (typeof window !== "undefined") {
+    const perf = (window as SpiritFlixPerfWindow).__spiritflixPerf ?? { marks: [] };
+    perf.marks.push({ name, at: performance.now(), detail });
+    (window as SpiritFlixPerfWindow).__spiritflixPerf = perf;
+  }
+}
+
+interface SpiritFlixPerfWindow extends Window {
+  __spiritflixPerf?: {
+    marks: Array<{ name: string; at: number; detail?: Record<string, unknown> }>;
+  };
+}
+
+function applyMobileOptimizedPlayback(
+  video: HTMLVideoElement,
+  mobileSource: MobileOptimizedSource,
+  setters: {
+    setMobileOptimizedSource: (value: MobileOptimizedSource | null) => void;
+    setPlaybackMode: (mode: PlaybackSourceMode) => void;
+    setPlaybackSourceClass: (value: PlaybackSourceClass) => void;
+    setPlaybackSourceReason: (value: string) => void;
+    playbackModeRef: { current: PlaybackSourceMode };
+  },
+): void {
+  if (!mobileSource.available || !mobileSource.url) return;
+  setters.setMobileOptimizedSource(mobileSource);
+  setters.setPlaybackMode("mobile optimized");
+  setters.setPlaybackSourceClass("mac_optimized_mp4");
+  setters.setPlaybackSourceReason("valid Mac optimized MP4 receipt and output found");
+  setters.playbackModeRef.current = "mobile optimized";
+  if (video.src !== mobileSource.url) {
+    video.src = mobileSource.url;
+    video.load();
+    markSpiritFlixPerf("src-assigned", { source: "mobileOptimized", url: mobileSource.url });
+  }
+}
+
+function applyDirectPlayback(
+  video: HTMLVideoElement,
+  item: JellyfinItem,
+  directUrl: string,
+  setters: {
+    setPlaybackMode: (mode: PlaybackSourceMode) => void;
+    setPlaybackSourceClass: (value: PlaybackSourceClass) => void;
+    setPlaybackSourceReason: (value: string) => void;
+    playbackModeRef: { current: PlaybackSourceMode };
+  },
+  reason: string,
+): void {
+  const directMode = directUrl.startsWith("/api/") ? "proxied stream" : "direct stream";
+  const directClass = getDirectPlaybackSourceClass(item, directUrl);
+  setters.playbackModeRef.current = directMode;
+  setters.setPlaybackMode(directMode);
+  setters.setPlaybackSourceClass(directClass);
+  setters.setPlaybackSourceReason(reason);
+  if (video.src !== directUrl) {
+    video.src = directUrl;
+    video.load();
+    markSpiritFlixPerf("src-assigned", { source: "directMp4", url: directUrl });
+  }
+}
+
 interface HlsController {
   loadSource: (source: string) => void;
   attachMedia: (media: HTMLMediaElement) => void;
@@ -1961,38 +2026,80 @@ export function SpiritFlixPlayer({
 
     const setup = async () => {
       resetVideo();
+      markSpiritFlixPerf("setup-start", { itemId: itemRef.current.Id });
       void client.getSystemDiagnostics?.()
         .then((diagnostics) => {
           if (!cancelled) setSystemDiagnostics(diagnostics);
         })
         .catch(() => undefined);
-      const mobileSource: MobileOptimizedSource = await client
-        .getMobileOptimizedSource(itemRef.current)
-        .catch((): MobileOptimizedSource => ({ available: false }));
-      if (cancelled) return;
-      if (mobileSource.available && mobileSource.url) {
-        setMobileOptimizedSource(mobileSource);
-        setPlaybackMode("mobile optimized");
-        setPlaybackSourceClass("mac_optimized_mp4");
-        setPlaybackSourceReason("valid Mac optimized MP4 receipt and output found");
-        playbackModeRef.current = "mobile optimized";
-        video.src = mobileSource.url;
-        video.load();
+
+      const directUrl = client.getStreamUrl(itemRef.current.Id);
+      const playbackSetters = {
+        setMobileOptimizedSource,
+        setPlaybackMode,
+        setPlaybackSourceClass,
+        setPlaybackSourceReason,
+        playbackModeRef,
+      };
+      const directSetters = {
+        setPlaybackMode,
+        setPlaybackSourceClass,
+        setPlaybackSourceReason,
+        playbackModeRef,
+      };
+
+      const cachedMobile = client.getCachedMobileOptimizedSource?.(itemRef.current.Id) ?? null;
+      const preferMobilePlayback = shouldPreferAppMiniPlayer();
+
+      if (cachedMobile?.available && cachedMobile.url) {
+        applyMobileOptimizedPlayback(video, cachedMobile, playbackSetters);
+        markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: true });
+      } else if (preferMobilePlayback) {
+        const mobileSource = await client
+          .getMobileOptimizedSource(itemRef.current)
+          .catch((): MobileOptimizedSource => ({ available: false }));
+        if (cancelled) return;
+        if (mobileSource.available && mobileSource.url) {
+          applyMobileOptimizedPlayback(video, mobileSource, playbackSetters);
+          markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false });
+        } else {
+          applyDirectPlayback(
+            video,
+            itemRef.current,
+            directUrl,
+            directSetters,
+            "no optimized MP4 receipt found; using direct MP4",
+          );
+          markSpiritFlixPerf("source-chosen", { source: "directMp4", cached: false });
+        }
       } else {
-        video.src = directUrl;
-        video.load();
-        const directMode = directUrl.startsWith("/api/") ? "proxied stream" : "direct stream";
-        const directClass = getDirectPlaybackSourceClass(itemRef.current, directUrl);
-        playbackModeRef.current = directMode;
-        setPlaybackMode(directMode);
-        setPlaybackSourceClass(directClass);
-        setPlaybackSourceReason(mobileSource.available ? "optimized MP4 unavailable or missing URL; using direct MP4" : "no optimized MP4 receipt found; using direct MP4");
+        applyDirectPlayback(
+          video,
+          itemRef.current,
+          directUrl,
+          directSetters,
+          "direct MP4 assigned immediately while mobile optimized receipt resolves",
+        );
+        markSpiritFlixPerf("source-chosen", { source: "directMp4", cached: false });
+        void client
+          .getMobileOptimizedSource(itemRef.current)
+          .then((mobileSource) => {
+            if (cancelled) return;
+            if (mobileSource.available && mobileSource.url && video.src !== mobileSource.url) {
+              const resumeTime = video.currentTime;
+              applyMobileOptimizedPlayback(video, mobileSource, playbackSetters);
+              markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false, upgraded: true });
+              if (resumeTime > 0) video.currentTime = resumeTime;
+            }
+          })
+          .catch(() => undefined);
       }
+
       const resumeAt = ticksToSeconds(startPositionTicks ?? item.UserData?.PlaybackPositionTicks);
       if (resumeAt) video.currentTime = resumeAt;
       const startTicks = resumeAt ? secondsToTicks(resumeAt) : 0;
       lastReportedTicksRef.current = startTicks;
-      await client.reportPlayback(item.Id, "Start", startTicks, false);
+      void client.reportPlayback(item.Id, "Start", startTicks, false);
       emitPlaybackProgress(startTicks, false);
       if (cancelled) return;
       await startPlayback();
@@ -2445,7 +2552,8 @@ export function SpiritFlixPlayer({
           controls={false}
           loop={repeatMode === "one"}
           controlsList="nodownload noplaybackrate noremoteplayback"
-          preload="metadata"
+          preload={shouldPreferAppMiniPlayer() ? "auto" : "metadata"}
+          data-spiritflix-playback-source={playbackSourceClass}
           onWaiting={() => {
             setIsLoading(true);
             if (!waitingSinceRef.current) {
@@ -2455,6 +2563,7 @@ export function SpiritFlixPlayer({
           onCanPlay={() => {
             setStreamError("");
             setIsLoading(false);
+            markSpiritFlixPerf("canplay", { source: playbackSourceClass });
             if (waitingSinceRef.current) {
               waitingSinceRef.current = null;
             }
@@ -2462,6 +2571,7 @@ export function SpiritFlixPlayer({
           onPlaying={() => {
             setIsPlaying(true);
             setIsLoading(false);
+            markSpiritFlixPerf("playing", { source: playbackSourceClass });
             scheduleControlsHide();
             if (waitingSinceRef.current) {
               waitingSinceRef.current = null;

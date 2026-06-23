@@ -274,6 +274,41 @@ interface SpiritFlixBrowseRoute {
 
 const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
+const HOME_CACHE_KEY = "spiritflix_home_cache_v1";
+const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
+
+function readCachedHomeData(): SpiritFlixHomeData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem(HOME_CACHE_KEY) ?? "null") as {
+      at?: number;
+      data?: SpiritFlixHomeData;
+    } | null;
+    if (!parsed?.data || !parsed.at || Date.now() - parsed.at > HOME_CACHE_TTL_MS) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedHomeData(data: SpiritFlixHomeData): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify({ at: Date.now(), data }));
+  } catch {
+    // sessionStorage can fail in private mode — non-fatal.
+  }
+}
+
+function hasUsefulHomeContent(data: SpiritFlixHomeData): boolean {
+  return Boolean(
+    data.libraries.length ||
+      data.libraryItems.length ||
+      data.continueWatching.length ||
+      data.latestAdded.length ||
+      data.featuredItems.length,
+  );
+}
 
 function applyManualModelRecordsToItems(
   items: JellyfinItem[],
@@ -385,7 +420,7 @@ export function SpiritFlixApp() {
   const [serverUrl, setServerUrl] = useState(SPIRITFLIX_DEFAULT_SERVER);
   const [serverInfo, setServerInfo] = useState<SpiritFlixServerInfo | null>(null);
   const [serverError, setServerError] = useState("");
-  const [homeData, setHomeData] = useState<SpiritFlixHomeData>(emptyHome);
+  const [homeData, setHomeData] = useState<SpiritFlixHomeData>(() => readCachedHomeData() ?? emptyHome);
   const [selectedItem, setSelectedItem] = useState<JellyfinItem | null>(null);
   const [playingItem, setPlayingItem] = useState<JellyfinItem | null>(null);
   const [playingQueue, setPlayingQueue] = useState<SpiritFlixPlaybackQueue | null>(null);
@@ -398,6 +433,8 @@ export function SpiritFlixApp() {
   const loadedSessionKeyRef = useRef<string | null>(null);
   const initialBrowseRouteRef = useRef<SpiritFlixBrowseRoute | null>(null);
   const deletedItemIdsRef = useRef<Set<string>>(new Set());
+  const homeDataRef = useRef(homeData);
+  homeDataRef.current = homeData;
 
   const client = useMemo(
     () => new JellyfinClient(session?.serverUrl ?? serverUrl, session?.accessToken, session?.userId),
@@ -446,7 +483,8 @@ export function SpiritFlixApp() {
   const loadHome = useCallback(
     async (libraryId?: string | null, term = searchTerm, options: { silent?: boolean } = {}) => {
       if (!session) return;
-      if (!options.silent) setLoadingHome(true);
+      const showBlockingLoader = !options.silent && !hasUsefulHomeContent(homeDataRef.current);
+      if (showBlockingLoader) setLoadingHome(true);
       setHomeError("");
       try {
         const libraries = (await client.getLibraries()).filter(isMediaLibrary);
@@ -458,8 +496,20 @@ export function SpiritFlixApp() {
             ? null
             : otherLibrary?.Id ?? libraries[0]?.Id ?? null;
         const animeLibrary = libraries.find((library) => library.Name.toLowerCase() === "anime");
-        const [libraryItems, featuredItems, continueWatching, watchHistory, latestAdded, favorites] = await Promise.all([
-          selectedLibraryId ? client.getLibraryItems(selectedLibraryId, term) : Promise.resolve([]),
+        const libraryItemsPromise = selectedLibraryId ? client.getLibraryItems(selectedLibraryId, term) : Promise.resolve([]);
+        const libraryItems = await libraryItemsPromise;
+        const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
+        const libraryItemsUnique = uniqueItems(libraryItems.filter(isNotDeleted));
+        setHomeData((previous) => ({
+          ...previous,
+          libraries,
+          playlists: [],
+          selectedLibraryId,
+          libraryItems: libraryItemsUnique,
+        }));
+        if (showBlockingLoader) setLoadingHome(false);
+
+        const [featuredItems, continueWatching, watchHistory, latestAdded, favorites] = await Promise.all([
           !selectedLibraryId && animeLibrary
             ? client
                 .getLibraryItems(animeLibrary.Id)
@@ -470,8 +520,6 @@ export function SpiritFlixApp() {
           selectedLibraryId ? client.getLibraryItems(selectedLibraryId, "", 18) : client.getLatestAdded(),
           selectedLibraryId ? client.getLibraryFavoriteItems(selectedLibraryId) : client.getFavorites(),
         ]);
-        const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
-        const libraryItemsUnique = uniqueItems(libraryItems.filter(isNotDeleted));
         const watchHistoryItems = sortByLastPlayed(uniqueItems(watchHistory.filter(isNotDeleted).filter(hasWatchActivity)));
         const continueWatchingItems = sortByLastPlayed(
           uniqueItems([
@@ -480,7 +528,7 @@ export function SpiritFlixApp() {
             ...libraryItemsUnique.filter(hasResumeProgress),
           ]),
         );
-        setHomeData({
+        const nextHome: SpiritFlixHomeData = {
           libraries,
           playlists: [],
           selectedLibraryId,
@@ -490,7 +538,9 @@ export function SpiritFlixApp() {
           watchHistory: watchHistoryItems,
           latestAdded: uniqueItems(latestAdded.filter(isNotDeleted)),
           favorites: uniqueItems(favorites.filter(isNotDeleted)),
-        });
+        };
+        setHomeData(nextHome);
+        writeCachedHomeData(nextHome);
       } catch {
         setHomeError("Could not load your Jellyfin library. Log out and back in if the token expired.");
       } finally {
@@ -628,6 +678,7 @@ export function SpiritFlixApp() {
 
   const handlePlay = (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => {
     if (isPlayableItem(item)) {
+      void client.getMobileOptimizedSource(item).catch(() => undefined);
       const seriesQueue = getSeriesPlaybackQueue(item, [
         ...(queueItems ?? []),
         ...homeData.libraryItems,

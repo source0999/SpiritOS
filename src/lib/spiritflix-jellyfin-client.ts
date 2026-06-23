@@ -27,6 +27,13 @@ export interface HlsPlaybackProfile {
   audioBitrate: number;
 }
 
+const MOBILE_SOURCE_CACHE_TTL_MS = 5 * 60 * 1000;
+const mobileSourceCache = new Map<string, { at: number; value: MobileOptimizedSource }>();
+
+export function clearMobileOptimizedSourceCache(): void {
+  mobileSourceCache.clear();
+}
+
 export interface MobileOptimizedSource {
   available: boolean;
   mode?: "mobile optimized";
@@ -129,14 +136,6 @@ function toQuery(params: Record<string, string | number | boolean | undefined>):
 
 function isHttpsPage(): boolean {
   return typeof window !== "undefined" && window.location.protocol === "https:";
-}
-
-async function sha256Hex(value: string): Promise<string> {
-  const subtle = globalThis.crypto?.subtle;
-  if (!subtle) return "";
-  const encoded = new TextEncoder().encode(value);
-  const digest = await subtle.digest("SHA-256", encoded);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function getDirectServerUrl(serverUrl: string): string {
@@ -592,25 +591,34 @@ export class JellyfinClient {
     return `${directServerUrl}${path}`;
   }
 
+  getCachedMobileOptimizedSource(itemId: string): MobileOptimizedSource | null {
+    const entry = mobileSourceCache.get(itemId);
+    if (!entry || Date.now() - entry.at > MOBILE_SOURCE_CACHE_TTL_MS) return null;
+    return entry.value;
+  }
+
   async getMobileOptimizedSource(item: JellyfinItem): Promise<MobileOptimizedSource> {
-    const sourcePath = item.MediaSources?.[0]?.Path ?? item.Path ?? "";
-    const sourcePathSha256 = sourcePath ? await sha256Hex(sourcePath) : "";
-    const query = toQuery({
-      itemId: item.Id,
-      sourcePathSha256,
-      sourcePath,
-    });
+    const cached = this.getCachedMobileOptimizedSource(item.Id);
+    if (cached) return cached;
+
+    const query = toQuery({ itemId: item.Id });
     const response = await fetch(`/api/spiritflix/mobile-optimized?${query}`, {
       method: "GET",
-      cache: "no-store",
+      cache: "default",
       headers: {
         Accept: "application/json",
-        "Cache-Control": "no-cache",
       },
     });
-    if (response.status === 404) return { available: false };
-    if (!response.ok) throw new Error(`Mobile optimized lookup failed with status ${response.status}.`);
-    return (await response.json()) as MobileOptimizedSource;
+    const result: MobileOptimizedSource =
+      response.status === 404
+        ? { available: false }
+        : response.ok
+          ? ((await response.json()) as MobileOptimizedSource)
+          : (() => {
+              throw new Error(`Mobile optimized lookup failed with status ${response.status}.`);
+            })();
+    mobileSourceCache.set(item.Id, { at: Date.now(), value: result });
+    return result;
   }
 
   async getSystemDiagnostics(): Promise<SpiritFlixSystemDiagnostics> {

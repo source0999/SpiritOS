@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   findMobileOptimizedReceipt,
   isContainedMobileOutput,
+  scheduleMobileOptimizedReceiptIndexWarmup,
 } from "@/lib/spiritflix/mobile-optimized";
 
 export const runtime = "nodejs";
+
+scheduleMobileOptimizedReceiptIndexWarmup();
 
 function parseRange(range: string | null, size: number): { start: number; end: number } | null {
   if (!range) return { start: 0, end: size - 1 };
@@ -44,22 +47,25 @@ export async function GET(request: NextRequest) {
   if (!stat?.isFile()) return jsonUnavailable();
 
   if (!stream) {
-    return NextResponse.json({
-      available: true,
-      mode: "mobile optimized",
-      key: match.key,
-      url: `/api/spiritflix/mobile-optimized?stream=1&key=${encodeURIComponent(match.key)}`,
-      receipt: {
-        itemId: match.receipt.itemId,
-        sourcePathSha256: match.receipt.sourcePathSha256,
-        encoder: match.receipt.encoder,
-        profile: match.receipt.profile,
-        workerHost: match.receipt.workerHost,
-        outputSize: match.receipt.outputSize ?? stat.size,
-        percentSaved: match.receipt.percentSaved,
-        ffprobe: match.receipt.ffprobe,
+    return NextResponse.json(
+      {
+        available: true,
+        mode: "mobile optimized",
+        key: match.key,
+        url: `/api/spiritflix/mobile-optimized?stream=1&key=${encodeURIComponent(match.key)}`,
+        receipt: {
+          itemId: match.receipt.itemId,
+          sourcePathSha256: match.receipt.sourcePathSha256,
+          encoder: match.receipt.encoder,
+          profile: match.receipt.profile,
+          workerHost: match.receipt.workerHost,
+          outputSize: match.receipt.outputSize ?? stat.size,
+          percentSaved: match.receipt.percentSaved,
+          ffprobe: match.receipt.ffprobe,
+        },
       },
-    });
+      { headers: { "Cache-Control": "private, max-age=30" } },
+    );
   }
 
   const range = parseRange(request.headers.get("Range"), stat.size);

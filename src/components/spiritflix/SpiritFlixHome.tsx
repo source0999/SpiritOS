@@ -182,6 +182,14 @@ function isOrientationFilter(value: unknown): value is SpiritFlixOrientationFilt
   return value === "all" || value === "portrait" || value === "landscape";
 }
 
+function scheduleDeferredHomeTask(task: () => void): void {
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(() => task(), { timeout: 1_200 });
+    return;
+  }
+  window.setTimeout(task, 16);
+}
+
 function getStoredExcludedCategories(state: Partial<StoredLibraryUiState>): string[] {
   return Array.isArray(state.excludedCategories)
     ? state.excludedCategories.filter((category): category is string => typeof category === "string")
@@ -727,6 +735,17 @@ export function SpiritFlixHome({
   const resumeTrackRef = useRef<HTMLDivElement | null>(null);
   const modelStripRef = useRef<HTMLDivElement | null>(null);
   const isHomeView = data.selectedLibraryId === null;
+  const hasUsefulHomeContent = useMemo(
+    () =>
+      Boolean(
+        data.libraries.length ||
+          data.libraryItems.length ||
+          data.continueWatching.length ||
+          data.latestAdded.length ||
+          data.featuredItems.length,
+      ),
+    [data.continueWatching.length, data.featuredItems.length, data.latestAdded.length, data.libraries.length, data.libraryItems.length],
+  );
   const selectedLibrary = data.libraries.find((library) => library.Id === data.selectedLibraryId);
   const libraryTitle = isHomeView ? "Home" : displayLibraryName(selectedLibrary?.Name);
   const isAnimeView = !isHomeView && selectedLibrary?.Name.toLowerCase() === "anime";
@@ -995,18 +1014,18 @@ export function SpiritFlixHome({
 
   useEffect(() => {
     if (!isLibraryDashboardView) return undefined;
-    const timer = window.setTimeout(() => {
+    scheduleDeferredHomeTask(() => {
       void loadGallery();
-    }, 0);
-    return () => window.clearTimeout(timer);
+    });
+    return undefined;
   }, [isLibraryDashboardView, loadGallery]);
 
   useEffect(() => {
     if (!isLibraryDashboardView) return undefined;
-    const timer = window.setTimeout(() => {
+    scheduleDeferredHomeTask(() => {
       void loadManualTags();
       void loadManualModels();
-    }, 0);
+    });
     const handleManualTagsChanged = () => {
       void loadManualTags();
     };
@@ -1016,7 +1035,6 @@ export function SpiritFlixHome({
     window.addEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
     window.addEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
     return () => {
-      window.clearTimeout(timer);
       window.removeEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
       window.removeEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
     };
@@ -1333,9 +1351,9 @@ export function SpiritFlixHome({
       ) : null}
 
       {error ? <p className="spiritflix-error spiritflix-error--home">{error}</p> : null}
-      {loading ? <div className="spiritflix-loading">Loading Jellyfin rows...</div> : null}
+      {loading && !hasUsefulHomeContent ? <div className="spiritflix-loading" data-spiritflix-useful-content="pending">Loading Jellyfin rows...</div> : null}
 
-      <div className="spiritflix-rows">
+      <div className="spiritflix-rows" data-spiritflix-useful-content={hasUsefulHomeContent ? "ready" : "pending"}>
         {isLibraryDashboardView ? (
           <section className="spiritflix-library-v2" aria-label={`${libraryTitle} model library`}>
             <div className="spiritflix-library-v2__header">
