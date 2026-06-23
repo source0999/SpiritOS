@@ -6,6 +6,12 @@ from typing import Any, Sequence
 
 from source_proxy.diagnostics.status_codes import FailureClass
 
+"""Typed subprocess adapter contract for worker/tool probes.
+
+Callers get command, cwd, owner, evidence, and failure class echoed back so a
+failed local check is diagnosable instead of being flattened into generic text.
+"""
+
 
 @dataclass(frozen=True)
 class ProcessAdapterRequest:

@@ -6,6 +6,12 @@ from typing import Any
 from source_proxy.verification.anticheat.detectors import AntiCheatDetector, DETECTORS
 from source_proxy.verification.anticheat.types import AntiCheatReport, AntiCheatViolation
 
+"""Runs anti-cheat detectors as an audit layer over already-produced evidence.
+
+The registry reports contradictions and laundering risks; it does not repair,
+reinterpret, or upgrade the underlying verdict.
+"""
+
 
 class AntiCheatRegistry:
     def __init__(self, detectors: Iterable[AntiCheatDetector] = DETECTORS) -> None:

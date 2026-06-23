@@ -3,6 +3,12 @@ from __future__ import annotations
 import re
 from typing import Any
 
+"""Shared task-state predicates for long-running Source Proxy workflows.
+
+Keep these helpers semantic and side-effect free; API routes use them to decide
+whether a task is waiting, terminal, or allowed to proceed toward apply.
+"""
+
 APPROVED_EXECUTION_STATUSES = frozenset({
     "executing",
     "applied",

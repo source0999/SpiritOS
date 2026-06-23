@@ -7,6 +7,143 @@
 The active Source Proxy plan is `docs/source-proxy-production-hardening-plan.md`.
 `proxyCLI.md` is retired and intentionally deleted. Phase 11, AionUi bridge, and Spirit Cowork Console language is historical or deferred unless a later active plan explicitly reopens it.
 
+## LLM Context Packs / Repomix + Headroom
+
+ChatGPT and other external LLM sessions cannot see this repository directly. When asking for outside review, generate a focused context pack and upload that XML instead of uploading a raw full-repo bundle. Raw full-repo packs can drag in stale plans, receipt sludge, evidence directories, backend volumes, generated artifacts, and media-adjacent noise that make review slower and easier to misread.
+
+Generated XMLs intended for upload are written to the visible repo root at `/home/source/SpiritOS/`. They should remain untracked. The cleanup worktree may also create ignored `repomix-output*.xml` intermediates while building packs; those are verifier/runtime artifacts, not commit targets.
+
+Headroom is active only when the generated XML metadata shows both `compressed="true"` and `tokens_saved` greater than `0`. Tree-sitter Repomix compression by itself is usable, but it is not Headroom compression. If Headroom is unreachable, or if it reports zero savings, treat the pack as Tree-sitter-only and do not claim Headroom was active.
+
+Pack names and intended review scope:
+
+| Pack | File | Use for |
+| --- | --- | --- |
+| Quick repo map pack | `repo-map-context.xml` | Repo/docs overview, README/config orientation, and high-level cleanup review. |
+| Source Proxy / coding lane pack | `source-proxy-context.xml` | Source Proxy, `/coding`, worker, context, and coding-lane review. |
+| Source Proxy minimal pack | `source-proxy-min-context.xml` | Existing focused Source Proxy/coding profile from `npm run context:source-proxy-min`. |
+| Frontend pack | `frontend-context.xml` | Frontend app/lib/components review only. |
+| SpiritFlix/media code pack | `spiritflix-media-code-context.xml` | SpiritFlix/media code only; media files are excluded. |
+| Docs/plans pack | `docs-plans-context.xml` | Plans, breakpoints, roadmaps, audits, and cleanup history. |
+
+Use these single-pack commands when you only need one review surface:
+
+```bash
+cd /home/source/SpiritOS-cleanup-20260621
+
+# quick repo map pack
+npm run context:repo-map
+
+# Source Proxy / coding lane minimal pack
+HEADROOM_PORT=8798 \
+HEADROOM_BASE_URL=http://127.0.0.1:8798 \
+HEADROOM_BIN=/home/source/SpiritOS/.venv-headroom/bin/headroom \
+npm run context:source-proxy-min
+
+# verify the Source Proxy minimal pack and Headroom metadata
+HEADROOM_PORT=8798 \
+HEADROOM_BASE_URL=http://127.0.0.1:8798 \
+HEADROOM_BIN=/home/source/SpiritOS/.venv-headroom/bin/headroom \
+npm run context:verify
+```
+
+Use this all-packs command when a secondary reviewer needs several surfaces. It installs an isolated Repomix runner under `/tmp`, excludes evidence/media/runtime sludge, and writes uploadable XMLs into `/home/source/SpiritOS/`:
+
+```bash
+bash -lc '
+set -euo pipefail
+
+WORK="/home/source/SpiritOS-cleanup-20260621"
+OUT="/home/source/SpiritOS"
+TMP="/tmp/spiritos-repomix-bin-20260623"
+
+cd "$WORK"
+
+export HEADROOM_PORT=8798
+export HEADROOM_BASE_URL="http://127.0.0.1:8798"
+export HEADROOM_BIN="/home/source/SpiritOS/.venv-headroom/bin/headroom"
+
+echo "=== installing isolated repomix runner in $TMP ==="
+rm -rf "$TMP"
+mkdir -p "$TMP"
+npm --prefix "$TMP" install repomix@1.14.0 >/tmp/spiritos-repomix-install.log 2>&1
+REPOMIX="$TMP/node_modules/.bin/repomix"
+CONFIG="$TMP/repomix-focused.config.json"
+cat > "$CONFIG" <<JSON
+{
+  "input": { "maxFileSize": 2000000 },
+  "output": {
+    "style": "xml",
+    "parsableStyle": true,
+    "compress": true,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    "truncateBase64": true,
+    "topFilesLength": 10,
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 100,
+      "includeDiffs": false,
+      "includeLogs": false
+    }
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDotIgnore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": []
+  },
+  "security": { "enableSecurityCheck": true },
+  "tokenCount": { "encoding": "o200k_base" }
+}
+JSON
+
+COMMON_IGNORE="node_modules/**,.git/**,.next/**,dist/**,out/**,build/**,coverage/**,**/.venv/**,**/venv/**,**/__pycache__/**,**/*.pyc,**/*.sqlite,**/*.db,**/*.log,repomix-output*.xml,*context.xml,docs/evidence/**,docs/handoff/**,backend/searxng_data/**,backend/volumes/**,services/jellyfin/**,scripts/media/*.json,scripts/media/model_gallery/**,**/*.{mp4,mkv,mov,m4v,ts,mp3,wav,flac,jpg,jpeg,png,webp,gif,heic,zip,tar,gz,7z}"
+
+make_pack () {
+  NAME="$1"
+  INCLUDE="$2"
+  FINAL="$OUT/${NAME}.xml"
+  echo ""
+  echo "=== PACK: $NAME ==="
+  rm -f "$FINAL"
+  "$REPOMIX" . \
+    --config "$CONFIG" \
+    --compress \
+    --include "$INCLUDE" \
+    --ignore "$COMMON_IGNORE" \
+    --output "$FINAL"
+  echo "=== wrote ==="
+  ls -lh "$FINAL"
+  echo "=== metadata ==="
+  grep -Ei "headroom|compressed|compression|tokens_saved|fallback|source_context_bundle|repomix" "$FINAL" | head -40 || true
+}
+
+make_pack "repo-map-context" "README.md,package.json,repomix*.config.json,.repomixignore,docs/**/*.md,docs/**/*.json,_blueprints/**"
+make_pack "source-proxy-context" "source_proxy/**,scripts/context/**,scripts/source-proxy-*.mjs,scripts/source-proxy-*.sh,scripts/headroom-proxy-dev.sh,scripts/source-context-compress.mjs,scripts/repomix-llm.mjs,src/app/coding/**,src/components/coding/**,src/lib/coding/**,src/app/v1/**,src/app/api/coding/**,src/lib/mac-worker/**,scripts/mac-worker/**"
+make_pack "frontend-context" "src/app/**,src/components/**,src/lib/**,package.json,tsconfig.json,next.config.*"
+make_pack "spiritflix-media-code-context" "src/app/spiritflix/**,src/components/spiritflix/**,src/app/api/spiritflix/**,src/lib/spiritflix/**,src/lib/media/**,scripts/media/**/*.py,scripts/media/**/*.mjs,scripts/media/**/*.sh,services/jellyfin/**/*.md,services/jellyfin/**/*.yml,services/jellyfin/**/*.yaml"
+make_pack "docs-plans-context" "docs/**/*.md,docs/**/*.json,_blueprints/**"
+
+echo ""
+echo "=== DONE: visible packs in $OUT ==="
+ls -lh "$OUT"/repo-map-context.xml \
+       "$OUT"/source-proxy-context.xml \
+       "$OUT"/frontend-context.xml \
+       "$OUT"/spiritflix-media-code-context.xml \
+       "$OUT"/docs-plans-context.xml
+
+echo ""
+echo "Upload these as needed:"
+echo "$OUT/repo-map-context.xml"
+echo "$OUT/source-proxy-context.xml"
+echo "$OUT/frontend-context.xml"
+echo "$OUT/spiritflix-media-code-context.xml"
+echo "$OUT/docs-plans-context.xml"
+'
+```
+
 ## Authorized Media Importer
 
 SpiritOS includes a dedicated `/converter` route for authorized media imports. It is for Britton-owned content or content where Britton has documented written permission/license rights; it is not a public YouTube downloader.

@@ -9,6 +9,9 @@ export type CodingShellRegistryEntry = {
   rollback: string;
 };
 
+// Owns the /coding shell decision record. Alternate shells can stay available
+// for review, but this registry is the place that prevents experiments from
+// silently becoming canonical or being deleted without approval.
 export const codingShellRegistry = [
   {
     id: "coding-cockpit-shell",

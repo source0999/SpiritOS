@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compress } from "headroom-ai";
@@ -19,6 +19,9 @@ const PROFILE_CONFIGS = {
   default: "repomix.config.json",
 };
 
+// This script owns the uploadable context XML boundary. Headroom is reported
+// active only when it changes content and saves tokens; otherwise the pack stays
+// honestly labeled as Tree-sitter-only fallback output.
 export function resolveContextProfile(options = {}) {
   const profile = options.profile || "source-proxy-min";
   const configPath =
@@ -56,7 +59,7 @@ export async function buildRepositoryContextBundle(options = {}) {
     fullOutput,
   } = profilePaths;
 
-  const repomixCli = resolve(repoRoot, "node_modules", "repomix", "bin", "repomix.cjs");
+  const repomixCli = ensureRepomixCli();
   const headroomBaseUrl = (process.env.HEADROOM_BASE_URL || DEFAULT_HEADROOM_BASE_URL).replace(/\/$/, "");
   const headroomCompressionConfig = resolveHeadroomCompressionConfig();
 
@@ -205,6 +208,35 @@ export async function buildRepositoryContextBundle(options = {}) {
     headroomProxyReachable: proxyReachable,
     headroomResult,
   };
+}
+
+function ensureRepomixCli() {
+  const localCli = resolve(repoRoot, "node_modules", "repomix", "bin", "repomix.cjs");
+  if (isNodeRepomixCli(localCli)) {
+    return localCli;
+  }
+
+  const runnerRoot = process.env.REPOMIX_RUNNER_ROOT || "/tmp/spiritos-repomix-runtime-1.14.0";
+  const runnerCli = resolve(runnerRoot, "node_modules", "repomix", "bin", "repomix.cjs");
+  if (!isNodeRepomixCli(runnerCli)) {
+    rmSync(runnerRoot, { recursive: true, force: true });
+    execFileSync("npm", ["--prefix", runnerRoot, "install", "repomix@1.14.0"], {
+      cwd: repoRoot,
+      stdio: "inherit",
+    });
+  }
+  if (!isNodeRepomixCli(runnerCli)) {
+    throw new Error(`Repomix CLI is unavailable or not a Node executable at ${runnerCli}`);
+  }
+  return runnerCli;
+}
+
+function isNodeRepomixCli(candidatePath) {
+  if (!existsSync(candidatePath)) {
+    return false;
+  }
+  const firstBytes = readFileSync(candidatePath, "utf8").slice(0, 120);
+  return firstBytes.includes("/usr/bin/env node") || firstBytes.includes("/bin/env node");
 }
 
 function parseCliArgs(argv) {

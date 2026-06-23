@@ -7,6 +7,12 @@ from typing import Any
 
 from source_proxy.diagnostics.status_codes import FailureClass
 
+"""Local packet decomposition for tasks too broad or brittle as one prompt.
+
+Benchmark labels are stripped before shape selection so known eval names cannot
+become runtime branches or tailored success paths.
+"""
+
 
 class TaskShape(str, Enum):
     MULTI_NODE_RESOURCE_PLANNING = "multi_node_resource_planning"
