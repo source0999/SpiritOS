@@ -10,6 +10,7 @@ const DEFAULT_HEADROOM_PORT = 8797;
 const DEFAULT_HEADROOM_BASE_URL = `http://127.0.0.1:${DEFAULT_HEADROOM_PORT}`;
 const DEFAULT_TOKEN_BUDGET = 80_000;
 const DEFAULT_HEADROOM_TARGET_RATIO = 0.5;
+const DEFAULT_HEADROOM_CHUNK_CHARS = 100_000;
 
 const PROFILE_CONFIGS = {
   "source-proxy-min": "repomix.source-proxy-min.config.json",
@@ -115,8 +116,12 @@ export async function buildRepositoryContextBundle(options = {}) {
     );
   }
 
+  const headroomMessages = chunkText(
+    repositoryContextXml,
+    Number(process.env.HEADROOM_CONTEXT_CHUNK_CHARS || DEFAULT_HEADROOM_CHUNK_CHARS),
+  ).map((content) => ({ role: "user", content }));
   const headroomResult = await compress(
-    [{ role: "user", content: repositoryContextXml }],
+    headroomMessages,
     {
       model: process.env.HEADROOM_CONTEXT_MODEL || "gpt-4o",
       baseUrl: headroomBaseUrl,
@@ -125,11 +130,12 @@ export async function buildRepositoryContextBundle(options = {}) {
       retries: proxyReachable ? 1 : 0,
       stack: "spiritos-repomix-context",
       tokenBudget: Number(process.env.HEADROOM_CONTEXT_TOKEN_BUDGET || DEFAULT_TOKEN_BUDGET),
+      timeout: Number(process.env.HEADROOM_CONTEXT_TIMEOUT_MS || 180_000),
       config: headroomCompressionConfig,
     },
   );
 
-  const headroomContent = String(headroomResult.messages?.[0]?.content || repositoryContextXml);
+  const headroomContent = joinHeadroomMessages(headroomResult.messages) || repositoryContextXml;
   const headroomTokensSaved = Number(headroomResult.tokensSaved || 0);
   const headroomActuallyCompressed = Boolean(
     headroomResult.compressed && headroomTokensSaved > 0 && headroomContent !== repositoryContextXml,
@@ -261,6 +267,7 @@ function resolveHeadroomCompressionConfig() {
     compressUserMessages: process.env.HEADROOM_CONTEXT_COMPRESS_USER_MESSAGES !== "0",
     protectRecent: Number(process.env.HEADROOM_CONTEXT_PROTECT_RECENT || 0),
     targetRatio: Number(process.env.HEADROOM_CONTEXT_TARGET_RATIO || DEFAULT_HEADROOM_TARGET_RATIO),
+    protectAnalysisContext: process.env.HEADROOM_CONTEXT_PROTECT_ANALYSIS_CONTEXT === "1",
   };
 
   if (process.env.HEADROOM_CONTEXT_FORCE_KOMPRESS === "1") {
@@ -333,6 +340,38 @@ function escapeXml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
+}
+
+function chunkText(value, chunkSize) {
+  const safeChunkSize = Number.isFinite(chunkSize) && chunkSize > 0
+    ? Math.floor(chunkSize)
+    : DEFAULT_HEADROOM_CHUNK_CHARS;
+  const chunks = [];
+  for (let index = 0; index < value.length; index += safeChunkSize) {
+    chunks.push(value.slice(index, index + safeChunkSize));
+  }
+  return chunks.length ? chunks : [""];
+}
+
+function joinHeadroomMessages(messages) {
+  if (!Array.isArray(messages)) return "";
+  return messages
+    .map((message) => {
+      const content = message?.content;
+      if (typeof content === "string") return content;
+      if (Array.isArray(content)) {
+        return content
+          .map((part) => {
+            if (typeof part === "string") return part;
+            if (typeof part?.text === "string") return part.text;
+            if (typeof part?.content === "string") return part.content;
+            return "";
+          })
+          .join("\n");
+      }
+      return "";
+    })
+    .join("\n");
 }
 
 function indentXml(value, spaces) {

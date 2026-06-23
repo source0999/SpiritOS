@@ -10,6 +10,14 @@ HOST="${HEADROOM_HOST:-127.0.0.1}"
 VENV="${ROOT}/.venv-headroom"
 
 resolve_headroom() {
+  if [[ -n "${HEADROOM_BIN:-}" ]]; then
+    if [[ -x "${HEADROOM_BIN}" ]]; then
+      echo "${HEADROOM_BIN}"
+      return 0
+    fi
+    echo "HEADROOM_BIN is set but not executable: ${HEADROOM_BIN}" >&2
+    return 1
+  fi
   if command -v headroom >/dev/null 2>&1; then
     command -v headroom
     return 0
