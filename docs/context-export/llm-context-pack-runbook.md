@@ -82,3 +82,7 @@ Use the all-packs command in `README.md` under `LLM Context Packs / Repomix + He
 ```
 
 Generated XMLs are upload artifacts and should remain untracked.
+
+## Context-generation boundary
+
+`source-context-compress.mjs` may use an isolated Repomix CLI fallback or repair path when generating context packs. That changes context-generation behavior only. It does not change Source Proxy production runtime behavior, decision logic, API response shape, model routing, SpiritFlix, media imports, or Jellyfin behavior.

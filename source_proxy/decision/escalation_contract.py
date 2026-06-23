@@ -1,3 +1,9 @@
+"""Dry-run brain-switch contract for local-vs-provider recommendations.
+
+Recommendations here are advisory evidence. Provider policy, spend, and privacy
+authority stay outside this module until a human-approved gate executes them.
+"""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -6,11 +12,7 @@ from typing import Any
 
 from source_proxy.diagnostics.status_codes import FailureClass
 
-"""Dry-run brain-switch contract for local-vs-provider recommendations.
 
-Recommendations here are advisory evidence. Provider policy, spend, and privacy
-authority stay outside this module until a human-approved gate executes them.
-"""
 
 
 class BrainSwitchRecommendation(str, Enum):

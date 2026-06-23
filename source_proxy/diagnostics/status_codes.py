@@ -1,14 +1,16 @@
+"""Failure taxonomy for Source Proxy receipts and lane diagnostics.
+
+This module owns classification labels only; it must not silently change final
+verdict vocabulary or turn unknown failures into positive outcomes.
+"""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any
 
-"""Failure taxonomy for Source Proxy receipts and lane diagnostics.
 
-This module owns classification labels only; it must not silently change final
-verdict vocabulary or turn unknown failures into positive outcomes.
-"""
 
 
 class FailureClass(str, Enum):

@@ -11,7 +11,7 @@ The active Source Proxy plan is `docs/source-proxy-production-hardening-plan.md`
 
 ChatGPT and other external LLM sessions cannot see this repository directly. When asking for outside review, generate a focused context pack and upload that XML instead of uploading a raw full-repo bundle. Raw full-repo packs can drag in stale plans, receipt sludge, evidence directories, backend volumes, generated artifacts, and media-adjacent noise that make review slower and easier to misread.
 
-Generated XMLs intended for upload are written to the visible repo root at `/home/source/SpiritOS/`. They should remain untracked. The cleanup worktree may also create ignored `repomix-output*.xml` intermediates while building packs; those are verifier/runtime artifacts, not commit targets.
+Generated XMLs intended for upload are written to the visible repo root at `/home/source/SpiritOS/`. They should remain untracked. The cleanup worktree may also create ignored `repomix-output*.xml` intermediates while building packs; those are verifier/runtime artifacts, not commit targets. The context-generation scripts may use an isolated Repomix CLI fallback for pack export robustness only; this does not change Source Proxy production runtime, decision logic, API behavior, model routing, SpiritFlix, media, or Jellyfin behavior.
 
 Headroom is active only when the generated XML metadata shows both `compressed="true"` and `tokens_saved` greater than `0`. Tree-sitter Repomix compression by itself is usable, but it is not Headroom compression. If Headroom is unreachable, or if it reports zero savings, treat the pack as Tree-sitter-only and do not claim Headroom was active.
 

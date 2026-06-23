@@ -64,7 +64,7 @@ Targeted ownership/safety comments were added to:
 - `source_proxy/decision/worker_tool_adapters.py`: typed subprocess probe contract and evidence echoing.
 - `source_proxy/tasks/engine/state.py`: side-effect-free task-state predicates.
 - `src/lib/coding/shell-registry.ts`: `/coding` shell canonical/alternate ownership boundary.
-- `scripts/source-context-compress.mjs`: uploadable XML boundary and honest Headroom fallback labeling.
+- `scripts/source-context-compress.mjs`: uploadable XML boundary, honest Headroom fallback labeling, and context-generation-only Repomix CLI fallback robustness.
 
 ## Intentional non-touches
 
@@ -85,13 +85,14 @@ No old plans were deleted, moved, renamed, or resumed.
 
 ## Caveats
 
-`scripts/source-context-compress.mjs` needed a small robustness repair because the local `node_modules/repomix/bin/repomix.cjs` had been overwritten with the SpiritOS shell shim. The script now uses a valid local Node Repomix CLI when present, otherwise installs/uses an isolated `/tmp/spiritos-repomix-runtime-1.14.0` runner. No package files or `node_modules` artifacts were committed.
+`scripts/source-context-compress.mjs` needed a small context-generation robustness repair because the local `node_modules/repomix/bin/repomix.cjs` had been overwritten with the SpiritOS shell shim. For context-pack generation only, the script now uses a valid local Node Repomix CLI when present, otherwise installs/uses an isolated `/tmp/spiritos-repomix-runtime-1.14.0` runner. No package files or `node_modules` artifacts were committed.
 
 The all-packs command uses Repomix Tree-sitter compression. Headroom-positive proof was verified on the maintained `source-proxy-min` npm context path, not on the ad hoc all-packs command.
 
 ## Safety readback
 
-- Source Proxy runtime behavior changed: no; comments/docstrings only, plus context-script robustness for pack generation.
+- Context-generation behavior changed: yes, limited to Repomix/Headroom export robustness.
+- Source Proxy production runtime behavior changed: no; no decision logic, API behavior, model routing, SpiritFlix, media, or Jellyfin behavior changed.
 - SpiritFlix/media/Jellyfin touched: no runtime/data mutation; only context pack instructions mention SpiritFlix/media code pack.
 - Set A/B/C: not run.
 - Plan 3/4: not resumed or started.
