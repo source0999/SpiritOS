@@ -178,6 +178,8 @@ export async function buildRepositoryContextBundle(options = {}) {
 
   const llmBytes = readFileSync(llmOutput).byteLength;
   console.log(`Profile: ${profile} (config: ${configPath})`);
+  console.log(`Repo root: ${repoRoot}`);
+  console.log(`Open in repo root: ${llmOutput}`);
   console.log(`LLM context written to ${llmOutput} (${formatBytes(llmBytes)})`);
   console.log(`AST mirror written to ${astOutput}`);
   console.log(
