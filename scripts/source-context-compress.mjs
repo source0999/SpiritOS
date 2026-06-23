@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compress } from "headroom-ai";
 
 const repoRoot = resolve(import.meta.dirname, "..");
+const visibleRepoRoot = process.env.REPOMIX_VISIBLE_REPO_ROOT || (repoRoot.endsWith("/SpiritOS-cleanup-20260621") ? "/home/source/SpiritOS" : repoRoot);
 const DEFAULT_HEADROOM_PORT = 8797;
 const DEFAULT_HEADROOM_BASE_URL = `http://127.0.0.1:${DEFAULT_HEADROOM_PORT}`;
 const DEFAULT_TOKEN_BUDGET = 80_000;
+const DEFAULT_HEADROOM_TARGET_RATIO = 0.5;
+const DEFAULT_HEADROOM_CHUNK_CHARS = 100_000;
 
 const PROFILE_CONFIGS = {
   "source-proxy-min": "repomix.source-proxy-min.config.json",
@@ -16,6 +19,9 @@ const PROFILE_CONFIGS = {
   default: "repomix.config.json",
 };
 
+// This script owns the uploadable context XML boundary. Headroom is reported
+// active only when it changes content and saves tokens; otherwise the pack stays
+// honestly labeled as Tree-sitter-only fallback output.
 export function resolveContextProfile(options = {}) {
   const profile = options.profile || "source-proxy-min";
   const configPath =
@@ -26,6 +32,7 @@ export function resolveContextProfile(options = {}) {
     configPath,
     slug,
     llmOutput: resolve(repoRoot, `repomix-output${slug}.xml`),
+    visibleOutput: resolve(visibleRepoRoot, `${profile}-context.xml`),
     astOutput: resolve(repoRoot, `repomix-output${slug}.ast.xml`),
     headroomOutput: resolve(repoRoot, `repomix-output${slug}.headroom.xml`),
     innerOutput: resolve(repoRoot, `repomix-output${slug}.ast-inner.xml`),
@@ -46,13 +53,15 @@ export async function buildRepositoryContextBundle(options = {}) {
     configPath,
     innerOutput,
     llmOutput,
+    visibleOutput,
     astOutput,
     headroomOutput,
     fullOutput,
   } = profilePaths;
 
-  const repomixCli = resolve(repoRoot, "node_modules", "repomix", "bin", "repomix.cjs");
+  const repomixCli = ensureRepomixCli();
   const headroomBaseUrl = (process.env.HEADROOM_BASE_URL || DEFAULT_HEADROOM_BASE_URL).replace(/\/$/, "");
+  const headroomCompressionConfig = resolveHeadroomCompressionConfig();
 
   if (fullOnly) {
     execFileSync(
@@ -113,8 +122,12 @@ export async function buildRepositoryContextBundle(options = {}) {
     );
   }
 
+  const headroomMessages = chunkText(
+    repositoryContextXml,
+    Number(process.env.HEADROOM_CONTEXT_CHUNK_CHARS || DEFAULT_HEADROOM_CHUNK_CHARS),
+  ).map((content) => ({ role: "user", content }));
   const headroomResult = await compress(
-    [{ role: "user", content: repositoryContextXml }],
+    headroomMessages,
     {
       model: process.env.HEADROOM_CONTEXT_MODEL || "gpt-4o",
       baseUrl: headroomBaseUrl,
@@ -123,13 +136,22 @@ export async function buildRepositoryContextBundle(options = {}) {
       retries: proxyReachable ? 1 : 0,
       stack: "spiritos-repomix-context",
       tokenBudget: Number(process.env.HEADROOM_CONTEXT_TOKEN_BUDGET || DEFAULT_TOKEN_BUDGET),
+      timeout: Number(process.env.HEADROOM_CONTEXT_TIMEOUT_MS || 180_000),
+      config: headroomCompressionConfig,
     },
   );
 
-  const headroomContent = String(headroomResult.messages?.[0]?.content || repositoryContextXml);
+  const headroomContent = joinHeadroomMessages(headroomResult.messages) || repositoryContextXml;
+  const headroomTokensSaved = Number(headroomResult.tokensSaved || 0);
   const headroomActuallyCompressed = Boolean(
-    headroomResult.compressed && headroomContent !== repositoryContextXml,
+    headroomResult.compressed && headroomTokensSaved > 0 && headroomContent !== repositoryContextXml,
   );
+  const headroomFallbackReason = resolveHeadroomFallbackReason({
+    proxyReachable,
+    headroomResult,
+    headroomContent,
+    repositoryContextXml,
+  });
 
   const wrappedXml = wrapContextXml({
     compression: headroomActuallyCompressed ? "tree-sitter+headroom" : "tree-sitter",
@@ -138,9 +160,12 @@ export async function buildRepositoryContextBundle(options = {}) {
     contextXml: headroomActuallyCompressed ? headroomContent : repositoryContextXml,
     headroomResult,
     headroomBaseUrl,
+    headroomActuallyCompressed,
+    headroomFallbackReason,
   });
 
   writeFileSync(llmOutput, wrappedXml, "utf8");
+  writeFileSync(visibleOutput, wrappedXml, "utf8");
   writeFileSync(astOutput, wrappedXml, "utf8");
   writeFileSync(
     headroomOutput,
@@ -151,6 +176,8 @@ export async function buildRepositoryContextBundle(options = {}) {
       contextXml: headroomContent,
       headroomResult,
       headroomBaseUrl,
+      headroomActuallyCompressed,
+      headroomFallbackReason,
     }),
     "utf8",
   );
@@ -158,7 +185,11 @@ export async function buildRepositoryContextBundle(options = {}) {
 
   const llmBytes = readFileSync(llmOutput).byteLength;
   console.log(`Profile: ${profile} (config: ${configPath})`);
-  console.log(`LLM context written to ${llmOutput} (${formatBytes(llmBytes)})`);
+  console.log(`Repo root: ${repoRoot}`);
+  console.log(`Visible repo root: ${visibleRepoRoot}`);
+  console.log(`Open visible repo-root XML: ${visibleOutput}`);
+  console.log(`Ignored verifier XML: ${llmOutput}`);
+  console.log(`LLM context written to ${visibleOutput} (${formatBytes(llmBytes)})`);
   console.log(`AST mirror written to ${astOutput}`);
   console.log(
     headroomActuallyCompressed
@@ -170,12 +201,42 @@ export async function buildRepositoryContextBundle(options = {}) {
     profile,
     configPath,
     llmOutput,
+    visibleOutput,
     astOutput,
     headroomOutput,
     headroomActuallyCompressed,
     headroomProxyReachable: proxyReachable,
     headroomResult,
   };
+}
+
+function ensureRepomixCli() {
+  const localCli = resolve(repoRoot, "node_modules", "repomix", "bin", "repomix.cjs");
+  if (isNodeRepomixCli(localCli)) {
+    return localCli;
+  }
+
+  const runnerRoot = process.env.REPOMIX_RUNNER_ROOT || "/tmp/spiritos-repomix-runtime-1.14.0";
+  const runnerCli = resolve(runnerRoot, "node_modules", "repomix", "bin", "repomix.cjs");
+  if (!isNodeRepomixCli(runnerCli)) {
+    rmSync(runnerRoot, { recursive: true, force: true });
+    execFileSync("npm", ["--prefix", runnerRoot, "install", "repomix@1.14.0"], {
+      cwd: repoRoot,
+      stdio: "inherit",
+    });
+  }
+  if (!isNodeRepomixCli(runnerCli)) {
+    throw new Error(`Repomix CLI is unavailable or not a Node executable at ${runnerCli}`);
+  }
+  return runnerCli;
+}
+
+function isNodeRepomixCli(candidatePath) {
+  if (!existsSync(candidatePath)) {
+    return false;
+  }
+  const firstBytes = readFileSync(candidatePath, "utf8").slice(0, 120);
+  return firstBytes.includes("/usr/bin/env node") || firstBytes.includes("/bin/env node");
 }
 
 function parseCliArgs(argv) {
@@ -242,6 +303,36 @@ async function probeHeadroomProxy(baseUrl) {
   }
 }
 
+function resolveHeadroomCompressionConfig() {
+  const config = {
+    compressUserMessages: process.env.HEADROOM_CONTEXT_COMPRESS_USER_MESSAGES !== "0",
+    protectRecent: Number(process.env.HEADROOM_CONTEXT_PROTECT_RECENT || 0),
+    targetRatio: Number(process.env.HEADROOM_CONTEXT_TARGET_RATIO || DEFAULT_HEADROOM_TARGET_RATIO),
+    protectAnalysisContext: process.env.HEADROOM_CONTEXT_PROTECT_ANALYSIS_CONTEXT === "1",
+  };
+
+  if (process.env.HEADROOM_CONTEXT_FORCE_KOMPRESS === "1") {
+    config.forceKompress = true;
+  }
+  if (process.env.HEADROOM_CONTEXT_MIN_TOKENS) {
+    config.minTokensToCompress = Number(process.env.HEADROOM_CONTEXT_MIN_TOKENS);
+  }
+  return config;
+}
+
+function resolveHeadroomFallbackReason({
+  proxyReachable,
+  headroomResult,
+  headroomContent,
+  repositoryContextXml,
+}) {
+  if (!proxyReachable) return "proxy_unreachable";
+  if (!headroomResult.compressed) return "headroom_not_compressed";
+  if (Number(headroomResult.tokensSaved || 0) <= 0) return "no_positive_token_savings";
+  if (headroomContent === repositoryContextXml) return "content_unchanged";
+  return "unknown";
+}
+
 function wrapContextXml({
   compression,
   generator,
@@ -249,13 +340,17 @@ function wrapContextXml({
   contextXml,
   headroomResult,
   headroomBaseUrl,
+  headroomActuallyCompressed,
+  headroomFallbackReason,
 }) {
   const metrics = [
-    `compressed="${headroomResult.compressed ? "true" : "false"}"`,
+    `compressed="${headroomActuallyCompressed ? "true" : "false"}"`,
     `tokens_before="${headroomResult.tokensBefore || 0}"`,
     `tokens_after="${headroomResult.tokensAfter || 0}"`,
     `tokens_saved="${headroomResult.tokensSaved || 0}"`,
     `compression_ratio="${headroomResult.compressionRatio || 1}"`,
+    `fallback_used="${headroomActuallyCompressed ? "false" : "true"}"`,
+    `fallback_reason="${escapeXml(headroomFallbackReason)}"`,
     `proxy="${escapeXml(headroomBaseUrl)}"`,
   ].join(" ");
 
@@ -286,6 +381,38 @@ function escapeXml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
+}
+
+function chunkText(value, chunkSize) {
+  const safeChunkSize = Number.isFinite(chunkSize) && chunkSize > 0
+    ? Math.floor(chunkSize)
+    : DEFAULT_HEADROOM_CHUNK_CHARS;
+  const chunks = [];
+  for (let index = 0; index < value.length; index += safeChunkSize) {
+    chunks.push(value.slice(index, index + safeChunkSize));
+  }
+  return chunks.length ? chunks : [""];
+}
+
+function joinHeadroomMessages(messages) {
+  if (!Array.isArray(messages)) return "";
+  return messages
+    .map((message) => {
+      const content = message?.content;
+      if (typeof content === "string") return content;
+      if (Array.isArray(content)) {
+        return content
+          .map((part) => {
+            if (typeof part === "string") return part;
+            if (typeof part?.text === "string") return part.text;
+            if (typeof part?.content === "string") return part.content;
+            return "";
+          })
+          .join("\n");
+      }
+      return "";
+    })
+    .join("\n");
 }
 
 function indentXml(value, spaces) {

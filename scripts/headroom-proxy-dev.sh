@@ -10,6 +10,14 @@ HOST="${HEADROOM_HOST:-127.0.0.1}"
 VENV="${ROOT}/.venv-headroom"
 
 resolve_headroom() {
+  if [[ -n "${HEADROOM_BIN:-}" ]]; then
+    if [[ -x "${HEADROOM_BIN}" ]]; then
+      echo "${HEADROOM_BIN}"
+      return 0
+    fi
+    echo "HEADROOM_BIN is set but not executable: ${HEADROOM_BIN}" >&2
+    return 1
+  fi
   if command -v headroom >/dev/null 2>&1; then
     command -v headroom
     return 0
@@ -22,11 +30,10 @@ resolve_headroom() {
 }
 
 if ! HEADROOM_BIN="$(resolve_headroom)"; then
-  echo "Headroom CLI not found. Bootstrapping local venv at ${VENV} ..."
-  python3 -m venv "${VENV}"
-  "${VENV}/bin/pip" install --upgrade pip
-  "${VENV}/bin/pip" install "headroom-ai[proxy]"
-  HEADROOM_BIN="${VENV}/bin/headroom"
+  echo "Headroom CLI not found in PATH or ${VENV}/bin/headroom."
+  echo "Install or repair the Linux-native Headroom venv out of band, then rerun this script."
+  echo "No package install was attempted by this launcher."
+  exit 1
 fi
 
 echo "Starting Headroom proxy on http://${HOST}:${PORT}"

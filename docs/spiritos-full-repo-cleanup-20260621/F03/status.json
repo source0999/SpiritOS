@@ -1,21 +1,51 @@
 {
   "stage": "F03",
   "title": "Brain-switch verdict contract",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
-  "baseline_captured": false,
-  "dependencies_satisfied": {"F01": false},
+  "acceptance_contract_sha256": "94fd549cfd8498e09e3923cbdd19eb549b23a6367b6bfdc7eaf7170847dc601f",
+  "holdout_manifest_sha256": "a46e8b752bd531c2882891184415cd8c800f443a51c3362954c93869305e3ac0",
+  "baseline_head": "6cc3916864c86f181e0bd27a29f2aa1912782938",
+  "baseline_captured": true,
+  "dependencies_satisfied": {
+    "F01": true
+  },
   "increments": [
-    {"id": "3.1", "title": "escalation_contract.py verdict enum + recommend() (no provider call) + 5-property tests", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "3.2", "title": "wire model_lanes + litellm_router to consult contract read-only", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "3.1",
+      "title": "escalation_contract.py verdict enum + recommend() (no provider call) + 5-property tests",
+      "status": "COMPLETE",
+      "files_touched": [
+        "source_proxy/decision/escalation_contract.py",
+        "source_proxy/tests/test_brain_switch_contract.py"
+      ]
+    },
+    {
+      "id": "3.2",
+      "title": "wire model_lanes + litellm_router to consult contract read-only",
+      "status": "COMPLETE",
+      "files_touched": [
+        "source_proxy/decision/model_lanes.py",
+        "source_proxy/routing/litellm_router.py",
+        "source_proxy/tests/test_brain_switch_contract.py"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "baseline_f1_f2": "PASS: 21 passed in 0.53s before F3 edits; 21 passed in 0.74s after F3 edits",
+    "f3_focused": "PASS: 11 passed in 0.15s",
+    "combined_f1_f2_f3_model_lane_preview": "PASS: 38 passed in 0.77s",
+    "provider_call_guard": "PASS: no provider-call path in F3 contract; grep hits limited to pre-existing decision imports and F3 test importing litellm_router helper by module name",
+    "broad_source_proxy_tests": "TIMEOUT_EXIT_124_AFTER_300S with pre-existing failures visible; not treated as F3 acceptance gate",
+    "operator_check": "PASS before final commit; final HEAD reported in F3 verdict",
+    "git_diff_check": "PASS"
+  },
+  "caveats": [
+    "Full source_proxy/tests suite timed out after 300 seconds with existing failures visible; focused F3/F1/F2 compatibility gates passed.",
+    "litellm_router retains existing provider-routing references; F3 added only a supplied-status advisory helper and did not call route_models(), get_router(), LiteLLM, Ollama, or external providers."
+  ],
+  "next_stage_handoff_updated": true
 }

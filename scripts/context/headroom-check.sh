@@ -10,14 +10,16 @@ BASE="${BASE%/}"
 echo "Headroom proxy check: ${BASE}/health"
 
 if curl -fsS --max-time 3 "${BASE}/health" >/dev/null 2>&1; then
-  echo "headroom_present: true"
+  echo "headroom_health_success: true"
   echo "headroom_proxy_reachable: true"
-  echo "hint: npm run context:source-proxy-min will use Headroom when proxy is up"
+  echo "headroom_active_contract: health_success_required_before_compression_claim"
+  echo "hint: npm run context:source-proxy-min may use Headroom only when compressed=true and tokens_saved>0"
   exit 0
 fi
 
-echo "headroom_present: true (venv/cli may exist)"
+echo "headroom_health_success: false"
 echo "headroom_proxy_reachable: false"
-echo "hint: start with npm run headroom:proxy in another terminal"
-echo "fallback: tight repomix profile still produces uploadable tree-sitter output"
+echo "headroom_active_contract: inactive_until_health_success"
+echo "hint: start with npm run headroom:proxy in another terminal if the Linux-native binary already exists"
+echo "fallback: tree-sitter profile only; do not label as Headroom-compressed"
 exit 1

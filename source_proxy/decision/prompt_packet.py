@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from source_proxy.context.obsidian import obsidian_context_diagnostics
+from source_proxy.decision.packet_decomposition import build_decomposition_from_brain_switch
 from source_proxy.decision.router import DecisionInput, RouteDecision, decide_route
 
 TargetModelHint = Literal["chatgpt", "claude", "gemini", "google_ai_studio", "grok"]
@@ -47,6 +48,9 @@ class PromptPacketInput:
     needs_codebase_context: bool = False
     wants_implementation: bool = False
     prefer_free: bool = True
+    brain_switch_recommendation: str | None = None
+    task_shape: str | None = None
+    evidence_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -64,9 +68,10 @@ class PromptPacket:
     prompt_text: str
     route_decision: RouteDecision
     research_sources: list[dict[str, str]] = field(default_factory=list)
+    local_decomposition: dict[str, object] | None = None
 
     def as_payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "target_model_hint": self.target_model_hint,
             "phase_label": self.phase_label,
             "increment_label": self.increment_label,
@@ -81,6 +86,9 @@ class PromptPacket:
             "route_decision": self.route_decision.as_payload(),
             "research_sources": self.research_sources,
         }
+        if self.local_decomposition is not None:
+            payload["local_decomposition"] = self.local_decomposition
+        return payload
 
 
 def build_prompt_packet(input_data: PromptPacketInput) -> PromptPacket:
@@ -101,6 +109,10 @@ def build_prompt_packet(input_data: PromptPacketInput) -> PromptPacket:
     phase_label, increment_label, increment_goal = _phase_fields_for(input_data)
     relevant_context = _build_context_section(input_data)
     context_metadata = _context_metadata_for(input_data, relevant_context)
+    local_decomposition = _local_decomposition_for(input_data)
+    if local_decomposition is not None:
+        context_metadata["local_decomposition_status"] = local_decomposition["validation_status"]
+        context_metadata["local_decomposition_family"] = local_decomposition["decomposition_family"]
     constraints = _constraints_for(input_data, decision)
     requested_output = _requested_output_for(input_data, decision)
     paste_back_instructions = (
@@ -132,7 +144,20 @@ def build_prompt_packet(input_data: PromptPacketInput) -> PromptPacket:
         paste_back_instructions=paste_back_instructions,
         prompt_text=prompt_text,
         route_decision=decision,
+        local_decomposition=local_decomposition,
     )
+
+
+def _local_decomposition_for(input_data: PromptPacketInput) -> dict[str, object] | None:
+    if input_data.brain_switch_recommendation != "LOCAL_DECOMPOSITION_RECOMMENDED":
+        return None
+    decomposition = build_decomposition_from_brain_switch(
+        input_data.brain_switch_recommendation,
+        input_data.task,
+        task_shape=input_data.task_shape,
+        evidence_ids=input_data.evidence_ids,
+    )
+    return decomposition.to_dict() if decomposition else None
 
 
 def _default_model_for_decision(decision: RouteDecision) -> str:

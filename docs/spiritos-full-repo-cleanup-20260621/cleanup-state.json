@@ -2,50 +2,56 @@
   "cleanup_id": "full-repo-20260621",
   "packet_version": "1",
   "last_updated": "2026-06-21",
-  "last_updated_by": "Codex takeover",
+  "last_updated_by": "Codex F10R state hygiene after GLM secondary audit",
   "operator_role": "cleanup_planning_and_implementation_owner_NOT_acceptance_authority",
-
   "planning_packet": "GO",
-  "implementation_started": false,
-  "current_stage": "F01",
-  "current_stage_status": "NOT_STARTED",
-  "ready_for_secondary_review": false,
-  "secondary_review_completed": false,
+  "implementation_started": true,
+  "current_stage": "SECONDARY_REVIEW",
+  "current_stage_status": "READY_FOR_GLM_SECONDARY_AUDIT",
+  "ready_for_secondary_review": true,
+  "secondary_review_completed": true,
   "old_plan_resumed": false,
-
-  "completed_stages": [],
+  "completed_stages": [
+    "F01",
+    "F02",
+    "F03",
+    "F04",
+    "F05",
+    "F06",
+    "F07",
+    "F08",
+    "F09",
+    "F10"
+  ],
   "stage_verdicts": {
-    "F01": "NOT_STARTED",
-    "F02": "NOT_STARTED",
-    "F03": "NOT_STARTED",
-    "F04": "NOT_STARTED",
-    "F05": "NOT_STARTED",
-    "F06": "NOT_STARTED",
-    "F07": "NOT_STARTED",
-    "F08": "NOT_STARTED",
-    "F09": "NOT_STARTED",
-    "F10": "NOT_STARTED"
+    "F01": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F02": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F03": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F04": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F05": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F06": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F07": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F08": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F09": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+    "F10": "READY_FOR_GLM_SECONDARY_AUDIT"
   },
-
   "isolation": {
     "primary_repo": "Z:\\ (//10.0.0.186/SpiritOS)",
     "cleanup_worktree": "../SpiritOS-cleanup-20260621",
     "cleanup_branch": "cleanup/full-repo-20260621",
     "starting_breakpoint_head": "927055e489eb1dc9a263bf3a80cde53869e274ce",
     "planning_commit": null,
-    "cleanup_starting_head": null,
-    "current_cleanup_head": null,
+    "cleanup_starting_head": "6cc3916864c86f181e0bd27a29f2aa1912782938",
+    "current_cleanup_head": "eee61415af716495144b690effb6e6ed2efc66db",
     "primary_worktree_touched": false,
     "note": "Branch/worktree are created AFTER P2 commits the planning packet. Fields null until then."
   },
-
   "evidence_root": {
     "preferred": "/home/source/spiritos-evidence/full-repo-cleanup-20260621/",
     "fallback": "/tmp/spiritos-full-repo-cleanup-20260621/",
     "chosen": null,
     "note": "Selected at first stage generating raw logs; recorded here and in baseline-manifest.json. P0 used in-tree evidence only."
   },
-
   "p0_verdict": "GO",
   "codex_takeover": {
     "takeover_reason": "GLM/ZCode provider rate limit during P1; retryable=false; not a cleanup failure",
@@ -75,7 +81,6 @@
       "verification": "sha256sum -c ... 8/8 OK, exit 0"
     }
   ],
-
   "integrity_caveats": [
     {
       "id": "CAVEAT-PRIOR-AUDIT-XML",
@@ -86,14 +91,24 @@
       "affects_cleanup_contracts": false
     }
   ],
-
   "minor_caveats_at_completion": [],
   "terminal_state_achieved": null,
-  "forbidden_terminal_states": ["FULLY_ACCEPTED", "DAILY_DRIVER_READY", "PLAN_3_COMPLETE", "SET_A_ACCEPTED", "CLEANUP_MERGED"],
+  "forbidden_terminal_states": [
+    "FULLY_ACCEPTED",
+    "DAILY_DRIVER_READY",
+    "PLAN_3_COMPLETE",
+    "SET_A_ACCEPTED",
+    "CLEANUP_MERGED"
+  ],
   "only_permitted_terminal_state": "READY_FOR_SECONDARY_REVIEW",
-
-  "stage_commit_chain": [],
-
+  "stage_commit_chain": [
+    {
+      "stage": "F03",
+      "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+      "commit": null,
+      "note": "final F03 commit is reported by git/final verdict; commit cannot self-reference its own hash"
+    }
+  ],
   "safety_guards_active": {
     "no_set_a_b_c": true,
     "no_plan_4": true,
@@ -103,5 +118,21 @@
     "no_push": true,
     "no_merge": true,
     "no_old_plan_resume": true
+  },
+  "final_cleanup_head": "eee61415af716495144b690effb6e6ed2efc66db",
+  "secondary_review_verdict": "GLM_SECONDARY_GO_FOR_HUMAN_REVIEW",
+  "current_cleanup_head": "eee61415af716495144b690effb6e6ed2efc66db",
+  "merge_performed": false,
+  "push_performed": false,
+  "plan3_resumed": false,
+  "set_a_run": false,
+  "set_b_run": false,
+  "set_c_run": false,
+  "plan4_started": false,
+  "caveats": {
+    "broad_source_proxy_tests": "NOT_PASS_TIMEOUT_300S",
+    "frontend_checks": "BLOCKED_ENV_NODE_MODULES_MISSING",
+    "headroom": "INACTIVE_FALLBACK_LABELED_HONESTLY",
+    "git_maintenance": "PREEXISTING_GC_LOOSE_OBJECT_WARNINGS"
   }
 }

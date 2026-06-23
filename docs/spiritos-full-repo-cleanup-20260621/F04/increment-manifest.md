@@ -1,9 +1,8 @@
 # F04 Increment Manifest
 
-| Increment | Title | Source files (≤12) | Status | Commit |
+| Increment | Title | Source files (<=12) | Status | Commit |
 |---|---|---|---|---|
-| 4.1 | packet_templates generic decomposer (comparison shape) + validator + unseen tests | (pending) `decision/packet_templates/*` (new), test | NOT_STARTED | — |
-| 4.2 | remaining shapes + prompt_packet wiring + regression refs | (pending) `decision/prompt_packet.py`, tests | NOT_STARTED | — |
+| 4.1 | generic decomposer + validator + unseen tests | `source_proxy/decision/packet_decomposition.py`, `source_proxy/decision/packet_templates/__init__.py`, `source_proxy/tests/test_packet_decomposition.py` | COMPLETE | pending commit |
+| 4.2 | prompt_packet dry-run wiring + API passthrough | `source_proxy/decision/prompt_packet.py`, `source_proxy/api/decision.py`, `source_proxy/tests/test_packet_decomposition.py` | COMPLETE | pending commit |
 
-Per-increment protocol: baseline → edit ≤12 → focused checks → decompose-vs-monolithic holdout compare → operator-check.
-Repair budget: max 3 per increment. Decomposition worsening packets → NEEDS_FIX.
+Repair attempts used: 1. Manual diff inspection caught and removed accidental non-prompt-packet API spillover before commit.

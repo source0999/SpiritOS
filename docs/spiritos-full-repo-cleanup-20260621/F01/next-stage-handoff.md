@@ -1,25 +1,25 @@
-# F01 → F02 Handoff
+# F01 Next Stage Handoff
 
-**Status:** NOT_STARTED (handoff finalized when F01 verdict is set).
+F01 is internally GO pending secondary review. F2 has not started.
 
-## F01 must hand to F02 (and F03/F05/F06/F09 downstream)
-- The 19-code enum is live in `source_proxy/diagnostics/status_codes.py`.
-- `classify_failure()` is the single entry point for mapping shapes → code.
-- Lanes emit `reason_code`; receipts carry additive `failure_classification`;
-  traces carry additive `failure` events.
-- Legacy free strings preserved.
+## What F01 changed
+- Added canonical failure taxonomy in `source_proxy/diagnostics/status_codes.py`.
+- Added additive failure classification metadata to model lane failures and FIP0
+  lane status failures.
+- Added top-level FIP0 `failure_classification` and additive FIP6 failure trace.
+- Preserved existing final-status vocabulary, legacy `reason` strings, and
+  `fake_go_detected` behavior.
 
-## F02 can begin once
-- F01 verdict == INTERNAL_GO_PENDING_SECONDARY_REVIEW.
-- F01 commit landed; worktree clean; HEAD advanced.
-- `classify_failure()` importable (F02's anti-cheat detectors reference it for
-  failure-honesty checks, though F02 has no hard upstream dep — it may also run
-  before F01; the recommended order runs it after).
+## Evidence to review
+- `F01/status.json`
+- `F01/evidence-summary.md`
+- `source_proxy/tests/test_status_codes.py`
+- F1 commit once created.
 
-## Carry-forward invariants for F02
-- F02 copies (not moves) existing selftests; runs legacy + new in parallel.
-- F02's negative corpus is frozen in its own holdout-manifest before edits.
-- F02 must not retire legacy behavior in its first increment.
+## Caveat
+The full `source_proxy/tests` suite timed out under the available environment and
+is not claimed as PASS. Focused touched-path coverage and operator check passed.
 
-## Downstream note
-F03/F05/F06/F09 all depend on F1's taxonomy. They must not start before F01 GO.
+## Next safe step
+Run F2 only after reviewing this F1 result. Do not start F3, Set A/B/C, Plan 3,
+or Plan 4 from this handoff.

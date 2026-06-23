@@ -1,18 +1,15 @@
 # F09 Status
 
-**Stage:** F09 — Worker / tool contract cleanup
-**Status:** NOT_STARTED · **Verdict:** (pending) · **Depends on:** F01, F05
+**Stage:** F09 - Worker and tool adapters
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
+**Verdict:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Frozen artifacts
-- `acceptance-contract.json` — frozen (7-field adapter contract, 5 gates).
-- `holdout-manifest.json` — frozen (7 adapter behavior checks).
+## Completed
+- Added typed `ProcessAdapterRequest`/`ProcessAdapterResult` contracts.
+- Routed `_safe_dirty_tree_status()` through the typed process adapter.
+- Preserved the existing dirty-tree payload shape and exception path.
 
-## Baseline
-`test_coder_agent_repomix_diff` + `test_ollama_route` green set.
-
-## Increments
-- 9.1 — qwen lane adapter + decision.py routing + parity
-- 9.2 — browser/ollama adapters + mac-worker contract + redaction/ownership
-
-## Gate results / Caveats
-(populated during execution)
+## Manual findings
+- No new engine was created.
+- Output/timing contract for dirty-tree status remains unchanged.
+- Adapter carries timeout, attempt, owner, evidence reference, and F1 failure class metadata.

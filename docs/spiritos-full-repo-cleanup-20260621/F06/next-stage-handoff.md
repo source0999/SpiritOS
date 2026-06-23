@@ -1,23 +1,16 @@
-# F06 → F07 Handoff
+# F06 -> F07 Handoff
 
-**Status:** NOT_STARTED (finalized when F06 verdict set).
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
 ## F06 hands to F07
-- `tasks/long_running.py` split into cohesive engine + apply/ + trace/ +
-  recovery/ + regression/, state-machine intact, behavior parity-proven.
-- The apply/recovery/trace contracts F7's UI components render are now stable.
+- Long-running state/readback helpers are split into `source_proxy/tasks/engine/state.py`.
+- Core transition, apply, recovery, persistence, and route behavior remain in `long_running.py`.
+- Full long-running apply-suite failures are documented as pre-existing and not counted as PASS.
 
 ## F07 can begin once
-- F06 verdict == INTERNAL_GO_PENDING_SECONDARY_REVIEW.
-- Shared contracts stable (F1 taxonomy + F5 lanes/receipts + F6 apply/recovery).
-  F7 only runs after shared contracts stabilize (dependency-map.md).
+- F06 commit is created and the worktree is clean.
 
 ## Carry-forward for F07
-- F7 cleans up coding UI shells: classify active/legacy/experimental; extract
-  shared types / API adapters+hooks / timeline+receipt+debug components; add
-  reversible feature metadata.
-- **Provisional canonical** (from runtime import): `/coding` →
-  `CodingCockpitShell`. Final canonical-shell decision is Britton's.
-- **Do not delete any shell. Do not replace `/coding`.**
-- If a structural move requires choosing between competing product behaviors →
-  stop `BLOCKED_HUMAN`.
+- Do not delete alternate coding shells.
+- Do not replace canonical `/coding`.
+- Keep UI shell cleanup reversible and metadata-oriented.

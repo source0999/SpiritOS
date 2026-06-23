@@ -9,6 +9,17 @@ from typing import Any
 
 import httpx
 
+from source_proxy.decision.escalation_contract import (
+    LaneAvailability,
+    evidence_from_lane_attempts,
+    recommend_brain_switch,
+)
+from source_proxy.diagnostics.status_codes import (
+    classify_failure,
+    is_failure_status,
+    serialize_failure_classification,
+)
+
 
 MODEL_LANE_REGISTRY_VERSION = "source-proxy-model-lane-registry-v0.1"
 FIP3_MODEL_PACKET_VERSION = "source-proxy-fip3-local-model-lanes-v0.1"
@@ -94,6 +105,38 @@ def lane_selection_observability(
         ],
         "lane_evidence_refs": list(evidence_refs or []),
     }
+
+
+def brain_switch_advisory_from_model_lane_attempts(
+    *,
+    task_shape: str,
+    attempts: list[dict[str, Any]],
+    evidence_refs: list[str] | None = None,
+    privacy_class: str = "unknown",
+    cost_class: str = "unknown",
+    decomposable: bool = False,
+) -> dict[str, Any]:
+    lanes = [
+        LaneAvailability(
+            lane_id=str(lane["lane_id"]),
+            configured=True,
+            available="preview" not in str(lane.get("status", "")) and "future" not in str(lane.get("status", "")),
+            privacy_class=str(lane.get("privacy_class") or "unknown"),
+            cost_class=str(lane.get("cost_class") or "unknown"),
+            reason=str(lane.get("status") or ""),
+        )
+        for lane in model_lane_registry()["lanes"]
+    ]
+    evidence = evidence_from_lane_attempts(
+        task_shape=task_shape,
+        attempts=attempts,
+        lane_availability=lanes,
+        privacy_class=privacy_class,
+        cost_class=cost_class,
+        evidence_ids=list(evidence_refs or []),
+        decomposable=decomposable,
+    )
+    return recommend_brain_switch(evidence).to_dict()
 
 
 def build_model_lanes_preview(*, task_type: str = "disposable_artifact") -> dict[str, Any]:
@@ -725,7 +768,17 @@ def _reserved_hermes_verifier(model: str = "") -> dict[str, Any]:
 
 
 def _model_lane_status(status: str, reason: str, **extra: Any) -> dict[str, Any]:
-    return {"status": status, "reason": reason, **extra}
+    payload = {"status": status, "reason": reason, **extra}
+    if is_failure_status(status):
+        classification = classify_failure(
+            status=status,
+            reason=reason,
+            source=str(extra.get("lane") or extra.get("source") or "model_lane"),
+            provider_errors=extra.get("provider_errors", []),
+        )
+        payload["reason_code"] = classification.reason_code
+        payload["failure_classification"] = serialize_failure_classification(classification)
+    return payload
 
 
 def _ollama_base_url() -> str:

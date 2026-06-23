@@ -1,23 +1,68 @@
 {
   "stage": "F06",
   "title": "Split long-running responsibilities",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
+  "acceptance_contract_sha256": "d2430aa4effb4fd7bb354ae09785661bb9bf504cf4f81ab81cf341e538ad9fce",
+  "holdout_manifest_sha256": "cfa3175ecdb68de507eeb984cbef9a892cad4e8409c6c0b451c1afbf850a9762",
+  "baseline_head": "18f5a1a4098b88246bf51f342951b002d594eede",
   "baseline_long_running_py_lines": 6513,
-  "baseline_captured": false,
-  "dependencies_satisfied": {"F01": false, "F05": false},
+  "baseline_captured": true,
+  "dependencies_satisfied": {
+    "F01": true,
+    "F02": true,
+    "F03": true,
+    "F04": true,
+    "F05": true
+  },
   "increments": [
-    {"id": "6.1", "title": "extract apply/ (git-apply + next-router) + parity", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "6.2", "title": "extract trace/ + recovery/ (idempotence + dup protection)", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "6.3", "title": "extract regression/ + slim engine", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "6.1",
+      "title": "extract pure long-running state/readback helpers",
+      "status": "COMPLETE",
+      "files_touched": [
+        "source_proxy/tasks/long_running.py",
+        "source_proxy/tasks/engine/__init__.py",
+        "source_proxy/tasks/engine/state.py",
+        "source_proxy/tests/test_long_running_engine_state.py"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "focused_state_readback_tests": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_long_running_engine_state.py + selected queue/readback tests -q",
+      "status": "PASS",
+      "summary": "9 passed in 4.69s"
+    },
+    "full_long_running_suite": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m pytest source_proxy/tests/test_long_running_engine_state.py source_proxy/tests/test_long_running_tasks.py -q",
+      "status": "PRE_EXISTING_FAILURE_NOT_PASS",
+      "summary": "8 failed, 41 passed; representative test_router_executes_approved_diff also failed on pre-F6 archive 18f5a1a4 with approved_diff_blocked."
+    },
+    "baseline_representative_apply_test": {
+      "command": "git archive 18f5a1a4 to /tmp then pytest test_router_executes_approved_diff",
+      "status": "PRE_EXISTING_FAIL",
+      "summary": "1 failed with HTTP 422 approved_diff_blocked before F6 edits."
+    },
+    "py_compile": {
+      "command": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m py_compile source_proxy/tasks/long_running.py source_proxy/tasks/engine/state.py source_proxy/tasks/engine/__init__.py",
+      "status": "PASS"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    "operator_check": {
+      "command": "bash docs/spiritos-full-repo-cleanup-20260621/F06/operator-check.sh",
+      "status": "PASS",
+      "summary": "F06 operator check: PASS"
+    }
+  },
+  "caveats": [
+    "Full pre-existing long_running apply-route tests fail with approved_diff_blocked on both current F6 worktree and pre-F6 archive; not counted as F6 PASS. F6 touched only state/readback predicates, not apply/recovery code."
+  ],
+  "next_stage_handoff_updated": true
 }

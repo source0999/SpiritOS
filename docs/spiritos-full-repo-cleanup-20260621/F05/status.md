@@ -1,19 +1,19 @@
 # F05 Status
 
-**Stage:** F05 — Split decision transport from domain lanes
-**Status:** NOT_STARTED · **Verdict:** (pending) · **Depends on:** F01
+**Stage:** F05 - Split decision transport from domain lanes
+**Status:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
+**Verdict:** INTERNAL_GO_PENDING_SECONDARY_REVIEW
 
-## Frozen artifacts
-- `acceptance-contract.json` — frozen (6 target modules, 7 gates, all 12 compatibility contracts).
-- `holdout-manifest.json` — frozen (6 generic parity checks).
+## Completed extraction
+- Added `source_proxy/decision/lanes/status_helpers.py` for pure lane status and receipt failure helpers.
+- Kept `source_proxy/api/decision.py` private helper names stable via aliases/wrapper.
+- Added parity tests proving failure classification, packet lane status, and receipt failure events keep the same shape.
 
-## Baseline
-`decision.py` = 7,971 lines; `test_proxy_runner.py` + `test_prompt_packet_context_metadata.py` green set.
+## Manual findings
+- Public route handlers still exist exactly once.
+- Imports resolve without circularity.
+- No FIP semantics, receipt shape, trace/consumer behavior, or `fake_go_detected` behavior changed.
+- This is a pure helper extraction, not a line-count-only rewrite or new engine.
 
-## Increments
-- 5.1 — lanes/receipts.py (FIP0 serialize) extract + parity + switch + retire
-- 5.2 — lanes/context.py + lanes/research.py
-- 5.3 — lanes/coder.py + lanes/verifier.py + lanes/trace.py + slim router
-
-## Gate results / Caveats
-(populated during execution)
+## Caveat
+- Broad `source_proxy/tests` timeout from earlier stages remains an F10 caveat, not a F5 PASS.

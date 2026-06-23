@@ -72,6 +72,15 @@ from source_proxy.decision.preview import (
     ApiVsManualPreviewInput,
     build_api_vs_manual_preview,
 )
+from source_proxy.diagnostics.status_codes import no_failure_classification
+from source_proxy.decision.lanes.status_helpers import (
+    lane_status as _lane_status,
+    packet_lane_status as _packet_lane_status,
+    receipt_failure_classification as _lane_receipt_failure_classification,
+    receipt_failure_event as _receipt_failure_event,
+    valid_lane_status_value as _valid_lane_status_value,
+)
+from source_proxy.decision.worker_tool_adapters import run_process_adapter
 from source_proxy.decision.model_lanes import (
     build_fip3_model_lane_packet,
     build_model_lanes_preview,
@@ -213,6 +222,9 @@ class PromptPacketRequest(RouteDecisionRequest):
     forbidden_files: list[str] = Field(default_factory=list)
     selected_prompt_id: str | None = None
     trial_prompt_id: str | None = None
+    brain_switch_recommendation: str | None = None
+    task_shape: str | None = None
+    evidence_ids: list[str] = Field(default_factory=list)
 
 
 class ApiVsManualPreviewRequest(PromptPacketRequest):
@@ -277,13 +289,13 @@ def _fip0_receipt_root() -> Path:
 
 def _safe_dirty_tree_status() -> dict[str, Any]:
     try:
-        result = subprocess.run(
-            ["git", "status", "--short", "--untracked-files=no"],
+        result = run_process_adapter(
+            adapter_id="git_status_dirty_tree",
+            command=("git", "status", "--short", "--untracked-files=no"),
             cwd=str(_workspace_root()),
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=5,
+            timeout_seconds=5,
+            owner="source_proxy.api.decision",
+            evidence_ref="fip0_dirty_tree_status",
         )
     except Exception as error:
         return {
@@ -301,34 +313,8 @@ def _safe_dirty_tree_status() -> dict[str, Any]:
     }
 
 
-def _lane_status(status: str, reason: str, **extra: Any) -> dict[str, Any]:
-    return {"status": status, "reason": reason, **extra}
-
-
-def _valid_lane_status_value(value: str) -> bool:
-    return value in {"used", "skipped", "blocked", "failed", "timed_out", "config_blocked"}
-
-
-def _packet_lane_status(packet: dict[str, Any], *, fallback_reason: str) -> dict[str, Any]:
-    status = str(packet.get("status") or "")
-    reason = str(packet.get("reason") or fallback_reason)
-    if not _valid_lane_status_value(status):
-        return _lane_status(
-            "failed",
-            "context_lane_returned_invalid_status",
-            source=packet.get("source"),
-            raw_status=status,
-            raw_reason=reason,
-        )
-    return _lane_status(
-        status,
-        reason,
-        source=packet.get("source"),
-        diagnostics=packet.get("diagnostics") if isinstance(packet.get("diagnostics"), dict) else {},
-        packet=packet.get("packet") if isinstance(packet.get("packet"), dict) else {},
-        authority=packet.get("authority") if isinstance(packet.get("authority"), dict) else {},
-    )
-
+def _receipt_failure_classification(receipt: dict[str, Any]) -> dict[str, Any]:
+    return _lane_receipt_failure_classification(receipt, FIP0_LANE_STATUS_FIELDS)
 
 def _blocked_context_packet(source: str, error: Exception) -> dict[str, Any]:
     return {
@@ -1005,6 +991,10 @@ def _fip6_operator_trace_from_receipt(
             "repair_packets": _bounded_trace_value(receipt.get("repair_packets", [])),
             "qwen_repair_outputs": _bounded_trace_value(receipt.get("qwen_repair_outputs", [])),
             "verifier_result": _bounded_trace_value(fip5_result.get("final_verifier_result", {})),
+        },
+        "failure_trace": {
+            "failure_event": receipt.get("failure_event", {"failure_present": False}),
+            "failure_classification": receipt.get("failure_classification", no_failure_classification()),
         },
         "verdict_trace": {
             "final_verdict": receipt.get("final_verdict"),
@@ -4527,6 +4517,8 @@ def _attach_fip0_truth_receipt(
             or fip5_result.get("reason")
             or "NO-GO: fip5_verifier_missing_final_verdict"
         )
+    receipt["failure_classification"] = _receipt_failure_classification(receipt)
+    receipt["failure_event"] = _receipt_failure_event(receipt)
     degraded_lanes = _lane_degradation_for_receipt(receipt)
     if degraded_lanes and str(receipt.get("final_verdict") or "").startswith("GO:"):
         receipt["final_verdict"] = "NO-GO: expected_degraded_lane"
@@ -6933,6 +6925,9 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             needs_codebase_context=reset_request.needs_codebase_context,
             wants_implementation=reset_request.wants_implementation,
             prefer_free=reset_request.prefer_free,
+            brain_switch_recommendation=reset_request.brain_switch_recommendation,
+            task_shape=reset_request.task_shape,
+            evidence_ids=tuple(reset_request.evidence_ids),
         )
     )
     payload = packet.as_payload()

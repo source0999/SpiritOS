@@ -1,21 +1,56 @@
 {
   "stage": "F08",
   "title": "Context / memory / Headroom / repomix consistency",
-  "status": "NOT_STARTED",
-  "verdict": null,
+  "status": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
+  "verdict": "INTERNAL_GO_PENDING_SECONDARY_REVIEW",
   "acceptance_contract_frozen": true,
   "holdout_manifest_frozen": true,
-  "acceptance_contract_sha256": null,
-  "holdout_manifest_sha256": null,
-  "baseline_head": null,
-  "baseline_captured": false,
-  "dependencies_satisfied": {},
+  "acceptance_contract_sha256": "001670bfee76044623053fbefbe2a28e0dfa982636578dbbdce2ca61404c0f3e",
+  "holdout_manifest_sha256": "ada515774928d8513a8f3603bb912ea2103e0fa3fe47f087ff5b87f06f7e9732",
+  "baseline_head": "0306cc03fb911211fba07b4226639006c198386e",
+  "baseline_captured": true,
+  "dependencies_satisfied": {
+    "F07": true
+  },
   "increments": [
-    {"id": "8.1", "title": "HEADROOM_PORT consistency + Cursor/8797 documentation", "status": "NOT_STARTED", "files_touched": []},
-    {"id": "8.2", "title": "context/memory digest consistency + honest headroom_status probe", "status": "NOT_STARTED", "files_touched": []}
+    {
+      "id": "8.1",
+      "title": "Headroom/context fallback honesty and no-install launcher",
+      "status": "COMPLETE",
+      "files_touched": [
+        "scripts/context/headroom-check.sh",
+        "scripts/headroom-proxy-dev.sh",
+        "scripts/context/verify-repomix-context.sh"
+      ]
+    }
   ],
   "commit": null,
-  "gate_results": {},
-  "caveats": [],
-  "next_stage_handoff_updated": false
+  "gate_results": {
+    "headroom_health_probe": {
+      "command": "bash scripts/context/headroom-check.sh",
+      "status": "INACTIVE_NOT_PASS",
+      "summary": "headroom_health_success=false on http://127.0.0.1:8797/health; fallback labelled tree-sitter only."
+    },
+    "script_syntax": {
+      "command": "bash -n headroom/context scripts",
+      "status": "PASS"
+    },
+    "forbidden_mutation_scan": {
+      "status": "PASS",
+      "summary": "No pkill/killall/npm install/pip install/python3 -m venv in changed scripts."
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    "operator_check": {
+      "command": "bash docs/spiritos-full-repo-cleanup-20260621/F08/operator-check.sh",
+      "status": "PASS",
+      "summary": "F08 operator check: PASS"
+    }
+  },
+  "caveats": [
+    "Headroom proxy is currently inactive; not counted as compressed/active. Fallback remains tree-sitter-only until health succeeds and tokens_saved > 0."
+  ],
+  "next_stage_handoff_updated": true
 }

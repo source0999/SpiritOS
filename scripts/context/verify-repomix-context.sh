@@ -27,11 +27,16 @@ COMPRESSION=$(grep -oP 'compression="\K[^"]+' "$OUTPUT" | head -1 || true)
 HEADROOM_COMPRESSED=$(grep -oP '<headroom compressed="\K[^"]+' "$OUTPUT" | head -1 || true)
 TOKENS_BEFORE=$(grep -oP 'tokens_before="\K[^"]+' "$OUTPUT" | head -1 || true)
 TOKENS_AFTER=$(grep -oP 'tokens_after="\K[^"]+' "$OUTPUT" | head -1 || true)
+TOKENS_SAVED=$(grep -oP 'tokens_saved="\K[^"]+' "$OUTPUT" | head -1 || true)
 PROXY=$(grep -oP 'proxy="\K[^"]+' "$OUTPUT" | head -1 || true)
+
+if [[ -z "${TOKENS_SAVED}" && "${TOKENS_BEFORE}" =~ ^[0-9]+$ && "${TOKENS_AFTER}" =~ ^[0-9]+$ ]]; then
+  TOKENS_SAVED=$((TOKENS_BEFORE - TOKENS_AFTER))
+fi
 
 echo "bundle compression: ${COMPRESSION:-unknown}"
 echo "headroom compressed: ${HEADROOM_COMPRESSED:-unknown}"
-echo "tokens: ${TOKENS_BEFORE:-?} → ${TOKENS_AFTER:-?}"
+echo "tokens: ${TOKENS_BEFORE:-->} → ${TOKENS_AFTER:-->}"
 echo "headroom proxy: ${PROXY:-unknown}"
 
 FILE_COUNT=$(grep -c '<file path=' "$OUTPUT" 2>/dev/null || echo 0)
@@ -81,15 +86,15 @@ fi
 
 # Headroom honesty: if proxy URL is set and compressed=true, tokens should differ
 if [[ "${HEADROOM_COMPRESSED}" == "true" ]]; then
-  if [[ "${TOKENS_BEFORE}" == "${TOKENS_AFTER}" || -z "${TOKENS_BEFORE}" ]]; then
-    fail "headroom claims compressed=true but token counts show no savings"
+  if [[ ! "${TOKENS_SAVED:-}" =~ ^[0-9]+$ || "${TOKENS_SAVED}" -le 0 ]]; then
+    fail "headroom claims compressed=true but tokens_saved is not positive"
   else
-    echo "  OK  headroom token savings verified"
+    echo "  OK  headroom token savings verified (${TOKENS_SAVED} saved)"
   fi
 elif [[ "${COMPRESSION}" == "tree-sitter+headroom" ]]; then
   fail "bundle claims tree-sitter+headroom but headroom compressed=false"
 else
-  echo "  OK  fallback tree-sitter profile (headroom proxy likely down)"
+  echo "  OK  honest fallback tree-sitter profile (headroom inactive or unavailable)"
 fi
 
 echo ""
