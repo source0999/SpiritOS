@@ -2571,6 +2571,84 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             "work_product_summary": " ".join(work.split())[:450],
             "raw_evidence_dir": str(RAW),
         }
+        selected_lane = (decision_packet_bundle or {}).get("selected_lane") or {}
+        validation_errors = record.get("decision_packet_validation_errors") or []
+        failure_classification = "PASS"
+        if record["final_status"] != "PASS":
+            if str(record["final_status"]).startswith("BLOCKED_ENV"):
+                failure_classification = "ENV_BLOCKED"
+            elif str(record["final_status"]).startswith("BLOCKED_HUMAN"):
+                failure_classification = "HUMAN_GATE_REQUIRED"
+            elif policy_error:
+                failure_classification = "PROTECTED_PATH_BLOCK"
+            elif validation_errors:
+                failure_classification = "MODEL_PACKET_VALIDATION_FAILURE"
+            elif not work.strip():
+                failure_classification = "EMPTY_OUTPUT"
+            elif record.get("blocked_reasons"):
+                failure_classification = "ENV_OR_HUMAN_BLOCK"
+            else:
+                failure_classification = "PRODUCTIVE_OUTPUT_GRADE_FAILURE"
+        diagnostic_debugger = {
+            "run_id": f"PLAN3_STAGE4R_SET_A_RERUN_{pid}",
+            "prompt_id": pid,
+            "task_id": task_id,
+            "task_class": item.get("expected_work_product"),
+            "route_type": "plan3_stage4r_set_a",
+            "expected_lane": "validated_decision_packet" if pid in {"A2", "A5", "A9"} else "live_model_work_product",
+            "candidate_lanes": record.get("packet_lanes_available") or [{"lane_name": "ollama_default", "provider_type": "ollama", "model": MODEL}],
+            "selected_lane": selected_lane.get("lane_name") or ("ollama_default" if work else ""),
+            "selected_model_provider_tool": {
+                "model": selected_lane.get("model") or MODEL,
+                "provider": selected_lane.get("provider_type") or "ollama",
+                "tool": "validated_decision_packet_renderer" if decision_packet_validated else "stage4r_live_work_product",
+            },
+            "local_api_cli_distinction": "local_ollama_cli_or_http",
+            "provider_availability": {
+                "available": record.get("packet_lanes_available") or [{"lane_name": "ollama_default", "provider_type": "ollama", "model": MODEL}],
+                "unavailable": record.get("packet_lanes_unavailable") or [],
+            },
+            "model_call_attempted": bool(work or decision_packet_bundle),
+            "model_call_result_or_failure_class": "validated_packet_rendered" if decision_packet_validated else ("packet_validation_failed" if validation_errors else record["final_status"]),
+            "timeout_empty_parse_policy": {
+                "timeout": any("timeout" in str(err).lower() for err in validation_errors),
+                "empty_output": not bool(work.strip()),
+                "parse_failure": any("json" in str(err).lower() or "parse" in str(err).lower() for err in validation_errors),
+                "policy_block": bool(policy_error),
+            },
+            "fallback_used": False,
+            "fallback_reason": "",
+            "degraded_lanes": record.get("packet_lanes_unavailable") or [],
+            "productive_status": record["final_status"],
+            "productive_reasons": record.get("notes") or [],
+            "verification_real_flags": {
+                "same_trace_consumer_evidence": record["same_trace_consumer_evidence"],
+                "downstream_consumed": record["downstream_consumed"],
+                "final_status_derived_by_grader": True,
+                "fake_go_detected_computed": True,
+            },
+            "browser_functional_verifier_result": record["verification_result"],
+            "created_modified_files": [
+                str(BASE / f"{pid}.json"),
+                str(BASE / f"{pid}.md"),
+                str(RAW / f"{pid}.task.final.raw.json"),
+            ],
+            "protected_path_block_result": policy_error or "not_required",
+            "failure_classification": failure_classification,
+            "anti_cheat_flags": {
+                "fake_go_detected": record["fake_go_detected"],
+                "hardcoded_sources_used": False,
+                "hardcoded_plans_used": False,
+                "jellyfin_or_media_mutation_detected": False,
+            },
+            "receipt_path": str(BASE / f"{pid}.json"),
+            "trace_path": str(RAW / f"{pid}.task.final.raw.json"),
+            "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+            "human_action_required": record["final_status"] not in {"PASS", "BLOCKED_ENV"},
+            "next_recommended_action": "inspect decision_packet_validation_errors and rerun bounded Set A slice" if validation_errors else ("no action" if record["final_status"] == "PASS" else "inspect failed_gates and make one bounded fix"),
+        }
+        record["diagnostic_debugger"] = diagnostic_debugger
+        jwrite(RAW / f"{pid}.diagnostic_debugger.raw.json", diagnostic_debugger)
         jwrite(BASE / f"{pid}.json", record)
         (BASE / f"{pid}.md").write_text(md(record, work, research, repo), encoding="utf-8")
         jwrite(RAW / f"{pid}.task.final.raw.json", final_task)

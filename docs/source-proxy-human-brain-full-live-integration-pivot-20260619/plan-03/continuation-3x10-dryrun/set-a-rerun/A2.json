@@ -5,8 +5,158 @@
   "decision_packet_attempts": 6,
   "decision_packet_validated": false,
   "decision_packet_validation_errors": [
-    "missing_contract_term:local api"
+    "decision_no_action_verb:2",
+    "missing_contract_term:local api",
+    "non_json_wrapping_text",
+    "source_url_not_from_raw_sources:1",
+    "source_url_not_from_raw_sources:2"
   ],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_hermes4_latest",
+        "model": "hermes4:latest",
+        "provider_type": "ollama",
+        "reason": "stronger_existing_local_ollama"
+      },
+      {
+        "lane_name": "ollama_gemma3n_e4b",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama",
+        "reason": "current_default_local_model"
+      }
+    ],
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A2.task.final.raw.json"
+    ],
+    "degraded_lanes": [
+      {
+        "lane_name": "openai",
+        "model": "gpt-4o-mini",
+        "provider_type": "openai",
+        "reason": "OPENAI_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "anthropic",
+        "model": "claude-3-5-sonnet-latest",
+        "provider_type": "anthropic",
+        "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "deepseek",
+        "model": "deepseek-chat",
+        "provider_type": "deepseek",
+        "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "litellm",
+        "model": "",
+        "provider_type": "litellm",
+        "reason": "LITELLM_API_KEY_unset_or_model_missing"
+      }
+    ],
+    "expected_lane": "validated_decision_packet",
+    "failure_classification": "MODEL_PACKET_VALIDATION_FAILURE",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": true,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "packet_validation_failed",
+    "next_recommended_action": "inspect decision_packet_validation_errors and rerun bounded Set A slice",
+    "productive_reasons": [
+      "research_materially_changed_output",
+      "repo_context_used",
+      "a2_mv3_architecture_constraints",
+      "a2_native_messaging_permission",
+      "a2_native_host_registration",
+      "a2_service_worker_lifecycle",
+      "a2_payload_or_local_api_boundary",
+      "a2_source_proxy_endpoint_context",
+      "a2_safe_mvp_slice",
+      "a2_coding_agent_handoff",
+      "work_product_too_short"
+    ],
+    "productive_status": "NEEDS_FIX",
+    "prompt_id": "A2",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_hermes4_latest",
+          "model": "hermes4:latest",
+          "provider_type": "ollama",
+          "reason": "stronger_existing_local_ollama"
+        },
+        {
+          "lane_name": "ollama_gemma3n_e4b",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama",
+          "reason": "current_default_local_model"
+        }
+      ],
+      "unavailable": [
+        {
+          "lane_name": "openai",
+          "model": "gpt-4o-mini",
+          "provider_type": "openai",
+          "reason": "OPENAI_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "anthropic",
+          "model": "claude-3-5-sonnet-latest",
+          "provider_type": "anthropic",
+          "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "deepseek",
+          "model": "deepseek-chat",
+          "provider_type": "deepseek",
+          "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "litellm",
+          "model": "",
+          "provider_type": "litellm",
+          "reason": "LITELLM_API_KEY_unset_or_model_missing"
+        }
+      ]
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.json",
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A2",
+    "selected_lane": "ollama_hermes4_latest",
+    "selected_model_provider_tool": {
+      "model": "hermes4:latest",
+      "provider": "ollama",
+      "tool": "stage4r_live_work_product"
+    },
+    "task_class": "plan",
+    "task_id": "task_07b08b268075",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": true,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A2.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
   "downstream_consumed": true,
   "failed_gates": [
     "research_materially_changed_output",
@@ -43,7 +193,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_72c310983b7740ce",
+  "latest_consumer_event_id": "consumer_d6b9c087b9894e10",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -154,8 +304,8 @@
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_6d52415ef8d2",
-  "trace_id": "trace_e515b701629b4596",
+  "task_id": "task_07b08b268075",
+  "trace_id": "trace_cec03d4e46454a5a",
   "user_goal_reached": false,
   "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
   "verification_result": "not_required",

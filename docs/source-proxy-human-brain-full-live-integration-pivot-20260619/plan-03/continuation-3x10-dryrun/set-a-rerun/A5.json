@@ -5,15 +5,163 @@
   "decision_packet_attempts": 6,
   "decision_packet_validated": false,
   "decision_packet_validation_errors": [
-    "decision_field_too_thin:1:decision",
+    "a5_do_not_buy",
+    "a5_no_new_hardware",
     "decision_no_action_verb:0",
+    "decision_no_action_verb:1",
+    "decision_no_action_verb:2",
+    "decision_no_action_verb:3",
     "evidence_finding_too_thin:4",
     "fabricated_host:0:ollama.ai",
     "insufficient_source_refs:2",
+    "missing_contract_term:avoid buying",
+    "missing_contract_term:no new hardware",
     "non_json_wrapping_text",
     "source_url_not_from_raw_sources:0",
     "source_url_not_from_raw_sources:1"
   ],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_hermes4_latest",
+        "model": "hermes4:latest",
+        "provider_type": "ollama",
+        "reason": "stronger_existing_local_ollama"
+      },
+      {
+        "lane_name": "ollama_gemma3n_e4b",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama",
+        "reason": "current_default_local_model"
+      }
+    ],
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A5.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A5.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A5.task.final.raw.json"
+    ],
+    "degraded_lanes": [
+      {
+        "lane_name": "openai",
+        "model": "gpt-4o-mini",
+        "provider_type": "openai",
+        "reason": "OPENAI_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "anthropic",
+        "model": "claude-3-5-sonnet-latest",
+        "provider_type": "anthropic",
+        "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "deepseek",
+        "model": "deepseek-chat",
+        "provider_type": "deepseek",
+        "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "litellm",
+        "model": "",
+        "provider_type": "litellm",
+        "reason": "LITELLM_API_KEY_unset_or_model_missing"
+      }
+    ],
+    "expected_lane": "validated_decision_packet",
+    "failure_classification": "MODEL_PACKET_VALIDATION_FAILURE",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": true,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "packet_validation_failed",
+    "next_recommended_action": "inspect decision_packet_validation_errors and rerun bounded Set A slice",
+    "productive_reasons": [
+      "research_materially_changed_output",
+      "repo_context_used",
+      "a5_dell_mac_windows_role_split",
+      "a5_cost_no_new_hardware_reasoning",
+      "a5_privacy_local_cloud_tradeoff",
+      "a5_model_tooling_tied_to_roles",
+      "work_product_too_short"
+    ],
+    "productive_status": "NEEDS_FIX",
+    "prompt_id": "A5",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_hermes4_latest",
+          "model": "hermes4:latest",
+          "provider_type": "ollama",
+          "reason": "stronger_existing_local_ollama"
+        },
+        {
+          "lane_name": "ollama_gemma3n_e4b",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama",
+          "reason": "current_default_local_model"
+        }
+      ],
+      "unavailable": [
+        {
+          "lane_name": "openai",
+          "model": "gpt-4o-mini",
+          "provider_type": "openai",
+          "reason": "OPENAI_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "anthropic",
+          "model": "claude-3-5-sonnet-latest",
+          "provider_type": "anthropic",
+          "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "deepseek",
+          "model": "deepseek-chat",
+          "provider_type": "deepseek",
+          "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "litellm",
+          "model": "",
+          "provider_type": "litellm",
+          "reason": "LITELLM_API_KEY_unset_or_model_missing"
+        }
+      ]
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A5.json",
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A5",
+    "selected_lane": "ollama_hermes4_latest",
+    "selected_model_provider_tool": {
+      "model": "hermes4:latest",
+      "provider": "ollama",
+      "tool": "stage4r_live_work_product"
+    },
+    "task_class": "plan",
+    "task_id": "task_5cab1f3accb6",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": true,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A5.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
   "downstream_consumed": true,
   "failed_gates": [
     "research_materially_changed_output",
@@ -46,7 +194,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_32857e3d11fb4e46",
+  "latest_consumer_event_id": "consumer_5fc0e87fd8404b05",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -157,8 +305,8 @@
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_598464a43b4f",
-  "trace_id": "trace_d370e6b8e30743ef",
+  "task_id": "task_5cab1f3accb6",
+  "trace_id": "trace_747aa2bab1ba41a4",
   "user_goal_reached": false,
   "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
   "verification_result": "not_required",

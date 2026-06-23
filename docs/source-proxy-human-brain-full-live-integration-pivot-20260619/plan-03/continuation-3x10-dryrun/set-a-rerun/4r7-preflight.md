@@ -1,6 +1,6 @@
 # Stage 4R7 Preflight
 
-- current HEAD: `e527563c266726ab97eb099e1a32032a9dd11064`
+- current HEAD: `4caf6147d10a60862654432dc3c747bc69e706d8`
 - staged files count: 0
 - raw evidence writable: yes
 - scope confirmation: Stage 4R7 only; patch `_stage4r_runner.py` packet model-lane escalation and rerun A2/A5/A9 only; no Set B/C, Stage 5, Plan 4, push, media/Jellyfin mutation, route replacement, or new engine.
@@ -8,7 +8,7 @@
 ## Current A2/A5/A9 Blockers
 
 - A2: final_status=NEEDS_FIX decision_packet_validated=False source_count=6 blockers=research_materially_changed_output; repo_context_used; a2_mv3_architecture_constraints; a2_native_messaging_permission; a2_native_host_registration; a2_service_worker_lifecycle; a2_payload_or_local_api_boundary; a2_source_proxy_endpoint_context; a2_safe_mvp_slice; a2_coding_agent_handoff; work_product_too_short
-- A5: final_status=NEEDS_FIX decision_packet_validated=False source_count=6 blockers=research_materially_changed_output; repo_context_used; a5_dell_mac_windows_role_split; a5_cost_no_new_hardware_reasoning; a5_privacy_local_cloud_tradeoff; a5_model_tooling_tied_to_roles; work_product_too_short
+- A5: final_status=BLOCKED_ENV decision_packet_validated=False source_count=0 blockers=live research provider returned no sources
 - A9: final_status=NEEDS_FIX decision_packet_validated=False source_count=6 blockers=research_materially_changed_output; repo_context_used; a9_clean_tool_comparison; a9_current_limitations; a9_proxy_setup_recommendation; work_product_too_short
 
 ## Configured Model/Provider Lanes

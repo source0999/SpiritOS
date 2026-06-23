@@ -1,6 +1,6 @@
 # Stage 4R4 Preflight
 
-- current HEAD: `e527563c266726ab97eb099e1a32032a9dd11064`
+- current HEAD: `4caf6147d10a60862654432dc3c747bc69e706d8`
 - staged files count: 0
 - raw evidence writable: yes
 - scope confirmation: Stage 4R4 only; add structured live decision packets for A2/A5/A9; no grader weakening, canned answers, Set B/C, Stage 5, Plan 4, push, media/Jellyfin mutation, route replacement, or new engine.
