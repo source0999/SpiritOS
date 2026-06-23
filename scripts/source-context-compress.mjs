@@ -9,6 +9,7 @@ const repoRoot = resolve(import.meta.dirname, "..");
 const DEFAULT_HEADROOM_PORT = 8797;
 const DEFAULT_HEADROOM_BASE_URL = `http://127.0.0.1:${DEFAULT_HEADROOM_PORT}`;
 const DEFAULT_TOKEN_BUDGET = 80_000;
+const DEFAULT_HEADROOM_TARGET_RATIO = 0.5;
 
 const PROFILE_CONFIGS = {
   "source-proxy-min": "repomix.source-proxy-min.config.json",
@@ -53,6 +54,7 @@ export async function buildRepositoryContextBundle(options = {}) {
 
   const repomixCli = resolve(repoRoot, "node_modules", "repomix", "bin", "repomix.cjs");
   const headroomBaseUrl = (process.env.HEADROOM_BASE_URL || DEFAULT_HEADROOM_BASE_URL).replace(/\/$/, "");
+  const headroomCompressionConfig = resolveHeadroomCompressionConfig();
 
   if (fullOnly) {
     execFileSync(
@@ -123,13 +125,21 @@ export async function buildRepositoryContextBundle(options = {}) {
       retries: proxyReachable ? 1 : 0,
       stack: "spiritos-repomix-context",
       tokenBudget: Number(process.env.HEADROOM_CONTEXT_TOKEN_BUDGET || DEFAULT_TOKEN_BUDGET),
+      config: headroomCompressionConfig,
     },
   );
 
   const headroomContent = String(headroomResult.messages?.[0]?.content || repositoryContextXml);
+  const headroomTokensSaved = Number(headroomResult.tokensSaved || 0);
   const headroomActuallyCompressed = Boolean(
-    headroomResult.compressed && headroomContent !== repositoryContextXml,
+    headroomResult.compressed && headroomTokensSaved > 0 && headroomContent !== repositoryContextXml,
   );
+  const headroomFallbackReason = resolveHeadroomFallbackReason({
+    proxyReachable,
+    headroomResult,
+    headroomContent,
+    repositoryContextXml,
+  });
 
   const wrappedXml = wrapContextXml({
     compression: headroomActuallyCompressed ? "tree-sitter+headroom" : "tree-sitter",
@@ -138,6 +148,8 @@ export async function buildRepositoryContextBundle(options = {}) {
     contextXml: headroomActuallyCompressed ? headroomContent : repositoryContextXml,
     headroomResult,
     headroomBaseUrl,
+    headroomActuallyCompressed,
+    headroomFallbackReason,
   });
 
   writeFileSync(llmOutput, wrappedXml, "utf8");
@@ -151,6 +163,8 @@ export async function buildRepositoryContextBundle(options = {}) {
       contextXml: headroomContent,
       headroomResult,
       headroomBaseUrl,
+      headroomActuallyCompressed,
+      headroomFallbackReason,
     }),
     "utf8",
   );
@@ -242,6 +256,35 @@ async function probeHeadroomProxy(baseUrl) {
   }
 }
 
+function resolveHeadroomCompressionConfig() {
+  const config = {
+    compressUserMessages: process.env.HEADROOM_CONTEXT_COMPRESS_USER_MESSAGES !== "0",
+    protectRecent: Number(process.env.HEADROOM_CONTEXT_PROTECT_RECENT || 0),
+    targetRatio: Number(process.env.HEADROOM_CONTEXT_TARGET_RATIO || DEFAULT_HEADROOM_TARGET_RATIO),
+  };
+
+  if (process.env.HEADROOM_CONTEXT_FORCE_KOMPRESS === "1") {
+    config.forceKompress = true;
+  }
+  if (process.env.HEADROOM_CONTEXT_MIN_TOKENS) {
+    config.minTokensToCompress = Number(process.env.HEADROOM_CONTEXT_MIN_TOKENS);
+  }
+  return config;
+}
+
+function resolveHeadroomFallbackReason({
+  proxyReachable,
+  headroomResult,
+  headroomContent,
+  repositoryContextXml,
+}) {
+  if (!proxyReachable) return "proxy_unreachable";
+  if (!headroomResult.compressed) return "headroom_not_compressed";
+  if (Number(headroomResult.tokensSaved || 0) <= 0) return "no_positive_token_savings";
+  if (headroomContent === repositoryContextXml) return "content_unchanged";
+  return "unknown";
+}
+
 function wrapContextXml({
   compression,
   generator,
@@ -249,13 +292,17 @@ function wrapContextXml({
   contextXml,
   headroomResult,
   headroomBaseUrl,
+  headroomActuallyCompressed,
+  headroomFallbackReason,
 }) {
   const metrics = [
-    `compressed="${headroomResult.compressed ? "true" : "false"}"`,
+    `compressed="${headroomActuallyCompressed ? "true" : "false"}"`,
     `tokens_before="${headroomResult.tokensBefore || 0}"`,
     `tokens_after="${headroomResult.tokensAfter || 0}"`,
     `tokens_saved="${headroomResult.tokensSaved || 0}"`,
     `compression_ratio="${headroomResult.compressionRatio || 1}"`,
+    `fallback_used="${headroomActuallyCompressed ? "false" : "true"}"`,
+    `fallback_reason="${escapeXml(headroomFallbackReason)}"`,
     `proxy="${escapeXml(headroomBaseUrl)}"`,
   ].join(" ");
 
