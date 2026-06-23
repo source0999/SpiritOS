@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { compress } from "headroom-ai";
 
 const repoRoot = resolve(import.meta.dirname, "..");
+const visibleRepoRoot = process.env.REPOMIX_VISIBLE_REPO_ROOT || (repoRoot.endsWith("/SpiritOS-cleanup-20260621") ? "/home/source/SpiritOS" : repoRoot);
 const DEFAULT_HEADROOM_PORT = 8797;
 const DEFAULT_HEADROOM_BASE_URL = `http://127.0.0.1:${DEFAULT_HEADROOM_PORT}`;
 const DEFAULT_TOKEN_BUDGET = 80_000;
@@ -28,7 +29,7 @@ export function resolveContextProfile(options = {}) {
     configPath,
     slug,
     llmOutput: resolve(repoRoot, `repomix-output${slug}.xml`),
-    visibleOutput: resolve(repoRoot, `${profile}-context.xml`),
+    visibleOutput: resolve(visibleRepoRoot, `${profile}-context.xml`),
     astOutput: resolve(repoRoot, `repomix-output${slug}.ast.xml`),
     headroomOutput: resolve(repoRoot, `repomix-output${slug}.headroom.xml`),
     innerOutput: resolve(repoRoot, `repomix-output${slug}.ast-inner.xml`),
@@ -182,6 +183,7 @@ export async function buildRepositoryContextBundle(options = {}) {
   const llmBytes = readFileSync(llmOutput).byteLength;
   console.log(`Profile: ${profile} (config: ${configPath})`);
   console.log(`Repo root: ${repoRoot}`);
+  console.log(`Visible repo root: ${visibleRepoRoot}`);
   console.log(`Open visible repo-root XML: ${visibleOutput}`);
   console.log(`Ignored verifier XML: ${llmOutput}`);
   console.log(`LLM context written to ${visibleOutput} (${formatBytes(llmBytes)})`);
