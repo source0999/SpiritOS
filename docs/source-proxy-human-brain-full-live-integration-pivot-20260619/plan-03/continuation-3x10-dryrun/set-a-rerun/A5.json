@@ -3,6 +3,7 @@
   "blocked_reasons": [],
   "code_owned_packet_shell_status": {
     "action_errors": [],
+    "action_intent_normalizations": [],
     "code_owned_fields": [
       "prompt_id",
       "user_goal",
@@ -30,6 +31,38 @@
       "confidence_reason"
     ],
     "model_provenance_stripped": [],
+    "raw_source_registry": [
+      {
+        "evidence_id": "research:1",
+        "source_host": "kunalganglani.com",
+        "source_url": "https://www.kunalganglani.com/blog/ollama-vs-lm-studio"
+      },
+      {
+        "evidence_id": "research:2",
+        "source_host": "roksblog.de",
+        "source_url": "https://www.roksblog.de/openclaw-local-llms-running-your-own-ai-agent-in-a-homelab/"
+      },
+      {
+        "evidence_id": "research:3",
+        "source_host": "reddit.com",
+        "source_url": "https://www.reddit.com/r/ollama/comments/1nl0d45/ollama_or_lm_studio/"
+      },
+      {
+        "evidence_id": "research:4",
+        "source_host": "youtube.com",
+        "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
+      },
+      {
+        "evidence_id": "research:5",
+        "source_host": "devtoolhub.com",
+        "source_url": "https://devtoolhub.com/install-lm-studio-ollama/"
+      },
+      {
+        "evidence_id": "research:6",
+        "source_host": "compute-market.com",
+        "source_url": "https://www.compute-market.com/blog/how-to-set-up-ollama-local-ai-guide-2026"
+      }
+    ],
     "source_urls_from_code": true,
     "status": "assembled"
   },
@@ -67,6 +100,7 @@
     ],
     "code_owned_packet_shell_status": {
       "action_errors": [],
+      "action_intent_normalizations": [],
       "code_owned_fields": [
         "prompt_id",
         "user_goal",
@@ -94,6 +128,38 @@
         "confidence_reason"
       ],
       "model_provenance_stripped": [],
+      "raw_source_registry": [
+        {
+          "evidence_id": "research:1",
+          "source_host": "kunalganglani.com",
+          "source_url": "https://www.kunalganglani.com/blog/ollama-vs-lm-studio"
+        },
+        {
+          "evidence_id": "research:2",
+          "source_host": "roksblog.de",
+          "source_url": "https://www.roksblog.de/openclaw-local-llms-running-your-own-ai-agent-in-a-homelab/"
+        },
+        {
+          "evidence_id": "research:3",
+          "source_host": "reddit.com",
+          "source_url": "https://www.reddit.com/r/ollama/comments/1nl0d45/ollama_or_lm_studio/"
+        },
+        {
+          "evidence_id": "research:4",
+          "source_host": "youtube.com",
+          "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
+        },
+        {
+          "evidence_id": "research:5",
+          "source_host": "devtoolhub.com",
+          "source_url": "https://devtoolhub.com/install-lm-studio-ollama/"
+        },
+        {
+          "evidence_id": "research:6",
+          "source_host": "compute-market.com",
+          "source_url": "https://www.compute-market.com/blog/how-to-set-up-ollama-local-ai-guide-2026"
+        }
+      ],
       "source_urls_from_code": true,
       "status": "assembled"
     },
@@ -129,10 +195,10 @@
       }
     ],
     "expected_lane": "validated_decision_packet",
-    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+    "failure_classification": "PASS",
     "fallback_reason": "",
     "fallback_used": false,
-    "human_action_required": true,
+    "human_action_required": false,
     "local_api_cli_distinction": "local_ollama_cli_or_http",
     "model_call_attempted": true,
     "model_call_result_or_failure_class": "code_owned_packet_validated",
@@ -143,12 +209,9 @@
       "parse_status": "ok",
       "status": "valid"
     },
-    "next_recommended_action": "inspect failed_gates and make one bounded fix",
-    "productive_reasons": [
-      "research_materially_changed_output",
-      "research_change_source_not_from_raw_sources"
-    ],
-    "productive_status": "NEEDS_FIX",
+    "next_recommended_action": "no action",
+    "productive_reasons": [],
+    "productive_status": "PASS",
     "prompt_id": "A5",
     "protected_path_block_result": "not_required",
     "provider_availability": {
@@ -210,7 +273,7 @@
       "tool": "validated_decision_packet_renderer"
     },
     "task_class": "plan",
-    "task_id": "task_7cacb1792196",
+    "task_id": "task_d8fc1cc238ea",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -226,13 +289,10 @@
     }
   },
   "downstream_consumed": true,
-  "failed_gates": [
-    "research_materially_changed_output",
-    "research_change_source_not_from_raw_sources"
-  ],
+  "failed_gates": [],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
-  "final_status": "NEEDS_FIX",
+  "final_status": "PASS",
   "handoff_or_context_prompt_created_when_useful": true,
   "internet_required": true,
   "jellyfin_or_media_mutation_detected": false,
@@ -252,7 +312,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_526e665d624f4640",
+  "latest_consumer_event_id": "consumer_f5c8c85124524fe4",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -277,10 +337,7 @@
     "parse_status": "ok",
     "status": "valid"
   },
-  "notes": [
-    "research_materially_changed_output",
-    "research_change_source_not_from_raw_sources"
-  ],
+  "notes": [],
   "packet_lanes_available": [
     {
       "lane_name": "ollama_qwen2.5-coder_7b",
@@ -370,17 +427,17 @@
     "roksblog.de",
     "reddit.com"
   ],
-  "research_materially_changed_output": false,
+  "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_7cacb1792196",
-  "trace_id": "trace_04ede3e2dde742ab",
-  "user_goal_reached": false,
+  "task_id": "task_d8fc1cc238ea",
+  "trace_id": "trace_9c97a2a17f434b7b",
+  "user_goal_reached": true,
   "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation Implement a hybrid AI architecture leveraging existing Dell, Mac, and Windows machines to avoid new hardware purchases, prioritize local processing on the Mac for privacy, and use Windows for scalable cloud tasks. Required terms: dell, mac, windows, no new hardware, avoid buying, privacy, local, cloud, ollama, role. Research findings that changed the plan - Finding: Ollama vs LM Studio 2026: Dev Tool Comparison - Kunal Ganglani: Ma",
+  "work_product_summary": "Recommendation Leverage existing Mac and Dell hardware for AI tasks, prioritizing local processing on the Mac and routing complex tasks to the Dell. Avoid new hardware purchases and consider cloud solutions for scalability. Required terms: dell, mac, windows, no new hardware, avoid buying, privacy, local, cloud, ollama, role. Research findings that changed the plan - Finding: Ollama vs LM Studio 2026: Dev Tool Comparison - Kunal Ganglani: May 10,",
   "work_product_type": "plan"
 }

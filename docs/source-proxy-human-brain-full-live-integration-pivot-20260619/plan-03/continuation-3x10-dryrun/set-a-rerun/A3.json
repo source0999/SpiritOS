@@ -1,13 +1,103 @@
 {
-  "auto_fix_attempts": 0,
+  "auto_fix_attempts": 2,
   "blocked_reasons": [],
+  "code_owned_packet_shell_status": {},
   "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 0,
+  "decision_packet_validated": false,
+  "decision_packet_validation_errors": [],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_default",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama"
+      }
+    ],
+    "code_owned_packet_shell_status": {},
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A3.task.final.raw.json"
+    ],
+    "degraded_lanes": [],
+    "expected_lane": "live_model_work_product",
+    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": true,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "NEEDS_FIX",
+    "model_decision_body_status": {},
+    "next_recommended_action": "inspect failed_gates and make one bounded fix",
+    "productive_reasons": [
+      "research_materially_changed_output",
+      "repo_context_used",
+      "limitations_stated",
+      "handoff_created",
+      "research_change_no_specific_decision",
+      "research_change_source_not_from_raw_sources"
+    ],
+    "productive_status": "NEEDS_FIX",
+    "prompt_id": "A3",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_default",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama"
+        }
+      ],
+      "unavailable": []
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.json",
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A3",
+    "selected_lane": "ollama_default",
+    "selected_model_provider_tool": {
+      "model": "gemma3n:e4b",
+      "provider": "ollama",
+      "tool": "stage4r_live_work_product"
+    },
+    "task_class": "plan",
+    "task_id": "task_0eb0ef0d1bfc",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": false,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A3.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
   "downstream_consumed": true,
-  "failed_gates": [],
+  "failed_gates": [
+    "research_materially_changed_output",
+    "repo_context_used",
+    "limitations_stated",
+    "handoff_created",
+    "research_change_no_specific_decision",
+    "research_change_source_not_from_raw_sources"
+  ],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
-  "final_status": "PASS",
-  "handoff_or_context_prompt_created_when_useful": true,
+  "final_status": "NEEDS_FIX",
+  "handoff_or_context_prompt_created_when_useful": false,
   "internet_required": true,
   "jellyfin_or_media_mutation_detected": false,
   "lanes_invoked": [
@@ -25,22 +115,42 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_6b5b9baa4439410e",
-  "limitations_stated": true,
+  "latest_consumer_event_id": "consumer_29717a8c498a4794",
+  "limitations_stated": false,
   "live_search_used": true,
   "local_fallback_used": false,
+  "mac_evidence_signals": [],
   "mac_invoked": false,
   "mac_required": false,
   "mac_status": "not_required",
   "mac_system_status_alone_used_as_pass": false,
   "max_auto_fix_attempts": 3,
   "model": "gemma3n:e4b",
-  "notes": [],
+  "model_decision_body_status": {},
+  "notes": [
+    "research_materially_changed_output",
+    "repo_context_used",
+    "limitations_stated",
+    "handoff_created",
+    "research_change_no_specific_decision",
+    "research_change_source_not_from_raw_sources"
+  ],
+  "packet_lanes_available": [],
+  "packet_lanes_unavailable": [],
+  "packet_model": "",
+  "packet_model_lane": "",
+  "packet_model_provider": "",
   "patch_bucket": "",
   "patch_required": false,
   "policy_event_present": false,
   "policy_event_required": false,
   "prompt_id": "A3",
+  "query_variant_source_counts": [
+    6
+  ],
+  "query_variants_tried": [
+    "Android Jetpack Compose share intent local task app receipt polling"
+  ],
   "qwen_activated": false,
   "qwen_required": false,
   "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -49,7 +159,7 @@
   "recovery_required": false,
   "repair_applied": false,
   "repair_required": false,
-  "repo_context_used": true,
+  "repo_context_used": false,
   "repo_files_read": [
     "source_proxy/api/long_running_tasks.py",
     "src/app/v1/tasks/long-running/route.ts",
@@ -65,21 +175,22 @@
     "repo_context"
   ],
   "research_marker_hits": [
-    "kotlinlang.org",
     "medium.com",
+    "kotlin multiplatform samples",
+    "stackoverflow.com",
     "youtube.com"
   ],
-  "research_materially_changed_output": true,
+  "research_materially_changed_output": false,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_f5b9fefaf1b4",
-  "trace_id": "trace_433b5c55cbe147d3",
-  "user_goal_reached": true,
+  "task_id": "task_0eb0ef0d1bfc",
+  "trace_id": "trace_d871c46992d946e3",
+  "user_goal_reached": false,
   "user_prompt": "figure out the best path for an android app that lets me start proxy tasks from my phone and check receipts",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "## Plan for Android App to Start Proxy Tasks and Check Receipts **Recommendation:** Develop an Android application that leverages Android Intents to communicate with a backend proxy service. The app will allow users to initiate proxy tasks and receive updates, including receipt information, through standard Android UI elements and system integrations. **Evidence Used:** * **Android Intents for Data Sharing:** The Android developer documentation c",
+  "work_product_summary": "Recommendation: The best path for an Android app to start proxy tasks and check receipts is to leverage Android Intents for task initiation and data transfer, potentially utilizing the Kotlin Multiplatform framework for cross-platform consistency. A share button in the Compose UI should be implemented to facilitate receipt sharing. Data sharing between screens within the app should be explored using established Android mechanisms. Research-to-dec",
   "work_product_type": "plan"
 }

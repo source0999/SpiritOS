@@ -1,6 +1,6 @@
 # Stage 4R5 Preflight
 
-- current HEAD: `143c0e6d6d990c329c7e0d6d9e4493e04e610c05`
+- current HEAD: `7d4f3054f877e13c02572574d5dc0f5f101f49b4`
 - staged files count: 0
 - raw evidence writable: yes
 - scope confirmation: Stage 4R5 only; align structured packet validator, renderer, and hardened grader for A2/A5/A9; no Set B/C, Stage 5, Plan 4, push, media/Jellyfin mutation, route replacement, or new engine.

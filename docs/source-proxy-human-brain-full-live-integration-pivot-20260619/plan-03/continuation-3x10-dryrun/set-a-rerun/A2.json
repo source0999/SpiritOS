@@ -3,6 +3,7 @@
   "blocked_reasons": [],
   "code_owned_packet_shell_status": {
     "action_errors": [],
+    "action_intent_normalizations": [],
     "code_owned_fields": [
       "prompt_id",
       "user_goal",
@@ -29,8 +30,38 @@
       "action_intent",
       "confidence_reason"
     ],
-    "model_provenance_stripped": [
-      "manifest.json"
+    "model_provenance_stripped": [],
+    "raw_source_registry": [
+      {
+        "evidence_id": "research:1",
+        "source_host": "developer.chrome.com",
+        "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
+      },
+      {
+        "evidence_id": "research:2",
+        "source_host": "stackoverflow.com",
+        "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+      },
+      {
+        "evidence_id": "research:3",
+        "source_host": "developer.chrome.com",
+        "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
+      },
+      {
+        "evidence_id": "research:4",
+        "source_host": "developer.mozilla.org",
+        "source_url": "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging"
+      },
+      {
+        "evidence_id": "research:5",
+        "source_host": "optymized.net",
+        "source_url": "https://optymized.net/blog/building-chrome-extensions"
+      },
+      {
+        "evidence_id": "research:6",
+        "source_host": "cwskit.khanakia.com",
+        "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+      }
     ],
     "source_urls_from_code": true,
     "status": "assembled"
@@ -69,6 +100,7 @@
     ],
     "code_owned_packet_shell_status": {
       "action_errors": [],
+      "action_intent_normalizations": [],
       "code_owned_fields": [
         "prompt_id",
         "user_goal",
@@ -95,8 +127,38 @@
         "action_intent",
         "confidence_reason"
       ],
-      "model_provenance_stripped": [
-        "manifest.json"
+      "model_provenance_stripped": [],
+      "raw_source_registry": [
+        {
+          "evidence_id": "research:1",
+          "source_host": "developer.chrome.com",
+          "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
+        },
+        {
+          "evidence_id": "research:2",
+          "source_host": "stackoverflow.com",
+          "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+        },
+        {
+          "evidence_id": "research:3",
+          "source_host": "developer.chrome.com",
+          "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
+        },
+        {
+          "evidence_id": "research:4",
+          "source_host": "developer.mozilla.org",
+          "source_url": "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging"
+        },
+        {
+          "evidence_id": "research:5",
+          "source_host": "optymized.net",
+          "source_url": "https://optymized.net/blog/building-chrome-extensions"
+        },
+        {
+          "evidence_id": "research:6",
+          "source_host": "cwskit.khanakia.com",
+          "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+        }
       ],
       "source_urls_from_code": true,
       "status": "assembled"
@@ -133,10 +195,10 @@
       }
     ],
     "expected_lane": "validated_decision_packet",
-    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+    "failure_classification": "PASS",
     "fallback_reason": "",
     "fallback_used": false,
-    "human_action_required": true,
+    "human_action_required": false,
     "local_api_cli_distinction": "local_ollama_cli_or_http",
     "model_call_attempted": true,
     "model_call_result_or_failure_class": "code_owned_packet_validated",
@@ -147,11 +209,9 @@
       "parse_status": "ok",
       "status": "valid"
     },
-    "next_recommended_action": "inspect failed_gates and make one bounded fix",
-    "productive_reasons": [
-      "research_change_source_not_from_raw_sources"
-    ],
-    "productive_status": "NEEDS_FIX",
+    "next_recommended_action": "no action",
+    "productive_reasons": [],
+    "productive_status": "PASS",
     "prompt_id": "A2",
     "protected_path_block_result": "not_required",
     "provider_availability": {
@@ -213,7 +273,7 @@
       "tool": "validated_decision_packet_renderer"
     },
     "task_class": "plan",
-    "task_id": "task_cb7d7a5dfca3",
+    "task_id": "task_d2bbe0960c3d",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -229,12 +289,10 @@
     }
   },
   "downstream_consumed": true,
-  "failed_gates": [
-    "research_change_source_not_from_raw_sources"
-  ],
+  "failed_gates": [],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
-  "final_status": "NEEDS_FIX",
+  "final_status": "PASS",
   "handoff_or_context_prompt_created_when_useful": true,
   "internet_required": true,
   "jellyfin_or_media_mutation_detected": false,
@@ -254,7 +312,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_1616cb371cee4091",
+  "latest_consumer_event_id": "consumer_120e0b0356384383",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -272,9 +330,7 @@
     "parse_status": "ok",
     "status": "valid"
   },
-  "notes": [
-    "research_change_source_not_from_raw_sources"
-  ],
+  "notes": [],
   "packet_lanes_available": [
     {
       "lane_name": "ollama_qwen2.5-coder_7b",
@@ -365,21 +421,21 @@
   "research_marker_hits": [
     "developer.chrome.com",
     "stackoverflow.com",
-    "cwskit.khanakia.com",
     "developer.mozilla.org",
-    "optymized.net"
+    "optymized.net",
+    "cwskit.khanakia.com"
   ],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_cb7d7a5dfca3",
-  "trace_id": "trace_edb09400bb974261",
-  "user_goal_reached": false,
+  "task_id": "task_d2bbe0960c3d",
+  "trace_id": "trace_ecd8926b1cfe45b7",
+  "user_goal_reached": true,
   "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation Review current architecture against Manifest V3 requirements, update permissions, ensure service worker lifecycle support, define clear payload/local API boundaries, and prioritize key features for the MVP. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: Native messaging - Chrome for D",
+  "work_product_summary": "Recommendation Focus on essential features, ensure compliance with privacy regulations, and design robust payload handling within the defined local API boundaries. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: Native messaging - Chrome for Developers: The maximum size of the message sent to the nat",
   "work_product_type": "plan"
 }

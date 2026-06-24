@@ -214,6 +214,54 @@ def test_invalid_action_intent_remains_visible() -> None:
     )
 
 
+def test_test_later_action_intent_maps_to_defer_with_receipt_detail() -> None:
+    runner = _load_runner()
+    body = _valid_model_decision_body()
+    body["decisions"][0]["action_intent"] = "test later"
+
+    packet, shell_status = runner.assemble_code_owned_decision_packet(
+        "A9",
+        {"user_prompt": "compare current local llm tools", "expected_work_product": "research_pack"},
+        runner.synthetic_digest("A9"),
+        body,
+        {"lane_name": "ollama_qwen2.5-coder_7b", "provider_type": "ollama", "model": "qwen2.5-coder:7b"},
+        "",
+    )
+
+    assert shell_status["action_errors"] == []
+    assert shell_status["action_intent_normalizations"][0] == {
+        "index": 0,
+        "action_intent_original": "test later",
+        "action_intent_normalized": "defer",
+        "action_intent_normalization_reason": "exact_semantic_alias:test_later_to_defer",
+    }
+    assert packet["decisions_changed_by_evidence"][0]["decision"].startswith("defer ")
+
+
+def test_skip_action_intent_maps_to_reject_with_receipt_detail() -> None:
+    runner = _load_runner()
+    body = _valid_model_decision_body()
+    body["decisions"][0]["action_intent"] = "skip"
+
+    packet, shell_status = runner.assemble_code_owned_decision_packet(
+        "A9",
+        {"user_prompt": "compare current local llm tools", "expected_work_product": "research_pack"},
+        runner.synthetic_digest("A9"),
+        body,
+        {"lane_name": "ollama_qwen2.5-coder_7b", "provider_type": "ollama", "model": "qwen2.5-coder:7b"},
+        "",
+    )
+
+    assert shell_status["action_errors"] == []
+    assert shell_status["action_intent_normalizations"][0] == {
+        "index": 0,
+        "action_intent_original": "skip",
+        "action_intent_normalized": "reject",
+        "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
+    }
+    assert packet["decisions_changed_by_evidence"][0]["decision"].startswith("reject ")
+
+
 def test_missing_real_sources_do_not_fabricate_sources() -> None:
     runner = _load_runner()
     digest = runner.synthetic_digest("A2")
@@ -251,6 +299,7 @@ def test_code_owned_shell_status_contains_runtime_truth() -> None:
     assert "evidence_items" in shell_status["code_owned_fields"]
     assert "decision_summary" in shell_status["model_owned_fields_used"]
     assert shell_status["model_decision_body_status"]["status"] == "valid"
+    assert len(shell_status["raw_source_registry"]) >= 3
 
 
 def test_garbled_token_guard_ignores_real_source_urls() -> None:
@@ -283,6 +332,31 @@ def test_renderer_research_blocks_are_tied_to_source_facts() -> None:
     assert len(blocks) >= 3
     assert "research_change_finding_not_tied_to_source_fact" not in errors
     assert "research_change_source_not_from_raw_sources" not in errors
+
+
+def test_research_parser_ignores_repo_source_lines_after_research_section() -> None:
+    runner = _load_runner()
+    digest = runner.synthetic_digest("A2")
+    packet, _shell_status = runner.assemble_code_owned_decision_packet(
+        "A2",
+        {"user_prompt": "send selected browser text to Source Proxy", "expected_work_product": "plan"},
+        digest,
+        _valid_model_decision_body(),
+        {"lane_name": "ollama_qwen2.5-coder_7b", "provider_type": "ollama", "model": "qwen2.5-coder:7b"},
+        "",
+    )
+    work = runner.render_work_from_decision_packet("A2", packet, digest)
+    work += "\nRepo/Mac evidence that changed the plan\n"
+    work += "- Evidence: 17 Source: source_proxy/api/long_running_tasks.py (repo); relevance: repo context only\n"
+
+    blocks, errors = runner.research_change_blocks(
+        work,
+        [{"title": fact["title"], "url": fact["url"], "content": fact["finding"]} for fact in digest["source_facts"]],
+    )
+
+    assert len(blocks) >= 3
+    assert "research_change_source_not_from_raw_sources" not in errors
+    assert all("source_proxy/" not in block["source"] for block in blocks)
 
 
 def test_packet_assembler_has_no_prompt_specific_branches() -> None:

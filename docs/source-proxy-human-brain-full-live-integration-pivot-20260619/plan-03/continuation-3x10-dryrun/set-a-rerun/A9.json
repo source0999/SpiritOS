@@ -2,8 +2,20 @@
   "auto_fix_attempts": 0,
   "blocked_reasons": [],
   "code_owned_packet_shell_status": {
-    "action_errors": [
-      "invalid_action_intent:test later"
+    "action_errors": [],
+    "action_intent_normalizations": [
+      {
+        "action_intent_normalization_reason": "exact_semantic_alias:test_later_to_defer",
+        "action_intent_normalized": "defer",
+        "action_intent_original": "test later",
+        "index": 1
+      },
+      {
+        "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
+        "action_intent_normalized": "reject",
+        "action_intent_original": "skip",
+        "index": 3
+      }
     ],
     "code_owned_fields": [
       "prompt_id",
@@ -16,13 +28,11 @@
     ],
     "local_api_truth_from_lane_metadata": true,
     "model_decision_body_status": {
-      "decision_count": 3,
-      "errors": [
-        "model_decision_body_invalid_action_intent:test later:1"
-      ],
-      "parse_error": "non_json_wrapping_text",
-      "parse_status": "wrapped_json_extracted",
-      "status": "invalid"
+      "decision_count": 4,
+      "errors": [],
+      "parse_error": "",
+      "parse_status": "ok",
+      "status": "valid"
     },
     "model_owned_fields_used": [
       "decision_summary",
@@ -34,16 +44,45 @@
       "confidence_reason"
     ],
     "model_provenance_stripped": [],
+    "raw_source_registry": [
+      {
+        "evidence_id": "research:1",
+        "source_host": "github.com",
+        "source_url": "https://github.com/rafska/awesome-local-llm"
+      },
+      {
+        "evidence_id": "research:2",
+        "source_host": "reddit.com",
+        "source_url": "https://www.reddit.com/r/LocalLLaMA/comments/1oclug7/getting_most_out_of_your_local_llm_setup/"
+      },
+      {
+        "evidence_id": "research:3",
+        "source_host": "docs.openhands.dev",
+        "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
+      },
+      {
+        "evidence_id": "research:4",
+        "source_host": "codersera.com",
+        "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
+      },
+      {
+        "evidence_id": "research:5",
+        "source_host": "sitepoint.com",
+        "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
+      },
+      {
+        "evidence_id": "research:6",
+        "source_host": "developers.redhat.com",
+        "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+      }
+    ],
     "source_urls_from_code": true,
     "status": "assembled"
   },
-  "consumer_subsystem": "long_running_status_observer",
-  "decision_packet_attempts": 9,
-  "decision_packet_validated": false,
-  "decision_packet_validation_errors": [
-    "model_decision_body_invalid_action_intent:test later",
-    "model_decision_body_invalid_action_intent:test later:1"
-  ],
+  "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 4,
+  "decision_packet_validated": true,
+  "decision_packet_validation_errors": [],
   "diagnostic_debugger": {
     "anti_cheat_flags": {
       "fake_go_detected": false,
@@ -73,8 +112,20 @@
       }
     ],
     "code_owned_packet_shell_status": {
-      "action_errors": [
-        "invalid_action_intent:test later"
+      "action_errors": [],
+      "action_intent_normalizations": [
+        {
+          "action_intent_normalization_reason": "exact_semantic_alias:test_later_to_defer",
+          "action_intent_normalized": "defer",
+          "action_intent_original": "test later",
+          "index": 1
+        },
+        {
+          "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
+          "action_intent_normalized": "reject",
+          "action_intent_original": "skip",
+          "index": 3
+        }
       ],
       "code_owned_fields": [
         "prompt_id",
@@ -87,13 +138,11 @@
       ],
       "local_api_truth_from_lane_metadata": true,
       "model_decision_body_status": {
-        "decision_count": 3,
-        "errors": [
-          "model_decision_body_invalid_action_intent:test later:1"
-        ],
-        "parse_error": "non_json_wrapping_text",
-        "parse_status": "wrapped_json_extracted",
-        "status": "invalid"
+        "decision_count": 4,
+        "errors": [],
+        "parse_error": "",
+        "parse_status": "ok",
+        "status": "valid"
       },
       "model_owned_fields_used": [
         "decision_summary",
@@ -105,6 +154,38 @@
         "confidence_reason"
       ],
       "model_provenance_stripped": [],
+      "raw_source_registry": [
+        {
+          "evidence_id": "research:1",
+          "source_host": "github.com",
+          "source_url": "https://github.com/rafska/awesome-local-llm"
+        },
+        {
+          "evidence_id": "research:2",
+          "source_host": "reddit.com",
+          "source_url": "https://www.reddit.com/r/LocalLLaMA/comments/1oclug7/getting_most_out_of_your_local_llm_setup/"
+        },
+        {
+          "evidence_id": "research:3",
+          "source_host": "docs.openhands.dev",
+          "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
+        },
+        {
+          "evidence_id": "research:4",
+          "source_host": "codersera.com",
+          "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
+        },
+        {
+          "evidence_id": "research:5",
+          "source_host": "sitepoint.com",
+          "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
+        },
+        {
+          "evidence_id": "research:6",
+          "source_host": "developers.redhat.com",
+          "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+        }
+      ],
       "source_urls_from_code": true,
       "status": "assembled"
     },
@@ -140,32 +221,23 @@
       }
     ],
     "expected_lane": "validated_decision_packet",
-    "failure_classification": "MODEL_PACKET_VALIDATION_FAILURE",
+    "failure_classification": "PASS",
     "fallback_reason": "",
     "fallback_used": false,
-    "human_action_required": true,
+    "human_action_required": false,
     "local_api_cli_distinction": "local_ollama_cli_or_http",
     "model_call_attempted": true,
-    "model_call_result_or_failure_class": "packet_validation_failed",
+    "model_call_result_or_failure_class": "code_owned_packet_validated",
     "model_decision_body_status": {
-      "decision_count": 3,
-      "errors": [
-        "model_decision_body_invalid_action_intent:test later:1"
-      ],
-      "parse_error": "non_json_wrapping_text",
-      "parse_status": "wrapped_json_extracted",
-      "status": "invalid"
+      "decision_count": 4,
+      "errors": [],
+      "parse_error": "",
+      "parse_status": "ok",
+      "status": "valid"
     },
-    "next_recommended_action": "inspect decision_packet_validation_errors and rerun bounded Set A slice",
-    "productive_reasons": [
-      "research_materially_changed_output",
-      "repo_context_used",
-      "a9_clean_tool_comparison",
-      "a9_current_limitations",
-      "a9_proxy_setup_recommendation",
-      "work_product_too_short"
-    ],
-    "productive_status": "NEEDS_FIX",
+    "next_recommended_action": "no action",
+    "productive_reasons": [],
+    "productive_status": "PASS",
     "prompt_id": "A9",
     "protected_path_block_result": "not_required",
     "provider_availability": {
@@ -224,10 +296,10 @@
     "selected_model_provider_tool": {
       "model": "hermes4:latest",
       "provider": "ollama",
-      "tool": "stage4r_live_work_product"
+      "tool": "validated_decision_packet_renderer"
     },
     "task_class": "research_pack",
-    "task_id": "task_9948f900dcf4",
+    "task_id": "task_6db0ace5e8f0",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -243,17 +315,10 @@
     }
   },
   "downstream_consumed": true,
-  "failed_gates": [
-    "research_materially_changed_output",
-    "repo_context_used",
-    "a9_clean_tool_comparison",
-    "a9_current_limitations",
-    "a9_proxy_setup_recommendation",
-    "work_product_too_short"
-  ],
+  "failed_gates": [],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
-  "final_status": "NEEDS_FIX",
+  "final_status": "PASS",
   "handoff_or_context_prompt_created_when_useful": true,
   "internet_required": true,
   "jellyfin_or_media_mutation_detected": false,
@@ -272,7 +337,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_de5467a07ca54c07",
+  "latest_consumer_event_id": "consumer_4f1c0b7f7c1e4cc3",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -284,22 +349,13 @@
   "max_auto_fix_attempts": 3,
   "model": "gemma3n:e4b",
   "model_decision_body_status": {
-    "decision_count": 3,
-    "errors": [
-      "model_decision_body_invalid_action_intent:test later:1"
-    ],
-    "parse_error": "non_json_wrapping_text",
-    "parse_status": "wrapped_json_extracted",
-    "status": "invalid"
+    "decision_count": 4,
+    "errors": [],
+    "parse_error": "",
+    "parse_status": "ok",
+    "status": "valid"
   },
-  "notes": [
-    "research_materially_changed_output",
-    "repo_context_used",
-    "a9_clean_tool_comparison",
-    "a9_current_limitations",
-    "a9_proxy_setup_recommendation",
-    "work_product_too_short"
-  ],
+  "notes": [],
   "packet_lanes_available": [
     {
       "lane_name": "ollama_qwen2.5-coder_7b",
@@ -370,7 +426,7 @@
   "recovery_required": false,
   "repair_applied": false,
   "repair_required": false,
-  "repo_context_used": false,
+  "repo_context_used": true,
   "repo_files_read": [
     "source_proxy/routing/ollama_route.py",
     "source_proxy/routing/litellm_router.py",
@@ -385,18 +441,23 @@
     "current_research",
     "repo_context"
   ],
-  "research_marker_hits": [],
-  "research_materially_changed_output": false,
+  "research_marker_hits": [
+    "github.com",
+    "reddit.com",
+    "docs.openhands.dev",
+    "codersera.com"
+  ],
+  "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_9948f900dcf4",
-  "trace_id": "trace_1d1633e703924021",
-  "user_goal_reached": false,
+  "task_id": "task_6db0ace5e8f0",
+  "trace_id": "trace_8f53afd009db4da5",
+  "user_goal_reached": true,
   "user_prompt": "research current local llm tools and tell me what is worth using for my proxy setup this month",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation NEEDS_FIX: live decision packet did not validate, so no deterministic renderer output was accepted. Limits - The hardened grader remains authoritative. Next Handoff Goal: inspect decision packet validation errors and rerun only with valid live JSON.",
+  "work_product_summary": "Recommendation Use Ollama and vLLM immediately for their open-source nature and recent updates, test LM Studio later, and skip it for now due to monetization concerns. Required terms: comparison, proxy, use now, test later, skip, recency, ollama, lm studio. Research findings that changed the plan - Finding: rafska/awesome-local-llm - GitHub: Inference platforms. LM Studio - discover, download and run local LLMs ... llama.cpp - LLM inference in C/",
   "work_product_type": "research_pack"
 }

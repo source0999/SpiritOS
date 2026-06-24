@@ -1,15 +1,15 @@
 # Stage 4R7 Preflight
 
-- current HEAD: `143c0e6d6d990c329c7e0d6d9e4493e04e610c05`
+- current HEAD: `7d4f3054f877e13c02572574d5dc0f5f101f49b4`
 - staged files count: 0
 - raw evidence writable: yes
 - scope confirmation: Stage 4R7 only; patch `_stage4r_runner.py` packet model-lane escalation and rerun A2/A5/A9 only; no Set B/C, Stage 5, Plan 4, push, media/Jellyfin mutation, route replacement, or new engine.
 
 ## Current A2/A5/A9 Blockers
 
-- A2: final_status=NEEDS_FIX decision_packet_validated=True source_count=6 blockers=research_materially_changed_output; research_change_finding_not_tied_to_source_fact; research_change_source_not_from_raw_sources
-- A5: final_status=NEEDS_FIX decision_packet_validated=True source_count=6 blockers=research_materially_changed_output; research_change_source_not_from_raw_sources
-- A9: final_status=NEEDS_FIX decision_packet_validated=False source_count=6 blockers=research_materially_changed_output; repo_context_used; a9_clean_tool_comparison; a9_current_limitations; a9_proxy_setup_recommendation; work_product_too_short
+- A2: final_status=PASS decision_packet_validated=True source_count=6 blockers=
+- A5: final_status=PASS decision_packet_validated=True source_count=6 blockers=
+- A9: final_status=PASS decision_packet_validated=True source_count=6 blockers=
 
 ## Configured Model/Provider Lanes
 

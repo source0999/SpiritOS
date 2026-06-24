@@ -9,7 +9,7 @@
 - Set A rerun JSON shape validation: PASS
 - Set A 4R7 requested acceptance validation: FAIL
 - JSON shape validation errors: none
-- acceptance validation errors: ['A2: not PASS after 4R7', 'A5: not PASS after 4R7', 'A5: research_materially_changed_output false after 4R7', 'A9: expected PASS or BLOCKED_ENV, got NEEDS_FIX']
+- acceptance validation errors: ['Set A pass_count is 3, expected 9 with A9 blocked or 10']
 - Plan 3 operator: FAIL
 - focused tests: `_stage4r_runner.py` py_compile PASS.
 - typecheck: not run; no frontend touched.

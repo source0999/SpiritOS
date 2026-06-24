@@ -1,14 +1,14 @@
 # Set A Real Rerun Summary
 
-- A1: PASS task=task_45660368933d sources=6 consumer=consumer_404a04dbe5d84035 notes=none
-- A2: NEEDS_FIX task=task_cb7d7a5dfca3 sources=6 consumer=consumer_1616cb371cee4091 notes=research_change_source_not_from_raw_sources
-- A3: PASS task=task_f5b9fefaf1b4 sources=6 consumer=consumer_6b5b9baa4439410e notes=none
-- A4: PASS task=task_f5ec9c26b816 sources=6 consumer=consumer_24d8e70f41564544 notes=none
-- A5: NEEDS_FIX task=task_7cacb1792196 sources=6 consumer=consumer_526e665d624f4640 notes=research_materially_changed_output; research_change_source_not_from_raw_sources
-- A6: PASS task=task_970e87b7fb8f sources=6 consumer=consumer_8d5318c7d12a498c notes=none
-- A7: PASS task=task_8b4603e91b0d sources=0 consumer=consumer_3403c3058e5e4757 notes=none
-- A8: PASS task=task_c68ceaf41016 sources=0 consumer=consumer_485108b70f354e0a notes=none
-- A9: NEEDS_FIX task=task_9948f900dcf4 sources=6 consumer=consumer_de5467a07ca54c07 notes=research_materially_changed_output; repo_context_used; a9_clean_tool_comparison; a9_current_limitations; a9_proxy_setup_recommendation; work_product_too_short
-- A10: PASS task=task_be01eb513a79 sources=0 consumer=consumer_3b0834e79ddb4b97 notes=none
+- A1: NEEDS_FIX task=task_58fd61a67b6b sources=6 consumer=consumer_e6a0bd2679fe4c38 notes=research_materially_changed_output; research_change_no_specific_decision
+- A2: PASS task=task_d2bbe0960c3d sources=6 consumer=consumer_120e0b0356384383 notes=none
+- A3: NEEDS_FIX task=task_0eb0ef0d1bfc sources=6 consumer=consumer_29717a8c498a4794 notes=research_materially_changed_output; repo_context_used; limitations_stated; handoff_created; research_change_no_specific_decision; research_change_source_not_from_raw_sources
+- A4: NEEDS_FIX task=task_d57f4f12d753 sources=6 consumer=consumer_4ec57533bb6c4e2c notes=research_materially_changed_output; research_change_no_specific_decision
+- A5: PASS task=task_d8fc1cc238ea sources=6 consumer=consumer_f5c8c85124524fe4 notes=none
+- A6: NEEDS_FIX task=task_77420a868145 sources=6 consumer=consumer_b6f2729ba59c4163 notes=research_materially_changed_output; research_change_no_specific_decision
+- A7: NEEDS_FIX task=task_32c12935a683 sources=0 consumer=consumer_0045cb39f21e49f0 notes=research_change_source_not_from_raw_sources
+- A8: NEEDS_FIX task=task_0dbe98a1612c sources=0 consumer=consumer_a15b6818d9284704 notes=research_change_source_not_from_raw_sources
+- A9: PASS task=task_6db0ace5e8f0 sources=6 consumer=consumer_4f1c0b7f7c1e4cc3 notes=none
+- A10: NEEDS_FIX task=task_7855478eb611 sources=0 consumer=consumer_8e5ab70c3a7c4d9c notes=research_change_source_not_from_raw_sources
 
 Verdict: NEEDS_FIX

@@ -1,12 +1,92 @@
 {
-  "auto_fix_attempts": 0,
+  "auto_fix_attempts": 2,
   "blocked_reasons": [],
+  "code_owned_packet_shell_status": {},
   "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 0,
+  "decision_packet_validated": false,
+  "decision_packet_validation_errors": [],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_default",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama"
+      }
+    ],
+    "code_owned_packet_shell_status": {},
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A8.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A8.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A8.task.final.raw.json"
+    ],
+    "degraded_lanes": [],
+    "expected_lane": "live_model_work_product",
+    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": true,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "NEEDS_FIX",
+    "model_decision_body_status": {},
+    "next_recommended_action": "inspect failed_gates and make one bounded fix",
+    "productive_reasons": [
+      "research_change_source_not_from_raw_sources"
+    ],
+    "productive_status": "NEEDS_FIX",
+    "prompt_id": "A8",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_default",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama"
+        }
+      ],
+      "unavailable": []
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A8.json",
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A8",
+    "selected_lane": "ollama_default",
+    "selected_model_provider_tool": {
+      "model": "gemma3n:e4b",
+      "provider": "ollama",
+      "tool": "stage4r_live_work_product"
+    },
+    "task_class": "plan",
+    "task_id": "task_0dbe98a1612c",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": false,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A8.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
   "downstream_consumed": true,
-  "failed_gates": [],
+  "failed_gates": [
+    "research_change_source_not_from_raw_sources"
+  ],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
-  "final_status": "PASS",
+  "final_status": "NEEDS_FIX",
   "handoff_or_context_prompt_created_when_useful": true,
   "internet_required": false,
   "jellyfin_or_media_mutation_detected": false,
@@ -24,22 +104,33 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_485108b70f354e0a",
+  "latest_consumer_event_id": "consumer_a15b6818d9284704",
   "limitations_stated": true,
   "live_search_used": false,
   "local_fallback_used": false,
+  "mac_evidence_signals": [],
   "mac_invoked": false,
   "mac_required": false,
   "mac_status": "not_required",
   "mac_system_status_alone_used_as_pass": false,
   "max_auto_fix_attempts": 3,
   "model": "gemma3n:e4b",
-  "notes": [],
+  "model_decision_body_status": {},
+  "notes": [
+    "research_change_source_not_from_raw_sources"
+  ],
+  "packet_lanes_available": [],
+  "packet_lanes_unavailable": [],
+  "packet_model": "",
+  "packet_model_lane": "",
+  "packet_model_provider": "",
   "patch_bucket": "",
   "patch_required": false,
   "policy_event_present": false,
   "policy_event_required": false,
   "prompt_id": "A8",
+  "query_variant_source_counts": [],
+  "query_variants_tried": [],
   "qwen_activated": false,
   "qwen_required": false,
   "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -68,12 +159,12 @@
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 0,
-  "task_id": "task_c68ceaf41016",
-  "trace_id": "trace_915cdd804b9e439a",
-  "user_goal_reached": true,
+  "task_id": "task_0dbe98a1612c",
+  "trace_id": "trace_6c8725192a8240d5",
+  "user_goal_reached": false,
   "user_prompt": "make me a plan for a small dashboard that shows what happened in a proxy run without overwhelming me",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "## Plan for a Small Dashboard for Proxy Run Status **Recommendation:** Create a simple dashboard displaying key information about the recent proxy run. This will provide a quick overview of the run's status without overwhelming the user. The dashboard should focus on whether the run completed successfully, any errors encountered, and potentially some high-level metrics. **Evidence Used:** * **Repo Context:** The presence of `source_proxy/tasks/lo",
+  "work_product_summary": "## Plan for a Small Dashboard for Proxy Run Status **Recommendation:** Create a simple dashboard displaying the status of the current proxy run, focusing on key information without overwhelming the user. This will include the task being executed, its current state (e.g., executing, blocked, queued), and any relevant details extracted from the task specification. **Research-to-Decision Changes:** Finding: The codebase includes components for codin",
   "work_product_type": "plan"
 }

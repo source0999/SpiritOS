@@ -114,6 +114,10 @@ CONTROLLED_ACTION_INTENTS = {
     "split": "split",
     "use": "use",
 }
+CONTROLLED_ACTION_INTENT_ALIASES = {
+    "skip": ("reject", "exact_semantic_alias:skip_to_reject"),
+    "test later": ("defer", "exact_semantic_alias:test_later_to_defer"),
+}
 ONLY_PROMPTS = {
     pid.strip()
     for pid in os.environ.get("PLAN3_STAGE4R_ONLY", "").split(",")
@@ -333,6 +337,8 @@ def research_change_blocks(work: str, sources: list[dict[str, Any]]) -> tuple[li
     for raw in lines:
         line = raw.strip().lstrip("-*0123456789. ").replace("**", "")
         lowered = line.lower()
+        if lowered.startswith("repo/mac evidence that changed the plan"):
+            break
         if lowered.startswith("finding:"):
             if current:
                 blocks.append(current)
@@ -1004,16 +1010,25 @@ def required_repo_evidence_refs(digest: dict[str, Any], contract: dict[str, Any]
     return refs
 
 
-def normalize_action_intent(value: str, summary: str = "") -> tuple[str, str]:
+def normalize_action_intent_detail(value: str, summary: str = "") -> dict[str, str]:
     raw = str(value or "").strip().lower().replace("_", " ")
+    raw = re.sub(r"\s+", " ", raw)
     if raw in CONTROLLED_ACTION_INTENTS:
-        return CONTROLLED_ACTION_INTENTS[raw], ""
+        return {"normalized": CONTROLLED_ACTION_INTENTS[raw], "error": "", "original": raw, "reason": "already_controlled"}
+    if raw in CONTROLLED_ACTION_INTENT_ALIASES:
+        normalized, reason = CONTROLLED_ACTION_INTENT_ALIASES[raw]
+        return {"normalized": normalized, "error": "", "original": raw, "reason": reason}
     if raw:
-        return "", f"invalid_action_intent:{raw}"
+        return {"normalized": "", "error": f"invalid_action_intent:{raw}", "original": raw, "reason": "not_in_controlled_enum"}
     first_word = re.split(r"\W+", str(summary or "").strip().lower())[0] if str(summary or "").strip() else ""
     if first_word in CONTROLLED_ACTION_INTENTS:
-        return CONTROLLED_ACTION_INTENTS[first_word], "mapped_from_decision_summary"
-    return "", "invalid_action_intent:missing"
+        return {"normalized": CONTROLLED_ACTION_INTENTS[first_word], "error": "mapped_from_decision_summary", "original": raw, "reason": "fallback_first_word"}
+    return {"normalized": "", "error": "invalid_action_intent:missing", "original": raw, "reason": "missing"}
+
+
+def normalize_action_intent(value: str, summary: str = "") -> tuple[str, str]:
+    detail = normalize_action_intent_detail(value, summary)
+    return detail["normalized"], detail["error"]
 
 
 def sanitize_model_owned_text(value: Any) -> tuple[str, list[str]]:
@@ -1091,6 +1106,7 @@ def assemble_code_owned_decision_packet(
 
     decisions = []
     action_errors = []
+    action_normalizations = []
     stripped_model_provenance: list[str] = []
     contract_terms = ", ".join(str(term) for term in contract.get("required_terms", []) or [])
     lane_name = str(lane.get("lane_name") or "")
@@ -1101,7 +1117,16 @@ def assemble_code_owned_decision_packet(
         overall_recommendation = str(body.get("overall_recommendation") or "") if isinstance(body, dict) else ""
         next_action, next_stripped = sanitize_model_owned_text(decision.get("proposed_next_action") or overall_recommendation)
         stripped_model_provenance.extend([*summary_stripped, *reasoning_stripped, *next_stripped])
-        verb, action_error = normalize_action_intent(str(decision.get("action_intent") or ""), summary)
+        action_detail = normalize_action_intent_detail(str(decision.get("action_intent") or ""), summary)
+        verb = action_detail["normalized"]
+        action_error = action_detail["error"]
+        if action_detail["reason"] not in {"already_controlled", "missing"}:
+            action_normalizations.append({
+                "index": idx,
+                "action_intent_original": action_detail["original"],
+                "action_intent_normalized": action_detail["normalized"],
+                "action_intent_normalization_reason": action_detail["reason"],
+            })
         if action_error and action_error != "mapped_from_decision_summary":
             action_errors.append(action_error)
             verb = "defer"
@@ -1183,7 +1208,17 @@ def assemble_code_owned_decision_packet(
         ],
         "source_urls_from_code": True,
         "local_api_truth_from_lane_metadata": True,
+        "raw_source_registry": [
+            {
+                "evidence_id": item.get("evidence_id"),
+                "source_host": item.get("source_host"),
+                "source_url": item.get("source_url"),
+            }
+            for item in evidence_items
+            if item.get("evidence_type") == "research"
+        ],
         "model_provenance_stripped": sorted(set(stripped_model_provenance)),
+        "action_intent_normalizations": action_normalizations,
         "action_errors": sorted(set(action_errors)),
         "model_decision_body_status": body_status,
     }
@@ -1498,6 +1533,7 @@ def source_fact_by_ref(digest: dict[str, Any], ref: str) -> dict[str, str]:
     evidence = evidence_item_by_id(digest, value)
     if evidence.get("evidence_type") == "research":
         return {
+            "evidence_id": str(evidence.get("evidence_id") or value),
             "finding": str(evidence.get("finding_excerpt") or ""),
             "source_title": str(evidence.get("source_title") or ""),
             "source_host": str(evidence.get("source_host") or ""),
@@ -1508,6 +1544,7 @@ def source_fact_by_ref(digest: dict[str, Any], ref: str) -> dict[str, str]:
     for fact in digest.get("source_facts", []) or []:
         if value and value in {str(fact.get("url") or ""), str(fact.get("host") or ""), str(fact.get("title") or "")}:
             return {
+                "evidence_id": str(evidence.get("evidence_id") or ""),
                 "finding": str(fact.get("finding") or ""),
                 "source_title": str(fact.get("title") or ""),
                 "source_host": str(fact.get("host") or ""),
@@ -1625,7 +1662,7 @@ def render_work_from_decision_packet(pid: str, packet: dict[str, Any], digest: d
         )
         lines.extend([
             f"- Finding: {finding}",
-            f"  Source: {source_title} ({source_host}) {str(evidence.get('source_url') or '').strip()}",
+            f"  Source: {source_title} ({source_host}) {str(evidence.get('source_url') or '').strip()} [raw_source_id: {str(evidence.get('evidence_id') or '').strip()}]",
             f"  Decision changed: {decision_text}",
             f"  Default without evidence: {str(decision.get('default_without_evidence') or '').strip()}",
             f"  Why this changes the plan: {why}",

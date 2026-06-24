@@ -1,9 +1,9 @@
 {
   "blocked_count": 0,
-  "failed_count": 3,
+  "failed_count": 7,
   "fake_go_detected_computed": true,
   "final_status_derived_by_grader": true,
-  "generated_at": "2026-06-24T00:51:53.813340+00:00",
+  "generated_at": "2026-06-24T02:46:34.645970+00:00",
   "hardcoded_plans_used": false,
   "hardcoded_sources_used": false,
   "model": "gemma3n:e4b",
@@ -11,17 +11,99 @@
   "no_set_b_run": true,
   "no_set_c_run": true,
   "old_generator_disqualified": true,
-  "pass_count": 7,
+  "pass_count": 3,
   "records": [
     {
-      "auto_fix_attempts": 0,
+      "auto_fix_attempts": 2,
       "blocked_reasons": [],
+      "code_owned_packet_shell_status": {},
       "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 0,
+      "decision_packet_validated": false,
+      "decision_packet_validation_errors": [],
+      "diagnostic_debugger": {
+        "anti_cheat_flags": {
+          "fake_go_detected": false,
+          "hardcoded_plans_used": false,
+          "hardcoded_sources_used": false,
+          "jellyfin_or_media_mutation_detected": false
+        },
+        "browser_functional_verifier_result": "not_required",
+        "candidate_lanes": [
+          {
+            "lane_name": "ollama_default",
+            "model": "gemma3n:e4b",
+            "provider_type": "ollama"
+          }
+        ],
+        "code_owned_packet_shell_status": {},
+        "created_modified_files": [
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A1.json",
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A1.md",
+          "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A1.task.final.raw.json"
+        ],
+        "degraded_lanes": [],
+        "expected_lane": "live_model_work_product",
+        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "fallback_reason": "",
+        "fallback_used": false,
+        "human_action_required": true,
+        "local_api_cli_distinction": "local_ollama_cli_or_http",
+        "model_call_attempted": true,
+        "model_call_result_or_failure_class": "NEEDS_FIX",
+        "model_decision_body_status": {},
+        "next_recommended_action": "inspect failed_gates and make one bounded fix",
+        "productive_reasons": [
+          "research_materially_changed_output",
+          "research_change_no_specific_decision"
+        ],
+        "productive_status": "NEEDS_FIX",
+        "prompt_id": "A1",
+        "protected_path_block_result": "not_required",
+        "provider_availability": {
+          "available": [
+            {
+              "lane_name": "ollama_default",
+              "model": "gemma3n:e4b",
+              "provider_type": "ollama"
+            }
+          ],
+          "unavailable": []
+        },
+        "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+        "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A1.json",
+        "route_type": "plan3_stage4r_set_a",
+        "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A1",
+        "selected_lane": "ollama_default",
+        "selected_model_provider_tool": {
+          "model": "gemma3n:e4b",
+          "provider": "ollama",
+          "tool": "stage4r_live_work_product"
+        },
+        "task_class": "research_pack",
+        "task_id": "task_58fd61a67b6b",
+        "timeout_empty_parse_policy": {
+          "empty_output": false,
+          "parse_failure": false,
+          "policy_block": false,
+          "timeout": false
+        },
+        "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A1.task.final.raw.json",
+        "verification_real_flags": {
+          "downstream_consumed": true,
+          "fake_go_detected_computed": true,
+          "final_status_derived_by_grader": true,
+          "same_trace_consumer_evidence": true
+        }
+      },
       "downstream_consumed": true,
-      "failed_gates": [],
+      "failed_gates": [
+        "research_materially_changed_output",
+        "research_change_no_specific_decision"
+      ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "PASS",
+      "final_status": "NEEDS_FIX",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": true,
       "jellyfin_or_media_mutation_detected": false,
@@ -39,22 +121,38 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_404a04dbe5d84035",
+      "latest_consumer_event_id": "consumer_e6a0bd2679fe4c38",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
+      "mac_evidence_signals": [],
       "mac_invoked": false,
       "mac_required": false,
       "mac_status": "not_required",
       "mac_system_status_alone_used_as_pass": false,
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
-      "notes": [],
+      "model_decision_body_status": {},
+      "notes": [
+        "research_materially_changed_output",
+        "research_change_no_specific_decision"
+      ],
+      "packet_lanes_available": [],
+      "packet_lanes_unavailable": [],
+      "packet_model": "",
+      "packet_model_lane": "",
+      "packet_model_provider": "",
       "patch_bucket": "",
       "patch_required": false,
       "policy_event_present": false,
       "policy_event_required": false,
       "prompt_id": "A1",
+      "query_variant_source_counts": [
+        6
+      ],
+      "query_variants_tried": [
+        "Pokemon save editor open source PKHeX PKSM pkNX save format"
+      ],
       "qwen_activated": false,
       "qwen_required": false,
       "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -74,21 +172,22 @@
         "current_research"
       ],
       "research_marker_hits": [
+        "projectpokemon.org",
         "reddit.com",
-        "pkhex-web.github.io"
+        "github.com"
       ],
-      "research_materially_changed_output": true,
+      "research_materially_changed_output": false,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_45660368933d",
-      "trace_id": "trace_bb91f879d7bd4128",
-      "user_goal_reached": true,
+      "task_id": "task_58fd61a67b6b",
+      "trace_id": "trace_9ec55e621e984740",
+      "user_goal_reached": false,
       "user_prompt": "research open source frameworks and more to make a plan to setup a pokemon save editor. i want the best route not random tutorial slop",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Research Pack: Pok\u00e9mon Save Editor Setup - Plan 3 Stage 4R Set A **Recommendation:** Utilize **PKHeX** as the primary framework for a Pok\u00e9mon save editor. It offers a robust, actively maintained, and cross-platform solution with a strong community and comprehensive features. The web version provides accessibility without requiring installation. **Evidence Used:** * **PKHeX - Save Editing:** ([https://projectpo kemon.org/home/files/file/1-pkhex",
+      "work_product_summary": "Recommendation: The best route to set up a Pok\u00e9mon save editor is to utilize the open-source framework PKHeX. It is specifically designed for this purpose, supports a wide range of Pok\u00e9mon game file formats, and has an active community providing tutorials and support. Research-to-decision changes: - Finding: Pok\u00e9mon core series save editor, programmed in C#. Supports the following files: Save files (\"main\", *.sav, *.dsv, *.dat, *.gci) GameCube Me",
       "work_product_type": "research_pack"
     },
     {
@@ -96,6 +195,7 @@
       "blocked_reasons": [],
       "code_owned_packet_shell_status": {
         "action_errors": [],
+        "action_intent_normalizations": [],
         "code_owned_fields": [
           "prompt_id",
           "user_goal",
@@ -122,8 +222,38 @@
           "action_intent",
           "confidence_reason"
         ],
-        "model_provenance_stripped": [
-          "manifest.json"
+        "model_provenance_stripped": [],
+        "raw_source_registry": [
+          {
+            "evidence_id": "research:1",
+            "source_host": "developer.chrome.com",
+            "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
+          },
+          {
+            "evidence_id": "research:2",
+            "source_host": "stackoverflow.com",
+            "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+          },
+          {
+            "evidence_id": "research:3",
+            "source_host": "developer.chrome.com",
+            "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
+          },
+          {
+            "evidence_id": "research:4",
+            "source_host": "developer.mozilla.org",
+            "source_url": "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging"
+          },
+          {
+            "evidence_id": "research:5",
+            "source_host": "optymized.net",
+            "source_url": "https://optymized.net/blog/building-chrome-extensions"
+          },
+          {
+            "evidence_id": "research:6",
+            "source_host": "cwskit.khanakia.com",
+            "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+          }
         ],
         "source_urls_from_code": true,
         "status": "assembled"
@@ -162,6 +292,7 @@
         ],
         "code_owned_packet_shell_status": {
           "action_errors": [],
+          "action_intent_normalizations": [],
           "code_owned_fields": [
             "prompt_id",
             "user_goal",
@@ -188,8 +319,38 @@
             "action_intent",
             "confidence_reason"
           ],
-          "model_provenance_stripped": [
-            "manifest.json"
+          "model_provenance_stripped": [],
+          "raw_source_registry": [
+            {
+              "evidence_id": "research:1",
+              "source_host": "developer.chrome.com",
+              "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
+            },
+            {
+              "evidence_id": "research:2",
+              "source_host": "stackoverflow.com",
+              "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+            },
+            {
+              "evidence_id": "research:3",
+              "source_host": "developer.chrome.com",
+              "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
+            },
+            {
+              "evidence_id": "research:4",
+              "source_host": "developer.mozilla.org",
+              "source_url": "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging"
+            },
+            {
+              "evidence_id": "research:5",
+              "source_host": "optymized.net",
+              "source_url": "https://optymized.net/blog/building-chrome-extensions"
+            },
+            {
+              "evidence_id": "research:6",
+              "source_host": "cwskit.khanakia.com",
+              "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+            }
           ],
           "source_urls_from_code": true,
           "status": "assembled"
@@ -226,10 +387,10 @@
           }
         ],
         "expected_lane": "validated_decision_packet",
-        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "failure_classification": "PASS",
         "fallback_reason": "",
         "fallback_used": false,
-        "human_action_required": true,
+        "human_action_required": false,
         "local_api_cli_distinction": "local_ollama_cli_or_http",
         "model_call_attempted": true,
         "model_call_result_or_failure_class": "code_owned_packet_validated",
@@ -240,11 +401,9 @@
           "parse_status": "ok",
           "status": "valid"
         },
-        "next_recommended_action": "inspect failed_gates and make one bounded fix",
-        "productive_reasons": [
-          "research_change_source_not_from_raw_sources"
-        ],
-        "productive_status": "NEEDS_FIX",
+        "next_recommended_action": "no action",
+        "productive_reasons": [],
+        "productive_status": "PASS",
         "prompt_id": "A2",
         "protected_path_block_result": "not_required",
         "provider_availability": {
@@ -306,7 +465,7 @@
           "tool": "validated_decision_packet_renderer"
         },
         "task_class": "plan",
-        "task_id": "task_cb7d7a5dfca3",
+        "task_id": "task_d2bbe0960c3d",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -322,12 +481,10 @@
         }
       },
       "downstream_consumed": true,
-      "failed_gates": [
-        "research_change_source_not_from_raw_sources"
-      ],
+      "failed_gates": [],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "NEEDS_FIX",
+      "final_status": "PASS",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": true,
       "jellyfin_or_media_mutation_detected": false,
@@ -347,7 +504,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_1616cb371cee4091",
+      "latest_consumer_event_id": "consumer_120e0b0356384383",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -365,9 +522,7 @@
         "parse_status": "ok",
         "status": "valid"
       },
-      "notes": [
-        "research_change_source_not_from_raw_sources"
-      ],
+      "notes": [],
       "packet_lanes_available": [
         {
           "lane_name": "ollama_qwen2.5-coder_7b",
@@ -458,34 +613,124 @@
       "research_marker_hits": [
         "developer.chrome.com",
         "stackoverflow.com",
-        "cwskit.khanakia.com",
         "developer.mozilla.org",
-        "optymized.net"
+        "optymized.net",
+        "cwskit.khanakia.com"
       ],
       "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_cb7d7a5dfca3",
-      "trace_id": "trace_edb09400bb974261",
-      "user_goal_reached": false,
+      "task_id": "task_d2bbe0960c3d",
+      "trace_id": "trace_ecd8926b1cfe45b7",
+      "user_goal_reached": true,
       "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation Review current architecture against Manifest V3 requirements, update permissions, ensure service worker lifecycle support, define clear payload/local API boundaries, and prioritize key features for the MVP. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: Native messaging - Chrome for D",
+      "work_product_summary": "Recommendation Focus on essential features, ensure compliance with privacy regulations, and design robust payload handling within the defined local API boundaries. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: Native messaging - Chrome for Developers: The maximum size of the message sent to the nat",
       "work_product_type": "plan"
     },
     {
-      "auto_fix_attempts": 0,
+      "auto_fix_attempts": 2,
       "blocked_reasons": [],
+      "code_owned_packet_shell_status": {},
       "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 0,
+      "decision_packet_validated": false,
+      "decision_packet_validation_errors": [],
+      "diagnostic_debugger": {
+        "anti_cheat_flags": {
+          "fake_go_detected": false,
+          "hardcoded_plans_used": false,
+          "hardcoded_sources_used": false,
+          "jellyfin_or_media_mutation_detected": false
+        },
+        "browser_functional_verifier_result": "not_required",
+        "candidate_lanes": [
+          {
+            "lane_name": "ollama_default",
+            "model": "gemma3n:e4b",
+            "provider_type": "ollama"
+          }
+        ],
+        "code_owned_packet_shell_status": {},
+        "created_modified_files": [
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.json",
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.md",
+          "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A3.task.final.raw.json"
+        ],
+        "degraded_lanes": [],
+        "expected_lane": "live_model_work_product",
+        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "fallback_reason": "",
+        "fallback_used": false,
+        "human_action_required": true,
+        "local_api_cli_distinction": "local_ollama_cli_or_http",
+        "model_call_attempted": true,
+        "model_call_result_or_failure_class": "NEEDS_FIX",
+        "model_decision_body_status": {},
+        "next_recommended_action": "inspect failed_gates and make one bounded fix",
+        "productive_reasons": [
+          "research_materially_changed_output",
+          "repo_context_used",
+          "limitations_stated",
+          "handoff_created",
+          "research_change_no_specific_decision",
+          "research_change_source_not_from_raw_sources"
+        ],
+        "productive_status": "NEEDS_FIX",
+        "prompt_id": "A3",
+        "protected_path_block_result": "not_required",
+        "provider_availability": {
+          "available": [
+            {
+              "lane_name": "ollama_default",
+              "model": "gemma3n:e4b",
+              "provider_type": "ollama"
+            }
+          ],
+          "unavailable": []
+        },
+        "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+        "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.json",
+        "route_type": "plan3_stage4r_set_a",
+        "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A3",
+        "selected_lane": "ollama_default",
+        "selected_model_provider_tool": {
+          "model": "gemma3n:e4b",
+          "provider": "ollama",
+          "tool": "stage4r_live_work_product"
+        },
+        "task_class": "plan",
+        "task_id": "task_0eb0ef0d1bfc",
+        "timeout_empty_parse_policy": {
+          "empty_output": false,
+          "parse_failure": false,
+          "policy_block": false,
+          "timeout": false
+        },
+        "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A3.task.final.raw.json",
+        "verification_real_flags": {
+          "downstream_consumed": true,
+          "fake_go_detected_computed": true,
+          "final_status_derived_by_grader": true,
+          "same_trace_consumer_evidence": true
+        }
+      },
       "downstream_consumed": true,
-      "failed_gates": [],
+      "failed_gates": [
+        "research_materially_changed_output",
+        "repo_context_used",
+        "limitations_stated",
+        "handoff_created",
+        "research_change_no_specific_decision",
+        "research_change_source_not_from_raw_sources"
+      ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "PASS",
-      "handoff_or_context_prompt_created_when_useful": true,
+      "final_status": "NEEDS_FIX",
+      "handoff_or_context_prompt_created_when_useful": false,
       "internet_required": true,
       "jellyfin_or_media_mutation_detected": false,
       "lanes_invoked": [
@@ -503,22 +748,42 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_6b5b9baa4439410e",
-      "limitations_stated": true,
+      "latest_consumer_event_id": "consumer_29717a8c498a4794",
+      "limitations_stated": false,
       "live_search_used": true,
       "local_fallback_used": false,
+      "mac_evidence_signals": [],
       "mac_invoked": false,
       "mac_required": false,
       "mac_status": "not_required",
       "mac_system_status_alone_used_as_pass": false,
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
-      "notes": [],
+      "model_decision_body_status": {},
+      "notes": [
+        "research_materially_changed_output",
+        "repo_context_used",
+        "limitations_stated",
+        "handoff_created",
+        "research_change_no_specific_decision",
+        "research_change_source_not_from_raw_sources"
+      ],
+      "packet_lanes_available": [],
+      "packet_lanes_unavailable": [],
+      "packet_model": "",
+      "packet_model_lane": "",
+      "packet_model_provider": "",
       "patch_bucket": "",
       "patch_required": false,
       "policy_event_present": false,
       "policy_event_required": false,
       "prompt_id": "A3",
+      "query_variant_source_counts": [
+        6
+      ],
+      "query_variants_tried": [
+        "Android Jetpack Compose share intent local task app receipt polling"
+      ],
       "qwen_activated": false,
       "qwen_required": false,
       "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -527,7 +792,7 @@
       "recovery_required": false,
       "repair_applied": false,
       "repair_required": false,
-      "repo_context_used": true,
+      "repo_context_used": false,
       "repo_files_read": [
         "source_proxy/api/long_running_tasks.py",
         "src/app/v1/tasks/long-running/route.ts",
@@ -543,33 +808,116 @@
         "repo_context"
       ],
       "research_marker_hits": [
-        "kotlinlang.org",
         "medium.com",
+        "kotlin multiplatform samples",
+        "stackoverflow.com",
         "youtube.com"
       ],
-      "research_materially_changed_output": true,
+      "research_materially_changed_output": false,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_f5b9fefaf1b4",
-      "trace_id": "trace_433b5c55cbe147d3",
-      "user_goal_reached": true,
+      "task_id": "task_0eb0ef0d1bfc",
+      "trace_id": "trace_d871c46992d946e3",
+      "user_goal_reached": false,
       "user_prompt": "figure out the best path for an android app that lets me start proxy tasks from my phone and check receipts",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Plan for Android App to Start Proxy Tasks and Check Receipts **Recommendation:** Develop an Android application that leverages Android Intents to communicate with a backend proxy service. The app will allow users to initiate proxy tasks and receive updates, including receipt information, through standard Android UI elements and system integrations. **Evidence Used:** * **Android Intents for Data Sharing:** The Android developer documentation c",
+      "work_product_summary": "Recommendation: The best path for an Android app to start proxy tasks and check receipts is to leverage Android Intents for task initiation and data transfer, potentially utilizing the Kotlin Multiplatform framework for cross-platform consistency. A share button in the Compose UI should be implemented to facilitate receipt sharing. Data sharing between screens within the app should be explored using established Android mechanisms. Research-to-dec",
       "work_product_type": "plan"
     },
     {
-      "auto_fix_attempts": 0,
+      "auto_fix_attempts": 2,
       "blocked_reasons": [],
+      "code_owned_packet_shell_status": {},
       "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 0,
+      "decision_packet_validated": false,
+      "decision_packet_validation_errors": [],
+      "diagnostic_debugger": {
+        "anti_cheat_flags": {
+          "fake_go_detected": false,
+          "hardcoded_plans_used": false,
+          "hardcoded_sources_used": false,
+          "jellyfin_or_media_mutation_detected": false
+        },
+        "browser_functional_verifier_result": "not_required",
+        "candidate_lanes": [
+          {
+            "lane_name": "ollama_default",
+            "model": "gemma3n:e4b",
+            "provider_type": "ollama"
+          }
+        ],
+        "code_owned_packet_shell_status": {},
+        "created_modified_files": [
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A4.json",
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A4.md",
+          "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A4.task.final.raw.json"
+        ],
+        "degraded_lanes": [],
+        "expected_lane": "live_model_work_product",
+        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "fallback_reason": "",
+        "fallback_used": false,
+        "human_action_required": true,
+        "local_api_cli_distinction": "local_ollama_cli_or_http",
+        "model_call_attempted": true,
+        "model_call_result_or_failure_class": "NEEDS_FIX",
+        "model_decision_body_status": {},
+        "next_recommended_action": "inspect failed_gates and make one bounded fix",
+        "productive_reasons": [
+          "research_materially_changed_output",
+          "research_change_no_specific_decision"
+        ],
+        "productive_status": "NEEDS_FIX",
+        "prompt_id": "A4",
+        "protected_path_block_result": "not_required",
+        "provider_availability": {
+          "available": [
+            {
+              "lane_name": "ollama_default",
+              "model": "gemma3n:e4b",
+              "provider_type": "ollama"
+            }
+          ],
+          "unavailable": []
+        },
+        "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+        "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A4.json",
+        "route_type": "plan3_stage4r_set_a",
+        "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A4",
+        "selected_lane": "ollama_default",
+        "selected_model_provider_tool": {
+          "model": "gemma3n:e4b",
+          "provider": "ollama",
+          "tool": "stage4r_live_work_product"
+        },
+        "task_class": "research_pack",
+        "task_id": "task_d57f4f12d753",
+        "timeout_empty_parse_policy": {
+          "empty_output": false,
+          "parse_failure": false,
+          "policy_block": false,
+          "timeout": false
+        },
+        "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A4.task.final.raw.json",
+        "verification_real_flags": {
+          "downstream_consumed": true,
+          "fake_go_detected_computed": true,
+          "final_status_derived_by_grader": true,
+          "same_trace_consumer_evidence": true
+        }
+      },
       "downstream_consumed": true,
-      "failed_gates": [],
+      "failed_gates": [
+        "research_materially_changed_output",
+        "research_change_no_specific_decision"
+      ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "PASS",
+      "final_status": "NEEDS_FIX",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": true,
       "jellyfin_or_media_mutation_detected": false,
@@ -588,22 +936,38 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_24d8e70f41564544",
+      "latest_consumer_event_id": "consumer_4ec57533bb6c4e2c",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
+      "mac_evidence_signals": [],
       "mac_invoked": false,
       "mac_required": false,
       "mac_status": "not_required",
       "mac_system_status_alone_used_as_pass": false,
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
-      "notes": [],
+      "model_decision_body_status": {},
+      "notes": [
+        "research_materially_changed_output",
+        "research_change_no_specific_decision"
+      ],
+      "packet_lanes_available": [],
+      "packet_lanes_unavailable": [],
+      "packet_model": "",
+      "packet_model_lane": "",
+      "packet_model_provider": "",
       "patch_bucket": "",
       "patch_required": false,
       "policy_event_present": false,
       "policy_event_required": false,
       "prompt_id": "A4",
+      "query_variant_source_counts": [
+        6
+      ],
+      "query_variants_tried": [
+        "Obsidian AI context open source plugins Smart Connections local embeddings project notes"
+      ],
       "qwen_activated": false,
       "qwen_required": false,
       "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -628,21 +992,23 @@
         "repo_context"
       ],
       "research_marker_hits": [
+        "github.com",
+        "grokipedia.com",
         "smart connections for obsidian",
-        "smart plugins for obsidian"
+        "smartconnections.app"
       ],
-      "research_materially_changed_output": true,
+      "research_materially_changed_output": false,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_f5ec9c26b816",
-      "trace_id": "trace_ff9c6bda8a3b4be7",
-      "user_goal_reached": true,
+      "task_id": "task_d57f4f12d753",
+      "trace_id": "trace_c62743cfbc724e63",
+      "user_goal_reached": false,
       "user_prompt": "research ways to turn obsidian/project notes into better ai context and tell me what i should build first",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Research Pack: Leveraging Obsidian for Enhanced AI Context ### Recommendation The most impactful first step is to **implement the Smart Connections plugin for Obsidian**. This plugin directly addresses the core need of providing better AI context by leveraging local semantic search and embedding models. It allows for the retrieval of relevant notes and excerpts from your Obsidian vault and their inclusion as context when interacting with Large",
+      "work_product_summary": "Recommendation: Build Smart Connections first. Research-to-decision changes: - Finding: Smart Connections v4[!NOTE] What Smart Connections does Smart Connections uses local embeddings and your Smart Environment to surface notes that are semantically related to what you are working on right now. Start with the overview, then j Source: GitHub - brianpetro/obsidian-smart-connections: Find related notes and ... (github.com) Decision changed: The init",
       "work_product_type": "research_pack"
     },
     {
@@ -650,6 +1016,7 @@
       "blocked_reasons": [],
       "code_owned_packet_shell_status": {
         "action_errors": [],
+        "action_intent_normalizations": [],
         "code_owned_fields": [
           "prompt_id",
           "user_goal",
@@ -677,6 +1044,38 @@
           "confidence_reason"
         ],
         "model_provenance_stripped": [],
+        "raw_source_registry": [
+          {
+            "evidence_id": "research:1",
+            "source_host": "kunalganglani.com",
+            "source_url": "https://www.kunalganglani.com/blog/ollama-vs-lm-studio"
+          },
+          {
+            "evidence_id": "research:2",
+            "source_host": "roksblog.de",
+            "source_url": "https://www.roksblog.de/openclaw-local-llms-running-your-own-ai-agent-in-a-homelab/"
+          },
+          {
+            "evidence_id": "research:3",
+            "source_host": "reddit.com",
+            "source_url": "https://www.reddit.com/r/ollama/comments/1nl0d45/ollama_or_lm_studio/"
+          },
+          {
+            "evidence_id": "research:4",
+            "source_host": "youtube.com",
+            "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
+          },
+          {
+            "evidence_id": "research:5",
+            "source_host": "devtoolhub.com",
+            "source_url": "https://devtoolhub.com/install-lm-studio-ollama/"
+          },
+          {
+            "evidence_id": "research:6",
+            "source_host": "compute-market.com",
+            "source_url": "https://www.compute-market.com/blog/how-to-set-up-ollama-local-ai-guide-2026"
+          }
+        ],
         "source_urls_from_code": true,
         "status": "assembled"
       },
@@ -714,6 +1113,7 @@
         ],
         "code_owned_packet_shell_status": {
           "action_errors": [],
+          "action_intent_normalizations": [],
           "code_owned_fields": [
             "prompt_id",
             "user_goal",
@@ -741,6 +1141,38 @@
             "confidence_reason"
           ],
           "model_provenance_stripped": [],
+          "raw_source_registry": [
+            {
+              "evidence_id": "research:1",
+              "source_host": "kunalganglani.com",
+              "source_url": "https://www.kunalganglani.com/blog/ollama-vs-lm-studio"
+            },
+            {
+              "evidence_id": "research:2",
+              "source_host": "roksblog.de",
+              "source_url": "https://www.roksblog.de/openclaw-local-llms-running-your-own-ai-agent-in-a-homelab/"
+            },
+            {
+              "evidence_id": "research:3",
+              "source_host": "reddit.com",
+              "source_url": "https://www.reddit.com/r/ollama/comments/1nl0d45/ollama_or_lm_studio/"
+            },
+            {
+              "evidence_id": "research:4",
+              "source_host": "youtube.com",
+              "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
+            },
+            {
+              "evidence_id": "research:5",
+              "source_host": "devtoolhub.com",
+              "source_url": "https://devtoolhub.com/install-lm-studio-ollama/"
+            },
+            {
+              "evidence_id": "research:6",
+              "source_host": "compute-market.com",
+              "source_url": "https://www.compute-market.com/blog/how-to-set-up-ollama-local-ai-guide-2026"
+            }
+          ],
           "source_urls_from_code": true,
           "status": "assembled"
         },
@@ -776,10 +1208,10 @@
           }
         ],
         "expected_lane": "validated_decision_packet",
-        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "failure_classification": "PASS",
         "fallback_reason": "",
         "fallback_used": false,
-        "human_action_required": true,
+        "human_action_required": false,
         "local_api_cli_distinction": "local_ollama_cli_or_http",
         "model_call_attempted": true,
         "model_call_result_or_failure_class": "code_owned_packet_validated",
@@ -790,12 +1222,9 @@
           "parse_status": "ok",
           "status": "valid"
         },
-        "next_recommended_action": "inspect failed_gates and make one bounded fix",
-        "productive_reasons": [
-          "research_materially_changed_output",
-          "research_change_source_not_from_raw_sources"
-        ],
-        "productive_status": "NEEDS_FIX",
+        "next_recommended_action": "no action",
+        "productive_reasons": [],
+        "productive_status": "PASS",
         "prompt_id": "A5",
         "protected_path_block_result": "not_required",
         "provider_availability": {
@@ -857,7 +1286,7 @@
           "tool": "validated_decision_packet_renderer"
         },
         "task_class": "plan",
-        "task_id": "task_7cacb1792196",
+        "task_id": "task_d8fc1cc238ea",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -873,13 +1302,10 @@
         }
       },
       "downstream_consumed": true,
-      "failed_gates": [
-        "research_materially_changed_output",
-        "research_change_source_not_from_raw_sources"
-      ],
+      "failed_gates": [],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "NEEDS_FIX",
+      "final_status": "PASS",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": true,
       "jellyfin_or_media_mutation_detected": false,
@@ -899,7 +1325,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_526e665d624f4640",
+      "latest_consumer_event_id": "consumer_f5c8c85124524fe4",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -924,10 +1350,7 @@
         "parse_status": "ok",
         "status": "valid"
       },
-      "notes": [
-        "research_materially_changed_output",
-        "research_change_source_not_from_raw_sources"
-      ],
+      "notes": [],
       "packet_lanes_available": [
         {
           "lane_name": "ollama_qwen2.5-coder_7b",
@@ -1017,29 +1440,111 @@
         "roksblog.de",
         "reddit.com"
       ],
-      "research_materially_changed_output": false,
+      "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_7cacb1792196",
-      "trace_id": "trace_04ede3e2dde742ab",
-      "user_goal_reached": false,
+      "task_id": "task_d8fc1cc238ea",
+      "trace_id": "trace_9c97a2a17f434b7b",
+      "user_goal_reached": true,
       "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation Implement a hybrid AI architecture leveraging existing Dell, Mac, and Windows machines to avoid new hardware purchases, prioritize local processing on the Mac for privacy, and use Windows for scalable cloud tasks. Required terms: dell, mac, windows, no new hardware, avoid buying, privacy, local, cloud, ollama, role. Research findings that changed the plan - Finding: Ollama vs LM Studio 2026: Dev Tool Comparison - Kunal Ganglani: Ma",
+      "work_product_summary": "Recommendation Leverage existing Mac and Dell hardware for AI tasks, prioritizing local processing on the Mac and routing complex tasks to the Dell. Avoid new hardware purchases and consider cloud solutions for scalability. Required terms: dell, mac, windows, no new hardware, avoid buying, privacy, local, cloud, ollama, role. Research findings that changed the plan - Finding: Ollama vs LM Studio 2026: Dev Tool Comparison - Kunal Ganglani: May 10,",
       "work_product_type": "plan"
     },
     {
       "auto_fix_attempts": 2,
       "blocked_reasons": [],
+      "code_owned_packet_shell_status": {},
       "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 0,
+      "decision_packet_validated": false,
+      "decision_packet_validation_errors": [],
+      "diagnostic_debugger": {
+        "anti_cheat_flags": {
+          "fake_go_detected": false,
+          "hardcoded_plans_used": false,
+          "hardcoded_sources_used": false,
+          "jellyfin_or_media_mutation_detected": false
+        },
+        "browser_functional_verifier_result": "not_required",
+        "candidate_lanes": [
+          {
+            "lane_name": "ollama_default",
+            "model": "gemma3n:e4b",
+            "provider_type": "ollama"
+          }
+        ],
+        "code_owned_packet_shell_status": {},
+        "created_modified_files": [
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.json",
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.md",
+          "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A6.task.final.raw.json"
+        ],
+        "degraded_lanes": [],
+        "expected_lane": "live_model_work_product",
+        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "fallback_reason": "",
+        "fallback_used": false,
+        "human_action_required": true,
+        "local_api_cli_distinction": "local_ollama_cli_or_http",
+        "model_call_attempted": true,
+        "model_call_result_or_failure_class": "NEEDS_FIX",
+        "model_decision_body_status": {},
+        "next_recommended_action": "inspect failed_gates and make one bounded fix",
+        "productive_reasons": [
+          "research_materially_changed_output",
+          "research_change_no_specific_decision"
+        ],
+        "productive_status": "NEEDS_FIX",
+        "prompt_id": "A6",
+        "protected_path_block_result": "not_required",
+        "provider_availability": {
+          "available": [
+            {
+              "lane_name": "ollama_default",
+              "model": "gemma3n:e4b",
+              "provider_type": "ollama"
+            }
+          ],
+          "unavailable": []
+        },
+        "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+        "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.json",
+        "route_type": "plan3_stage4r_set_a",
+        "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A6",
+        "selected_lane": "ollama_default",
+        "selected_model_provider_tool": {
+          "model": "gemma3n:e4b",
+          "provider": "ollama",
+          "tool": "stage4r_live_work_product"
+        },
+        "task_class": "research_pack",
+        "task_id": "task_77420a868145",
+        "timeout_empty_parse_policy": {
+          "empty_output": false,
+          "parse_failure": false,
+          "policy_block": false,
+          "timeout": false
+        },
+        "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A6.task.final.raw.json",
+        "verification_real_flags": {
+          "downstream_consumed": true,
+          "fake_go_detected_computed": true,
+          "final_status_derived_by_grader": true,
+          "same_trace_consumer_evidence": true
+        }
+      },
       "downstream_consumed": true,
-      "failed_gates": [],
+      "failed_gates": [
+        "research_materially_changed_output",
+        "research_change_no_specific_decision"
+      ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "PASS",
+      "final_status": "NEEDS_FIX",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": true,
       "jellyfin_or_media_mutation_detected": false,
@@ -1059,22 +1564,38 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_8d5318c7d12a498c",
+      "latest_consumer_event_id": "consumer_b6f2729ba59c4163",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
+      "mac_evidence_signals": [],
       "mac_invoked": false,
       "mac_required": false,
       "mac_status": "not_required",
       "mac_system_status_alone_used_as_pass": false,
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
-      "notes": [],
+      "model_decision_body_status": {},
+      "notes": [
+        "research_materially_changed_output",
+        "research_change_no_specific_decision"
+      ],
+      "packet_lanes_available": [],
+      "packet_lanes_unavailable": [],
+      "packet_model": "",
+      "packet_model_lane": "",
+      "packet_model_provider": "",
       "patch_bucket": "",
       "patch_required": false,
       "policy_event_present": true,
       "policy_event_required": true,
       "prompt_id": "A6",
+      "query_variant_source_counts": [
+        6
+      ],
+      "query_variants_tried": [
+        "open source media metadata cleanup tools Jellyfin TinyMediaManager FileBot MediaElch Jellyfin metadata"
+      ],
       "qwen_activated": false,
       "qwen_required": false,
       "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -1100,33 +1621,115 @@
         "policy_gate"
       ],
       "research_marker_hits": [
-        "what media management software",
         "tinymediamanager",
-        "tinymediamanager.org"
+        "tinymediamanager.org",
+        "reddit.com",
+        "docs.bankai-tech.com",
+        "github.com"
       ],
-      "research_materially_changed_output": true,
+      "research_materially_changed_output": false,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_970e87b7fb8f",
-      "trace_id": "trace_85d0729037454a9a",
-      "user_goal_reached": true,
+      "task_id": "task_77420a868145",
+      "trace_id": "trace_cfb439e0883442ef",
+      "user_goal_reached": false,
       "user_prompt": "research open source tools for local media metadata cleanup and tell me what i should use for my jellyfin/spiritflix mess without touching jellyfin configs or media files",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Research Pack: Local Media Metadata Cleanup Tools for SpiritFlix ### Recommendation For cleaning up messy file names in your SpiritFlix library without directly modifying Jellyfin configurations or media files, **TinyMediaManager** appears to be the most suitable open-source tool. It is specifically designed for this purpose and has been highlighted by users in the SpiritFlix community as a \"game-changer.\" ### Evidence Used The following findi",
+      "work_product_summary": "Recommendation: Consider using TinyMediaManager and/or Jellysweep for cleaning up your media library within Jellyfin. TinyMediaManager offers a dedicated metadata management tool, while Jellysweep is specifically designed for Jellyfin cleanup tasks like removing old content. You could also explore using Filebot with appropriate naming standards for initial library organization. Research-to-decision changes: Finding: TinyMediaManager is a media ma",
       "work_product_type": "research_pack"
     },
     {
-      "auto_fix_attempts": 0,
+      "auto_fix_attempts": 2,
       "blocked_reasons": [],
+      "code_owned_packet_shell_status": {},
       "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 0,
+      "decision_packet_validated": false,
+      "decision_packet_validation_errors": [],
+      "diagnostic_debugger": {
+        "anti_cheat_flags": {
+          "fake_go_detected": false,
+          "hardcoded_plans_used": false,
+          "hardcoded_sources_used": false,
+          "jellyfin_or_media_mutation_detected": false
+        },
+        "browser_functional_verifier_result": "not_required",
+        "candidate_lanes": [
+          {
+            "lane_name": "ollama_default",
+            "model": "gemma3n:e4b",
+            "provider_type": "ollama"
+          }
+        ],
+        "code_owned_packet_shell_status": {},
+        "created_modified_files": [
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A7.json",
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A7.md",
+          "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A7.task.final.raw.json"
+        ],
+        "degraded_lanes": [],
+        "expected_lane": "live_model_work_product",
+        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "fallback_reason": "",
+        "fallback_used": false,
+        "human_action_required": true,
+        "local_api_cli_distinction": "local_ollama_cli_or_http",
+        "model_call_attempted": true,
+        "model_call_result_or_failure_class": "NEEDS_FIX",
+        "model_decision_body_status": {},
+        "next_recommended_action": "inspect failed_gates and make one bounded fix",
+        "productive_reasons": [
+          "research_change_source_not_from_raw_sources"
+        ],
+        "productive_status": "NEEDS_FIX",
+        "prompt_id": "A7",
+        "protected_path_block_result": "not_required",
+        "provider_availability": {
+          "available": [
+            {
+              "lane_name": "ollama_default",
+              "model": "gemma3n:e4b",
+              "provider_type": "ollama"
+            }
+          ],
+          "unavailable": []
+        },
+        "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+        "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A7.json",
+        "route_type": "plan3_stage4r_set_a",
+        "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A7",
+        "selected_lane": "ollama_default",
+        "selected_model_provider_tool": {
+          "model": "gemma3n:e4b",
+          "provider": "ollama",
+          "tool": "stage4r_live_work_product"
+        },
+        "task_class": "plan",
+        "task_id": "task_32c12935a683",
+        "timeout_empty_parse_policy": {
+          "empty_output": false,
+          "parse_failure": false,
+          "policy_block": false,
+          "timeout": false
+        },
+        "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A7.task.final.raw.json",
+        "verification_real_flags": {
+          "downstream_consumed": true,
+          "fake_go_detected_computed": true,
+          "final_status_derived_by_grader": true,
+          "same_trace_consumer_evidence": true
+        }
+      },
       "downstream_consumed": true,
-      "failed_gates": [],
+      "failed_gates": [
+        "research_change_source_not_from_raw_sources"
+      ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "PASS",
+      "final_status": "NEEDS_FIX",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": false,
       "jellyfin_or_media_mutation_detected": false,
@@ -1144,22 +1747,33 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_3403c3058e5e4757",
+      "latest_consumer_event_id": "consumer_0045cb39f21e49f0",
       "limitations_stated": true,
       "live_search_used": false,
       "local_fallback_used": false,
+      "mac_evidence_signals": [],
       "mac_invoked": false,
       "mac_required": false,
       "mac_status": "not_required",
       "mac_system_status_alone_used_as_pass": false,
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
-      "notes": [],
+      "model_decision_body_status": {},
+      "notes": [
+        "research_change_source_not_from_raw_sources"
+      ],
+      "packet_lanes_available": [],
+      "packet_lanes_unavailable": [],
+      "packet_model": "",
+      "packet_model_lane": "",
+      "packet_model_provider": "",
       "patch_bucket": "",
       "patch_required": false,
       "policy_event_present": false,
       "policy_event_required": false,
       "prompt_id": "A7",
+      "query_variant_source_counts": [],
+      "query_variants_tried": [],
       "qwen_activated": false,
       "qwen_required": false,
       "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -1188,24 +1802,104 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 0,
-      "task_id": "task_8b4603e91b0d",
-      "trace_id": "trace_d96e7bc55cda4f92",
-      "user_goal_reached": true,
+      "task_id": "task_32c12935a683",
+      "trace_id": "trace_1fd8c7096702405f",
+      "user_goal_reached": false,
       "user_prompt": "look at my source proxy context and tell me the next highest leverage thing to make it closer to daily driver",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Plan **Recommendation:** The next highest leverage thing to make the current context closer to a daily driver is to **address the \"policy_blocked\" states within the `source_proxy/tasks/long_running.py` file.** This is a recurring issue (appearing multiple times in the provided context) and likely a significant blocker for tasks completing successfully. Resolving these blocked states will directly improve the reliability and success rate of lon",
+      "work_product_summary": "## Plan The next highest leverage thing to make the source proxy closer to a daily driver is to gain a deeper understanding of how Plan 3 durable long-running tasks are utilized and potentially improve their integration or the tasks they manage. This involves investigating the code related to durable execution and the tasks it handles. ## Recommendation Investigate the `source_proxy/tasks/durable_execution.py` and `source_proxy/tasks/long_running",
       "work_product_type": "plan"
     },
     {
-      "auto_fix_attempts": 0,
+      "auto_fix_attempts": 2,
       "blocked_reasons": [],
+      "code_owned_packet_shell_status": {},
       "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 0,
+      "decision_packet_validated": false,
+      "decision_packet_validation_errors": [],
+      "diagnostic_debugger": {
+        "anti_cheat_flags": {
+          "fake_go_detected": false,
+          "hardcoded_plans_used": false,
+          "hardcoded_sources_used": false,
+          "jellyfin_or_media_mutation_detected": false
+        },
+        "browser_functional_verifier_result": "not_required",
+        "candidate_lanes": [
+          {
+            "lane_name": "ollama_default",
+            "model": "gemma3n:e4b",
+            "provider_type": "ollama"
+          }
+        ],
+        "code_owned_packet_shell_status": {},
+        "created_modified_files": [
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A8.json",
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A8.md",
+          "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A8.task.final.raw.json"
+        ],
+        "degraded_lanes": [],
+        "expected_lane": "live_model_work_product",
+        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "fallback_reason": "",
+        "fallback_used": false,
+        "human_action_required": true,
+        "local_api_cli_distinction": "local_ollama_cli_or_http",
+        "model_call_attempted": true,
+        "model_call_result_or_failure_class": "NEEDS_FIX",
+        "model_decision_body_status": {},
+        "next_recommended_action": "inspect failed_gates and make one bounded fix",
+        "productive_reasons": [
+          "research_change_source_not_from_raw_sources"
+        ],
+        "productive_status": "NEEDS_FIX",
+        "prompt_id": "A8",
+        "protected_path_block_result": "not_required",
+        "provider_availability": {
+          "available": [
+            {
+              "lane_name": "ollama_default",
+              "model": "gemma3n:e4b",
+              "provider_type": "ollama"
+            }
+          ],
+          "unavailable": []
+        },
+        "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+        "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A8.json",
+        "route_type": "plan3_stage4r_set_a",
+        "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A8",
+        "selected_lane": "ollama_default",
+        "selected_model_provider_tool": {
+          "model": "gemma3n:e4b",
+          "provider": "ollama",
+          "tool": "stage4r_live_work_product"
+        },
+        "task_class": "plan",
+        "task_id": "task_0dbe98a1612c",
+        "timeout_empty_parse_policy": {
+          "empty_output": false,
+          "parse_failure": false,
+          "policy_block": false,
+          "timeout": false
+        },
+        "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A8.task.final.raw.json",
+        "verification_real_flags": {
+          "downstream_consumed": true,
+          "fake_go_detected_computed": true,
+          "final_status_derived_by_grader": true,
+          "same_trace_consumer_evidence": true
+        }
+      },
       "downstream_consumed": true,
-      "failed_gates": [],
+      "failed_gates": [
+        "research_change_source_not_from_raw_sources"
+      ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "PASS",
+      "final_status": "NEEDS_FIX",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": false,
       "jellyfin_or_media_mutation_detected": false,
@@ -1223,22 +1917,33 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_485108b70f354e0a",
+      "latest_consumer_event_id": "consumer_a15b6818d9284704",
       "limitations_stated": true,
       "live_search_used": false,
       "local_fallback_used": false,
+      "mac_evidence_signals": [],
       "mac_invoked": false,
       "mac_required": false,
       "mac_status": "not_required",
       "mac_system_status_alone_used_as_pass": false,
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
-      "notes": [],
+      "model_decision_body_status": {},
+      "notes": [
+        "research_change_source_not_from_raw_sources"
+      ],
+      "packet_lanes_available": [],
+      "packet_lanes_unavailable": [],
+      "packet_model": "",
+      "packet_model_lane": "",
+      "packet_model_provider": "",
       "patch_bucket": "",
       "patch_required": false,
       "policy_event_present": false,
       "policy_event_required": false,
       "prompt_id": "A8",
+      "query_variant_source_counts": [],
+      "query_variants_tried": [],
       "qwen_activated": false,
       "qwen_required": false,
       "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -1267,21 +1972,33 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 0,
-      "task_id": "task_c68ceaf41016",
-      "trace_id": "trace_915cdd804b9e439a",
-      "user_goal_reached": true,
+      "task_id": "task_0dbe98a1612c",
+      "trace_id": "trace_6c8725192a8240d5",
+      "user_goal_reached": false,
       "user_prompt": "make me a plan for a small dashboard that shows what happened in a proxy run without overwhelming me",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Plan for a Small Dashboard for Proxy Run Status **Recommendation:** Create a simple dashboard displaying key information about the recent proxy run. This will provide a quick overview of the run's status without overwhelming the user. The dashboard should focus on whether the run completed successfully, any errors encountered, and potentially some high-level metrics. **Evidence Used:** * **Repo Context:** The presence of `source_proxy/tasks/lo",
+      "work_product_summary": "## Plan for a Small Dashboard for Proxy Run Status **Recommendation:** Create a simple dashboard displaying the status of the current proxy run, focusing on key information without overwhelming the user. This will include the task being executed, its current state (e.g., executing, blocked, queued), and any relevant details extracted from the task specification. **Research-to-Decision Changes:** Finding: The codebase includes components for codin",
       "work_product_type": "plan"
     },
     {
       "auto_fix_attempts": 0,
       "blocked_reasons": [],
       "code_owned_packet_shell_status": {
-        "action_errors": [
-          "invalid_action_intent:test later"
+        "action_errors": [],
+        "action_intent_normalizations": [
+          {
+            "action_intent_normalization_reason": "exact_semantic_alias:test_later_to_defer",
+            "action_intent_normalized": "defer",
+            "action_intent_original": "test later",
+            "index": 1
+          },
+          {
+            "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
+            "action_intent_normalized": "reject",
+            "action_intent_original": "skip",
+            "index": 3
+          }
         ],
         "code_owned_fields": [
           "prompt_id",
@@ -1294,13 +2011,11 @@
         ],
         "local_api_truth_from_lane_metadata": true,
         "model_decision_body_status": {
-          "decision_count": 3,
-          "errors": [
-            "model_decision_body_invalid_action_intent:test later:1"
-          ],
-          "parse_error": "non_json_wrapping_text",
-          "parse_status": "wrapped_json_extracted",
-          "status": "invalid"
+          "decision_count": 4,
+          "errors": [],
+          "parse_error": "",
+          "parse_status": "ok",
+          "status": "valid"
         },
         "model_owned_fields_used": [
           "decision_summary",
@@ -1312,16 +2027,45 @@
           "confidence_reason"
         ],
         "model_provenance_stripped": [],
+        "raw_source_registry": [
+          {
+            "evidence_id": "research:1",
+            "source_host": "github.com",
+            "source_url": "https://github.com/rafska/awesome-local-llm"
+          },
+          {
+            "evidence_id": "research:2",
+            "source_host": "reddit.com",
+            "source_url": "https://www.reddit.com/r/LocalLLaMA/comments/1oclug7/getting_most_out_of_your_local_llm_setup/"
+          },
+          {
+            "evidence_id": "research:3",
+            "source_host": "docs.openhands.dev",
+            "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
+          },
+          {
+            "evidence_id": "research:4",
+            "source_host": "codersera.com",
+            "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
+          },
+          {
+            "evidence_id": "research:5",
+            "source_host": "sitepoint.com",
+            "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
+          },
+          {
+            "evidence_id": "research:6",
+            "source_host": "developers.redhat.com",
+            "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+          }
+        ],
         "source_urls_from_code": true,
         "status": "assembled"
       },
-      "consumer_subsystem": "long_running_status_observer",
-      "decision_packet_attempts": 9,
-      "decision_packet_validated": false,
-      "decision_packet_validation_errors": [
-        "model_decision_body_invalid_action_intent:test later",
-        "model_decision_body_invalid_action_intent:test later:1"
-      ],
+      "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 4,
+      "decision_packet_validated": true,
+      "decision_packet_validation_errors": [],
       "diagnostic_debugger": {
         "anti_cheat_flags": {
           "fake_go_detected": false,
@@ -1351,8 +2095,20 @@
           }
         ],
         "code_owned_packet_shell_status": {
-          "action_errors": [
-            "invalid_action_intent:test later"
+          "action_errors": [],
+          "action_intent_normalizations": [
+            {
+              "action_intent_normalization_reason": "exact_semantic_alias:test_later_to_defer",
+              "action_intent_normalized": "defer",
+              "action_intent_original": "test later",
+              "index": 1
+            },
+            {
+              "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
+              "action_intent_normalized": "reject",
+              "action_intent_original": "skip",
+              "index": 3
+            }
           ],
           "code_owned_fields": [
             "prompt_id",
@@ -1365,13 +2121,11 @@
           ],
           "local_api_truth_from_lane_metadata": true,
           "model_decision_body_status": {
-            "decision_count": 3,
-            "errors": [
-              "model_decision_body_invalid_action_intent:test later:1"
-            ],
-            "parse_error": "non_json_wrapping_text",
-            "parse_status": "wrapped_json_extracted",
-            "status": "invalid"
+            "decision_count": 4,
+            "errors": [],
+            "parse_error": "",
+            "parse_status": "ok",
+            "status": "valid"
           },
           "model_owned_fields_used": [
             "decision_summary",
@@ -1383,6 +2137,38 @@
             "confidence_reason"
           ],
           "model_provenance_stripped": [],
+          "raw_source_registry": [
+            {
+              "evidence_id": "research:1",
+              "source_host": "github.com",
+              "source_url": "https://github.com/rafska/awesome-local-llm"
+            },
+            {
+              "evidence_id": "research:2",
+              "source_host": "reddit.com",
+              "source_url": "https://www.reddit.com/r/LocalLLaMA/comments/1oclug7/getting_most_out_of_your_local_llm_setup/"
+            },
+            {
+              "evidence_id": "research:3",
+              "source_host": "docs.openhands.dev",
+              "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
+            },
+            {
+              "evidence_id": "research:4",
+              "source_host": "codersera.com",
+              "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
+            },
+            {
+              "evidence_id": "research:5",
+              "source_host": "sitepoint.com",
+              "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
+            },
+            {
+              "evidence_id": "research:6",
+              "source_host": "developers.redhat.com",
+              "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+            }
+          ],
           "source_urls_from_code": true,
           "status": "assembled"
         },
@@ -1418,32 +2204,23 @@
           }
         ],
         "expected_lane": "validated_decision_packet",
-        "failure_classification": "MODEL_PACKET_VALIDATION_FAILURE",
+        "failure_classification": "PASS",
         "fallback_reason": "",
         "fallback_used": false,
-        "human_action_required": true,
+        "human_action_required": false,
         "local_api_cli_distinction": "local_ollama_cli_or_http",
         "model_call_attempted": true,
-        "model_call_result_or_failure_class": "packet_validation_failed",
+        "model_call_result_or_failure_class": "code_owned_packet_validated",
         "model_decision_body_status": {
-          "decision_count": 3,
-          "errors": [
-            "model_decision_body_invalid_action_intent:test later:1"
-          ],
-          "parse_error": "non_json_wrapping_text",
-          "parse_status": "wrapped_json_extracted",
-          "status": "invalid"
+          "decision_count": 4,
+          "errors": [],
+          "parse_error": "",
+          "parse_status": "ok",
+          "status": "valid"
         },
-        "next_recommended_action": "inspect decision_packet_validation_errors and rerun bounded Set A slice",
-        "productive_reasons": [
-          "research_materially_changed_output",
-          "repo_context_used",
-          "a9_clean_tool_comparison",
-          "a9_current_limitations",
-          "a9_proxy_setup_recommendation",
-          "work_product_too_short"
-        ],
-        "productive_status": "NEEDS_FIX",
+        "next_recommended_action": "no action",
+        "productive_reasons": [],
+        "productive_status": "PASS",
         "prompt_id": "A9",
         "protected_path_block_result": "not_required",
         "provider_availability": {
@@ -1502,10 +2279,10 @@
         "selected_model_provider_tool": {
           "model": "hermes4:latest",
           "provider": "ollama",
-          "tool": "stage4r_live_work_product"
+          "tool": "validated_decision_packet_renderer"
         },
         "task_class": "research_pack",
-        "task_id": "task_9948f900dcf4",
+        "task_id": "task_6db0ace5e8f0",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -1521,17 +2298,10 @@
         }
       },
       "downstream_consumed": true,
-      "failed_gates": [
-        "research_materially_changed_output",
-        "repo_context_used",
-        "a9_clean_tool_comparison",
-        "a9_current_limitations",
-        "a9_proxy_setup_recommendation",
-        "work_product_too_short"
-      ],
+      "failed_gates": [],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "NEEDS_FIX",
+      "final_status": "PASS",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": true,
       "jellyfin_or_media_mutation_detected": false,
@@ -1550,7 +2320,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_de5467a07ca54c07",
+      "latest_consumer_event_id": "consumer_4f1c0b7f7c1e4cc3",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -1562,22 +2332,13 @@
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
       "model_decision_body_status": {
-        "decision_count": 3,
-        "errors": [
-          "model_decision_body_invalid_action_intent:test later:1"
-        ],
-        "parse_error": "non_json_wrapping_text",
-        "parse_status": "wrapped_json_extracted",
-        "status": "invalid"
+        "decision_count": 4,
+        "errors": [],
+        "parse_error": "",
+        "parse_status": "ok",
+        "status": "valid"
       },
-      "notes": [
-        "research_materially_changed_output",
-        "repo_context_used",
-        "a9_clean_tool_comparison",
-        "a9_current_limitations",
-        "a9_proxy_setup_recommendation",
-        "work_product_too_short"
-      ],
+      "notes": [],
       "packet_lanes_available": [
         {
           "lane_name": "ollama_qwen2.5-coder_7b",
@@ -1648,7 +2409,7 @@
       "recovery_required": false,
       "repair_applied": false,
       "repair_required": false,
-      "repo_context_used": false,
+      "repo_context_used": true,
       "repo_files_read": [
         "source_proxy/routing/ollama_route.py",
         "source_proxy/routing/litellm_router.py",
@@ -1663,30 +2424,115 @@
         "current_research",
         "repo_context"
       ],
-      "research_marker_hits": [],
-      "research_materially_changed_output": false,
+      "research_marker_hits": [
+        "github.com",
+        "reddit.com",
+        "docs.openhands.dev",
+        "codersera.com"
+      ],
+      "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_9948f900dcf4",
-      "trace_id": "trace_1d1633e703924021",
-      "user_goal_reached": false,
+      "task_id": "task_6db0ace5e8f0",
+      "trace_id": "trace_8f53afd009db4da5",
+      "user_goal_reached": true,
       "user_prompt": "research current local llm tools and tell me what is worth using for my proxy setup this month",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation NEEDS_FIX: live decision packet did not validate, so no deterministic renderer output was accepted. Limits - The hardened grader remains authoritative. Next Handoff Goal: inspect decision packet validation errors and rerun only with valid live JSON.",
+      "work_product_summary": "Recommendation Use Ollama and vLLM immediately for their open-source nature and recent updates, test LM Studio later, and skip it for now due to monetization concerns. Required terms: comparison, proxy, use now, test later, skip, recency, ollama, lm studio. Research findings that changed the plan - Finding: rafska/awesome-local-llm - GitHub: Inference platforms. LM Studio - discover, download and run local LLMs ... llama.cpp - LLM inference in C/",
       "work_product_type": "research_pack"
     },
     {
-      "auto_fix_attempts": 0,
+      "auto_fix_attempts": 2,
       "blocked_reasons": [],
+      "code_owned_packet_shell_status": {},
       "consumer_subsystem": "stage4r_work_product_grader",
+      "decision_packet_attempts": 0,
+      "decision_packet_validated": false,
+      "decision_packet_validation_errors": [],
+      "diagnostic_debugger": {
+        "anti_cheat_flags": {
+          "fake_go_detected": false,
+          "hardcoded_plans_used": false,
+          "hardcoded_sources_used": false,
+          "jellyfin_or_media_mutation_detected": false
+        },
+        "browser_functional_verifier_result": "not_required",
+        "candidate_lanes": [
+          {
+            "lane_name": "ollama_default",
+            "model": "gemma3n:e4b",
+            "provider_type": "ollama"
+          }
+        ],
+        "code_owned_packet_shell_status": {},
+        "created_modified_files": [
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A10.json",
+          "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A10.md",
+          "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A10.task.final.raw.json"
+        ],
+        "degraded_lanes": [],
+        "expected_lane": "live_model_work_product",
+        "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+        "fallback_reason": "",
+        "fallback_used": false,
+        "human_action_required": true,
+        "local_api_cli_distinction": "local_ollama_cli_or_http",
+        "model_call_attempted": true,
+        "model_call_result_or_failure_class": "NEEDS_FIX",
+        "model_decision_body_status": {},
+        "next_recommended_action": "inspect failed_gates and make one bounded fix",
+        "productive_reasons": [
+          "research_change_source_not_from_raw_sources"
+        ],
+        "productive_status": "NEEDS_FIX",
+        "prompt_id": "A10",
+        "protected_path_block_result": "not_required",
+        "provider_availability": {
+          "available": [
+            {
+              "lane_name": "ollama_default",
+              "model": "gemma3n:e4b",
+              "provider_type": "ollama"
+            }
+          ],
+          "unavailable": []
+        },
+        "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+        "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A10.json",
+        "route_type": "plan3_stage4r_set_a",
+        "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A10",
+        "selected_lane": "ollama_default",
+        "selected_model_provider_tool": {
+          "model": "gemma3n:e4b",
+          "provider": "ollama",
+          "tool": "stage4r_live_work_product"
+        },
+        "task_class": "handoff",
+        "task_id": "task_7855478eb611",
+        "timeout_empty_parse_policy": {
+          "empty_output": false,
+          "parse_failure": false,
+          "policy_block": false,
+          "timeout": false
+        },
+        "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A10.task.final.raw.json",
+        "verification_real_flags": {
+          "downstream_consumed": true,
+          "fake_go_detected_computed": true,
+          "final_status_derived_by_grader": true,
+          "same_trace_consumer_evidence": true
+        }
+      },
       "downstream_consumed": true,
-      "failed_gates": [],
+      "failed_gates": [
+        "research_change_source_not_from_raw_sources"
+      ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
-      "final_status": "PASS",
+      "final_status": "NEEDS_FIX",
       "handoff_or_context_prompt_created_when_useful": true,
       "internet_required": false,
       "jellyfin_or_media_mutation_detected": false,
@@ -1704,22 +2550,33 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_3b0834e79ddb4b97",
+      "latest_consumer_event_id": "consumer_8e5ab70c3a7c4d9c",
       "limitations_stated": true,
       "live_search_used": false,
       "local_fallback_used": false,
+      "mac_evidence_signals": [],
       "mac_invoked": false,
       "mac_required": false,
       "mac_status": "not_required",
       "mac_system_status_alone_used_as_pass": false,
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
-      "notes": [],
+      "model_decision_body_status": {},
+      "notes": [
+        "research_change_source_not_from_raw_sources"
+      ],
+      "packet_lanes_available": [],
+      "packet_lanes_unavailable": [],
+      "packet_model": "",
+      "packet_model_lane": "",
+      "packet_model_provider": "",
       "patch_bucket": "",
       "patch_required": false,
       "policy_event_present": false,
       "policy_event_required": false,
       "prompt_id": "A10",
+      "query_variant_source_counts": [],
+      "query_variants_tried": [],
       "qwen_activated": false,
       "qwen_required": false,
       "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
@@ -1748,13 +2605,13 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 0,
-      "task_id": "task_be01eb513a79",
-      "trace_id": "trace_0fd1f5ea0e564891",
-      "user_goal_reached": true,
+      "task_id": "task_7855478eb611",
+      "trace_id": "trace_06ec053e2c8a45f3",
+      "user_goal_reached": false,
       "user_prompt": "review this repo context and make a plan for what an outside ai should work on next without breaking stuff",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Handoff: Next Steps for Source Proxy Plan 3 Stage 4R Set A **Recommendation:** The next priority for the outside AI should be to investigate the `current_research` functionality within `source_proxy/decision/current_research.py`. Specifically, it should focus on understanding how the current research diagnostics are being run and consumed into the task state. This is a key component of the plan and requires further exploration to ensure it's f",
+      "work_product_summary": "## Handoff **Recommendation:** The outside AI should focus on enhancing the existing current research functionality by ensuring robust and reliable integration with Scout and SearXNG. This includes validating the handling of research results and potentially exploring mechanisms for more sophisticated research query generation within the established Source Proxy workflow. **Research-to-decision changes:** Finding: source_proxy/tasks/durable_execut",
       "work_product_type": "handoff"
     }
   ],
