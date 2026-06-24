@@ -1,6 +1,6 @@
 # Stage 4R7 Preflight
 
-- current HEAD: `836d8707f55a9ee0baf0d33b3a7bdf984cb1fe6e`
+- current HEAD: `d1edd343f355c71f8a074d1898386bbf0698e6d6`
 - staged files count: 0
 - raw evidence writable: yes
 - scope confirmation: Stage 4R7 only; patch `_stage4r_runner.py` packet model-lane escalation and rerun A2/A5/A9 only; no Set B/C, Stage 5, Plan 4, push, media/Jellyfin mutation, route replacement, or new engine.
@@ -8,7 +8,7 @@
 ## Current A2/A5/A9 Blockers
 
 - A2: final_status=PASS decision_packet_validated=True source_count=6 blockers=
-- A5: final_status=PASS decision_packet_validated=True source_count=6 blockers=
+- A5: final_status=BLOCKED_ENV decision_packet_validated=False source_count=0 blockers=live research provider returned no sources
 - A9: final_status=PASS decision_packet_validated=True source_count=6 blockers=
 
 ## Configured Model/Provider Lanes

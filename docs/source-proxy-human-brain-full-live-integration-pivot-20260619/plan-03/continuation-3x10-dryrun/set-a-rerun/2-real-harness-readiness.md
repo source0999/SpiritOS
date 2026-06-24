@@ -6,5 +6,5 @@
 - research path invokes live provider: yes, `run_current_research_for_task` with SearXNG/Scout diagnostics.
 - final_status derived from grader: yes.
 - fake_go_detected computed: yes.
-- search probe: `{"result_count": 21, "first_titles": ["PKHeX - Save Editing - Project Pokemon Forums", "PKHeX download | SourceForge.net", "kwsch/PKHeX: Pok\u00e9mon Save File Editor - GitHub"]}`
+- search probe: `{"result_count": 13, "first_titles": ["PKHeX - Save Editing - Project Pokemon Forums", "kwsch/PKHeX: Pok\u00e9mon Save File Editor - GitHub", "PKHeX for Web"]}`
 - ollama tags reachable: yes

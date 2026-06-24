@@ -54,6 +54,7 @@
     },
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A8.json",
+    "research_change_field_repair_status": {},
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A8",
     "selected_lane": "ollama_default",
@@ -63,7 +64,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "plan",
-    "task_id": "task_8463ba9d042c",
+    "task_id": "task_6355c9c3ece2",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -100,7 +101,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_039a657dd7f04628",
+  "latest_consumer_event_id": "consumer_06e2ba9231c84a4f",
   "limitations_stated": true,
   "live_search_used": false,
   "local_fallback_used": false,
@@ -147,18 +148,19 @@
     "work_product_consumer",
     "repo_context"
   ],
+  "research_change_field_repair_status": {},
   "research_marker_hits": [],
   "research_materially_changed_output": false,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 0,
-  "task_id": "task_8463ba9d042c",
-  "trace_id": "trace_3288ef2e50064510",
+  "task_id": "task_6355c9c3ece2",
+  "trace_id": "trace_1af8e7524a2044b2",
   "user_goal_reached": true,
   "user_prompt": "make me a plan for a small dashboard that shows what happened in a proxy run without overwhelming me",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "## Plan for a Small Dashboard for Proxy Run Status **Recommendation:** Create a simple dashboard displaying the status of ongoing proxy runs, focusing on key information without overwhelming the user. This will provide a quick overview of what's happening with the proxy. **Research-to-Decision Changes:** Finding: The codebase includes components for coding command center shell, handling alerts, backend truth, settings, and usage time. Source: src",
+  "work_product_summary": "## Plan for a Small Dashboard Showing Proxy Run Activity **Recommendation:** Create a simple dashboard displaying the status of ongoing and recently completed proxy runs. This dashboard will focus on key indicators like task status (e.g., \"executing\", \"blocked\", \"completed\") and potentially include information related to coding tasks if relevant. **Research-to-Decision Changes:** Finding: The codebase includes modules for coding alerts, backend t",
   "work_product_type": "plan"
 }

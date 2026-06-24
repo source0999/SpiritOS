@@ -1,5 +1,5 @@
 {
-  "auto_fix_attempts": 1,
+  "auto_fix_attempts": 0,
   "blocked_reasons": [],
   "code_owned_packet_shell_status": {},
   "consumer_subsystem": "stage4r_work_product_grader",
@@ -54,6 +54,13 @@
     },
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A4.json",
+    "research_change_field_repair_status": {
+      "code_owned_grounding": "raw_source_and_model_decision_only",
+      "derived_why_fields": 0,
+      "enabled": true,
+      "inline_labels_split": 0,
+      "repairs": []
+    },
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A4",
     "selected_lane": "ollama_default",
@@ -63,7 +70,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "research_pack",
-    "task_id": "task_8deffd8d279a",
+    "task_id": "task_097cd9c8d6f8",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -101,7 +108,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_1e80ee7142394fa8",
+  "latest_consumer_event_id": "consumer_4d73e40ae2874474",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -153,20 +160,28 @@
     "current_research",
     "repo_context"
   ],
+  "research_change_field_repair_status": {
+    "code_owned_grounding": "raw_source_and_model_decision_only",
+    "derived_why_fields": 0,
+    "enabled": true,
+    "inline_labels_split": 0,
+    "repairs": []
+  },
   "research_marker_hits": [
-    "smart connections for obsidian"
+    "reddit.com",
+    "community.obsidian.md"
   ],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_8deffd8d279a",
-  "trace_id": "trace_7a88db2ab0da45c3",
+  "task_id": "task_097cd9c8d6f8",
+  "trace_id": "trace_f89bd4641e544960",
   "user_goal_reached": true,
   "user_prompt": "research ways to turn obsidian/project notes into better ai context and tell me what i should build first",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation: Prioritize building the Smart Connections plugin first. This plugin directly addresses the user's need to enhance AI context for their Obsidian notes by identifying semantically related notes. Research-to-decision changes: Finding: \"Smart Connections is an open-source plugin for Obsidian that uses local embeddings and a smart environment to surface semantically related notes. It was developed by Brian Petro and first released in 2",
+  "work_product_summary": "Recommendation: Prioritize building or utilizing the Smart Connections plugin as the first step to establish a foundation for using Obsidian notes with AI. This plugin directly addresses the user's goal of improving AI context from their notes by leveraging local embeddings and integration with Large Language Models. Research-to-decision changes: Finding: The Smart Connections plugin uses the text embedding model to find relevant notes and sends ",
   "work_product_type": "research_pack"
 }

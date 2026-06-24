@@ -1,5 +1,5 @@
 {
-  "auto_fix_attempts": 0,
+  "auto_fix_attempts": 2,
   "blocked_reasons": [],
   "code_owned_packet_shell_status": {},
   "consumer_subsystem": "stage4r_work_product_grader",
@@ -29,17 +29,19 @@
     ],
     "degraded_lanes": [],
     "expected_lane": "live_model_work_product",
-    "failure_classification": "PASS",
+    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
     "fallback_reason": "",
     "fallback_used": false,
-    "human_action_required": false,
+    "human_action_required": true,
     "local_api_cli_distinction": "local_ollama_cli_or_http",
     "model_call_attempted": true,
-    "model_call_result_or_failure_class": "PASS",
+    "model_call_result_or_failure_class": "NEEDS_FIX",
     "model_decision_body_status": {},
-    "next_recommended_action": "no action",
-    "productive_reasons": [],
-    "productive_status": "PASS",
+    "next_recommended_action": "inspect failed_gates and make one bounded fix",
+    "productive_reasons": [
+      "research_change_source_not_from_raw_sources"
+    ],
+    "productive_status": "NEEDS_FIX",
     "prompt_id": "A3",
     "protected_path_block_result": "not_required",
     "provider_availability": {
@@ -54,6 +56,13 @@
     },
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.json",
+    "research_change_field_repair_status": {
+      "code_owned_grounding": "raw_source_and_model_decision_only",
+      "derived_why_fields": 0,
+      "enabled": true,
+      "inline_labels_split": 0,
+      "repairs": []
+    },
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A3",
     "selected_lane": "ollama_default",
@@ -63,7 +72,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "plan",
-    "task_id": "task_bc3497180c5d",
+    "task_id": "task_f47e8876c901",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -79,10 +88,12 @@
     }
   },
   "downstream_consumed": true,
-  "failed_gates": [],
+  "failed_gates": [
+    "research_change_source_not_from_raw_sources"
+  ],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
-  "final_status": "PASS",
+  "final_status": "NEEDS_FIX",
   "handoff_or_context_prompt_created_when_useful": true,
   "internet_required": true,
   "jellyfin_or_media_mutation_detected": false,
@@ -101,7 +112,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_c973de1bb5604da3",
+  "latest_consumer_event_id": "consumer_048f735339524cab",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -113,7 +124,9 @@
   "max_auto_fix_attempts": 3,
   "model": "gemma3n:e4b",
   "model_decision_body_status": {},
-  "notes": [],
+  "notes": [
+    "research_change_source_not_from_raw_sources"
+  ],
   "packet_lanes_available": [],
   "packet_lanes_unavailable": [],
   "packet_model": "",
@@ -153,20 +166,25 @@
     "current_research",
     "repo_context"
   ],
-  "research_marker_hits": [
-    "medium.com"
-  ],
+  "research_change_field_repair_status": {
+    "code_owned_grounding": "raw_source_and_model_decision_only",
+    "derived_why_fields": 0,
+    "enabled": true,
+    "inline_labels_split": 0,
+    "repairs": []
+  },
+  "research_marker_hits": [],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_bc3497180c5d",
-  "trace_id": "trace_bf3f01e3056946f9",
-  "user_goal_reached": true,
+  "task_id": "task_f47e8876c901",
+  "trace_id": "trace_3455fa8909ca45cc",
+  "user_goal_reached": false,
   "user_prompt": "figure out the best path for an android app that lets me start proxy tasks from my phone and check receipts",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "## Plan **Phase 1: Intent-Based Task Initiation and Data Transfer (Estimated Duration: 2-3 weeks)** 1. **Research and Design (CodingCommandCeCenterShell.tsx, src/app/v1/tasks/long-running/route.ts):** Investigate the feasibility of using Android Intents to trigger proxy tasks from the mobile application. Design the intent structure to include necessary data for task initiation and data transfer (e.g., task ID, relevant parameters). 2. **Intent Im",
+  "work_product_summary": "Recommendation Implement Android Intents to enable starting proxy tasks from the phone and checking receipts. This will allow for seamless communication between the mobile app and the proxy task service. Research-to-decision changes Finding: When you construct an intent, you must specify the action you want the intent to \"trigger.\" Android defines several actions, including ACTION_SEND which, as you can probably guess, indicates that the intent i",
   "work_product_type": "plan"
 }

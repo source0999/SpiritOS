@@ -54,6 +54,7 @@
     },
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A10.json",
+    "research_change_field_repair_status": {},
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A10",
     "selected_lane": "ollama_default",
@@ -63,7 +64,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "handoff",
-    "task_id": "task_ccf03217b386",
+    "task_id": "task_aa71f09e02ab",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -100,7 +101,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_4a794f0b92184e7f",
+  "latest_consumer_event_id": "consumer_3ca275b1c30b4099",
   "limitations_stated": true,
   "live_search_used": false,
   "local_fallback_used": false,
@@ -147,18 +148,19 @@
     "work_product_consumer",
     "repo_context"
   ],
+  "research_change_field_repair_status": {},
   "research_marker_hits": [],
   "research_materially_changed_output": false,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 0,
-  "task_id": "task_ccf03217b386",
-  "trace_id": "trace_1824e968024f4669",
+  "task_id": "task_aa71f09e02ab",
+  "trace_id": "trace_866ea26890324943",
   "user_goal_reached": true,
   "user_prompt": "review this repo context and make a plan for what an outside ai should work on next without breaking stuff",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "## Handoff **Recommendation:** The outside AI should prioritize extending the current research functionality within the existing Source Proxy framework. Specifically, it should focus on enhancing the integration with Scout and SearXNG, ensuring that any new features adhere to established Source Proxy workflows and do not introduce instability. **Research-to-decision changes:** Finding: The `source_proxy/tasks/durable_execution.py` file defines ta",
+  "work_product_summary": "## Handoff **Recommendation:** The outside AI should prioritize enhancing the current research integration capabilities within the Source Proxy workflow. Specifically, it should focus on improving the diagnostics and handling of research requests using the existing Scout and SearXNG infrastructure. **Research-to-decision changes:** Finding: The `source_proxy/tasks/durable_execution.py` file defines states related to policy checking and research e",
   "work_product_type": "handoff"
 }

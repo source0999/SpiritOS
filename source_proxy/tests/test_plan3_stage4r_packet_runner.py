@@ -409,6 +409,85 @@ Research-to-decision changes
     assert errors == []
 
 
+def test_inline_research_change_labels_are_parsed_without_weakening_source_match() -> None:
+    runner = _load_runner()
+    sources = [
+        {
+            "title": "PKHeX - Save Editing - Project Pokemon Forums",
+            "url": "https://projectpokemon.org/home/files/file/1-pkhex/",
+            "content": "PKHeX supports Pokemon core series save files including main, sav, dsv, dat, and GameCube memory card files.",
+        }
+    ]
+    work = """Recommendation
+Use PKHeX as the first save-editor framework.
+
+Research-to-decision changes
+- Finding: PKHeX supports Pokemon core series save files including main, sav, dsv, dat, and GameCube memory card files.
+  Source: PKHeX - Save Editing - Project Pokemon Forums | host=projectpokemon.org | url=https://projectpokemon.org/home/files/file/1-pkhex/ | Decision changed: Choose PKHeX as the initial framework because it already targets the required Pokemon save formats. Why this changes the recommendation: This source turns the route away from a generic tutorial and toward an existing save-editor codebase with format coverage.
+"""
+
+    blocks, errors = runner.research_change_blocks(work, sources)
+
+    assert len(blocks) == 1
+    assert errors == []
+    assert blocks[0]["decision"].startswith("Choose PKHeX")
+
+
+def test_research_change_field_repair_derives_missing_why_from_raw_source_and_decision() -> None:
+    runner = _load_runner()
+    sources = [
+        {
+            "title": "PKHeX for Web - A Cross-Platform Pokemon Save File Editor",
+            "url": "https://pkhex-web.github.io/",
+            "content": "PKHeX for Web runs on Windows, Linux, MacOS, Steam Deck, or anywhere a browser is supported.",
+        }
+    ]
+    work = """Recommendation
+Use PKHeX for the first save-editor route.
+
+Research-to-decision changes
+- Finding: PKHeX for Web runs on Windows, Linux, MacOS, Steam Deck, or anywhere a browser is supported.
+  Source: PKHeX for Web - A Cross-Platform Pokemon Save File Editor | host=pkhex-web.github.io | url=https://pkhex-web.github.io/ | Decision changed: Consider the web-based PKHeX route for broader platform compatibility during development.
+
+Evidence Used
+- PKHeX for Web
+"""
+
+    repaired, status = runner.repair_research_change_fields(work, sources)
+    blocks, errors = runner.research_change_blocks(repaired, sources)
+
+    assert status["derived_why_fields"] == 1
+    assert "derived_missing_why_from_raw_source_and_decision" in status["repairs"]
+    assert len(blocks) == 1
+    assert errors == []
+    assert "Why this changes the recommendation:" in repaired
+
+
+def test_research_change_field_repair_does_not_promote_fake_sources() -> None:
+    runner = _load_runner()
+    sources = [
+        {
+            "title": "PKHeX - Save Editing - Project Pokemon Forums",
+            "url": "https://projectpokemon.org/home/files/file/1-pkhex/",
+            "content": "PKHeX supports Pokemon save files and related save editing workflows.",
+        }
+    ]
+    work = """Recommendation
+Use a save editor.
+
+Research-to-decision changes
+- Finding: PKHeX supports Pokemon save files and related save editing workflows.
+  Source: Fake Tutorial Site (fake.example) https://fake.example/pkhex | Decision changed: Choose PKHeX as the starting point for save editing.
+"""
+
+    repaired, status = runner.repair_research_change_fields(work, sources)
+    blocks, errors = runner.research_change_blocks(repaired, sources)
+
+    assert status["derived_why_fields"] == 0
+    assert blocks == []
+    assert "research_change_source_not_from_raw_sources" in errors
+
+
 def test_research_source_line_rejects_fake_model_source() -> None:
     runner = _load_runner()
     sources = [

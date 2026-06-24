@@ -9,12 +9,6 @@
         "action_intent_normalized": "defer",
         "action_intent_original": "test later",
         "index": 1
-      },
-      {
-        "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
-        "action_intent_normalized": "reject",
-        "action_intent_original": "skip",
-        "index": 3
       }
     ],
     "code_owned_fields": [
@@ -43,12 +37,14 @@
       "action_intent",
       "confidence_reason"
     ],
-    "model_provenance_stripped": [],
+    "model_provenance_stripped": [
+      "llama.cpp"
+    ],
     "raw_source_registry": [
       {
         "evidence_id": "research:1",
-        "source_host": "github.com",
-        "source_url": "https://github.com/rafska/awesome-local-llm"
+        "source_host": "docs.openhands.dev",
+        "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
       },
       {
         "evidence_id": "research:2",
@@ -57,23 +53,23 @@
       },
       {
         "evidence_id": "research:3",
-        "source_host": "docs.openhands.dev",
-        "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
-      },
-      {
-        "evidence_id": "research:4",
-        "source_host": "codersera.com",
-        "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
-      },
-      {
-        "evidence_id": "research:5",
         "source_host": "sitepoint.com",
         "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
       },
       {
+        "evidence_id": "research:4",
+        "source_host": "github.com",
+        "source_url": "https://github.com/rafska/awesome-local-llm"
+      },
+      {
+        "evidence_id": "research:5",
+        "source_host": "pinggy.io",
+        "source_url": "https://pinggy.io/blog/top_5_local_llm_tools_and_models/"
+      },
+      {
         "evidence_id": "research:6",
-        "source_host": "developers.redhat.com",
-        "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+        "source_host": "youtube.com",
+        "source_url": "https://www.youtube.com/watch?v=lnOovGwqboE"
       }
     ],
     "source_urls_from_code": true,
@@ -119,12 +115,6 @@
           "action_intent_normalized": "defer",
           "action_intent_original": "test later",
           "index": 1
-        },
-        {
-          "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
-          "action_intent_normalized": "reject",
-          "action_intent_original": "skip",
-          "index": 3
         }
       ],
       "code_owned_fields": [
@@ -153,12 +143,14 @@
         "action_intent",
         "confidence_reason"
       ],
-      "model_provenance_stripped": [],
+      "model_provenance_stripped": [
+        "llama.cpp"
+      ],
       "raw_source_registry": [
         {
           "evidence_id": "research:1",
-          "source_host": "github.com",
-          "source_url": "https://github.com/rafska/awesome-local-llm"
+          "source_host": "docs.openhands.dev",
+          "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
         },
         {
           "evidence_id": "research:2",
@@ -167,23 +159,23 @@
         },
         {
           "evidence_id": "research:3",
-          "source_host": "docs.openhands.dev",
-          "source_url": "https://docs.openhands.dev/openhands/usage/llms/local-llms"
-        },
-        {
-          "evidence_id": "research:4",
-          "source_host": "codersera.com",
-          "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
-        },
-        {
-          "evidence_id": "research:5",
           "source_host": "sitepoint.com",
           "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
         },
         {
+          "evidence_id": "research:4",
+          "source_host": "github.com",
+          "source_url": "https://github.com/rafska/awesome-local-llm"
+        },
+        {
+          "evidence_id": "research:5",
+          "source_host": "pinggy.io",
+          "source_url": "https://pinggy.io/blog/top_5_local_llm_tools_and_models/"
+        },
+        {
           "evidence_id": "research:6",
-          "source_host": "developers.redhat.com",
-          "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+          "source_host": "youtube.com",
+          "source_url": "https://www.youtube.com/watch?v=lnOovGwqboE"
         }
       ],
       "source_urls_from_code": true,
@@ -290,6 +282,7 @@
     },
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A9.json",
+    "research_change_field_repair_status": {},
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A9",
     "selected_lane": "ollama_hermes4_latest",
@@ -299,7 +292,7 @@
       "tool": "validated_decision_packet_renderer"
     },
     "task_class": "research_pack",
-    "task_id": "task_6db0ace5e8f0",
+    "task_id": "task_d2c669abaf18",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -337,7 +330,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_4f1c0b7f7c1e4cc3",
+  "latest_consumer_event_id": "consumer_2a11ca68b479452a",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -441,23 +434,24 @@
     "current_research",
     "repo_context"
   ],
+  "research_change_field_repair_status": {},
   "research_marker_hits": [
-    "github.com",
-    "reddit.com",
     "docs.openhands.dev",
-    "codersera.com"
+    "reddit.com",
+    "sitepoint.com",
+    "github.com"
   ],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_6db0ace5e8f0",
-  "trace_id": "trace_8f53afd009db4da5",
+  "task_id": "task_d2c669abaf18",
+  "trace_id": "trace_cd247d8d85894584",
   "user_goal_reached": true,
   "user_prompt": "research current local llm tools and tell me what is worth using for my proxy setup this month",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation Use Ollama and vLLM immediately for their open-source nature and recent updates, test LM Studio later, and skip it for now due to monetization concerns. Required terms: comparison, proxy, use now, test later, skip, recency, ollama, lm studio. Research findings that changed the plan - Finding: rafska/awesome-local-llm - GitHub: Inference platforms. LM Studio - discover, download and run local LLMs ... llama.cpp - LLM inference in C/",
+  "work_product_summary": "Recommendation Immediately integrate Ollama into the proxy setup, evaluate LM Studio in a test environment, and defer consideration of other tools until further evidence is available. Required terms: comparison, proxy, use now, test later, skip, recency, ollama, lm studio. Research findings that changed the plan - Finding: Local LLMs - OpenHands Docs: ... LM Studio, Ollama, vLLM, and SGLang. \u200b. Quickstart: Running OpenHands with a Local LLM using",
   "work_product_type": "research_pack"
 }

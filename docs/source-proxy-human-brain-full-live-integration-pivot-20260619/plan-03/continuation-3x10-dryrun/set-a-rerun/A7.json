@@ -1,5 +1,5 @@
 {
-  "auto_fix_attempts": 1,
+  "auto_fix_attempts": 0,
   "blocked_reasons": [],
   "code_owned_packet_shell_status": {},
   "consumer_subsystem": "stage4r_work_product_grader",
@@ -54,6 +54,7 @@
     },
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A7.json",
+    "research_change_field_repair_status": {},
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A7",
     "selected_lane": "ollama_default",
@@ -63,7 +64,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "plan",
-    "task_id": "task_15e8fae619b6",
+    "task_id": "task_cbe214be273a",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -100,7 +101,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_641d240718b94e45",
+  "latest_consumer_event_id": "consumer_a22f9a0f6bf04b76",
   "limitations_stated": true,
   "live_search_used": false,
   "local_fallback_used": false,
@@ -147,18 +148,19 @@
     "work_product_consumer",
     "repo_context"
   ],
+  "research_change_field_repair_status": {},
   "research_marker_hits": [],
   "research_materially_changed_output": false,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 0,
-  "task_id": "task_15e8fae619b6",
-  "trace_id": "trace_66b40f1c38dd4fcc",
+  "task_id": "task_cbe214be273a",
+  "trace_id": "trace_b4f5a36e7c534b43",
   "user_goal_reached": true,
   "user_prompt": "look at my source proxy context and tell me the next highest leverage thing to make it closer to daily driver",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "## Plan **Phase:** Investigate and understand the `source_proxy/tasks/durable_execution.py` and `source_proxy/tasks/long_running.py` files. **Steps:** 1. **Examine `source_proxy/tasks/durable_execution.py`:** Analyze this file to understand how it interacts with the `source_proxy/tasks/long_running.py` module. Identify the specific tasks it creates, manages, and monitors. 2. **Examine `source_proxy/tasks/long_running.py`:** Deep dive into this fi",
+  "work_product_summary": "## Plan **Phase:** Investigate and integrate Plan 3 durable long-running tasks. **Task:** Deep dive into `source_proxy/tasks/durable_execution.py` and `source_proxy/tasks/long_running.py` to understand the implementation of Plan 3 durable long-running tasks. **Goal:** Leverage the existing Plan 3 durable infrastructure to enhance the reliability and robustness of the source proxy, making it more suitable for daily driver use. ## Recommendation Pr",
   "work_product_type": "plan"
 }

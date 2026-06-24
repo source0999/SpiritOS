@@ -350,6 +350,148 @@ def specific_decision_verb_present(text: str) -> bool:
     ))
 
 
+def split_inline_research_change_fields(value: str) -> tuple[str, dict[str, str]]:
+    labels = [
+        ("decision changed:", "decision"),
+        ("how it changed the plan:", "decision"),
+        ("why this changes the recommendation:", "why"),
+        ("why this changes the plan:", "why"),
+    ]
+    lowered = value.lower()
+    matches = sorted(
+        (lowered.find(label), label, key)
+        for label, key in labels
+        if lowered.find(label) >= 0
+    )
+    if not matches:
+        return value.strip().strip("|").strip(), {}
+    main = value[:matches[0][0]].strip().strip("|").strip()
+    fields: dict[str, str] = {}
+    for index, (start, label, key) in enumerate(matches):
+        end = matches[index + 1][0] if index + 1 < len(matches) else len(value)
+        text = value[start + len(label):end].strip().strip("|").strip()
+        if text and key not in fields:
+            fields[key] = text
+    return main, fields
+
+
+def matching_research_source_facts(source_line: str, source_records: list[dict[str, str]]) -> list[dict[str, str]]:
+    source_line_lower = source_line.lower()
+    normalized_source_line = normalize_source_text(source_line)
+    matched_records = []
+    for fact in source_records:
+        host = str(fact.get("host") or "").lower().replace("www.", "")
+        url = str(fact.get("url") or "").lower().replace("www.", "")
+        title = normalize_source_text(str(fact.get("title") or ""))
+        if (
+            (host and host in normalized_source_line)
+            or (url and url in source_line_lower.replace("www.", ""))
+            or (title and title in normalized_source_line)
+            or source_title_token_match(source_line, str(fact.get("title") or ""))
+        ):
+            matched_records.append(fact)
+    return matched_records
+
+
+def derive_research_change_why(block: dict[str, str], sources: list[dict[str, Any]]) -> str:
+    finding = block.get("finding", "").strip()
+    source = block.get("source", "").strip()
+    decision = block.get("decision", "").strip()
+    if len(finding) < 35 or len(source) < 10 or len(decision) < 35:
+        return ""
+    if not specific_decision_verb_present(decision):
+        return ""
+    matched = matching_research_source_facts(source, source_facts(sources))
+    if not matched:
+        return ""
+    source_words = set()
+    for fact in matched:
+        source_words |= meaningful_words(" ".join([str(fact.get("title") or ""), str(fact.get("finding") or "")]))
+    if len(meaningful_words(finding) & source_words) < 2:
+        return ""
+    fact = matched[0]
+    source_phrase = str(fact.get("finding") or fact.get("title") or finding).strip()
+    if len(source_phrase) > 180:
+        source_phrase = source_phrase[:177].rstrip() + "..."
+    lowered_decision = decision[:1].lower() + decision[1:]
+    return (
+        f"The raw source finding says {source_phrase}, so the plan should {lowered_decision} "
+        "instead of treating that source as background-only evidence."
+    )
+
+
+def repair_research_change_fields(work: str, sources: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
+    lines = work.splitlines()
+    out: list[str] = []
+    current: dict[str, str] | None = None
+    repairs: list[str] = []
+    inserted_why = 0
+    split_inline = 0
+
+    def finalize_current() -> None:
+        nonlocal inserted_why
+        if current is None or current.get("why", "").strip():
+            return
+        why = derive_research_change_why(current, sources)
+        if not why:
+            return
+        indent = current.get("indent", "  ")
+        out.append(f"{indent}Why this changes the recommendation: {why}")
+        current["why"] = why
+        inserted_why += 1
+        repairs.append("derived_missing_why_from_raw_source_and_decision")
+
+    for raw in lines:
+        stripped = raw.strip()
+        line = stripped.lstrip("-*0123456789. ").replace("**", "")
+        lowered = line.lower()
+        indent = raw[: len(raw) - len(raw.lstrip())]
+        if lowered.startswith("finding:"):
+            finalize_current()
+            current = {"finding": line.split(":", 1)[1].strip(), "indent": indent or "  "}
+            out.append(raw)
+            continue
+        if lowered.startswith(("evidence used", "repo/mac evidence that changed the plan", "plan", "limits", "next handoff")):
+            finalize_current()
+            current = None
+            out.append(raw)
+            continue
+        if lowered.startswith("source:") and current is not None:
+            source_value, inline_fields = split_inline_research_change_fields(line.split(":", 1)[1])
+            current["source"] = source_value
+            out.append(f"{indent}Source: {source_value}")
+            if inline_fields:
+                split_inline += len(inline_fields)
+                repairs.append("split_inline_research_change_labels")
+            if inline_fields.get("decision"):
+                current["decision"] = inline_fields["decision"]
+                out.append(f"{indent}Decision changed: {inline_fields['decision']}")
+            if inline_fields.get("why"):
+                current["why"] = inline_fields["why"]
+                out.append(f"{indent}Why this changes the recommendation: {inline_fields['why']}")
+            continue
+        if lowered.startswith(("decision changed:", "how it changed the plan:")) and current is not None:
+            current["decision"] = line.split(":", 1)[1].strip()
+            out.append(raw)
+            continue
+        if lowered.startswith(("why this changes the recommendation:", "why this changes the plan:")) and current is not None:
+            current["why"] = line.split(":", 1)[1].strip()
+            out.append(raw)
+            continue
+        out.append(raw)
+    finalize_current()
+    repaired = "\n".join(out)
+    if work.endswith("\n"):
+        repaired += "\n"
+    return repaired, {
+        "enabled": bool(sources),
+        "repairs": sorted(set(repairs)),
+        "inline_labels_split": split_inline,
+        "derived_why_fields": inserted_why,
+        "code_owned_grounding": "raw_source_and_model_decision_only",
+    }
+
+
 def research_change_blocks(work: str, sources: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
     lines = work.splitlines()
     blocks: list[dict[str, Any]] = []
@@ -364,12 +506,14 @@ def research_change_blocks(work: str, sources: list[dict[str, Any]]) -> tuple[li
                 blocks.append(current)
             current = {"finding": line.split(":", 1)[1].strip()}
         elif lowered.startswith("source:") and current is not None:
-            current["source"] = line.split(":", 1)[1].strip()
+            source_value, inline_fields = split_inline_research_change_fields(line.split(":", 1)[1])
+            current["source"] = source_value
+            current.update(inline_fields)
         elif lowered.startswith("decision changed:") and current is not None:
             current["decision"] = line.split(":", 1)[1].strip()
         elif lowered.startswith("how it changed the plan:") and current is not None:
             current["decision"] = line.split(":", 1)[1].strip()
-        elif lowered.startswith("why this changes the recommendation:") and current is not None:
+        elif lowered.startswith(("why this changes the recommendation:", "why this changes the plan:")) and current is not None:
             current["why"] = line.split(":", 1)[1].strip()
     if current:
         blocks.append(current)
@@ -379,19 +523,7 @@ def research_change_blocks(work: str, sources: list[dict[str, Any]]) -> tuple[li
     errors: list[str] = []
     for block in blocks:
         source_line = block.get("source", "").lower()
-        normalized_source_line = normalize_source_text(source_line)
-        matched_records = []
-        for fact in source_records:
-            host = str(fact.get("host") or "").lower().replace("www.", "")
-            url = str(fact.get("url") or "").lower().replace("www.", "")
-            title = normalize_source_text(str(fact.get("title") or ""))
-            if (
-                (host and host in normalized_source_line)
-                or (url and url in source_line.replace("www.", ""))
-                or (title and title in normalized_source_line)
-                or source_title_token_match(source_line, str(fact.get("title") or ""))
-            ):
-                matched_records.append(fact)
+        matched_records = matching_research_source_facts(source_line, source_records)
         finding = block.get("finding", "")
         decision = block.get("decision", "")
         why = block.get("why", "")
@@ -2722,6 +2854,7 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
         attempt = 1
         decision_packet_bundle: dict[str, Any] | None = None
         decision_packet_validated = False
+        research_change_field_repair_status: dict[str, Any] = {}
         if pid in {"A2", "A5", "A9"}:
             try:
                 decision_packet_bundle = live_decision_packet(pid, item, evidence_digest)
@@ -2788,6 +2921,11 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             for attempt in range(1, 4):
                 raw_model = ollama(model_prompt(pid, item, research, repo, mac, attempt > 1, evidence_digest, raw_digest_model), attempt)
                 work = str(raw_model.get("response") or "")
+                sources = ((research or {}).get("research_packet") or {}).get("sources") or []
+                if item.get("internet_likely_required") and sources:
+                    work, research_change_field_repair_status = repair_research_change_fields(work, sources)
+                    raw_model["response_after_code_owned_research_field_repair"] = work
+                    raw_model["research_change_field_repair_status"] = research_change_field_repair_status
                 jwrite(RAW / f"{pid}.model.attempt{attempt}.raw.json", raw_model)
                 task = record_subsystem_integration_result(
                     task_id,
@@ -2878,6 +3016,7 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             "packet_lanes_unavailable": (decision_packet_bundle or {}).get("unavailable_lanes", []),
             "model_decision_body_status": (decision_packet_bundle or {}).get("model_decision_body_status", {}),
             "code_owned_packet_shell_status": (decision_packet_bundle or {}).get("code_owned_packet_shell_status", {}),
+            "research_change_field_repair_status": research_change_field_repair_status,
             "query_variants_tried": (research_attempt_bundle or {}).get("query_variants", []),
             "query_variant_source_counts": [a.get("source_count") for a in ((research_attempt_bundle or {}).get("attempts") or [])],
             "model": MODEL,
@@ -2925,6 +3064,7 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             "model_call_result_or_failure_class": "code_owned_packet_validated" if decision_packet_validated else ("packet_validation_failed" if validation_errors else record["final_status"]),
             "model_decision_body_status": record.get("model_decision_body_status"),
             "code_owned_packet_shell_status": record.get("code_owned_packet_shell_status"),
+            "research_change_field_repair_status": record.get("research_change_field_repair_status"),
             "timeout_empty_parse_policy": {
                 "timeout": any("timeout" in str(err).lower() for err in validation_errors),
                 "empty_output": not bool(work.strip()),

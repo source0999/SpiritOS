@@ -1,4 +1,4 @@
 # Set A Rerun Failure Buckets
 
 ## NEEDS_FIX
-- A1: research_materially_changed_output; research_change_fields_too_thin
+- A3: research_change_source_not_from_raw_sources

@@ -1,5 +1,5 @@
 {
-  "auto_fix_attempts": 2,
+  "auto_fix_attempts": 0,
   "blocked_reasons": [],
   "code_owned_packet_shell_status": {},
   "consumer_subsystem": "stage4r_work_product_grader",
@@ -29,20 +29,17 @@
     ],
     "degraded_lanes": [],
     "expected_lane": "live_model_work_product",
-    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+    "failure_classification": "PASS",
     "fallback_reason": "",
     "fallback_used": false,
-    "human_action_required": true,
+    "human_action_required": false,
     "local_api_cli_distinction": "local_ollama_cli_or_http",
     "model_call_attempted": true,
-    "model_call_result_or_failure_class": "NEEDS_FIX",
+    "model_call_result_or_failure_class": "PASS",
     "model_decision_body_status": {},
-    "next_recommended_action": "inspect failed_gates and make one bounded fix",
-    "productive_reasons": [
-      "research_materially_changed_output",
-      "research_change_fields_too_thin"
-    ],
-    "productive_status": "NEEDS_FIX",
+    "next_recommended_action": "no action",
+    "productive_reasons": [],
+    "productive_status": "PASS",
     "prompt_id": "A1",
     "protected_path_block_result": "not_required",
     "provider_availability": {
@@ -57,6 +54,13 @@
     },
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A1.json",
+    "research_change_field_repair_status": {
+      "code_owned_grounding": "raw_source_and_model_decision_only",
+      "derived_why_fields": 0,
+      "enabled": true,
+      "inline_labels_split": 0,
+      "repairs": []
+    },
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A1",
     "selected_lane": "ollama_default",
@@ -66,7 +70,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "research_pack",
-    "task_id": "task_336edccf9420",
+    "task_id": "task_757b09776ee1",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -82,13 +86,10 @@
     }
   },
   "downstream_consumed": true,
-  "failed_gates": [
-    "research_materially_changed_output",
-    "research_change_fields_too_thin"
-  ],
+  "failed_gates": [],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
-  "final_status": "NEEDS_FIX",
+  "final_status": "PASS",
   "handoff_or_context_prompt_created_when_useful": true,
   "internet_required": true,
   "jellyfin_or_media_mutation_detected": false,
@@ -106,7 +107,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_6d331ee5d367401f",
+  "latest_consumer_event_id": "consumer_bcf8aa12dbd6407e",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -118,10 +119,7 @@
   "max_auto_fix_attempts": 3,
   "model": "gemma3n:e4b",
   "model_decision_body_status": {},
-  "notes": [
-    "research_materially_changed_output",
-    "research_change_fields_too_thin"
-  ],
+  "notes": [],
   "packet_lanes_available": [],
   "packet_lanes_unavailable": [],
   "packet_model": "",
@@ -156,25 +154,30 @@
     "work_product_consumer",
     "current_research"
   ],
+  "research_change_field_repair_status": {
+    "code_owned_grounding": "raw_source_and_model_decision_only",
+    "derived_why_fields": 0,
+    "enabled": true,
+    "inline_labels_split": 0,
+    "repairs": []
+  },
   "research_marker_hits": [
     "reddit.com",
-    "projectpokemon.org",
     "github.com",
-    "pkhex-web.github.io",
-    "pkhex guide for nuzlocking",
-    "youtube.com"
+    "youtube.com",
+    "projectpokemon.org"
   ],
-  "research_materially_changed_output": false,
+  "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_336edccf9420",
-  "trace_id": "trace_9083b7ed103c42f4",
-  "user_goal_reached": false,
+  "task_id": "task_757b09776ee1",
+  "trace_id": "trace_7860cf99b71743d1",
+  "user_goal_reached": true,
   "user_prompt": "research open source frameworks and more to make a plan to setup a pokemon save editor. i want the best route not random tutorial slop",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation: Prioritize the use of PKHeX as the primary framework for developing a Pok\u00e9mon save editor. Its extensive file format support, active community, and cross-platform availability make it a robust and versatile solution. Research-to-decision changes: - Finding: Oct 8, 2025 ... PKHex is the most popular and expansive save editor in the present day. It's PC-based and allows for more customization than the alternatives, ... Source: Save ",
+  "work_product_summary": "## Research Pack ### Recommendation Prioritize the use of PKHeX as the primary framework for developing a Pok\u00e9mon save editor. It is a well-established, actively supported, and feature-rich tool specifically designed for Pok\u00e9mon core series save file manipulation. ### Research-to-Decision Changes Finding: Oct 8, 2025 \u00b7 PKHex is the most popular and expansive save editor in the present day. It's PC-based and allows for more customization than the ",
   "work_product_type": "research_pack"
 }
