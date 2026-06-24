@@ -359,6 +359,117 @@ def test_research_parser_ignores_repo_source_lines_after_research_section() -> N
     assert all("source_proxy/" not in block["source"] for block in blocks)
 
 
+def test_research_source_line_can_match_raw_source_title() -> None:
+    runner = _load_runner()
+    sources = [
+        {
+            "title": "Send simple data to other apps | App data and files - Android Developers",
+            "url": "https://developer.android.com/training/sharing/send",
+            "content": "Android supports sending simple data to other apps through intents and chooser flows.",
+        }
+    ]
+    work = """Recommendation
+Use Android intents.
+
+Research-to-decision changes
+- Finding: Send simple data to other apps | App data and files - Android Developers: Android supports sending simple data to other apps through intents and chooser flows.
+  Source: Send simple data to other apps | App data and files - Android Developers
+  Decision changed: prioritize Android intents for passing task receipt data between app surfaces.
+  Why this changes the recommendation: The raw source finding says Android supports sending simple data to other apps through intents and chooser flows, so the plan should prioritize an intent handoff.
+"""
+
+    blocks, errors = runner.research_change_blocks(work, sources)
+
+    assert len(blocks) == 1
+    assert errors == []
+
+
+def test_research_source_line_can_match_raw_title_tokens_with_minor_model_typo() -> None:
+    runner = _load_runner()
+    sources = [
+        {
+            "title": "Send simple data to other apps | App data and files - Android Developers",
+            "url": "https://developer.android.com/training/sharing/send",
+            "content": "The Android intent resolver is best suited for passing data to the next stage of a well-defined task.",
+        }
+    ]
+    work = """Recommendation
+Use Android intents.
+
+Research-to-decision changes
+- Finding: Send simple data to other apps | App data and files - Android Developers: The Android intent resolver is best suited for passing data to the next stage of a well-defined task.
+  Source: Send simple data to other apps | App data and files - Android Developeers
+  Decision changed: evaluate Android intents for passing task receipt data between app surfaces.
+  Why this changes the recommendation: The raw source finding says Android intent resolver is best suited for passing data to the next stage of a task, so the plan should evaluate an intent handoff.
+"""
+
+    blocks, errors = runner.research_change_blocks(work, sources)
+
+    assert len(blocks) == 1
+    assert errors == []
+
+
+def test_research_source_line_rejects_fake_model_source() -> None:
+    runner = _load_runner()
+    sources = [
+        {
+            "title": "PKHeX - Save Editing - Project Pokemon Forums",
+            "url": "https://projectpokemon.org/home/files/file/1-pkhex/",
+            "content": "PKHeX supports Pokemon save files and related save editing workflows.",
+        }
+    ]
+    work = """Recommendation
+Use a save editor.
+
+Research-to-decision changes
+- Finding: PKHeX supports Pokemon save files and related save editing workflows.
+  Source: Fake Tutorial Site (fake.example) https://fake.example/pkhex
+  Decision changed: choose PKHeX as the starting point for save editing.
+  Why this changes the recommendation: The raw source finding says PKHeX supports Pokemon save files, so the plan should choose a save-editor-specific route.
+"""
+
+    blocks, errors = runner.research_change_blocks(work, sources)
+
+    assert blocks == []
+    assert "research_change_source_not_from_raw_sources" in errors
+
+
+def test_repo_only_prompt_does_not_require_research_source_materiality() -> None:
+    runner = _load_runner()
+    item = {
+        "prompt_id": "A8",
+        "internet_likely_required": False,
+        "must_inspect_repo_context": False,
+        "mac_likely_required": False,
+    }
+    work = """Recommendation
+Build a small dashboard with clear limits and a next handoff.
+
+Research-to-decision changes
+- Finding: The repo has long-running task state fields.
+  Source: source_proxy/tasks/long_running.py
+  Decision changed: prioritize long-running task state in the dashboard.
+  Why this changes the recommendation: The repo finding points to task state as the useful display target.
+
+Evidence Used
+- source_proxy/tasks/long_running.py
+
+Plan
+Use the existing task state and avoid new systems.
+
+Limits
+- Do not change runtime behavior.
+
+Next Handoff
+Build first dashboard slice.
+"""
+
+    result = runner.grade(item, work, None, None, None, runner.synthetic_task(), "")
+
+    assert "research_change_source_not_from_raw_sources" not in result["failed_gates"]
+    assert "research_materially_changed_output" not in result["failed_gates"]
+
+
 def test_packet_assembler_has_no_prompt_specific_branches() -> None:
     runner = _load_runner()
     source = inspect.getsource(runner.assemble_code_owned_decision_packet)

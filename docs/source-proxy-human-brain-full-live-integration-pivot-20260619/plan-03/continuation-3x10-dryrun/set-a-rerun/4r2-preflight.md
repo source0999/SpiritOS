@@ -1,6 +1,6 @@
 # Stage 4R2 Preflight
 
-- current HEAD: `7d4f3054f877e13c02572574d5dc0f5f101f49b4`
+- current HEAD: `836d8707f55a9ee0baf0d33b3a7bdf984cb1fe6e`
 - staged files count: 0
 - raw evidence writable: yes
 - scope confirmation: Stage 4R2 only; A2/A5/A9 selected rerun allowed; no Set B/C, Stage 5, Plan 4, push, media/Jellyfin mutation, route replacement, or new engine.

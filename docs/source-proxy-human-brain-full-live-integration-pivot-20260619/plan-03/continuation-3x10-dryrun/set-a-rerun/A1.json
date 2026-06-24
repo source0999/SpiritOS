@@ -40,7 +40,7 @@
     "next_recommended_action": "inspect failed_gates and make one bounded fix",
     "productive_reasons": [
       "research_materially_changed_output",
-      "research_change_no_specific_decision"
+      "research_change_fields_too_thin"
     ],
     "productive_status": "NEEDS_FIX",
     "prompt_id": "A1",
@@ -66,7 +66,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "research_pack",
-    "task_id": "task_58fd61a67b6b",
+    "task_id": "task_336edccf9420",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -84,7 +84,7 @@
   "downstream_consumed": true,
   "failed_gates": [
     "research_materially_changed_output",
-    "research_change_no_specific_decision"
+    "research_change_fields_too_thin"
   ],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
@@ -106,7 +106,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_e6a0bd2679fe4c38",
+  "latest_consumer_event_id": "consumer_6d331ee5d367401f",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -120,7 +120,7 @@
   "model_decision_body_status": {},
   "notes": [
     "research_materially_changed_output",
-    "research_change_no_specific_decision"
+    "research_change_fields_too_thin"
   ],
   "packet_lanes_available": [],
   "packet_lanes_unavailable": [],
@@ -157,21 +157,24 @@
     "current_research"
   ],
   "research_marker_hits": [
-    "projectpokemon.org",
     "reddit.com",
-    "github.com"
+    "projectpokemon.org",
+    "github.com",
+    "pkhex-web.github.io",
+    "pkhex guide for nuzlocking",
+    "youtube.com"
   ],
   "research_materially_changed_output": false,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_58fd61a67b6b",
-  "trace_id": "trace_9ec55e621e984740",
+  "task_id": "task_336edccf9420",
+  "trace_id": "trace_9083b7ed103c42f4",
   "user_goal_reached": false,
   "user_prompt": "research open source frameworks and more to make a plan to setup a pokemon save editor. i want the best route not random tutorial slop",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation: The best route to set up a Pok\u00e9mon save editor is to utilize the open-source framework PKHeX. It is specifically designed for this purpose, supports a wide range of Pok\u00e9mon game file formats, and has an active community providing tutorials and support. Research-to-decision changes: - Finding: Pok\u00e9mon core series save editor, programmed in C#. Supports the following files: Save files (\"main\", *.sav, *.dsv, *.dat, *.gci) GameCube Me",
+  "work_product_summary": "Recommendation: Prioritize the use of PKHeX as the primary framework for developing a Pok\u00e9mon save editor. Its extensive file format support, active community, and cross-platform availability make it a robust and versatile solution. Research-to-decision changes: - Finding: Oct 8, 2025 ... PKHex is the most popular and expansive save editor in the present day. It's PC-based and allows for more customization than the alternatives, ... Source: Save ",
   "work_product_type": "research_pack"
 }

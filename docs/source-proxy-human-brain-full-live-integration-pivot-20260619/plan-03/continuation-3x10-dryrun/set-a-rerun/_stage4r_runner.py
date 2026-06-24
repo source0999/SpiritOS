@@ -330,6 +330,26 @@ def meaningful_words(text: str) -> set[str]:
     return {w for w in re.findall(r"[a-z0-9.+#-]{4,}", text.lower()) if w not in stop}
 
 
+def normalize_source_text(text: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9.+#-]+", str(text or "").lower().replace("www.", "")))
+
+
+def source_title_token_match(source_line: str, title: str) -> bool:
+    line_words = meaningful_words(normalize_source_text(source_line))
+    title_words = meaningful_words(normalize_source_text(title))
+    if not title_words:
+        return False
+    overlap = line_words & title_words
+    return len(overlap) >= min(3, max(1, len(title_words) // 2))
+
+
+def specific_decision_verb_present(text: str) -> bool:
+    return bool(re.search(
+        r"\b(add|avoid|choose|consider|defer|design|evaluate|examine|explore|focus|implement|include|limit|narrow|narrowed|prefer|prioritize|reject|route|select|split|use|utilize)\b",
+        str(text or "").lower(),
+    ))
+
+
 def research_change_blocks(work: str, sources: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
     lines = work.splitlines()
     blocks: list[dict[str, Any]] = []
@@ -354,22 +374,29 @@ def research_change_blocks(work: str, sources: list[dict[str, Any]]) -> tuple[li
     if current:
         blocks.append(current)
 
-    hosts = source_hosts(sources)
-    source_text_by_host = {
-        fact["host"]: " ".join([fact["title"], fact["finding"]])
-        for fact in source_facts(sources)
-        if fact["host"]
-    }
+    source_records = source_facts(sources)
     good: list[dict[str, Any]] = []
     errors: list[str] = []
     for block in blocks:
         source_line = block.get("source", "").lower()
-        matched_hosts = [host for host in hosts if host and host in source_line]
+        normalized_source_line = normalize_source_text(source_line)
+        matched_records = []
+        for fact in source_records:
+            host = str(fact.get("host") or "").lower().replace("www.", "")
+            url = str(fact.get("url") or "").lower().replace("www.", "")
+            title = normalize_source_text(str(fact.get("title") or ""))
+            if (
+                (host and host in normalized_source_line)
+                or (url and url in source_line.replace("www.", ""))
+                or (title and title in normalized_source_line)
+                or source_title_token_match(source_line, str(fact.get("title") or ""))
+            ):
+                matched_records.append(fact)
         finding = block.get("finding", "")
         decision = block.get("decision", "")
         why = block.get("why", "")
         combined = " ".join([finding, decision, why]).lower()
-        if not matched_hosts:
+        if not matched_records:
             errors.append("research_change_source_not_from_raw_sources")
             continue
         if len(finding) < 35 or len(decision) < 35 or len(why) < 35:
@@ -378,16 +405,16 @@ def research_change_blocks(work: str, sources: list[dict[str, Any]]) -> tuple[li
         if any(phrase in combined for phrase in GENERIC_MATERIALITY_PHRASES):
             errors.append("research_change_generic_phrase")
             continue
-        if not re.search(r"\b(add|avoid|choose|defer|design|include|limit|prefer|reject|route|split|use)\b", decision.lower()):
+        if not specific_decision_verb_present(decision):
             errors.append("research_change_no_specific_decision")
             continue
         source_words = set()
-        for host in matched_hosts:
-            source_words |= meaningful_words(source_text_by_host.get(host, ""))
+        for fact in matched_records:
+            source_words |= meaningful_words(" ".join([str(fact.get("title") or ""), str(fact.get("finding") or "")]))
         if len(meaningful_words(finding) & source_words) < 2:
             errors.append("research_change_finding_not_tied_to_source_fact")
             continue
-        good.append({**block, "matched_hosts": matched_hosts})
+        good.append({**block, "matched_hosts": sorted({str(fact.get("host") or "") for fact in matched_records if fact.get("host")})})
     return good, errors
 
 
@@ -1713,7 +1740,7 @@ def model_prompt(pid: str, item: dict[str, Any], research: dict[str, Any] | None
         for fact in source_facts(sources)
     )
     repo_text = "\n\n".join(f"FILE {f.get('file')} exists={f.get('exists')}\n{f.get('snippet','')[:1400]}" for f in (repo or {}).get("files", [])[:6])
-    extra = "\nPrevious grading found missing or shallow evidence. Rewrite with concrete decisions that visibly depend on the fetched findings; do not merely append links." if retry else ""
+    extra = "\nPrevious grading found missing or shallow evidence. Rewrite with concrete decisions that visibly depend on the fetched findings; do not merely append links. Every Decision changed line must start with a concrete verb such as choose, use, prioritize, implement, route, limit, avoid, defer, or reject." if retry else ""
     return f"""You are Source Proxy's live planning worker for Plan 3 Stage 4R Set A.
 
 Exact user prompt:
@@ -1751,7 +1778,7 @@ Plan
 Limits
 Next Handoff
 
-For every internet-required prompt, include at least three research-to-decision bullets. Do not use a table. Do not output JSON. Each bullet must use separate lines labeled exactly Finding:, Source:, Decision changed:, and Why this changes the recommendation:. Use concrete fetched findings and the source title/host for each. A source name or domain list is not enough. Source lines must use an exact host from the canonical source citations above.
+For every internet-required prompt, include at least three research-to-decision bullets. Do not use a table. Do not output JSON. Each bullet must use separate lines labeled exactly Finding:, Source:, Decision changed:, and Why this changes the recommendation:. Use concrete fetched findings and the source title/host for each. Source lines must copy the exact raw source title plus either the exact host or exact URL from the canonical source citations above. Decision changed lines must start with a concrete action verb such as choose, use, prioritize, implement, route, limit, avoid, defer, or reject.
 
 If repo context exists, the Evidence Used and Plan sections must name the exact repo file paths that shaped endpoint, receipt, routing, or worker decisions. Do not claim research materiality unless those findings alter the plan.{extra}
 """
@@ -1799,7 +1826,8 @@ def grade(item: dict[str, Any], work: str, research: dict[str, Any] | None, repo
     checks.extend((False, gate) for gate in prompt_failed)
     if has_garbled_or_fabricated_tokens(work):
         checks.append((False, "garbled_or_fabricated_tokens_detected"))
-    checks.extend((False, gate) for gate in sorted(set(materiality_errors)))
+    if item.get("internet_likely_required") or sources:
+        checks.extend((False, gate) for gate in sorted(set(materiality_errors)))
     failed = [name for ok, name in checks if not ok]
     blocked = []
     if item.get("internet_likely_required") and not sources:

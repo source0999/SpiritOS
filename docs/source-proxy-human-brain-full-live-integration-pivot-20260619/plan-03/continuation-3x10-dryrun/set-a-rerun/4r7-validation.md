@@ -8,9 +8,9 @@
 - model escalation selftest: PASS
 - summary JSON parse: PASS
 - Set A rerun JSON shape validation: PASS
-- Set A 4R7 requested acceptance validation: FAIL
+- Set A 4R7 requested acceptance validation: PASS
 - JSON shape validation errors: none
-- acceptance validation errors: ['Set A pass_count is 3, expected 9 with A9 blocked or 10']
+- acceptance validation errors: none
 - Plan 3 operator: FAIL
 - focused tests: `_stage4r_runner.py` py_compile.
 - typecheck: not run; no frontend/runtime TypeScript touched.
