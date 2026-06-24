@@ -1,8 +1,8 @@
 # Set A Rerun Preflight
 
-- current HEAD: `f65b52c44455d1c4d1814f19b9d1974c9b3b500e`
+- current HEAD: `143c0e6d6d990c329c7e0d6d9e4493e04e610c05`
 - staged files count: 0
-- dirty source_proxy files: 0
+- dirty source_proxy files: 1
 - dirty Plan 3 dry-run files: 20
 - unrelated dirty tree summary: pre-existing SpiritFlix/media/handoff dirt present; ignored and not reverted.
 - raw evidence path writable: yes

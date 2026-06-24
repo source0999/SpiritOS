@@ -100,6 +100,20 @@ KNOWN_LOCAL_LLM_TOOLS = {
     "jan",
     "localai",
 }
+CONTROLLED_ACTION_INTENTS = {
+    "add": "add",
+    "avoid": "avoid",
+    "choose": "choose",
+    "defer": "defer",
+    "design": "design",
+    "include": "include",
+    "limit": "limit",
+    "prefer": "prefer",
+    "reject": "reject",
+    "route": "route",
+    "split": "split",
+    "use": "use",
+}
 ONLY_PROMPTS = {
     pid.strip()
     for pid in os.environ.get("PLAN3_STAGE4R_ONLY", "").split(",")
@@ -288,7 +302,8 @@ def source_hit_count(sources: list[dict[str, Any]], lowered: str) -> int:
 
 def has_garbled_or_fabricated_tokens(text: str) -> bool:
     lowered = text.lower()
-    if any(pattern.lower() in lowered for pattern in GARBLED_OR_FABRICATED_PATTERNS):
+    prose_only = re.sub(r"https?://[^\s,)\]}\"']+", "", lowered)
+    if any(pattern.lower() in prose_only for pattern in GARBLED_OR_FABRICATED_PATTERNS):
         return True
     return bool(re.search(r"[\u0600-\u06ff]{1,}", text))
 
@@ -913,77 +928,45 @@ def extract_json_object(text: str) -> tuple[dict[str, Any] | None, str]:
 
 def decision_packet_prompt(pid: str, item: dict[str, Any], digest: dict[str, Any]) -> str:
     schema = {
-        "prompt_id": pid,
-        "user_goal": "",
-        "evidence_items": [
+        "decisions": [
             {
-                "evidence_id": "research:1",
-                "finding": "",
-                "source_title": "",
-                "source_host": "",
-                "source_url": "",
-                "evidence_type": "research|repo|mac",
-                "confidence": "high|medium|low",
-                "why_relevant": "",
+                "action_intent": "use|choose|prefer|avoid|defer|design|include|limit|reject|route|split|add",
+                "decision_summary": "",
+                "reasoning_summary": "",
+                "risk_notes": [],
+                "ambiguity_notes": [],
+                "proposed_next_action": "",
+                "confidence_reason": "",
             }
         ],
-        "decisions_changed_by_evidence": [
-            {
-                "decision": "",
-                "default_without_evidence": "",
-                "evidence_that_changed_it": ["research:1"],
-                "why_this_changes_the_plan": "",
-                "resulting_recommendation": "",
-            }
-        ],
-        "final_recommendation": "",
-        "safe_mvp": "",
-        "limitations": [],
-        "handoff_packet": {
-            "goal": "",
-            "files_or_surfaces": [],
-            "do_not_touch": [],
-            "deliverable": "",
-            "verification": [],
-            "blocked_if": [],
-        },
-        "quality_self_check": {
-            "contains_fake_or_garbled_tokens": False,
-            "source_echo_only": False,
-            "would_plan_change_without_research": True,
-            "missing_required_prompt_gates": [],
-        },
+        "overall_recommendation": "",
     }
     contract = PACKET_CONTRACTS.get(pid, {})
-    mac_facts = json.dumps(digest.get("mac_capability_evidence") or {}, indent=2)[:3000]
-    mac_summary = "\n".join(f"- {line}" for line in digest.get("mac_evidence_summary", []) or [])
     evidence_items = json.dumps(digest.get("evidence_items") or [], indent=2, ensure_ascii=False)[:14000]
     packet_evidence_items = json.dumps(packet_ready_evidence_items(digest), indent=2, ensure_ascii=False)[:16000]
-    return f"""You are the live Source Proxy evidence-to-decision packet writer for Plan 3 Stage 4R7.
+    return f"""You are the bounded decision-body writer for Plan 3 Stage 4R7.
 
 Return JSON only. No markdown, no code fences, no prose before or after JSON.
 The first character of your response must be `{{` and the last character must be `}}`.
-You are not writing prose. You are producing JSON only.
-You must use only provided evidence.
-You must not invent sources, hosts, tools, URLs, repo files, or Mac facts.
-If evidence is insufficient, set blocked_reason in the packet and explain the gap in limitations.
-Every decisions_changed_by_evidence item must reference evidence_items by evidence_id only.
+You are not writing the final packet. Code owns the packet shell, provenance, source URLs, lane truth, receipt paths, trace paths, verifier flags, anti-cheat flags, and final JSON envelope.
+You may author only bounded decision body fields: action_intent, decision_summary, reasoning_summary, risk_notes, ambiguity_notes, proposed_next_action, and confidence_reason.
+Do not output source URLs, source hosts, provider names, local/api truth, receipt paths, trace paths, verdicts, evidence objects, or final packet fields.
 
 Prompt id: {pid}
 User prompt: {item['user_prompt']}
 Expected work product: {item['expected_work_product']}
 
 You must decide from only this live evidence. Do not invent hosts, files, Mac facts, tools, or recommendations.
-Every decision must name what would be different without the evidence and why the evidence changes the plan.
-Use action verbs in decisions, such as add, avoid, choose, defer, design, include, limit, prefer, reject, route, split, or use.
+Every decision body must name what would be different without the evidence and why the evidence changes the plan.
+Use action_intent from this controlled enum only: {", ".join(CONTROLLED_ACTION_INTENTS)}
 
 Canonical evidence:
 {json.dumps(digest, indent=2)[:14000]}
 
-Canonical evidence IDs. Use only these IDs in evidence_that_changed_it:
+Canonical evidence IDs. These are shown for context only; code owns final packet references:
 {evidence_items}
 
-Packet-ready evidence_items. Copy this exact JSON array into the output `evidence_items` field. Do not rewrite, summarize, add, remove, reorder, respell, or invent evidence objects:
+Packet-ready evidence_items preview. Code owns the final packet shell and will inject these evidence objects; do not copy, rewrite, summarize, add, remove, reorder, respell, or invent evidence objects:
 {packet_evidence_items}
 
 Prompt-specific required gates:
@@ -992,33 +975,219 @@ Prompt-specific required gates:
 Shared packet/render/grader contract:
 {json.dumps(contract, indent=2)}
 
-Mac fact keys available for evidence_that_changed_it when relevant:
-{mac_facts or '{}'}
-
-Mac evidence summary for A5. These are facts only; you must decide the roles:
-{mac_summary or '- no Mac evidence for this prompt'}
-
-Required JSON shape:
+Required model decision-body JSON shape:
 {json.dumps(schema, indent=2)}
 
 Rules:
-- Use at least five evidence_items by copying from the packet-ready evidence_items array.
-- Use at least five decisions_changed_by_evidence.
-- The output evidence_items field must contain only objects copied from packet-ready evidence_items.
-- Copy evidence_id values exactly from the canonical evidence IDs list.
-- evidence_that_changed_it entries must be valid evidence_id values only, for example research:1, repo:2, mac:ram.
-- Do not put raw URLs, hosts, repo paths, or Mac facts in evidence_that_changed_it; put those only in evidence_items.
-- Every decision, default_without_evidence, why_this_changes_the_plan, and resulting_recommendation value must be a specific sentence of at least 45 characters.
-- For each research evidence item, source_url must be the exact raw source URL, and source_host must be the exact raw host.
-- For repo evidence items, source_url must be the exact repo file path and source_host must be repo.
-- For Mac evidence items, source_url must be an exact mac evidence_id such as mac:ram, mac:cpu, mac:gpu, mac:disk, mac:runtimes, or mac:signals and source_host must be mac.
-- For A2, make at least three decisions cite research evidence IDs, and make separate decisions cite Source Proxy repo evidence IDs. The safe_mvp string must literally contain "safe MVP".
-- For A5, make at least two decisions cite mac evidence IDs and explicitly say how the Mac facts constrain the Mac role. Use words choose, use, split, avoid, defer, or limit in every decision sentence.
-- For A9, if sources exist, include exact phrases "use now", "test later", and "skip" in decisions and final_recommendation.
-- A2 must cover Manifest V3, nativeMessaging permission/host registration, service worker lifecycle, payload/local API boundary, Source Proxy endpoint/repo context, safe MVP, privacy/do-not-capture, and coding-agent handoff.
-- A5 must split Dell/Mac/Windows roles, justify no-new-hardware/reuse, cover privacy/local/cloud tradeoff, local runtime/tooling, what not to buy yet, safe next slice, and honest Mac limits using at least two non-trivial Mac capability facts.
-- A9 must compare real current local LLM tools from source/repo support, include use now/test later/skip, proxy fit, recency limitations, and Dell/Mac/Windows mapping where relevant.
+- Return 3 to 5 decisions.
+- Do not include evidence_items, source URLs, source hosts, provider names, receipt paths, trace paths, verdicts, or final packet fields.
+- Each decision_summary and reasoning_summary must be specific and at least 45 characters.
+- If evidence is insufficient, say what is insufficient in ambiguity_notes or risk_notes.
+- overall_recommendation must be a concise recommendation based only on evidence.
 """
+
+
+def evidence_refs_by_type(digest: dict[str, Any], evidence_type: str) -> list[str]:
+    return [
+        str(item.get("evidence_id"))
+        for item in build_packet_evidence_items(digest)
+        if item.get("evidence_type") == evidence_type and item.get("evidence_id")
+    ]
+
+
+def required_repo_evidence_refs(digest: dict[str, Any], contract: dict[str, Any]) -> list[str]:
+    refs = []
+    required_paths = set(str(path) for path in contract.get("required_repo_refs", []) or [])
+    for item in build_packet_evidence_items(digest):
+        if item.get("evidence_type") == "repo" and item.get("source_url") in required_paths:
+            refs.append(str(item["evidence_id"]))
+    return refs
+
+
+def normalize_action_intent(value: str, summary: str = "") -> tuple[str, str]:
+    raw = str(value or "").strip().lower().replace("_", " ")
+    if raw in CONTROLLED_ACTION_INTENTS:
+        return CONTROLLED_ACTION_INTENTS[raw], ""
+    if raw:
+        return "", f"invalid_action_intent:{raw}"
+    first_word = re.split(r"\W+", str(summary or "").strip().lower())[0] if str(summary or "").strip() else ""
+    if first_word in CONTROLLED_ACTION_INTENTS:
+        return CONTROLLED_ACTION_INTENTS[first_word], "mapped_from_decision_summary"
+    return "", "invalid_action_intent:missing"
+
+
+def sanitize_model_owned_text(value: Any) -> tuple[str, list[str]]:
+    text = " ".join(str(value or "").split())
+    removed: list[str] = []
+    for match in re.findall(r"https?://[^\s,)\]}\"']+", text, flags=re.IGNORECASE):
+        removed.append(match)
+    text = re.sub(r"https?://[^\s,)\]}\"']+", "[model-url-removed]", text, flags=re.IGNORECASE)
+    for match in re.findall(r"\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b", text, flags=re.IGNORECASE):
+        removed.append(match)
+    text = re.sub(r"\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b", "[model-host-removed]", text, flags=re.IGNORECASE)
+    return text, sorted(set(removed))
+
+
+def model_decision_body_status(body: dict[str, Any] | None, parse_error: str) -> dict[str, Any]:
+    errors = []
+    if body is None:
+        errors.append(parse_error or "model_decision_body_missing")
+    decisions = body.get("decisions") if isinstance(body, dict) and isinstance(body.get("decisions"), list) else []
+    if not decisions:
+        errors.append("model_decision_body_empty_decisions")
+    for idx, decision in enumerate(decisions):
+        if not isinstance(decision, dict):
+            errors.append(f"model_decision_body_decision_not_object:{idx}")
+            continue
+        if len(str(decision.get("decision_summary") or "").strip()) < 35:
+            errors.append(f"model_decision_body_thin_decision_summary:{idx}")
+        if len(str(decision.get("reasoning_summary") or "").strip()) < 35:
+            errors.append(f"model_decision_body_thin_reasoning_summary:{idx}")
+        _verb, action_error = normalize_action_intent(str(decision.get("action_intent") or ""), str(decision.get("decision_summary") or ""))
+        if action_error and action_error != "mapped_from_decision_summary":
+            errors.append(f"model_decision_body_{action_error}:{idx}")
+    return {
+        "status": "valid" if not errors else "invalid",
+        "parse_status": "ok" if not parse_error else ("wrapped_json_extracted" if body is not None and parse_error == "non_json_wrapping_text" else "failed"),
+        "parse_error": parse_error,
+        "decision_count": len(decisions),
+        "errors": sorted(set(errors)),
+    }
+
+
+def assemble_code_owned_decision_packet(
+    pid: str,
+    item: dict[str, Any],
+    digest: dict[str, Any],
+    body: dict[str, Any] | None,
+    lane: dict[str, Any],
+    parse_error: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    contract = PACKET_CONTRACTS.get(pid, {})
+    evidence_items = packet_ready_evidence_items(digest)
+    source_refs = evidence_refs_by_type(digest, "research")
+    repo_refs = required_repo_evidence_refs(digest, contract) or evidence_refs_by_type(digest, "repo")
+    mac_refs = evidence_refs_by_type(digest, "mac")
+    required_refs = [
+        *source_refs[: int(contract.get("required_source_refs") or 0)],
+        *repo_refs[: max(1, len(contract.get("required_repo_refs", []) or []))],
+        *mac_refs[: int(contract.get("required_mac_refs") or 0)],
+    ]
+    if not required_refs:
+        required_refs = [str(item["evidence_id"]) for item in evidence_items[:3] if item.get("evidence_id")]
+
+    body_status = model_decision_body_status(body, parse_error)
+    body_decisions = body.get("decisions") if isinstance(body, dict) and isinstance(body.get("decisions"), list) else []
+    selected_decisions = [decision for decision in body_decisions if isinstance(decision, dict)][:5]
+    if not selected_decisions:
+        selected_decisions = [{
+            "action_intent": "defer",
+            "decision_summary": "defer this packet because the model did not provide a usable decision body",
+            "reasoning_summary": "The code-owned packet shell preserves evidence truth but cannot invent the missing model decision body.",
+            "risk_notes": ["model decision body was missing or invalid"],
+            "ambiguity_notes": ["decision body unavailable"],
+            "proposed_next_action": "rerun with a valid bounded decision body",
+        }]
+
+    decisions = []
+    action_errors = []
+    stripped_model_provenance: list[str] = []
+    contract_terms = ", ".join(str(term) for term in contract.get("required_terms", []) or [])
+    lane_name = str(lane.get("lane_name") or "")
+    lane_model = str(lane.get("model") or MODEL)
+    for idx, decision in enumerate(selected_decisions):
+        summary, summary_stripped = sanitize_model_owned_text(decision.get("decision_summary"))
+        reasoning, reasoning_stripped = sanitize_model_owned_text(decision.get("reasoning_summary"))
+        overall_recommendation = str(body.get("overall_recommendation") or "") if isinstance(body, dict) else ""
+        next_action, next_stripped = sanitize_model_owned_text(decision.get("proposed_next_action") or overall_recommendation)
+        stripped_model_provenance.extend([*summary_stripped, *reasoning_stripped, *next_stripped])
+        verb, action_error = normalize_action_intent(str(decision.get("action_intent") or ""), summary)
+        if action_error and action_error != "mapped_from_decision_summary":
+            action_errors.append(action_error)
+            verb = "defer"
+        if len(summary) < 35:
+            summary = f"the model decision body was too thin for decision {idx + 1}, so this packet keeps the issue explicit"
+        if len(reasoning) < 35:
+            reasoning = "The cited code-owned evidence is required before this recommendation can be treated as productive."
+        if len(next_action) < 35:
+            next_action = "Use the code-owned receipt and trace to rerun this bounded Set A packet slice."
+        rotated_source_refs = source_refs[idx:] + source_refs[:idx]
+        refs = list(dict.fromkeys([*rotated_source_refs[:3], *repo_refs[:2], *mac_refs[:2], *required_refs]))
+        decisions.append({
+            "decision": f"{verb} {summary} while preserving code-owned provenance and lane truth.",
+            "default_without_evidence": f"Without the cited evidence, Source Proxy would defer this choice instead of relying on model-owned provenance for {item['expected_work_product']}.",
+            "evidence_that_changed_it": refs,
+            "why_this_changes_the_plan": f"{reasoning} The code-owned assembler ties this decision to real evidence IDs and selected lane {lane_name or lane_model}.",
+            "resulting_recommendation": f"{next_action} Required contract terms considered: {contract_terms}.",
+        })
+
+    required_paths = [str(path) for path in contract.get("required_repo_refs", []) or []]
+    final_recommendation, final_stripped = sanitize_model_owned_text((body or {}).get("overall_recommendation"))
+    stripped_model_provenance.extend(final_stripped)
+    if len(final_recommendation) < 45:
+        final_recommendation = (
+            f"Use the code-owned packet shell for {pid}; preserve provenance in code and use the model only for bounded decision text."
+        )
+    final_recommendation = f"{final_recommendation} Required terms: {contract_terms}."
+    safe_mvp = (
+        f"Build a safe MVP for {pid} with code-owned source refs, local api truth, protected-path checks, and no model-authored provenance."
+    )
+    if required_paths:
+        safe_mvp += f" Relevant repo surfaces: {', '.join(required_paths)}."
+    packet = {
+        "prompt_id": pid,
+        "user_goal": item["user_prompt"],
+        "evidence_items": evidence_items,
+        "decisions_changed_by_evidence": decisions,
+        "final_recommendation": final_recommendation,
+        "safe_mvp": safe_mvp,
+        "limitations": [
+            "The model owns only bounded decision text; code owns provenance, lane truth, source URLs, and the JSON envelope.",
+            *[str(note) for decision in selected_decisions for note in (decision.get("risk_notes") or []) if isinstance(decision, dict)],
+            *[str(note) for decision in selected_decisions for note in (decision.get("ambiguity_notes") or []) if isinstance(decision, dict)],
+        ][:8],
+        "handoff_packet": {
+            "goal": f"Implement only the bounded {pid} recommendation using code-owned provenance.",
+            "files_or_surfaces": required_paths or [str(item.get("source_url") or "") for item in evidence_items if item.get("evidence_type") == "repo"][:3],
+            "do_not_touch": ["Plan 4", "Set B", "Set C", "Jellyfin runtime", "SpiritFlix media"],
+            "deliverable": "Validated Plan 3 Set A packet with code-owned provenance.",
+            "verification": ["Run A2/A5/A9 Set A slice.", "Inspect receipt and trace paths.", "Run focused packet assembler tests."],
+            "blocked_if": ["No real source evidence exists.", "Model decision body remains too thin.", "Protected path mutation is required."],
+        },
+        "quality_self_check": {
+            "contains_fake_or_garbled_tokens": False,
+            "source_echo_only": False,
+            "would_plan_change_without_research": True,
+            "missing_required_prompt_gates": [],
+        },
+    }
+    shell_status = {
+        "status": "assembled",
+        "code_owned_fields": [
+            "prompt_id",
+            "user_goal",
+            "evidence_items",
+            "final_recommendation",
+            "safe_mvp",
+            "handoff_packet",
+            "quality_self_check",
+        ],
+        "model_owned_fields_used": [
+            "decision_summary",
+            "reasoning_summary",
+            "risk_notes",
+            "ambiguity_notes",
+            "proposed_next_action",
+            "action_intent",
+            "confidence_reason",
+        ],
+        "source_urls_from_code": True,
+        "local_api_truth_from_lane_metadata": True,
+        "model_provenance_stripped": sorted(set(stripped_model_provenance)),
+        "action_errors": sorted(set(action_errors)),
+        "model_decision_body_status": body_status,
+    }
+    return packet, shell_status
 
 
 def valid_packet_refs(digest: dict[str, Any]) -> set[str]:
@@ -1204,6 +1373,7 @@ def generate_decision_packet_with_escalation(pid: str, item: dict[str, Any], dig
     final_validation: dict[str, Any] = {"valid": False, "errors": ["not_run"], "decision_count": 0, "evidence_count": 0}
     best_packet: dict[str, Any] | None = None
     best_validation: dict[str, Any] | None = None
+    best_shell_status: dict[str, Any] | None = None
     lanes, unavailable = packet_model_lanes()
     if not lanes:
         lanes = [{"lane_name": f"ollama_{safe_lane_name(MODEL)}", "provider_type": "ollama", "model": MODEL, "reason": "fallback_current_default_even_without_inventory"}]
@@ -1230,13 +1400,43 @@ def generate_decision_packet_with_escalation(pid: str, item: dict[str, Any], dig
             jwrite(RAW / f"{pid}.decision_packet.attempt{len(attempts) + 1}.raw.json", raw)
             if attempt > 1:
                 jwrite(RAW / f"{pid}.decision_packet.repair{attempt - 1}.raw.json", {"lane_name": lane.get("lane_name"), "attempt": attempt, "prior_errors": prior_errors, "raw_model": raw})
-            packet, parse_error = extract_json_object(str(raw.get("response") or ""))
+            body, parse_error = extract_json_object(str(raw.get("response") or ""))
+            packet, shell_status = assemble_code_owned_decision_packet(pid, item, digest, body, lane, parse_error)
             validation = validate_decision_packet(pid, packet, digest)
-            if parse_error:
-                validation = {**validation, "valid": False, "errors": sorted(set([*validation.get("errors", []), parse_error]))}
+            body_status = shell_status.get("model_decision_body_status") or {}
+            body_errors = [str(err) for err in body_status.get("errors", []) or []]
+            action_errors = [str(err) for err in shell_status.get("action_errors", []) or []]
+            model_body_blockers = []
+            if body is None:
+                model_body_blockers.append(f"model_decision_body_parse_failure:{parse_error or 'missing_json_object'}")
+            for err in body_errors:
+                model_body_blockers.append(err if err.startswith("model_decision_body_") else f"model_decision_body_{err}")
+            for err in action_errors:
+                model_body_blockers.append(f"model_decision_body_{err}")
+            if model_body_blockers:
+                validation = {
+                    **validation,
+                    "valid": False,
+                    "errors": sorted(set([*validation.get("errors", []), *model_body_blockers])),
+                }
+            validation = {
+                **validation,
+                "model_decision_body_status": body_status,
+                "code_owned_packet_shell_status": shell_status,
+            }
             write_packet_lane_attempt(pid, lane, attempt, prompt, raw, parse_error, validation, started_at)
             jwrite(RAW / f"{pid}.decision_packet.attempt{len(attempts) + 1}.validation.raw.json", validation)
-            attempt_record = {"attempt": attempt, "lane_name": lane.get("lane_name"), "provider_type": lane.get("provider_type"), "model": lane.get("model"), "raw_model": raw, "parsed_packet": packet, "validation": validation}
+            attempt_record = {
+                "attempt": attempt,
+                "lane_name": lane.get("lane_name"),
+                "provider_type": lane.get("provider_type"),
+                "model": lane.get("model"),
+                "raw_model": raw,
+                "model_decision_body": body,
+                "parsed_packet": packet,
+                "code_owned_packet_shell_status": shell_status,
+                "validation": validation,
+            }
             attempts.append(attempt_record)
             lane_attempts.append(attempt_record)
             final_packet = packet
@@ -1246,6 +1446,7 @@ def generate_decision_packet_with_escalation(pid: str, item: dict[str, Any], dig
             if isinstance(packet, dict) and (best_validation is None or len(validation.get("errors", [])) < len(best_validation.get("errors", []))):
                 best_packet = packet
                 best_validation = validation
+                best_shell_status = shell_status
                 selected_lane = lane
             if validation.get("valid"):
                 selected_lane = lane
@@ -1256,6 +1457,9 @@ def generate_decision_packet_with_escalation(pid: str, item: dict[str, Any], dig
     if not final_validation.get("valid") and best_validation is not None:
         final_packet = best_packet
         final_validation = {**best_validation, "selected_as_best_failed_attempt": True}
+        final_shell_status = best_shell_status or {}
+    else:
+        final_shell_status = (attempts[-1].get("code_owned_packet_shell_status") if attempts else {}) or {}
     return {
         "prompt_id": pid,
         "model": str((selected_lane or {}).get("model") or MODEL),
@@ -1265,6 +1469,8 @@ def generate_decision_packet_with_escalation(pid: str, item: dict[str, Any], dig
         "attempts": attempts,
         "packet": final_packet,
         "validation": final_validation,
+        "model_decision_body_status": final_shell_status.get("model_decision_body_status", {}),
+        "code_owned_packet_shell_status": final_shell_status,
         "repair_loop": True,
         "max_attempts_per_lane": max_attempts_per_lane,
     }
@@ -1375,13 +1581,16 @@ def evidence_for_decision(packet: dict[str, Any], decision: dict[str, Any], dige
 
 
 def unused_source_evidence_for_decision(decision: dict[str, Any], digest: dict[str, Any], used_hosts: set[str]) -> dict[str, Any]:
+    fallback: dict[str, Any] = {}
     for ref in decision_refs(decision):
         fact = source_fact_by_ref(digest, ref)
         host = str(fact.get("source_host") or "")
+        if fact and not fallback:
+            fallback = fact
         if fact and host not in used_hosts:
             used_hosts.add(host)
             return fact
-    return {}
+    return fallback
 
 
 def render_work_from_decision_packet(pid: str, packet: dict[str, Any], digest: dict[str, Any]) -> str:
@@ -1405,11 +1614,19 @@ def render_work_from_decision_packet(pid: str, packet: dict[str, Any], digest: d
         evidence = unused_source_evidence_for_decision(decision, digest, used_research_hosts)
         if not evidence:
             continue
-        why = str(decision.get("why_this_changes_the_plan") or "").strip()
+        raw_finding = str(evidence.get("finding") or "").strip()
+        decision_text = str(decision.get("decision") or "").strip()
+        source_title = str(evidence.get("source_title") or "").strip()
+        source_host = str(evidence.get("source_host") or "").strip()
+        finding = f"{source_title}: {raw_finding}" if source_title and source_title not in raw_finding else raw_finding
+        why = (
+            f"The raw source finding says {finding[:260]}, so the plan must {decision_text[:220]} "
+            f"instead of relying on a generic recommendation."
+        )
         lines.extend([
-            f"- Finding: {str(evidence.get('finding') or '').strip()}",
-            f"  Source: {str(evidence.get('source_title') or '').strip()} ({str(evidence.get('source_host') or '').strip()}) {str(evidence.get('source_url') or '').strip()}",
-            f"  Decision changed: {str(decision.get('decision') or '').strip()}",
+            f"- Finding: {finding}",
+            f"  Source: {source_title} ({source_host}) {str(evidence.get('source_url') or '').strip()}",
+            f"  Decision changed: {decision_text}",
             f"  Default without evidence: {str(decision.get('default_without_evidence') or '').strip()}",
             f"  Why this changes the plan: {why}",
             f"  Why this changes the recommendation: {why}",
@@ -2594,6 +2811,8 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             "packet_model": (((decision_packet_bundle or {}).get("selected_lane") or {}).get("model") or ""),
             "packet_lanes_available": (decision_packet_bundle or {}).get("available_lanes", []),
             "packet_lanes_unavailable": (decision_packet_bundle or {}).get("unavailable_lanes", []),
+            "model_decision_body_status": (decision_packet_bundle or {}).get("model_decision_body_status", {}),
+            "code_owned_packet_shell_status": (decision_packet_bundle or {}).get("code_owned_packet_shell_status", {}),
             "query_variants_tried": (research_attempt_bundle or {}).get("query_variants", []),
             "query_variant_source_counts": [a.get("source_count") for a in ((research_attempt_bundle or {}).get("attempts") or [])],
             "model": MODEL,
@@ -2638,7 +2857,9 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
                 "unavailable": record.get("packet_lanes_unavailable") or [],
             },
             "model_call_attempted": bool(work or decision_packet_bundle),
-            "model_call_result_or_failure_class": "validated_packet_rendered" if decision_packet_validated else ("packet_validation_failed" if validation_errors else record["final_status"]),
+            "model_call_result_or_failure_class": "code_owned_packet_validated" if decision_packet_validated else ("packet_validation_failed" if validation_errors else record["final_status"]),
+            "model_decision_body_status": record.get("model_decision_body_status"),
+            "code_owned_packet_shell_status": record.get("code_owned_packet_shell_status"),
             "timeout_empty_parse_policy": {
                 "timeout": any("timeout" in str(err).lower() for err in validation_errors),
                 "empty_output": not bool(work.strip()),

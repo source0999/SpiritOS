@@ -1,18 +1,44 @@
 {
   "auto_fix_attempts": 0,
   "blocked_reasons": [],
-  "consumer_subsystem": "long_running_status_observer",
-  "decision_packet_attempts": 9,
-  "decision_packet_validated": false,
-  "decision_packet_validation_errors": [
-    "decision_no_action_verb:4",
-    "fabricated_host:2:cwskit.com",
-    "missing_contract_term:local api",
-    "non_json_wrapping_text",
-    "source_url_not_from_raw_sources:0",
-    "source_url_not_from_raw_sources:1",
-    "source_url_not_from_raw_sources:2"
-  ],
+  "code_owned_packet_shell_status": {
+    "action_errors": [],
+    "code_owned_fields": [
+      "prompt_id",
+      "user_goal",
+      "evidence_items",
+      "final_recommendation",
+      "safe_mvp",
+      "handoff_packet",
+      "quality_self_check"
+    ],
+    "local_api_truth_from_lane_metadata": true,
+    "model_decision_body_status": {
+      "decision_count": 5,
+      "errors": [],
+      "parse_error": "",
+      "parse_status": "ok",
+      "status": "valid"
+    },
+    "model_owned_fields_used": [
+      "decision_summary",
+      "reasoning_summary",
+      "risk_notes",
+      "ambiguity_notes",
+      "proposed_next_action",
+      "action_intent",
+      "confidence_reason"
+    ],
+    "model_provenance_stripped": [
+      "manifest.json"
+    ],
+    "source_urls_from_code": true,
+    "status": "assembled"
+  },
+  "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 1,
+  "decision_packet_validated": true,
+  "decision_packet_validation_errors": [],
   "diagnostic_debugger": {
     "anti_cheat_flags": {
       "fake_go_detected": false,
@@ -41,6 +67,40 @@
         "reason": "current_default_local_model"
       }
     ],
+    "code_owned_packet_shell_status": {
+      "action_errors": [],
+      "code_owned_fields": [
+        "prompt_id",
+        "user_goal",
+        "evidence_items",
+        "final_recommendation",
+        "safe_mvp",
+        "handoff_packet",
+        "quality_self_check"
+      ],
+      "local_api_truth_from_lane_metadata": true,
+      "model_decision_body_status": {
+        "decision_count": 5,
+        "errors": [],
+        "parse_error": "",
+        "parse_status": "ok",
+        "status": "valid"
+      },
+      "model_owned_fields_used": [
+        "decision_summary",
+        "reasoning_summary",
+        "risk_notes",
+        "ambiguity_notes",
+        "proposed_next_action",
+        "action_intent",
+        "confidence_reason"
+      ],
+      "model_provenance_stripped": [
+        "manifest.json"
+      ],
+      "source_urls_from_code": true,
+      "status": "assembled"
+    },
     "created_modified_files": [
       "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.json",
       "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.md",
@@ -73,26 +133,23 @@
       }
     ],
     "expected_lane": "validated_decision_packet",
-    "failure_classification": "MODEL_PACKET_VALIDATION_FAILURE",
+    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
     "fallback_reason": "",
     "fallback_used": false,
     "human_action_required": true,
     "local_api_cli_distinction": "local_ollama_cli_or_http",
     "model_call_attempted": true,
-    "model_call_result_or_failure_class": "packet_validation_failed",
-    "next_recommended_action": "inspect decision_packet_validation_errors and rerun bounded Set A slice",
+    "model_call_result_or_failure_class": "code_owned_packet_validated",
+    "model_decision_body_status": {
+      "decision_count": 5,
+      "errors": [],
+      "parse_error": "",
+      "parse_status": "ok",
+      "status": "valid"
+    },
+    "next_recommended_action": "inspect failed_gates and make one bounded fix",
     "productive_reasons": [
-      "research_materially_changed_output",
-      "repo_context_used",
-      "a2_mv3_architecture_constraints",
-      "a2_native_messaging_permission",
-      "a2_native_host_registration",
-      "a2_service_worker_lifecycle",
-      "a2_payload_or_local_api_boundary",
-      "a2_source_proxy_endpoint_context",
-      "a2_safe_mvp_slice",
-      "a2_coding_agent_handoff",
-      "work_product_too_short"
+      "research_change_source_not_from_raw_sources"
     ],
     "productive_status": "NEEDS_FIX",
     "prompt_id": "A2",
@@ -149,17 +206,17 @@
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.json",
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A2",
-    "selected_lane": "ollama_hermes4_latest",
+    "selected_lane": "ollama_qwen2.5-coder_7b",
     "selected_model_provider_tool": {
-      "model": "hermes4:latest",
+      "model": "qwen2.5-coder:7b",
       "provider": "ollama",
-      "tool": "stage4r_live_work_product"
+      "tool": "validated_decision_packet_renderer"
     },
     "task_class": "plan",
-    "task_id": "task_f2232af48edc",
+    "task_id": "task_cb7d7a5dfca3",
     "timeout_empty_parse_policy": {
       "empty_output": false,
-      "parse_failure": true,
+      "parse_failure": false,
       "policy_block": false,
       "timeout": false
     },
@@ -173,17 +230,7 @@
   },
   "downstream_consumed": true,
   "failed_gates": [
-    "research_materially_changed_output",
-    "repo_context_used",
-    "a2_mv3_architecture_constraints",
-    "a2_native_messaging_permission",
-    "a2_native_host_registration",
-    "a2_service_worker_lifecycle",
-    "a2_payload_or_local_api_boundary",
-    "a2_source_proxy_endpoint_context",
-    "a2_safe_mvp_slice",
-    "a2_coding_agent_handoff",
-    "work_product_too_short"
+    "research_change_source_not_from_raw_sources"
   ],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
@@ -207,7 +254,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_191ff5d17bfe4c0a",
+  "latest_consumer_event_id": "consumer_1616cb371cee4091",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -218,18 +265,15 @@
   "mac_system_status_alone_used_as_pass": false,
   "max_auto_fix_attempts": 3,
   "model": "gemma3n:e4b",
+  "model_decision_body_status": {
+    "decision_count": 5,
+    "errors": [],
+    "parse_error": "",
+    "parse_status": "ok",
+    "status": "valid"
+  },
   "notes": [
-    "research_materially_changed_output",
-    "repo_context_used",
-    "a2_mv3_architecture_constraints",
-    "a2_native_messaging_permission",
-    "a2_native_host_registration",
-    "a2_service_worker_lifecycle",
-    "a2_payload_or_local_api_boundary",
-    "a2_source_proxy_endpoint_context",
-    "a2_safe_mvp_slice",
-    "a2_coding_agent_handoff",
-    "work_product_too_short"
+    "research_change_source_not_from_raw_sources"
   ],
   "packet_lanes_available": [
     {
@@ -277,8 +321,8 @@
       "reason": "LITELLM_API_KEY_unset_or_model_missing"
     }
   ],
-  "packet_model": "hermes4:latest",
-  "packet_model_lane": "ollama_hermes4_latest",
+  "packet_model": "qwen2.5-coder:7b",
+  "packet_model_lane": "ollama_qwen2.5-coder_7b",
   "packet_model_provider": "ollama",
   "patch_bucket": "",
   "patch_required": false,
@@ -301,7 +345,7 @@
   "recovery_required": false,
   "repair_applied": false,
   "repair_required": false,
-  "repo_context_used": false,
+  "repo_context_used": true,
   "repo_files_read": [
     "source_proxy/api/long_running_tasks.py",
     "source_proxy/decision/task_spec_intake.py",
@@ -318,18 +362,24 @@
     "repo_context",
     "policy_gate"
   ],
-  "research_marker_hits": [],
-  "research_materially_changed_output": false,
+  "research_marker_hits": [
+    "developer.chrome.com",
+    "stackoverflow.com",
+    "cwskit.khanakia.com",
+    "developer.mozilla.org",
+    "optymized.net"
+  ],
+  "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_f2232af48edc",
-  "trace_id": "trace_7415ff944f944adc",
+  "task_id": "task_cb7d7a5dfca3",
+  "trace_id": "trace_edb09400bb974261",
   "user_goal_reached": false,
   "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation NEEDS_FIX: live decision packet did not validate, so no deterministic renderer output was accepted. Limits - The hardened grader remains authoritative. Next Handoff Goal: inspect decision packet validation errors and rerun only with valid live JSON.",
+  "work_product_summary": "Recommendation Review current architecture against Manifest V3 requirements, update permissions, ensure service worker lifecycle support, define clear payload/local API boundaries, and prioritize key features for the MVP. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: Native messaging - Chrome for D",
   "work_product_type": "plan"
 }

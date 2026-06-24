@@ -1,18 +1,48 @@
 {
   "auto_fix_attempts": 0,
   "blocked_reasons": [],
+  "code_owned_packet_shell_status": {
+    "action_errors": [
+      "invalid_action_intent:test later"
+    ],
+    "code_owned_fields": [
+      "prompt_id",
+      "user_goal",
+      "evidence_items",
+      "final_recommendation",
+      "safe_mvp",
+      "handoff_packet",
+      "quality_self_check"
+    ],
+    "local_api_truth_from_lane_metadata": true,
+    "model_decision_body_status": {
+      "decision_count": 3,
+      "errors": [
+        "model_decision_body_invalid_action_intent:test later:1"
+      ],
+      "parse_error": "non_json_wrapping_text",
+      "parse_status": "wrapped_json_extracted",
+      "status": "invalid"
+    },
+    "model_owned_fields_used": [
+      "decision_summary",
+      "reasoning_summary",
+      "risk_notes",
+      "ambiguity_notes",
+      "proposed_next_action",
+      "action_intent",
+      "confidence_reason"
+    ],
+    "model_provenance_stripped": [],
+    "source_urls_from_code": true,
+    "status": "assembled"
+  },
   "consumer_subsystem": "long_running_status_observer",
   "decision_packet_attempts": 9,
   "decision_packet_validated": false,
   "decision_packet_validation_errors": [
-    "decision_field_too_thin:0:default_without_evidence",
-    "decision_field_too_thin:1:default_without_evidence",
-    "decision_field_too_thin:2:default_without_evidence",
-    "decision_field_too_thin:3:default_without_evidence",
-    "decision_field_too_thin:4:default_without_evidence",
-    "decision_no_action_verb:1",
-    "decision_no_action_verb:2",
-    "decision_no_action_verb:4"
+    "model_decision_body_invalid_action_intent:test later",
+    "model_decision_body_invalid_action_intent:test later:1"
   ],
   "diagnostic_debugger": {
     "anti_cheat_flags": {
@@ -42,6 +72,42 @@
         "reason": "current_default_local_model"
       }
     ],
+    "code_owned_packet_shell_status": {
+      "action_errors": [
+        "invalid_action_intent:test later"
+      ],
+      "code_owned_fields": [
+        "prompt_id",
+        "user_goal",
+        "evidence_items",
+        "final_recommendation",
+        "safe_mvp",
+        "handoff_packet",
+        "quality_self_check"
+      ],
+      "local_api_truth_from_lane_metadata": true,
+      "model_decision_body_status": {
+        "decision_count": 3,
+        "errors": [
+          "model_decision_body_invalid_action_intent:test later:1"
+        ],
+        "parse_error": "non_json_wrapping_text",
+        "parse_status": "wrapped_json_extracted",
+        "status": "invalid"
+      },
+      "model_owned_fields_used": [
+        "decision_summary",
+        "reasoning_summary",
+        "risk_notes",
+        "ambiguity_notes",
+        "proposed_next_action",
+        "action_intent",
+        "confidence_reason"
+      ],
+      "model_provenance_stripped": [],
+      "source_urls_from_code": true,
+      "status": "assembled"
+    },
     "created_modified_files": [
       "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A9.json",
       "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A9.md",
@@ -81,6 +147,15 @@
     "local_api_cli_distinction": "local_ollama_cli_or_http",
     "model_call_attempted": true,
     "model_call_result_or_failure_class": "packet_validation_failed",
+    "model_decision_body_status": {
+      "decision_count": 3,
+      "errors": [
+        "model_decision_body_invalid_action_intent:test later:1"
+      ],
+      "parse_error": "non_json_wrapping_text",
+      "parse_status": "wrapped_json_extracted",
+      "status": "invalid"
+    },
     "next_recommended_action": "inspect decision_packet_validation_errors and rerun bounded Set A slice",
     "productive_reasons": [
       "research_materially_changed_output",
@@ -145,14 +220,14 @@
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A9.json",
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A9",
-    "selected_lane": "ollama_qwen2.5-coder_7b",
+    "selected_lane": "ollama_hermes4_latest",
     "selected_model_provider_tool": {
-      "model": "qwen2.5-coder:7b",
+      "model": "hermes4:latest",
       "provider": "ollama",
       "tool": "stage4r_live_work_product"
     },
     "task_class": "research_pack",
-    "task_id": "task_42352035080c",
+    "task_id": "task_9948f900dcf4",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -197,7 +272,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_1043948bfb894e29",
+  "latest_consumer_event_id": "consumer_de5467a07ca54c07",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -208,6 +283,15 @@
   "mac_system_status_alone_used_as_pass": false,
   "max_auto_fix_attempts": 3,
   "model": "gemma3n:e4b",
+  "model_decision_body_status": {
+    "decision_count": 3,
+    "errors": [
+      "model_decision_body_invalid_action_intent:test later:1"
+    ],
+    "parse_error": "non_json_wrapping_text",
+    "parse_status": "wrapped_json_extracted",
+    "status": "invalid"
+  },
   "notes": [
     "research_materially_changed_output",
     "repo_context_used",
@@ -262,8 +346,8 @@
       "reason": "LITELLM_API_KEY_unset_or_model_missing"
     }
   ],
-  "packet_model": "qwen2.5-coder:7b",
-  "packet_model_lane": "ollama_qwen2.5-coder_7b",
+  "packet_model": "hermes4:latest",
+  "packet_model_lane": "ollama_hermes4_latest",
   "packet_model_provider": "ollama",
   "patch_bucket": "",
   "patch_required": false,
@@ -307,8 +391,8 @@
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_42352035080c",
-  "trace_id": "trace_05c40481fcc941e9",
+  "task_id": "task_9948f900dcf4",
+  "trace_id": "trace_1d1633e703924021",
   "user_goal_reached": false,
   "user_prompt": "research current local llm tools and tell me what is worth using for my proxy setup this month",
   "verification_result": "not_required",
