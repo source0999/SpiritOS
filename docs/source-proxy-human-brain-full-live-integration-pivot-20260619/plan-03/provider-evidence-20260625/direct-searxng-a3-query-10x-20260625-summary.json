@@ -1,0 +1,25 @@
+{
+  "all_http_200": true,
+  "all_nonzero": true,
+  "attempts": 10,
+  "generated_at": "2026-06-25T14:51:10.905155+00:00",
+  "http_200_count": 10,
+  "jsonl_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/provider-evidence-20260625/direct-searxng-a3-query-10x-20260625.jsonl",
+  "ok_count": 10,
+  "provider_url": "http://127.0.0.1:8080",
+  "query": "Android Jetpack Compose share intent local task app receipt polling",
+  "result_counts": [
+    20,
+    20,
+    20,
+    20,
+    20,
+    20,
+    20,
+    20,
+    20,
+    20
+  ],
+  "timeout_or_error_count": 0,
+  "zero_result_count": 0
+}

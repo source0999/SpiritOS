@@ -312,3 +312,11 @@ declared, and (c) durable SearXNG provider proof is captured into the docs tree.
 - Set B/C run: no
 - Plan 4 started: no
 - SpiritFlix/media/Jellyfin touched: no
+
+## Post-audit durable provider proof captured
+
+- path: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/provider-evidence-20260625/direct-searxng-a3-query-10x-20260625.md`
+- result: 10/10 HTTP 200, nonzero sources
+- verdict: `DURABLE_SEARXNG_PROOF_CAPTURED`
+- scope: direct SearXNG proof only; Set A was not rerun, Set B/C were not run, and
+  Plan 4 was not started.
