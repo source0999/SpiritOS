@@ -1,14 +1,14 @@
 # Set A Real Rerun Summary
 
-- A1: PASS task=task_757b09776ee1 sources=6 consumer=consumer_bcf8aa12dbd6407e notes=none
-- A2: PASS task=task_6d5fff56f26a sources=6 consumer=consumer_e44fefbea4904121 notes=none
-- A3: NEEDS_FIX task=task_f47e8876c901 sources=6 consumer=consumer_048f735339524cab notes=research_change_source_not_from_raw_sources
-- A4: PASS task=task_097cd9c8d6f8 sources=6 consumer=consumer_4d73e40ae2874474 notes=none
-- A5: PASS task=task_84c251fd61d1 sources=6 consumer=consumer_26322369c0f7438e notes=none
-- A6: PASS task=task_d9884298d33f sources=6 consumer=consumer_6f6725f6b2714700 notes=none
-- A7: PASS task=task_cbe214be273a sources=0 consumer=consumer_a22f9a0f6bf04b76 notes=none
-- A8: PASS task=task_6355c9c3ece2 sources=0 consumer=consumer_06e2ba9231c84a4f notes=none
-- A9: PASS task=task_d2c669abaf18 sources=6 consumer=consumer_2a11ca68b479452a notes=none
-- A10: PASS task=task_aa71f09e02ab sources=0 consumer=consumer_3ca275b1c30b4099 notes=none
+- A1: PASS task=task_476658d46c38 sources=6 consumer=consumer_12fcc8bcee1e4945 notes=none
+- A2: PASS task=task_1996e6d49121 sources=6 consumer=consumer_cbe4386e592b4eb8 notes=none
+- A3: NEEDS_FIX task=task_e0f96027dfe4 sources=6 consumer=consumer_4d0e21630def46e5 notes=research_change_no_specific_decision
+- A4: PASS task=task_a69418d252f0 sources=6 consumer=consumer_3a120f5928fa4672 notes=none
+- A5: PASS task=task_43b5728a657b sources=6 consumer=consumer_6413d1637f134496 notes=none
+- A6: PASS task=task_3cd9b37679dc sources=6 consumer=consumer_97744afd575b4ca6 notes=none
+- A7: PASS task=task_871dbc6f9226 sources=0 consumer=consumer_6221414726054909 notes=none
+- A8: PASS task=task_1fde2c168d62 sources=0 consumer=consumer_4a2e25b5e7f64243 notes=none
+- A9: PASS task=task_a167d5d905ac sources=6 consumer=consumer_604edde5c77945d8 notes=none
+- A10: PASS task=task_2bf027b5a2c3 sources=0 consumer=consumer_2199abd254194d95 notes=none
 
 Verdict: NEEDS_FIX

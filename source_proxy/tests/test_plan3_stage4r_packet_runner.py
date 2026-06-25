@@ -484,8 +484,104 @@ Research-to-decision changes
     blocks, errors = runner.research_change_blocks(repaired, sources)
 
     assert status["derived_why_fields"] == 0
+    assert status["dropped_non_raw_source_blocks"] == 1
+    assert "dropped_non_raw_research_source_block" in status["repairs"]
     assert blocks == []
-    assert "research_change_source_not_from_raw_sources" in errors
+    assert errors == []
+    assert "fake.example" not in repaired
+
+
+def test_a3_like_repair_canonicalizes_raw_sources_and_drops_repo_research_leak() -> None:
+    runner = _load_runner()
+    sources = [
+        {
+            "title": "Send simple data to other apps | App data and files - Android Developers",
+            "url": "https://developer.android.com/training/sharing/send",
+            "content": "When you construct an intent, you must specify the action you want the intent to trigger and ACTION_SEND indicates data sharing.",
+        },
+        {
+            "title": "Handle user interaction | Jetpack Compose | Android Developers",
+            "url": "https://developer.android.com/develop/ui/compose/glance/user-interaction",
+            "content": "Underneath, the parameters are included in the intent used to launch the activity, allowing the target Activity to retrieve it.",
+        },
+    ]
+    work = """Recommendation
+Use Android intents for the phone handoff.
+
+Research-to-decision changes
+Finding: When you construct an intent, you must specify the action you want the intent to trigger and ACTION_SEND indicates data sharing.
+Source: Send simple data to other apps | App data and files - Android Deveopers (davelopeer.android.com)
+Decision changed: Choose Android Intents for inter-process communication to initiate proxy tasks and retrieve receipt information.
+Why this changes the recommendation: This confirms the Android handoff mechanism needed to start tasks and pass receipt context.
+
+Finding: Underneath, the parameters are included in the intent used to launch the activity, allowing the target Activity to retrieve it.
+Source: Handle user interaction | Jeptack Compose | Android Developers (deveelopeer.android.com)
+Decision changed: Use Intent parameters to pass receipt identifiers and task context to the Android app surface.
+Why this changes the recommendation: This gives the app a source-backed way to carry task data into the receipt-check flow.
+
+Finding: The project uses long-running tasks for receipt creation.
+Source: source_proxy/api/long_running_tasks.py
+Decision changed: Leverage existing repo task plumbing as research provenance.
+Why this changes the recommendation: This repo evidence belongs in repo context, not research source provenance.
+
+Evidence Used
+- source_proxy/api/long_running_tasks.py
+"""
+
+    repaired, status = runner.repair_research_change_fields(work, sources)
+    blocks, errors = runner.research_change_blocks(repaired, sources)
+
+    assert status["canonicalized_source_refs"] == 2
+    assert status["dropped_non_raw_source_blocks"] == 1
+    assert "source_proxy/api/long_running_tasks.py" not in repaired.split("Evidence Used", 1)[0]
+    assert "davelopeer" not in repaired
+    assert "deveelopeer" not in repaired
+    assert len(blocks) == 2
+    assert errors == []
+    assert all(block["source"].endswith("developer.android.com/develop/ui/compose/glance/user-interaction") or "training/sharing/send" in block["source"] for block in blocks)
+
+
+def test_missing_raw_research_source_still_fails_honestly_after_repair() -> None:
+    runner = _load_runner()
+    item = {
+        "prompt_id": "A3",
+        "internet_likely_required": True,
+        "must_inspect_repo_context": False,
+        "mac_likely_required": False,
+    }
+    work = """Recommendation
+Use Android intents.
+
+Research-to-decision changes
+Finding: The repo has long-running task state fields.
+Source: source_proxy/api/long_running_tasks.py
+Decision changed: Choose repo task plumbing as if it were research provenance.
+Why this changes the recommendation: This should not count as a raw research source.
+
+Plan
+Use the existing task state and avoid new systems.
+
+Limits
+Do not touch protected paths.
+
+Next Handoff
+Inspect source provenance.
+"""
+
+    repaired, status = runner.repair_research_change_fields(work, [])
+    result = runner.grade(item, repaired, {"research_packet": {"sources": []}}, None, None, runner.synthetic_task(), "")
+
+    assert status["enabled"] is False
+    assert "live_search_sources" in result["failed_gates"]
+    assert "research_materially_changed_output" in result["failed_gates"]
+
+
+def test_research_change_repair_has_no_prompt_specific_branches() -> None:
+    runner = _load_runner()
+    source = inspect.getsource(runner.repair_research_change_fields)
+
+    assert 'pid == "A3"' not in source
+    assert '"A3"' not in source
 
 
 def test_research_source_line_rejects_fake_model_source() -> None:

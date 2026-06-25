@@ -39,7 +39,7 @@
     "model_decision_body_status": {},
     "next_recommended_action": "inspect failed_gates and make one bounded fix",
     "productive_reasons": [
-      "research_change_source_not_from_raw_sources"
+      "research_change_no_specific_decision"
     ],
     "productive_status": "NEEDS_FIX",
     "prompt_id": "A3",
@@ -57,11 +57,15 @@
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.json",
     "research_change_field_repair_status": {
+      "canonicalized_source_refs": 6,
       "code_owned_grounding": "raw_source_and_model_decision_only",
       "derived_why_fields": 0,
+      "dropped_non_raw_source_blocks": 0,
       "enabled": true,
       "inline_labels_split": 0,
-      "repairs": []
+      "repairs": [
+        "canonicalized_research_source_ref"
+      ]
     },
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A3",
@@ -72,7 +76,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "plan",
-    "task_id": "task_f47e8876c901",
+    "task_id": "task_e0f96027dfe4",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -89,7 +93,7 @@
   },
   "downstream_consumed": true,
   "failed_gates": [
-    "research_change_source_not_from_raw_sources"
+    "research_change_no_specific_decision"
   ],
   "failure_changed_outcome": false,
   "fake_go_detected": false,
@@ -112,7 +116,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_048f735339524cab",
+  "latest_consumer_event_id": "consumer_4d0e21630def46e5",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -125,7 +129,7 @@
   "model": "gemma3n:e4b",
   "model_decision_body_status": {},
   "notes": [
-    "research_change_source_not_from_raw_sources"
+    "research_change_no_specific_decision"
   ],
   "packet_lanes_available": [],
   "packet_lanes_unavailable": [],
@@ -167,24 +171,35 @@
     "repo_context"
   ],
   "research_change_field_repair_status": {
+    "canonicalized_source_refs": 6,
     "code_owned_grounding": "raw_source_and_model_decision_only",
     "derived_why_fields": 0,
+    "dropped_non_raw_source_blocks": 0,
     "enabled": true,
     "inline_labels_split": 0,
-    "repairs": []
+    "repairs": [
+      "canonicalized_research_source_ref"
+    ]
   },
-  "research_marker_hits": [],
+  "research_marker_hits": [
+    "medium.com",
+    "developer.android.com",
+    "kotlin multiplatform samples",
+    "kotlinlang.org",
+    "stackoverflow.com",
+    "youtube.com"
+  ],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_f47e8876c901",
-  "trace_id": "trace_3455fa8909ca45cc",
+  "task_id": "task_e0f96027dfe4",
+  "trace_id": "trace_6d13bfb0ae2741da",
   "user_goal_reached": false,
   "user_prompt": "figure out the best path for an android app that lets me start proxy tasks from my phone and check receipts",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation Implement Android Intents to enable starting proxy tasks from the phone and checking receipts. This will allow for seamless communication between the mobile app and the proxy task service. Research-to-decision changes Finding: When you construct an intent, you must specify the action you want the intent to \"trigger.\" Android defines several actions, including ACTION_SEND which, as you can probably guess, indicates that the intent i",
+  "work_product_summary": "Recommendation: The best path forward for an Android app to start proxy tasks from a phone and check receipts is to leverage Android Intents for task initiation and data transfer, combined with Compose for a user-friendly interface and potentially utilizing Compose Multiplatform for shared data. A share button in Compose should be implemented to facilitate sharing of receipt data or task-related information. Research-to-decision changes: Finding:",
   "work_product_type": "plan"
 }

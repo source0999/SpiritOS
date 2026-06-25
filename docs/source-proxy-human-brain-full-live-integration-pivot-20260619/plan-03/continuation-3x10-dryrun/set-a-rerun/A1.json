@@ -55,11 +55,16 @@
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A1.json",
     "research_change_field_repair_status": {
+      "canonicalized_source_refs": 4,
       "code_owned_grounding": "raw_source_and_model_decision_only",
       "derived_why_fields": 0,
+      "dropped_non_raw_source_blocks": 0,
       "enabled": true,
-      "inline_labels_split": 0,
-      "repairs": []
+      "inline_labels_split": 10,
+      "repairs": [
+        "canonicalized_research_source_ref",
+        "split_inline_research_change_labels"
+      ]
     },
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A1",
@@ -70,7 +75,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "research_pack",
-    "task_id": "task_757b09776ee1",
+    "task_id": "task_476658d46c38",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -107,7 +112,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_bcf8aa12dbd6407e",
+  "latest_consumer_event_id": "consumer_12fcc8bcee1e4945",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -155,29 +160,33 @@
     "current_research"
   ],
   "research_change_field_repair_status": {
+    "canonicalized_source_refs": 4,
     "code_owned_grounding": "raw_source_and_model_decision_only",
     "derived_why_fields": 0,
+    "dropped_non_raw_source_blocks": 0,
     "enabled": true,
-    "inline_labels_split": 0,
-    "repairs": []
+    "inline_labels_split": 10,
+    "repairs": [
+      "canonicalized_research_source_ref",
+      "split_inline_research_change_labels"
+    ]
   },
   "research_marker_hits": [
     "reddit.com",
     "github.com",
-    "youtube.com",
-    "projectpokemon.org"
+    "pkhex.dev"
   ],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_757b09776ee1",
-  "trace_id": "trace_7860cf99b71743d1",
+  "task_id": "task_476658d46c38",
+  "trace_id": "trace_ed6e0d5907bc4d53",
   "user_goal_reached": true,
   "user_prompt": "research open source frameworks and more to make a plan to setup a pokemon save editor. i want the best route not random tutorial slop",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "## Research Pack ### Recommendation Prioritize the use of PKHeX as the primary framework for developing a Pok\u00e9mon save editor. It is a well-established, actively supported, and feature-rich tool specifically designed for Pok\u00e9mon core series save file manipulation. ### Research-to-Decision Changes Finding: Oct 8, 2025 \u00b7 PKHex is the most popular and expansive save editor in the present day. It's PC-based and allows for more customization than the ",
+  "work_product_summary": "Recommendation: I recommend prioritizing PKHeX for Web as the best route to set up a Pok\u00e9mon save editor. It offers cross-platform accessibility, precise save file editing, and support for a wide range of Pok\u00e9mon games. While PKSM and the desktop version of PKHeX are viable options, PKHeX for Web's versatility and ease of access make it the most practical choice for a general-purpose editor. Research-to-decision changes: Finding: Oct 8, 2025 \u00b7 PK",
   "work_product_type": "research_pack"
 }

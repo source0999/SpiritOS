@@ -31,39 +31,38 @@
       "confidence_reason"
     ],
     "model_provenance_stripped": [
-      "manifest.json",
-      "route.ts"
+      "manifest.json"
     ],
     "raw_source_registry": [
       {
         "evidence_id": "research:1",
-        "source_host": "stackoverflow.com",
-        "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
-      },
-      {
-        "evidence_id": "research:2",
         "source_host": "developer.chrome.com",
         "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
       },
       {
-        "evidence_id": "research:3",
+        "evidence_id": "research:2",
         "source_host": "developer.chrome.com",
         "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
       },
       {
+        "evidence_id": "research:3",
+        "source_host": "stackoverflow.com",
+        "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+      },
+      {
         "evidence_id": "research:4",
+        "source_host": "cwskit.khanakia.com",
+        "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+      },
+      {
+        "evidence_id": "research:5",
         "source_host": "optymized.net",
         "source_url": "https://optymized.net/blog/building-chrome-extensions"
       },
       {
-        "evidence_id": "research:5",
-        "source_host": "youtube.com",
-        "source_url": "https://www.youtube.com/watch?v=5E94S1J2vBI"
-      },
-      {
         "evidence_id": "research:6",
-        "source_host": "medium.com",
-        "source_url": "https://medium.com/@trivajay259/oxichrome-chrome-extensions-in-pure-rust-no-hand-written-javascript-4de343e1c32b"
+        "source_host": "support.google.com",
+        "source_url": "https://support.google.com/chrome/thread/267297536/in-manifest-v3-will-global-variables-work-for-native-messaging-extensions?hl=en"
       }
     ],
     "source_urls_from_code": true,
@@ -131,39 +130,38 @@
         "confidence_reason"
       ],
       "model_provenance_stripped": [
-        "manifest.json",
-        "route.ts"
+        "manifest.json"
       ],
       "raw_source_registry": [
         {
           "evidence_id": "research:1",
-          "source_host": "stackoverflow.com",
-          "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
-        },
-        {
-          "evidence_id": "research:2",
           "source_host": "developer.chrome.com",
           "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
         },
         {
-          "evidence_id": "research:3",
+          "evidence_id": "research:2",
           "source_host": "developer.chrome.com",
           "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
         },
         {
+          "evidence_id": "research:3",
+          "source_host": "stackoverflow.com",
+          "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+        },
+        {
           "evidence_id": "research:4",
+          "source_host": "cwskit.khanakia.com",
+          "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+        },
+        {
+          "evidence_id": "research:5",
           "source_host": "optymized.net",
           "source_url": "https://optymized.net/blog/building-chrome-extensions"
         },
         {
-          "evidence_id": "research:5",
-          "source_host": "youtube.com",
-          "source_url": "https://www.youtube.com/watch?v=5E94S1J2vBI"
-        },
-        {
           "evidence_id": "research:6",
-          "source_host": "medium.com",
-          "source_url": "https://medium.com/@trivajay259/oxichrome-chrome-extensions-in-pure-rust-no-hand-written-javascript-4de343e1c32b"
+          "source_host": "support.google.com",
+          "source_url": "https://support.google.com/chrome/thread/267297536/in-manifest-v3-will-global-variables-work-for-native-messaging-extensions?hl=en"
         }
       ],
       "source_urls_from_code": true,
@@ -280,7 +278,7 @@
       "tool": "validated_decision_packet_renderer"
     },
     "task_class": "plan",
-    "task_id": "task_6d5fff56f26a",
+    "task_id": "task_1996e6d49121",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -319,7 +317,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_e44fefbea4904121",
+  "latest_consumer_event_id": "consumer_cbe4386e592b4eb8",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -427,23 +425,23 @@
   ],
   "research_change_field_repair_status": {},
   "research_marker_hits": [
-    "stackoverflow.com",
     "developer.chrome.com",
+    "stackoverflow.com",
+    "cwskit.khanakia.com",
     "optymized.net",
-    "youtube.com",
-    "medium.com"
+    "support.google.com"
   ],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_6d5fff56f26a",
-  "trace_id": "trace_8d41b7243a7b4c1b",
+  "task_id": "task_1996e6d49121",
+  "trace_id": "trace_f94667ce90574172",
   "user_goal_reached": true,
   "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation Implement nativeMessaging, service workers, payload limits, and proper routing for /v1/tasks endpoint. Refactor code for clarity and maintainability. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: In a Chrome Extension, can a Service Worker receive Native Messaging ...: Jul 1, 2023 \u00b7 ",
+  "work_product_summary": "Recommendation Design nativeMessaging permission, handle service worker lifecycle, limit payload size, route through Source Proxy, and split into a safe MVP slice while considering privacy limitations. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: API reference - Chrome for Developers: Use the chro",
   "work_product_type": "plan"
 }

@@ -3,7 +3,7 @@
   "failed_count": 1,
   "fake_go_detected_computed": true,
   "final_status_derived_by_grader": true,
-  "generated_at": "2026-06-24T13:29:52.726527+00:00",
+  "generated_at": "2026-06-25T00:20:04.126936+00:00",
   "hardcoded_plans_used": false,
   "hardcoded_sources_used": false,
   "model": "gemma3n:e4b",
@@ -70,11 +70,16 @@
         "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
         "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A1.json",
         "research_change_field_repair_status": {
+          "canonicalized_source_refs": 4,
           "code_owned_grounding": "raw_source_and_model_decision_only",
           "derived_why_fields": 0,
+          "dropped_non_raw_source_blocks": 0,
           "enabled": true,
-          "inline_labels_split": 0,
-          "repairs": []
+          "inline_labels_split": 10,
+          "repairs": [
+            "canonicalized_research_source_ref",
+            "split_inline_research_change_labels"
+          ]
         },
         "route_type": "plan3_stage4r_set_a",
         "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A1",
@@ -85,7 +90,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "research_pack",
-        "task_id": "task_757b09776ee1",
+        "task_id": "task_476658d46c38",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -122,7 +127,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_bcf8aa12dbd6407e",
+      "latest_consumer_event_id": "consumer_12fcc8bcee1e4945",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -170,30 +175,34 @@
         "current_research"
       ],
       "research_change_field_repair_status": {
+        "canonicalized_source_refs": 4,
         "code_owned_grounding": "raw_source_and_model_decision_only",
         "derived_why_fields": 0,
+        "dropped_non_raw_source_blocks": 0,
         "enabled": true,
-        "inline_labels_split": 0,
-        "repairs": []
+        "inline_labels_split": 10,
+        "repairs": [
+          "canonicalized_research_source_ref",
+          "split_inline_research_change_labels"
+        ]
       },
       "research_marker_hits": [
         "reddit.com",
         "github.com",
-        "youtube.com",
-        "projectpokemon.org"
+        "pkhex.dev"
       ],
       "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_757b09776ee1",
-      "trace_id": "trace_7860cf99b71743d1",
+      "task_id": "task_476658d46c38",
+      "trace_id": "trace_ed6e0d5907bc4d53",
       "user_goal_reached": true,
       "user_prompt": "research open source frameworks and more to make a plan to setup a pokemon save editor. i want the best route not random tutorial slop",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Research Pack ### Recommendation Prioritize the use of PKHeX as the primary framework for developing a Pok\u00e9mon save editor. It is a well-established, actively supported, and feature-rich tool specifically designed for Pok\u00e9mon core series save file manipulation. ### Research-to-Decision Changes Finding: Oct 8, 2025 \u00b7 PKHex is the most popular and expansive save editor in the present day. It's PC-based and allows for more customization than the ",
+      "work_product_summary": "Recommendation: I recommend prioritizing PKHeX for Web as the best route to set up a Pok\u00e9mon save editor. It offers cross-platform accessibility, precise save file editing, and support for a wide range of Pok\u00e9mon games. While PKSM and the desktop version of PKHeX are viable options, PKHeX for Web's versatility and ease of access make it the most practical choice for a general-purpose editor. Research-to-decision changes: Finding: Oct 8, 2025 \u00b7 PK",
       "work_product_type": "research_pack"
     },
     {
@@ -229,39 +238,38 @@
           "confidence_reason"
         ],
         "model_provenance_stripped": [
-          "manifest.json",
-          "route.ts"
+          "manifest.json"
         ],
         "raw_source_registry": [
           {
             "evidence_id": "research:1",
-            "source_host": "stackoverflow.com",
-            "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
-          },
-          {
-            "evidence_id": "research:2",
             "source_host": "developer.chrome.com",
             "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
           },
           {
-            "evidence_id": "research:3",
+            "evidence_id": "research:2",
             "source_host": "developer.chrome.com",
             "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
           },
           {
+            "evidence_id": "research:3",
+            "source_host": "stackoverflow.com",
+            "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+          },
+          {
             "evidence_id": "research:4",
+            "source_host": "cwskit.khanakia.com",
+            "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+          },
+          {
+            "evidence_id": "research:5",
             "source_host": "optymized.net",
             "source_url": "https://optymized.net/blog/building-chrome-extensions"
           },
           {
-            "evidence_id": "research:5",
-            "source_host": "youtube.com",
-            "source_url": "https://www.youtube.com/watch?v=5E94S1J2vBI"
-          },
-          {
             "evidence_id": "research:6",
-            "source_host": "medium.com",
-            "source_url": "https://medium.com/@trivajay259/oxichrome-chrome-extensions-in-pure-rust-no-hand-written-javascript-4de343e1c32b"
+            "source_host": "support.google.com",
+            "source_url": "https://support.google.com/chrome/thread/267297536/in-manifest-v3-will-global-variables-work-for-native-messaging-extensions?hl=en"
           }
         ],
         "source_urls_from_code": true,
@@ -329,39 +337,38 @@
             "confidence_reason"
           ],
           "model_provenance_stripped": [
-            "manifest.json",
-            "route.ts"
+            "manifest.json"
           ],
           "raw_source_registry": [
             {
               "evidence_id": "research:1",
-              "source_host": "stackoverflow.com",
-              "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
-            },
-            {
-              "evidence_id": "research:2",
               "source_host": "developer.chrome.com",
               "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
             },
             {
-              "evidence_id": "research:3",
+              "evidence_id": "research:2",
               "source_host": "developer.chrome.com",
               "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
             },
             {
+              "evidence_id": "research:3",
+              "source_host": "stackoverflow.com",
+              "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+            },
+            {
               "evidence_id": "research:4",
+              "source_host": "cwskit.khanakia.com",
+              "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+            },
+            {
+              "evidence_id": "research:5",
               "source_host": "optymized.net",
               "source_url": "https://optymized.net/blog/building-chrome-extensions"
             },
             {
-              "evidence_id": "research:5",
-              "source_host": "youtube.com",
-              "source_url": "https://www.youtube.com/watch?v=5E94S1J2vBI"
-            },
-            {
               "evidence_id": "research:6",
-              "source_host": "medium.com",
-              "source_url": "https://medium.com/@trivajay259/oxichrome-chrome-extensions-in-pure-rust-no-hand-written-javascript-4de343e1c32b"
+              "source_host": "support.google.com",
+              "source_url": "https://support.google.com/chrome/thread/267297536/in-manifest-v3-will-global-variables-work-for-native-messaging-extensions?hl=en"
             }
           ],
           "source_urls_from_code": true,
@@ -478,7 +485,7 @@
           "tool": "validated_decision_packet_renderer"
         },
         "task_class": "plan",
-        "task_id": "task_6d5fff56f26a",
+        "task_id": "task_1996e6d49121",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -517,7 +524,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_e44fefbea4904121",
+      "latest_consumer_event_id": "consumer_cbe4386e592b4eb8",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -625,24 +632,24 @@
       ],
       "research_change_field_repair_status": {},
       "research_marker_hits": [
-        "stackoverflow.com",
         "developer.chrome.com",
+        "stackoverflow.com",
+        "cwskit.khanakia.com",
         "optymized.net",
-        "youtube.com",
-        "medium.com"
+        "support.google.com"
       ],
       "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_6d5fff56f26a",
-      "trace_id": "trace_8d41b7243a7b4c1b",
+      "task_id": "task_1996e6d49121",
+      "trace_id": "trace_f94667ce90574172",
       "user_goal_reached": true,
       "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation Implement nativeMessaging, service workers, payload limits, and proper routing for /v1/tasks endpoint. Refactor code for clarity and maintainability. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: In a Chrome Extension, can a Service Worker receive Native Messaging ...: Jul 1, 2023 \u00b7 ",
+      "work_product_summary": "Recommendation Design nativeMessaging permission, handle service worker lifecycle, limit payload size, route through Source Proxy, and split into a safe MVP slice while considering privacy limitations. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: API reference - Chrome for Developers: Use the chro",
       "work_product_type": "plan"
     },
     {
@@ -686,7 +693,7 @@
         "model_decision_body_status": {},
         "next_recommended_action": "inspect failed_gates and make one bounded fix",
         "productive_reasons": [
-          "research_change_source_not_from_raw_sources"
+          "research_change_no_specific_decision"
         ],
         "productive_status": "NEEDS_FIX",
         "prompt_id": "A3",
@@ -704,11 +711,15 @@
         "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
         "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A3.json",
         "research_change_field_repair_status": {
+          "canonicalized_source_refs": 6,
           "code_owned_grounding": "raw_source_and_model_decision_only",
           "derived_why_fields": 0,
+          "dropped_non_raw_source_blocks": 0,
           "enabled": true,
           "inline_labels_split": 0,
-          "repairs": []
+          "repairs": [
+            "canonicalized_research_source_ref"
+          ]
         },
         "route_type": "plan3_stage4r_set_a",
         "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A3",
@@ -719,7 +730,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "plan",
-        "task_id": "task_f47e8876c901",
+        "task_id": "task_e0f96027dfe4",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -736,7 +747,7 @@
       },
       "downstream_consumed": true,
       "failed_gates": [
-        "research_change_source_not_from_raw_sources"
+        "research_change_no_specific_decision"
       ],
       "failure_changed_outcome": false,
       "fake_go_detected": false,
@@ -759,7 +770,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_048f735339524cab",
+      "latest_consumer_event_id": "consumer_4d0e21630def46e5",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -772,7 +783,7 @@
       "model": "gemma3n:e4b",
       "model_decision_body_status": {},
       "notes": [
-        "research_change_source_not_from_raw_sources"
+        "research_change_no_specific_decision"
       ],
       "packet_lanes_available": [],
       "packet_lanes_unavailable": [],
@@ -814,25 +825,36 @@
         "repo_context"
       ],
       "research_change_field_repair_status": {
+        "canonicalized_source_refs": 6,
         "code_owned_grounding": "raw_source_and_model_decision_only",
         "derived_why_fields": 0,
+        "dropped_non_raw_source_blocks": 0,
         "enabled": true,
         "inline_labels_split": 0,
-        "repairs": []
+        "repairs": [
+          "canonicalized_research_source_ref"
+        ]
       },
-      "research_marker_hits": [],
+      "research_marker_hits": [
+        "medium.com",
+        "developer.android.com",
+        "kotlin multiplatform samples",
+        "kotlinlang.org",
+        "stackoverflow.com",
+        "youtube.com"
+      ],
       "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_f47e8876c901",
-      "trace_id": "trace_3455fa8909ca45cc",
+      "task_id": "task_e0f96027dfe4",
+      "trace_id": "trace_6d13bfb0ae2741da",
       "user_goal_reached": false,
       "user_prompt": "figure out the best path for an android app that lets me start proxy tasks from my phone and check receipts",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation Implement Android Intents to enable starting proxy tasks from the phone and checking receipts. This will allow for seamless communication between the mobile app and the proxy task service. Research-to-decision changes Finding: When you construct an intent, you must specify the action you want the intent to \"trigger.\" Android defines several actions, including ACTION_SEND which, as you can probably guess, indicates that the intent i",
+      "work_product_summary": "Recommendation: The best path forward for an Android app to start proxy tasks from a phone and check receipts is to leverage Android Intents for task initiation and data transfer, combined with Compose for a user-friendly interface and potentially utilizing Compose Multiplatform for shared data. A share button in Compose should be implemented to facilitate sharing of receipt data or task-related information. Research-to-decision changes: Finding:",
       "work_product_type": "plan"
     },
     {
@@ -892,11 +914,15 @@
         "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
         "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A4.json",
         "research_change_field_repair_status": {
+          "canonicalized_source_refs": 1,
           "code_owned_grounding": "raw_source_and_model_decision_only",
           "derived_why_fields": 0,
+          "dropped_non_raw_source_blocks": 0,
           "enabled": true,
           "inline_labels_split": 0,
-          "repairs": []
+          "repairs": [
+            "canonicalized_research_source_ref"
+          ]
         },
         "route_type": "plan3_stage4r_set_a",
         "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A4",
@@ -907,7 +933,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "research_pack",
-        "task_id": "task_097cd9c8d6f8",
+        "task_id": "task_a69418d252f0",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -945,7 +971,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_4d73e40ae2874474",
+      "latest_consumer_event_id": "consumer_3a120f5928fa4672",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -998,14 +1024,18 @@
         "repo_context"
       ],
       "research_change_field_repair_status": {
+        "canonicalized_source_refs": 1,
         "code_owned_grounding": "raw_source_and_model_decision_only",
         "derived_why_fields": 0,
+        "dropped_non_raw_source_blocks": 0,
         "enabled": true,
         "inline_labels_split": 0,
-        "repairs": []
+        "repairs": [
+          "canonicalized_research_source_ref"
+        ]
       },
       "research_marker_hits": [
-        "reddit.com",
+        "github.com",
         "community.obsidian.md"
       ],
       "research_materially_changed_output": true,
@@ -1013,13 +1043,13 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_097cd9c8d6f8",
-      "trace_id": "trace_f89bd4641e544960",
+      "task_id": "task_a69418d252f0",
+      "trace_id": "trace_086ac83c0469420c",
       "user_goal_reached": true,
       "user_prompt": "research ways to turn obsidian/project notes into better ai context and tell me what i should build first",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation: Prioritize building or utilizing the Smart Connections plugin as the first step to establish a foundation for using Obsidian notes with AI. This plugin directly addresses the user's goal of improving AI context from their notes by leveraging local embeddings and integration with Large Language Models. Research-to-decision changes: Finding: The Smart Connections plugin uses the text embedding model to find relevant notes and sends ",
+      "work_product_summary": "Recommendation: Prioritize building or utilizing the Smart Connections plugin first. This plugin directly addresses the user's need to improve AI context from Obsidian notes by surfacing semantically related notes. Research-to-decision changes: - Finding: [!NOTE] What Smart Connections does. Smart Connections uses local embeddings and your Smart Environment to surface notes that are semantically related to ... Source: GitHub - brianpetro/obsidian",
       "work_product_type": "research_pack"
     },
     {
@@ -1068,30 +1098,30 @@
           },
           {
             "evidence_id": "research:3",
-            "source_host": "coffeejourneys.blog",
-            "source_url": "https://coffeejourneys.blog/home-lab-local-llms-docker-amd/"
+            "source_host": "youtube.com",
+            "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
           },
           {
             "evidence_id": "research:4",
-            "source_host": "reddit.com",
-            "source_url": "https://www.reddit.com/r/ollama/comments/1qu4ka4/recommendations_for_a_good_value_machine_to_run/"
+            "source_host": "toolsmint.com",
+            "source_url": "https://www.toolsmint.com/learn/local-llm-setup-ollama-lm-studio-2026"
           },
           {
             "evidence_id": "research:5",
-            "source_host": "lmstudio.ai",
-            "source_url": "https://lmstudio.ai/"
+            "source_host": "compute-market.com",
+            "source_url": "https://www.compute-market.com/blog/how-to-set-up-ollama-local-ai-guide-2026"
           },
           {
             "evidence_id": "research:6",
-            "source_host": "forum.level1techs.com",
-            "source_url": "https://forum.level1techs.com/t/self-hosted-llm-custom-where-to-start/239434"
+            "source_host": "youtube.com",
+            "source_url": "https://www.youtube.com/watch?v=C_RsXQFK3AM"
           }
         ],
         "source_urls_from_code": true,
         "status": "assembled"
       },
       "consumer_subsystem": "stage4r_work_product_grader",
-      "decision_packet_attempts": 5,
+      "decision_packet_attempts": 6,
       "decision_packet_validated": true,
       "decision_packet_validation_errors": [],
       "diagnostic_debugger": {
@@ -1165,23 +1195,23 @@
             },
             {
               "evidence_id": "research:3",
-              "source_host": "coffeejourneys.blog",
-              "source_url": "https://coffeejourneys.blog/home-lab-local-llms-docker-amd/"
+              "source_host": "youtube.com",
+              "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
             },
             {
               "evidence_id": "research:4",
-              "source_host": "reddit.com",
-              "source_url": "https://www.reddit.com/r/ollama/comments/1qu4ka4/recommendations_for_a_good_value_machine_to_run/"
+              "source_host": "toolsmint.com",
+              "source_url": "https://www.toolsmint.com/learn/local-llm-setup-ollama-lm-studio-2026"
             },
             {
               "evidence_id": "research:5",
-              "source_host": "lmstudio.ai",
-              "source_url": "https://lmstudio.ai/"
+              "source_host": "compute-market.com",
+              "source_url": "https://www.compute-market.com/blog/how-to-set-up-ollama-local-ai-guide-2026"
             },
             {
               "evidence_id": "research:6",
-              "source_host": "forum.level1techs.com",
-              "source_url": "https://forum.level1techs.com/t/self-hosted-llm-custom-where-to-start/239434"
+              "source_host": "youtube.com",
+              "source_url": "https://www.youtube.com/watch?v=C_RsXQFK3AM"
             }
           ],
           "source_urls_from_code": true,
@@ -1298,7 +1328,7 @@
           "tool": "validated_decision_packet_renderer"
         },
         "task_class": "plan",
-        "task_id": "task_84c251fd61d1",
+        "task_id": "task_43b5728a657b",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -1337,7 +1367,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_26322369c0f7438e",
+      "latest_consumer_event_id": "consumer_6413d1637f134496",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -1451,20 +1481,21 @@
       "research_marker_hits": [
         "roksblog.de",
         "kunalganglani.com",
-        "coffeejourneys.blog"
+        "local llm with ollama",
+        "youtube.com"
       ],
       "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_84c251fd61d1",
-      "trace_id": "trace_ca00c1c5c80e41f2",
+      "task_id": "task_43b5728a657b",
+      "trace_id": "trace_2b9bbddd5eaf4a85",
       "user_goal_reached": true,
       "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation Proceed with hardware reuse strategy, install Ollama on Mac and LM Studio on Windows, and monitor performance before considering cloud solutions Required terms: dell, mac, windows, no new hardware, avoid buying, privacy, local, cloud, ollama, role. Research findings that changed the plan - Finding: OpenClaw + Local LLMs: Running Your Own AI Agent in a Homelab: Mar 14, 2026 \u00b7 By doing so, Ollama will listen not only on localhost but",
+      "work_product_summary": "Recommendation Proceed with role split and Ollama implementation on Mac while monitoring resource usage Required terms: dell, mac, windows, no new hardware, avoid buying, privacy, local, cloud, ollama, role. Research findings that changed the plan - Finding: OpenClaw + Local LLMs: Running Your Own AI Agent in a Homelab: Mar 14, 2026 ... Ollama instead of LM Studio. This time I also decided to switch from LM Studio to Ollama. Ollama is very easy t",
       "work_product_type": "plan"
     },
     {
@@ -1524,11 +1555,15 @@
         "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
         "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.json",
         "research_change_field_repair_status": {
+          "canonicalized_source_refs": 3,
           "code_owned_grounding": "raw_source_and_model_decision_only",
           "derived_why_fields": 0,
+          "dropped_non_raw_source_blocks": 0,
           "enabled": true,
           "inline_labels_split": 0,
-          "repairs": []
+          "repairs": [
+            "canonicalized_research_source_ref"
+          ]
         },
         "route_type": "plan3_stage4r_set_a",
         "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A6",
@@ -1539,7 +1574,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "research_pack",
-        "task_id": "task_d9884298d33f",
+        "task_id": "task_3cd9b37679dc",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -1578,7 +1613,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_6f6725f6b2714700",
+      "latest_consumer_event_id": "consumer_97744afd575b4ca6",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -1632,27 +1667,35 @@
         "policy_gate"
       ],
       "research_change_field_repair_status": {
+        "canonicalized_source_refs": 3,
         "code_owned_grounding": "raw_source_and_model_decision_only",
         "derived_why_fields": 0,
+        "dropped_non_raw_source_blocks": 0,
         "enabled": true,
         "inline_labels_split": 0,
-        "repairs": []
+        "repairs": [
+          "canonicalized_research_source_ref"
+        ]
       },
       "research_marker_hits": [
-        "tinymediamanager"
+        "tinymediamanager",
+        "tinymediamanager.org",
+        "what media management software",
+        "reddit.com",
+        "tinymediamanager integration with jellyfin"
       ],
       "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_d9884298d33f",
-      "trace_id": "trace_710dc114f28f49ca",
+      "task_id": "task_3cd9b37679dc",
+      "trace_id": "trace_79a58ed9984e4239",
       "user_goal_reached": true,
       "user_prompt": "research open source tools for local media metadata cleanup and tell me what i should use for my jellyfin/spiritflix mess without touching jellyfin configs or media files",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation: Consider using TinyMediaManager for file name cleanup. It is specifically designed to provide metadata for media centers like Jellyfin and is effective for cleaning up messy file names. Research-to-decision changes: Finding: TinyMediaManager is a media management tool designed to provide metadata for media centers like Kodi, Embly, and Jellyfin, and is effective for cleaning up messy file names. Source: Fast way to clean up file n",
+      "work_product_summary": "Recommendation: Choose to use TinyMediaManager for cleaning up messy file names and providing rich metadata for the Jellyfin library. Research-to-decision changes: Finding: TinyMediaManager is a media management tool designed to provide metadata, artwork, and organization for media centers like Jellyfin. It is cross-platform and runs on Java. Source: tinyMediaManager | host=tinymediamanager.org | url=https://www.tinymediamanager.org/ Decision cha",
       "work_product_type": "research_pack"
     },
     {
@@ -1721,7 +1764,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "plan",
-        "task_id": "task_cbe214be273a",
+        "task_id": "task_871dbc6f9226",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -1758,7 +1801,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_a22f9a0f6bf04b76",
+      "latest_consumer_event_id": "consumer_6221414726054909",
       "limitations_stated": true,
       "live_search_used": false,
       "local_fallback_used": false,
@@ -1812,13 +1855,13 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 0,
-      "task_id": "task_cbe214be273a",
-      "trace_id": "trace_b4f5a36e7c534b43",
+      "task_id": "task_871dbc6f9226",
+      "trace_id": "trace_c9589231b5e04b07",
       "user_goal_reached": true,
       "user_prompt": "look at my source proxy context and tell me the next highest leverage thing to make it closer to daily driver",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Plan **Phase:** Investigate and integrate Plan 3 durable long-running tasks. **Task:** Deep dive into `source_proxy/tasks/durable_execution.py` and `source_proxy/tasks/long_running.py` to understand the implementation of Plan 3 durable long-running tasks. **Goal:** Leverage the existing Plan 3 durable infrastructure to enhance the reliability and robustness of the source proxy, making it more suitable for daily driver use. ## Recommendation Pr",
+      "work_product_summary": "## Plan **Phase:** Investigate and potentially optimize `source_proxy.tasks.durable_execution` and `source_proxy.tasks.long_running` for improved performance and reliability. **Steps:** 1. **Code Review:** Examine the `source_proxy/tasks/durable_execution.py` and `source_proxy/tasks/long_running.py` files to understand the implementation of Plan 3 durable long-running tasks. 2. **Performance Analysis:** Identify potential bottlenecks or areas for",
       "work_product_type": "plan"
     },
     {
@@ -1887,7 +1930,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "plan",
-        "task_id": "task_6355c9c3ece2",
+        "task_id": "task_1fde2c168d62",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -1924,7 +1967,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_06e2ba9231c84a4f",
+      "latest_consumer_event_id": "consumer_4a2e25b5e7f64243",
       "limitations_stated": true,
       "live_search_used": false,
       "local_fallback_used": false,
@@ -1978,13 +2021,13 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 0,
-      "task_id": "task_6355c9c3ece2",
-      "trace_id": "trace_1af8e7524a2044b2",
+      "task_id": "task_1fde2c168d62",
+      "trace_id": "trace_7111f82522ef43fd",
       "user_goal_reached": true,
       "user_prompt": "make me a plan for a small dashboard that shows what happened in a proxy run without overwhelming me",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Plan for a Small Dashboard Showing Proxy Run Activity **Recommendation:** Create a simple dashboard displaying the status of ongoing and recently completed proxy runs. This dashboard will focus on key indicators like task status (e.g., \"executing\", \"blocked\", \"completed\") and potentially include information related to coding tasks if relevant. **Research-to-Decision Changes:** Finding: The codebase includes modules for coding alerts, backend t",
+      "work_product_summary": "## Plan for a Small Dashboard for Proxy Run Status **Recommendation:** Create a simple dashboard displaying the status of long-running proxy tasks, policy checks, and key information from coding operations. This will provide a concise overview of the proxy run without overwhelming the user. **Research-to-Decision Changes:** Finding: The `source_proxy/tasks/long_running.py` file indicates the system manages tasks with states like \"executing\", \"blo",
       "work_product_type": "plan"
     },
     {
@@ -1998,6 +2041,12 @@
             "action_intent_normalized": "defer",
             "action_intent_original": "test later",
             "index": 1
+          },
+          {
+            "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
+            "action_intent_normalized": "reject",
+            "action_intent_original": "skip",
+            "index": 2
           }
         ],
         "code_owned_fields": [
@@ -2011,7 +2060,7 @@
         ],
         "local_api_truth_from_lane_metadata": true,
         "model_decision_body_status": {
-          "decision_count": 4,
+          "decision_count": 3,
           "errors": [],
           "parse_error": "",
           "parse_status": "ok",
@@ -2026,9 +2075,7 @@
           "action_intent",
           "confidence_reason"
         ],
-        "model_provenance_stripped": [
-          "llama.cpp"
-        ],
+        "model_provenance_stripped": [],
         "raw_source_registry": [
           {
             "evidence_id": "research:1",
@@ -2042,23 +2089,23 @@
           },
           {
             "evidence_id": "research:3",
-            "source_host": "sitepoint.com",
-            "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
+            "source_host": "codersera.com",
+            "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
           },
           {
             "evidence_id": "research:4",
-            "source_host": "github.com",
-            "source_url": "https://github.com/rafska/awesome-local-llm"
-          },
-          {
-            "evidence_id": "research:5",
             "source_host": "pinggy.io",
             "source_url": "https://pinggy.io/blog/top_5_local_llm_tools_and_models/"
           },
           {
+            "evidence_id": "research:5",
+            "source_host": "developers.redhat.com",
+            "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+          },
+          {
             "evidence_id": "research:6",
-            "source_host": "youtube.com",
-            "source_url": "https://www.youtube.com/watch?v=lnOovGwqboE"
+            "source_host": "sitepoint.com",
+            "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
           }
         ],
         "source_urls_from_code": true,
@@ -2104,6 +2151,12 @@
               "action_intent_normalized": "defer",
               "action_intent_original": "test later",
               "index": 1
+            },
+            {
+              "action_intent_normalization_reason": "exact_semantic_alias:skip_to_reject",
+              "action_intent_normalized": "reject",
+              "action_intent_original": "skip",
+              "index": 2
             }
           ],
           "code_owned_fields": [
@@ -2117,7 +2170,7 @@
           ],
           "local_api_truth_from_lane_metadata": true,
           "model_decision_body_status": {
-            "decision_count": 4,
+            "decision_count": 3,
             "errors": [],
             "parse_error": "",
             "parse_status": "ok",
@@ -2132,9 +2185,7 @@
             "action_intent",
             "confidence_reason"
           ],
-          "model_provenance_stripped": [
-            "llama.cpp"
-          ],
+          "model_provenance_stripped": [],
           "raw_source_registry": [
             {
               "evidence_id": "research:1",
@@ -2148,23 +2199,23 @@
             },
             {
               "evidence_id": "research:3",
-              "source_host": "sitepoint.com",
-              "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
+              "source_host": "codersera.com",
+              "source_url": "https://codersera.com/blog/local-ai-runtimes-may-2026-update/"
             },
             {
               "evidence_id": "research:4",
-              "source_host": "github.com",
-              "source_url": "https://github.com/rafska/awesome-local-llm"
-            },
-            {
-              "evidence_id": "research:5",
               "source_host": "pinggy.io",
               "source_url": "https://pinggy.io/blog/top_5_local_llm_tools_and_models/"
             },
             {
+              "evidence_id": "research:5",
+              "source_host": "developers.redhat.com",
+              "source_url": "https://developers.redhat.com/articles/2026/06/15/llamacpp-vs-vllm-choosing-right-local-llm-inference-engine"
+            },
+            {
               "evidence_id": "research:6",
-              "source_host": "youtube.com",
-              "source_url": "https://www.youtube.com/watch?v=lnOovGwqboE"
+              "source_host": "sitepoint.com",
+              "source_url": "https://www.sitepoint.com/definitive-guide-local-llms-2026-privacy-tools-hardware/"
             }
           ],
           "source_urls_from_code": true,
@@ -2210,7 +2261,7 @@
         "model_call_attempted": true,
         "model_call_result_or_failure_class": "code_owned_packet_validated",
         "model_decision_body_status": {
-          "decision_count": 4,
+          "decision_count": 3,
           "errors": [],
           "parse_error": "",
           "parse_status": "ok",
@@ -2281,7 +2332,7 @@
           "tool": "validated_decision_packet_renderer"
         },
         "task_class": "research_pack",
-        "task_id": "task_d2c669abaf18",
+        "task_id": "task_a167d5d905ac",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -2319,7 +2370,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_2a11ca68b479452a",
+      "latest_consumer_event_id": "consumer_604edde5c77945d8",
       "limitations_stated": true,
       "live_search_used": true,
       "local_fallback_used": false,
@@ -2331,7 +2382,7 @@
       "max_auto_fix_attempts": 3,
       "model": "gemma3n:e4b",
       "model_decision_body_status": {
-        "decision_count": 4,
+        "decision_count": 3,
         "errors": [],
         "parse_error": "",
         "parse_status": "ok",
@@ -2427,21 +2478,20 @@
       "research_marker_hits": [
         "docs.openhands.dev",
         "reddit.com",
-        "sitepoint.com",
-        "github.com"
+        "codersera.com"
       ],
       "research_materially_changed_output": true,
       "reverified": false,
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 6,
-      "task_id": "task_d2c669abaf18",
-      "trace_id": "trace_cd247d8d85894584",
+      "task_id": "task_a167d5d905ac",
+      "trace_id": "trace_760e1dbee93146b7",
       "user_goal_reached": true,
       "user_prompt": "research current local llm tools and tell me what is worth using for my proxy setup this month",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "Recommendation Immediately integrate Ollama into the proxy setup, evaluate LM Studio in a test environment, and defer consideration of other tools until further evidence is available. Required terms: comparison, proxy, use now, test later, skip, recency, ollama, lm studio. Research findings that changed the plan - Finding: Local LLMs - OpenHands Docs: ... LM Studio, Ollama, vLLM, and SGLang. \u200b. Quickstart: Running OpenHands with a Local LLM using",
+      "work_product_summary": "Recommendation Use Ollama immediately, test LM Studio later, and skip SGLang and LiteLLM for now. Required terms: comparison, proxy, use now, test later, skip, recency, ollama, lm studio. Research findings that changed the plan - Finding: Local LLMs - OpenHands Docs: ... LM Studio, Ollama, vLLM, and SGLang. \u200b. Quickstart: Running OpenHands with a Local LLM using LM Studio. This guide explains how to serve a local LLM using LM ... Source: Local LL",
       "work_product_type": "research_pack"
     },
     {
@@ -2510,7 +2560,7 @@
           "tool": "stage4r_live_work_product"
         },
         "task_class": "handoff",
-        "task_id": "task_aa71f09e02ab",
+        "task_id": "task_2bf027b5a2c3",
         "timeout_empty_parse_policy": {
           "empty_output": false,
           "parse_failure": false,
@@ -2547,7 +2597,7 @@
         "repair",
         "recovery"
       ],
-      "latest_consumer_event_id": "consumer_3ca275b1c30b4099",
+      "latest_consumer_event_id": "consumer_2199abd254194d95",
       "limitations_stated": true,
       "live_search_used": false,
       "local_fallback_used": false,
@@ -2601,13 +2651,13 @@
       "safety_violation_detected": false,
       "same_trace_consumer_evidence": true,
       "source_count": 0,
-      "task_id": "task_aa71f09e02ab",
-      "trace_id": "trace_866ea26890324943",
+      "task_id": "task_2bf027b5a2c3",
+      "trace_id": "trace_db47f249d698494e",
       "user_goal_reached": true,
       "user_prompt": "review this repo context and make a plan for what an outside ai should work on next without breaking stuff",
       "verification_result": "not_required",
       "verifier_required": false,
-      "work_product_summary": "## Handoff **Recommendation:** The outside AI should prioritize enhancing the current research integration capabilities within the Source Proxy workflow. Specifically, it should focus on improving the diagnostics and handling of research requests using the existing Scout and SearXNG infrastructure. **Research-to-decision changes:** Finding: The `source_proxy/tasks/durable_execution.py` file defines states related to policy checking and research e",
+      "work_product_summary": "## Handoff **Recommendation:** The outside AI should prioritize extending the current research functionality within the existing `source_proxy/decision/current_research.py` file. This should involve exploring new research providers or refining the integration with Scout and SearXNG, while strictly adhering to established Source Proxy workflows and task states as defined in `source_proxy/tasks/durable_execution.py` and the documentation in `docs/s",
       "work_product_type": "handoff"
     }
   ],

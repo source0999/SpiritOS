@@ -55,11 +55,15 @@
     "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
     "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.json",
     "research_change_field_repair_status": {
+      "canonicalized_source_refs": 3,
       "code_owned_grounding": "raw_source_and_model_decision_only",
       "derived_why_fields": 0,
+      "dropped_non_raw_source_blocks": 0,
       "enabled": true,
       "inline_labels_split": 0,
-      "repairs": []
+      "repairs": [
+        "canonicalized_research_source_ref"
+      ]
     },
     "route_type": "plan3_stage4r_set_a",
     "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A6",
@@ -70,7 +74,7 @@
       "tool": "stage4r_live_work_product"
     },
     "task_class": "research_pack",
-    "task_id": "task_d9884298d33f",
+    "task_id": "task_3cd9b37679dc",
     "timeout_empty_parse_policy": {
       "empty_output": false,
       "parse_failure": false,
@@ -109,7 +113,7 @@
     "repair",
     "recovery"
   ],
-  "latest_consumer_event_id": "consumer_6f6725f6b2714700",
+  "latest_consumer_event_id": "consumer_97744afd575b4ca6",
   "limitations_stated": true,
   "live_search_used": true,
   "local_fallback_used": false,
@@ -163,26 +167,34 @@
     "policy_gate"
   ],
   "research_change_field_repair_status": {
+    "canonicalized_source_refs": 3,
     "code_owned_grounding": "raw_source_and_model_decision_only",
     "derived_why_fields": 0,
+    "dropped_non_raw_source_blocks": 0,
     "enabled": true,
     "inline_labels_split": 0,
-    "repairs": []
+    "repairs": [
+      "canonicalized_research_source_ref"
+    ]
   },
   "research_marker_hits": [
-    "tinymediamanager"
+    "tinymediamanager",
+    "tinymediamanager.org",
+    "what media management software",
+    "reddit.com",
+    "tinymediamanager integration with jellyfin"
   ],
   "research_materially_changed_output": true,
   "reverified": false,
   "safety_violation_detected": false,
   "same_trace_consumer_evidence": true,
   "source_count": 6,
-  "task_id": "task_d9884298d33f",
-  "trace_id": "trace_710dc114f28f49ca",
+  "task_id": "task_3cd9b37679dc",
+  "trace_id": "trace_79a58ed9984e4239",
   "user_goal_reached": true,
   "user_prompt": "research open source tools for local media metadata cleanup and tell me what i should use for my jellyfin/spiritflix mess without touching jellyfin configs or media files",
   "verification_result": "not_required",
   "verifier_required": false,
-  "work_product_summary": "Recommendation: Consider using TinyMediaManager for file name cleanup. It is specifically designed to provide metadata for media centers like Jellyfin and is effective for cleaning up messy file names. Research-to-decision changes: Finding: TinyMediaManager is a media management tool designed to provide metadata for media centers like Kodi, Embly, and Jellyfin, and is effective for cleaning up messy file names. Source: Fast way to clean up file n",
+  "work_product_summary": "Recommendation: Choose to use TinyMediaManager for cleaning up messy file names and providing rich metadata for the Jellyfin library. Research-to-decision changes: Finding: TinyMediaManager is a media management tool designed to provide metadata, artwork, and organization for media centers like Jellyfin. It is cross-platform and runs on Java. Source: tinyMediaManager | host=tinymediamanager.org | url=https://www.tinymediamanager.org/ Decision cha",
   "work_product_type": "research_pack"
 }

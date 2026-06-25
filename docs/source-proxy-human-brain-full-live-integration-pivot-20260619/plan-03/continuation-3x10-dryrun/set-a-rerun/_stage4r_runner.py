@@ -393,6 +393,10 @@ def matching_research_source_facts(source_line: str, source_records: list[dict[s
     return matched_records
 
 
+def canonical_research_source_line(fact: dict[str, str]) -> str:
+    return f"{fact.get('title') or fact.get('url')} | host={fact.get('host') or ''} | url={fact.get('url') or ''}".strip()
+
+
 def derive_research_change_why(block: dict[str, str], sources: list[dict[str, Any]]) -> str:
     finding = block.get("finding", "").strip()
     source = block.get("source", "").strip()
@@ -423,23 +427,41 @@ def derive_research_change_why(block: dict[str, str], sources: list[dict[str, An
 def repair_research_change_fields(work: str, sources: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
     lines = work.splitlines()
     out: list[str] = []
-    current: dict[str, str] | None = None
+    current: dict[str, Any] | None = None
     repairs: list[str] = []
     inserted_why = 0
     split_inline = 0
+    canonicalized_sources = 0
+    dropped_non_raw_source_blocks = 0
+
+    def emit_current() -> None:
+        nonlocal inserted_why
+        if current is None:
+            return
+        if not current.get("why", "").strip():
+            why = derive_research_change_why(current, sources)
+            if why:
+                current["why"] = why
+                inserted_why += 1
+                repairs.append("derived_missing_why_from_raw_source_and_decision")
+        out.extend(current.get("lines") or [])
+        if current.get("source_line"):
+            out.append(str(current["source_line"]))
+        if current.get("decision_line"):
+            out.append(str(current["decision_line"]))
+        if current.get("why", "").strip():
+            out.append(f"{current.get('indent', '  ')}Why this changes the recommendation: {current['why']}")
 
     def finalize_current() -> None:
-        nonlocal inserted_why
-        if current is None or current.get("why", "").strip():
+        nonlocal dropped_non_raw_source_blocks
+        if current is None:
             return
-        why = derive_research_change_why(current, sources)
-        if not why:
+        source = str(current.get("source") or "")
+        if source and not matching_research_source_facts(source, source_facts(sources)):
+            dropped_non_raw_source_blocks += 1
+            repairs.append("dropped_non_raw_research_source_block")
             return
-        indent = current.get("indent", "  ")
-        out.append(f"{indent}Why this changes the recommendation: {why}")
-        current["why"] = why
-        inserted_why += 1
-        repairs.append("derived_missing_why_from_raw_source_and_decision")
+        emit_current()
 
     for raw in lines:
         stripped = raw.strip()
@@ -448,8 +470,14 @@ def repair_research_change_fields(work: str, sources: list[dict[str, Any]]) -> t
         indent = raw[: len(raw) - len(raw.lstrip())]
         if lowered.startswith("finding:"):
             finalize_current()
-            current = {"finding": line.split(":", 1)[1].strip(), "indent": indent or "  "}
-            out.append(raw)
+            current = {
+                "finding": line.split(":", 1)[1].strip(),
+                "indent": indent or "  ",
+                "lines": [raw],
+                "source_line": "",
+                "decision_line": "",
+                "why": "",
+            }
             continue
         if lowered.startswith(("evidence used", "repo/mac evidence that changed the plan", "plan", "limits", "next handoff")):
             finalize_current()
@@ -458,25 +486,35 @@ def repair_research_change_fields(work: str, sources: list[dict[str, Any]]) -> t
             continue
         if lowered.startswith("source:") and current is not None:
             source_value, inline_fields = split_inline_research_change_fields(line.split(":", 1)[1])
-            current["source"] = source_value
-            out.append(f"{indent}Source: {source_value}")
+            matched = matching_research_source_facts(source_value, source_facts(sources))
+            if matched:
+                canonical = canonical_research_source_line(matched[0])
+                if canonical != source_value:
+                    canonicalized_sources += 1
+                    repairs.append("canonicalized_research_source_ref")
+                current["source"] = canonical
+                current["source_line"] = f"{indent}Source: {canonical}"
+            else:
+                current["source"] = source_value
+                current["source_line"] = f"{indent}Source: {source_value}"
             if inline_fields:
                 split_inline += len(inline_fields)
                 repairs.append("split_inline_research_change_labels")
             if inline_fields.get("decision"):
                 current["decision"] = inline_fields["decision"]
-                out.append(f"{indent}Decision changed: {inline_fields['decision']}")
+                current["decision_line"] = f"{indent}Decision changed: {inline_fields['decision']}"
             if inline_fields.get("why"):
                 current["why"] = inline_fields["why"]
-                out.append(f"{indent}Why this changes the recommendation: {inline_fields['why']}")
             continue
         if lowered.startswith(("decision changed:", "how it changed the plan:")) and current is not None:
             current["decision"] = line.split(":", 1)[1].strip()
-            out.append(raw)
+            current["decision_line"] = raw
             continue
         if lowered.startswith(("why this changes the recommendation:", "why this changes the plan:")) and current is not None:
             current["why"] = line.split(":", 1)[1].strip()
-            out.append(raw)
+            continue
+        if current is not None:
+            current.setdefault("lines", []).append(raw)
             continue
         out.append(raw)
     finalize_current()
@@ -488,6 +526,8 @@ def repair_research_change_fields(work: str, sources: list[dict[str, Any]]) -> t
         "repairs": sorted(set(repairs)),
         "inline_labels_split": split_inline,
         "derived_why_fields": inserted_why,
+        "canonicalized_source_refs": canonicalized_sources,
+        "dropped_non_raw_source_blocks": dropped_non_raw_source_blocks,
         "code_owned_grounding": "raw_source_and_model_decision_only",
     }
 

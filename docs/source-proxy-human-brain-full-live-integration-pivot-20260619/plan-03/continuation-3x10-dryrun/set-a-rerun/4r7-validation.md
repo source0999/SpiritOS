@@ -11,6 +11,6 @@
 - Set A 4R7 requested acceptance validation: PASS
 - JSON shape validation errors: none
 - acceptance validation errors: none
-- Plan 3 operator: FAIL
+- Plan 3 operator: PASS
 - focused tests: `_stage4r_runner.py` py_compile.
 - typecheck: not run; no frontend/runtime TypeScript touched.
