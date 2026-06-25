@@ -20,8 +20,8 @@
         "zero_result_count": 0
     },
     "full_set_a_2x": "PASS_10_OF_10_TWICE",
-    "human_approval_gate": "BRITTON_MUST_APPROVE_SET_A_CLOSEOUT_BEFORE_SET_B_READBACK_OR_EXECUTION",
-    "next_gate_before_set_b": "CREATE_AND_APPROVE_SET_B_RUBRIC_READBACK_PACKET_DO_NOT_EXECUTE_SET_B_YET",
+    "human_approval_gate": "BRITTON_MUST_REVIEW_SET_B_CLOSEOUT_BEFORE_SET_C_OR_PLAN_4",
+    "next_gate_after_set_b": "REVIEW_SET_B_CLOSEOUT_DO_NOT_EXECUTE_SET_C_OR_PLAN_4_YET",
     "plan_3_overall": "IN_PROGRESS",
     "plan_4_started": false,
     "plan_4_status": "NOT_STARTED / NOT_APPROVED",
@@ -32,10 +32,12 @@
     "repair_task_id": "task_46dfb756f7c7",
     "set_a_status": "STABLE_GO_READY_FOR_HUMAN_APPROVAL",
     "set_b_placeholder": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-rubric-placeholder-20260625.md",
-    "set_b_status": "NOT_RUN / GATED_BEHIND_HUMAN_APPROVAL",
+    "set_b_closeout_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-closeout-packet-20260625.md",
+    "set_b_score": 96,
+    "set_b_status": "GO_READY_FOR_HUMAN_APPROVAL",
     "set_c_status": "NOT_RUN / GATED",
-    "source_edited": false,
+    "source_edited": true,
     "stage_2_completed": true,
     "stage_3_started": false,
-    "status": "PLAN_3_IN_PROGRESS_SET_A_STABLE_GO_READY_FOR_HUMAN_APPROVAL"
+    "status": "PLAN_3_IN_PROGRESS_SET_B_GO_READY_FOR_HUMAN_APPROVAL"
 }

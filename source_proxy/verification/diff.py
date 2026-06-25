@@ -1732,8 +1732,9 @@ def _suggest_commands(files: list[dict[str, Any]], test_command: list[str] | Non
                 }
             )
 
-    if ".md" in extensions:
-        md_targets = [path for path in paths if PurePosixPath(path).suffix.lower() == ".md"]
+    docs_extensions = {".md", ".mdx"}
+    if extensions & docs_extensions:
+        md_targets = [path for path in paths if PurePosixPath(path).suffix.lower() in docs_extensions]
         commands.append(
             {
                 "command": ["git", "diff", "--check", "--", *md_targets[:20]],

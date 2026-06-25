@@ -974,6 +974,31 @@ class DiffVerificationPreviewTests(unittest.TestCase):
             [item["command"] for item in payload["suggested_commands"]],
         )
 
+    def test_plan3_set_b_mdx_docs_diff_gets_diff_check_suggestion(self) -> None:
+        path = "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-evidence-20260625/b9-integration-proof.mdx"
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    f"diff --git a/{path} b/{path}",
+                    "new file mode 100644",
+                    "index 0000000..1111111",
+                    "--- /dev/null",
+                    f"+++ b/{path}",
+                    "@@ -0,0 +1,3 @@",
+                    "+# Plan 3 Set B - B9 Integration Proof",
+                    "+",
+                    "+MDX docs diffs get the same focused docs sanity check.",
+                ]
+            )
+        )
+
+        self.assertEqual(payload["status"], "preview_ready", payload.get("blocked_reasons"))
+        self.assertEqual(payload["risk"], "low")
+        self.assertIn(
+            ["git", "diff", "--check", "--", path],
+            [item["command"] for item in payload["suggested_commands"]],
+        )
+
     def test_docs_append_fails_when_exact_sentence_missing(self) -> None:
         payload = preview_diff_verification(
             self._docs_append_diff(include_literal=False),
