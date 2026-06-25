@@ -5,7 +5,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PROFILE="${1:-source-proxy-min}"
-OUTPUT="${ROOT}/repomix-output.${PROFILE}.xml"
+OUT="${SPIRIT_CONTEXT_OUT:-${ROOT}/repomixes}"
+OUTPUT="${OUT}/repomix-output.${PROFILE}.xml"
 TARGET_BYTES=$((2 * 1024 * 1024))   # 2 MB soft target
 HARD_FAIL_BYTES=$((5 * 1024 * 1024)) # 5 MB hard fail
 
@@ -44,11 +45,14 @@ echo "included files (approx): ${FILE_COUNT}"
 
 echo ""
 echo "Largest included paths:"
+LARGEST_INCLUDED=$(
 grep -oP '<file path="\K[^"]+' "$OUTPUT" 2>/dev/null | while read -r path; do
   if [[ -f "${ROOT}/${path}" ]]; then
   stat -c "%s %n" "${ROOT}/${path}" 2>/dev/null || stat -f "%z %N" "${ROOT}/${path}"
   fi
-done | sort -rn | head -8 | awk '{printf "  %8s  %s\n", $1, $2}'
+done | sort -rn | head -8 | awk '{printf "  %8s  %s\n", $1, $2}' || true
+)
+printf "%s\n" "$LARGEST_INCLUDED"
 
 FAIL=0
 warn() { echo "WARN: $*"; }

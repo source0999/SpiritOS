@@ -810,11 +810,43 @@ The common mix-up: `npm run proxy:https:lan` starts only the API on **8787**. It
 
 ### Repository context bundles
 
-**Do not upload** raw `repomix-output*.xml` from the repo root unless a reviewer explicitly asks for full context. The default export is a tight Source Proxy profile, not the whole tree.
+## FULL REPO CONTEXT COMMAND
 
-Generate the **LLM handoff** bundle (Repomix Tree-sitter + optional Headroom pass):
+Run this when an outside LLM needs the whole repo split into uploadable compressed context files:
 
 ```bash
+cd /home/source/SpiritOS
+npm run context:all
+```
+
+This writes all full-repo context packs into:
+
+```text
+/home/source/SpiritOS/repomixes/
+```
+
+Generated files:
+
+| File | What it contains |
+| --- | --- |
+| `repomixes/repo-map-context.xml` | repo map, README, package/config, docs, blueprints |
+| `repomixes/source-proxy-context.xml` | Source Proxy, coding lane, worker code |
+| `repomixes/frontend-context.xml` | app, components, lib, Next/TS config |
+| `repomixes/spiritflix-media-code-context.xml` | SpiritFlix and media code |
+| `repomixes/docs-plans-context.xml` | docs, plans, roadmaps, blueprints |
+
+Equivalent alias:
+
+```bash
+npm run context:full-split
+```
+
+## PROXY ONLY CONTEXT COMMAND
+
+Run this only when the reviewer needs Source Proxy plus the coding lane:
+
+```bash
+cd /home/source/SpiritOS
 npm run context:source-proxy-min
 ```
 
@@ -824,11 +856,7 @@ Equivalent:
 npx repomix --profile source-proxy-min .
 ```
 
-**Includes:** `source_proxy/`, coding lane (`src/app/coding`, `src/components/coding`, `src/lib/coding`, `src/lib/mac-worker`), Source Proxy bootstrap scripts, `scripts/mac-worker/`, pivot plan index/closeout docs (not evidence artifacts), and repomix/headroom config.
-
-**Excludes:** `docs/evidence/`, `scripts/media/`, SpiritFlix generated output, `node_modules/`, `.next/`, build/cache dirs, prior `repomix-output*`, lockfiles, logs, sqlite/db, pivot `artifacts/` and review folders.
-
-**Output:** `repomix-output.source-proxy-min.xml` — drop this into any model. Mirrors: `repomix-output.source-proxy-min.ast.xml`, `repomix-output.source-proxy-min.headroom.xml`.
+**Output:** `repomix-output.source-proxy-min.xml` - upload this only for proxy/coding-lane review. Mirrors are also written as `repomix-output.source-proxy-min.ast.xml` and `repomix-output.source-proxy-min.headroom.xml`.
 
 Verify size and bloat exclusions:
 
@@ -836,51 +864,33 @@ Verify size and bloat exclusions:
 npm run context:verify
 ```
 
-Shows output path, byte size, approximate file count, largest included paths, and whether Headroom actually compressed.
-
-**Larger repo map** (layout + pivot docs, minimal code) only when needed:
+## SMALL REPO MAP ONLY
 
 ```bash
 npm run context:repo-map
 npm run context:verify:repo-map
 ```
 
-SpiritOS overrides the local `repomix` bin so `npx repomix` defaults to `source-proxy-min`, not an uncompressed megafile.
+## HEADROOM NOTES
 
-**Headroom** (extra token savings) needs the Python proxy on **8797** — not Source Proxy on 8787:
+Headroom extra token savings needs the Python proxy on **8797** - not Source Proxy on 8787:
 
 ```bash
-npm run context:headroom:check    # is the proxy up?
+npm run context:headroom:check
 pip install "headroom-ai[proxy]"
-npm run headroom:proxy            # terminal 1 — http://127.0.0.1:8797
-npm run context:source-proxy-min  # terminal 2
+npm run headroom:proxy
+npm run context:source-proxy-min
 ```
 
-Or set `HEADROOM_API_KEY` for Headroom Cloud. Without a proxy, you still get the tight Tree-sitter profile; the `<headroom compressed="false" />` element records that Headroom did not run.
+Without Headroom, the context commands still generate Tree-sitter compressed Repomix packs.
 
-```xml
-<system_directive>...</system_directive>
-<headroom compressed="true" tokens_saved="..." proxy="http://127.0.0.1:8797" />
-<repository_context format="repomix-xml">...</repository_context>
-```
-
-Tune target size (default `80000` tokens):
-
-```bash
-HEADROOM_CONTEXT_TOKEN_BUDGET=60000 npm run context:source-proxy-min
-```
-
-Re-run only the Headroom pass against the current AST bundle:
-
-```bash
-npm run context:headroom
-```
-
-Raw full-tree dump (legacy / debugging only):
+Raw full-tree dump, legacy/debug only:
 
 ```bash
 npm run context:pack:full
 ```
+
+Prefer `npm run context:all` for real LLM review.
 
 ### Next MCP WebSocket diagnostics
 

@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compress } from "headroom-ai";
 
 const repoRoot = resolve(import.meta.dirname, "..");
-const visibleRepoRoot = process.env.REPOMIX_VISIBLE_REPO_ROOT || (repoRoot.endsWith("/SpiritOS-cleanup-20260621") ? "/home/source/SpiritOS" : repoRoot);
+const contextOutputRoot = resolve(
+  process.env.SPIRIT_CONTEXT_OUT ||
+    process.env.REPOMIX_VISIBLE_REPO_ROOT ||
+    resolve(repoRoot, "repomixes"),
+);
 const DEFAULT_HEADROOM_PORT = 8797;
 const DEFAULT_HEADROOM_BASE_URL = `http://127.0.0.1:${DEFAULT_HEADROOM_PORT}`;
 const DEFAULT_TOKEN_BUDGET = 80_000;
@@ -31,12 +35,12 @@ export function resolveContextProfile(options = {}) {
     profile,
     configPath,
     slug,
-    llmOutput: resolve(repoRoot, `repomix-output${slug}.xml`),
-    visibleOutput: resolve(visibleRepoRoot, `${profile}-context.xml`),
-    astOutput: resolve(repoRoot, `repomix-output${slug}.ast.xml`),
-    headroomOutput: resolve(repoRoot, `repomix-output${slug}.headroom.xml`),
-    innerOutput: resolve(repoRoot, `repomix-output${slug}.ast-inner.xml`),
-    fullOutput: resolve(repoRoot, `repomix-output${slug}.full.xml`),
+    llmOutput: resolve(contextOutputRoot, `repomix-output${slug}.xml`),
+    visibleOutput: resolve(contextOutputRoot, `${profile}-context.xml`),
+    astOutput: resolve(contextOutputRoot, `repomix-output${slug}.ast.xml`),
+    headroomOutput: resolve(contextOutputRoot, `repomix-output${slug}.headroom.xml`),
+    innerOutput: resolve(contextOutputRoot, `repomix-output${slug}.ast-inner.xml`),
+    fullOutput: resolve(contextOutputRoot, `repomix-output${slug}.full.xml`),
   };
 }
 
@@ -60,6 +64,7 @@ export async function buildRepositoryContextBundle(options = {}) {
   } = profilePaths;
 
   const repomixCli = ensureRepomixCli();
+  mkdirSync(contextOutputRoot, { recursive: true });
   const headroomBaseUrl = (process.env.HEADROOM_BASE_URL || DEFAULT_HEADROOM_BASE_URL).replace(/\/$/, "");
   const headroomCompressionConfig = resolveHeadroomCompressionConfig();
 
@@ -186,9 +191,9 @@ export async function buildRepositoryContextBundle(options = {}) {
   const llmBytes = readFileSync(llmOutput).byteLength;
   console.log(`Profile: ${profile} (config: ${configPath})`);
   console.log(`Repo root: ${repoRoot}`);
-  console.log(`Visible repo root: ${visibleRepoRoot}`);
-  console.log(`Open visible repo-root XML: ${visibleOutput}`);
-  console.log(`Ignored verifier XML: ${llmOutput}`);
+  console.log(`Context output folder: ${contextOutputRoot}`);
+  console.log(`Open XML: ${visibleOutput}`);
+  console.log(`Verifier XML: ${llmOutput}`);
   console.log(`LLM context written to ${visibleOutput} (${formatBytes(llmBytes)})`);
   console.log(`AST mirror written to ${astOutput}`);
   console.log(

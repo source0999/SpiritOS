@@ -13,7 +13,7 @@
     "files": true,
     "truncateBase64": true,
     "topFilesLength": 15,
-    "includeFullDirectoryStructure": true,
+    "includeFullDirectoryStructure": false,
     "headerText": "SpiritOS repo-map profile — high-level layout, configs, and pivot docs. Use source-proxy-min for implementation work.",
     "git": {
       "sortByChanges": false,
