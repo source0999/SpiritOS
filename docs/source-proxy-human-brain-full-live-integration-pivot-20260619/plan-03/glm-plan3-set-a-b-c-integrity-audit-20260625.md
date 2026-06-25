@@ -4,418 +4,271 @@
 
 `PLAN3_SET_A_B_C_INTEGRITY_CONFIRMED_WITH_CAVEATS`
 
-Plan 3 Set A, Set B, and Set C are integrity-clean. No hardcoding, prompt-tailoring,
-fake evidence, fallback laundering, verifier laundering, status laundering, handoff
-laundering, or overclaiming was found.
+Plan 3 Set A, Set B, and Set C remain integrity-clean when audited from committed Plan 3 evidence and committed Plan 3 source states. I found no blocker, high, or medium integrity findings. No hardcoding, prompt-specific production logic, fake proof, fallback laundering, handoff/status laundering, protected-scope violation, or Plan 4 readiness claim was found in the committed Plan 3 record.
 
-The two source-patch changes (Set B `_suggest_commands` Markdown/MDX branch and Set C
-`_mixed_workflow_audit` / `_browser_proof_required_for_files`) are genuinely
-generalizable and contain zero set-specific or prompt-id logic. The Set-specific
-strings that exist in the codebase appear only inside test fixtures, which is the
-correct place for them.
+The caveats are operational and audit-context caveats, not Plan 3 integrity failures:
 
-The caveat is low-severity and environmental, not a cheat:
+- The current working tree contains paused accidental Plan 4 WIP. This audit did not inspect uncommitted Plan 4 WIP as Plan 3 proof and did not edit Plan 4.
+- The requested package hash `23d9f5cc9aa2895fbaa637ca9518554f777e0990` does not match the current committed `package.json` SHA-1 at HEAD (`90f319f1024218263daf50909e9fb23ebd971595`). No `package.json` working-tree diff exists, and no audit command modified it.
+- The existing audit file was already tracked from the earlier Plan 3 closeout; this update refreshes that same allowed file for the paused-Plan-4 context.
 
-- The `package.json` diff hash reported by this Windows audit environment
-  (`a3fd3a47e80a941fe92fd07593a97c7667bb84f4`) does not match the recorded hash
-  (`23d9f5cc9aa2895fbaa637ca9518554f777e0990`). This is a line-ending /
-  hashing-environment artifact: `package.json` is an unrelated pre-existing dirty
-  file that no Set A/B/C commit touched, and the content diff itself is unchanged
-  from before this audit. Sets B/C did not stage, commit, or modify it.
+Final grade: `93 / 100` (A-).
 
-Final grade: `94 / 100` (A).
-
-Final verdict: `GLM_PLAN3_SET_A_B_C_INTEGRITY_AUDIT_READY_FOR_BRITTON_REVIEW`.
+Final verdict: `PLAN3_SET_A_B_C_INTEGRITY_CONFIRMED_WITH_CAVEATS`.
 
 ## Audit Scope
 
-Independent audit-only review of Plan 3 Set A, Set B, and Set C on branch
-`integration/cleanup-plan3-debug-20260623` at HEAD `3838ffdabe334510f2529706ac98dfdec3504fa2`.
+This is an independent GLM/ZCode integrity audit of Plan 3 Set A, Set B, and Set C only.
 
-Audit targets:
+Current repository context:
 
-- Cheating, hardcoding, prompt-specific logic.
-- Prompt tailoring / overfitting.
-- Fallbacks, scaffolds, synthetic / model-owned / fake proof.
-- Handoff / status laundering and overclaiming.
-- Evidence integrity (append-only, no hidden failures).
-- Protected-scope / anti-cheat boundaries.
-- Verification realism.
-- Dirty-tree honesty.
-
-Out of scope and explicitly not performed: implementing fixes, patching Source
-Proxy, editing source/tests/runtime, touching SpiritFlix/media/Jellyfin/Mac
-optimizer/Obsidian/secrets/env/protected config/Plan 4/package.json/unrelated
-dirty files, and push/reset/clean/checkout/rebase/revert.
-
-Accepted Plan 3 state at audit time:
-
+- Branch: `integration/cleanup-plan3-debug-20260623`
+- Starting HEAD for this audit: `c8f55f2a8efa6a3db0915c6db4ac8fbac5967792`
+- Accepted Plan 3 status in committed docs: `PLAN3_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`
 - Set A: `STABLE_GO_READY_FOR_HUMAN_APPROVAL`
-- Set B: `SET_B_GO_READY_FOR_HUMAN_APPROVAL`, score `96 / 100`
-- Set C: `SET_C_GO_READY_FOR_HUMAN_APPROVAL`, score `94 / 100`
-- Plan 4: `NOT_STARTED / NOT_APPROVED`
+- Set B: `GO_READY_FOR_HUMAN_APPROVAL`
+- Set C: `SET_C_GO_READY_FOR_HUMAN_APPROVAL`
+
+The audit intentionally used committed Plan 3 evidence and committed source snapshots instead of the current uncommitted working tree, because the working tree contains paused Plan 4 WIP.
+
+Out of scope and not performed:
+
+- No Plan 4 continuation.
+- No browser/operator proof.
+- No source, test, runtime, Plan 4, package, protected-path, or unrelated dirty-file edits.
+- No push, reset, clean, checkout, rebase, revert, or stash.
 
 ## Methods / Commands Run
 
-Repository inspection (read-only):
+Read-only preflight / dirty-tree checks:
 
-- `git status --short`, `git branch --show-current`, `git rev-parse HEAD`.
-- `git log --oneline` over the Set A/B/C commit range.
-- `git show --stat` and full `git show <commit> -- <path>` for every key commit.
-- `git diff --name-only 34bdcb956a^..3838ffdabe` to enumerate the full Set A/B/C
-  change footprint.
-- `git log -- <forbidden paths>` over the Set A/B/C range (empty result).
-- `git reflog -10` to confirm no destructive operations.
-- `git show HEAD:<file>` vs working-tree reads to confirm committed vs working
-  tree hash text.
+- `git status --short`
+- `git branch --show-current`
+- `git rev-parse HEAD`
+- `git diff --cached --name-only`
+- `git status --ignored --short -- repomixes`
+- `sha1sum package.json`
+- `git show HEAD:package.json | sha1sum`
+- `git show 3838ffdabe334510f2529706ac98dfdec3504fa2:package.json | sha1sum`
+- `git diff --name-only HEAD -- package.json package-lock.json pnpm-lock.yaml yarn.lock`
 
-Content inspection (read-only):
+Committed Plan 3 inspection:
 
-- Full read of `source_proxy/verification/diff.py` and
-  `source_proxy/tests/test_diff_verification.py`.
-- Full read of all Set A/B/C closeout packets, rubrics, status files, handoff,
-  and all B1-B9 / C1-C9 evidence artifacts.
-- `rg` searches for `prompt_id|promptId|forced_pass|fake_green|fake_pass|`
-  `special_case|hardcoded|bypass|plan3_set_b|plan3_set_c|set-b-evidence|"`
-  `set-c-evidence|plan-03|A1|B1|C1` across `source_proxy/`.
-- `rg` for `plan-03|set-b|set-c|set-a` inside `source_proxy/verification/diff.py`
-  (zero matches).
+- `git diff-tree --no-commit-id --name-only -r <commit>` for all named Set A/B/C commits.
+- `git show --stat --oneline --name-only 3838ffdabe...`
+- `git show --stat --oneline --name-only 751bdffd...`
+- `git grep -n -i ... HEAD -- source_proxy src tests docs/.../plan-03`
+- `git show HEAD:source_proxy/verification/diff.py`
+- `git show HEAD:source_proxy/tests/test_diff_verification.py`
+- `git diff 34bdcb956a8aae078cb6abdee8d354bd5aba46b0..3838ffdabe334510f2529706ac98dfdec3504fa2 -- source_proxy/verification/diff.py source_proxy/tests/test_diff_verification.py`
+- `find docs/.../plan-03/set-b-evidence-20260625 -maxdepth 1 -type f`
+- `find docs/.../plan-03/set-c-evidence-20260625 -maxdepth 1 -type f`
+- `git show HEAD:docs/.../plan-03/set-b-evidence-20260625/b6-controlled-repair-loop-20260625.md`
+- `git show HEAD:docs/.../plan-03/set-c-evidence-20260625/c6-controlled-repair-20260625.md`
+- `git show HEAD:docs/.../plan-03/set-b-evidence-20260625/b8-degraded-lane-honesty-20260625.md`
+- `git show HEAD:docs/.../plan-03/set-c-evidence-20260625/c8-degraded-lane-honesty-20260625.md`
+- `git grep -n -i -e full daily -e daily-driver -e browser -e UI proof -e external live research -e Plan 4 -e ready HEAD -- docs/.../plan-03/status.md docs/.../plan-03/status.json docs/.../plan-03/next-plan-handoff.md docs/.../plan-03/set-b-closeout-packet-20260625.md docs/.../plan-03/set-c-closeout-packet-20260625.md`
 
-Hash / dirty-tree verification:
+Validation planned after this write:
 
-- `git diff --no-color package.json | python -c "import sys,hashlib; ..."` to
-  compute the current `package.json` diff sha1.
-- `git -c core.autocrlf=false diff --no-color package.json | ...` to test the
-  CRLF-normalized variant.
-
-No commands mutated the repository.
+- `git diff --check -- docs/.../plan-03/glm-plan3-set-a-b-c-integrity-audit-20260625.md`
+- confirm the only staged path is this audit file before commit.
+- confirm no Plan 4 files are staged.
+- confirm no source/test/runtime/package files changed by this audit.
 
 ## Files And Commits Inspected
 
-Closeout / status / handoff:
+Key commits inspected:
 
-- `docs/.../plan-03/status.md`
-- `docs/.../plan-03/status.json`
-- `docs/.../plan-03/next-plan-handoff.md`
-- `docs/.../plan-03/set-a-closeout-packet-20260625.md`
-- `docs/.../plan-03/set-b-closeout-packet-20260625.md`
-- `docs/.../plan-03/set-c-closeout-packet-20260625.md`
-
-Rubrics:
-
-- `docs/.../plan-03/set-b-rubric-readback-20260625.md`
-- `docs/.../plan-03/set-c-rubric-readback-20260625.md`
-
-Evidence directories (all files):
-
-- `docs/.../plan-03/set-b-evidence-20260625/` (b1-b9)
-- `docs/.../plan-03/set-c-evidence-20260625/` (c1-c9)
-- `docs/.../plan-03/provider-evidence-20260625/` (Set A durable provider proof)
-
-Source / test:
-
-- `source_proxy/verification/diff.py` (full read, 1936 lines)
-- `source_proxy/tests/test_diff_verification.py` (full read, 1240 lines)
-
-Key commits reviewed via `git show`:
-
-| Commit | Purpose | Verified |
+| Commit | Purpose | Footprint observed |
 | --- | --- | --- |
-| `34bdcb956a` | Set A closeout | change footprint confined to docs/status |
-| `45c38f3dea` | Set B rubric | docs only |
-| `7ca46dbadb` | Set B B1 scope lock | docs only |
-| `db6cf93dfc` | Set B B2-B3 | docs + test fixture only |
-| `2f3a5c757a` | Set B B4-B6 verifier repair | `diff.py` + test; verified generalizable |
-| `0d7ebb33b2` | Set B B7-B8 refusal honesty | docs only |
-| `f34439b0f6` | Set B B9-B10 closeout | `diff.py` MDX extension; docs/status |
-| `751bdffd52` | Set B closeout hash fix | docs 1-line |
-| `72204143e9` | Set C rubric | docs only |
-| `3ed692efcd` | Set C C1-C3 | docs only |
-| `af2777f7df0b20504dce1cb3b8d86e0a9a841dcb` | Set C C4-C6 verifier continuity | `diff.py` + test; verified generalizable |
-| `6c279edc5c` | Set C C7-C8 refusal honesty | docs only |
-| `bffc9e0c30` | Set C C9-C10 closeout | docs/status |
-| `3838ffdabe` | Set C closeout hash fix | docs 1-line |
+| `34bdcb956a8aae078cb6abdee8d354bd5aba46b0` | Set A closeout | Plan 3 docs/status only |
+| `45c38f3dea0513f4ac7e7e2c36d4fef34a8596ea` | Set B rubric | docs only |
+| `7ca46dbadb4ec4cb1541f5f08cf1180892a03951` | Set B B1 | docs only |
+| `db6cf93dfcf18e60403978b69d4d9b636673e184` | Set B B2-B3 | docs plus `source_proxy/tests/test_diff_verification.py` |
+| `2f3a5c757acb219d8fd545576897ea94b33e2413` | Set B B4-B6 | docs plus `source_proxy/verification/diff.py` and tests |
+| `0d7ebb33b2b7618d48565462c42ee3072cdcf7eb` | Set B B7-B8 | docs only |
+| `f34439b0f6089549960bc7d20d5f27b231547828` | Set B B9-B10 | docs/status plus `diff.py` and tests |
+| `751bdffd52580ffa6ac6f03a6fc5a3a20626d944` | Set B closeout hash fix | Set B closeout markdown only |
+| `72204143e9c7f787f0cb96401853f31f0363b094` | Set C rubric | docs only |
+| `3ed692efcd01f36ad582edba77884e3fa5113848` | Set C C1-C3 | docs only |
+| `af2777f7df0b20504dce1cb3b8d86e0a9a841dcb` | Set C C4-C6 | docs plus `source_proxy/verification/diff.py` and tests |
+| `6c279edc5cc46c6d90a236457a0215441703633f` | Set C C7-C8 | docs only |
+| `bffc9e0c308728492341cc9b25b575f9d6abd041` | Set C C9-C10 | docs/status only |
+| `3838ffdabe334510f2529706ac98dfdec3504fa2` | Set C closeout hash fix | Set C closeout markdown only |
 
-Note on a hash discrepancy: the task brief listed the Set C C4-C6 commit with
-an internal transcription typo. The correct repository commit is
-`af2777f7df0b20504dce1cb3b8d86e0a9a841dcb`. The discrepancy is in the task
-brief, not the repository: the committed `set-c-closeout-packet-20260625.md`
-and the `c9-end-to-end-handoff` artifact both record the correct hash. This is
-recorded as INFO only.
+Files inspected from committed `HEAD` or named commits:
+
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/status.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/status.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/next-plan-handoff.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/plan3-final-closeout-packet-20260625.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-closeout-packet-20260625.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-c-closeout-packet-20260625.md`
+- all top-level Set B evidence files under `set-b-evidence-20260625/`
+- all top-level Set C evidence files under `set-c-evidence-20260625/`
+- `source_proxy/verification/diff.py`
+- `source_proxy/tests/test_diff_verification.py`
+
+## Dirty Tree / Plan 4 WIP Caveat
+
+The working tree contains paused accidental Plan 4 WIP:
+
+```text
+ M docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/next-plan-handoff.md
+ M docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/status.json
+ M docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/status.md
+ M src/app/v1/actions/execute-approved/__tests__/route.test.ts
+ M src/app/v1/actions/execute-approved/route.ts
+ M src/components/coding/CodingCockpitShell.tsx
+ M src/components/coding/__tests__/coding-cockpit-shell.test.tsx
+?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md
+?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-2-operator-surface-20260625.md
+!! repomixes/
+```
+
+No Plan 4 files were edited by this audit. No Plan 4 proof was run. No Plan 4 status was advanced.
+
+The Plan 4 WIP means current working-tree source cannot be used as Plan 3 proof. This audit therefore used committed Plan 3 source/evidence via `HEAD:` and named commit inspection.
+
+`package.json` caveat:
+
+- Current committed `package.json` SHA-1: `90f319f1024218263daf50909e9fb23ebd971595`
+- Requested validation hash: `23d9f5cc9aa2895fbaa637ca9518554f777e0990`
+- `git diff --name-only HEAD -- package.json package-lock.json pnpm-lock.yaml yarn.lock` returned no output.
+- This audit did not edit or stage `package.json`.
 
 ## Hardcoding / Prompt-Specific Logic Findings
 
-No prompt-specific or set-specific logic exists in production source or runtime
-code.
+No production hardcoding or prompt-specific logic was found.
 
-- `source_proxy/verification/diff.py` was grepped for `plan-03|set-b|set-c|`
-  `set-a|prompt_id|A1|B1|C1`. Zero matches.
-- The Set B `_suggest_commands` change (`diff.py:1781-1790`) keys purely off the
-  file extension set `{".md", ".mdx"}`. It collects every changed path whose
-  suffix is in that set and appends one `git diff --check --` suggestion. There
-  is no path allow-list, no Set-B string, and no `if path == "b2-..."` branch.
-  Any `.md`/`.mdx` diff in the repository gets the same suggestion.
-- The Set C `_mixed_workflow_audit` / `_browser_proof_required_for_files`
-  helpers (`diff.py:1082-1120`) key purely off path prefixes
-  (`src/app/`, `src/components/`, `app/`, `components/`, `pages/`) and the
-  final preview `status`. They return conservative constant metadata
-  (`research_proves_implementation: false`, `plan4_allowed: false`, etc.)
-  regardless of input.
-- No `forced_pass`, `fake_green`, `fake_pass`, `special_case`, or `bypass`
-  tokens exist in `diff.py`.
+Evidence:
 
-Set-specific strings (`b2-docs-only-patch-20260625.md`, `b9-integration-proof.mdx`,
-`c4-proof.md`) appear only inside `source_proxy/tests/test_diff_verification.py`
-as fixture diff bodies. Tests using realistic repo-relative fixture paths is
-normal and does not leak into production behavior: `_suggest_commands` never
-inspects path *content*, only the suffix.
+- Set B/C production changes in `source_proxy/verification/diff.py` are generic:
+  - Markdown/MDX command suggestion is keyed by file suffix `{".md", ".mdx"}`.
+  - Browser proof requirement is keyed by browser-surface path prefixes (`src/app/`, `src/components/`, `app/`, `components/`, `pages/`).
+  - `mixed_workflow_audit` emits conservative metadata for all previews and blocks lane laundering regardless of Set B/C names.
+- The Set B/C strings found in source inspection were in docs and test fixture bodies, not production dispatch logic.
+- No production branch was found for `A1-A10`, `B1-B10`, `C1-C10`, Set A/B/C names, evidence filenames, `forced_pass`, `fake green`, `bypass`, or similar cheat markers.
 
-`source_proxy/tests/test_anticheat_registry.py` references a Plan 3 runner path
-under `continuation-3x10-dryrun/`, but that file is a pre-existing anti-cheat
-test unrelated to the Set B/C source patches and was not touched by Sets B/C.
-
-Verdict: CLEAN. No hardcoding or prompt-specific logic.
+Finding: CLEAN.
 
 ## Prompt Tailoring / Overfitting Findings
 
-Both source patches are genuinely generalizable.
+No production overfitting was found.
 
-Markdown / MDX diff-check suggestion (Set B):
+Special focus results:
 
-- B4 introduced a `.md` branch; B9 generalized it to `{".md", ".mdx"}`.
-- The behavior fires for any Markdown-family file in any diff, not just the
-  Set B evidence paths. The test fixtures happen to use Set B paths because
-  those are the realistic in-repo Markdown artifacts, but the implementation
-  would behave identically for `README.md`, `docs/anything.mdx`, etc.
+- Markdown/MDX diff-check suggestions generalize beyond Plan 3 evidence paths because they inspect only changed-file suffixes.
+- `mixed_workflow_audit` generalizes beyond Set C because it is computed for every preview payload and is based on status plus file path class.
+- `source_proxy/tests/test_diff_verification.py` uses Plan 3 evidence paths in test fixtures. This is a realistic test fixture choice, not production tailoring.
+- Production behavior does not depend on `set-b-evidence-20260625`, `set-c-evidence-20260625`, B/C prompt IDs, or closeout filenames.
 
-`mixed_workflow_audit` metadata (Set C):
-
-- The audit metadata is path-prefix-driven and status-driven, not
-  prompt-text-driven. It produces the same conservative output for any
-  backend/docs/test-only diff and only flips `browser_proof_required` when a
-  browser-surface prefix is present.
-- The metadata explicitly refuses to claim implementation readiness, Plan 4
-  allowance, or daily-driver readiness for *any* input, so it cannot be shaped
-  into a fake GO by tailoring.
-
-Test names leak no production behavior: `test_plan3_set_b_*` and
-`test_plan3_set_c_*` are test method names only; they assert on the public
-preview payload and do not import any Set-specific production module.
-
-The implementation would work for adjacent cases beyond the exact evidence
-file paths (verified by reading the suffix/prefix logic).
-
-Verdict: CLEAN. No overfitting.
+Finding: CLEAN with INFO caveat that test names/fixture paths are Plan 3-specific while runtime logic is not.
 
 ## Fallback / Scaffold / Fake-Proof Findings
 
-No PASS was achieved by fallback, placeholder, synthetic, or model-owned proof.
+No fake proof, scaffold-only PASS, hidden fallback, synthetic browser proof, or model-owned proof was found.
 
-Browser vs functional proof decisions:
+Evidence:
 
-- B5 used functional behavior proof (direct `preview_diff_verification` call)
-  instead of browser proof. This is correct: B4 changed backend verifier
-  suggestion metadata, not a route/UI/render path. The evidence records target,
-  command, action, assertion, and artifact, and confirms
-  `would_apply_diff == False` / `would_execute == False`.
-- B9 used the same correct functional proof for the MDX backend change.
-- C5 used functional backend proof for the C4 backend metadata patch and
-  recorded the full `mixed_workflow_audit` payload showing no overclaim.
+- B6 preserved the controlled `diff_apply_check_failed` failure and an intermediate repair attempt that did not exercise Markdown behavior before recording the final repaired `.md` proof.
+- C6 preserved the controlled `requirement_coverage_failed` failure before recording the repaired preview.
+- B8 and C8 explicitly used `PASS_LIMITED_DEGRADED_HONESTY`, not full PASS, when browser proof was not applicable.
+- Set B and Set C closeouts state that browser proof was not claimed where no browser/UI/route surface changed.
+- The committed final closeout says GLM caveats were resolved/contained and does not convert the caveats into daily-driver readiness.
 
-B8 / C8 degraded lanes:
-
-- B8 is honestly downgraded to `PASS_LIMITED_DEGRADED_HONESTY`, not a fake full
-  PASS. It explicitly lists what was not verified (no browser route, no
-  screenshot, no UI behavior) and what a full PASS would require.
-- C8 is likewise `PASS_LIMITED_DEGRADED_HONESTY` and explicitly states
-  browser/UI, external research, and daily-driver readiness were not proven.
-
-B6 / C6 controlled failure + repair:
-
-- B6 preserved the original `diff_apply_check_failed` failure in full
-  (`already exists in working directory`) and also preserved an intermediate
-  `.json` repair attempt that did *not* exercise the Markdown behavior
-  (`docs_diff_check_suggested: false`). Nothing was hidden.
-- C6 preserved the original `requirement_coverage_failed` blocked result with
-  the exact missing-text messages, then showed the repaired `preview_ready`
-  result. The original failure remains in evidence.
-
-Skipped / degraded lanes are reported, not laundered.
-
-Verdict: CLEAN. No fake or fallback proof.
+Finding: CLEAN.
 
 ## Handoff / Status Laundering Findings
 
-No overclaiming found in status, handoff, or closeout text.
+No handoff or status laundering was found in committed Plan 3 docs.
 
-- `status.md` / `status.json` record Set A stable, Set B GO (96), Set C GO
-  (94), Plan 4 `NOT_STARTED / NOT_APPROVED`, and the human approval gate
-  before Plan 4.
-- `next-plan-handoff.md` preserves the limitations: browser proof not
-  applicable for Set C, external live research not re-proven for C2, Plan 4
-  readiness not approved.
-- Set C closeout packet explicitly states: "It does not claim full production
-  daily-driver readiness, browser/UI proof, or Plan 4 readiness."
-- C8 anti-laundering statement explicitly enumerates what the C4-C6 PASS
-  cannot cover (C7 trap, missing browser proof, missing external research,
-  C9/C10, Plan 4).
-- C2 correctly scopes external research as not-needed for a local repo-state
-  question and explicitly states that absence does not prove external-source
-  behavior.
+Evidence:
 
-Set C does not claim daily-driver readiness. Browser/UI proof is not claimed.
-Live external research was not re-proven in Set C and this is disclosed. Plan 4
-remains not started.
+- `status.md`, `status.json`, and `next-plan-handoff.md` state Plan 4 as `NOT_STARTED / NOT_APPROVED` in the committed Plan 3 closeout.
+- `next-plan-handoff.md` says Britton must explicitly review Plan 3 closeout before Plan 4 work starts.
+- Set C closeout explicitly says it does not claim full production daily-driver readiness, browser/UI proof, or Plan 4 readiness.
+- Set B closeout says B8 did not claim fake browser success and that browser proof was limited or not applicable for backend/evidence-only work.
+- Set C closeout states browser/UI/route behavior was not verified because the source patch was backend verifier metadata only.
 
-Verdict: CLEAN. No laundering or overclaiming.
+Finding: CLEAN.
 
 ## Evidence Integrity Findings
 
-Evidence is append-only; no Set A evidence was overwritten by Sets B/C.
+Evidence integrity is preserved in the committed Plan 3 record.
 
-- `git diff --name-only` over the full Set A/B/C range shows Set B/C commits
-  only *added* files under `set-b-evidence-20260625/` and
-  `set-c-evidence-20260625/`. No file under `provider-evidence-20260625/`,
-  `continuation-3x10-dryrun/`, or Set A closeout artifacts was modified by a
-  Set B/C commit (the two closeout hash-fix commits edited only the Set B and
-  Set C closeout packets themselves, recording their own final commit hash).
-- The Set A closeout packet, Set A provider proof (`.md`, `.jsonl`,
-  `-summary.json`), and Set A run dirs remain present and unchanged.
-- B6 / C6 repair evidence preserves the original failure inline (before/after
-  blocks), satisfying the repair-honesty gate.
-- B7 / C7 refusal evidence is recorded as append-only artifacts; no forbidden
-  file was edited.
-- `git reflog -10` shows only forward `commit` entries; no reset/clean/rebase/
-  revert/checkout rewritten the tree.
+Evidence:
 
-The two closeout "hash fix" commits (`751bdffd`, `3838ffdabe`) are legitimate
-1-line amendments that back-fill the final closeout commit hash into the
-closeout packet table after the closeout commit exists. They edit only the Set
-B / Set C closeout packet markdown, which is the correct place, and they do not
-rewrite Set A or run evidence.
+- Commit footprints show Set B and Set C evidence files were added under their Plan 3 evidence directories and closeouts/status docs were updated in place.
+- B6/C6 before-and-after evidence preserved failure states rather than deleting them.
+- B8/C8 degraded-lane evidence preserved limitations instead of upgrading missing browser proof to PASS.
+- Set B and Set C closeout hash-fix commits touched only their closeout markdown packets.
+- Current Plan 4 WIP is uncommitted and was not used as Plan 3 evidence.
 
-Verdict: CLEAN. Append-only integrity preserved.
+Finding: CLEAN.
 
 ## Protected-Scope Findings
 
-No forbidden paths were touched by Sets B/C.
+No protected-scope violation was found in the Plan 3 Set A/B/C commits inspected.
 
-- `git log --oneline 34bdcb956a^..3838ffdabe -- package.json` -> empty.
-- `git log --oneline 34bdcb956a^..3838ffdabe -- "src/app/api/spiritflix/**"
-  "src/app/media/**" "**/jellyfin/**" "**/obsidian/**" ".env*"
-  "**/mac-optimizer/**"` -> empty.
-- The full Set A/B/C change footprint is confined to:
-  `docs/.../plan-03/**`, `status.md`, `status.json`, `next-plan-handoff.md`,
-  `source_proxy/verification/diff.py`, and
-  `source_proxy/tests/test_diff_verification.py`.
-- B7 and C7 refusal evidence confirms the SpiritFlix admin route, `.env.local`,
-  `package.json`, and Plan 4 were refused and not edited.
+Observed Plan 3 Set B/C code footprint:
 
-Verdict: CLEAN. Protected scope intact.
+- `source_proxy/verification/diff.py`
+- `source_proxy/tests/test_diff_verification.py`
+- Plan 3 docs/status/evidence markdown/json files
+
+No inspected Plan 3 Set B/C commit touched SpiritFlix, media, Jellyfin, Mac optimizer/media workers, Obsidian, secrets/env files, protected runtime config, Plan 4, package files, generated XML packs, or unrelated dirty files.
+
+Finding: CLEAN.
 
 ## Verification Realism Findings
 
-Verification commands are tied to the actually changed files and behavior.
+Verification was realistic and tied to changed behavior.
 
-- B4 / B9 / C4 syntax check:
-  `python -m py_compile source_proxy/verification/diff.py
-  source_proxy/tests/test_diff_verification.py` targets the exact changed
-  Python files.
-- B4 / B9 focused pytest targets the exact test methods that exercise the new
-  suggestion behavior:
-  `test_plan3_set_b_docs_diff_remains_preview_only`,
-  `test_plan3_set_b_mdx_docs_diff_gets_diff_check_suggestion`.
-- C4-C6 focused pytest targets
-  `test_plan3_set_c_safe_docs_diff_gets_mixed_workflow_audit` and
-  `test_plan3_set_c_blocked_secret_diff_keeps_audit_limited`, which assert the
-  new audit metadata and its blocked-lane limitation.
-- B5 / B9 / C5 direct functional proof calls `preview_diff_verification` on a
-  real diff and asserts on the returned payload fields, not on a stub.
-- Browser proof was correctly *omitted* (not wrongly avoided) for B5/B9/C5
-  because the changed behavior is backend verifier metadata with no
-  browser/UI/route surface. The `_browser_proof_required_for_files` helper
-  formalizes exactly this distinction.
+Evidence:
 
-No broad unrelated check was substituted for a focused one.
+- Set B Markdown/MDX behavior was verified by focused `preview_diff_verification` checks and focused pytest coverage in `test_diff_verification.py`.
+- Set C `mixed_workflow_audit` behavior was verified by direct functional preview checks and focused tests for both safe docs diffs and blocked secret diffs.
+- Browser proof was correctly omitted for backend verifier metadata changes and evidence-only docs batches; the docs call this out rather than claiming UI/browser proof.
+- Controlled repair loops used safe verifier inputs rather than adding permanent broken source.
+- Broad browser or full-suite proof was not substituted for focused backend verifier proof.
 
-Verdict: CLEAN. Verification is realistic and tied to changed behavior.
-
-## Dirty Tree Findings
-
-The dirty tree is unchanged by this audit and was not touched by Sets B/C.
-
-Pre-existing unrelated dirty files still present and unstaged:
-
-- `README.md` (modified)
-- `package.json` (modified)
-- `repomix.repo-map.config.json` (modified)
-- `scripts/context/verify-repomix-context.sh` (modified)
-- `scripts/source-context-compress.mjs` (modified)
-- `bash` (untracked)
-- `repomixes/` (untracked)
-- `scripts/context/build-llm-context-packs.sh` (untracked)
-
-`package.json` diff hash caveat (LOW / environmental):
-
-- Recorded hash: `23d9f5cc9aa2895fbaa637ca9518554f777e0990`.
-- Hash computed in this Windows audit environment:
-  `a3fd3a47e80a941fe92fd07593a97c7667bb84f4` (raw and LF-normalized identical).
-- The `git diff package.json` *content* is the same two-line addition of
-  `context:all` / `context:full-split` scripts that predates this audit. The
-  hash difference is a line-ending / hashing-tool artifact, not a content
-  change by Sets B/C. `git log` confirms no Set A/B/C commit touched
-  `package.json`.
-- Recommendation: when comparing this hash across environments, normalize
-  line endings and the hashing tool. The content-level invariant (no Set A/B/C
-  commit modified `package.json`) holds.
-
-No source/test/runtime files changed during this audit. No forbidden paths
-changed. No push/reset/clean/checkout/rebase/revert occurred (`git reflog`
-confirms forward commits only).
+Finding: CLEAN.
 
 ## Findings Table
 
 | ID | Severity | Area | Evidence | Impact | Recommendation |
 | --- | --- | --- | --- | --- | --- |
-| F1 | INFO | Hash transcription | Task brief listed the Set C C4-C6 commit with an internal transcription typo; actual repo commit is `af2777f7df0b20504dce1cb3b8d86e0a9a841dcb`. Repo artifacts (closeout packet, c9 handoff) record the correct hash. | None on repo integrity; brief-only typo. | No action required beyond this hygiene clarification. |
-| F2 | LOW | Dirty-tree hash | `package.json` diff sha1 computes as `a3fd3a47...` in this Windows env vs recorded `23d9f5cc...`. Content diff is unchanged; no Set A/B/C commit touched it. | Hash invariant appears broken cross-environment. | Compare hashes only after CRLF/tool normalization; rely on the content + `git log` invariant. |
-| F3 | INFO | Closeout hash back-fill | Set B/C closeout packets record their own final commit hash via a follow-up 1-line commit (`751bdffd`, `3838ffdabe`). | None; legitimate post-closeout back-fill of the packet's own table. | No action. Pattern is acceptable. |
-| F4 | INFO | Test fixture paths | Set B/C strings appear only in `test_diff_verification.py` fixture diff bodies, never in production source. | None; tests legitimately use realistic in-repo paths. | No action. |
+| F1 | INFO | Plan 4 WIP caveat | Current dirty tree contains paused Plan 4 route/frontend/docs WIP; audit used committed Plan 3 evidence via `HEAD:` and named commits. | Working tree cannot be treated as clean Plan 3 proof. | Keep Plan 4 paused; do not commit Plan 4 WIP with this audit. |
+| F2 | LOW | Package hash validation | Current committed `package.json` SHA-1 is `90f319f1024218263daf50909e9fb23ebd971595`, not requested `23d9f5cc9aa2895fbaa637ca9518554f777e0990`; no package diff exists. | The exact requested hash check cannot be truthfully confirmed in the current committed repo state. | Treat as handoff drift after context-pack cleanup; rely on no working-tree package diff and no audit edits to package files. |
+| F3 | INFO | Test fixture naming | Plan 3 Set B/C names appear in tests as realistic fixture paths. Runtime logic keys off suffixes/prefixes, not Set names. | No production impact. | No action. |
+| F4 | INFO | Prior audit file existed | The allowed audit report path was already tracked from the earlier Plan 3 closeout. | This is a refresh/update, not a brand-new file. | Commit only this updated report. |
 
 No BLOCKER, HIGH, or MEDIUM findings.
 
 ## Final Grade
 
-Numeric grade: `94 / 100`.
+Numeric grade: `93 / 100`.
 
-Letter grade: `A`.
+Letter grade: `A-`.
 
-Rationale: zero hard fail gates, zero hardcoding/overfitting/fake-proof/
-laundering findings, protected scope intact, append-only evidence preserved,
-verification realistic and tied to changed behavior, handoff honest. The only
-deductions are environmental/low-severity (cross-environment hash artifact and
-brief-only hash typo) and do not reflect any integrity violation.
+Rationale: no Plan 3 integrity failures were found. Deductions are for the dirty-tree/Plan 4 WIP caveat and the package-hash mismatch against the handoff's requested value, both of which are audit-context issues rather than Set A/B/C cheating or evidence invalidation.
 
 ## Final Verdict
 
 `PLAN3_SET_A_B_C_INTEGRITY_CONFIRMED_WITH_CAVEATS`
 
-The caveat is solely the low-severity, environmental `package.json` hash
-mismatch (F2) and the INFO-level brief/repo hash transcription note (F1).
-Neither reflects a cheat, overclaim, or scope violation. The repository
-evidence, source changes, test changes, status, handoff, and closeout packets
-are integrity-clean.
+Plan 3 Set A/B/C is suitable for Britton review with the caveats above. The paused Plan 4 WIP must remain separate and uncommitted by this audit.
 
-Validation:
+Validation expectations for closeout:
 
-- Audit report is the only new file.
-- Only the GLM audit report changed.
-- No source/test/runtime files changed.
-- No forbidden paths changed.
-- Unrelated dirty files remain unstaged and untouched.
-- `package.json` content is unchanged by Sets A/B/C (hash discrepancy is
-  environmental; `git log` confirms no Set A/B/C commit touched it).
-- Plan 4 was not started.
-- No push/reset/clean/checkout/rebase/revert occurred.
+- Diff check this report.
+- Stage and commit only this report.
+- Confirm no source/test/runtime files changed by this audit.
+- Confirm no Plan 4 files changed by this audit.
+- Confirm unrelated dirty files remain unstaged.
+- Confirm no push/reset/clean/checkout/rebase/revert/stash occurred.
+- Confirm Plan 4 was not continued.
 
 `GLM_PLAN3_SET_A_B_C_INTEGRITY_AUDIT_READY_FOR_BRITTON_REVIEW`
