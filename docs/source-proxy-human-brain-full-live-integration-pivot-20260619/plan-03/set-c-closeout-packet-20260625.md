@@ -22,7 +22,7 @@ Daily-driver readiness note: Set C is GO for human approval with documented limi
 | C1-C3 | `3ed692efcd01f36ad582edba77884e3fa5113848` | Add Plan 3 Set C C1-C3 planning batch |
 | C4-C6 | `af2777f7df0b20504dce1cb3b8d86e0a9a841dcb` | Add Plan 3 Set C C4-C6 verifier continuity batch |
 | C7-C8 | `6c279edc5cc46c6d90a236457a0215441703633f` | Add Plan 3 Set C C7-C8 refusal honesty batch |
-| C9-C10 | recorded by the final C9-C10 commit and final response | Close out Plan 3 Set C |
+| C9-C10 | `bffc9e0c308728492341cc9b25b575f9d6abd041` | Close out Plan 3 Set C |
 
 ## C1-C10 Status
 
