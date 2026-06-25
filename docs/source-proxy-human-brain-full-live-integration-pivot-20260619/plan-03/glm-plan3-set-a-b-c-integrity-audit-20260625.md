@@ -136,12 +136,12 @@ Key commits reviewed via `git show`:
 | `bffc9e0c30` | Set C C9-C10 closeout | docs/status |
 | `3838ffdabe` | Set C closeout hash fix | docs 1-line |
 
-Note on a hash discrepancy: the task brief listed the Set C C4-C6 commit as
-`af2777f7dfb20504dce1cb3b8d86e0a9a841dcb` (substring `dfb2`). The actual
-repository commit is `af2777f7df0b20504dce1cb3b8d86e0a9a841dcb` (substring
-`df0b`). The discrepancy is in the task brief, not the repository: the
-committed `set-c-closeout-packet-20260625.md` and the `c9-end-to-end-handoff`
-artifact both record the correct hash. This is recorded as INFO only.
+Note on a hash discrepancy: the task brief listed the Set C C4-C6 commit with
+an internal transcription typo. The correct repository commit is
+`af2777f7df0b20504dce1cb3b8d86e0a9a841dcb`. The discrepancy is in the task
+brief, not the repository: the committed `set-c-closeout-packet-20260625.md`
+and the `c9-end-to-end-handoff` artifact both record the correct hash. This is
+recorded as INFO only.
 
 ## Hardcoding / Prompt-Specific Logic Findings
 
@@ -377,7 +377,7 @@ confirms forward commits only).
 
 | ID | Severity | Area | Evidence | Impact | Recommendation |
 | --- | --- | --- | --- | --- | --- |
-| F1 | INFO | Hash transcription | Task brief lists Set C C4-C6 commit as `...dfb2...`; actual repo commit is `...df0b...`. Repo artifacts (closeout packet, c9 handoff) record the correct hash. | None on repo integrity; brief-only typo. | No action required in repo. Optionally correct the brief. |
+| F1 | INFO | Hash transcription | Task brief listed the Set C C4-C6 commit with an internal transcription typo; actual repo commit is `af2777f7df0b20504dce1cb3b8d86e0a9a841dcb`. Repo artifacts (closeout packet, c9 handoff) record the correct hash. | None on repo integrity; brief-only typo. | No action required beyond this hygiene clarification. |
 | F2 | LOW | Dirty-tree hash | `package.json` diff sha1 computes as `a3fd3a47...` in this Windows env vs recorded `23d9f5cc...`. Content diff is unchanged; no Set A/B/C commit touched it. | Hash invariant appears broken cross-environment. | Compare hashes only after CRLF/tool normalization; rely on the content + `git log` invariant. |
 | F3 | INFO | Closeout hash back-fill | Set B/C closeout packets record their own final commit hash via a follow-up 1-line commit (`751bdffd`, `3838ffdabe`). | None; legitimate post-closeout back-fill of the packet's own table. | No action. Pattern is acceptable. |
 | F4 | INFO | Test fixture paths | Set B/C strings appear only in `test_diff_verification.py` fixture diff bodies, never in production source. | None; tests legitimately use realistic in-repo paths. | No action. |
