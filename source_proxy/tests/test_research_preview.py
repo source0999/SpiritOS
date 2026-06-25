@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from source_proxy.decision import research
+from source_proxy.decision import current_research, research
 
 
 class _FakeResponse:
@@ -228,6 +228,178 @@ class ResearchPreviewTests(unittest.IsolatedAsyncioTestCase):
                 )
 
         self.assertTrue(any(source["url"] == "repo://src/app/coding/page.tsx" for source in sources))
+
+    async def test_current_research_retries_zero_sources_and_remains_blocked(self) -> None:
+        async def fake_scout(query: str, max_results: int = 6) -> dict[str, object]:
+            return {
+                "status": "skipped",
+                "reason": "scout_research_disabled",
+                "scout_result_count": 0,
+                "scout_sources": [],
+                "provider_errors": [],
+            }
+
+        async def fake_searxng(query: str, max_results: int = 6) -> dict[str, object]:
+            return {
+                "status": "blocked",
+                "reason": "searxng_query_returned_no_usable_results",
+                "searxng_result_count": 0,
+                "searxng_sources": [],
+                "provider_call_made": True,
+                "provider_url_used": "http://127.0.0.1:8080",
+                "provider_errors": [],
+            }
+
+        def fake_record(task_id: str, **kwargs: object) -> dict[str, object]:
+            return {"task": {"id": task_id, "ast_snapshot": {}}}
+
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "SOURCE_PROXY_CURRENT_RESEARCH_MAX_RETRIES": "2",
+                    "SOURCE_PROXY_CURRENT_RESEARCH_RETRY_BACKOFF_SECONDS": "0",
+                },
+                clear=False,
+            ),
+            patch.object(current_research, "run_scout_research_diagnostics", fake_scout),
+            patch.object(current_research, "run_searxng_research_diagnostics", fake_searxng),
+            patch.object(current_research, "record_subsystem_integration_result", fake_record),
+        ):
+            result = await current_research.run_current_research_for_task(
+                "task_provider_zero",
+                query="Android Jetpack Compose share intent local task app receipt polling",
+                upstream_state={"test": "zero_sources"},
+                max_results=6,
+            )
+
+        packet = result["research_packet"]
+        self.assertEqual(result["status"], "BLOCKED_ENV")
+        self.assertEqual(packet["source_count"], 0)
+        self.assertEqual(packet["research_provider_retry_count"], 2)
+        self.assertEqual(packet["research_provider_result_counts"], [0, 0, 0])
+        self.assertEqual(packet["research_provider_failure_classification"], "PROVIDER_ZERO_RESULTS")
+
+    async def test_current_research_successful_retry_uses_returned_sources_only(self) -> None:
+        async def fake_scout(query: str, max_results: int = 6) -> dict[str, object]:
+            return {
+                "status": "skipped",
+                "reason": "scout_research_disabled",
+                "scout_result_count": 0,
+                "scout_sources": [],
+                "provider_errors": [],
+            }
+
+        calls = {"count": 0}
+
+        async def fake_searxng(query: str, max_results: int = 6) -> dict[str, object]:
+            calls["count"] += 1
+            if calls["count"] == 1:
+                return {
+                    "status": "blocked",
+                    "reason": "searxng_query_returned_no_usable_results",
+                    "searxng_result_count": 0,
+                    "searxng_sources": [],
+                    "provider_call_made": True,
+                    "provider_url_used": "http://127.0.0.1:8080",
+                    "provider_errors": [],
+                }
+            return {
+                "status": "used",
+                "reason": "live_searxng_provider_query_executed",
+                "searxng_result_count": 1,
+                "searxng_sources": [
+                    {
+                        "title": "Send simple data to other apps",
+                        "url": "https://developer.android.com/training/sharing/send",
+                        "snippet": "Android intents share data between apps.",
+                    }
+                ],
+                "provider_call_made": True,
+                "provider_url_used": "http://127.0.0.1:8080",
+                "provider_errors": [],
+            }
+
+        def fake_record(task_id: str, **kwargs: object) -> dict[str, object]:
+            return {"task": {"id": task_id, "ast_snapshot": {}}}
+
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "SOURCE_PROXY_CURRENT_RESEARCH_MAX_RETRIES": "2",
+                    "SOURCE_PROXY_CURRENT_RESEARCH_RETRY_BACKOFF_SECONDS": "0",
+                },
+                clear=False,
+            ),
+            patch.object(current_research, "run_scout_research_diagnostics", fake_scout),
+            patch.object(current_research, "run_searxng_research_diagnostics", fake_searxng),
+            patch.object(current_research, "record_subsystem_integration_result", fake_record),
+        ):
+            result = await current_research.run_current_research_for_task(
+                "task_provider_retry",
+                query="Android Jetpack Compose share intent local task app receipt polling",
+                upstream_state={"test": "retry_success"},
+                max_results=6,
+            )
+
+        packet = result["research_packet"]
+        self.assertEqual(result["status"], "INTEGRATED_LIVE")
+        self.assertEqual(packet["source_count"], 1)
+        self.assertEqual(packet["research_provider_retry_count"], 1)
+        self.assertEqual(packet["research_provider_result_counts"], [0, 1])
+        self.assertEqual(packet["sources"][0]["provider"], "searxng")
+        self.assertEqual(packet["sources"][0]["url"], "https://developer.android.com/training/sharing/send")
+
+    async def test_current_research_timeout_classifies_blocked_env(self) -> None:
+        async def fake_scout(query: str, max_results: int = 6) -> dict[str, object]:
+            return {
+                "status": "skipped",
+                "reason": "scout_research_disabled",
+                "scout_result_count": 0,
+                "scout_sources": [],
+                "provider_errors": [],
+            }
+
+        async def fake_searxng(query: str, max_results: int = 6) -> dict[str, object]:
+            return {
+                "status": "blocked",
+                "reason": "searxng_unreachable",
+                "searxng_result_count": 0,
+                "searxng_sources": [],
+                "provider_call_made": True,
+                "provider_url_used": "",
+                "provider_errors": ["http://127.0.0.1:8080: timeout: "],
+            }
+
+        def fake_record(task_id: str, **kwargs: object) -> dict[str, object]:
+            return {"task": {"id": task_id, "ast_snapshot": {}}}
+
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "SOURCE_PROXY_CURRENT_RESEARCH_MAX_RETRIES": "1",
+                    "SOURCE_PROXY_CURRENT_RESEARCH_RETRY_BACKOFF_SECONDS": "0",
+                },
+                clear=False,
+            ),
+            patch.object(current_research, "run_scout_research_diagnostics", fake_scout),
+            patch.object(current_research, "run_searxng_research_diagnostics", fake_searxng),
+            patch.object(current_research, "record_subsystem_integration_result", fake_record),
+        ):
+            result = await current_research.run_current_research_for_task(
+                "task_provider_timeout",
+                query="Android Jetpack Compose share intent local task app receipt polling",
+                upstream_state={"test": "timeout"},
+                max_results=6,
+            )
+
+        packet = result["research_packet"]
+        self.assertEqual(result["status"], "BLOCKED_ENV")
+        self.assertEqual(packet["source_count"], 0)
+        self.assertEqual(packet["research_provider_retry_count"], 1)
+        self.assertEqual(packet["research_provider_failure_classification"], "PROVIDER_TIMEOUT")
 
 
 if __name__ == "__main__":

@@ -1284,6 +1284,41 @@ def research_source_count(research: dict[str, Any] | None) -> int:
     return len(((research or {}).get("research_packet") or {}).get("sources") or [])
 
 
+def research_provider_debug_summary(research_attempt_bundle: dict[str, Any] | None) -> dict[str, Any]:
+    attempts = (research_attempt_bundle or {}).get("attempts") or []
+    provider_attempts: list[dict[str, Any]] = []
+    query_source_counts: list[int] = []
+    retry_count = 0
+    max_retries = 0
+    failure_classifications: list[str] = []
+    for attempt in attempts:
+        query_source_counts.append(int(attempt.get("source_count") or 0))
+        packet = (((attempt.get("result") or {}).get("research_packet")) or {})
+        retry_count += int(packet.get("research_provider_retry_count") or 0)
+        max_retries = max(max_retries, int(packet.get("research_provider_max_retries") or 0))
+        classification = str(packet.get("research_provider_failure_classification") or "")
+        if classification:
+            failure_classifications.append(classification)
+        provider_attempts.extend(packet.get("research_provider_attempts") or [])
+    unique_classifications = sorted(set(failure_classifications))
+    if any(count > 0 for count in query_source_counts):
+        failure_classification = "SOURCES_AVAILABLE"
+    elif unique_classifications:
+        failure_classification = unique_classifications[-1]
+    else:
+        failure_classification = "UNKNOWN_NEEDS_HUMAN"
+    return {
+        "query_attempt_count": len(attempts),
+        "query_variants": (research_attempt_bundle or {}).get("query_variants", []),
+        "query_variant_source_counts": query_source_counts,
+        "provider_attempt_count": len(provider_attempts),
+        "provider_attempts": provider_attempts,
+        "retry_count": retry_count,
+        "max_retries": max_retries,
+        "failure_classification": failure_classification,
+    }
+
+
 async def run_research_with_variants(task_id: str, pid: str, item: dict[str, Any], route: Any) -> dict[str, Any]:
     queries = [RESEARCH_QUERIES.get(pid, item["user_prompt"])]
     if pid == "A2":
@@ -3181,9 +3216,8 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             research = research_attempt_bundle.get("selected")
             task = research["task"]
             jwrite(RAW / f"{pid}.research.raw.json", research)
-            if pid in {"A2", "A9"}:
-                jwrite(RAW / f"{pid}.research.variants.raw.json", research_attempt_bundle)
-                jwrite(RAW / f"{pid}.research.query_attempts.raw.json", research_attempt_bundle)
+            jwrite(RAW / f"{pid}.research.variants.raw.json", research_attempt_bundle)
+            jwrite(RAW / f"{pid}.research.query_attempts.raw.json", research_attempt_bundle)
         repo = read_repo(pid) if item.get("must_inspect_repo_context") else None
         if repo:
             jwrite(RAW / f"{pid}.repo_context.raw.json", repo)
@@ -3330,6 +3364,7 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             required.append("mac_worker")
         if pid in POLICY_REQUIRED:
             required.append("policy_gate")
+        research_provider_summary = research_provider_debug_summary(research_attempt_bundle)
         record = {
             "prompt_id": pid,
             "user_prompt": item["user_prompt"],
@@ -3396,6 +3431,9 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             "research_change_field_repair_status": research_change_field_repair_status,
             "query_variants_tried": (research_attempt_bundle or {}).get("query_variants", []),
             "query_variant_source_counts": [a.get("source_count") for a in ((research_attempt_bundle or {}).get("attempts") or [])],
+            "research_provider_debug": research_provider_summary,
+            "research_provider_retry_count": research_provider_summary["retry_count"],
+            "research_provider_failure_classification": research_provider_summary["failure_classification"],
             "model": MODEL,
             "selected_work_lane": selected_work_lane,
             "generic_lane_sampling_contract": generic_lane_status,
@@ -3445,6 +3483,9 @@ The worktree has pre-existing unrelated SpiritFlix/media/handoff changes. This r
             "model_decision_body_status": record.get("model_decision_body_status"),
             "code_owned_packet_shell_status": record.get("code_owned_packet_shell_status"),
             "research_change_field_repair_status": record.get("research_change_field_repair_status"),
+            "research_provider_debug": record.get("research_provider_debug"),
+            "research_provider_retry_count": record.get("research_provider_retry_count"),
+            "research_provider_failure_classification": record.get("research_provider_failure_classification"),
             "timeout_empty_parse_policy": {
                 "timeout": any("timeout" in str(err).lower() for err in validation_errors),
                 "empty_output": not bool(work.strip()),

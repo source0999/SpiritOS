@@ -791,6 +791,45 @@ def test_classification_for_stability_detects_nondeterminism() -> None:
     assert set(unstable["unique_verdicts"]) == {"NEEDS_FIX", "PASS"}
 
 
+def test_research_provider_debug_summary_surfaces_retry_and_counts() -> None:
+    runner = _load_runner()
+    bundle = {
+        "query_variants": ["Android Jetpack Compose share intent local task app receipt polling"],
+        "attempts": [
+            {
+                "index": 1,
+                "query": "Android Jetpack Compose share intent local task app receipt polling",
+                "source_count": 0,
+                "result": {
+                    "research_packet": {
+                        "research_provider_retry_count": 2,
+                        "research_provider_max_retries": 2,
+                        "research_provider_failure_classification": "PROVIDER_ZERO_RESULTS",
+                        "research_provider_attempts": [
+                            {"attempt": 1, "source_count": 0, "providers": {"searxng": "blocked"}},
+                            {"attempt": 2, "source_count": 0, "providers": {"searxng": "blocked"}},
+                            {"attempt": 3, "source_count": 0, "providers": {"searxng": "blocked"}},
+                        ],
+                    }
+                },
+            }
+        ],
+    }
+    summary = runner.research_provider_debug_summary(bundle)
+    assert summary["query_attempt_count"] == 1
+    assert summary["query_variant_source_counts"] == [0]
+    assert summary["provider_attempt_count"] == 3
+    assert summary["retry_count"] == 2
+    assert summary["failure_classification"] == "PROVIDER_ZERO_RESULTS"
+
+
+def test_research_provider_debug_summary_has_no_a3_specific_branch() -> None:
+    runner = _load_runner()
+    source = inspect.getsource(runner.research_provider_debug_summary)
+    assert 'pid ==' not in source
+    assert '"A3"' not in source
+
+
 def test_run_stability_check_has_no_prompt_specific_branches() -> None:
     runner = _load_runner()
     source = inspect.getsource(runner.run_stability_check)
