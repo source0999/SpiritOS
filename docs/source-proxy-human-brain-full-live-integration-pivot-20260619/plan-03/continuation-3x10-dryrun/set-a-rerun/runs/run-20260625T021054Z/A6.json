@@ -1,0 +1,214 @@
+{
+  "auto_fix_attempts": 0,
+  "blocked_reasons": [],
+  "code_owned_packet_shell_status": {},
+  "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 0,
+  "decision_packet_validated": false,
+  "decision_packet_validation_errors": [],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_default",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama"
+      }
+    ],
+    "code_owned_packet_shell_status": {},
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A6.task.final.raw.json"
+    ],
+    "degraded_lanes": [],
+    "expected_lane": "generic_stabilized_research",
+    "failure_classification": "PASS",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": false,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "PASS",
+    "model_decision_body_status": {},
+    "next_recommended_action": "no action",
+    "productive_reasons": [],
+    "productive_status": "PASS",
+    "prompt_id": "A6",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_default",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama"
+        }
+      ],
+      "unavailable": []
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A6.json",
+    "research_change_field_repair_status": {
+      "canonicalized_source_refs": 3,
+      "code_owned_grounding": "raw_source_and_model_decision_only",
+      "derived_why_fields": 0,
+      "dropped_non_raw_source_blocks": 0,
+      "enabled": true,
+      "inline_labels_split": 0,
+      "repairs": [
+        "canonicalized_research_source_ref"
+      ]
+    },
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A6",
+    "selected_lane": "ollama_default",
+    "selected_model_provider_tool": {
+      "model": "gemma3n:e4b",
+      "provider": "ollama",
+      "tool": "stage4r_live_work_product"
+    },
+    "selected_work_lane_basis": "task_shape_internet_required_not_prompt_id",
+    "task_class": "research_pack",
+    "task_id": "task_c687055e79e5",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": false,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A6.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
+  "downstream_consumed": true,
+  "failed_gates": [],
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "PASS",
+  "generic_lane_sampling_contract": {
+    "api_or_frontier_call_added": false,
+    "lane": "generic_stabilized_research",
+    "local_first": true,
+    "model": "gemma3n:e4b",
+    "num_predict": 6000,
+    "provider": "ollama",
+    "selection_basis": "task_shape_internet_required_not_prompt_id",
+    "temperature": 0.03,
+    "timeout_seconds": 320
+  },
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": true,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "policy_gate"
+  ],
+  "lanes_not_required": [
+    "qwen_coder",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_8a45ff72cc164151",
+  "limitations_stated": true,
+  "live_search_used": true,
+  "local_fallback_used": false,
+  "mac_evidence_signals": [],
+  "mac_invoked": false,
+  "mac_required": false,
+  "mac_status": "not_required",
+  "mac_system_status_alone_used_as_pass": false,
+  "max_auto_fix_attempts": 3,
+  "model": "gemma3n:e4b",
+  "model_decision_body_status": {},
+  "notes": [],
+  "packet_lanes_available": [],
+  "packet_lanes_unavailable": [],
+  "packet_model": "",
+  "packet_model_lane": "",
+  "packet_model_provider": "",
+  "patch_bucket": "",
+  "patch_required": false,
+  "policy_event_present": true,
+  "policy_event_required": true,
+  "prompt_id": "A6",
+  "query_variant_source_counts": [
+    6
+  ],
+  "query_variants_tried": [
+    "open source media metadata cleanup tools Jellyfin TinyMediaManager FileBot MediaElch Jellyfin metadata"
+  ],
+  "qwen_activated": false,
+  "qwen_required": false,
+  "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": true,
+  "repo_files_read": [
+    "src/components/spiritflix/SpiritFlixApp.tsx",
+    "src/lib/spiritflix/jellyfin-client.ts",
+    "source_proxy/tasks/durable_execution.py"
+  ],
+  "required_lanes": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "policy_gate"
+  ],
+  "research_change_field_repair_status": {
+    "canonicalized_source_refs": 3,
+    "code_owned_grounding": "raw_source_and_model_decision_only",
+    "derived_why_fields": 0,
+    "dropped_non_raw_source_blocks": 0,
+    "enabled": true,
+    "inline_labels_split": 0,
+    "repairs": [
+      "canonicalized_research_source_ref"
+    ]
+  },
+  "research_marker_hits": [
+    "tinymediamanager",
+    "tinymediamanager.org",
+    "what media management software",
+    "reddit.com",
+    "github.com"
+  ],
+  "research_materially_changed_output": true,
+  "reverified": false,
+  "run_id": "run-20260625T021054Z",
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "selected_work_lane": "generic_stabilized_research",
+  "source_count": 6,
+  "task_id": "task_c687055e79e5",
+  "trace_id": "trace_98d188ee283041f4",
+  "user_goal_reached": true,
+  "user_prompt": "research open source tools for local media metadata cleanup and tell me what i should use for my jellyfin/spiritflix mess without touching jellyfin configs or media files",
+  "verification_result": "not_required",
+  "verifier_required": false,
+  "work_product_summary": "Recommendation: Consider using TinyMediaManager for local media metadata cleanup in Jellyfin. Also, consider using Jellysweep for automated cleanup of old, unwatched content within your Jellyfin media server. Research-to-decision changes: Finding: TinyMediaManager is a media management tool designed for media centers like Jellyfin, providing metadata and organization. It's cross-platform and runs on Java. Source: tinyMediaManager | host=tinymedia",
+  "work_product_type": "research_pack"
+}

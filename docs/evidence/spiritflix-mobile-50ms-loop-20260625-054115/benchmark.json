@@ -1,0 +1,926 @@
+{
+  "generatedAt": "2026-06-25T05:41:44.887Z",
+  "config": {
+    "runs": 3,
+    "mode": "warm",
+    "baseUrl": "https://127.0.0.1:3000",
+    "itemId": "phase7-candidate-02",
+    "fixtureOnly": false
+  },
+  "mode": "warm",
+  "itemId": "phase7-candidate-02",
+  "baseUrl": "https://127.0.0.1:3000",
+  "commands": [
+    "git status --short",
+    "node scripts/spiritflix-mobile-benchmark.mjs --runs=3",
+    "npm run typecheck",
+    "vitest run src/components/spiritflix src/lib/spiritflix src/app/api/spiritflix/mobile-optimized"
+  ],
+  "gitStatus": "M docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/81-corrected-safety-scan.txt\n M docs/evidence/source-proxy-runtime-health-status-patch-20260618/raw/safety-scan.txt\n D home/source/spiritos-evidence/plan-02-continuation-patch-4/task-a-verifier-target-task_09558f6aa41b.html\n D home/source/spiritos-evidence/plan-02-continuation-patch-4/task-a-verifier-target-task_213d4e2ed36d.html\n D home/source/spiritos-evidence/plan-02-continuation-patch-4/task-a-verifier-target-task_31c65ec0a877.html\n D home/source/spiritos-evidence/plan-02-continuation-patch-4/task-a-verifier-target-task_3b97a5d8a3cd.html\n D home/source/spiritos-evidence/plan-02-continuation-patch-4/task-a-verifier-target-task_3e99285fac3d.html\n D home/source/spiritos-evidence/plan-02-continuation-patch-4/task-a-verifier-target-task_8c64815cc022.html\n D home/source/spiritos-evidence/plan-02-continuation-patch-4/task-a-verifier-target-task_bb1f95ce8f48.html\n M scripts/spiritflix-mobile-benchmark-report.mjs\n M scripts/spiritflix-mobile-benchmark.mjs\n M src/app/api/spiritflix/jellyfin-image/route.ts\n M src/app/api/spiritflix/videos/[itemId]/model/route.ts\n M src/app/api/spiritflix/videos/[itemId]/tags/route.ts\n M src/components/spiritflix/SpiritFlixApp.tsx\n M src/components/spiritflix/SpiritFlixCard.tsx\n M src/components/spiritflix/SpiritFlixHome.tsx\n M src/components/spiritflix/SpiritFlixImage.tsx\n M src/components/spiritflix/SpiritFlixPlayer.tsx\n M src/components/spiritflix/SpiritFlixRail.tsx\n M src/components/spiritflix/__tests__/SpiritFlixDetailsModal.test.tsx\n M src/components/spiritflix/__tests__/SpiritFlixHome.test.tsx\n M src/components/spiritflix/__tests__/SpiritFlixPlayer.test.tsx\n M src/lib/spiritflix-jellyfin-client.test.ts\n M src/lib/spiritflix-jellyfin-client.ts\n M src/lib/spiritflix-types.ts\n M src/lib/spiritflix/__tests__/manual-models.test.ts\n M src/lib/spiritflix/__tests__/manual-tags.test.ts\n M src/lib/spiritflix/manual-models.ts\n M src/lib/spiritflix/manual-tags.ts\n M src/styles/spiritflix.css\n M vitest.config.mjs\n?? docs/evidence/spiritflix-mobile-50ms-loop-20260625-053137/\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/runs/\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/glm-set-a-stability-hardline-audit-20260625.md\n?? nul\n?? src/components/spiritflix/__tests__/SpiritFlixImage.test.tsx",
+  "metrics": {
+    "apiMobileOptimizedColdMs": 57.009735999999975,
+    "apiMobileOptimizedWarm": {
+      "count": 3,
+      "p50": 5.759837000000061,
+      "p75": 6.438030000000026,
+      "p95": 6.438030000000026,
+      "min": 5.310748999999987,
+      "max": 6.438030000000026,
+      "samples": [
+        6.438030000000026,
+        5.759837000000061,
+        5.310748999999987
+      ]
+    },
+    "pageUsefulContent": {
+      "count": 3,
+      "p50": 189.70787400000017,
+      "p75": 210.6872199999998,
+      "p95": 210.6872199999998,
+      "min": 183.446328,
+      "max": 210.6872199999998,
+      "samples": [
+        183.446328,
+        189.70787400000017,
+        210.6872199999998
+      ]
+    },
+    "realHomeUsefulContent": {
+      "count": 0,
+      "p50": null,
+      "p75": null,
+      "p95": null,
+      "min": null,
+      "max": null,
+      "samples": []
+    },
+    "realHomeRequestCount": {
+      "count": 3,
+      "p50": 14,
+      "p75": 14,
+      "p95": 14,
+      "min": 14,
+      "max": 14,
+      "samples": [
+        14,
+        14,
+        14
+      ]
+    },
+    "realHomeBytes": {
+      "count": 3,
+      "p50": 247647,
+      "p75": 247647,
+      "p95": 247647,
+      "min": 247647,
+      "max": 247647,
+      "samples": [
+        247647,
+        247647,
+        247647
+      ]
+    },
+    "realHomeThumbnailRequests": {
+      "count": 3,
+      "p50": 0,
+      "p75": 0,
+      "p95": 0,
+      "min": 0,
+      "max": 0,
+      "samples": [
+        0,
+        0,
+        0
+      ]
+    },
+    "videoPlaying": {
+      "count": 3,
+      "p50": 4263.969107000001,
+      "p75": 5240.852046,
+      "p95": 5240.852046,
+      "min": 4110.232671,
+      "max": 5240.852046,
+      "samples": [
+        4263.969107000001,
+        4110.232671,
+        5240.852046
+      ]
+    },
+    "warmVideoTap": {
+      "count": 3,
+      "p50": 60.27194799999779,
+      "p75": 61.952556000000186,
+      "p95": 61.952556000000186,
+      "min": 51.53667499999938,
+      "max": 61.952556000000186,
+      "samples": [
+        60.27194799999779,
+        61.952556000000186,
+        51.53667499999938
+      ]
+    }
+  },
+  "apiCold": {
+    "elapsedMs": 57.009735999999975,
+    "status": 200,
+    "available": true,
+    "source": "mobileOptimized",
+    "url": "/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+    "rangeSupported": true,
+    "rangeStatus": 206
+  },
+  "apiWarmRuns": [
+    {
+      "elapsedMs": 6.438030000000026,
+      "status": 200,
+      "available": true,
+      "source": "mobileOptimized",
+      "url": "/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+      "rangeSupported": true,
+      "rangeStatus": 206
+    },
+    {
+      "elapsedMs": 5.759837000000061,
+      "status": 200,
+      "available": true,
+      "source": "mobileOptimized",
+      "url": "/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+      "rangeSupported": true,
+      "rangeStatus": 206
+    },
+    {
+      "elapsedMs": 5.310748999999987,
+      "status": 200,
+      "available": true,
+      "source": "mobileOptimized",
+      "url": "/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+      "rangeSupported": true,
+      "rangeStatus": 206
+    }
+  ],
+  "playwright": {
+    "shell": [
+      {
+        "elapsedMs": 183.446328,
+        "usefulContentMs": 183.446328,
+        "cardCount": 1,
+        "route": "/spiritflix/benchmark/shell",
+        "mode": "shell-fixture",
+        "network": {
+          "requests": 26,
+          "apiRequests": 1,
+          "imageRequests": 1,
+          "thumbnailRequests": 0,
+          "videoRequests": 0,
+          "bytes": 384991,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1782366076164",
+              "method": "GET",
+              "resourceType": "script",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      },
+      {
+        "elapsedMs": 189.70787400000017,
+        "usefulContentMs": 189.70787400000017,
+        "cardCount": 1,
+        "route": "/spiritflix/benchmark/shell",
+        "mode": "shell-fixture",
+        "network": {
+          "requests": 26,
+          "apiRequests": 1,
+          "imageRequests": 1,
+          "thumbnailRequests": 0,
+          "videoRequests": 0,
+          "bytes": 384991,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1782366077731",
+              "method": "GET",
+              "resourceType": "script",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      },
+      {
+        "elapsedMs": 210.6872199999998,
+        "usefulContentMs": 210.6872199999998,
+        "cardCount": 1,
+        "route": "/spiritflix/benchmark/shell",
+        "mode": "shell-fixture",
+        "network": {
+          "requests": 26,
+          "apiRequests": 1,
+          "imageRequests": 1,
+          "thumbnailRequests": 0,
+          "videoRequests": 0,
+          "bytes": 384991,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1782366079359",
+              "method": "GET",
+              "resourceType": "script",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      }
+    ],
+    "player": [
+      {
+        "elapsedMs": 4282.082635000001,
+        "videoPlayingMs": 4263.969107000001,
+        "videoCanplayMs": 4259.100000023842,
+        "videoPlayingMarkMs": 4259.399999976158,
+        "playRequestMs": null,
+        "videoSrc": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+        "playbackSource": "mac_optimized_mp4",
+        "source": "mobileOptimized",
+        "rangeSupported": true,
+        "marks": [
+          {
+            "name": "setup-start",
+            "at": 1065.6999999284744,
+            "detail": {
+              "itemId": "phase7-candidate-02"
+            }
+          },
+          {
+            "name": "setup-start",
+            "at": 1077.8999999761581,
+            "detail": {
+              "itemId": "phase7-candidate-02"
+            }
+          },
+          {
+            "name": "waiting",
+            "at": 1167.5,
+            "detail": {
+              "source": "canonical_mp4"
+            }
+          },
+          {
+            "name": "src-assigned",
+            "at": 2138.6999999284744,
+            "detail": {
+              "source": "mobileOptimized",
+              "url": "/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02"
+            }
+          },
+          {
+            "name": "source-chosen",
+            "at": 2138.6999999284744,
+            "detail": {
+              "source": "mobileOptimized",
+              "cached": false
+            }
+          },
+          {
+            "name": "waiting",
+            "at": 2163.2999999523163,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "loadedmetadata",
+            "at": 4073.2999999523163,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "canplay",
+            "at": 4259.100000023842,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "playing",
+            "at": 4259.399999976158,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          }
+        ],
+        "route": "/spiritflix/benchmark/player?itemId=phase7-candidate-02",
+        "mode": "player-real-api",
+        "network": {
+          "requests": 27,
+          "apiRequests": 13,
+          "imageRequests": 0,
+          "thumbnailRequests": 0,
+          "videoRequests": 1,
+          "bytes": 2460132,
+          "failedRequests": []
+        }
+      },
+      {
+        "elapsedMs": 4126.186382999998,
+        "videoPlayingMs": 4110.232671,
+        "videoCanplayMs": 4094.600000023842,
+        "videoPlayingMarkMs": 4094.899999976158,
+        "playRequestMs": null,
+        "videoSrc": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+        "playbackSource": "mac_optimized_mp4",
+        "source": "mobileOptimized",
+        "rangeSupported": true,
+        "marks": [
+          {
+            "name": "setup-start",
+            "at": 1506.6000000238419,
+            "detail": {
+              "itemId": "phase7-candidate-02"
+            }
+          },
+          {
+            "name": "setup-start",
+            "at": 1522.3999999761581,
+            "detail": {
+              "itemId": "phase7-candidate-02"
+            }
+          },
+          {
+            "name": "waiting",
+            "at": 1591.7000000476837,
+            "detail": {
+              "source": "canonical_mp4"
+            }
+          },
+          {
+            "name": "src-assigned",
+            "at": 2507.399999976158,
+            "detail": {
+              "source": "mobileOptimized",
+              "url": "/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02"
+            }
+          },
+          {
+            "name": "source-chosen",
+            "at": 2507.399999976158,
+            "detail": {
+              "source": "mobileOptimized",
+              "cached": false
+            }
+          },
+          {
+            "name": "waiting",
+            "at": 2535.100000023842,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "loadedmetadata",
+            "at": 4066.7000000476837,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "canplay",
+            "at": 4094.600000023842,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "playing",
+            "at": 4094.899999976158,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          }
+        ],
+        "route": "/spiritflix/benchmark/player?itemId=phase7-candidate-02",
+        "mode": "player-real-api",
+        "network": {
+          "requests": 27,
+          "apiRequests": 13,
+          "imageRequests": 0,
+          "thumbnailRequests": 0,
+          "videoRequests": 1,
+          "bytes": 2460132,
+          "failedRequests": []
+        }
+      },
+      {
+        "elapsedMs": 5268.550653999999,
+        "videoPlayingMs": 5240.852046,
+        "videoCanplayMs": 5239.299999952316,
+        "videoPlayingMarkMs": 5239.700000047684,
+        "playRequestMs": null,
+        "videoSrc": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+        "playbackSource": "mac_optimized_mp4",
+        "source": "mobileOptimized",
+        "rangeSupported": true,
+        "marks": [
+          {
+            "name": "setup-start",
+            "at": 2133.399999976158,
+            "detail": {
+              "itemId": "phase7-candidate-02"
+            }
+          },
+          {
+            "name": "setup-start",
+            "at": 2148.100000023842,
+            "detail": {
+              "itemId": "phase7-candidate-02"
+            }
+          },
+          {
+            "name": "waiting",
+            "at": 2218.2999999523163,
+            "detail": {
+              "source": "canonical_mp4"
+            }
+          },
+          {
+            "name": "src-assigned",
+            "at": 4403.700000047684,
+            "detail": {
+              "source": "mobileOptimized",
+              "url": "/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02"
+            }
+          },
+          {
+            "name": "source-chosen",
+            "at": 4403.700000047684,
+            "detail": {
+              "source": "mobileOptimized",
+              "cached": false
+            }
+          },
+          {
+            "name": "waiting",
+            "at": 4429.200000047684,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "loadedmetadata",
+            "at": 5207.600000023842,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "canplay",
+            "at": 5239.299999952316,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          },
+          {
+            "name": "playing",
+            "at": 5239.700000047684,
+            "detail": {
+              "source": "mac_optimized_mp4"
+            }
+          }
+        ],
+        "route": "/spiritflix/benchmark/player?itemId=phase7-candidate-02",
+        "mode": "player-real-api",
+        "network": {
+          "requests": 27,
+          "apiRequests": 13,
+          "imageRequests": 0,
+          "thumbnailRequests": 0,
+          "videoRequests": 1,
+          "bytes": 2460132,
+          "failedRequests": []
+        }
+      }
+    ],
+    "warmTap": [
+      {
+        "tapToPlayingMs": 60.27194799999779,
+        "playbackSource": "mac_optimized_mp4",
+        "videoSrc": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+        "mode": "player-warm-tap",
+        "network": {
+          "requests": 81,
+          "apiRequests": 39,
+          "imageRequests": 0,
+          "thumbnailRequests": 0,
+          "videoRequests": 3,
+          "bytes": 2734820,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+              "method": "GET",
+              "resourceType": "media",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+              "method": "GET",
+              "resourceType": "media",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/__nextjs_original-stack-frames",
+              "method": "POST",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      },
+      {
+        "tapToPlayingMs": 61.952556000000186,
+        "playbackSource": "mac_optimized_mp4",
+        "videoSrc": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+        "mode": "player-warm-tap",
+        "network": {
+          "requests": 54,
+          "apiRequests": 26,
+          "imageRequests": 0,
+          "thumbnailRequests": 0,
+          "videoRequests": 2,
+          "bytes": 274688,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+              "method": "GET",
+              "resourceType": "media",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+              "method": "GET",
+              "resourceType": "media",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/__nextjs_original-stack-frames",
+              "method": "POST",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      },
+      {
+        "tapToPlayingMs": 51.53667499999938,
+        "playbackSource": "mac_optimized_mp4",
+        "videoSrc": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+        "mode": "player-warm-tap",
+        "network": {
+          "requests": 27,
+          "apiRequests": 13,
+          "imageRequests": 0,
+          "thumbnailRequests": 0,
+          "videoRequests": 1,
+          "bytes": 137344,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/tags",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/tags?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+              "method": "GET",
+              "resourceType": "media",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/videos/phase7-candidate-02/model?filePath=%2Fmedia%2Fyes%2Fbenchmark%2FBenchmark+Clip.mp4",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/__nextjs_original-stack-frames",
+              "method": "POST",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            },
+            {
+              "url": "https://127.0.0.1:3000/api/spiritflix/model-index",
+              "method": "GET",
+              "resourceType": "fetch",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      }
+    ],
+    "realHome": [
+      {
+        "elapsedMs": 1328.4279740000002,
+        "usefulContentMs": null,
+        "cardCount": 0,
+        "videoCardCount": 0,
+        "loginVisible": true,
+        "route": "/spiritflix",
+        "mode": "real-route",
+        "network": {
+          "requests": 14,
+          "apiRequests": 1,
+          "imageRequests": 1,
+          "thumbnailRequests": 0,
+          "videoRequests": 0,
+          "bytes": 247647,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1782366076164",
+              "method": "GET",
+              "resourceType": "script",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      },
+      {
+        "elapsedMs": 1383.1752089999995,
+        "usefulContentMs": null,
+        "cardCount": 0,
+        "videoCardCount": 0,
+        "loginVisible": true,
+        "route": "/spiritflix",
+        "mode": "real-route",
+        "network": {
+          "requests": 14,
+          "apiRequests": 1,
+          "imageRequests": 1,
+          "thumbnailRequests": 0,
+          "videoRequests": 0,
+          "bytes": 247647,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1782366077731",
+              "method": "GET",
+              "resourceType": "script",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      },
+      {
+        "elapsedMs": 1341.5514819999999,
+        "usefulContentMs": null,
+        "cardCount": 0,
+        "videoCardCount": 0,
+        "loginVisible": true,
+        "route": "/spiritflix",
+        "mode": "real-route",
+        "network": {
+          "requests": 14,
+          "apiRequests": 1,
+          "imageRequests": 1,
+          "thumbnailRequests": 0,
+          "videoRequests": 0,
+          "bytes": 247647,
+          "failedRequests": [
+            {
+              "url": "https://127.0.0.1:3000/_next/static/chunks/main-app.js?v=1782366079359",
+              "method": "GET",
+              "resourceType": "script",
+              "failure": "net::ERR_ABORTED"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "sourceSelection": {
+    "api": "mobileOptimized",
+    "playerPlaybackSource": "mac_optimized_mp4",
+    "playerVideoSrc": "https://127.0.0.1:3000/api/spiritflix/mobile-optimized?stream=1&key=phase7-candidate-02",
+    "rangeSupported": true,
+    "mobileOptimized": true
+  },
+  "fixtureNote": "Shell route uses seeded SpiritFlixHome data. Player route uses real /api/spiritflix/mobile-optimized and stream APIs with benchmark Jellyfin client stubs for auth-only calls."
+}

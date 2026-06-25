@@ -1,0 +1,175 @@
+{
+  "auto_fix_attempts": 0,
+  "blocked_reasons": [],
+  "code_owned_packet_shell_status": {},
+  "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 0,
+  "decision_packet_validated": false,
+  "decision_packet_validation_errors": [],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_default",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama"
+      }
+    ],
+    "code_owned_packet_shell_status": {},
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A10.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A10.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A10.task.final.raw.json"
+    ],
+    "degraded_lanes": [],
+    "expected_lane": "generic_local_work_product",
+    "failure_classification": "PASS",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": false,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "PASS",
+    "model_decision_body_status": {},
+    "next_recommended_action": "no action",
+    "productive_reasons": [],
+    "productive_status": "PASS",
+    "prompt_id": "A10",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_default",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama"
+        }
+      ],
+      "unavailable": []
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A10.json",
+    "research_change_field_repair_status": {},
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A10",
+    "selected_lane": "ollama_default",
+    "selected_model_provider_tool": {
+      "model": "gemma3n:e4b",
+      "provider": "ollama",
+      "tool": "stage4r_live_work_product"
+    },
+    "selected_work_lane_basis": "task_shape",
+    "task_class": "handoff",
+    "task_id": "task_eb12d34c74dd",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": false,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A10.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
+  "downstream_consumed": true,
+  "failed_gates": [],
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "PASS",
+  "generic_lane_sampling_contract": {
+    "lane": "generic_local_work_product",
+    "model": "gemma3n:e4b",
+    "provider": "ollama",
+    "selection_basis": "task_shape_not_prompt_id"
+  },
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": false,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "repo_context"
+  ],
+  "lanes_not_required": [
+    "qwen_coder",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_5e80cb02ee1b419b",
+  "limitations_stated": true,
+  "live_search_used": false,
+  "local_fallback_used": false,
+  "mac_evidence_signals": [],
+  "mac_invoked": false,
+  "mac_required": false,
+  "mac_status": "not_required",
+  "mac_system_status_alone_used_as_pass": false,
+  "max_auto_fix_attempts": 3,
+  "model": "gemma3n:e4b",
+  "model_decision_body_status": {},
+  "notes": [],
+  "packet_lanes_available": [],
+  "packet_lanes_unavailable": [],
+  "packet_model": "",
+  "packet_model_lane": "",
+  "packet_model_provider": "",
+  "patch_bucket": "",
+  "patch_required": false,
+  "policy_event_present": false,
+  "policy_event_required": false,
+  "prompt_id": "A10",
+  "query_variant_source_counts": [],
+  "query_variants_tried": [],
+  "qwen_activated": false,
+  "qwen_required": false,
+  "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": true,
+  "repo_files_read": [
+    "source_proxy/tasks/durable_execution.py",
+    "source_proxy/decision/current_research.py",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/stage-plan.md"
+  ],
+  "required_lanes": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "repo_context"
+  ],
+  "research_change_field_repair_status": {},
+  "research_marker_hits": [],
+  "research_materially_changed_output": false,
+  "reverified": false,
+  "run_id": "run-20260625T021054Z",
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "selected_work_lane": "generic_local_work_product",
+  "source_count": 0,
+  "task_id": "task_eb12d34c74dd",
+  "trace_id": "trace_bac270b86d374d75",
+  "user_goal_reached": true,
+  "user_prompt": "review this repo context and make a plan for what an outside ai should work on next without breaking stuff",
+  "verification_result": "not_required",
+  "verifier_required": false,
+  "work_product_summary": "## Handoff **Recommendation:** The outside AI should prioritize extending the current research functionality by enhancing the integration with Scout and SearXNG, as defined in `source_proxy/decision/current_research.py`. This should be done while strictly adhering to existing Source Proxy workflows and task paths, as outlined in `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/stage-plan.md`. **",
+  "work_product_type": "handoff"
+}

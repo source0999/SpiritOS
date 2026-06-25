@@ -1,0 +1,458 @@
+{
+  "auto_fix_attempts": 0,
+  "blocked_reasons": [],
+  "code_owned_packet_shell_status": {
+    "action_errors": [],
+    "action_intent_normalizations": [],
+    "code_owned_fields": [
+      "prompt_id",
+      "user_goal",
+      "evidence_items",
+      "final_recommendation",
+      "safe_mvp",
+      "handoff_packet",
+      "quality_self_check"
+    ],
+    "local_api_truth_from_lane_metadata": true,
+    "model_decision_body_status": {
+      "decision_count": 5,
+      "errors": [],
+      "parse_error": "",
+      "parse_status": "ok",
+      "status": "valid"
+    },
+    "model_owned_fields_used": [
+      "decision_summary",
+      "reasoning_summary",
+      "risk_notes",
+      "ambiguity_notes",
+      "proposed_next_action",
+      "action_intent",
+      "confidence_reason"
+    ],
+    "model_provenance_stripped": [],
+    "raw_source_registry": [
+      {
+        "evidence_id": "research:1",
+        "source_host": "developer.chrome.com",
+        "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
+      },
+      {
+        "evidence_id": "research:2",
+        "source_host": "developer.chrome.com",
+        "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
+      },
+      {
+        "evidence_id": "research:3",
+        "source_host": "stackoverflow.com",
+        "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+      },
+      {
+        "evidence_id": "research:4",
+        "source_host": "cwskit.khanakia.com",
+        "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+      },
+      {
+        "evidence_id": "research:5",
+        "source_host": "developer.mozilla.org",
+        "source_url": "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging"
+      },
+      {
+        "evidence_id": "research:6",
+        "source_host": "optymized.net",
+        "source_url": "https://optymized.net/blog/building-chrome-extensions"
+      }
+    ],
+    "source_urls_from_code": true,
+    "status": "assembled"
+  },
+  "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 1,
+  "decision_packet_validated": true,
+  "decision_packet_validation_errors": [],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_qwen2.5-coder_7b",
+        "model": "qwen2.5-coder:7b",
+        "provider_type": "ollama",
+        "reason": "structured_packet_author_primary_local_coder"
+      },
+      {
+        "lane_name": "ollama_hermes4_latest",
+        "model": "hermes4:latest",
+        "provider_type": "ollama",
+        "reason": "stronger_existing_local_ollama"
+      },
+      {
+        "lane_name": "ollama_gemma3n_e4b",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama",
+        "reason": "current_default_local_model"
+      }
+    ],
+    "code_owned_packet_shell_status": {
+      "action_errors": [],
+      "action_intent_normalizations": [],
+      "code_owned_fields": [
+        "prompt_id",
+        "user_goal",
+        "evidence_items",
+        "final_recommendation",
+        "safe_mvp",
+        "handoff_packet",
+        "quality_self_check"
+      ],
+      "local_api_truth_from_lane_metadata": true,
+      "model_decision_body_status": {
+        "decision_count": 5,
+        "errors": [],
+        "parse_error": "",
+        "parse_status": "ok",
+        "status": "valid"
+      },
+      "model_owned_fields_used": [
+        "decision_summary",
+        "reasoning_summary",
+        "risk_notes",
+        "ambiguity_notes",
+        "proposed_next_action",
+        "action_intent",
+        "confidence_reason"
+      ],
+      "model_provenance_stripped": [],
+      "raw_source_registry": [
+        {
+          "evidence_id": "research:1",
+          "source_host": "developer.chrome.com",
+          "source_url": "https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging"
+        },
+        {
+          "evidence_id": "research:2",
+          "source_host": "developer.chrome.com",
+          "source_url": "https://developer.chrome.com/docs/extensions/reference/api"
+        },
+        {
+          "evidence_id": "research:3",
+          "source_host": "stackoverflow.com",
+          "source_url": "https://stackoverflow.com/questions/76595804/in-a-chrome-extension-can-a-service-worker-receive-native-messaging-with-no-bro"
+        },
+        {
+          "evidence_id": "research:4",
+          "source_host": "cwskit.khanakia.com",
+          "source_url": "https://cwskit.khanakia.com/blog/complete-guide-to-manifest-v3-in-2026"
+        },
+        {
+          "evidence_id": "research:5",
+          "source_host": "developer.mozilla.org",
+          "source_url": "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging"
+        },
+        {
+          "evidence_id": "research:6",
+          "source_host": "optymized.net",
+          "source_url": "https://optymized.net/blog/building-chrome-extensions"
+        }
+      ],
+      "source_urls_from_code": true,
+      "status": "assembled"
+    },
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A2.task.final.raw.json"
+    ],
+    "degraded_lanes": [
+      {
+        "lane_name": "openai",
+        "model": "gpt-4o-mini",
+        "provider_type": "openai",
+        "reason": "OPENAI_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "anthropic",
+        "model": "claude-3-5-sonnet-latest",
+        "provider_type": "anthropic",
+        "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "deepseek",
+        "model": "deepseek-chat",
+        "provider_type": "deepseek",
+        "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "litellm",
+        "model": "",
+        "provider_type": "litellm",
+        "reason": "LITELLM_API_KEY_unset_or_model_missing"
+      }
+    ],
+    "expected_lane": "validated_decision_packet",
+    "failure_classification": "PRODUCTIVE_OUTPUT_GRADE_FAILURE",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": true,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "code_owned_packet_validated",
+    "model_decision_body_status": {
+      "decision_count": 5,
+      "errors": [],
+      "parse_error": "",
+      "parse_status": "ok",
+      "status": "valid"
+    },
+    "next_recommended_action": "inspect failed_gates and make one bounded fix",
+    "productive_reasons": [
+      "a2_native_messaging_permission"
+    ],
+    "productive_status": "NEEDS_FIX",
+    "prompt_id": "A2",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_qwen2.5-coder_7b",
+          "model": "qwen2.5-coder:7b",
+          "provider_type": "ollama",
+          "reason": "structured_packet_author_primary_local_coder"
+        },
+        {
+          "lane_name": "ollama_hermes4_latest",
+          "model": "hermes4:latest",
+          "provider_type": "ollama",
+          "reason": "stronger_existing_local_ollama"
+        },
+        {
+          "lane_name": "ollama_gemma3n_e4b",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama",
+          "reason": "current_default_local_model"
+        }
+      ],
+      "unavailable": [
+        {
+          "lane_name": "openai",
+          "model": "gpt-4o-mini",
+          "provider_type": "openai",
+          "reason": "OPENAI_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "anthropic",
+          "model": "claude-3-5-sonnet-latest",
+          "provider_type": "anthropic",
+          "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "deepseek",
+          "model": "deepseek-chat",
+          "provider_type": "deepseek",
+          "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "litellm",
+          "model": "",
+          "provider_type": "litellm",
+          "reason": "LITELLM_API_KEY_unset_or_model_missing"
+        }
+      ]
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A2.json",
+    "research_change_field_repair_status": {},
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A2",
+    "selected_lane": "ollama_qwen2.5-coder_7b",
+    "selected_model_provider_tool": {
+      "model": "qwen2.5-coder:7b",
+      "provider": "ollama",
+      "tool": "validated_decision_packet_renderer"
+    },
+    "selected_work_lane_basis": "task_shape",
+    "task_class": "plan",
+    "task_id": "task_8895bad50226",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": false,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A2.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
+  "downstream_consumed": true,
+  "failed_gates": [
+    "a2_native_messaging_permission"
+  ],
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "NEEDS_FIX",
+  "generic_lane_sampling_contract": {
+    "lane": "validated_decision_packet",
+    "model": "gemma3n:e4b",
+    "provider": "ollama",
+    "selection_basis": "task_shape_not_prompt_id"
+  },
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": true,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "policy_gate"
+  ],
+  "lanes_not_required": [
+    "qwen_coder",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_14a090268c2e4a2e",
+  "limitations_stated": true,
+  "live_search_used": true,
+  "local_fallback_used": false,
+  "mac_evidence_signals": [],
+  "mac_invoked": false,
+  "mac_required": false,
+  "mac_status": "not_required",
+  "mac_system_status_alone_used_as_pass": false,
+  "max_auto_fix_attempts": 3,
+  "model": "gemma3n:e4b",
+  "model_decision_body_status": {
+    "decision_count": 5,
+    "errors": [],
+    "parse_error": "",
+    "parse_status": "ok",
+    "status": "valid"
+  },
+  "notes": [
+    "a2_native_messaging_permission"
+  ],
+  "packet_lanes_available": [
+    {
+      "lane_name": "ollama_qwen2.5-coder_7b",
+      "model": "qwen2.5-coder:7b",
+      "provider_type": "ollama",
+      "reason": "structured_packet_author_primary_local_coder"
+    },
+    {
+      "lane_name": "ollama_hermes4_latest",
+      "model": "hermes4:latest",
+      "provider_type": "ollama",
+      "reason": "stronger_existing_local_ollama"
+    },
+    {
+      "lane_name": "ollama_gemma3n_e4b",
+      "model": "gemma3n:e4b",
+      "provider_type": "ollama",
+      "reason": "current_default_local_model"
+    }
+  ],
+  "packet_lanes_unavailable": [
+    {
+      "lane_name": "openai",
+      "model": "gpt-4o-mini",
+      "provider_type": "openai",
+      "reason": "OPENAI_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "anthropic",
+      "model": "claude-3-5-sonnet-latest",
+      "provider_type": "anthropic",
+      "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "deepseek",
+      "model": "deepseek-chat",
+      "provider_type": "deepseek",
+      "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "litellm",
+      "model": "",
+      "provider_type": "litellm",
+      "reason": "LITELLM_API_KEY_unset_or_model_missing"
+    }
+  ],
+  "packet_model": "qwen2.5-coder:7b",
+  "packet_model_lane": "ollama_qwen2.5-coder_7b",
+  "packet_model_provider": "ollama",
+  "patch_bucket": "",
+  "patch_required": false,
+  "policy_event_present": true,
+  "policy_event_required": true,
+  "prompt_id": "A2",
+  "query_variant_source_counts": [
+    6
+  ],
+  "query_variants_tried": [
+    "browser extension Manifest V3 native messaging service worker local API payload size 2026",
+    "Chrome extension MV3 native messaging host registration service worker lifecycle local app API",
+    "Manifest V3 extension send selected text current tab local server native messaging payload limits"
+  ],
+  "qwen_activated": false,
+  "qwen_required": false,
+  "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": true,
+  "repo_files_read": [
+    "source_proxy/api/long_running_tasks.py",
+    "source_proxy/decision/task_spec_intake.py",
+    "src/app/v1/tasks/long-running/route.ts",
+    "source_proxy/tasks/durable_execution.py"
+  ],
+  "required_lanes": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "policy_gate"
+  ],
+  "research_change_field_repair_status": {},
+  "research_marker_hits": [
+    "developer.chrome.com",
+    "stackoverflow.com",
+    "cwskit.khanakia.com",
+    "developer.mozilla.org",
+    "optymized.net"
+  ],
+  "research_materially_changed_output": true,
+  "reverified": false,
+  "run_id": "run-20260625T023103Z",
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "selected_work_lane": "validated_decision_packet",
+  "source_count": 6,
+  "task_id": "task_8895bad50226",
+  "trace_id": "trace_95f133b47ba04a2d",
+  "user_goal_reached": false,
+  "user_prompt": "look into how i could build a browser extension that sends whatever page/text/video im on to source proxy and turns it into a task",
+  "verification_result": "not_required",
+  "verifier_required": false,
+  "work_product_summary": "Recommendation Prioritize Manifest V3 architecture, secure native messaging, and define clear local API boundaries for a safe MVP. Required terms: manifest v3, native messaging, native host, service worker, lifecycle, payload, local api, /v1/tasks, safe mvp, privacy, handoff. Research findings that changed the plan - Finding: Native messaging - Chrome for Developers: The maximum size of the message sent to the native messaging host is 64 MiB. The",
+  "work_product_type": "plan"
+}

@@ -1,9 +1,9 @@
 # Set A Rerun Preflight
 
-- current HEAD: `0296415db64e0fb4c51d3e865676afbf8a95b90c`
+- current HEAD: `877f51fdef86e9f16349059323b9b8b9dec87a2f`
 - staged files count: 0
-- dirty source_proxy files: 1
-- dirty Plan 3 dry-run files: 17
+- dirty source_proxy files: 0
+- dirty Plan 3 dry-run files: 1
 - unrelated dirty tree summary: pre-existing SpiritFlix/media/handoff dirt present; ignored and not reverted.
 - raw evidence path writable: yes
 - GLM Set A review findings read back: old Set A was generator/canned evidence with hardcoded SOURCES/PLANS and stamped PASS.
