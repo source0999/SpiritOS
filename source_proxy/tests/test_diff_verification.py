@@ -999,6 +999,61 @@ class DiffVerificationPreviewTests(unittest.TestCase):
             [item["command"] for item in payload["suggested_commands"]],
         )
 
+    def test_plan3_set_c_safe_docs_diff_gets_mixed_workflow_audit(self) -> None:
+        path = "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-c-evidence-20260625/c4-proof.md"
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    f"diff --git a/{path} b/{path}",
+                    "new file mode 100644",
+                    "index 0000000..1111111",
+                    "--- /dev/null",
+                    f"+++ b/{path}",
+                    "@@ -0,0 +1,3 @@",
+                    "+# Plan 3 Set C - C4 Proof",
+                    "+",
+                    "+Backend verifier preview metadata is not implementation readiness.",
+                ]
+            )
+        )
+
+        audit = payload["mixed_workflow_audit"]
+        self.assertEqual(payload["status"], "preview_ready", payload.get("blocked_reasons"))
+        self.assertFalse(audit["research_proves_implementation"])
+        self.assertTrue(audit["requires_focused_verification"])
+        self.assertFalse(audit["browser_proof_required"])
+        self.assertFalse(audit["lane_laundering_allowed"])
+        self.assertFalse(audit["plan4_allowed"])
+        self.assertFalse(audit["daily_driver_readiness_claimed"])
+        self.assertFalse(audit["preview_is_implementation_readiness"])
+        self.assertTrue(any("read-only metadata" in note for note in audit["notes"]))
+
+    def test_plan3_set_c_blocked_secret_diff_keeps_audit_limited(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/.env.local b/.env.local",
+                    "--- a/.env.local",
+                    "+++ b/.env.local",
+                    "@@ -1 +1 @@",
+                    "-OLD=1",
+                    "+NEW=1",
+                ]
+            ),
+            route_type="local_route",
+        )
+
+        audit = payload["mixed_workflow_audit"]
+        self.assertEqual(payload["status"], "blocked")
+        self.assertFalse(payload["limits"]["file_writes_allowed"])
+        self.assertFalse(audit["research_proves_implementation"])
+        self.assertTrue(audit["requires_focused_verification"])
+        self.assertFalse(audit["lane_laundering_allowed"])
+        self.assertFalse(audit["plan4_allowed"])
+        self.assertFalse(audit["daily_driver_readiness_claimed"])
+        self.assertFalse(audit["preview_is_implementation_readiness"])
+        self.assertTrue(any("Blocked preview lanes remain blocked" in note for note in audit["notes"]))
+
     def test_docs_append_fails_when_exact_sentence_missing(self) -> None:
         payload = preview_diff_verification(
             self._docs_append_diff(include_literal=False),

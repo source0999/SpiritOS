@@ -1079,6 +1079,47 @@ def _task_text_for_diff_preview(task_text: str | None) -> str:
     return effective_planning_task_text(raw)
 
 
+def _browser_proof_required_for_files(files: list[dict[str, Any]]) -> bool:
+    browser_surface_prefixes = (
+        "src/app/",
+        "src/components/",
+        "app/",
+        "components/",
+        "pages/",
+    )
+    for file in files:
+        path = str(file.get("path") or "").replace("\\", "/")
+        if path.startswith(browser_surface_prefixes):
+            return True
+    return False
+
+
+def _mixed_workflow_audit(files: list[dict[str, Any]], status: str) -> dict[str, Any]:
+    browser_required = _browser_proof_required_for_files(files)
+    notes = [
+        "Diff preview is read-only metadata, not implementation readiness.",
+        "Research evidence cannot prove implementation or verifier behavior.",
+        "Focused verification remains required for any applied source patch.",
+    ]
+    if browser_required:
+        notes.append("Browser proof is required when the changed paths affect browser/UI/route behavior.")
+    else:
+        notes.append("Backend/docs/test-only diffs do not force browser proof from this preview alone.")
+    if status == "blocked":
+        notes.append("Blocked preview lanes remain blocked and cannot be laundered through another PASS.")
+
+    return {
+        "research_proves_implementation": False,
+        "requires_focused_verification": True,
+        "browser_proof_required": browser_required,
+        "lane_laundering_allowed": False,
+        "plan4_allowed": False,
+        "daily_driver_readiness_claimed": False,
+        "preview_is_implementation_readiness": False,
+        "notes": notes,
+    }
+
+
 def preview_diff_verification(
     unified_diff: str,
     *,
@@ -1310,6 +1351,11 @@ def preview_diff_verification(
         lim = dict(payload["limits"])
         lim["file_writes_allowed"] = False
         payload["limits"] = lim
+
+    payload["mixed_workflow_audit"] = _mixed_workflow_audit(
+        files,
+        str(payload["status"]),
+    )
 
     return payload
 
