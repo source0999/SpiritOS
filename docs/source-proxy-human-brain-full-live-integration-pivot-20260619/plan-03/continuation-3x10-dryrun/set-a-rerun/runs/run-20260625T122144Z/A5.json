@@ -1,0 +1,526 @@
+{
+  "auto_fix_attempts": 0,
+  "blocked_reasons": [],
+  "code_owned_packet_shell_status": {
+    "action_errors": [],
+    "action_intent_normalizations": [],
+    "code_owned_fields": [
+      "prompt_id",
+      "user_goal",
+      "evidence_items",
+      "final_recommendation",
+      "safe_mvp",
+      "handoff_packet",
+      "quality_self_check"
+    ],
+    "local_api_truth_from_lane_metadata": true,
+    "model_decision_body_status": {
+      "decision_count": 3,
+      "errors": [],
+      "parse_error": "non_json_wrapping_text",
+      "parse_status": "wrapped_json_extracted",
+      "status": "valid"
+    },
+    "model_owned_fields_used": [
+      "decision_summary",
+      "reasoning_summary",
+      "risk_notes",
+      "ambiguity_notes",
+      "proposed_next_action",
+      "action_intent",
+      "confidence_reason"
+    ],
+    "model_provenance_stripped": [
+      "llama.cpp"
+    ],
+    "raw_source_registry": [
+      {
+        "evidence_id": "research:1",
+        "source_host": "roksblog.de",
+        "source_url": "https://www.roksblog.de/openclaw-local-llms-running-your-own-ai-agent-in-a-homelab/"
+      },
+      {
+        "evidence_id": "research:2",
+        "source_host": "kunalganglani.com",
+        "source_url": "https://www.kunalganglani.com/blog/ollama-vs-lm-studio"
+      },
+      {
+        "evidence_id": "research:3",
+        "source_host": "lmstudio.ai",
+        "source_url": "https://lmstudio.ai/"
+      },
+      {
+        "evidence_id": "research:4",
+        "source_host": "reddit.com",
+        "source_url": "https://www.reddit.com/r/ollama/comments/1sjef91/has_anyone_actually_gotten_a_reliable_local_ai/"
+      },
+      {
+        "evidence_id": "research:5",
+        "source_host": "forum.level1techs.com",
+        "source_url": "https://forum.level1techs.com/t/self-hosted-llm-custom-where-to-start/239434"
+      },
+      {
+        "evidence_id": "research:6",
+        "source_host": "youtube.com",
+        "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
+      }
+    ],
+    "source_urls_from_code": true,
+    "status": "assembled"
+  },
+  "consumer_subsystem": "stage4r_work_product_grader",
+  "decision_packet_attempts": 8,
+  "decision_packet_validated": true,
+  "decision_packet_validation_errors": [],
+  "diagnostic_debugger": {
+    "anti_cheat_flags": {
+      "fake_go_detected": false,
+      "hardcoded_plans_used": false,
+      "hardcoded_sources_used": false,
+      "jellyfin_or_media_mutation_detected": false
+    },
+    "browser_functional_verifier_result": "not_required",
+    "candidate_lanes": [
+      {
+        "lane_name": "ollama_qwen2.5-coder_7b",
+        "model": "qwen2.5-coder:7b",
+        "provider_type": "ollama",
+        "reason": "structured_packet_author_primary_local_coder"
+      },
+      {
+        "lane_name": "ollama_hermes4_latest",
+        "model": "hermes4:latest",
+        "provider_type": "ollama",
+        "reason": "stronger_existing_local_ollama"
+      },
+      {
+        "lane_name": "ollama_gemma3n_e4b",
+        "model": "gemma3n:e4b",
+        "provider_type": "ollama",
+        "reason": "current_default_local_model"
+      }
+    ],
+    "code_owned_packet_shell_status": {
+      "action_errors": [],
+      "action_intent_normalizations": [],
+      "code_owned_fields": [
+        "prompt_id",
+        "user_goal",
+        "evidence_items",
+        "final_recommendation",
+        "safe_mvp",
+        "handoff_packet",
+        "quality_self_check"
+      ],
+      "local_api_truth_from_lane_metadata": true,
+      "model_decision_body_status": {
+        "decision_count": 3,
+        "errors": [],
+        "parse_error": "non_json_wrapping_text",
+        "parse_status": "wrapped_json_extracted",
+        "status": "valid"
+      },
+      "model_owned_fields_used": [
+        "decision_summary",
+        "reasoning_summary",
+        "risk_notes",
+        "ambiguity_notes",
+        "proposed_next_action",
+        "action_intent",
+        "confidence_reason"
+      ],
+      "model_provenance_stripped": [
+        "llama.cpp"
+      ],
+      "raw_source_registry": [
+        {
+          "evidence_id": "research:1",
+          "source_host": "roksblog.de",
+          "source_url": "https://www.roksblog.de/openclaw-local-llms-running-your-own-ai-agent-in-a-homelab/"
+        },
+        {
+          "evidence_id": "research:2",
+          "source_host": "kunalganglani.com",
+          "source_url": "https://www.kunalganglani.com/blog/ollama-vs-lm-studio"
+        },
+        {
+          "evidence_id": "research:3",
+          "source_host": "lmstudio.ai",
+          "source_url": "https://lmstudio.ai/"
+        },
+        {
+          "evidence_id": "research:4",
+          "source_host": "reddit.com",
+          "source_url": "https://www.reddit.com/r/ollama/comments/1sjef91/has_anyone_actually_gotten_a_reliable_local_ai/"
+        },
+        {
+          "evidence_id": "research:5",
+          "source_host": "forum.level1techs.com",
+          "source_url": "https://forum.level1techs.com/t/self-hosted-llm-custom-where-to-start/239434"
+        },
+        {
+          "evidence_id": "research:6",
+          "source_host": "youtube.com",
+          "source_url": "https://www.youtube.com/watch?v=HfyDHm3wqjo"
+        }
+      ],
+      "source_urls_from_code": true,
+      "status": "assembled"
+    },
+    "created_modified_files": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A5.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A5.md",
+      "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A5.task.final.raw.json"
+    ],
+    "degraded_lanes": [
+      {
+        "lane_name": "openai",
+        "model": "gpt-4o-mini",
+        "provider_type": "openai",
+        "reason": "OPENAI_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "anthropic",
+        "model": "claude-3-5-sonnet-latest",
+        "provider_type": "anthropic",
+        "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "deepseek",
+        "model": "deepseek-chat",
+        "provider_type": "deepseek",
+        "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+      },
+      {
+        "lane_name": "litellm",
+        "model": "",
+        "provider_type": "litellm",
+        "reason": "LITELLM_API_KEY_unset_or_model_missing"
+      }
+    ],
+    "expected_lane": "validated_decision_packet",
+    "failure_classification": "PASS",
+    "fallback_reason": "",
+    "fallback_used": false,
+    "human_action_required": false,
+    "local_api_cli_distinction": "local_ollama_cli_or_http",
+    "model_call_attempted": true,
+    "model_call_result_or_failure_class": "code_owned_packet_validated",
+    "model_decision_body_status": {
+      "decision_count": 3,
+      "errors": [],
+      "parse_error": "non_json_wrapping_text",
+      "parse_status": "wrapped_json_extracted",
+      "status": "valid"
+    },
+    "next_recommended_action": "no action",
+    "productive_reasons": [],
+    "productive_status": "PASS",
+    "prompt_id": "A5",
+    "protected_path_block_result": "not_required",
+    "provider_availability": {
+      "available": [
+        {
+          "lane_name": "ollama_qwen2.5-coder_7b",
+          "model": "qwen2.5-coder:7b",
+          "provider_type": "ollama",
+          "reason": "structured_packet_author_primary_local_coder"
+        },
+        {
+          "lane_name": "ollama_hermes4_latest",
+          "model": "hermes4:latest",
+          "provider_type": "ollama",
+          "reason": "stronger_existing_local_ollama"
+        },
+        {
+          "lane_name": "ollama_gemma3n_e4b",
+          "model": "gemma3n:e4b",
+          "provider_type": "ollama",
+          "reason": "current_default_local_model"
+        }
+      ],
+      "unavailable": [
+        {
+          "lane_name": "openai",
+          "model": "gpt-4o-mini",
+          "provider_type": "openai",
+          "reason": "OPENAI_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "anthropic",
+          "model": "claude-3-5-sonnet-latest",
+          "provider_type": "anthropic",
+          "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "deepseek",
+          "model": "deepseek-chat",
+          "provider_type": "deepseek",
+          "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+        },
+        {
+          "lane_name": "litellm",
+          "model": "",
+          "provider_type": "litellm",
+          "reason": "LITELLM_API_KEY_unset_or_model_missing"
+        }
+      ]
+    },
+    "public_private_redaction_status": "public_artifacts_no_secret_values; raw provider env records use set/unset only",
+    "receipt_path": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/A5.json",
+    "research_change_field_repair_status": {},
+    "research_provider_debug": {
+      "failure_classification": "SOURCES_AVAILABLE",
+      "max_retries": 2,
+      "provider_attempt_count": 1,
+      "provider_attempts": [
+        {
+          "attempt": 1,
+          "providers": {
+            "scout": "skipped",
+            "scout_provider_errors": [],
+            "scout_reason": "scout_research_disabled",
+            "scout_result_count": 0,
+            "searxng": "used",
+            "searxng_latency_ms": 661,
+            "searxng_provider_errors": [],
+            "searxng_provider_url_used": "http://127.0.0.1:8080",
+            "searxng_reason": "live_searxng_provider_query_executed",
+            "searxng_result_count": 6
+          },
+          "query": "local AI workstation setup Ollama LM Studio Windows Mac Linux homelab 2026",
+          "source_count": 6
+        }
+      ],
+      "query_attempt_count": 1,
+      "query_variant_source_counts": [
+        6
+      ],
+      "query_variants": [
+        "local AI workstation setup Ollama LM Studio Windows Mac Linux homelab 2026"
+      ],
+      "retry_count": 0
+    },
+    "research_provider_failure_classification": "SOURCES_AVAILABLE",
+    "research_provider_retry_count": 0,
+    "route_type": "plan3_stage4r_set_a",
+    "run_id": "PLAN3_STAGE4R_SET_A_RERUN_A5",
+    "selected_lane": "ollama_gemma3n_e4b",
+    "selected_model_provider_tool": {
+      "model": "gemma3n:e4b",
+      "provider": "ollama",
+      "tool": "validated_decision_packet_renderer"
+    },
+    "selected_work_lane_basis": "task_shape",
+    "task_class": "plan",
+    "task_id": "task_0da1b72ebb9f",
+    "timeout_empty_parse_policy": {
+      "empty_output": false,
+      "parse_failure": false,
+      "policy_block": false,
+      "timeout": false
+    },
+    "trace_path": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun/A5.task.final.raw.json",
+    "verification_real_flags": {
+      "downstream_consumed": true,
+      "fake_go_detected_computed": true,
+      "final_status_derived_by_grader": true,
+      "same_trace_consumer_evidence": true
+    }
+  },
+  "downstream_consumed": true,
+  "failed_gates": [],
+  "failure_changed_outcome": false,
+  "fake_go_detected": false,
+  "final_status": "PASS",
+  "generic_lane_sampling_contract": {
+    "lane": "validated_decision_packet",
+    "model": "gemma3n:e4b",
+    "provider": "ollama",
+    "selection_basis": "task_shape_not_prompt_id"
+  },
+  "handoff_or_context_prompt_created_when_useful": true,
+  "internet_required": true,
+  "jellyfin_or_media_mutation_detected": false,
+  "lanes_invoked": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "mac_worker"
+  ],
+  "lanes_not_required": [
+    "qwen_coder",
+    "verifier",
+    "repair",
+    "recovery"
+  ],
+  "latest_consumer_event_id": "consumer_51e1d0db1afe4359",
+  "limitations_stated": true,
+  "live_search_used": true,
+  "local_fallback_used": false,
+  "mac_evidence_signals": [
+    "cpu_or_architecture",
+    "disk_or_free_space",
+    "gpu_or_metal",
+    "installed_ai_runtime",
+    "memory_or_ram",
+    "safe_ai_worker_task"
+  ],
+  "mac_invoked": true,
+  "mac_required": true,
+  "mac_status": "INTEGRATED_LIVE",
+  "mac_system_status_alone_used_as_pass": false,
+  "max_auto_fix_attempts": 3,
+  "model": "gemma3n:e4b",
+  "model_decision_body_status": {
+    "decision_count": 3,
+    "errors": [],
+    "parse_error": "non_json_wrapping_text",
+    "parse_status": "wrapped_json_extracted",
+    "status": "valid"
+  },
+  "notes": [],
+  "packet_lanes_available": [
+    {
+      "lane_name": "ollama_qwen2.5-coder_7b",
+      "model": "qwen2.5-coder:7b",
+      "provider_type": "ollama",
+      "reason": "structured_packet_author_primary_local_coder"
+    },
+    {
+      "lane_name": "ollama_hermes4_latest",
+      "model": "hermes4:latest",
+      "provider_type": "ollama",
+      "reason": "stronger_existing_local_ollama"
+    },
+    {
+      "lane_name": "ollama_gemma3n_e4b",
+      "model": "gemma3n:e4b",
+      "provider_type": "ollama",
+      "reason": "current_default_local_model"
+    }
+  ],
+  "packet_lanes_unavailable": [
+    {
+      "lane_name": "openai",
+      "model": "gpt-4o-mini",
+      "provider_type": "openai",
+      "reason": "OPENAI_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "anthropic",
+      "model": "claude-3-5-sonnet-latest",
+      "provider_type": "anthropic",
+      "reason": "ANTHROPIC_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "deepseek",
+      "model": "deepseek-chat",
+      "provider_type": "deepseek",
+      "reason": "DEEPSEEK_API_KEY_unset_or_model_missing"
+    },
+    {
+      "lane_name": "litellm",
+      "model": "",
+      "provider_type": "litellm",
+      "reason": "LITELLM_API_KEY_unset_or_model_missing"
+    }
+  ],
+  "packet_model": "gemma3n:e4b",
+  "packet_model_lane": "ollama_gemma3n_e4b",
+  "packet_model_provider": "ollama",
+  "patch_bucket": "",
+  "patch_required": false,
+  "policy_event_present": false,
+  "policy_event_required": false,
+  "prompt_id": "A5",
+  "query_variant_source_counts": [
+    6
+  ],
+  "query_variants_tried": [
+    "local AI workstation setup Ollama LM Studio Windows Mac Linux homelab 2026"
+  ],
+  "qwen_activated": false,
+  "qwen_required": false,
+  "raw_evidence_dir": "/home/source/spiritos-evidence/plan-03-3x10-dryrun/set-a-rerun",
+  "recommendation_pack_created_when_useful": true,
+  "recovery_event_present": false,
+  "recovery_required": false,
+  "repair_applied": false,
+  "repair_required": false,
+  "repo_context_used": true,
+  "repo_files_read": [
+    "source_proxy/decision/mac_integration.py",
+    "src/app/api/coding/mac-worker/route.ts",
+    "source_proxy/routing/ollama_route.py"
+  ],
+  "required_lanes": [
+    "route_decision",
+    "task_spec",
+    "plan3_durable_task",
+    "live_model",
+    "work_product_consumer",
+    "current_research",
+    "repo_context",
+    "mac_worker"
+  ],
+  "research_change_field_repair_status": {},
+  "research_marker_hits": [
+    "roksblog.de",
+    "kunalganglani.com",
+    "lmstudio.ai"
+  ],
+  "research_materially_changed_output": true,
+  "research_provider_debug": {
+    "failure_classification": "SOURCES_AVAILABLE",
+    "max_retries": 2,
+    "provider_attempt_count": 1,
+    "provider_attempts": [
+      {
+        "attempt": 1,
+        "providers": {
+          "scout": "skipped",
+          "scout_provider_errors": [],
+          "scout_reason": "scout_research_disabled",
+          "scout_result_count": 0,
+          "searxng": "used",
+          "searxng_latency_ms": 661,
+          "searxng_provider_errors": [],
+          "searxng_provider_url_used": "http://127.0.0.1:8080",
+          "searxng_reason": "live_searxng_provider_query_executed",
+          "searxng_result_count": 6
+        },
+        "query": "local AI workstation setup Ollama LM Studio Windows Mac Linux homelab 2026",
+        "source_count": 6
+      }
+    ],
+    "query_attempt_count": 1,
+    "query_variant_source_counts": [
+      6
+    ],
+    "query_variants": [
+      "local AI workstation setup Ollama LM Studio Windows Mac Linux homelab 2026"
+    ],
+    "retry_count": 0
+  },
+  "research_provider_failure_classification": "SOURCES_AVAILABLE",
+  "research_provider_retry_count": 0,
+  "reverified": false,
+  "run_id": "run-20260625T122144Z",
+  "safety_violation_detected": false,
+  "same_trace_consumer_evidence": true,
+  "selected_work_lane": "validated_decision_packet",
+  "source_count": 6,
+  "task_id": "task_0da1b72ebb9f",
+  "trace_id": "trace_9e18f4ba5b9043c5",
+  "user_goal_reached": true,
+  "user_prompt": "make me a plan for a local ai workstation setup using my dell mac and windows without wasting money",
+  "verification_result": "not_required",
+  "verifier_required": false,
+  "work_product_summary": "Recommendation Use the code-owned packet shell for A5; preserve provenance in code and use the model only for bounded decision text. Required terms: dell, mac, windows, no new hardware, avoid buying, privacy, local, cloud, ollama, role. Research findings that changed the plan - Finding: OpenClaw + Local LLMs: Running Your Own AI Agent in a Homelab: Mar 14, 2026 \u00b7 By doing so, Ollama will listen not only on localhost but also on the network interf",
+  "work_product_type": "plan"
+}
