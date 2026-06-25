@@ -126,6 +126,7 @@ scout/data.backup-*/
 scout/.venv/
 scout/data.backup-*/
 tmp/
+tmp-audit/
 fold7-media-grabber/
 data/source-proxy/visual-index/
 docs/evidence/**/workspace/
