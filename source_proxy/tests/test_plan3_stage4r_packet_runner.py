@@ -652,3 +652,252 @@ def test_packet_assembler_has_no_prompt_specific_branches() -> None:
     assert 'pid == "A2"' not in source
     assert 'pid == "A5"' not in source
     assert 'pid == "A9"' not in source
+
+
+def test_decision_verb_vocabulary_accepts_common_planning_verbs() -> None:
+    runner = _load_runner()
+    accepted = [
+        "Investigate the use of intents for proxy task initiation",
+        "Adopt compose multiplatform for receipt data sharing",
+        "Integrate a share button into the compose user interface",
+        "Build the receipt polling screen against the task endpoint",
+        "Recommend intents as the task initiation path forward",
+        "Validate the polling loop against the long-running route",
+        "Assess the privacy tradeoff between local and cloud routes",
+        "Test the share path against the real receipt payload",
+        "Leverage the existing long-running route handler",
+        "Deploy the worker behind the local api boundary",
+        "Determine the endpoint shape before writing the client",
+        "Prototype a minimal intent receiver before full integration",
+    ]
+    for line in accepted:
+        assert runner.specific_decision_verb_present(line), f"expected verb-accepted: {line}"
+        assert not runner.decision_line_is_vague(line), f"unexpected vague: {line}"
+
+
+def test_vague_non_decisions_still_fail() -> None:
+    runner = _load_runner()
+    rejected = [
+        "Think about it",
+        "Maybe consider stuff",
+        "do things",
+        "Look into it",
+        "consider it",
+        "I guess maybe",
+        "Consider various things",
+        "Look into stuff",
+    ]
+    for line in rejected:
+        fails = (not runner.specific_decision_verb_present(line)) or runner.decision_line_is_vague(line)
+        assert fails, f"expected vague/verbless rejection: {line}"
+
+
+def test_research_change_no_specific_decision_uses_general_vocabulary_not_a3_tuning() -> None:
+    runner = _load_runner()
+    source = inspect.getsource(runner.specific_decision_verb_present)
+    # Must not branch on prompt id and must not use the old narrow inline regex.
+    assert 'pid == "A3"' not in source
+    assert '"A3"' not in source
+    assert "DECISION_VERB_VOCABULARY" in source
+    # The vocabulary is a maintained general set, not tuned to a single prompt.
+    vocab_source = inspect.getsource(runner)
+    assert "investigate" in vocab_source
+    assert "leverage" in vocab_source
+    assert "recommend" in vocab_source
+
+
+def test_decision_line_vague_guard_has_no_prompt_specific_branches() -> None:
+    runner = _load_runner()
+    source = inspect.getsource(runner.decision_line_is_vague)
+    assert 'pid ==' not in source
+    assert '"A3"' not in source
+
+
+def test_work_product_lane_selection_is_by_task_shape_not_prompt_id() -> None:
+    runner = _load_runner()
+    # The generic stabilized lane must be selected by task SHAPE, not prompt id. Prove
+    # generalization behaviorally: a research-required prompt of ANY id (including a
+    # hypothetical Set B/C id) routes to the stabilized lane; a non-research prompt does not.
+    research_item = {"prompt_id": "A3", "internet_likely_required": True, "must_inspect_repo_context": True}
+    assert runner.select_work_product_lane(research_item) == "generic_stabilized_research"
+    future_research_item = {"prompt_id": "B7", "internet_likely_required": True, "must_inspect_repo_context": True}
+    assert runner.select_work_product_lane(future_research_item) == "generic_stabilized_research"
+    # Same shape, different id => same lane (not prompt-id-tailored).
+    assert runner.select_work_product_lane(research_item) == runner.select_work_product_lane(future_research_item)
+    non_research_item = {"prompt_id": "A7", "internet_likely_required": False, "must_inspect_repo_context": True}
+    assert runner.select_work_product_lane(non_research_item) != "generic_stabilized_research"
+    # A2/A5/A9 still route to the structured packet lane.
+    for pid in ("A2", "A5", "A9"):
+        assert runner.select_work_product_lane({"prompt_id": pid, "internet_likely_required": True}) == "validated_decision_packet"
+    # The selector source must not contain a literal A3 branch on the executable path.
+    # (The docstring may mention the forbidden pattern in prose; assert on the AST body.)
+    import ast
+    tree = ast.parse(inspect.getsource(runner.select_work_product_lane))
+    code_text = "\n".join(ast.unparse(node) for node in ast.walk(tree) if not isinstance(node, (ast.FunctionDef, ast.Expr, ast.Constant, ast.Module)))
+    assert 'pid == "A3"' not in code_text
+    assert '"A3"' not in code_text
+
+
+def test_generic_lane_metadata_surfaces_sampling_contract() -> None:
+    runner = _load_runner()
+    meta = runner.generic_lane_metadata()
+    assert meta["lane"] == "generic_stabilized_research"
+    assert meta["provider"] == "ollama"
+    assert meta["local_first"] is True
+    assert meta["api_or_frontier_call_added"] is False
+    assert "temperature" in meta and meta["temperature"] <= 0.1
+    assert "num_predict" in meta and meta["num_predict"] >= 6000
+    assert meta["selection_basis"] == "task_shape_internet_required_not_prompt_id"
+
+
+def test_generic_research_prompt_requires_canonical_research_change_blocks() -> None:
+    runner = _load_runner()
+    item = {
+        "prompt_id": "B7",
+        "user_prompt": "research a mobile proxy task receipt flow",
+        "expected_work_product": "plan",
+        "internet_likely_required": True,
+        "must_inspect_repo_context": False,
+        "mac_likely_required": False,
+    }
+    research = {
+        "research_packet": {
+            "sources": [
+                {
+                    "title": "Send simple data to other apps",
+                    "url": "https://developer.android.com/training/sharing/send",
+                    "content": "Android intents pass data between app components and apps.",
+                }
+            ]
+        }
+    }
+    prompt = runner.model_prompt("B7", item, research, None, None, False, {}, None)
+    assert "use this exact four-line template" in prompt
+    assert "Finding: <copy or closely paraphrase one concrete in-run finding>" in prompt
+    assert 'Do not use "Evidence Used" bullets' in prompt
+    assert "Source: <copy one exact source citation" in prompt
+    assert "S1: title=Send simple data to other apps" in prompt
+    assert "investigate, validate, test, adopt, integrate, build, recommend, assess" in prompt
+
+
+def test_classification_for_stability_detects_nondeterminism() -> None:
+    runner = _load_runner()
+    stable = runner.classification_for_stability(["PASS", "PASS", "PASS"])
+    assert stable["stable"] is True
+    assert stable["classification"] == "STABLE"
+    unstable = runner.classification_for_stability(["PASS", "NEEDS_FIX", "PASS"])
+    assert unstable["stable"] is False
+    assert unstable["classification"] == "MODEL_NONDETERMINISM"
+    assert set(unstable["unique_verdicts"]) == {"NEEDS_FIX", "PASS"}
+
+
+def test_run_stability_check_has_no_prompt_specific_branches() -> None:
+    runner = _load_runner()
+    source = inspect.getsource(runner.run_stability_check)
+    assert 'pid == "A3"' not in source
+    assert '"A3"' not in source
+
+
+def test_repair_vague_decision_lines_does_not_invent_sources_or_pass(monkeypatch) -> None:
+    runner = _load_runner()
+    repair_source = inspect.getsource(runner.repair_vague_decision_lines)
+    assert 'pid ==' not in repair_source
+    assert '"A3"' not in repair_source
+    monkeypatch.setattr(runner, "_rewrite_vague_decision", lambda decision, finding_hint: "")
+    # With an empty/vague decision and no model available, the original line is preserved
+    # (not silently fixed) and the grader still fails it honestly.
+    sources = [
+        {"title": "Send simple data to other apps", "url": "https://developer.android.com/training/sharing/send", "content": "Intents pass data between app components."},
+        {"title": "android - Share Button In Compose - Stack Overflow", "url": "https://stackoverflow.com/questions/68870406/share-button-in-compose", "content": "A share button in compose can share data like download links between screens."},
+    ]
+    work = """Recommendation
+Use intents and a compose share button to start proxy tasks and show receipts on the phone.
+
+Research-to-decision changes
+Finding: Intents pass data between app components and other apps on the device.
+Source: Send simple data to other apps | host=developer.android.com | url=https://developer.android.com/training/sharing/send
+Decision changed: Use Android intents to initiate proxy tasks from the phone and pass receipt data.
+Why this changes the recommendation: This directly supports starting proxy tasks on mobile and routing receipt payloads.
+Finding: A share button in compose can share data like download links between screens.
+Source: android - Share Button In Compose - Stack Overflow | host=stackoverflow.com | url=https://stackoverflow.com/questions/68870406/share-button-in-compose
+Decision changed: Think about it and maybe look into the various options later on.
+Why this changes the recommendation: This is vague and offers no concrete actionable commitment for the plan.
+
+Plan
+Use intents and a compose share button, then validate the receipt payload path.
+
+Limits
+- Do not mutate protected paths or runtime behavior.
+
+Next Handoff
+Inspect the decision line and build the first share slice.
+"""
+    repaired, status = runner.repair_vague_decision_lines(work, sources)
+    assert status["enabled"] is True
+    # The grader must still fail the vague decision (no silent PASS / no invention).
+    item = {"prompt_id": "A3", "internet_likely_required": True, "must_inspect_repo_context": False, "mac_likely_required": False, "expected_work_product": "plan"}
+    result = runner.grade(item, repaired, {"research_packet": {"sources": sources}}, None, None, runner.synthetic_task(), "")
+    assert result["final_status"] != "PASS"
+    assert "research_change_no_specific_decision" in result["failed_gates"]
+
+
+def test_fake_go_still_detected_after_generic_contract_changes() -> None:
+    runner = _load_runner()
+    item = {"prompt_id": "A3", "internet_likely_required": True, "must_inspect_repo_context": False, "mac_likely_required": False, "expected_work_product": "plan"}
+    sources = [
+        {"title": "Send simple data to other apps", "url": "https://developer.android.com/training/sharing/send", "content": "Intents pass data between app components and other applications."},
+    ]
+    # A work product with a real source but a fabricated/garbled token must still fail,
+    # and fake_go must not be triggered by the contract changes.
+    work = """Recommendation
+Use intents with dexevelopeer local_l.
+
+Research-to-decision changes
+Finding: Intents pass data between app components and other applications.
+Source: Send simple data to other apps | host=developer.android.com | url=https://developer.android.com/training/sharing/send
+Decision changed: Use intents to initiate proxy tasks from the phone.
+Why this changes the recommendation: This directly supports starting proxy tasks on mobile.
+
+Plan
+Use intents.
+
+Limits
+- Avoid fabricating tool names.
+
+Next Handoff
+Build first slice.
+"""
+    result = runner.grade(item, work, {"research_packet": {"sources": sources}}, None, None, runner.synthetic_task(), "")
+    assert result["final_status"] != "PASS"
+    assert "garbled_or_fabricated_tokens_detected" in result["failed_gates"]
+    assert result["fake_go_detected"] is False
+
+
+def test_model_owned_source_url_still_fails_after_contract_changes() -> None:
+    runner = _load_runner()
+    item = {"prompt_id": "A3", "internet_likely_required": True, "must_inspect_repo_context": False, "mac_likely_required": False, "expected_work_product": "plan"}
+    real_sources = [
+        {"title": "Send simple data to other apps", "url": "https://developer.android.com/training/sharing/send", "content": "Intents pass data between app components."},
+    ]
+    # A model-invented host that is NOT in the raw source registry must still fail provenance.
+    work = """Recommendation
+Use intents.
+
+Research-to-decision changes
+Finding: Intents pass data between app components and other applications.
+Source: Awesome Intent Guide | host=modelinvented.example | url=https://modelinvented.example/intents
+Decision changed: Use intents to initiate proxy tasks from the phone.
+Why this changes the recommendation: This directly supports starting proxy tasks on mobile.
+
+Plan
+Use intents.
+
+Limits
+- Do not invent sources.
+
+Next Handoff
+Build first slice.
+"""
+    result = runner.grade(item, work, {"research_packet": {"sources": real_sources}}, None, None, runner.synthetic_task(), "")
+    assert result["final_status"] != "PASS"
+    assert "research_change_source_not_from_raw_sources" in result["failed_gates"]

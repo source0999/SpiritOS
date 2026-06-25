@@ -1,0 +1,121 @@
+# Interrupted Generic Contract Recovery Audit - 2026-06-25
+
+## Snapshot
+
+- Repo: `/home/source/SpiritOS`
+- Branch: `integration/cleanup-plan3-debug-20260623`
+- Starting HEAD: `3f6e38c01a09f67f3ce41d084fe3962ab10619ff`
+- Fresh recovery snapshot saved:
+  - `/tmp/spiritos-codex-recovery/recovery-current.diff`
+  - `/tmp/spiritos-codex-recovery/recovery-current.diffstat`
+  - `/tmp/spiritos-codex-recovery/recovery-current.status`
+
+## Dirty State At Recovery
+
+Intended implementation edits:
+
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/continuation-3x10-dryrun/set-a-rerun/_stage4r_runner.py`
+- `source_proxy/tests/test_plan3_stage4r_packet_runner.py`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/generic-model-contract-redesign-plan-20260625.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/glm-set-a-stability-hardline-audit-20260625.md`
+
+Accidental evidence churn present at recovery:
+
+- Set A rerun tracked receipts and reports under `docs/.../set-a-rerun/`, including
+  `A3.json`, `A3.md`, `summary.json`, `summary.md`, `4r*.md`, preflight files,
+  `failure-buckets.md`, and verdict/test-result Markdown.
+- These were classified as overwritten live-run evidence churn, not implementation
+  source, and restored by exact path only.
+- `_stage4r_runner.py` was deliberately not restored.
+
+Protected unrelated dirty state preserved:
+
+- Pre-existing SpiritFlix/media source changes under `src/app/api/spiritflix`,
+  `src/components/spiritflix`, and `src/lib/spiritflix`.
+- Pre-existing deleted plan-02 evidence under `home/source/spiritos-evidence`.
+- Untracked temp artifact `nul`.
+
+## Implementation Symbols Present
+
+Runner symbols present after recovery:
+
+- `DECISION_VERB_VOCABULARY`
+- `decision_line_is_vague`
+- `select_work_product_lane`
+- `generic_lane_metadata`
+- `classification_for_stability`
+- `run_stability_check`
+- `write_run_receipt`
+- `repair_vague_decision_lines`
+- `RUN_ID`
+- `generic_stabilized_research`
+
+Test expectations present after recovery:
+
+- expanded concrete planning verb acceptance
+- vague non-decision rejection
+- generic lane selection by task shape, not prompt id
+- deterministic/near-deterministic lane metadata
+- nondeterminism/stability classification
+- no prompt-specific branches in new helpers
+- no silent fake GO or model-owned source acceptance
+- no silent PASS when vague decision repair is unavailable
+
+## Coherence Repair
+
+The interrupted diff was mostly present but one test was environment-sensitive:
+`test_repair_vague_decision_lines_does_not_invent_sources_or_pass` assumed no live
+model was reachable. On the Dell host, Ollama was reachable and the repair helper
+rewrote the vague line into a grounded concrete decision, so the test observed a PASS.
+
+The test was repaired with `monkeypatch` so `_rewrite_vague_decision` returns an empty
+rewrite for that case. This makes the safety assertion deterministic: when the repair
+path cannot rewrite, the vague body remains vague and the grader fails honestly.
+
+## Evidence Churn Quarantine
+
+Exact restored evidence files included the modified Set A Markdown and JSON receipts
+listed by `git diff --name-only -- docs/.../set-a-rerun/`, excluding
+`_stage4r_runner.py`. No directory restore was used. The post-restore Set A diff is
+limited to:
+
+- `_stage4r_runner.py`
+- `source_proxy/tests/test_plan3_stage4r_packet_runner.py`
+
+## Coherence Verdict
+
+The runner and tests are coherent after the repair:
+
+- `python3 -m py_compile .../_stage4r_runner.py` passed.
+- Focused runner tests passed: `36 passed`.
+- No A3 prompt-id branch was added.
+- No API/frontier dependency was added.
+- Existing fake-source/fake-GO protections remain covered by tests.
+
+## Live Stability Evidence
+
+Local Ollama was reachable and reported `gemma3n:e4b`, so the bounded A3-only live
+stability proof was run. The first three append-only per-run receipts showed live
+model-output instability:
+
+- `run-20260625T035628Z`: `PASS`
+- `run-20260625T040050Z`: `NEEDS_FIX`
+  (`research_materially_changed_output`, `garbled_or_fabricated_tokens_detected`,
+  `research_change_source_not_from_raw_sources`)
+- `run-20260625T040556Z`: `NEEDS_FIX`
+  (`research_materially_changed_output`, `research_change_source_not_from_raw_sources`)
+
+The generic prompt contract was then tightened to require exact four-line
+research-to-decision blocks and to reject prose-only `Evidence Used` substitutes.
+The follow-up A3-only proof improved but remained environment-blocked:
+
+- `run-20260625T041716Z`: `PASS`
+- `run-20260625T042249Z`: `BLOCKED_ENV`
+  (`live research provider returned no sources`; failed gates recorded
+  `live_search_sources`, `research_materially_changed_output`,
+  `research_change_source_not_from_raw_sources`)
+- `run-20260625T042819Z`: `PASS`
+
+Because A3 did not produce stable PASS across all three final reruns, full Set A
+stability was not run. The tracked latest receipts generated by live proof were
+restored by exact path after the per-run receipts were preserved under `runs/<run_id>/`.
