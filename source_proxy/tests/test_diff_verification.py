@@ -963,6 +963,16 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         )
         self.assertFalse(payload["would_apply_diff"])
         self.assertFalse(payload["would_execute"])
+        self.assertIn(
+            [
+                "git",
+                "diff",
+                "--check",
+                "--",
+                "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-evidence-20260625/b2-docs-only-patch-20260625.md",
+            ],
+            [item["command"] for item in payload["suggested_commands"]],
+        )
 
     def test_docs_append_fails_when_exact_sentence_missing(self) -> None:
         payload = preview_diff_verification(
