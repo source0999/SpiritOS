@@ -938,6 +938,32 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertTrue(payload["requirement_coverage"]["ok"], payload["requirement_coverage"])
         self.assertIsNone(payload["requirement_coverage"]["required"].get("route"))
 
+    def test_plan3_set_b_docs_diff_remains_preview_only(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-evidence-20260625/b2-docs-only-patch-20260625.md b/docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-evidence-20260625/b2-docs-only-patch-20260625.md",
+                    "new file mode 100644",
+                    "index 0000000..1111111",
+                    "--- /dev/null",
+                    "+++ b/docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-evidence-20260625/b2-docs-only-patch-20260625.md",
+                    "@@ -0,0 +1,3 @@",
+                    "+# Plan 3 Set B - B2 Docs-Only Patch",
+                    "+",
+                    "+B3-B10 remain gated behind later Britton approval.",
+                ]
+            )
+        )
+
+        self.assertEqual(payload["status"], "preview_ready", payload.get("blocked_reasons"))
+        self.assertEqual(payload["risk"], "low")
+        self.assertEqual(
+            payload["changed_files"][0]["path"],
+            "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-03/set-b-evidence-20260625/b2-docs-only-patch-20260625.md",
+        )
+        self.assertFalse(payload["would_apply_diff"])
+        self.assertFalse(payload["would_execute"])
+
     def test_docs_append_fails_when_exact_sentence_missing(self) -> None:
         payload = preview_diff_verification(
             self._docs_append_diff(include_literal=False),
