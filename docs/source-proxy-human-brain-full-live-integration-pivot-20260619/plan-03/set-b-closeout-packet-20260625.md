@@ -23,7 +23,7 @@ Plan 4 status: `NOT_STARTED / NOT_APPROVED`
 | B2-B3 | `db6cf93dfcf18e60403978b69d4d9b636673e184` | Add Plan 3 Set B B2-B3 low-risk batch |
 | B4-B6 | `2f3a5c757acb219d8fd545576897ea94b33e2413` | Add Plan 3 Set B B4-B6 verifier repair batch |
 | B7-B8 | `0d7ebb33b2b7618d48565462c42ee3072cdcf7eb` | Add Plan 3 Set B B7-B8 refusal honesty batch |
-| B9-B10 | final batch commit containing this packet; exact hash reported after commit | Close out Plan 3 Set B |
+| B9-B10 | `f34439b0f6089549960bc7d20d5f27b231547828` | Close out Plan 3 Set B |
 
 ## B1-B10 Status
 
