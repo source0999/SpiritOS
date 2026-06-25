@@ -9,6 +9,17 @@ search:
     - json
   safe_search: 1
 
+engines:
+  # Plan 3 research stability: these engines returned CAPTCHA, rate-limit, or
+  # access-denied metadata during the A3 provider probe while google/startpage
+  # returned usable sources.
+  - name: brave
+    disabled: true
+  - name: duckduckgo
+    disabled: true
+  - name: karmasearch
+    disabled: true
+
 server:
   bind_address: "0.0.0.0"
   port: 8080
