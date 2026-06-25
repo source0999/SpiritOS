@@ -1,10 +1,10 @@
 # Stage 4R Verdict
 
-Verdict: NEEDS_FIX
+Verdict: GO
 
-Set A rerun GO requires A1-A10 all PASS. This run passed 9 of 10, failed 1, and blocked 0.
+Set A rerun GO requires A1-A10 all PASS. This run passed 10 of 10, failed 0, and blocked 0.
 
-Because at least one prompt is not PASS, Stage 4R is not GO and Stage 5 is not approved.
+All Set A rerun prompts are PASS; Stage 4R Set A rerun is GO for human/GLM anti-cheat review.
 
 Safety confirmations:
 - No Set B prompts run.

@@ -1,6 +1,6 @@
 # Stage 4R6 Preflight
 
-- current HEAD: `877f51fdef86e9f16349059323b9b8b9dec87a2f`
+- current HEAD: `98eb111960cf557c7e9c2057e57db0dc49789c6e`
 - staged files count: 0
 - raw evidence writable: yes
 - scope confirmation: Stage 4R6 only; structured JSON repair loop plus A2/A9 search-provider stabilization for A2/A5/A9; no Set B/C, Stage 5, Plan 4, push, media/Jellyfin mutation, route replacement, or new engine.
