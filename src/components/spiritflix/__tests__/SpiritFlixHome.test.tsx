@@ -89,6 +89,7 @@ function createClient(gallery: SpiritFlixGalleryResponse = emptyGallery): Jellyf
       generatedAt: "2026-06-06T12:31:00.000Z",
     }),
     getGallery: vi.fn().mockResolvedValue(gallery),
+    getImageProxyUrl: vi.fn(() => "/api/spiritflix/jellyfin-image?test=1"),
     getImageObjectUrl: vi.fn().mockRejectedValue(new Error("No image in test")),
   } as unknown as JellyfinClient;
 }
@@ -118,13 +119,13 @@ describe("SpiritFlixHome watch history", () => {
     });
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        Response.json({
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(Response.json({
           schema: "spiritflix-manual-tag-index/v1",
           updatedAt: "2026-06-20T00:00:00.000Z",
           tags: [],
           items: [],
-        }),
+        })),
       ),
     );
   });
@@ -388,8 +389,8 @@ describe("SpiritFlixHome watch history", () => {
   it("filters the library by a manual tag from the URL-backed chip row", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        Response.json({
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(Response.json({
           schema: "spiritflix-manual-tag-index/v1",
           updatedAt: "2026-06-20T00:00:00.000Z",
           tags: [
@@ -405,7 +406,7 @@ describe("SpiritFlixHome watch history", () => {
               source: "manual",
             },
           ],
-        }),
+        })),
       ),
     );
 
@@ -760,6 +761,61 @@ describe("SpiritFlixHome watch history", () => {
     });
     expect(container.querySelectorAll(".spiritflix-library-grid .spiritflix-feed-card")).toHaveLength(5);
     expect(screen.getByRole("button", { name: "Next video page" })).toBeDisabled();
+  });
+
+  it("shows server-side library paging and asks for more videos without pretending all items are loaded", async () => {
+    const libraryItems = Array.from({ length: 24 }, (_, index) => ({
+      ...modelItem,
+      Id: `paged-model-${String(index + 1).padStart(2, "0")}`,
+      Name: `Paged Scene ${String(index + 1).padStart(2, "0")}`,
+    }));
+    const onLoadMoreLibrary = vi.fn();
+
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraryItems,
+          continueWatching: [],
+          watchHistory: [],
+          libraryPaging: {
+            loaded: 24,
+            total: 90,
+            pageSize: 24,
+            hasMore: true,
+          },
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+        onLoadMoreLibrary={onLoadMoreLibrary}
+      />,
+    );
+
+    expect(await screen.findByText(/Page 1 of 2 \/ 1-20 of 24 loaded of 90/i)).toBeInTheDocument();
+    const videoStat = Array.from(document.querySelectorAll(".spiritflix-library-stat"))
+      .find((node) => node.textContent?.includes("Videos"));
+    expect(videoStat).toHaveTextContent("90");
+    expect(videoStat).toHaveTextContent("24 loaded");
+
+    fireEvent.click(screen.getByRole("button", { name: "Load more library videos" }));
+
+    expect(onLoadMoreLibrary).toHaveBeenCalledTimes(1);
   });
 
   it("restores the saved library page after a refresh", async () => {

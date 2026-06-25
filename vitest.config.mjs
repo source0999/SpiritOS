@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
-    exclude: ["**/node_modules/**", "**/.git/**", "**/.spirit-backups/**"],
+    exclude: ["**/node_modules/**", "**/.git/**", "**/.spirit-backups/**", "**/docs/handoff/**"],
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["**/*.{test,spec}.{ts,tsx}"],

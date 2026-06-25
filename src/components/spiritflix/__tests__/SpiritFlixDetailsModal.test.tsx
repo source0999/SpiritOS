@@ -20,6 +20,7 @@ const item: JellyfinItem = {
 
 function createClient(): JellyfinClient {
   return {
+    getImageProxyUrl: vi.fn(() => "/api/spiritflix/jellyfin-image?test=1"),
     getImageObjectUrl: vi.fn().mockRejectedValue(new Error("No image in test")),
   } as unknown as JellyfinClient;
 }

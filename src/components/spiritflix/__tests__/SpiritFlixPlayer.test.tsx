@@ -40,6 +40,7 @@ function createClient(): JellyfinClient {
     getCachedMobileOptimizedSource: vi.fn(() => null),
     getSystemDiagnostics: vi.fn().mockResolvedValue({ dellFfmpegActive: false, dellFfmpegProcesses: [], checkedAt: "2026-06-20T00:00:00.000Z" }),
     getStreamUrl: vi.fn(() => "https://media.example/video.mp4"),
+    getImageProxyUrl: vi.fn(() => "/api/spiritflix/jellyfin-image?test=1"),
     getFaceOrganizerMetadata: vi.fn().mockResolvedValue({
       knownPerformers: [],
       videos: {},
@@ -182,7 +183,34 @@ describe("SpiritFlixPlayer mobile controls", () => {
       configurable: true,
       value: undefined,
     });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("/model-index")) {
+          return Response.json({ schema: "spiritflix-manual-model-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", models: [] });
+        }
+        if (href.includes("/model")) {
+          return Response.json({
+            schema: "spiritflix-manual-model/v1",
+            itemId: "video-1",
+            modelName: "",
+            updatedAt: "2026-06-20T00:00:00.000Z",
+            source: "manual",
+          });
+        }
+        if (href.includes("/tags") && !href.endsWith("/tags")) {
+          return Response.json({
+            schema: "spiritflix-manual-tags/v1",
+            itemId: "video-1",
+            manualTags: [],
+            updatedAt: "2026-06-20T00:00:00.000Z",
+            source: "manual",
+          });
+        }
+        return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+      }),
+    );
     global.ResizeObserver = class ResizeObserver {
       observe() {}
       unobserve() {}
@@ -274,6 +302,55 @@ describe("SpiritFlixPlayer mobile controls", () => {
       url: "/api/spiritflix/mobile-optimized?stream=1&key=video-1",
     });
     await waitFor(() => expect(video?.getAttribute("src")).toBe("/api/spiritflix/mobile-optimized?stream=1&key=video-1"));
+  });
+
+  it("does not swap sources when direct MP4 is already playing as the optimized receipt arrives", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+    let resolveMobile: (value: { available: boolean; url?: string; mode?: string }) => void = () => undefined;
+    const mobileResolved = vi.fn();
+    const mobilePromise = new Promise<{ available: boolean; url?: string; mode?: string }>((resolve) => {
+      resolveMobile = (value) => {
+        mobileResolved();
+        resolve(value);
+      };
+    });
+    const client = {
+      ...createClient(),
+      getStreamUrl: vi.fn(() => "/api/spiritflix/stream?itemId=video-1"),
+      getCachedMobileOptimizedSource: vi.fn(() => null),
+      getMobileOptimizedSource: vi.fn(() => mobilePromise),
+    } as unknown as JellyfinClient;
+
+    renderPlayer({ client });
+
+    const video = document.querySelector("video") as HTMLVideoElement | null;
+    await waitFor(() => expect(video?.getAttribute("src")).toBe("/api/spiritflix/stream?itemId=video-1"));
+    if (!video) throw new Error("Expected player video element");
+    Object.defineProperty(video, "paused", { configurable: true, value: false });
+    video.currentTime = 0.5;
+
+    resolveMobile({
+      available: true,
+      mode: "mobile optimized",
+      url: "/api/spiritflix/mobile-optimized?stream=1&key=video-1",
+    });
+
+    await waitFor(() => expect(mobileResolved).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+    expect(video.getAttribute("src")).toBe("/api/spiritflix/stream?itemId=video-1");
   });
 
   it("prefers a Mac-created mobile optimized MP4 receipt when available", async () => {

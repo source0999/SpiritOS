@@ -10,11 +10,12 @@ interface RouteContext {
   params: Promise<{ itemId: string }>;
 }
 
-export async function GET(_request: NextRequest, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
   const { itemId } = await context.params;
 
   try {
-    const record = await getSpiritFlixManualModelForItem(decodeURIComponent(itemId));
+    const lookupFilePath = request.nextUrl.searchParams.get("filePath") ?? undefined;
+    const record = await getSpiritFlixManualModelForItem(decodeURIComponent(itemId), { lookupFilePath });
     return NextResponse.json(record, {
       headers: { "Cache-Control": "no-store" },
     });

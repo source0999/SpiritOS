@@ -60,6 +60,30 @@ describe("SpiritFlix manual models", () => {
     );
   });
 
+  it("recovers a saved model assignment by file path when Jellyfin item id changes", async () => {
+    await setSpiritFlixManualModelForItem(
+      {
+        itemId: "old-video-id",
+        filePath: "/mnt/spirit-8tb/media/yes/sava/video.mkv",
+        modelName: "Sava Schultz",
+      },
+      { rootDir },
+    );
+
+    await expect(
+      getSpiritFlixManualModelForItem("new-video-id", {
+        rootDir,
+        lookupFilePath: "/mnt/spirit-8tb/media/yes/sava/video.mkv",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        itemId: "new-video-id",
+        filePath: "/mnt/spirit-8tb/media/yes/sava/video.mkv",
+        modelName: "Sava Schultz",
+      }),
+    );
+  });
+
   it("merges model index aliases and profile handles into the canonical model", async () => {
     const modelIndexPath = path.join(rootDir, "model_index.json");
     await fs.writeFile(

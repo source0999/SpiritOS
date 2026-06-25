@@ -14,6 +14,7 @@ interface SpiritFlixCardProps {
   faceMatch?: FaceOrganizerVideoMatch;
   modelName?: string;
   playOnPrimaryTap?: boolean;
+  imagePriority?: boolean;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, startPositionTicks?: number) => void;
 }
@@ -26,6 +27,7 @@ export function SpiritFlixCard({
   faceMatch,
   modelName,
   playOnPrimaryTap = false,
+  imagePriority = false,
   onOpenDetails,
   onPlay,
 }: SpiritFlixCardProps) {
@@ -54,6 +56,7 @@ export function SpiritFlixCard({
           type={imageType}
           width={variant === "landscape" ? 520 : 420}
           alt={item.Name}
+          priority={imagePriority}
         />
         <span className="spiritflix-card__veil" />
         {progress > 0 ? (

@@ -85,7 +85,47 @@ async function collectPerfMarks(page) {
   });
 }
 
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function attachNetworkMetrics(page) {
+  const metrics = {
+    requests: 0,
+    apiRequests: 0,
+    imageRequests: 0,
+    thumbnailRequests: 0,
+    videoRequests: 0,
+    bytes: 0,
+    failedRequests: [],
+  };
+  page.on("request", (request) => {
+    metrics.requests += 1;
+    const url = request.url();
+    if (url.includes("/api/")) metrics.apiRequests += 1;
+    if (request.resourceType() === "image") metrics.imageRequests += 1;
+    if (request.resourceType() === "media" || url.includes("/api/spiritflix/stream") || url.includes("/api/spiritflix/mobile-optimized?stream=1")) {
+      metrics.videoRequests += 1;
+    }
+    if (url.includes("/Images/") || url.includes("/jellyfin-image")) metrics.thumbnailRequests += 1;
+  });
+  page.on("response", (response) => {
+    const length = Number(response.headers()["content-length"] ?? 0);
+    if (Number.isFinite(length) && length > 0) metrics.bytes += length;
+  });
+  page.on("requestfailed", (request) => {
+    metrics.failedRequests.push({
+      url: request.url(),
+      method: request.method(),
+      resourceType: request.resourceType(),
+      failure: request.failure()?.errorText ?? "unknown",
+    });
+  });
+  return metrics;
+}
+
 async function measureShellPage(page, baseUrl) {
+  const network = attachNetworkMetrics(page);
   const started = performance.now();
   await page.goto(`${baseUrl}/spiritflix/benchmark/shell`, { waitUntil: "commit" });
   const useful = page.locator('[data-spiritflix-useful-content="ready"]').first();
@@ -98,10 +138,34 @@ async function measureShellPage(page, baseUrl) {
     cardCount,
     route: "/spiritflix/benchmark/shell",
     mode: "shell-fixture",
+    network,
+  };
+}
+
+async function measureRealHomePage(page, baseUrl) {
+  const network = attachNetworkMetrics(page);
+  const started = performance.now();
+  await page.goto(`${baseUrl}/spiritflix`, { waitUntil: "domcontentloaded" });
+  await page.locator("main").first().waitFor({ state: "visible", timeout: 15_000 });
+  await page.waitForTimeout(1_200);
+  const elapsedMs = performance.now() - started;
+  const cardCount = await page.locator(".spiritflix-card, .spiritflix-feed-card, .spiritflix-library-row").count();
+  const videoCardCount = await page.locator(".spiritflix-card button[aria-label*='Play'], .spiritflix-feed-card__play, .spiritflix-library-row__play").count();
+  const loginVisible = await page.locator("form, input[type='password']").count();
+  return {
+    elapsedMs,
+    usefulContentMs: cardCount > 0 ? elapsedMs : null,
+    cardCount,
+    videoCardCount,
+    loginVisible: loginVisible > 0,
+    route: "/spiritflix",
+    mode: "real-route",
+    network,
   };
 }
 
 async function measureWarmVideoTap(page, baseUrl, itemId) {
+  const network = attachNetworkMetrics(page);
   await page.addInitScript(() => {
     window.localStorage.setItem("spiritflix_player_muted", "true");
     window.localStorage.setItem("spiritflix_player_volume", "0");
@@ -142,10 +206,12 @@ async function measureWarmVideoTap(page, baseUrl, itemId) {
     playbackSource: perf.playbackSource,
     videoSrc: perf.videoSrc,
     mode: "player-warm-tap",
+    network,
   };
 }
 
 async function measurePlayerStart(page, baseUrl, itemId, { autoPlay = true } = {}) {
+  const network = attachNetworkMetrics(page);
   await page.addInitScript(() => {
     window.localStorage.setItem("spiritflix_player_muted", "true");
     window.localStorage.setItem("spiritflix_player_volume", "0");
@@ -198,13 +264,22 @@ async function measurePlayerStart(page, baseUrl, itemId, { autoPlay = true } = {
     marks: perf.marks,
     route: `/spiritflix/benchmark/player?itemId=${itemId}`,
     mode: "player-real-api",
+    network,
   };
 }
 
 async function runPlaywrightSuite(config) {
   const device = devices["Pixel 5"];
   const browser = await chromium.launch({ headless: true });
-  const results = { shell: [], player: [], warmTap: [] };
+  const results = { shell: [], player: [], warmTap: [], realHome: [] };
+
+  async function capture(bucket, mode, task) {
+    try {
+      bucket.push(await task());
+    } catch (error) {
+      bucket.push({ mode, error: errorMessage(error) });
+    }
+  }
 
   try {
     const warmupContext = await browser.newContext({
@@ -229,7 +304,8 @@ async function runPlaywrightSuite(config) {
       if (config.mode === "cold") {
         await context.clearCookies();
       }
-      results.shell.push(await measureShellPage(page, config.baseUrl));
+      await capture(results.shell, "shell-fixture", () => measureShellPage(page, config.baseUrl));
+      await capture(results.realHome, "real-route", () => measureRealHomePage(page, config.baseUrl));
       await context.close();
     }
 
@@ -243,7 +319,7 @@ async function runPlaywrightSuite(config) {
       if (config.mode === "cold") {
         await context.clearCookies();
       }
-      results.player.push(await measurePlayerStart(page, config.baseUrl, config.itemId, { autoPlay: true }));
+      await capture(results.player, "player-real-api", () => measurePlayerStart(page, config.baseUrl, config.itemId, { autoPlay: true }));
       await context.close();
     }
 
@@ -253,7 +329,7 @@ async function runPlaywrightSuite(config) {
     });
     const warmTapPage = await warmTapContext.newPage();
     for (let index = 0; index < config.runs; index += 1) {
-      results.warmTap.push(await measureWarmVideoTap(warmTapPage, config.baseUrl, config.itemId));
+      await capture(results.warmTap, "player-warm-tap", () => measureWarmVideoTap(warmTapPage, config.baseUrl, config.itemId));
     }
     await warmTapContext.close();
   } finally {
@@ -283,6 +359,10 @@ async function main() {
 
   const playwright = await runPlaywrightSuite(config);
   const shellSummary = summarizeRuns(playwright.shell.map((entry) => entry.usefulContentMs));
+  const realHomeSummary = summarizeRuns(playwright.realHome.map((entry) => entry.usefulContentMs));
+  const realHomeRequests = summarizeRuns(playwright.realHome.map((entry) => entry.network?.requests));
+  const realHomeBytes = summarizeRuns(playwright.realHome.map((entry) => entry.network?.bytes));
+  const realHomeThumbnails = summarizeRuns(playwright.realHome.map((entry) => entry.network?.thumbnailRequests));
   const playerSummary = summarizeRuns(playwright.player.map((entry) => entry.videoPlayingMs));
   const warmTapSummary = summarizeRuns(playwright.warmTap.map((entry) => entry.tapToPlayingMs));
   const apiSummary = summarizeRuns(apiWarmRuns.map((entry) => entry.elapsedMs));
@@ -299,6 +379,10 @@ async function main() {
       apiMobileOptimizedColdMs: apiCold.elapsedMs,
       apiMobileOptimizedWarm: apiSummary,
       pageUsefulContent: shellSummary,
+      realHomeUsefulContent: realHomeSummary,
+      realHomeRequestCount: realHomeRequests,
+      realHomeBytes,
+      realHomeThumbnailRequests: realHomeThumbnails,
       videoPlaying: playerSummary,
       warmVideoTap: warmTapSummary,
     },

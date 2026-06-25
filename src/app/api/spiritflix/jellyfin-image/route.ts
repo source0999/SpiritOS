@@ -18,12 +18,12 @@ function isAllowedServer(serverUrl: string): boolean {
   }
 }
 
-export async function POST(request: NextRequest) {
-  const payload = (await request.json()) as {
+async function proxyImage(payload: {
     serverUrl?: string;
     path?: string;
     authorization?: string;
-  };
+    token?: string;
+  }) {
   const serverUrl = normalizeJellyfinServerUrl(payload.serverUrl ?? "");
   const path = payload.path ?? "";
 
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
   const response = await fetch(`${serverUrl}${path}`, {
     headers: {
       ...(payload.authorization ? { "X-Emby-Authorization": payload.authorization } : {}),
+      ...(payload.token ? { "X-Emby-Token": payload.token } : {}),
     },
   });
 
@@ -45,7 +46,24 @@ export async function POST(request: NextRequest) {
     status: response.status,
     headers: {
       "Content-Type": response.headers.get("Content-Type") ?? "image/jpeg",
-      "Cache-Control": "private, max-age=300",
+      "Cache-Control": "private, max-age=900, stale-while-revalidate=3600",
     },
   });
+}
+
+export async function GET(request: NextRequest) {
+  return proxyImage({
+    serverUrl: request.nextUrl.searchParams.get("serverUrl") ?? undefined,
+    path: request.nextUrl.searchParams.get("path") ?? undefined,
+    token: request.nextUrl.searchParams.get("token") ?? undefined,
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const payload = (await request.json()) as {
+    serverUrl?: string;
+    path?: string;
+    authorization?: string;
+  };
+  return proxyImage(payload);
 }

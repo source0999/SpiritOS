@@ -233,6 +233,13 @@ export interface JellyfinItemsResponse<T> {
   TotalRecordCount?: number;
 }
 
+export interface SpiritFlixPagingState {
+  loaded: number;
+  total: number | null;
+  pageSize: number;
+  hasMore: boolean;
+}
+
 export interface SpiritFlixHomeData {
   libraries: JellyfinLibrary[];
   playlists: JellyfinItem[];
@@ -243,4 +250,9 @@ export interface SpiritFlixHomeData {
   watchHistory: JellyfinItem[];
   latestAdded: JellyfinItem[];
   favorites: JellyfinItem[];
+  libraryPaging?: SpiritFlixPagingState;
+  continueWatchingPaging?: SpiritFlixPagingState;
+  watchHistoryPaging?: SpiritFlixPagingState;
+  latestAddedPaging?: SpiritFlixPagingState;
+  favoritesPaging?: SpiritFlixPagingState;
 }

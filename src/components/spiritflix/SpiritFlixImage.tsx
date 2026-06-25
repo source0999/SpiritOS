@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import type { JellyfinItem } from "@/lib/spiritflix-types";
@@ -15,23 +15,8 @@ interface SpiritFlixImageProps {
   className?: string;
   fallback?: ReactNode;
   onLoad?: () => void;
-}
-
-const MAX_IMAGE_REQUESTS = 6;
-let activeImageRequests = 0;
-const imageQueue: Array<() => void> = [];
-
-async function withImageRequestLimit<T>(task: () => Promise<T>): Promise<T> {
-  if (activeImageRequests >= MAX_IMAGE_REQUESTS) {
-    await new Promise<void>((resolve) => imageQueue.push(resolve));
-  }
-  activeImageRequests += 1;
-  try {
-    return await task();
-  } finally {
-    activeImageRequests = Math.max(0, activeImageRequests - 1);
-    imageQueue.shift()?.();
-  }
+  priority?: boolean;
+  rootMargin?: string;
 }
 
 function imageFallbackOrder(type: "Primary" | "Backdrop" | "Thumb"): Array<"Primary" | "Backdrop" | "Thumb"> {
@@ -49,63 +34,105 @@ export function SpiritFlixImage({
   className,
   fallback,
   onLoad,
+  priority = false,
+  rootMargin = "640px 320px",
 }: SpiritFlixImageProps) {
+  const frameRef = useRef<HTMLSpanElement | null>(null);
+  const [shouldLoad, setShouldLoad] = useState(priority);
   const [src, setSrc] = useState("");
   const [failed, setFailed] = useState(false);
+  const [imageTypeIndex, setImageTypeIndex] = useState(0);
+  const availableTypes = useMemo(
+    () =>
+      imageFallbackOrder(type).filter((imageType) => {
+        if (imageType === "Backdrop") return Boolean(item.BackdropImageTags?.length);
+        return Boolean(item.ImageTags?.[imageType]);
+      }),
+    [item.BackdropImageTags, item.ImageTags, type],
+  );
 
   useEffect(() => {
-    let alive = true;
-    let objectUrl = "";
-
-    async function loadImage() {
-      setFailed(false);
-      setSrc("");
-
-      for (const imageType of imageFallbackOrder(type)) {
-        try {
-          const nextSrc = await withImageRequestLimit(() => client.getImageObjectUrl(item, imageType, width));
-          if (alive) {
-            objectUrl = nextSrc;
-            setSrc(nextSrc);
-            return;
-          }
-          URL.revokeObjectURL(nextSrc);
-          return;
-        } catch {
-          // Try the next Jellyfin image type before falling back to the letter tile.
-        }
-      }
-
-      if (alive) setFailed(true);
+    if (priority || shouldLoad || typeof IntersectionObserver === "undefined") {
+      setShouldLoad(true);
+      return undefined;
     }
 
-    void loadImage();
+    const node = frameRef.current;
+    if (!node) return undefined;
 
-    return () => {
-      alive = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [client, item, type, width]);
-
-  if (failed || !src) {
-    if (fallback) return fallback;
-    return (
-      <span className={`spiritflix-image-fallback ${className ?? ""}`} aria-label={alt || item.Name}>
-        <span>{item.Name.slice(0, 1).toUpperCase()}</span>
-      </span>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin },
     );
-  }
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [priority, rootMargin, shouldLoad]);
+
+  useEffect(() => {
+    setSrc("");
+    setFailed(false);
+    setImageTypeIndex(0);
+  }, [item.Id, type, width]);
+
+  useEffect(() => {
+    if (imageTypeIndex < availableTypes.length) return;
+    setImageTypeIndex(0);
+  }, [availableTypes.length, imageTypeIndex]);
+
+  useEffect(() => {
+    if (!shouldLoad) return;
+
+    const imageType = availableTypes[imageTypeIndex];
+    if (!imageType) {
+      setSrc("");
+      setFailed(true);
+      return;
+    }
+
+    setFailed(false);
+    setSrc(client.getImageProxyUrl(item, imageType, width));
+  }, [availableTypes, client, imageTypeIndex, item, shouldLoad, width]);
+
+  const fallbackNode = fallback ?? (
+    <span className="spiritflix-image-fallback" aria-label={alt || item.Name}>
+      <span>{item.Name.slice(0, 1).toUpperCase()}</span>
+    </span>
+  );
 
   return (
-    <Image
-      src={src}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      width={width}
-      height={Math.round(width * 1.5)}
-      unoptimized
-      onLoad={onLoad}
-    />
+    <span
+      ref={frameRef}
+      className={`spiritflix-image-frame ${className ?? ""}`.trim()}
+      data-spiritflix-image-state={failed ? "fallback" : src ? "loaded" : "pending"}
+    >
+      {src && !failed ? (
+        <Image
+          src={src}
+          alt={alt}
+          className="spiritflix-image-frame__image"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          width={width}
+          height={Math.round(width * 1.5)}
+          unoptimized
+          onError={() => {
+            if (imageTypeIndex < availableTypes.length - 1) {
+              setImageTypeIndex((current) => Math.min(current + 1, availableTypes.length - 1));
+            } else {
+              setFailed(true);
+            }
+          }}
+          onLoad={onLoad}
+        />
+      ) : (
+        fallbackNode
+      )}
+    </span>
   );
 }

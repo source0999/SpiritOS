@@ -139,6 +139,13 @@ const SHOW_PLAYER_DIAGNOSTICS = process.env.NODE_ENV !== "production";
 const MANUAL_TAG_CHANGED_EVENT = "spiritflix:manual-tags-changed";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
 
+function getManualMetadataUrl(itemId: string, kind: "model" | "tags", filePath?: string): string {
+  const query = new URLSearchParams();
+  if (filePath) query.set("filePath", filePath);
+  const queryText = query.toString();
+  return `/api/spiritflix/videos/${encodeURIComponent(itemId)}/${kind}${queryText ? `?${queryText}` : ""}`;
+}
+
 function markSpiritFlixPerf(name: string, detail?: Record<string, unknown>): void {
   if (typeof performance === "undefined") return;
   performance.mark(`spiritflix:${name}`);
@@ -872,6 +879,13 @@ export function SpiritFlixPlayer({
   const isMiniPlayerActive = isNativeMiniPlayer || isAppMiniPlayer;
   const miniPlayerLabel = isMiniPlayerActive ? "Exit mini player" : "Mini player";
   const sourcePath = getItemSourcePath(item);
+  const manualMetadataUrl = useMemo(
+    () => ({
+      model: getManualMetadataUrl(item.Id, "model", sourcePath),
+      tags: getManualMetadataUrl(item.Id, "tags", sourcePath),
+    }),
+    [item.Id, sourcePath],
+  );
   const deleteSourcePath = normalizeSpiritFlixMediaPath(sourcePath);
   const canDeleteFromYes = isPlayableItem(item) && isYesFolderVideoPath(sourcePath);
   const currentFaceMatch = faceMetadata?.videos[item.Id];
@@ -916,7 +930,7 @@ export function SpiritFlixPlayer({
   ), [draftManualTags]);
   const actionManualTags = useMemo(() => {
     const tagSet = new Set<string>();
-    manualTagIndex?.tags.forEach((tag) => tagSet.add(tag.tag));
+    manualTagIndex?.tags?.forEach((tag) => tagSet.add(tag.tag));
     draftManualTags.filter((tag) => getSpiritFlixManualTagScope(tag) === "video").forEach((tag) => tagSet.add(tag));
     return sortTagOptions(Array.from(tagSet));
   }, [draftManualTags, manualTagIndex, sortTagOptions]);
@@ -934,7 +948,7 @@ export function SpiritFlixPlayer({
       const key = getModelOptionKey(modelName);
       if (!options.has(key)) options.set(key, modelName);
     };
-    manualModelIndex?.models.forEach((model) => addOption(model.modelName));
+    manualModelIndex?.models?.forEach((model) => addOption(model.modelName));
     addOption(faceModelSuggestion?.primaryPerformer?.name ?? "");
     originalQueueItems.forEach((queueItem) => addOption(getInferredModelName(queueItem)));
     addOption(getInferredModelName(item));
@@ -1448,7 +1462,7 @@ export function SpiritFlixPlayer({
     try {
       const [indexResponse, itemResponse] = await Promise.all([
         fetch("/api/spiritflix/tags", { cache: "no-store" }),
-        fetch(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/tags`, { cache: "no-store" }),
+        fetch(manualMetadataUrl.tags, { cache: "no-store" }),
       ]);
       if (!indexResponse.ok || !itemResponse.ok) throw new Error("Manual tags could not be loaded.");
       const index = (await indexResponse.json()) as SpiritFlixManualTagIndex;
@@ -1571,7 +1585,7 @@ export function SpiritFlixPlayer({
     try {
       const [indexResponse, itemResponse] = await Promise.all([
         fetch("/api/spiritflix/model-index", { cache: "no-store" }),
-        fetch(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/model`, { cache: "no-store" }),
+        fetch(manualMetadataUrl.model, { cache: "no-store" }),
       ]);
       if (!itemResponse.ok) throw new Error("Manual model could not be loaded.");
       const index = indexResponse.ok
@@ -1588,7 +1602,7 @@ export function SpiritFlixPlayer({
     } finally {
       setManualModelLoading(false);
     }
-  }, [item]);
+  }, [item, manualMetadataUrl.model]);
 
   const loadPlayerFaceMetadata = useCallback(async () => {
     const byId = new Map<string, JellyfinItem>();
@@ -1640,6 +1654,46 @@ export function SpiritFlixPlayer({
     void loadManualModel();
     void loadPlayerFaceMetadata();
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const hydrateManualMetadata = async () => {
+      try {
+        const [tagIndexResponse, tagItemResponse, modelIndexResponse, modelItemResponse] = await Promise.all([
+          fetch("/api/spiritflix/tags", { cache: "no-store" }),
+          fetch(manualMetadataUrl.tags, { cache: "no-store" }),
+          fetch("/api/spiritflix/model-index", { cache: "no-store" }),
+          fetch(manualMetadataUrl.model, { cache: "no-store" }),
+        ]);
+        if (cancelled) return;
+        if (tagIndexResponse.ok) {
+          setManualTagIndex((await tagIndexResponse.json()) as SpiritFlixManualTagIndex);
+        }
+        if (tagItemResponse.ok) {
+          const record = (await tagItemResponse.json()) as SpiritFlixManualTagRecord;
+          const safeRecord = { ...record, manualTags: Array.isArray(record.manualTags) ? record.manualTags : [] };
+          setManualTagRecord(safeRecord);
+          if (!manualTagDraftDirtyRef.current) setDraftManualTags(safeRecord.manualTags);
+        }
+        if (modelIndexResponse.ok) {
+          setManualModelIndex((await modelIndexResponse.json()) as SpiritFlixManualModelIndex);
+        }
+        if (modelItemResponse.ok) {
+          const record = (await modelItemResponse.json()) as SpiritFlixManualModelRecord;
+          setManualModelRecord(record);
+          if (!manualModelDraftDirtyRef.current) {
+            setDraftModelName(record.modelName || item.ManualModelName || getInferredModelName(item));
+          }
+        }
+      } catch {
+        // Background hydration is opportunistic; editors still expose explicit retry/error states.
+      }
+    };
+    void hydrateManualMetadata();
+    return () => {
+      cancelled = true;
+    };
+  }, [item, item.ManualModelName, manualMetadataUrl.model, manualMetadataUrl.tags]);
 
   const saveManualModel = async (modelNameInput = draftModelName) => {
     const modelName = canonicalizeManualModelName(modelNameInput);
@@ -1917,7 +1971,6 @@ export function SpiritFlixPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return undefined;
-    const directUrl = client.getStreamUrl(item.Id);
     const hlsUrl = client.getHlsUrl(item.Id);
     let hlsInstance: HlsController | null = null;
     let cancelled = false;
@@ -2086,6 +2139,11 @@ export function SpiritFlixPlayer({
           .then((mobileSource) => {
             if (cancelled) return;
             if (mobileSource.available && mobileSource.url && video.src !== mobileSource.url) {
+              if (!video.paused && video.currentTime > 0.25) {
+                setMobileOptimizedSource(mobileSource);
+                markSpiritFlixPerf("source-available", { source: "mobileOptimized", deferred: true });
+                return;
+              }
               const resumeTime = video.currentTime;
               applyMobileOptimizedPlayback(video, mobileSource, playbackSetters);
               markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false, upgraded: true });
@@ -2559,6 +2617,13 @@ export function SpiritFlixPlayer({
             if (!waitingSinceRef.current) {
               waitingSinceRef.current = performance.now();
             }
+            markSpiritFlixPerf("waiting", { source: playbackSourceClass });
+          }}
+          onStalled={() => {
+            markSpiritFlixPerf("stalled", { source: playbackSourceClass });
+          }}
+          onError={() => {
+            markSpiritFlixPerf("error", { source: playbackSourceClass });
           }}
           onCanPlay={() => {
             setStreamError("");
@@ -2608,6 +2673,7 @@ export function SpiritFlixPlayer({
           }}
           onLoadedMetadata={(event) => {
             const video = event.currentTarget;
+            markSpiritFlixPerf("loadedmetadata", { source: playbackSourceClass });
             setDuration(Number.isFinite(video.duration) ? video.duration : ticksToSeconds(item.RunTimeTicks));
             setAudioTrackSwitchAvailable(applyAudioPreferenceToVideo(video, seriesAudioPreference));
             if (video.videoWidth > 0 && video.videoHeight > 0) {

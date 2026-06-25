@@ -75,6 +75,11 @@ interface SpiritFlixHomeProps {
   onSearch: (term: string) => void;
   onSelectHome: () => void;
   onSelectLibrary: (libraryId: string) => void;
+  loadingMore?: Partial<Record<"library" | "continueWatching" | "latestAdded" | "favorites", boolean>>;
+  onLoadMoreLibrary?: () => void;
+  onLoadMoreContinueWatching?: () => void;
+  onLoadMoreLatestAdded?: () => void;
+  onLoadMoreFavorites?: () => void;
   initialModelName?: string | null;
   initialManualTag?: string | null;
   onSelectModel: (modelName: string | null) => void;
@@ -182,12 +187,15 @@ function isOrientationFilter(value: unknown): value is SpiritFlixOrientationFilt
   return value === "all" || value === "portrait" || value === "landscape";
 }
 
-function scheduleDeferredHomeTask(task: () => void): void {
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(() => task(), { timeout: 1_200 });
-    return;
-  }
-  window.setTimeout(task, 16);
+function scheduleDeferredHomeTask(task: () => void): () => void {
+  let canceled = false;
+  const timer = window.setTimeout(() => {
+    if (!canceled) task();
+  }, 16);
+  return () => {
+    canceled = true;
+    window.clearTimeout(timer);
+  };
 }
 
 function getStoredExcludedCategories(state: Partial<StoredLibraryUiState>): string[] {
@@ -490,11 +498,12 @@ interface LibraryFeedCardProps {
   item: JellyfinItem;
   manualTags?: string[];
   playOnPrimaryTap: boolean;
+  imagePriority?: boolean;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, startPositionTicks?: number) => void;
 }
 
-function LibraryFeedCard({ client, item, manualTags = [], playOnPrimaryTap, onOpenDetails, onPlay }: LibraryFeedCardProps) {
+function LibraryFeedCard({ client, item, manualTags = [], playOnPrimaryTap, imagePriority = false, onOpenDetails, onPlay }: LibraryFeedCardProps) {
   const hasProgress = hasResumeProgress(item);
   const progress = getResumeProgressPercent(item);
   const resumeTicks = item.UserData?.PlaybackPositionTicks;
@@ -518,7 +527,7 @@ function LibraryFeedCard({ client, item, manualTags = [], playOnPrimaryTap, onOp
           }
         }}
       >
-        <SpiritFlixImage client={client} item={item} type="Primary" width={620} alt={item.Name} />
+        <SpiritFlixImage client={client} item={item} type="Primary" width={620} alt={item.Name} priority={imagePriority} />
         <span className="spiritflix-feed-card__shade" aria-hidden="true" />
         {actionTags.length ? (
           <span className="spiritflix-feed-card__tags" aria-label="Manual tags">
@@ -700,6 +709,11 @@ export function SpiritFlixHome({
   onSearch,
   onSelectHome,
   onSelectLibrary,
+  loadingMore = {},
+  onLoadMoreLibrary,
+  onLoadMoreContinueWatching,
+  onLoadMoreLatestAdded,
+  onLoadMoreFavorites,
   initialModelName = null,
   initialManualTag = null,
   onSelectModel,
@@ -880,6 +894,21 @@ export function SpiritFlixHome({
   }, [clampedLibraryPageIndex, sortedLibraryItems]);
   const libraryPageStart = sortedLibraryItems.length ? clampedLibraryPageIndex * LIBRARY_PAGE_SIZE + 1 : 0;
   const libraryPageEnd = Math.min(sortedLibraryItems.length, (clampedLibraryPageIndex + 1) * LIBRARY_PAGE_SIZE);
+  const hasMoreLibraryItems = Boolean(data.libraryPaging?.hasMore);
+  const loadedLibraryTotalLabel =
+    data.libraryPaging?.total != null && data.libraryPaging.total > data.libraryItems.length
+      ? `${data.libraryItems.length} loaded of ${data.libraryPaging.total}`
+      : `${sortedLibraryItems.length}`;
+  const isFullLibraryStatsScope =
+    !selectedModelGroup &&
+    !manualTagItemIds &&
+    orientationFilter === "all" &&
+    excludedCategorySet.size === 0;
+  const knownLibraryVideoTotal =
+    isFullLibraryStatsScope && typeof data.libraryPaging?.total === "number"
+      ? data.libraryPaging.total
+      : playableLibraryItems.length;
+  const loadedLibraryVideoCount = playableLibraryItems.length;
   const continueWatchingItems = useMemo(() => {
     const seen = new Set<string>();
     return [...data.continueWatching, ...data.watchHistory, ...filteredLibraryItems]
@@ -927,7 +956,11 @@ export function SpiritFlixHome({
       .slice(0, 80);
   }, [data.continueWatching, data.watchHistory, filteredLibraryItems, itemMatchesActiveVideoFilters]);
   const libraryStats = [
-    { label: "Videos", value: playableLibraryItems.length },
+    {
+      label: "Videos",
+      value: knownLibraryVideoTotal,
+      detail: knownLibraryVideoTotal > loadedLibraryVideoCount ? `${loadedLibraryVideoCount} loaded` : undefined,
+    },
     { label: "Models", value: modelGroups.length },
     { label: "Selected", value: sortedLibraryItems.length },
     { label: "Filtered out", value: scopedLibraryItems.length - filteredLibraryItems.length },
@@ -1014,15 +1047,14 @@ export function SpiritFlixHome({
 
   useEffect(() => {
     if (!isLibraryDashboardView) return undefined;
-    scheduleDeferredHomeTask(() => {
+    return scheduleDeferredHomeTask(() => {
       void loadGallery();
     });
-    return undefined;
   }, [isLibraryDashboardView, loadGallery]);
 
   useEffect(() => {
     if (!isLibraryDashboardView) return undefined;
-    scheduleDeferredHomeTask(() => {
+    const cancelDeferredLoad = scheduleDeferredHomeTask(() => {
       void loadManualTags();
       void loadManualModels();
     });
@@ -1035,6 +1067,7 @@ export function SpiritFlixHome({
     window.addEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
     window.addEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
     return () => {
+      cancelDeferredLoad();
       window.removeEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
       window.removeEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
     };
@@ -1310,8 +1343,8 @@ export function SpiritFlixHome({
       <section className={`spiritflix-hero ${hero ? "" : "spiritflix-hero--empty"}`}>
         {hero ? (
           <>
-            <SpiritFlixImage client={client} item={hero} type="Primary" width={700} className="spiritflix-hero__ambient" />
-            <SpiritFlixImage client={client} item={hero} type="Backdrop" width={1600} className="spiritflix-hero__image" />
+            <SpiritFlixImage client={client} item={hero} type="Primary" width={700} className="spiritflix-hero__ambient" priority />
+            <SpiritFlixImage client={client} item={hero} type="Backdrop" width={1600} className="spiritflix-hero__image" priority />
           </>
         ) : null}
         <div className="spiritflix-hero__shade" />
@@ -1574,6 +1607,7 @@ export function SpiritFlixHome({
                 <div key={stat.label} className="spiritflix-library-stat">
                   <strong>{stat.value}</strong>
                   <span>{stat.label}</span>
+                  {stat.detail ? <em>{stat.detail}</em> : null}
                 </div>
               ))}
             </div>
@@ -1791,13 +1825,14 @@ export function SpiritFlixHome({
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.18 }}
                 >
-                  {visibleLibraryItems.map((item) => (
+                  {visibleLibraryItems.map((item, index) => (
                     <LibraryFeedCard
                       key={item.Id}
                       client={client}
                       item={item}
                       manualTags={manualTagMap.get(item.Id)}
                       playOnPrimaryTap={playPrimaryTapOnMobile}
+                      imagePriority={index < 6}
                       onOpenDetails={onOpenDetails}
                       onPlay={(selectedItem, startPositionTicks) =>
                         onPlay(selectedItem, visibleLibraryItems, selectedModelGroup?.name ?? libraryTitle, startPositionTicks)
@@ -1943,7 +1978,7 @@ export function SpiritFlixHome({
                   <ChevronLeft size={20} aria-hidden="true" />
                 </button>
                 <span>
-                  Page {clampedLibraryPageIndex + 1} of {libraryPageCount} / {libraryPageStart}-{libraryPageEnd} of {sortedLibraryItems.length}
+                  Page {clampedLibraryPageIndex + 1} of {libraryPageCount} / {libraryPageStart}-{libraryPageEnd} of {loadedLibraryTotalLabel}
                 </span>
                 <button
                   type="button"
@@ -1953,6 +1988,16 @@ export function SpiritFlixHome({
                 >
                   <ChevronRight size={20} aria-hidden="true" />
                 </button>
+                {hasMoreLibraryItems ? (
+                  <button
+                    type="button"
+                    onClick={onLoadMoreLibrary}
+                    disabled={loadingMore.library}
+                    aria-label="Load more library videos"
+                  >
+                    <ChevronRight size={20} aria-hidden="true" />
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
@@ -2067,6 +2112,9 @@ export function SpiritFlixHome({
               client={client}
               items={data.continueWatching}
               playOnPrimaryTap={playPrimaryTapOnMobile}
+              hasMore={Boolean(data.continueWatchingPaging?.hasMore || data.watchHistoryPaging?.hasMore)}
+              loadingMore={Boolean(loadingMore.continueWatching)}
+              onLoadMore={onLoadMoreContinueWatching}
               onOpenDetails={onOpenDetails}
               onPlay={onPlay}
               emptyText="Nothing in progress yet."
@@ -2077,6 +2125,9 @@ export function SpiritFlixHome({
               client={client}
               items={data.latestAdded}
               playOnPrimaryTap={playPrimaryTapOnMobile}
+              hasMore={Boolean(data.latestAddedPaging?.hasMore)}
+              loadingMore={Boolean(loadingMore.latestAdded)}
+              onLoadMore={onLoadMoreLatestAdded}
               onOpenDetails={onOpenDetails}
               onPlay={onPlay}
               emptyText="No recent videos found."
@@ -2087,6 +2138,9 @@ export function SpiritFlixHome({
               client={client}
               items={data.favorites}
               playOnPrimaryTap={playPrimaryTapOnMobile}
+              hasMore={Boolean(data.favoritesPaging?.hasMore)}
+              loadingMore={Boolean(loadingMore.favorites)}
+              onLoadMore={onLoadMoreFavorites}
               onOpenDetails={onOpenDetails}
               onPlay={onPlay}
               emptyText="No favorite videos yet."

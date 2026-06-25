@@ -32,6 +32,7 @@ export interface SpiritFlixManualModelIndex {
 export interface SpiritFlixManualModelStoreOptions {
   rootDir?: string;
   modelIndexPath?: string;
+  lookupFilePath?: string;
 }
 
 export interface SetSpiritFlixManualModelInput {
@@ -64,6 +65,10 @@ function getModelNameKey(input: string): string {
 
 function getCompactModelNameKey(input: string): string {
   return getModelNameKey(input).replace(/[^a-z0-9]+/g, "");
+}
+
+function getFilePathKey(input: unknown): string {
+  return typeof input === "string" ? input.trim().replace(/\\/g, "/").toLowerCase() : "";
 }
 
 interface SpiritFlixKnownModelIndex {
@@ -143,13 +148,25 @@ export async function getSpiritFlixManualModelForItem(
 ): Promise<SpiritFlixManualModelRecord> {
   const normalizedItemId = assertManualModelItemId(itemId);
   const existing = await readJsonFile<SpiritFlixManualModelRecord>(getManualModelRecordPath(normalizedItemId, options));
+  const aliasMap = await getKnownModelAliasMap(options);
   if (existing?.schema === SPIRITFLIX_MANUAL_MODEL_SCHEMA) {
-    const aliasMap = await getKnownModelAliasMap(options);
     const modelName = canonicalizeSpiritFlixManualModelName(existing.modelName);
     return {
       ...existing,
       modelName: resolveKnownModelName(modelName, [], aliasMap),
     };
+  }
+  const lookupFilePath = getFilePathKey(options.lookupFilePath);
+  if (lookupFilePath) {
+    const fileMatchedRecord = (await listSpiritFlixManualModelRecords({ ...options, lookupFilePath: undefined }))
+      .find((record) => getFilePathKey(record.filePath) === lookupFilePath);
+    if (fileMatchedRecord) {
+      return {
+        ...fileMatchedRecord,
+        itemId: normalizedItemId,
+        modelName: resolveKnownModelName(fileMatchedRecord.modelName, [], aliasMap),
+      };
+    }
   }
   return {
     schema: SPIRITFLIX_MANUAL_MODEL_SCHEMA,

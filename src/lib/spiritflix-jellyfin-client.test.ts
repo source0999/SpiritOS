@@ -138,3 +138,83 @@ describe("SpiritFlix trash filtering", () => {
     expect(isPlayableItem(active)).toBe(true);
   });
 });
+
+describe("JellyfinClient paged card queries", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("requests a compact bounded page for the mobile library load", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        Items: [{ Id: "item-1", Name: "Scene 1", Type: "Video", MediaType: "Video" }],
+        TotalRecordCount: 99,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const page = await client.getLibraryItemsPage("library-1", {
+      searchTerm: "fold",
+      limit: 24,
+      startIndex: 48,
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1]?.body as string) as { path: string };
+    const path = new URL(`http://jellyfin.local${body.path}`);
+    expect(path.searchParams.get("Limit")).toBe("24");
+    expect(path.searchParams.get("StartIndex")).toBe("48");
+    expect(path.searchParams.get("SearchTerm")).toBe("fold");
+    expect(path.searchParams.get("Fields")).not.toContain("Overview");
+    expect(page.items).toHaveLength(1);
+    expect(page.totalRecordCount).toBe(99);
+    expect(page.hasMore).toBe(true);
+  });
+
+  it("pages Favorites instead of requesting the whole favorite set on mobile first load", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        Items: [{ Id: "fav-1", Name: "Favorite 1", Type: "Video", MediaType: "Video" }],
+        TotalRecordCount: 42,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const page = await client.getFavoritesPage({ limit: 10 });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1]?.body as string) as { path: string };
+    const path = new URL(`http://jellyfin.local${body.path}`);
+    expect(path.searchParams.get("Filters")).toBe("IsFavorite");
+    expect(path.searchParams.get("Limit")).toBe("10");
+    expect(path.searchParams.get("StartIndex")).toBe("0");
+    expect(page.hasMore).toBe(true);
+  });
+
+  it("pages Continue Watching with compact card fields", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        Items: [{ Id: "resume-1", Name: "Resume 1", Type: "Video", MediaType: "Video" }],
+        TotalRecordCount: 31,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const page = await client.getContinueWatchingPage("library-1", {
+      limit: 10,
+      startIndex: 20,
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1]?.body as string) as { path: string };
+    const path = new URL(`http://jellyfin.local${body.path}`);
+    expect(path.pathname).toBe("/Users/user-1/Items/Resume");
+    expect(path.searchParams.get("ParentId")).toBe("library-1");
+    expect(path.searchParams.get("Limit")).toBe("10");
+    expect(path.searchParams.get("StartIndex")).toBe("20");
+    expect(path.searchParams.get("Fields")).not.toContain("Overview");
+    expect(page.items).toHaveLength(1);
+    expect(page.hasMore).toBe(true);
+  });
+});

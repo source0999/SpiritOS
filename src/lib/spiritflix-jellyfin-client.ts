@@ -19,6 +19,8 @@ const DEVICE_ID_KEY = "spiritflix_device_id";
 const SESSION_KEY = "spiritflix_private_gooner_session";
 const GOONER_ITEM_FIELDS =
   "Path,SeriesName,DateCreated,IndexNumber,ParentIndexNumber,Overview,ProductionYear,RunTimeTicks,Genres,People,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount";
+const CARD_ITEM_FIELDS =
+  "Path,SeriesName,DateCreated,IndexNumber,ParentIndexNumber,ProductionYear,RunTimeTicks,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount";
 
 export interface HlsPlaybackProfile {
   maxWidth: number;
@@ -56,6 +58,22 @@ export interface MobileOptimizedSource {
       duration?: number;
     };
   };
+}
+
+export interface JellyfinItemPage {
+  items: JellyfinItem[];
+  totalRecordCount: number | null;
+  startIndex: number;
+  limit: number;
+  hasMore: boolean;
+}
+
+export interface JellyfinItemPageOptions {
+  searchTerm?: string;
+  limit?: number;
+  startIndex?: number;
+  fields?: "card" | "full";
+  signal?: AbortSignal;
 }
 
 export interface SpiritFlixSystemDiagnostics {
@@ -165,6 +183,36 @@ function visibleItems(items?: JellyfinItem[]): JellyfinItem[] {
   return (items ?? []).filter(isVisibleSpiritFlixItem);
 }
 
+function getItemFields(fields: "card" | "full" = "card"): string {
+  return fields === "full" ? GOONER_ITEM_FIELDS : CARD_ITEM_FIELDS;
+}
+
+function pageFromResponse(
+  data: JellyfinItemsResponse<JellyfinItem>,
+  { startIndex = 0, limit = 20 }: { startIndex?: number; limit?: number },
+): JellyfinItemPage {
+  const items = visibleItems(data.Items);
+  const totalRecordCount = typeof data.TotalRecordCount === "number" ? data.TotalRecordCount : null;
+  const loaded = startIndex + items.length;
+  return {
+    items,
+    totalRecordCount,
+    startIndex,
+    limit,
+    hasMore: totalRecordCount == null ? items.length >= limit : loaded < totalRecordCount,
+  };
+}
+
+function emptyItemPage({ startIndex = 0, limit = 20 }: { startIndex?: number; limit?: number } = {}): JellyfinItemPage {
+  return {
+    items: [],
+    totalRecordCount: 0,
+    startIndex,
+    limit,
+    hasMore: false,
+  };
+}
+
 export function getHlsPlaybackProfile(): HlsPlaybackProfile {
   const baseProfile: HlsPlaybackProfile = {
     maxWidth: 1280,
@@ -221,6 +269,7 @@ export class JellyfinClient {
     const response = await fetch("/api/spiritflix/jellyfin", {
       method: "POST",
       keepalive: init.keepalive,
+      signal: init.signal,
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -277,39 +326,60 @@ export class JellyfinClient {
     return data.Items ?? [];
   }
 
-  async getLibraryItems(parentId: string, searchTerm = "", limit?: number): Promise<JellyfinItem[]> {
-    if (!this.userId) return [];
+  async getLibraryItemsPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    const {
+      searchTerm = "",
+      limit = 20,
+      startIndex = 0,
+      fields = "card",
+      signal,
+    } = options;
+    if (!this.userId) return emptyItemPage({ startIndex, limit });
     const query = toQuery({
       ParentId: parentId,
       Recursive: true,
       IncludeItemTypes: "Movie,Series,Season,Episode,Video,Folder",
-      Fields: GOONER_ITEM_FIELDS,
+      Fields: getItemFields(fields),
       ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       SortBy: "SortName",
       SortOrder: "Ascending",
       SearchTerm: searchTerm,
       Limit: limit,
+      StartIndex: startIndex,
     });
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
+      { signal },
     );
-    if (data.Items?.length || searchTerm) return visibleItems(data.Items);
+    if (data.Items?.length || searchTerm) return pageFromResponse(data, { startIndex, limit });
 
     const fallbackQuery = toQuery({
       ParentId: parentId,
       Recursive: true,
-      Fields: GOONER_ITEM_FIELDS,
+      Fields: getItemFields(fields),
       ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       SortBy: "SortName",
       SortOrder: "Ascending",
       Limit: limit,
+      StartIndex: startIndex,
     });
     const fallbackData = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${fallbackQuery}`,
+      { signal },
     );
-    return visibleItems(fallbackData.Items);
+    return pageFromResponse(fallbackData, { startIndex, limit });
+  }
+
+  async getLibraryItems(parentId: string, searchTerm = "", limit?: number): Promise<JellyfinItem[]> {
+    const page = await this.getLibraryItemsPage(parentId, {
+      searchTerm,
+      limit: limit ?? 10_000,
+      startIndex: 0,
+      fields: "full",
+    });
+    return page.items;
   }
 
   async getItem(itemId: string): Promise<JellyfinItem | null> {
@@ -357,88 +427,152 @@ export class JellyfinClient {
     return visibleItems(data.Items);
   }
 
-  async getContinueWatching(parentId?: string): Promise<JellyfinItem[]> {
-    if (!this.userId) return [];
+  async getContinueWatchingPage(parentId?: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    const { limit = 18, startIndex = 0, fields = "card", signal } = options;
+    if (!this.userId) return emptyItemPage({ startIndex, limit });
     const query = toQuery({
       Recursive: true,
       ParentId: parentId,
-      Fields: GOONER_ITEM_FIELDS,
-      ImageTypeLimit: 3,
+      Fields: getItemFields(fields),
+      ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
-      Limit: 18,
+      Limit: limit,
+      StartIndex: startIndex,
     });
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items/Resume?${query}`,
+      { signal },
     );
-    return visibleItems(data.Items);
+    return pageFromResponse(data, { startIndex, limit });
+  }
+
+  async getContinueWatching(parentId?: string): Promise<JellyfinItem[]> {
+    return (await this.getContinueWatchingPage(parentId, { limit: 18, fields: "full" })).items;
+  }
+
+  async getLibraryResumeItemsPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    const { limit = 24, startIndex = 0, fields = "card", signal } = options;
+    if (!this.userId) return emptyItemPage({ startIndex, limit });
+    const query = toQuery({
+      ParentId: parentId,
+      Recursive: true,
+      IncludeItemTypes: "Movie,Episode,Video",
+      Fields: getItemFields(fields),
+      Filters: "IsResumable",
+      ImageTypeLimit: 1,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      SortBy: "DatePlayed",
+      SortOrder: "Descending",
+      Limit: limit,
+      StartIndex: startIndex,
+    });
+    const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
+      `/Users/${this.userId}/Items?${query}`,
+      { signal },
+    );
+    return pageFromResponse(data, { startIndex, limit });
   }
 
   async getLibraryResumeItems(parentId: string): Promise<JellyfinItem[]> {
-    if (!this.userId) return [];
+    return (await this.getLibraryResumeItemsPage(parentId, { limit: 24, fields: "full" })).items;
+  }
+
+  async getWatchHistoryPage(parentId?: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    const { limit = 60, startIndex = 0, fields = "card", signal } = options;
+    if (!this.userId) return emptyItemPage({ startIndex, limit });
     const query = toQuery({
       ParentId: parentId,
       Recursive: true,
       IncludeItemTypes: "Movie,Episode,Video",
-      Fields: GOONER_ITEM_FIELDS,
-      Filters: "IsResumable",
-      ImageTypeLimit: 3,
+      Fields: getItemFields(fields),
+      Filters: "IsPlayed",
+      ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       SortBy: "DatePlayed",
       SortOrder: "Descending",
-      Limit: 24,
+      Limit: limit,
+      StartIndex: startIndex,
     });
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
+      { signal },
     );
-    return visibleItems(data.Items);
+    return pageFromResponse(data, { startIndex, limit });
   }
 
   async getWatchHistory(parentId?: string): Promise<JellyfinItem[]> {
-    if (!this.userId) return [];
-    const query = toQuery({
-      ParentId: parentId,
-      Recursive: true,
-      IncludeItemTypes: "Movie,Episode,Video",
-      Fields: GOONER_ITEM_FIELDS,
-      Filters: "IsPlayed",
-      ImageTypeLimit: 3,
-      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
-      SortBy: "DatePlayed",
-      SortOrder: "Descending",
-      Limit: 60,
-    });
-    const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
-      `/Users/${this.userId}/Items?${query}`,
-    );
-    return visibleItems(data.Items);
+    return (await this.getWatchHistoryPage(parentId, { limit: 60, fields: "full" })).items;
   }
 
   async getLatestAdded(): Promise<JellyfinItem[]> {
-    return this.getItemsByQuery({ SortBy: "DateCreated", SortOrder: "Descending", Limit: 18 });
+    return (await this.getLatestAddedPage()).items;
   }
 
-  async getFavorites(): Promise<JellyfinItem[]> {
-    return this.getItemsByQuery({ Filters: "IsFavorite", SortBy: "SortName", Limit: 200 });
+  async getLatestAddedPage(options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    return this.getItemsPageByQuery(
+      { SortBy: "DateCreated", SortOrder: "Descending" },
+      { limit: 18, ...options },
+    );
   }
 
-  async getLibraryFavoriteItems(parentId: string): Promise<JellyfinItem[]> {
-    if (!this.userId) return [];
+  async getLibraryLatestAddedPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    if (!this.userId) return emptyItemPage({ startIndex: options.startIndex, limit: options.limit });
+    const { limit = 18, startIndex = 0, fields = "card", signal } = options;
     const query = toQuery({
       ParentId: parentId,
       Recursive: true,
       IncludeItemTypes: "Movie,Episode,Video",
-      Fields: GOONER_ITEM_FIELDS,
-      Filters: "IsFavorite",
-      ImageTypeLimit: 3,
+      Fields: getItemFields(fields),
+      ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
-      SortBy: "SortName",
-      SortOrder: "Ascending",
-      Limit: 200,
+      SortBy: "DateCreated",
+      SortOrder: "Descending",
+      Limit: limit,
+      StartIndex: startIndex,
     });
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
+      { signal },
     );
-    return visibleItems(data.Items);
+    return pageFromResponse(data, { startIndex, limit });
+  }
+
+  async getFavorites(): Promise<JellyfinItem[]> {
+    return (await this.getFavoritesPage({ limit: 200, fields: "full" })).items;
+  }
+
+  async getFavoritesPage(options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    return this.getItemsPageByQuery(
+      { Filters: "IsFavorite", SortBy: "SortName" },
+      { limit: 18, ...options },
+    );
+  }
+
+  async getLibraryFavoriteItemsPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
+    const { limit = 18, startIndex = 0, fields = "card", signal } = options;
+    if (!this.userId) return emptyItemPage({ startIndex, limit });
+    const query = toQuery({
+      ParentId: parentId,
+      Recursive: true,
+      IncludeItemTypes: "Movie,Episode,Video",
+      Fields: getItemFields(fields),
+      Filters: "IsFavorite",
+      ImageTypeLimit: 1,
+      EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+      SortBy: "SortName",
+      SortOrder: "Ascending",
+      Limit: limit,
+      StartIndex: startIndex,
+    });
+    const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
+      `/Users/${this.userId}/Items?${query}`,
+      { signal },
+    );
+    return pageFromResponse(data, { startIndex, limit });
+  }
+
+  async getLibraryFavoriteItems(parentId: string): Promise<JellyfinItem[]> {
+    return (await this.getLibraryFavoriteItemsPage(parentId, { limit: 200, fields: "full" })).items;
   }
 
   async setFavorite(itemId: string, isFavorite: boolean): Promise<void> {
@@ -499,21 +633,27 @@ export class JellyfinClient {
     return (await response.json()) as SpiritFlixGalleryResponse;
   }
 
-  private async getItemsByQuery(extra: Record<string, string | number>): Promise<JellyfinItem[]> {
-    if (!this.userId) return [];
+  private async getItemsPageByQuery(
+    extra: Record<string, string | number>,
+    options: JellyfinItemPageOptions = {},
+  ): Promise<JellyfinItemPage> {
+    const { limit = 18, startIndex = 0, fields = "card", signal } = options;
+    if (!this.userId) return emptyItemPage({ startIndex, limit });
     const query = toQuery({
       Recursive: true,
       IncludeItemTypes: "Movie,Episode,Video",
-      Fields: GOONER_ITEM_FIELDS,
-      ImageTypeLimit: 3,
+      Fields: getItemFields(fields),
+      ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
-      Limit: 18,
+      Limit: limit,
+      StartIndex: startIndex,
       ...extra,
     });
     const data = await this.request<JellyfinItemsResponse<JellyfinItem>>(
       `/Users/${this.userId}/Items?${query}`,
+      { signal },
     );
-    return visibleItems(data.Items);
+    return pageFromResponse(data, { startIndex, limit });
   }
 
   getImageUrl(item: JellyfinItem, type: "Primary" | "Backdrop" | "Thumb" = "Primary", width = 500): string {
@@ -527,6 +667,16 @@ export class JellyfinClient {
       tag,
     });
     return `${this.serverUrl}/Items/${item.Id}/Images/${type}?${query}`;
+  }
+
+  getImageProxyUrl(item: JellyfinItem, type: "Primary" | "Backdrop" | "Thumb" = "Primary", width = 500): string {
+    const imageUrl = new URL(this.getImageUrl(item, type, width));
+    const query = toQuery({
+      serverUrl: this.serverUrl,
+      path: `${imageUrl.pathname}${imageUrl.search}`,
+      token: this.token,
+    });
+    return `/api/spiritflix/jellyfin-image?${query}`;
   }
 
   async getImageObjectUrl(item: JellyfinItem, type: "Primary" | "Backdrop" | "Thumb" = "Primary", width = 500): Promise<string> {

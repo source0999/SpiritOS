@@ -84,6 +84,30 @@ describe("SpiritFlix manual tags", () => {
     );
   });
 
+  it("recovers saved tags by file path when Jellyfin item id changes", async () => {
+    await setSpiritFlixManualTagsForItem(
+      {
+        itemId: "old-video-id",
+        filePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
+        manualTags: ["handjob", "big ass"],
+      },
+      { rootDir },
+    );
+
+    await expect(
+      getSpiritFlixManualTagsForItem("new-video-id", {
+        rootDir,
+        lookupFilePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        itemId: "new-video-id",
+        filePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
+        manualTags: ["handjob", "big ass"],
+      }),
+    );
+  });
+
   it("rejects empty and duplicate malformed tags", async () => {
     await expect(
       setSpiritFlixManualTagsForItem({ itemId: "video-1", manualTags: [" "] }, { rootDir }),

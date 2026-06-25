@@ -55,6 +55,7 @@ export interface SpiritFlixManualTagIndex {
 
 export interface SpiritFlixManualTagStoreOptions {
   rootDir?: string;
+  lookupFilePath?: string;
 }
 
 export interface SetSpiritFlixManualTagsInput {
@@ -92,6 +93,10 @@ function assertManualTagItemId(itemId: string): string {
   const normalized = itemId.trim();
   if (!normalized) throw new Error("Manual tag item id is required.");
   return normalized;
+}
+
+function getFilePathKey(input: unknown): string {
+  return typeof input === "string" ? input.trim().replace(/\\/g, "/").toLowerCase() : "";
 }
 
 function getManualTagRecordPath(itemId: string, options: SpiritFlixManualTagStoreOptions = {}): string {
@@ -149,6 +154,18 @@ export async function getSpiritFlixManualTagsForItem(
       ...existing,
       manualTags: normalizeSpiritFlixManualTags(existing.manualTags),
     };
+  }
+  const lookupFilePath = getFilePathKey(options.lookupFilePath);
+  if (lookupFilePath) {
+    const fileMatchedRecord = (await listSpiritFlixManualTagRecords({ ...options, lookupFilePath: undefined }))
+      .find((record) => getFilePathKey(record.filePath) === lookupFilePath);
+    if (fileMatchedRecord) {
+      return {
+        ...fileMatchedRecord,
+        itemId: normalizedItemId,
+        manualTags: normalizeSpiritFlixManualTags(fileMatchedRecord.manualTags),
+      };
+    }
   }
   return {
     schema: SPIRITFLIX_MANUAL_TAG_SCHEMA,

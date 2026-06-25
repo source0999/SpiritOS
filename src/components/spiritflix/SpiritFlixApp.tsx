@@ -10,11 +10,13 @@ import {
   normalizeJellyfinServerUrl,
   SPIRITFLIX_DEFAULT_SERVER,
   storeSession,
+  type JellyfinItemPage,
 } from "@/lib/spiritflix-jellyfin-client";
 import type {
   JellyfinItem,
   SpiritFlixHomeData,
   SpiritFlixManualModelRecord,
+  SpiritFlixPagingState,
   SpiritFlixServerInfo,
   SpiritFlixSession,
 } from "@/lib/spiritflix-types";
@@ -56,6 +58,12 @@ const emptyHome: SpiritFlixHomeData = {
 const OTHER_LIBRARY_NAME = "Other";
 const PLAYLIST_LIBRARY_NAME = "Playlists";
 const HIDDEN_LIBRARY_NAMES = new Set(["music"]);
+const MOBILE_LIBRARY_PAGE_SIZE = 24;
+const DESKTOP_LIBRARY_PAGE_SIZE = 48;
+const MOBILE_SHELF_PAGE_SIZE = 10;
+const DESKTOP_SHELF_PAGE_SIZE = 18;
+const MOBILE_HISTORY_PAGE_SIZE = 16;
+const DESKTOP_HISTORY_PAGE_SIZE = 32;
 
 function isMediaLibrary(library: { Name: string; CollectionType?: string }): boolean {
   const name = library.Name.toLowerCase();
@@ -154,6 +162,64 @@ function hasWatchActivity(item: JellyfinItem): boolean {
       item.UserData?.Played ||
       (item.UserData?.PlaybackPositionTicks && item.UserData.PlaybackPositionTicks > 0) ||
       (item.UserData?.PlayCount && item.UserData.PlayCount > 0),
+  );
+}
+
+function isMobileSpiritFlixViewport(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(max-width: 980px), (pointer: coarse)").matches;
+}
+
+function getInitialPageSizes() {
+  const mobile = isMobileSpiritFlixViewport();
+  return {
+    library: mobile ? MOBILE_LIBRARY_PAGE_SIZE : DESKTOP_LIBRARY_PAGE_SIZE,
+    shelf: mobile ? MOBILE_SHELF_PAGE_SIZE : DESKTOP_SHELF_PAGE_SIZE,
+    history: mobile ? MOBILE_HISTORY_PAGE_SIZE : DESKTOP_HISTORY_PAGE_SIZE,
+  };
+}
+
+function pagingFromPage(page: JellyfinItemPage): SpiritFlixPagingState {
+  return {
+    loaded: page.startIndex + page.items.length,
+    total: page.totalRecordCount,
+    pageSize: page.limit,
+    hasMore: page.hasMore,
+  };
+}
+
+function emptyJellyfinPage(limit: number): JellyfinItemPage {
+  return {
+    items: [],
+    totalRecordCount: 0,
+    startIndex: 0,
+    limit,
+    hasMore: false,
+  };
+}
+
+function appendUniqueItems(current: JellyfinItem[], incoming: JellyfinItem[]): JellyfinItem[] {
+  return uniqueItems([...current, ...incoming]);
+}
+
+function mergeContinueWatchingItems({
+  continueWatching,
+  watchHistory,
+  libraryItems,
+  isNotDeleted,
+}: {
+  continueWatching: JellyfinItem[];
+  watchHistory: JellyfinItem[];
+  libraryItems: JellyfinItem[];
+  isNotDeleted: (item: JellyfinItem) => boolean;
+}): JellyfinItem[] {
+  const watchHistoryItems = sortByLastPlayed(uniqueItems(watchHistory.filter(isNotDeleted).filter(hasWatchActivity)));
+  return sortByLastPlayed(
+    uniqueItems([
+      ...continueWatching.filter(isNotDeleted),
+      ...watchHistoryItems.filter(hasResumeProgress),
+      ...libraryItems.filter(hasResumeProgress),
+    ]),
   );
 }
 
@@ -324,6 +390,21 @@ function applyManualModelRecordsToItems(
   });
 }
 
+function applyManualModelRecordsToHomeData(
+  homeData: SpiritFlixHomeData,
+  manualModelRecords: SpiritFlixManualModelRecord[],
+): SpiritFlixHomeData {
+  return {
+    ...homeData,
+    libraryItems: applyManualModelRecordsToItems(homeData.libraryItems, manualModelRecords),
+    featuredItems: applyManualModelRecordsToItems(homeData.featuredItems, manualModelRecords),
+    continueWatching: applyManualModelRecordsToItems(homeData.continueWatching, manualModelRecords),
+    watchHistory: applyManualModelRecordsToItems(homeData.watchHistory, manualModelRecords),
+    latestAdded: applyManualModelRecordsToItems(homeData.latestAdded, manualModelRecords),
+    favorites: applyManualModelRecordsToItems(homeData.favorites, manualModelRecords),
+  };
+}
+
 export function applyManualModelNameToItem(item: JellyfinItem, itemId: string, modelName: string): JellyfinItem {
   return item.Id === itemId ? { ...item, ManualModelName: modelName } : item;
 }
@@ -434,24 +515,24 @@ export function SpiritFlixApp() {
   const initialBrowseRouteRef = useRef<SpiritFlixBrowseRoute | null>(null);
   const deletedItemIdsRef = useRef<Set<string>>(new Set());
   const homeDataRef = useRef(homeData);
-  homeDataRef.current = homeData;
+  const loadHomeAbortRef = useRef<AbortController | null>(null);
+  const loadHomeSequenceRef = useRef(0);
+  const [loadingMore, setLoadingMore] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    homeDataRef.current = homeData;
+  }, [homeData]);
 
   const client = useMemo(
     () => new JellyfinClient(session?.serverUrl ?? serverUrl, session?.accessToken, session?.userId),
     [serverUrl, session],
   );
-  const modelAwareLibraryItems = useMemo(
-    () => applyManualModelRecordsToItems(homeData.libraryItems, manualModelRecords),
-    [homeData.libraryItems, manualModelRecords],
+  const modelAwareHomeData = useMemo(
+    () => applyManualModelRecordsToHomeData(homeData, manualModelRecords),
+    [homeData, manualModelRecords],
   );
 
-  const modelAwareHomeData = useMemo(
-    () => ({
-      ...homeData,
-      libraryItems: modelAwareLibraryItems,
-    }),
-    [homeData, modelAwareLibraryItems],
-  );
+  const modelAwareLibraryItems = modelAwareHomeData.libraryItems;
 
   const loadManualModels = useCallback(async () => {
     if (!session) return;
@@ -483,11 +564,19 @@ export function SpiritFlixApp() {
   const loadHome = useCallback(
     async (libraryId?: string | null, term = searchTerm, options: { silent?: boolean } = {}) => {
       if (!session) return;
+      const loadId = loadHomeSequenceRef.current + 1;
+      loadHomeSequenceRef.current = loadId;
+      loadHomeAbortRef.current?.abort();
+      const controller = new AbortController();
+      loadHomeAbortRef.current = controller;
+      const pageSizes = getInitialPageSizes();
+      const isStale = () => controller.signal.aborted || loadHomeSequenceRef.current !== loadId;
       const showBlockingLoader = !options.silent && !hasUsefulHomeContent(homeDataRef.current);
       if (showBlockingLoader) setLoadingHome(true);
       setHomeError("");
       try {
         const libraries = (await client.getLibraries()).filter(isMediaLibrary);
+        if (isStale()) return;
         const otherLibrary = libraries.find((library) => library.Name.toLowerCase() === OTHER_LIBRARY_NAME.toLowerCase());
         const requestedLibraryId = libraryId === undefined ? homeData.selectedLibraryId : libraryId;
         const selectedLibraryId = requestedLibraryId && libraries.some((library) => library.Id === requestedLibraryId)
@@ -496,59 +585,251 @@ export function SpiritFlixApp() {
             ? null
             : otherLibrary?.Id ?? libraries[0]?.Id ?? null;
         const animeLibrary = libraries.find((library) => library.Name.toLowerCase() === "anime");
-        const libraryItemsPromise = selectedLibraryId ? client.getLibraryItems(selectedLibraryId, term) : Promise.resolve([]);
-        const libraryItems = await libraryItemsPromise;
         const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
-        const libraryItemsUnique = uniqueItems(libraryItems.filter(isNotDeleted));
-        setHomeData((previous) => ({
-          ...previous,
+
+        const libraryPagePromise = selectedLibraryId
+          ? client.getLibraryItemsPage(selectedLibraryId, {
+              searchTerm: term,
+              limit: pageSizes.library,
+              fields: "card",
+              signal: controller.signal,
+            })
+          : Promise.resolve(emptyJellyfinPage(pageSizes.library));
+        const featuredPagePromise = !selectedLibraryId && animeLibrary
+          ? client.getLibraryItemsPage(animeLibrary.Id, {
+              limit: pageSizes.shelf,
+              fields: "card",
+              signal: controller.signal,
+            })
+          : Promise.resolve(emptyJellyfinPage(pageSizes.shelf));
+        const continuePagePromise = selectedLibraryId
+          ? client.getLibraryResumeItemsPage(selectedLibraryId, {
+              limit: pageSizes.shelf,
+              fields: "card",
+              signal: controller.signal,
+            })
+          : client.getContinueWatchingPage(undefined, {
+              limit: pageSizes.shelf,
+              fields: "card",
+              signal: controller.signal,
+            });
+        const watchHistoryPagePromise = client.getWatchHistoryPage(selectedLibraryId ?? undefined, {
+          limit: pageSizes.history,
+          fields: "card",
+          signal: controller.signal,
+        });
+        const latestPagePromise = selectedLibraryId
+          ? client.getLibraryLatestAddedPage(selectedLibraryId, {
+              limit: pageSizes.shelf,
+              fields: "card",
+              signal: controller.signal,
+            })
+          : client.getLatestAddedPage({
+              limit: pageSizes.shelf,
+              fields: "card",
+              signal: controller.signal,
+            });
+        const favoritesPagePromise = selectedLibraryId
+          ? client.getLibraryFavoriteItemsPage(selectedLibraryId, {
+              limit: pageSizes.shelf,
+              fields: "card",
+              signal: controller.signal,
+            })
+          : client.getFavoritesPage({
+              limit: pageSizes.shelf,
+              fields: "card",
+              signal: controller.signal,
+            });
+
+        const libraryPage = await libraryPagePromise;
+        if (isStale()) return;
+        const libraryItemsUnique = uniqueItems(libraryPage.items.filter(isNotDeleted));
+        const partialHome: SpiritFlixHomeData = {
+          ...homeDataRef.current,
           libraries,
           playlists: [],
           selectedLibraryId,
           libraryItems: libraryItemsUnique,
-        }));
+          libraryPaging: pagingFromPage(libraryPage),
+        };
+        setHomeData(partialHome);
         if (showBlockingLoader) setLoadingHome(false);
 
-        const [featuredItems, continueWatching, watchHistory, latestAdded, favorites] = await Promise.all([
-          !selectedLibraryId && animeLibrary
-            ? client
-                .getLibraryItems(animeLibrary.Id)
-                .then((items) => items.filter((item) => isPlayableItem(item) && isSeriesPlaybackItem(item)).sort(byEpisodeOrder))
-            : Promise.resolve([]),
-          selectedLibraryId ? client.getLibraryResumeItems(selectedLibraryId) : client.getContinueWatching(),
-          client.getWatchHistory(selectedLibraryId ?? undefined),
-          selectedLibraryId ? client.getLibraryItems(selectedLibraryId, "", 18) : client.getLatestAdded(),
-          selectedLibraryId ? client.getLibraryFavoriteItems(selectedLibraryId) : client.getFavorites(),
+        const [featuredPage, continuePage, watchHistoryPage, latestPage, favoritesPage] = await Promise.all([
+          featuredPagePromise,
+          continuePagePromise,
+          watchHistoryPagePromise,
+          latestPagePromise,
+          favoritesPagePromise,
         ]);
-        const watchHistoryItems = sortByLastPlayed(uniqueItems(watchHistory.filter(isNotDeleted).filter(hasWatchActivity)));
-        const continueWatchingItems = sortByLastPlayed(
-          uniqueItems([
-            ...continueWatching.filter(isNotDeleted),
-            ...watchHistoryItems.filter(hasResumeProgress),
-            ...libraryItemsUnique.filter(hasResumeProgress),
-          ]),
-        );
+        if (isStale()) return;
+        const watchHistoryItems = sortByLastPlayed(uniqueItems(watchHistoryPage.items.filter(isNotDeleted).filter(hasWatchActivity)));
+        const continueWatchingItems = mergeContinueWatchingItems({
+          continueWatching: continuePage.items,
+          watchHistory: watchHistoryItems,
+          libraryItems: libraryItemsUnique,
+          isNotDeleted,
+        });
         const nextHome: SpiritFlixHomeData = {
           libraries,
           playlists: [],
           selectedLibraryId,
-          featuredItems: uniqueItems(featuredItems.filter(isNotDeleted)),
+          featuredItems: uniqueItems(featuredPage.items.filter(isNotDeleted).filter((item) => isPlayableItem(item) && isSeriesPlaybackItem(item)).sort(byEpisodeOrder)),
           libraryItems: libraryItemsUnique,
+          libraryPaging: pagingFromPage(libraryPage),
           continueWatching: continueWatchingItems,
           watchHistory: watchHistoryItems,
-          latestAdded: uniqueItems(latestAdded.filter(isNotDeleted)),
-          favorites: uniqueItems(favorites.filter(isNotDeleted)),
+          latestAdded: uniqueItems(latestPage.items.filter(isNotDeleted)),
+          favorites: uniqueItems(favoritesPage.items.filter(isNotDeleted)),
+          continueWatchingPaging: pagingFromPage(continuePage),
+          watchHistoryPaging: pagingFromPage(watchHistoryPage),
+          latestAddedPaging: pagingFromPage(latestPage),
+          favoritesPaging: pagingFromPage(favoritesPage),
         };
         setHomeData(nextHome);
         writeCachedHomeData(nextHome);
-      } catch {
+      } catch (error) {
+        if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) return;
         setHomeError("Could not load your Jellyfin library. Log out and back in if the token expired.");
       } finally {
-        if (!options.silent) setLoadingHome(false);
+        if (!options.silent && !controller.signal.aborted) setLoadingHome(false);
       }
     },
     [client, homeData.selectedLibraryId, searchTerm, session],
   );
+
+  const setLoadingMoreKey = useCallback((key: string, value: boolean) => {
+    setLoadingMore((current) => ({ ...current, [key]: value }));
+  }, []);
+
+  const loadMoreLibraryItems = useCallback(async () => {
+    if (!session) return;
+    const current = homeDataRef.current;
+    const paging = current.libraryPaging;
+    if (!current.selectedLibraryId || !paging?.hasMore || loadingMore.library) return;
+    setLoadingMoreKey("library", true);
+    try {
+      const page = await client.getLibraryItemsPage(current.selectedLibraryId, {
+        searchTerm,
+        startIndex: paging.loaded,
+        limit: paging.pageSize || getInitialPageSizes().library,
+        fields: "card",
+      });
+      const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
+      setHomeData((existing) => ({
+        ...existing,
+        libraryItems: appendUniqueItems(existing.libraryItems, page.items.filter(isNotDeleted)),
+        libraryPaging: pagingFromPage(page),
+      }));
+    } finally {
+      setLoadingMoreKey("library", false);
+    }
+  }, [client, loadingMore.library, searchTerm, session, setLoadingMoreKey]);
+
+  const loadMoreLatestAdded = useCallback(async () => {
+    if (!session) return;
+    const current = homeDataRef.current;
+    const paging = current.latestAddedPaging;
+    if (!paging?.hasMore || loadingMore.latestAdded) return;
+    setLoadingMoreKey("latestAdded", true);
+    try {
+      const options = {
+        startIndex: paging.loaded,
+        limit: paging.pageSize || getInitialPageSizes().shelf,
+        fields: "card" as const,
+      };
+      const page = current.selectedLibraryId
+        ? await client.getLibraryLatestAddedPage(current.selectedLibraryId, options)
+        : await client.getLatestAddedPage(options);
+      const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
+      setHomeData((existing) => ({
+        ...existing,
+        latestAdded: appendUniqueItems(existing.latestAdded, page.items.filter(isNotDeleted)),
+        latestAddedPaging: pagingFromPage(page),
+      }));
+    } finally {
+      setLoadingMoreKey("latestAdded", false);
+    }
+  }, [client, loadingMore.latestAdded, session, setLoadingMoreKey]);
+
+  const loadMoreFavorites = useCallback(async () => {
+    if (!session) return;
+    const current = homeDataRef.current;
+    const paging = current.favoritesPaging;
+    if (!paging?.hasMore || loadingMore.favorites) return;
+    setLoadingMoreKey("favorites", true);
+    try {
+      const options = {
+        startIndex: paging.loaded,
+        limit: paging.pageSize || getInitialPageSizes().shelf,
+        fields: "card" as const,
+      };
+      const page = current.selectedLibraryId
+        ? await client.getLibraryFavoriteItemsPage(current.selectedLibraryId, options)
+        : await client.getFavoritesPage(options);
+      const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
+      setHomeData((existing) => ({
+        ...existing,
+        favorites: appendUniqueItems(existing.favorites, page.items.filter(isNotDeleted)),
+        favoritesPaging: pagingFromPage(page),
+      }));
+    } finally {
+      setLoadingMoreKey("favorites", false);
+    }
+  }, [client, loadingMore.favorites, session, setLoadingMoreKey]);
+
+  const loadMoreContinueWatching = useCallback(async () => {
+    if (!session) return;
+    const current = homeDataRef.current;
+    const resumePaging = current.continueWatchingPaging;
+    const historyPaging = current.watchHistoryPaging;
+    if (!resumePaging?.hasMore && !historyPaging?.hasMore) return;
+    if (loadingMore.continueWatching) return;
+    setLoadingMoreKey("continueWatching", true);
+    try {
+      const resumePage = resumePaging?.hasMore
+        ? current.selectedLibraryId
+          ? await client.getLibraryResumeItemsPage(current.selectedLibraryId, {
+              startIndex: resumePaging.loaded,
+              limit: resumePaging.pageSize || getInitialPageSizes().shelf,
+              fields: "card",
+            })
+          : await client.getContinueWatchingPage(undefined, {
+              startIndex: resumePaging.loaded,
+              limit: resumePaging.pageSize || getInitialPageSizes().shelf,
+              fields: "card",
+            })
+        : emptyJellyfinPage(resumePaging?.pageSize ?? getInitialPageSizes().shelf);
+      const historyPage = historyPaging?.hasMore
+        ? await client.getWatchHistoryPage(current.selectedLibraryId ?? undefined, {
+            startIndex: historyPaging.loaded,
+            limit: historyPaging.pageSize || getInitialPageSizes().history,
+            fields: "card",
+          })
+        : emptyJellyfinPage(historyPaging?.pageSize ?? getInitialPageSizes().history);
+      const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
+      setHomeData((existing) => {
+        const watchHistory = sortByLastPlayed(
+          appendUniqueItems(existing.watchHistory, historyPage.items.filter(isNotDeleted)).filter(hasWatchActivity),
+        );
+        const resumeSource = appendUniqueItems(existing.continueWatching, resumePage.items.filter(isNotDeleted));
+        return {
+          ...existing,
+          watchHistory,
+          continueWatching: mergeContinueWatchingItems({
+            continueWatching: resumeSource,
+            watchHistory,
+            libraryItems: existing.libraryItems,
+            isNotDeleted,
+          }),
+          continueWatchingPaging: resumePaging?.hasMore ? pagingFromPage(resumePage) : existing.continueWatchingPaging,
+          watchHistoryPaging: historyPaging?.hasMore ? pagingFromPage(historyPage) : existing.watchHistoryPaging,
+        };
+      });
+    } finally {
+      setLoadingMoreKey("continueWatching", false);
+    }
+  }, [client, loadingMore.continueWatching, session, setLoadingMoreKey]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -936,6 +1217,11 @@ export function SpiritFlixApp() {
           onSearch={handleSearch}
           onSelectHome={handleSelectHome}
           onSelectLibrary={handleSelectLibrary}
+          loadingMore={loadingMore}
+          onLoadMoreLibrary={loadMoreLibraryItems}
+          onLoadMoreContinueWatching={loadMoreContinueWatching}
+          onLoadMoreLatestAdded={loadMoreLatestAdded}
+          onLoadMoreFavorites={loadMoreFavorites}
           initialModelName={initialModelName}
           initialManualTag={initialManualTag}
           onSelectModel={handleSelectModel}
