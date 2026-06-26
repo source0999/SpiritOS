@@ -1,8 +1,56 @@
 {
   "plan": 6,
   "title": "Reliability and Daily-Driver Promotion",
-  "status": "PLAN_WRITTEN_NOT_STARTED",
-  "gate_status": "BLOCKED_PENDING_PLAN_0_COMPRESSION_DECISION",
+  "status": "PLAN6_BLOCKED_AT_6_4_1_MAC_DELL_DISPATCH_DECISION",
+  "gate_status": "PLAN6_START_APPROVED_BY_BRITTON_20260626",
+  "previous_plan_status": "PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW",
+  "approval_recorded": "Britton explicitly approved Plan 6 start in the Codex task prompt on 2026-06-26.",
   "implementation_performed": false,
-  "next_plan_authorized": false
+  "live_proof_performed": true,
+  "next_plan_authorized": false,
+  "current_phase": "6.4",
+  "next_incomplete_increment": "6.4.1",
+  "stop_condition": "Phase 6.4 requires repeated Mac/Dell dispatch and supervised soak; continuing requires a concrete Mac/Dell subsystem availability and authority decision not present in this run.",
+  "daily_driver_promotion_recommendation": "DENIED_NO_PRODUCTIVE_REPEATED_APPLY_PROOF",
+  "increments": {
+    "6.1.1": "GO_FAIL_CLOSED_CANONICAL_TRACE",
+    "6.1.2": "GO_FIVE_TASK_FAIL_CLOSED_SET",
+    "6.2.1": "GO_TEN_TASK_FAIL_CLOSED_GAUNTLET",
+    "6.2.2": "GO_NO_TARGET_MUTATION_OR_UNCONSUMED_OUTPUT",
+    "6.3.1": "GO_CENTRAL_GATE_FAULT_DECISION_BEARING",
+    "6.3.2": "GO_FAILURE_OUTPUT_CONSUMED_DOWNSTREAM",
+    "6.4.1": "BLOCKED_PENDING_MAC_DELL_DISPATCH_DECISION",
+    "6.4.2": "NOT_STARTED",
+    "6.5.1": "NOT_STARTED",
+    "6.5.2": "NOT_STARTED",
+    "6.6.1": "NOT_STARTED",
+    "6.6.2": "NOT_STARTED"
+  },
+  "phases": {
+    "6.1": "GO_FAIL_CLOSED_RELIABILITY_ONLY",
+    "6.2": "GO_FAIL_CLOSED_RELIABILITY_ONLY",
+    "6.3": "GO_FAIL_CLOSED_FAULT_INJECTION",
+    "6.4": "BLOCKED_AT_6_4_1",
+    "6.5": "NOT_STARTED",
+    "6.6": "NOT_STARTED"
+  },
+  "proof_artifacts": [
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-live-fail-closed-reliability-proof-20260626.json"
+  ],
+  "proof_summary": {
+    "accepted_fail_closed_tasks": 17,
+    "phase_6_1_accepted": 5,
+    "phase_6_2_accepted": 10,
+    "phase_6_3_accepted": 2,
+    "execute_approved_route_statuses": [
+      500
+    ],
+    "coding_operator_surface_http_status": 200,
+    "plan6_fail_closed_target_exists_after": false
+  },
+  "forbidden_paths_touched": false,
+  "product_code_changed": false,
+  "package_or_env_changed": false,
+  "generated_xml_or_repomix_changed": false,
+  "work_outside_plan_6_started": false
 }

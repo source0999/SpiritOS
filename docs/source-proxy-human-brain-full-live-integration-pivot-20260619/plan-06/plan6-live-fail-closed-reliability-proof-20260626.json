@@ -1,0 +1,1423 @@
+{
+  "accepted_full_chain_tasks": [
+    {
+      "consumer_event_id": "consumer_3de12b478eed46f7",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_308ab8f7dbb9478c",
+      "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_1 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_302dbbe876f34cf3",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_1_phase_verifier_1"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_1",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_1_fail_closed_1",
+      "task_id": "task_6d86d53d52f2",
+      "trace_id": "trace_075b4d5785c74877"
+    },
+    {
+      "consumer_event_id": "consumer_c92be6e4e7d8408d",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_7dcec0a49fc544b3",
+      "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_2 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_1c53a94fe53e4855",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_1_phase_verifier_2"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_2",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_1_fail_closed_2",
+      "task_id": "task_c6856615206f",
+      "trace_id": "trace_cbe4be031eb5419d"
+    },
+    {
+      "consumer_event_id": "consumer_0d5c464afdef4548",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_fd78cd23db4641e6",
+      "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_3 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_57fd8498e64043e3",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_1_phase_verifier_3"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_3",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_1_fail_closed_3",
+      "task_id": "task_0a13e9da3639",
+      "trace_id": "trace_cfffb2e56d484327"
+    },
+    {
+      "consumer_event_id": "consumer_f43dfedb9c2c41cc",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_ea5246afd93c4abc",
+      "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_4 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_08ce1e6c2fd94f14",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_1_phase_verifier_4"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_4",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_1_fail_closed_4",
+      "task_id": "task_72043fb76b96",
+      "trace_id": "trace_913b397da73244e0"
+    },
+    {
+      "consumer_event_id": "consumer_e61e81e04a684656",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_176acf52ba464dbb",
+      "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_5 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_1f26e37b2bc44623",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_1_phase_verifier_5"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_5",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_1_fail_closed_5",
+      "task_id": "task_0d0fcb52de8e",
+      "trace_id": "trace_c147ece5bf5840a4"
+    },
+    {
+      "consumer_event_id": "consumer_42b9fed4a66a4ec5",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_d36fcc7efd1b4fa4",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_1 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_e5feaff36a1a46d1",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_1"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_1",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_1",
+      "task_id": "task_c15440b401ae",
+      "trace_id": "trace_b28964601e374f63"
+    },
+    {
+      "consumer_event_id": "consumer_b3a2603731624b92",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_275904947ada4d9c",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_2 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_484f1091af1c488c",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_2"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_2",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_2",
+      "task_id": "task_b541f68f11ec",
+      "trace_id": "trace_8f2244348d814253"
+    },
+    {
+      "consumer_event_id": "consumer_7fef217bc87345a5",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_8ab69763f56a454f",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_3 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_7435ae1a71df4358",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_3"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_3",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_3",
+      "task_id": "task_d5e458e18dfd",
+      "trace_id": "trace_63e8eb786e8d42d8"
+    },
+    {
+      "consumer_event_id": "consumer_058ef8cb9a4541c4",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_d95fe6bbdd294442",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_4 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_b2f7f85f127f440e",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_4"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_4",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_4",
+      "task_id": "task_ac41f84adeb9",
+      "trace_id": "trace_b96170e8d5e743ca"
+    },
+    {
+      "consumer_event_id": "consumer_b784bba0afb14535",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_bbfa846db3ca4677",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_5 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_e4970d53842248a8",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_5"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_5",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_5",
+      "task_id": "task_eb8fa1e24a14",
+      "trace_id": "trace_422bade2931d4a17"
+    },
+    {
+      "consumer_event_id": "consumer_8370a859e9214707",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_8ae7c08ac1324902",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_6 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_bdfaab5d682443c3",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_6"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_6",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_6",
+      "task_id": "task_e41df2a13c5b",
+      "trace_id": "trace_eea4d711e25844da"
+    },
+    {
+      "consumer_event_id": "consumer_1cac80fe04b94c96",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_f04cc29e84da4878",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_7 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_fa7cf12a55e242aa",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_7"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_7",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_7",
+      "task_id": "task_0cea5558c220",
+      "trace_id": "trace_55d6177124e14125"
+    },
+    {
+      "consumer_event_id": "consumer_7e43c290e7b846dd",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_65e2364f52424490",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_8 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_84975b5f7d3d4209",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_8"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_8",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_8",
+      "task_id": "task_4c51c4cf2d62",
+      "trace_id": "trace_4a785934d3f04477"
+    },
+    {
+      "consumer_event_id": "consumer_23a25f66a4b745f0",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_15aaa1722e774e6e",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_9 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_756cf95ce4c6417b",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_9"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_9",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_9",
+      "task_id": "task_67ec1895ea8b",
+      "trace_id": "trace_3895e11cc4ca44ae"
+    },
+    {
+      "consumer_event_id": "consumer_7f538e6f40294d48",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_03b55ef8a97e4df7",
+      "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_10 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_bcc251b071d049c8",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_2_phase_verifier_10"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_10",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_2_fail_closed_10",
+      "task_id": "task_f0e3ebe1097e",
+      "trace_id": "trace_cfcb0896febe4fa4"
+    },
+    {
+      "consumer_event_id": "consumer_712f18a257a24e03",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_f030766763954aa9",
+      "operator_visible_result": "/coding consumes plan6_6_3_fail_closed_1 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_c8fbe468e4de41f1",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_3_phase_verifier_1"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_3_fail_closed_1",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_3_fail_closed_1",
+      "task_id": "task_c7aed30b4ad7",
+      "trace_id": "trace_c8fad09b8ace4263"
+    },
+    {
+      "consumer_event_id": "consumer_d95668594795416c",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+      "final_verdict_change": true,
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "curl -k https://127.0.0.1:3000/coding"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+      "invocation_event_id": "invocation_5357ea780c38440d",
+      "operator_visible_result": "/coding consumes plan6_6_3_fail_closed_2 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+      "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "consumer_event_id": "consumer_d6c6e9fb79cf4516",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_3_phase_verifier_2"
+      },
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_reliability.plan6_6_3_fail_closed_2",
+        "status",
+        "architect_status",
+        "architect_reason",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_3_fail_closed_2",
+      "task_id": "task_cd7a77eb4d52",
+      "trace_id": "trace_fcd1eb4287c14be2"
+    }
+  ],
+  "approval_recorded": "Britton explicitly approved Plan 6 start in Codex task prompt on 2026-06-26",
+  "branch": "integration/cleanup-plan3-debug-20260623",
+  "canonical_chain": "/coding -> CodingCockpitShell -> Next v1 route -> Source Proxy canonical handler -> fail-closed subsystem output -> downstream consumer -> phase gate -> operator-visible state",
+  "coding_operator_surface": {
+    "contains_coding_shell_id": true,
+    "contains_receipt_link": true,
+    "contains_trace_link": true,
+    "http_status": 200,
+    "url": "https://127.0.0.1:3000/coding"
+  },
+  "created_at": "2026-06-26T21:34:03.044518+00:00",
+  "daily_driver_promotion_recommendation": "DENIED_NO_PRODUCTIVE_REPEATED_APPLY_PROOF_AND_PLAN_6_4_MAC_DELL_DISPATCH_BLOCKED",
+  "head": "79d61e69bd7ffd901fcce17e55ba141e0cf967ab",
+  "plan": 6,
+  "proof_target": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/live-fail-closed-target-20260626.txt",
+  "proof_target_exists_after": false,
+  "raw_results": [
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_3de12b478eed46f7",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_308ab8f7dbb9478c",
+        "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_1 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_302dbbe876f34cf3",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_1_phase_verifier_1"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_1",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_1_fail_closed_1",
+        "task_id": "task_6d86d53d52f2",
+        "trace_id": "trace_075b4d5785c74877"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 1,
+      "label": "6.1",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_291bda1f42ad4629",
+      "route_invocation_event_id": "invocation_ea386e1635c8416d",
+      "route_trace_id": "trace_075b4d5785c74877",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_c92be6e4e7d8408d",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_7dcec0a49fc544b3",
+        "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_2 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_1c53a94fe53e4855",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_1_phase_verifier_2"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_2",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_1_fail_closed_2",
+        "task_id": "task_c6856615206f",
+        "trace_id": "trace_cbe4be031eb5419d"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 2,
+      "label": "6.1",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_27d113da4eae441b",
+      "route_invocation_event_id": "invocation_29499932441841ed",
+      "route_trace_id": "trace_cbe4be031eb5419d",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_0d5c464afdef4548",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_fd78cd23db4641e6",
+        "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_3 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_57fd8498e64043e3",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_1_phase_verifier_3"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_3",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_1_fail_closed_3",
+        "task_id": "task_0a13e9da3639",
+        "trace_id": "trace_cfffb2e56d484327"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 3,
+      "label": "6.1",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_13b526a78d0f4cdb",
+      "route_invocation_event_id": "invocation_ff9f939727844d17",
+      "route_trace_id": "trace_cfffb2e56d484327",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_f43dfedb9c2c41cc",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_ea5246afd93c4abc",
+        "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_4 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_08ce1e6c2fd94f14",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_1_phase_verifier_4"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_4",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_1_fail_closed_4",
+        "task_id": "task_72043fb76b96",
+        "trace_id": "trace_913b397da73244e0"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 4,
+      "label": "6.1",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_801dd2ecadc4460b",
+      "route_invocation_event_id": "invocation_c2f41d5e926f429d",
+      "route_trace_id": "trace_913b397da73244e0",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_e61e81e04a684656",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_176acf52ba464dbb",
+        "operator_visible_result": "/coding consumes plan6_6_1_fail_closed_5 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_1f26e37b2bc44623",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_1_phase_verifier_5"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_1_fail_closed_5",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_1_fail_closed_5",
+        "task_id": "task_0d0fcb52de8e",
+        "trace_id": "trace_c147ece5bf5840a4"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 5,
+      "label": "6.1",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_76104d027f844227",
+      "route_invocation_event_id": "invocation_32b2962f25724c50",
+      "route_trace_id": "trace_c147ece5bf5840a4",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_42b9fed4a66a4ec5",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_d36fcc7efd1b4fa4",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_1 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_e5feaff36a1a46d1",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_1"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_1",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_1",
+        "task_id": "task_c15440b401ae",
+        "trace_id": "trace_b28964601e374f63"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 1,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_bc9e095db3c64324",
+      "route_invocation_event_id": "invocation_fca8d52061cf4ae7",
+      "route_trace_id": "trace_b28964601e374f63",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_b3a2603731624b92",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_275904947ada4d9c",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_2 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_484f1091af1c488c",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_2"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_2",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_2",
+        "task_id": "task_b541f68f11ec",
+        "trace_id": "trace_8f2244348d814253"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 2,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_71d84c3b9c284fac",
+      "route_invocation_event_id": "invocation_ac04e013854a4610",
+      "route_trace_id": "trace_8f2244348d814253",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_7fef217bc87345a5",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_8ab69763f56a454f",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_3 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_7435ae1a71df4358",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_3"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_3",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_3",
+        "task_id": "task_d5e458e18dfd",
+        "trace_id": "trace_63e8eb786e8d42d8"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 3,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_4f0b40b1fdb34717",
+      "route_invocation_event_id": "invocation_aac1602c6b8e4e51",
+      "route_trace_id": "trace_63e8eb786e8d42d8",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_058ef8cb9a4541c4",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_d95fe6bbdd294442",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_4 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_b2f7f85f127f440e",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_4"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_4",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_4",
+        "task_id": "task_ac41f84adeb9",
+        "trace_id": "trace_b96170e8d5e743ca"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 4,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_1d2f349b5a7e44fd",
+      "route_invocation_event_id": "invocation_3a9b1407f10440de",
+      "route_trace_id": "trace_b96170e8d5e743ca",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_b784bba0afb14535",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_bbfa846db3ca4677",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_5 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_e4970d53842248a8",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_5"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_5",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_5",
+        "task_id": "task_eb8fa1e24a14",
+        "trace_id": "trace_422bade2931d4a17"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 5,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_b064271eec2a4e69",
+      "route_invocation_event_id": "invocation_9a722ee5b1194fd7",
+      "route_trace_id": "trace_422bade2931d4a17",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_8370a859e9214707",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_8ae7c08ac1324902",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_6 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_bdfaab5d682443c3",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_6"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_6",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_6",
+        "task_id": "task_e41df2a13c5b",
+        "trace_id": "trace_eea4d711e25844da"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 6,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_f7efe17888204000",
+      "route_invocation_event_id": "invocation_0ae631e13dfa4f39",
+      "route_trace_id": "trace_eea4d711e25844da",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_1cac80fe04b94c96",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_f04cc29e84da4878",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_7 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_fa7cf12a55e242aa",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_7"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_7",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_7",
+        "task_id": "task_0cea5558c220",
+        "trace_id": "trace_55d6177124e14125"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 7,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_b3b701bc006f42eb",
+      "route_invocation_event_id": "invocation_c123a7f0edaf44a5",
+      "route_trace_id": "trace_55d6177124e14125",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_7e43c290e7b846dd",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_65e2364f52424490",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_8 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_84975b5f7d3d4209",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_8"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_8",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_8",
+        "task_id": "task_4c51c4cf2d62",
+        "trace_id": "trace_4a785934d3f04477"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 8,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_6e58b6d4c24d45fd",
+      "route_invocation_event_id": "invocation_3b63e068d4284141",
+      "route_trace_id": "trace_4a785934d3f04477",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_23a25f66a4b745f0",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_15aaa1722e774e6e",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_9 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_756cf95ce4c6417b",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_9"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_9",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_9",
+        "task_id": "task_67ec1895ea8b",
+        "trace_id": "trace_3895e11cc4ca44ae"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 9,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_2b558207bb5a4902",
+      "route_invocation_event_id": "invocation_9107674752f94847",
+      "route_trace_id": "trace_3895e11cc4ca44ae",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_7f538e6f40294d48",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_03b55ef8a97e4df7",
+        "operator_visible_result": "/coding consumes plan6_6_2_fail_closed_10 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_bcc251b071d049c8",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_2_phase_verifier_10"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_2_fail_closed_10",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_2_fail_closed_10",
+        "task_id": "task_f0e3ebe1097e",
+        "trace_id": "trace_cfcb0896febe4fa4"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 10,
+      "label": "6.2",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_4622985617564ab2",
+      "route_invocation_event_id": "invocation_61a05ac7f86445c2",
+      "route_trace_id": "trace_cfcb0896febe4fa4",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_712f18a257a24e03",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_f030766763954aa9",
+        "operator_visible_result": "/coding consumes plan6_6_3_fail_closed_1 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_c8fbe468e4de41f1",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_3_phase_verifier_1"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_3_fail_closed_1",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_3_fail_closed_1",
+        "task_id": "task_c7aed30b4ad7",
+        "trace_id": "trace_c8fad09b8ace4263"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 1,
+      "label": "6.3",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_0234a67e5e8a440b",
+      "route_invocation_event_id": "invocation_e1cfeac1ca27491c",
+      "route_trace_id": "trace_c8fad09b8ace4263",
+      "target_exists_after": false,
+      "target_mutated": false
+    },
+    {
+      "accepted_task": {
+        "consumer_event_id": "consumer_d95668594795416c",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_6_fail_closed_reliability_budget",
+        "final_verdict_change": true,
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+          "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+          "curl -k https://127.0.0.1:3000/coding"
+        ],
+        "forbidden_state_scan": [],
+        "gate_failures": [],
+        "gate_status": "GO",
+        "git_status": "clean before Plan 6 generated evidence; docs/proof artifacts added during run",
+        "invocation_event_id": "invocation_5357ea780c38440d",
+        "operator_visible_result": "/coding consumes plan6_6_3_fail_closed_2 as BLOCKED; route /v1/actions/execute-approved returned HTTP 500",
+        "output_hash": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+        "phase_verifier_consumption": {
+          "accepted_output_hash_input": "4aeb4da5d0d81b80b2bfaaa28b481212d5e7eeb0a1c3a24dc71682cd3c2339cb",
+          "consumer_event_id": "consumer_d6c6e9fb79cf4516",
+          "consumer_subsystem": "plan6_phase_gate_consumer",
+          "phase_verifier_subsystem": "plan6_6_3_phase_verifier_2"
+        },
+        "state_fields_changed": [
+          "ast_snapshot.plan_6_reliability.plan6_6_3_fail_closed_2",
+          "status",
+          "architect_status",
+          "architect_reason",
+          "ast_snapshot"
+        ],
+        "subsystem_invoked": "plan6_6_3_fail_closed_2",
+        "task_id": "task_cd7a77eb4d52",
+        "trace_id": "trace_fcd1eb4287c14be2"
+      },
+      "execute_route_payload_type": "str",
+      "execute_route_status": 500,
+      "index": 2,
+      "label": "6.3",
+      "next_create_status": 200,
+      "route_consumer_event_id": "consumer_2eab3e12943b4eb7",
+      "route_invocation_event_id": "invocation_48c0901570e64d41",
+      "route_trace_id": "trace_fcd1eb4287c14be2",
+      "target_exists_after": false,
+      "target_mutated": false
+    }
+  ],
+  "sets": {
+    "6.1": {
+      "accepted_count": 5,
+      "all_targets_unmutated": true,
+      "requested_count": 5,
+      "route_statuses": [
+        500,
+        500,
+        500,
+        500,
+        500
+      ]
+    },
+    "6.2": {
+      "accepted_count": 10,
+      "all_targets_unmutated": true,
+      "requested_count": 10,
+      "route_statuses": [
+        500,
+        500,
+        500,
+        500,
+        500,
+        500,
+        500,
+        500,
+        500,
+        500
+      ]
+    },
+    "6.3": {
+      "accepted_count": 2,
+      "all_targets_unmutated": true,
+      "requested_count": 2,
+      "route_statuses": [
+        500,
+        500
+      ]
+    }
+  },
+  "stop_condition": "Plan 6 reached 6.4.1 boundary; repeated Mac/Dell dispatch would require a Mac/Dell subsystem availability and authority decision not present in this run."
+}
