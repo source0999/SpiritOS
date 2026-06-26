@@ -1,0 +1,311 @@
+{
+  "command_context": "/home/source/SpiritOS",
+  "failure_architect_reason": "plan5_phase_verifier_consumed_blocked_current_research",
+  "failure_changed_verdict": true,
+  "failure_gate": {
+    "evidence": {
+      "accepted_output_hash": "494f5fd67d347b93f59546e388cd2bdf3d8dd87fd989d81d52f5c45216dc48d5",
+      "evidence_budget_status": "within_plan_5_budget",
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+      ],
+      "git_status": "clean except ignored repomixes/",
+      "operator_consumer_event_id": "consumer_4e9d56edfe7349cb",
+      "phase_verifier_consumer_event_id": "consumer_eb842596b27b4d68",
+      "phase_verifier_invocation_event_id": "invocation_42e5b302be5d4a0a",
+      "phase_verifier_upstream_state_keys": [
+        "accepted_output_hash",
+        "source_subsystem",
+        "task_id"
+      ],
+      "task_id": "task_782fa06e1aa3",
+      "trace_id": "trace_80c26617ebee439d"
+    },
+    "failure_changes_final_verdict": true,
+    "failures": [],
+    "forbidden_states": [],
+    "operator_consumer_subsystem": "coding_operator_surface",
+    "output_consumed_by_operator": true,
+    "output_consumed_by_phase_verifier": true,
+    "phase_consumer_subsystem": "plan5_phase_acceptance_consumer",
+    "phase_verifier_gate": {
+      "evidence": {
+        "consumer_event_id": "consumer_eb842596b27b4d68",
+        "consumer_subsystem": "plan5_phase_acceptance_consumer",
+        "evidence_budget_status": "within_plan_5_budget",
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+        ],
+        "git_status": "clean except ignored repomixes/",
+        "invocation_event_id": "invocation_42e5b302be5d4a0a",
+        "output_hash": "3a0132c28231681c32401e265ca0f2086fd1c23bf76f4c40cb02d5da6babc6d4",
+        "state_fields_changed": [
+          "ast_snapshot.plan_5_acceptance.phase_verifier",
+          "ast_snapshot"
+        ],
+        "subsystem": "plan5_phase_verifier",
+        "subsystem_status": "BLOCKED_ENV",
+        "task_id": "task_782fa06e1aa3",
+        "trace_id": "trace_80c26617ebee439d"
+      },
+      "failure_changes_final_verdict": true,
+      "failures": [],
+      "forbidden_state_catalog": [
+        "preview_only_completion",
+        "advisory_only_completion",
+        "read_only_completion_for_action_capable_system",
+        "skipped_required_lane",
+        "unconsumed_output",
+        "fake_productive_go"
+      ],
+      "forbidden_states": [],
+      "missing_fields": [],
+      "output_consumed_downstream": true,
+      "plan": 5,
+      "required_fields": [
+        "task_id",
+        "trace_id",
+        "invocation_event_id",
+        "consumer_event_id",
+        "consumer_subsystem",
+        "state_fields_changed",
+        "focused_checks",
+        "git_status",
+        "evidence_budget_status"
+      ],
+      "required_verdict": "GO",
+      "same_trace": true,
+      "state_fields_changed_present": true,
+      "status": "GO",
+      "subsystem": "plan5_phase_verifier"
+    },
+    "phase_verifier_subsystem": "plan5_phase_verifier",
+    "plan": 5,
+    "required_fields": [
+      "task_id",
+      "trace_id",
+      "invocation_event_id",
+      "consumer_event_id",
+      "consumer_subsystem",
+      "state_fields_changed",
+      "focused_checks",
+      "git_status",
+      "evidence_budget_status"
+    ],
+    "required_verdict": "GO",
+    "same_trace": true,
+    "status": "GO",
+    "subsystem": "current_research",
+    "subsystem_gate": {
+      "evidence": {
+        "consumer_event_id": "consumer_4e9d56edfe7349cb",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_5_budget",
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+        ],
+        "git_status": "clean except ignored repomixes/",
+        "invocation_event_id": "invocation_44b8a55d41234491",
+        "output_hash": "494f5fd67d347b93f59546e388cd2bdf3d8dd87fd989d81d52f5c45216dc48d5",
+        "state_fields_changed": [
+          "ast_snapshot.plan_5_acceptance.current_research",
+          "ast_snapshot"
+        ],
+        "subsystem": "current_research",
+        "subsystem_status": "BLOCKED_ENV",
+        "task_id": "task_782fa06e1aa3",
+        "trace_id": "trace_80c26617ebee439d"
+      },
+      "failure_changes_final_verdict": true,
+      "failures": [],
+      "forbidden_state_catalog": [
+        "preview_only_completion",
+        "advisory_only_completion",
+        "read_only_completion_for_action_capable_system",
+        "skipped_required_lane",
+        "unconsumed_output",
+        "fake_productive_go"
+      ],
+      "forbidden_states": [],
+      "missing_fields": [],
+      "output_consumed_downstream": true,
+      "plan": 5,
+      "required_fields": [
+        "task_id",
+        "trace_id",
+        "invocation_event_id",
+        "consumer_event_id",
+        "consumer_subsystem",
+        "state_fields_changed",
+        "focused_checks",
+        "git_status",
+        "evidence_budget_status"
+      ],
+      "required_verdict": "GO",
+      "same_trace": true,
+      "state_fields_changed_present": true,
+      "status": "GO",
+      "subsystem": "current_research"
+    }
+  },
+  "failure_task_status": "blocked",
+  "forbidden_states_present": [],
+  "increment": "5.1.2",
+  "no_preview_only_completion": true,
+  "operator_consumer_subsystem": "coding_operator_surface",
+  "output_consumed_by_operator": true,
+  "output_consumed_by_phase_verifier": true,
+  "phase_consumer_subsystem": "plan5_phase_acceptance_consumer",
+  "phase_verifier_subsystem": "plan5_phase_verifier",
+  "plan": 5,
+  "same_trace": true,
+  "status": "PASS_PLAN5_5_1_2_PHASE_VERIFIER_PROOF",
+  "subsystem": "current_research",
+  "success_gate": {
+    "evidence": {
+      "accepted_output_hash": "50a849a867264e1f58308acbb4cb91fb0a064e558ab66b9819b171d548ac8e96",
+      "evidence_budget_status": "within_plan_5_budget",
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+      ],
+      "git_status": "clean except ignored repomixes/",
+      "operator_consumer_event_id": "consumer_7394125a95554ed1",
+      "phase_verifier_consumer_event_id": "consumer_540a2592abc84357",
+      "phase_verifier_invocation_event_id": "invocation_4301a0fd879c4fb6",
+      "phase_verifier_upstream_state_keys": [
+        "accepted_output_hash",
+        "source_subsystem",
+        "task_id"
+      ],
+      "task_id": "task_e34b031fc2f5",
+      "trace_id": "trace_65b5b7868f9e4744"
+    },
+    "failure_changes_final_verdict": false,
+    "failures": [],
+    "forbidden_states": [],
+    "operator_consumer_subsystem": "coding_operator_surface",
+    "output_consumed_by_operator": true,
+    "output_consumed_by_phase_verifier": true,
+    "phase_consumer_subsystem": "plan5_phase_acceptance_consumer",
+    "phase_verifier_gate": {
+      "evidence": {
+        "consumer_event_id": "consumer_540a2592abc84357",
+        "consumer_subsystem": "plan5_phase_acceptance_consumer",
+        "evidence_budget_status": "within_plan_5_budget",
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+        ],
+        "git_status": "clean except ignored repomixes/",
+        "invocation_event_id": "invocation_4301a0fd879c4fb6",
+        "output_hash": "4323d33f9294a714496ee9e64ce9cba1c680ad1bc66e93d9c20896903d37a540",
+        "state_fields_changed": [
+          "ast_snapshot.plan_5_acceptance.phase_verifier",
+          "ast_snapshot"
+        ],
+        "subsystem": "plan5_phase_verifier",
+        "subsystem_status": "INTEGRATED_LIVE",
+        "task_id": "task_e34b031fc2f5",
+        "trace_id": "trace_65b5b7868f9e4744"
+      },
+      "failure_changes_final_verdict": false,
+      "failures": [],
+      "forbidden_state_catalog": [
+        "preview_only_completion",
+        "advisory_only_completion",
+        "read_only_completion_for_action_capable_system",
+        "skipped_required_lane",
+        "unconsumed_output",
+        "fake_productive_go"
+      ],
+      "forbidden_states": [],
+      "missing_fields": [],
+      "output_consumed_downstream": true,
+      "plan": 5,
+      "required_fields": [
+        "task_id",
+        "trace_id",
+        "invocation_event_id",
+        "consumer_event_id",
+        "consumer_subsystem",
+        "state_fields_changed",
+        "focused_checks",
+        "git_status",
+        "evidence_budget_status"
+      ],
+      "required_verdict": "GO",
+      "same_trace": true,
+      "state_fields_changed_present": true,
+      "status": "GO",
+      "subsystem": "plan5_phase_verifier"
+    },
+    "phase_verifier_subsystem": "plan5_phase_verifier",
+    "plan": 5,
+    "required_fields": [
+      "task_id",
+      "trace_id",
+      "invocation_event_id",
+      "consumer_event_id",
+      "consumer_subsystem",
+      "state_fields_changed",
+      "focused_checks",
+      "git_status",
+      "evidence_budget_status"
+    ],
+    "required_verdict": "GO",
+    "same_trace": true,
+    "status": "GO",
+    "subsystem": "current_research",
+    "subsystem_gate": {
+      "evidence": {
+        "consumer_event_id": "consumer_7394125a95554ed1",
+        "consumer_subsystem": "coding_operator_surface",
+        "evidence_budget_status": "within_plan_5_budget",
+        "focused_checks": [
+          "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+        ],
+        "git_status": "clean except ignored repomixes/",
+        "invocation_event_id": "invocation_af7f01dea277485b",
+        "output_hash": "50a849a867264e1f58308acbb4cb91fb0a064e558ab66b9819b171d548ac8e96",
+        "state_fields_changed": [
+          "ast_snapshot.plan_5_acceptance.current_research",
+          "ast_snapshot"
+        ],
+        "subsystem": "current_research",
+        "subsystem_status": "INTEGRATED_LIVE",
+        "task_id": "task_e34b031fc2f5",
+        "trace_id": "trace_65b5b7868f9e4744"
+      },
+      "failure_changes_final_verdict": false,
+      "failures": [],
+      "forbidden_state_catalog": [
+        "preview_only_completion",
+        "advisory_only_completion",
+        "read_only_completion_for_action_capable_system",
+        "skipped_required_lane",
+        "unconsumed_output",
+        "fake_productive_go"
+      ],
+      "forbidden_states": [],
+      "missing_fields": [],
+      "output_consumed_downstream": true,
+      "plan": 5,
+      "required_fields": [
+        "task_id",
+        "trace_id",
+        "invocation_event_id",
+        "consumer_event_id",
+        "consumer_subsystem",
+        "state_fields_changed",
+        "focused_checks",
+        "git_status",
+        "evidence_budget_status"
+      ],
+      "required_verdict": "GO",
+      "same_trace": true,
+      "state_fields_changed_present": true,
+      "status": "GO",
+      "subsystem": "current_research"
+    }
+  },
+  "success_task_status": "queued"
+}

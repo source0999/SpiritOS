@@ -127,6 +127,126 @@ def build_plan5_acceptance_gate(
     }
 
 
+def build_plan5_phase_verifier_gate(
+    task_payload: dict[str, Any],
+    *,
+    subsystem: str,
+    phase_verifier_subsystem: str,
+    operator_consumer_subsystem: str,
+    phase_consumer_subsystem: str,
+    focused_checks: list[str],
+    git_status: str,
+    evidence_budget_status: str,
+) -> dict[str, Any]:
+    """Require both operator and phase-verifier consumption before Plan 5 GO."""
+    subsystem_gate = build_plan5_acceptance_gate(
+        task_payload,
+        subsystem=subsystem,
+        focused_checks=focused_checks,
+        git_status=git_status,
+        evidence_budget_status=evidence_budget_status,
+    )
+    verifier_gate = build_plan5_acceptance_gate(
+        task_payload,
+        subsystem=phase_verifier_subsystem,
+        focused_checks=focused_checks,
+        git_status=git_status,
+        evidence_budget_status=evidence_budget_status,
+    )
+    task = task_payload.get("task") if isinstance(task_payload.get("task"), dict) else {}
+    snapshot = task.get("ast_snapshot") if isinstance(task.get("ast_snapshot"), dict) else {}
+    integrations = (
+        snapshot.get("plan_2_subsystem_integrations")
+        if isinstance(snapshot.get("plan_2_subsystem_integrations"), dict)
+        else {}
+    )
+    subsystem_record = integrations.get(subsystem) if isinstance(integrations.get(subsystem), dict) else {}
+    verifier_record = (
+        integrations.get(phase_verifier_subsystem)
+        if isinstance(integrations.get(phase_verifier_subsystem), dict)
+        else {}
+    )
+    causal_events = task.get("causal_events") if isinstance(task.get("causal_events"), list) else []
+    trace_id = str(subsystem_gate["evidence"].get("trace_id") or "")
+    output_hash = str(subsystem_record.get("output_hash") or "")
+    verifier_upstream_keys = [
+        str(item)
+        for item in verifier_record.get("upstream_state_keys", [])
+        if str(item or "").strip()
+    ]
+
+    failures: list[str] = []
+    if subsystem_gate["status"] != "GO":
+        failures.append("subsystem_gate_not_go")
+    if verifier_gate["status"] != "GO":
+        failures.append("phase_verifier_gate_not_go")
+    if subsystem_gate["evidence"].get("consumer_subsystem") != operator_consumer_subsystem:
+        failures.append("operator_consumer_missing")
+    if verifier_gate["evidence"].get("consumer_subsystem") != phase_consumer_subsystem:
+        failures.append("phase_verifier_consumer_missing")
+    if not output_hash:
+        failures.append("accepted_output_hash_missing")
+    if "accepted_output_hash" not in verifier_upstream_keys:
+        failures.append("phase_verifier_missing_output_hash_input")
+    if "source_subsystem" not in verifier_upstream_keys:
+        failures.append("phase_verifier_missing_source_subsystem_input")
+
+    event_ids = [
+        str(subsystem_gate["evidence"].get("invocation_event_id") or ""),
+        str(subsystem_gate["evidence"].get("consumer_event_id") or ""),
+        str(verifier_gate["evidence"].get("invocation_event_id") or ""),
+        str(verifier_gate["evidence"].get("consumer_event_id") or ""),
+    ]
+    events = [_event_by_id(causal_events, event_id) for event_id in event_ids]
+    all_phase_events_present = all(event is not None for event in events)
+    all_phase_events_on_trace = all(
+        event is not None and event.get("trace_id") == trace_id
+        for event in events
+    )
+    if not all_phase_events_present:
+        failures.append("phase_trace_event_missing")
+    if all_phase_events_present and not all_phase_events_on_trace:
+        failures.append("phase_trace_mismatch")
+
+    forbidden_states = sorted(
+        set(subsystem_gate["forbidden_states"]) | set(verifier_gate["forbidden_states"])
+    )
+    status = "GO" if not failures and not forbidden_states else "NEEDS_FIX"
+    return {
+        "plan": 5,
+        "status": status,
+        "required_verdict": "GO",
+        "subsystem": subsystem,
+        "phase_verifier_subsystem": phase_verifier_subsystem,
+        "operator_consumer_subsystem": operator_consumer_subsystem,
+        "phase_consumer_subsystem": phase_consumer_subsystem,
+        "subsystem_gate": subsystem_gate,
+        "phase_verifier_gate": verifier_gate,
+        "failures": failures,
+        "forbidden_states": forbidden_states,
+        "required_fields": list(REQUIRED_PLAN5_FIELDS),
+        "output_consumed_by_operator": subsystem_gate["output_consumed_downstream"],
+        "output_consumed_by_phase_verifier": verifier_gate["output_consumed_downstream"]
+        and "accepted_output_hash" in verifier_upstream_keys
+        and "source_subsystem" in verifier_upstream_keys,
+        "same_trace": all_phase_events_present and all_phase_events_on_trace,
+        "failure_changes_final_verdict": subsystem_gate["failure_changes_final_verdict"]
+        or verifier_gate["failure_changes_final_verdict"],
+        "evidence": {
+            "task_id": subsystem_gate["evidence"].get("task_id", ""),
+            "trace_id": trace_id,
+            "accepted_output_hash": output_hash,
+            "operator_consumer_event_id": subsystem_gate["evidence"].get("consumer_event_id", ""),
+            "phase_verifier_invocation_event_id": verifier_gate["evidence"].get("invocation_event_id", ""),
+            "phase_verifier_consumer_event_id": verifier_gate["evidence"].get("consumer_event_id", ""),
+            "phase_verifier_upstream_state_keys": verifier_upstream_keys,
+            "focused_checks": [item for item in focused_checks if item],
+            "git_status": git_status.strip(),
+            "evidence_budget_status": evidence_budget_status.strip(),
+        },
+    }
+
+
 def _field_present(value: Any) -> bool:
     if isinstance(value, list):
         return bool(value)

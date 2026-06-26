@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 5 State - 2026-06-25
 
-Status: `PLAN5_INCREMENT_5_1_1_GO`.
+Status: `PLAN5_INCREMENT_5_1_2_GO`.
 
 Britton approved Plan 5 start and resolved the Plan 0 compression decision gate for Plan 5 start:
 
@@ -24,6 +24,19 @@ Implemented change:
 - Added focused backend tests in `source_proxy/tests/test_plan5_acceptance_harness.py`.
 - Added a render-level `/coding` operator assertion in `src/components/coding/__tests__/coding-cockpit-shell.test.tsx`.
 
+Increment 5.1.2 is complete:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-2-phase-verifier-20260625.md`
+
+Proof artifact:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-2-phase-verifier-proof-20260625.json`
+
+Implemented change:
+
+- Added `build_plan5_phase_verifier_gate` to require operator and phase verifier consumers for the accepted subsystem output hash.
+- Extended `source_proxy/tests/test_plan5_acceptance_harness.py` with positive and negative phase-verifier consumption checks.
+
 Focused checks passed from `/home/source/SpiritOS`:
 
 ```text
@@ -34,6 +47,13 @@ python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness
 npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders Plan 5 acceptance causal fields and authority flags on the operator surface'
 ```
 
-Next incomplete Plan 5 increment: `5.1.2`.
+Current focused backend result:
+
+```text
+python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness
+Ran 4 tests - OK
+```
+
+Next incomplete Plan 5 increment: `5.2.1`.
 
 Do not start Plan 6.
