@@ -1,0 +1,120 @@
+{
+  "approval_id": "approval-11b7301339568083",
+  "blocker": "central_gate_blocked_apply",
+  "blocker_detail": "Live Next HTTPS route forwarded to Source Proxy, but Source Proxy central_gate_check blocked apply before workspace mutation. Bypassing or expanding apply authority is outside Plan 5 scope.",
+  "causal_status_after": "failed_needs_human",
+  "changed_files": [],
+  "command_context": "/home/source/SpiritOS",
+  "commit_created": false,
+  "consumer_event_id": "consumer_167954bba27f4726",
+  "consumer_subsystem": "long_running_status_observer",
+  "create_status": 200,
+  "diff_hash": "4188e65b51d07e213917e4c788e27922ceefedf424bac503742e31e56734146e",
+  "event_types": [
+    "consumer",
+    "failure",
+    "invocation"
+  ],
+  "execute_status": 500,
+  "failure_changed_verdict": true,
+  "file_contains_after_marker": false,
+  "file_contains_before_marker": true,
+  "forbidden_states_present": [],
+  "increment": "5.2.1",
+  "invocation_event_id": "invocation_a1819a192cc6457f",
+  "live_readback_status": 200,
+  "live_route_forwarded_to_source_proxy": true,
+  "no_apply_success_displayed_or_claimed": true,
+  "no_commit_or_push": true,
+  "operator_route": "/coding -> /v1/actions/execute-approved -> /v1/tasks/long-running/{task_id}/execute-approved",
+  "output_consumed_downstream": true,
+  "plan": 5,
+  "push_ran": false,
+  "required_fields_present": true,
+  "response_excerpt": "Internal Server Error",
+  "source_proxy_readback_excerpt": {
+    "task": {
+      "causal_events": [
+        {
+          "approval_id": "approval-11b7301339568083",
+          "changed_state_fields": [],
+          "consumer_subsystem": null,
+          "created_at": "2026-06-26T10:05:20.402077+00:00",
+          "event_id": "invocation_a1819a192cc6457f",
+          "event_type": "invocation",
+          "notes": [
+            "execute-approved apply path entered"
+          ],
+          "run_id": "execute_approved_long_running_task:task_2bdd201cf018",
+          "status_after": null,
+          "status_before": "queued",
+          "subsystem": "source_proxy_long_running",
+          "task_id": "task_2bdd201cf018",
+          "trace_id": "trace_4a50c1dc7467423e"
+        },
+        {
+          "approval_id": "approval-11b7301339568083",
+          "changed_state_fields": [
+            "status"
+          ],
+          "consumer_subsystem": null,
+          "created_at": "2026-06-26T10:05:20.540045+00:00",
+          "event_id": "failure_b90efb53b0b24085",
+          "event_type": "failure",
+          "notes": [
+            "central gate blocked apply"
+          ],
+          "run_id": "execute_approved_long_running_task:task_2bdd201cf018",
+          "status_after": "failed_needs_human",
+          "status_before": "queued",
+          "subsystem": "source_proxy_long_running",
+          "task_id": "task_2bdd201cf018",
+          "trace_id": "trace_4a50c1dc7467423e"
+        },
+        {
+          "approval_id": null,
+          "changed_state_fields": [
+            "status"
+          ],
+          "consumer_subsystem": "long_running_status_observer",
+          "created_at": "2026-06-26T10:05:30.496228+00:00",
+          "event_id": "consumer_167954bba27f4726",
+          "event_type": "consumer",
+          "notes": [
+            "task status consumed by readback"
+          ],
+          "run_id": null,
+          "status_after": "failed_needs_human",
+          "status_before": null,
+          "subsystem": "source_proxy_long_running",
+          "task_id": "task_2bdd201cf018",
+          "trace_id": "trace_4a50c1dc7467423e"
+        }
+      ],
+      "causal_trace": {
+        "consumer_event_id": "consumer_167954bba27f4726",
+        "consumer_subsystem": "long_running_status_observer",
+        "event_types": [
+          "consumer",
+          "failure",
+          "invocation"
+        ],
+        "invocation_event_id": "invocation_a1819a192cc6457f",
+        "status_after": "failed_needs_human",
+        "trace_id": "trace_4a50c1dc7467423e"
+      },
+      "id": "task_2bdd201cf018",
+      "status": "failed_needs_human"
+    }
+  },
+  "source_proxy_task_url": "https://127.0.0.1:8787/v1/tasks/long-running/task_2bdd201cf018",
+  "state_fields_changed": [
+    "status"
+  ],
+  "status": "BLOCKED_PLAN5_5_2_1_LIVE_ACCEPTANCE_CENTRAL_GATE_BLOCKED_APPLY",
+  "target": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/live-acceptance-target-20260625.txt",
+  "target_url": "https://127.0.0.1:3000/v1/actions/execute-approved",
+  "task_id": "task_2bdd201cf018",
+  "task_status": "failed_needs_human",
+  "trace_id": "trace_4a50c1dc7467423e"
+}

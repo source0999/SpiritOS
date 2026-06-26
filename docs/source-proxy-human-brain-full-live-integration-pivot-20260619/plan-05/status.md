@@ -1,11 +1,12 @@
 # Plan 5/6 Status
 
-Status: `PLAN5_INCREMENT_5_1_2_GO`.
+Status: `PLAN5_INCREMENT_5_2_1_PROOF_BLOCKED_BY_CENTRAL_GATE`.
 Plan gate: `BRITTON_APPROVED_PLAN_5_START_20260625`.
 Compression gate: `PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK`.
 
 Increment 5.1.1 status: `GO`.
 Increment 5.1.2 status: `GO`.
+Increment 5.2.1 status: `PROOF_BLOCKED_BY_CENTRAL_GATE`.
 
 Implemented change: Plan 5 now has a bounded acceptance harness that validates a consumed subsystem output on one causal trace without invoking providers, applying patches, committing, pushing, or creating a parallel state engine.
 
@@ -18,6 +19,12 @@ Proof artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260
 Increment 5.1.2 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-2-phase-verifier-20260625.md`.
 
 Increment 5.1.2 proof artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-2-phase-verifier-proof-20260625.json`.
+
+Increment 5.2.1 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-live-acceptance-20260625.md`.
+
+Increment 5.2.1 proof artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-live-acceptance-proof-20260625.json`.
+
+Increment 5.2.1 blocker: live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and recorded causal failure/readback events, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. Bypassing that gate would expand authority, so 5.2.1 is not GO.
 
 Focused checks passed from `/home/source/SpiritOS`:
 
