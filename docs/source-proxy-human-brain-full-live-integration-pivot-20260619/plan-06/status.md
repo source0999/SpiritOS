@@ -92,3 +92,16 @@ Stop status: `BLOCKED_PENDING_BRITTON_DAILY_DRIVER_TASK_SELECTION`.
 Reason: Phase 6.4 is complete under the scoped Mac/Dell dispatch authority. Phase 6.5 requires ten Britton-selected supervised daily-driver tasks, and no such task set was provided in this run. No first Mac write, Mac optimizer touch, service restart, broad authority expansion, or productive apply gate was opened.
 
 Daily-driver promotion is still not recommended from this run. The accepted evidence now proves repeated fail-closed reliability plus repeated no-write Mac/Dell dispatch, not repeated productive daily-driver operation.
+
+
+### Phase 6.5 Supervised daily-driver trial
+
+Status: `GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE`.
+
+Recommendation: `PARTIAL`.
+
+The revised ten-task supervised trial completed with governance, safety, Mac/Dell no-write dispatch, two bounded productive docs/test-adjacent patches, and a final promotion decision packet. Scoped apply was used only through temporary environment gate state for tasks 8 and 9, then the existing non-apply gate was restored and a post-restore apply probe was blocked.
+
+Proof artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json`
+
+Next incomplete increment: `6.6.1`.

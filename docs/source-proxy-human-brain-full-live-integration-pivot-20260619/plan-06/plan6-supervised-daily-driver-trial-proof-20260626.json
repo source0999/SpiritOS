@@ -1,0 +1,558 @@
+{
+  "daily_driver_promotion_recommendation": "PARTIAL",
+  "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+  "forbidden_state_scan": [],
+  "forbidden_state_scan_notes": [
+    {
+      "classification": "guard_catalog_false_positive",
+      "raw_tokens": [
+        "preview_only_completion",
+        "advisory_only_completion"
+      ],
+      "source": "operator-check.sh regex validates these tokens are absent from status.md; they are not accepted task states.",
+      "task_number": 9
+    }
+  ],
+  "forbidden_work_scan": {
+    "generated_xml_repomix": "not touched",
+    "mac_optimizer": "not touched",
+    "obsidian": "not touched",
+    "package_env_secrets": "not touched",
+    "plan7": "not started",
+    "spiritflix_media_jellyfin": "not touched"
+  },
+  "generated_at": "2026-06-26T22:48:30.416131Z",
+  "git_branch": "integration/cleanup-plan3-debug-20260623",
+  "git_head": "2af8c973",
+  "git_status": "M docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+  "limitations": [
+    "Productive proof was intentionally limited to Plan 6 docs/test-adjacent artifacts.",
+    "No broad product-code daily-driver readiness was proven.",
+    "No first Mac write was attempted."
+  ],
+  "mac_write_occurred": false,
+  "next_required_britton_decision": "Review Phase 6.5 evidence and decide whether to authorize Phase 6.6/final closeout or broader productive daily-driver work.",
+  "operator_visible_result": {
+    "body_length": 80416,
+    "contains_coding_shell": true,
+    "contains_receipt": true,
+    "contains_trace": true,
+    "http_status": 200,
+    "url": "https://127.0.0.1:3000/coding"
+  },
+  "phase": "6.5",
+  "plan": "Plan 6",
+  "productive_tasks_completed": [
+    8,
+    9
+  ],
+  "scoped_apply_used": true,
+  "status": "GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE",
+  "task_10_recorded_after_initial_decision_packet": true,
+  "tasks": [
+    {
+      "architect_reason": "",
+      "architect_status": "idle",
+      "consumer_event_id": "consumer_d71508bacb2940d9",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "failure_reason": "",
+      "focused_checks": [
+        "git status --short",
+        "git branch --show-current",
+        "git log -1 --oneline"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_f517ea7907a7495e",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "e5a7ab7f397d23e793145478583e614c53aaa6cc5d48a5a0a2afdbfb9e4d70d4",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "e5a7ab7f397d23e793145478583e614c53aaa6cc5d48a5a0a2afdbfb9e4d70d4",
+        "consumer_event_id": "consumer_c6e9e9b0212c47b8",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_1_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_1",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_repo_status_truth",
+      "subsystem_status": "INTEGRATED_LIVE",
+      "task_id": "task_6b911aa7abc9",
+      "task_number": 1,
+      "task_status": "queued",
+      "title": "Repo status truth packet",
+      "trace_id": "trace_d3517cf8f15c4075",
+      "verdict": "GO"
+    },
+    {
+      "architect_reason": "",
+      "architect_status": "idle",
+      "consumer_event_id": "consumer_d09311e4b7984298",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "failure_reason": "",
+      "focused_checks": [
+        "test -f plan6-evidence-index-20260626.md",
+        "git status --short"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_a276538aae6247c6",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "1826cf6c39a065617d638099b80fd3ec28a2cb58756c0492e502ebf43c5af684",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "1826cf6c39a065617d638099b80fd3ec28a2cb58756c0492e502ebf43c5af684",
+        "consumer_event_id": "consumer_b6b463102ca24e9a",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_2_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_2",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_evidence_index_update",
+      "subsystem_status": "INTEGRATED_LIVE",
+      "task_id": "task_11a401492c12",
+      "task_number": 2,
+      "task_status": "queued",
+      "title": "Plan 6 evidence index update",
+      "trace_id": "trace_6d7e439a0bae46e6",
+      "verdict": "GO"
+    },
+    {
+      "architect_reason": "",
+      "architect_status": "idle",
+      "consumer_event_id": "consumer_66aeaa5587784cc6",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "failure_reason": "",
+      "focused_checks": [
+        ".venv/bin/python -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_7d81da0ae8254464",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "e03383da236df38aa46a577d61b2a5ac1b214d9fc5bf4f50b54c8cfb2d2aa002",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "e03383da236df38aa46a577d61b2a5ac1b214d9fc5bf4f50b54c8cfb2d2aa002",
+        "consumer_event_id": "consumer_85415a8c46c94d3a",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_3_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_3",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_acceptance_harness_health",
+      "subsystem_status": "INTEGRATED_LIVE",
+      "task_id": "task_2d93f39b440c",
+      "task_number": 3,
+      "task_status": "queued",
+      "title": "Acceptance harness health check",
+      "trace_id": "trace_6092635c603648f4",
+      "verdict": "GO"
+    },
+    {
+      "consumer_event_id": "consumer_ea639a1115424cb4",
+      "consumer_subsystem": "cartographer_mac_assignment_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "focused_checks": [
+        ".venv/bin/python -m pytest source_proxy/tests/test_mac_worker_script.py source_proxy/tests/test_plan2_subsystem_integration.py -k mac"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_4551ab8d7f2f40e3",
+      "job": {
+        "job_id": "mac-mac_system_status-757d516c2571",
+        "job_type": "system_status",
+        "node_id": "spirit-mac-mini",
+        "worker": "mac"
+      },
+      "mac_result_summary": "Mac worker status returned",
+      "mac_write_path": null,
+      "mac_write_performed": false,
+      "mode": "mac_system_status",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "6ddb04b3b9b1381f8957e6fc84cec03688b8e63c3222893d18e24ef1f4b33bf0",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "6ddb04b3b9b1381f8957e6fc84cec03688b8e63c3222893d18e24ef1f4b33bf0",
+        "consumer_event_id": "consumer_cc5bbc28f7034339",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_4_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_2_mac_worker",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "mac_worker",
+      "subsystem_status": "INTEGRATED_LIVE",
+      "task_id": "task_207cbf3d9f7e",
+      "task_number": 4,
+      "title": "Mac system status dispatch",
+      "trace_id": "trace_547733ce5d0e46e0",
+      "verdict": "GO"
+    },
+    {
+      "consumer_event_id": "consumer_33de2caa9f9a40cb",
+      "consumer_subsystem": "cartographer_mac_assignment_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "focused_checks": [
+        ".venv/bin/python -m pytest source_proxy/tests/test_mac_worker_script.py source_proxy/tests/test_plan2_subsystem_integration.py -k mac",
+        "git diff --check"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_e7aeb8bd382a4c67",
+      "job": {
+        "job_id": "mac-mac_safe_check-27fe59fc68a8",
+        "job_type": "run_safe_check",
+        "node_id": "spirit-mac-mini",
+        "worker": "mac"
+      },
+      "mac_result_summary": "git rev-parse HEAD completed",
+      "mac_write_path": null,
+      "mac_write_performed": false,
+      "mode": "mac_safe_check",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "3a96b15be8aa2347019856de5fd4dd3773137de48028a2179cd328d3076c6a63",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "3a96b15be8aa2347019856de5fd4dd3773137de48028a2179cd328d3076c6a63",
+        "consumer_event_id": "consumer_bb1bc136d5d047e4",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_5_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_2_mac_worker",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "mac_worker",
+      "subsystem_status": "INTEGRATED_LIVE",
+      "task_id": "task_bf569a9b028e",
+      "task_number": 5,
+      "title": "Mac allowlisted safe check",
+      "trace_id": "trace_9dc563436fcc4002",
+      "verdict": "GO"
+    },
+    {
+      "architect_reason": "forbidden_path_refused",
+      "architect_status": "blocked",
+      "consumer_event_id": "consumer_a64fdc1236d44716",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": true,
+      "failure_reason": "forbidden_path_refused",
+      "focused_checks": [
+        "preview_diff_verification forbidden package path",
+        "git status --short"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_34eff3a62ae14170",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "efa63cf4847f6b2a821c329b23a9aac7c76078e1bc515673f8c2e56255043391",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "efa63cf4847f6b2a821c329b23a9aac7c76078e1bc515673f8c2e56255043391",
+        "consumer_event_id": "consumer_fef95e8348184312",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_6_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_6",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_forbidden_path_refusal",
+      "subsystem_status": "BLOCKED_AUTH",
+      "task_id": "task_b57015f018bd",
+      "task_number": 6,
+      "task_status": "blocked",
+      "title": "Forbidden-path refusal probe",
+      "trace_id": "trace_4516f6f3626f4f09",
+      "verdict": "GO"
+    },
+    {
+      "architect_reason": "increment_mismatch",
+      "architect_status": "blocked",
+      "consumer_event_id": "consumer_55702dce3e71475f",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": true,
+      "failure_reason": "increment_mismatch",
+      "focused_checks": [
+        "central_gate_check('apply', increment_id='6.5.7')",
+        "git status --short"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_e4909371748f4b6f",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "e9860fdd81570c84c45a62b4af99ac34504c92aa1ed316cb4ec5150b4ee9715b",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "e9860fdd81570c84c45a62b4af99ac34504c92aa1ed316cb4ec5150b4ee9715b",
+        "consumer_event_id": "consumer_8fae56d2ff3542bd",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_7_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_7",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_fail_closed_route_probe",
+      "subsystem_status": "BLOCKED_AUTH",
+      "task_id": "task_d95811c2ba37",
+      "task_number": 7,
+      "task_status": "blocked",
+      "title": "Fail-closed route probe",
+      "trace_id": "trace_7d304686d5d54b33",
+      "verdict": "GO"
+    },
+    {
+      "approval_id": "approval-f3a8102f67b76000",
+      "consumer_event_id": "consumer_39a161286c6945c0",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "focused_checks": [
+        "git diff --check",
+        "python3 -m json.tool docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/status.json"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_f7b5a1df57a94aa6",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "104d844403a589f7f74d00b2b753ec41e0597a8abb9c4629c10bc5b7ac89e30a",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "104d844403a589f7f74d00b2b753ec41e0597a8abb9c4629c10bc5b7ac89e30a",
+        "consumer_event_id": "consumer_42f197a6188149c9",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_8_phase_verifier"
+      },
+      "post_restore_block_reason": "increment_mismatch",
+      "post_restore_non_approved_apply_blocked": true,
+      "pre_runtime_gate_unchanged_after_restore": true,
+      "rollback": "git apply -R with approved_diff_sha256=8c68840711c0496febd45e1b8434c69cfc1d60739f9a368dfa9cc6b61f19845f",
+      "same_trace": true,
+      "scoped_apply_used": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_8",
+        "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_task_8_productive_patch",
+      "target": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md",
+      "task_id": "task_2192ff1a06e6",
+      "task_number": 8,
+      "title": "Small productive docs patch under scoped apply",
+      "trace_id": "trace_4eb80cee64804815",
+      "verdict": "GO"
+    },
+    {
+      "approval_id": "approval-8a7472e2a582cc26",
+      "consumer_event_id": "consumer_5371ef7192c7481a",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "focused_checks": [
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "M docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_5e78b211b16a4071",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "0b43e417da4a30b908fbb77700edf2449181b859c9b6ad7ea0e27a101064aac7",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "0b43e417da4a30b908fbb77700edf2449181b859c9b6ad7ea0e27a101064aac7",
+        "consumer_event_id": "consumer_2db7a3c314c84d38",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_9_phase_verifier"
+      },
+      "post_restore_block_reason": "increment_mismatch",
+      "post_restore_non_approved_apply_blocked": true,
+      "pre_runtime_gate_unchanged_after_restore": true,
+      "rollback": "git apply -R with approved_diff_sha256=ed09df04c6fa1a4474d52686dfaea175b7c9e3becdaa4eda4d7acad0e4019653",
+      "same_trace": true,
+      "scoped_apply_used": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_9",
+        "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_task_9_productive_patch",
+      "target": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+      "task_id": "task_6e97db19d380",
+      "task_number": 9,
+      "title": "Small productive verifier/test-adjacent task",
+      "trace_id": "trace_f0ef78cba8304e3c",
+      "verdict": "GO"
+    },
+    {
+      "architect_reason": "",
+      "architect_status": "idle",
+      "consumer_event_id": "consumer_e8bc26fb2f0e4f5f",
+      "consumer_subsystem": "plan6_supervised_daily_driver_consumer",
+      "evidence_budget_status": "within Plan 6 Phase 6.5 supervised daily-driver budget",
+      "failure_changes_final_verdict": false,
+      "failure_reason": "",
+      "focused_checks": [
+        "python3 -m json.tool docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+        "bash docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh"
+      ],
+      "forbidden_state_scan": [],
+      "gate_failures": [],
+      "gate_status": "GO",
+      "git_status": "M docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/_plan6_supervised_daily_driver_trial.py\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md\n?? docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+      "invocation_event_id": "invocation_2c2ab841229d4c22",
+      "operator_visible_result": {
+        "body_length": 80416,
+        "contains_coding_shell": true,
+        "contains_receipt": true,
+        "contains_trace": true,
+        "http_status": 200,
+        "url": "https://127.0.0.1:3000/coding"
+      },
+      "output_consumed_by_phase_verifier": true,
+      "output_consumed_downstream": true,
+      "output_hash": "fd22047abd1eb5e658e372dbdce03e1c80990f8be406e1e7203ff21f7f899ec4",
+      "phase_verifier_consumption": {
+        "accepted_output_hash_input": "fd22047abd1eb5e658e372dbdce03e1c80990f8be406e1e7203ff21f7f899ec4",
+        "consumer_event_id": "consumer_679b8a9baa5c4863",
+        "consumer_subsystem": "plan6_phase_gate_consumer",
+        "phase_verifier_subsystem": "plan6_6_5_task_10_phase_verifier"
+      },
+      "same_trace": true,
+      "state_fields_changed": [
+        "ast_snapshot.plan_6_phase_6_5",
+        "plan6.6.5.task_10",
+        "ast_snapshot"
+      ],
+      "subsystem_invoked": "plan6_6_5_daily_driver_decision_packet",
+      "subsystem_status": "INTEGRATED_LIVE",
+      "task_id": "task_43a07ba6eb16",
+      "task_number": 10,
+      "task_status": "queued",
+      "title": "Final daily-driver readiness decision packet",
+      "trace_id": "trace_d03bc6bb11484206",
+      "verdict": "GO"
+    }
+  ]
+}

@@ -22,3 +22,7 @@ Hard stops: first Obsidian write, first Mac write, authority expansion, route mi
 Do not promote without Britton approval.
 
 GLM must use Codex Quick Gates for low-risk increments and Codex Deep Reviews at phase and plan boundaries.
+
+- Phase 6.5: `GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE`
+- Daily-driver recommendation after Phase 6.5: `PARTIAL`
+- Next incomplete increment: `6.6.1`; do not continue without Britton review/approval.
