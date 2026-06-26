@@ -1,6 +1,6 @@
 # Plan 5/6 Status
 
-Status: `PLAN5_PHASE_5_3_GO`.
+Status: `PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
 Plan gate: `BRITTON_APPROVED_PLAN_5_START_20260625`.
 Compression gate: `PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK`.
 
@@ -12,6 +12,9 @@ Phase 5.2 status: `GO`.
 Increment 5.3.1 status: `GO`.
 Increment 5.3.2 status: `GO`.
 Phase 5.3 status: `GO`.
+Increment 5.4.1 status: `GO`.
+Increment 5.4.2 status: `GO`.
+Phase 5.4 status: `GO`.
 
 Implemented change: Plan 5 now has a bounded acceptance harness that validates a consumed subsystem output on one causal trace without invoking providers, applying patches, committing, pushing, or creating a parallel state engine.
 
@@ -119,6 +122,14 @@ Failures: []
 
 Phase 5.3 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-3-closeout-review-20260626.md`.
 
-Current Plan 5 next incomplete increment: `5.4.1`.
+Increment 5.4.1 proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-1-binary-verdict-20260626.md`.
+
+Increment 5.4.2 proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-2-final-binary-boundary-20260626.md`.
+
+Phase 5.4 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-4-closeout-review-20260626.md`.
+
+Final closeout packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/plan5-final-closeout-packet-20260626.md`.
+
+Current Plan 5 next incomplete increment: `NONE_PLAN5_COMPLETE`.
 
 No Plan 6 work is authorized.

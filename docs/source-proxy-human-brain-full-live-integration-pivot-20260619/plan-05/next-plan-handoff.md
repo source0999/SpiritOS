@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 5 State - 2026-06-25
 
-Status: `PLAN5_PHASE_5_3_GO`.
+Status: `PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
 
 Britton approved Plan 5 start and resolved the Plan 0 compression decision gate for Plan 5 start:
 
@@ -172,6 +172,26 @@ Phase 5.3 closeout review:
 
 `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-3-closeout-review-20260626.md`
 
-Next incomplete Plan 5 increment: `5.4.1`.
+Increment 5.4.1 is complete:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-1-binary-verdict-20260626.md`
+
+Increment 5.4.2 is complete:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-2-final-binary-boundary-20260626.md`
+
+Phase 5.4 closeout review:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-4-closeout-review-20260626.md`
+
+Final closeout packet:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/plan5-final-closeout-packet-20260626.md`
+
+Final verdict:
+
+`PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`
+
+Next incomplete Plan 5 increment: `NONE_PLAN5_COMPLETE`.
 
 Do not start Plan 6.

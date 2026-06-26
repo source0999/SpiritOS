@@ -1,0 +1,23 @@
+{
+  "accepted_output_hash": "3b8776ebaa2e8e75bfad5885463d54ae0c8a6af8ef780aed0fc4c51963a64de8",
+  "binary_verdict": "PLAN5_BINARY_VERDICT_GO",
+  "checks": {
+    "all_prior_increments_completed": true,
+    "anti_laundering_present": true,
+    "causal_audit_present": true,
+    "fail_closed_live_acceptance_present": true,
+    "phase_5_2_go": true,
+    "phase_5_3_go": true,
+    "plan6_not_authorized": true,
+    "productive_live_acceptance_present": true
+  },
+  "failures": [],
+  "increment": "5.4.1",
+  "operator_consumer_event_id": "consumer_bd609b96687d44e7",
+  "phase_verifier_consumer_event_id": "consumer_8608e92321bc4934",
+  "plan": 5,
+  "scoped_apply_gate_required": false,
+  "status": "GO",
+  "trace_id": "trace_a54114b07c434672",
+  "verdict_task_id": "task_51ef24acaf4d"
+}

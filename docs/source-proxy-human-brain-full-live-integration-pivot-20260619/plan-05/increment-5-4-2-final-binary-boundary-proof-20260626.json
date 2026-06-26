@@ -1,0 +1,20 @@
+{
+  "accepted_output_hash": "739899edda5ace5ab9a289eb411a5d48afaeeee17cc68f30836aa021771e7686",
+  "checks": {
+    "binary_verdict_go": true,
+    "forbidden_paths_clean": true,
+    "next_plan_not_authorized": true,
+    "plan5_no_apply_gate_open": true,
+    "plan6_not_started": true
+  },
+  "failures": [],
+  "final_binary_verdict": "PLAN5_FINAL_BINARY_VERDICT_GO_READY_FOR_CLOSEOUT",
+  "increment": "5.4.2",
+  "operator_consumer_event_id": "consumer_24e2dfb426e74885",
+  "phase_verifier_consumer_event_id": "consumer_046873a275ca4cbd",
+  "plan": 5,
+  "scoped_apply_gate_required": false,
+  "status": "GO",
+  "trace_id": "trace_4138fe7877874c3a",
+  "verdict_task_id": "task_ebbed296e0db"
+}

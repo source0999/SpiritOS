@@ -1,18 +1,20 @@
 {
   "plan": 5,
   "title": "Binary Whole-Brain Acceptance",
-  "status": "PLAN5_PHASE_5_3_GO",
+  "status": "PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW",
   "gate_status": "BRITTON_APPROVED_PLAN_5_START_20260625",
   "compression_gate_status": "PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK",
   "implementation_performed": true,
-  "current_increment": "5.3.2",
+  "current_increment": "5.4.2",
   "completed_increments": [
     "5.1.1",
     "5.1.2",
     "5.2.1",
     "5.2.2",
     "5.3.1",
-    "5.3.2"
+    "5.3.2",
+    "5.4.1",
+    "5.4.2"
   ],
   "increment_5_1_1_status": "GO",
   "increment_5_1_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-1-acceptance-harness-20260625.md",
@@ -90,6 +92,35 @@
   },
   "phase_5_3_status": "GO",
   "phase_5_3_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-3-closeout-review-20260626.md",
+  "increment_5_4_1_status": "GO",
+  "increment_5_4_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-1-binary-verdict-20260626.md",
+  "increment_5_4_1_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-1-binary-verdict-proof-20260626.json",
+  "increment_5_4_1_result": "Binary verdict aggregation consumed completed Plan 5 evidence and produced PLAN5_BINARY_VERDICT_GO.",
+  "increment_5_4_1_scoped_apply_gate_required": false,
+  "increment_5_4_1_evidence": {
+    "verdict_task_id": "task_51ef24acaf4d",
+    "trace_id": "trace_a54114b07c434672",
+    "operator_consumer_event_id": "consumer_bd609b96687d44e7",
+    "phase_verifier_consumer_event_id": "consumer_8608e92321bc4934",
+    "accepted_output_hash": "3b8776ebaa2e8e75bfad5885463d54ae0c8a6af8ef780aed0fc4c51963a64de8",
+    "binary_verdict": "PLAN5_BINARY_VERDICT_GO"
+  },
+  "increment_5_4_2_status": "GO",
+  "increment_5_4_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-2-final-binary-boundary-20260626.md",
+  "increment_5_4_2_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-4-2-final-binary-boundary-proof-20260626.json",
+  "increment_5_4_2_result": "Final binary boundary consumed the binary verdict, confirmed Plan 6 was not started, and produced PLAN5_FINAL_BINARY_VERDICT_GO_READY_FOR_CLOSEOUT.",
+  "increment_5_4_2_scoped_apply_gate_required": false,
+  "increment_5_4_2_evidence": {
+    "verdict_task_id": "task_ebbed296e0db",
+    "trace_id": "trace_4138fe7877874c3a",
+    "operator_consumer_event_id": "consumer_24e2dfb426e74885",
+    "phase_verifier_consumer_event_id": "consumer_046873a275ca4cbd",
+    "accepted_output_hash": "739899edda5ace5ab9a289eb411a5d48afaeeee17cc68f30836aa021771e7686",
+    "final_binary_verdict": "PLAN5_FINAL_BINARY_VERDICT_GO_READY_FOR_CLOSEOUT"
+  },
+  "phase_5_4_status": "GO",
+  "phase_5_4_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-4-closeout-review-20260626.md",
+  "final_closeout_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/plan5-final-closeout-packet-20260626.md",
   "implemented_change": "Plan 5 acceptance harness validates consumed subsystem output on one causal trace, rejects unconsumed output, and requires phase-verifier consumption of the accepted output hash.",
   "required_fields": [
     "task_id",
@@ -121,6 +152,6 @@
   ],
   "glm_caveat_f1_status": "ADDRESSED_FOR_5_1_1_RENDER_LEVEL_OPERATOR_ASSERTION",
   "glm_caveat_f2_status": "ADDRESSED_FOR_5_1_2_LINUX_PATH_TEST_REFRESH",
-  "next_incomplete_increment": "5.4.1",
+  "next_incomplete_increment": "NONE_PLAN5_COMPLETE",
   "next_plan_authorized": false
 }
