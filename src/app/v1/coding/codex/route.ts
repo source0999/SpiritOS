@@ -1,10 +1,18 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 
+const dormantRouteHeaders = {
+  "x-spiritos-plan4-route-status": "dormant",
+  "x-spiritos-plan4-canonical-replacement": "/v1/decisions/prompt-packet -> /v1/verification/diff-preview -> /v1/actions/execute-approved",
+};
+
 export async function POST(request: Request) {
   if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
     return Response.json(
-      { error: "SPIRIT_CODING_USE_PROXY is not true" },
-      { status: 409 },
+      {
+        error: "SPIRIT_CODING_USE_PROXY is not true",
+        plan4_route_status: "dormant",
+      },
+      { headers: dormantRouteHeaders, status: 409 },
     );
   }
 
@@ -33,15 +41,18 @@ export async function POST(request: Request) {
         approval_authority: false,
         apply_authority: false,
         commit_authority: false,
+        plan4_canonical_replacement: "/v1/decisions/prompt-packet -> /v1/verification/diff-preview -> /v1/actions/execute-approved",
+        plan4_route_status: "dormant",
         push_authority: false,
       },
-      { status: 200 },
+      { headers: dormantRouteHeaders, status: 200 },
     );
   }
 
   return new Response(await response.text(), {
     headers: {
       "content-type": response.headers.get("content-type") ?? "application/json",
+      ...dormantRouteHeaders,
     },
     status: response.status,
     statusText: response.statusText,

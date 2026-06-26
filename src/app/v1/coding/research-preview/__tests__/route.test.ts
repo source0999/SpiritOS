@@ -42,6 +42,7 @@ describe("coding research preview route", () => {
         status: "blocked",
       },
       preview_only: true,
+      plan4_route_status: "dormant",
       provider_call_made: false,
       push_authority: false,
       queue_worker_started: false,
@@ -66,6 +67,7 @@ describe("coding research preview route", () => {
       target_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
   });
 
   it("blocks incomplete packets instead of inventing search evidence", async () => {
@@ -78,6 +80,7 @@ describe("coding research preview route", () => {
       blocked_reasons: ["missing_target_files", "missing_allowed_files"],
       preview_only: true,
       provider_call_made: false,
+      plan4_route_status: "dormant",
       research_lane_status: "blocked",
       research_sources: [
         {
@@ -88,6 +91,7 @@ describe("coding research preview route", () => {
       ],
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
   });
 
   it("keeps Mac, Scout, apply, commit, push, queue, and shell actions blocked", async () => {

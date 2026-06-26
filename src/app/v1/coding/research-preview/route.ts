@@ -6,6 +6,11 @@ type ResearchPreviewRequest = {
   task_id?: unknown;
 };
 
+const dormantRouteHeaders = {
+  "x-spiritos-plan4-route-status": "dormant",
+  "x-spiritos-plan4-canonical-replacement": "/v1/decisions/prompt-packet",
+};
+
 type ResearchSource = {
   kind: "repo" | "web" | "scout";
   snippet: string;
@@ -107,6 +112,8 @@ export async function POST(request: Request) {
       status: "blocked",
     },
     preview_only: true,
+    plan4_canonical_replacement: "/v1/decisions/prompt-packet",
+    plan4_route_status: "dormant",
     provider_call_made: false,
     push_authority: false,
     queue_worker_started: false,
@@ -129,5 +136,5 @@ export async function POST(request: Request) {
     shell_command_started: false,
     target_files: targetFiles,
     task: prompt,
-  });
+  }, { headers: dormantRouteHeaders });
 }

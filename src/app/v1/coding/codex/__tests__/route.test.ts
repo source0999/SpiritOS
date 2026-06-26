@@ -55,6 +55,7 @@ describe("coding Codex route", () => {
       would_run_task: false,
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
     expect(mockedSourceProxyFetch).toHaveBeenCalledWith(
       "/v1/coding/codex",
       expect.objectContaining({
@@ -88,6 +89,7 @@ describe("coding Codex route", () => {
       push_authority: false,
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
   });
 
   it("stays behind the proxy feature flag", async () => {
@@ -97,8 +99,10 @@ describe("coding Codex route", () => {
 
     await expect(response.json()).resolves.toEqual({
       error: "SPIRIT_CODING_USE_PROXY is not true",
+      plan4_route_status: "dormant",
     });
     expect(response.status).toBe(409);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 });

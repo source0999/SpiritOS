@@ -1,6 +1,6 @@
 # Plan 4/6 Status
 
-Status: `PLAN4_INCREMENT_4_5_1_GO`.
+Status: `PLAN4_PHASE_4_5_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_4_START_20260625`.
 
 Increment 4.1.1 started after Britton approval on 2026-06-25.
@@ -107,4 +107,18 @@ Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-piv
 
 Browser/operator result: `/coding` visibly preserved the canonical route sequence, supporting route, and dormant parallel routes. The proof invoked the canonical sequence, did not invoke dormant routes, and displayed no apply success.
 
-Next incomplete Plan 4 increment: `4.5.2`.
+Increment 4.5.2 status: `GO`.
+
+Increment 4.5.2 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-2-dormant-route-boundary-20260625.md`.
+
+Current 4.5.2 implemented change: dormant/advisory `/v1/coding` routes now return dormant route-boundary headers and canonical replacement pointers.
+
+Focused 4.5.2 proof: `npm test -- --run src/app/v1/coding/codex/__tests__/route.test.ts src/app/v1/coding/bounded-diff-preview/__tests__/route.test.ts src/app/v1/coding/research-preview/__tests__/route.test.ts src/app/v1/coding/helper-agents/preview/__tests__/route.test.ts` passed on `/home/source/SpiritOS` with 11 tests.
+
+Live route proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-2-live-route-proof-20260625.json`.
+
+Live route result: the Dell Next dev server returned dormant headers for `/v1/coding/codex`, `/v1/coding/bounded-diff-preview`, `/v1/coding/research-preview`, and `/v1/coding/helper-agents/preview`; advisory bodies preserved `plan4_route_status: dormant`; no apply-success phrase appeared.
+
+Phase 4.5 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-5-closeout-review-20260625.md`.
+
+Next incomplete Plan 4 increment: `4.6.1`.

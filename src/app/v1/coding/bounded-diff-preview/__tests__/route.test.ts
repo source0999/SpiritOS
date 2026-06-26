@@ -75,6 +75,7 @@ describe("coding bounded diff preview route", () => {
       reason_code: "preview_ready",
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
     expect(mockedSourceProxyFetch).toHaveBeenCalledWith(
       "/v1/coding/bounded-diff-preview",
       expect.objectContaining({
@@ -109,8 +110,10 @@ describe("coding bounded diff preview route", () => {
       hidden_execution_started: false,
       reason_code: "source_proxy_unavailable",
       receipt_class: "route_gap_not_ready",
+      plan4_route_status: "dormant",
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
   });
 
   it("stays behind the proxy feature flag", async () => {
@@ -120,8 +123,10 @@ describe("coding bounded diff preview route", () => {
 
     await expect(response.json()).resolves.toEqual({
       error: "SPIRIT_CODING_USE_PROXY is not true",
+      plan4_route_status: "dormant",
     });
     expect(response.status).toBe(409);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 });

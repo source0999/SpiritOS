@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 4 State - 2026-06-25
 
-Status: `PLAN4_INCREMENT_4_5_1_GO`
+Status: `PLAN4_PHASE_4_5_GO`
 
 Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
 
@@ -272,6 +272,42 @@ Proof summary:
 
 Increment 4.5.1 verdict: `GO`.
 
-Next incomplete Plan 4 increment: `4.5.2`.
+Increment 4.5.2 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-2-dormant-route-boundary-20260625.md`
+
+4.5.2 implemented change:
+
+- Dormant/advisory `/v1/coding` routes return `x-spiritos-plan4-route-status: dormant`.
+- Dormant/advisory `/v1/coding` routes return `x-spiritos-plan4-canonical-replacement` pointing back to the canonical route sequence.
+- Advisory route JSON bodies include `plan4_route_status: dormant`.
+
+Focused 4.5.2 check:
+
+```text
+npm test -- --run src/app/v1/coding/codex/__tests__/route.test.ts src/app/v1/coding/bounded-diff-preview/__tests__/route.test.ts src/app/v1/coding/research-preview/__tests__/route.test.ts src/app/v1/coding/helper-agents/preview/__tests__/route.test.ts
+11 tests passed
+```
+
+Live route proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-2-live-route-proof-20260625.json`
+
+Proof summary:
+
+- The Dell Next dev server returned dormant headers for `/v1/coding/codex`, `/v1/coding/bounded-diff-preview`, `/v1/coding/research-preview`, and `/v1/coding/helper-agents/preview`.
+- Advisory bodies preserved `plan4_route_status: dormant`.
+- Canonical replacement headers pointed back to `/v1/decisions/prompt-packet`, `/v1/verification/diff-preview`, and `/v1/actions/execute-approved` as applicable.
+- No apply-success phrase appeared.
+
+Increment 4.5.2 verdict: `GO`.
+
+Phase 4.5 closeout review:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-5-closeout-review-20260625.md`
+
+Phase 4.5 verdict: `GO`.
+
+Next incomplete Plan 4 increment: `4.6.1`.
 
 Do not start Plan 5/6.

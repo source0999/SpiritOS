@@ -1,10 +1,10 @@
 {
   "plan": 4,
   "title": "Canonical /coding UI/API Consolidation",
-  "status": "PLAN4_INCREMENT_4_5_1_GO",
+  "status": "PLAN4_PHASE_4_5_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_4_START_20260625",
   "implementation_performed": true,
-  "current_increment": "4.5.1",
+  "current_increment": "4.5.2",
   "completed_increments": [
     "4.1.1",
     "4.1.2",
@@ -14,9 +14,10 @@
     "4.3.2",
     "4.4.1",
     "4.4.2",
-    "4.5.1"
+    "4.5.1",
+    "4.5.2"
   ],
-  "implemented_change": "/coding displays a Plan 4.5 API consolidation ledger and the coding registry marks canonical, supporting, and dormant parallel routes without deleting dormant route files",
+  "implemented_change": "Dormant and advisory /v1/coding routes return Plan 4.5 dormant route-boundary headers and canonical replacement pointers while /coding preserves the canonical API ledger",
   "required_contract_fields": [
     "task_id",
     "trace_id",
@@ -109,6 +110,16 @@
       "command": "node_repl standalone Playwright chromium with installed Chrome executable and minimal page.route interception against /coding",
       "cwd": "Z:/",
       "result": "PASS_BROWSER_OPERATOR_PLAN_4_5_1_API_LEDGER_VISIBLE"
+    },
+    {
+      "command": "npm test -- --run src/app/v1/coding/codex/__tests__/route.test.ts src/app/v1/coding/bounded-diff-preview/__tests__/route.test.ts src/app/v1/coding/research-preview/__tests__/route.test.ts src/app/v1/coding/helper-agents/preview/__tests__/route.test.ts",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_11_TESTS"
+    },
+    {
+      "command": "node_repl Playwright request.newContext(ignoreHTTPSErrors) POST dormant/advisory /v1/coding routes",
+      "cwd": "Z:/",
+      "result": "PASS_LIVE_ROUTE_PLAN_4_5_2_DORMANT_BOUNDARY_MARKS"
     }
   ],
   "live_canonical_route_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md",
@@ -140,6 +151,10 @@
   "increment_4_5_1_status": "GO",
   "increment_4_5_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-api-consolidation-ledger-20260625.md",
   "increment_4_5_1_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-browser-proof-20260625.md",
-  "next_incomplete_increment": "4.5.2",
+  "increment_4_5_2_status": "GO",
+  "increment_4_5_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-2-dormant-route-boundary-20260625.md",
+  "increment_4_5_2_live_route_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-2-live-route-proof-20260625.json",
+  "phase_4_5_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-5-closeout-review-20260625.md",
+  "next_incomplete_increment": "4.6.1",
   "next_plan_authorized": false
 }

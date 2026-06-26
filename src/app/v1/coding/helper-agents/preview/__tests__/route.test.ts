@@ -31,6 +31,7 @@ describe("coding helper agents preview route", () => {
       ],
       lease_created: false,
       lock_created: false,
+      plan4_route_status: "dormant",
       provider_call_made: false,
       push_authority: false,
       result_packets: [
@@ -61,6 +62,7 @@ describe("coding helper agents preview route", () => {
       write_authority: false,
     });
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");
   });
 
   it("keeps conflicts visible instead of resolving them with hidden authority", async () => {

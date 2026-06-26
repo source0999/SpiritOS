@@ -43,6 +43,11 @@ const helperRoles = [
   },
 ];
 
+const dormantRouteHeaders = {
+  "x-spiritos-plan4-route-status": "dormant",
+  "x-spiritos-plan4-canonical-replacement": "/v1/decisions/prompt-packet",
+};
+
 export async function POST() {
   return Response.json({
     advisory_only: true,
@@ -67,6 +72,8 @@ export async function POST() {
     hidden_worker_started: false,
     lease_created: false,
     lock_created: false,
+    plan4_canonical_replacement: "/v1/decisions/prompt-packet",
+    plan4_route_status: "dormant",
     provider_call_made: false,
     push_authority: false,
     result_packets: helperRoles.map((role) => ({
@@ -85,5 +92,5 @@ export async function POST() {
       title: `${role.name} advisory packet ready`,
     })),
     write_authority: false,
-  });
+  }, { headers: dormantRouteHeaders });
 }

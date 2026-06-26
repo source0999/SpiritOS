@@ -1,10 +1,18 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 
+const dormantRouteHeaders = {
+  "x-spiritos-plan4-route-status": "dormant",
+  "x-spiritos-plan4-canonical-replacement": "/v1/decisions/prompt-packet -> /v1/verification/diff-preview",
+};
+
 export async function POST(request: Request) {
   if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
     return Response.json(
-      { error: "SPIRIT_CODING_USE_PROXY is not true" },
-      { status: 409 },
+      {
+        error: "SPIRIT_CODING_USE_PROXY is not true",
+        plan4_route_status: "dormant",
+      },
+      { headers: dormantRouteHeaders, status: 409 },
     );
   }
 
@@ -40,17 +48,20 @@ export async function POST(request: Request) {
         unexpected_files: 0,
         reason_code: "source_proxy_unavailable",
         receipt_class: "route_gap_not_ready",
+        plan4_canonical_replacement: "/v1/decisions/prompt-packet -> /v1/verification/diff-preview",
+        plan4_route_status: "dormant",
         message:
           "The bounded diff preview route could not reach Source Proxy. No files changed.",
         detail: error instanceof Error ? error.message : "Unknown connection error.",
       },
-      { status: 200 },
+      { headers: dormantRouteHeaders, status: 200 },
     );
   }
 
   return new Response(await response.text(), {
     headers: {
       "content-type": response.headers.get("content-type") ?? "application/json",
+      ...dormantRouteHeaders,
     },
     status: response.status,
     statusText: response.statusText,
