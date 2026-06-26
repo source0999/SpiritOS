@@ -1,0 +1,37 @@
+{
+  "targetUrl": "https://10.0.0.186:3000/coding",
+  "command": "node_repl Playwright chromium executable with page.route interception against /coding",
+  "promptText": "In src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.2 browser proof comment.",
+  "routeInjection": "Playwright page.route fulfilled upstream /v1 routes and /v1/actions/execute-approved with an HTTP 502 fail-closed payload.",
+  "interceptedRoutes": [
+    "/v1/decisions/prompt-packet",
+    "/v1/verification/diff-preview",
+    "/v1/actions/execute-approved"
+  ],
+  "assertions": {
+    "plan42LedgerVisible": true,
+    "brainStageAndWorkerLedgerVisible": true,
+    "taskLedgerVisible": true,
+    "progressLedgerVisible": true,
+    "specialistsAndWorkersVisible": true,
+    "taskIdVisible": true,
+    "routeVisible": true,
+    "providerModelVisible": true,
+    "failedStateVisible": true,
+    "noApplySuccessVisible": true,
+    "noPlan42GoVisible": true
+  },
+  "observed": {
+    "taskId": "task-plan4-421-ledger-proof",
+    "target": "src/components/coding/CodingCockpitShell.tsx",
+    "route": "/v1/actions/execute-approved",
+    "reasonCode": "plan4_execute_approved_contract_missing",
+    "provider": "Local / Ollama",
+    "model": "qwen2.5-coder:7b",
+    "modelSource": "runtime",
+    "providerCallMade": true,
+    "diskChangedFiles": "None"
+  },
+  "sourceEvidence": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-browser-debug-20260625.json",
+  "screenshotPath": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-browser-proof-20260625.png"
+}

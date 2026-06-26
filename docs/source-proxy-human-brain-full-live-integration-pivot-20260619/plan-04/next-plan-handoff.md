@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 4 State - 2026-06-25
 
-Status: `PLAN4_INCREMENT_4_1_2_GO`
+Status: `PLAN4_INCREMENT_4_2_1_GO`
 
 Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
 
@@ -54,5 +54,37 @@ Proof summary:
 - No apply success was displayed.
 
 Increment 4.1.2 verdict: `GO`.
+
+Increment 4.2.1 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-operator-ledger-20260625.md`
+
+4.2.1 implemented change:
+
+- `/coding` displays a Plan 4.2 operator ledger derived from existing runner state: brain-stage timeline, task ledger, progress ledger, specialists, and workers.
+- Copied diagnostics include `plan_4_2_operator_ledger`.
+- The implementation does not introduce a new worker, parallel state engine, package dependency, or backend substitute.
+
+Focused 4.2.1 check:
+
+```text
+npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.2 brain-stage and worker ledger without fake GO wording'
+1 targeted test passed
+```
+
+Browser/operator proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-browser-proof-20260625.md`
+
+Proof summary:
+
+- `/coding` was loaded from the existing Dell Next dev server at `https://10.0.0.186:3000/coding`.
+- Playwright route interception exercised `/v1/decisions/prompt-packet`, `/v1/verification/diff-preview`, and `/v1/actions/execute-approved`.
+- The visible operator ledger preserved failed state, task id, route, target, provider/model, progress ledger, and worker status.
+- No apply success was displayed.
+
+Increment 4.2.1 verdict: `GO`.
+
+Next incomplete Plan 4 increment: `4.2.2`.
 
 Do not start Plan 5/6.

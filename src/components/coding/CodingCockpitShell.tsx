@@ -4918,6 +4918,12 @@ export function CodingCockpitShell() {
         ? previewState.events.map((event) => `- ${event.status}: ${event.label} - ${event.detail}`).join("\n")
         : "- none recorded",
       "",
+      "plan_4_2_operator_ledger:",
+      `brain_stage_timeline: ${plan42BrainStageTimelineItems.map((item) => `${item.label}=${item.status} (${item.meta})`).join("; ")}`,
+      `task_ledger: ${plan42TaskLedgerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `progress_ledger: ${plan42ProgressLedgerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `specialists_and_workers: ${plan42SpecialistWorkerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      "",
       "copy_paste_block_for_chatgpt_codex:",
       `Manual /coding prompt: ${task.trim() || "not drafted"}`,
       `Trial verdict: ${manualTrialVerdict.verdict}`,
@@ -9647,6 +9653,46 @@ export function CodingCockpitShell() {
             : "waiting");
     return { label, status };
   });
+  const plan42BrainStageTimelineItems = [
+    {
+      label: "Stage 4",
+      meta: "Canonical coding route",
+      status: previewState.status === "idle" ? "waiting for task" : currentTaskState,
+    },
+    {
+      label: "Trace",
+      meta: previewState.traceId ? `trace ${previewState.traceId}` : "no trace yet",
+      status: previewState.consumerEventId ? "consumed event recorded" : "waiting for consumed event",
+    },
+    {
+      label: "Decision",
+      meta: previewState.routeCalled ?? "no route yet",
+      status: previewState.reasonCode ?? previewState.previewStatus,
+    },
+  ];
+  const plan42TaskLedgerItems = [
+    ["task_id", previewState.taskId || "none"],
+    ["task_state", currentTaskState],
+    ["target", currentTaskTarget],
+    ["route", previewState.routeCalled ?? "none"],
+    ["consumer", previewState.consumerSubsystem ?? "none"],
+  ];
+  const plan42ProgressLedgerItems = simpleProgressItems.map((item) => [
+    item.label,
+    item.status,
+  ]);
+  const plan42SpecialistWorkerItems = [
+    ["provider", activeProviderTruth.providerLabel],
+    ["model", activeProviderTruth.modelLabel],
+    ["model_source", activeProviderTruth.source],
+    ["provider_call_made", String(activeProviderTruth.providerCallMade)],
+    [
+      "trial_worker",
+      reversibleSuiteState.status === "idle"
+        ? "idle"
+        : `${reversibleSuiteState.status}: ${reversibleSuiteState.currentStep}`,
+    ],
+  ];
   const activeSessionItems = [
     {
       label: task.trim() ? "Current request" : "New coding chat",
@@ -10372,6 +10418,45 @@ export function CodingCockpitShell() {
                   </li>
                 ))}
               </ol>
+            </section>
+
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-42-ledger-heading">
+              <p className={commandLabelClass}>Plan 4.2 ledger</p>
+              <h2 id="plan-42-ledger-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                Brain-stage and worker ledger
+              </h2>
+              <ol className="mt-4 grid gap-2 sm:grid-cols-3">
+                {plan42BrainStageTimelineItems.map((item) => (
+                  <li className={`${commandInsetClass} min-h-20 p-3`} key={item.label}>
+                    <div className={`text-sm font-semibold ${commandTextClass}`}>{item.label}</div>
+                    <div className={`mt-1 text-xs ${commandMutedClass}`}>{item.meta}</div>
+                    <div className={`mt-2 text-xs uppercase tracking-[0.12em] ${commandMutedClass}`}>
+                      {item.status}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                {[
+                  ["Task ledger", plan42TaskLedgerItems],
+                  ["Progress ledger", plan42ProgressLedgerItems],
+                  ["Specialists and workers", plan42SpecialistWorkerItems],
+                ].map(([title, rows]) => (
+                  <div className={`${commandInsetClass} p-3`} key={String(title)}>
+                    <h3 className={`text-sm font-semibold ${commandTextClass}`}>{String(title)}</h3>
+                    <dl className="mt-3 grid gap-2 text-xs">
+                      {(rows as string[][]).map(([label, value]) => (
+                        <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`${title}-${label}`}>
+                          <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                            {label}
+                          </dt>
+                          <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ))}
+              </div>
             </section>
           </section>
 

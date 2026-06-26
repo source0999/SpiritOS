@@ -1094,6 +1094,19 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).toContain("technicalDetail: safePayloadSummary(applyPayload)");
   });
 
+  it("renders the Plan 4.2 brain-stage and worker ledger without fake GO wording", () => {
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("Plan 4.2 ledger");
+    expect(shellSrc).toContain("Brain-stage and worker ledger");
+    expect(shellSrc).toContain("plan42BrainStageTimelineItems");
+    expect(shellSrc).toContain("plan42TaskLedgerItems");
+    expect(shellSrc).toContain("plan42ProgressLedgerItems");
+    expect(shellSrc).toContain("plan42SpecialistWorkerItems");
+    expect(shellSrc).toContain("plan_4_2_operator_ledger");
+    expect(shellSrc).not.toContain("Plan 4.2 GO");
+    expect(shellSrc).not.toContain("4.2.1 GO");
+  });
+
   it("reads Plan 2 subsystem integration truth without a GO label", () => {
     const payload = {
       task: {

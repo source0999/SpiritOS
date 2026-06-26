@@ -1,6 +1,6 @@
 # Plan 4/6 Status
 
-Status: `PLAN4_INCREMENT_4_1_2_GO`.
+Status: `PLAN4_INCREMENT_4_2_1_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_4_START_20260625`.
 
 Increment 4.1.1 started after Britton approval on 2026-06-25.
@@ -26,3 +26,15 @@ Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-piv
 Browser/operator result: `/coding` visibly preserved a fail-closed `/v1/actions/execute-approved` response without displaying apply success.
 
 No Plan 5 work is authorized.
+
+Increment 4.2.1 status: `GO`.
+
+Increment 4.2.1 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-operator-ledger-20260625.md`.
+
+Current 4.2.1 implemented change: `/coding` now displays a Plan 4.2 operator ledger derived from existing runner state: brain-stage timeline, task ledger, progress ledger, specialists, and workers.
+
+Focused 4.2.1 proof: `npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.2 brain-stage and worker ledger without fake GO wording'` passed on `/home/source/SpiritOS`.
+
+Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-browser-proof-20260625.md`.
+
+Next incomplete Plan 4 increment: `4.2.2`.
