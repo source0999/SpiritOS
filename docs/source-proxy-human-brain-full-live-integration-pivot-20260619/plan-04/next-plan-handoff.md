@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 4 State - 2026-06-25
 
-Status: `PLAN4_INCREMENT_4_2_2_GO`
+Status: `PLAN4_INCREMENT_4_3_1_GO`
 
 Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
 
@@ -120,6 +120,37 @@ Phase 4.2 closeout review:
 
 Increment 4.2.2 verdict: `GO`.
 
-Next incomplete Plan 4 increment: `4.3.1`.
+Increment 4.3.1 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-operator-controls-20260625.md`
+
+4.3.1 implemented change:
+
+- `/coding` displays a Plan 4.3 operator control ledger for edit, approve, reject, apply, cancel, resume, and stop/kill controls.
+- Control authority explicitly preserves `apply_without_approval=false`, `commit=false`, `push=false`, and `os_process_kill=false`.
+- Reject and cancel controls now leave reviewable operator state instead of silent local-only transitions.
+
+Focused 4.3.1 check:
+
+```text
+npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.3 operator control ledger without hidden apply authority'
+1 targeted test passed
+```
+
+Browser/operator proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-browser-proof-20260625.md`
+
+Proof summary:
+
+- `/coding` was loaded from the existing Dell Next dev server at `https://10.0.0.186:3000/coding`.
+- Standalone Playwright route interception exercised `/v1/decisions/prompt-packet`, `/v1/verification/diff-preview`, and `/v1/actions/execute-approved`.
+- `/v1/actions/execute-approved` was intercepted once and held pending until the operator clicked `Cancel`.
+- The visible Plan 4.3 control ledger preserved `cancelled_no_apply_success`, `browser_operator_cancel`, and no commit/push/OS-kill authority.
+- No apply success was displayed.
+
+Increment 4.3.1 verdict: `GO`.
+
+Next incomplete Plan 4 increment: `4.3.2`.
 
 Do not start Plan 5/6.

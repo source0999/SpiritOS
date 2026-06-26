@@ -1,0 +1,34 @@
+{
+  "status": "PASS_BROWSER_OPERATOR_PLAN_4_3_CANCEL_CONTROL_VISIBLE",
+  "target_url": "https://10.0.0.186:3000/coding",
+  "command": "node_repl standalone Playwright chromium with page.route interception against /coding",
+  "input_path": "typed concrete file-scoped request into the visible Task Composer textarea after networkidle",
+  "injected_or_observed": {
+    "prompt_packet": "fulfilled with proposal_ready diff for src/components/coding/CodingCockpitShell.tsx",
+    "diff_preview": "fulfilled with preview_ready changed_files inside allowed scope",
+    "execute_approved": "intercepted and intentionally held pending until after operator Cancel was clicked",
+    "execute_approved_intercepted_count": 1
+  },
+  "assertions": {
+    "plan43ControlsVisible": true,
+    "controlLedgerVisible": true,
+    "controlAuthorityVisible": true,
+    "cancelStatusVisible": true,
+    "cancelRouteVisible": true,
+    "noCommitAuthorityVisible": true,
+    "noPushAuthorityVisible": true,
+    "noProcessKillAuthorityVisible": true,
+    "executeApprovedWasAttempted": true,
+    "noApplySuccessDisplayed": true,
+    "cancelledOperatorStateVisible": true
+  },
+  "visible_plan43_excerpt": "PLAN 4.3 CONTROLS\n\nReviewable operator controls\nControl ledger\nEDIT\ndraft_present; editing resets preview before apply\nAPPROVE\nlocked\nREJECT\nlocked\nAPPLY\nlocked\nCANCEL\ncancelled_no_apply_success\nRESUME\nlocked\nSTOP_OR_KILL\nno_process_kill_exposed\nControl authority\nAPPLY_WITHOUT_APPROVAL\nfalse\nCOMMIT\nfalse\nPUSH\nfalse\nOS_PROCESS_KILL\nfalse\nROUTE_BACKED_APPLY\nlocked\nROUTE_BACKED_SUITE_STOP\nbrowser_or_local_state_only\nLAST_CONTROL_ROUTE\nbrowser_operator_cancel\nLAST_CONTROL_STATUS\ncancelled_no_apply_success",
+  "execute_approved_request_bodies": [
+    "{\"action\":\"Modify src/components/coding/CodingCockpitShell.tsx\",\"approved\":true,\"approved_diff\":\"diff --git a/src/components/coding/CodingCockpitShell.tsx b/src/components/coding/CodingCockpitShell.tsx\\n--- a/src/components/coding/CodingCockpitShell.tsx\\n+++ b/src/components/coding/CodingCockpitShell.tsx\\n@@ -1,3 +1,4 @@\\n+// Plan 4.3.1 browser proof held by route interception.\\n \\\"use client\\\";\",\"allowed_files\":[\"src/components/coding/CodingCockpitShell.tsx\"],\"target\":\"src/components/coding/CodingCockpitShell.tsx\",\"task_id\":\"task-plan4-431-cancel-control\"}"
+  ],
+  "artifacts": {
+    "screenshot": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-browser-proof-20260625.png",
+    "json": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-browser-proof-20260625.json"
+  },
+  "passed": true
+}

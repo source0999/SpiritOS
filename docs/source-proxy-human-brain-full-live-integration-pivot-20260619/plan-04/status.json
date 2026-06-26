@@ -1,17 +1,18 @@
 {
   "plan": 4,
   "title": "Canonical /coding UI/API Consolidation",
-  "status": "PLAN4_INCREMENT_4_2_2_GO",
+  "status": "PLAN4_INCREMENT_4_3_1_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_4_START_20260625",
   "implementation_performed": true,
-  "current_increment": "4.2.2",
+  "current_increment": "4.3.1",
   "completed_increments": [
     "4.1.1",
     "4.1.2",
     "4.2.1",
-    "4.2.2"
+    "4.2.2",
+    "4.3.1"
   ],
-  "implemented_change": "execute-approved bridge fails closed when successful Source Proxy response lacks Plan 4 causal output contract fields",
+  "implemented_change": "/coding displays a Plan 4.3 operator control ledger and preserves cancel/reject control outcomes without hidden apply, commit, push, or OS process-kill authority",
   "required_contract_fields": [
     "task_id",
     "trace_id",
@@ -59,6 +60,16 @@
       "command": "node_repl Playwright chromium executable with page.route interception against /coding",
       "cwd": "Z:/",
       "result": "PASS_BROWSER_OPERATOR_PLAN_4_2_OUTPUT_CONTRACT_VISIBLE_AND_COPIED"
+    },
+    {
+      "command": "npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.3 operator control ledger without hidden apply authority'",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_1_TARGETED_TEST"
+    },
+    {
+      "command": "node_repl standalone Playwright chromium with page.route interception against /coding",
+      "cwd": "Z:/",
+      "result": "PASS_BROWSER_OPERATOR_PLAN_4_3_CANCEL_CONTROL_VISIBLE"
     }
   ],
   "live_canonical_route_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md",
@@ -73,6 +84,9 @@
   "increment_4_2_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-output-contract-ledger-20260625.md",
   "increment_4_2_2_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-browser-proof-20260625.md",
   "phase_4_2_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-2-closeout-review-20260625.md",
-  "next_incomplete_increment": "4.3.1",
+  "increment_4_3_1_status": "GO",
+  "increment_4_3_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-operator-controls-20260625.md",
+  "increment_4_3_1_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-browser-proof-20260625.md",
+  "next_incomplete_increment": "4.3.2",
   "next_plan_authorized": false
 }

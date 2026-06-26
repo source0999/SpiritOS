@@ -4927,6 +4927,12 @@ export function CodingCockpitShell() {
       `progress_ledger: ${plan42ProgressLedgerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       `specialists_and_workers: ${plan42SpecialistWorkerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       "",
+      "plan_4_3_control_ledger:",
+      `controls: ${plan43ControlLedgerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `authority: ${plan43ControlAuthorityItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `last_control_route: ${plan43LastControlRoute}`,
+      `last_control_status: ${plan43LastControlStatus}`,
+      "",
       "copy_paste_block_for_chatgpt_codex:",
       `Manual /coding prompt: ${task.trim() || "not drafted"}`,
       `Trial verdict: ${manualTrialVerdict.verdict}`,
@@ -9024,7 +9030,14 @@ export function CodingCockpitShell() {
       appliedAt: null,
       applySummary: "",
       blocker: "Rejected by human reviewer. No files changed.",
+      currentPhase: manualTaskPhaseLabels.blocked,
+      events: [
+        ...current.events,
+        manualEvent("blocked", "blocked", "Human reviewer rejected the preview. No apply route was called."),
+      ],
+      reasonCode: "human_rejected_preview",
       status: "blocked",
+      technicalDetail: "operator_control=reject; route=browser_operator_reject; apply_called=false",
     }));
   }
 
@@ -9039,7 +9052,12 @@ export function CodingCockpitShell() {
     setPreviewState((current) => ({
       ...current,
       approvedAt: new Date().toISOString(),
+      events: [
+        ...current.events,
+        manualEvent("review", "done", "Human approval recorded. Apply is still a separate action."),
+      ],
       status: "approved",
+      technicalDetail: "operator_control=approve; route=browser_operator_approval; apply_called=false",
     }));
   }
 
@@ -9564,11 +9582,15 @@ export function CodingCockpitShell() {
       blocker: "Cancelled",
       currentPhase: manualTaskPhaseLabels.blocked,
       error: null,
+      events: [
+        ...current.events,
+        manualEvent("blocked", "blocked", "Operator cancelled in-flight browser work. No apply success was recorded."),
+      ],
       isApplying: false,
       isLoading: false,
       reasonCode: "cancelled",
       status: "blocked",
-      technicalDetail: "cancelled",
+      technicalDetail: "operator_control=cancel; route=browser_operator_cancel; apply_success=false",
     }));
   }
 
@@ -9720,6 +9742,102 @@ export function CodingCockpitShell() {
         ? "idle"
         : `${reversibleSuiteState.status}: ${reversibleSuiteState.currentStep}`,
     ],
+  ];
+  const plan43CancelOrStopAvailable =
+    previewState.isLoading ||
+    previewState.isApplying ||
+    isReverting ||
+    reversibleSuiteState.status === "running" ||
+    reversibleSuiteState.status === "stopping";
+  const plan43LastControlRoute =
+    previewState.reasonCode === "cancelled"
+      ? "browser_operator_cancel"
+      : previewState.reasonCode === "human_rejected_preview"
+        ? "browser_operator_reject"
+        : previewState.status === "approved"
+          ? "browser_operator_approval"
+          : previewState.status === "applied"
+            ? "/v1/actions/execute-approved"
+            : reversibleSuiteState.status === "stopping"
+              ? "/v1/coding/runs/[runId]"
+              : "none";
+  const plan43LastControlStatus =
+    previewState.reasonCode === "cancelled"
+      ? "cancelled_no_apply_success"
+      : previewState.reasonCode === "human_rejected_preview"
+        ? "rejected_no_apply"
+        : previewState.status === "approved"
+          ? "approved_not_applied"
+          : previewState.status === "applied"
+            ? "applied_needs_verification"
+            : reversibleSuiteState.status === "stopping"
+              ? "suite_stop_requested"
+              : "waiting_for_operator_action";
+  const plan43ControlLedgerItems = [
+    [
+      "edit",
+      task.trim()
+        ? "draft_present; editing resets preview before apply"
+        : "waiting_for_draft",
+    ],
+    [
+      "approve",
+      previewState.status === "approved"
+        ? "approved_not_applied"
+        : approvalControlsAvailable
+          ? "available_after_review_gates"
+          : "locked",
+    ],
+    [
+      "reject",
+      previewState.reasonCode === "human_rejected_preview"
+        ? "rejected_no_apply"
+        : approvalControlsAvailable || applyControlsVisible
+          ? "available_no_apply"
+          : "locked",
+    ],
+    [
+      "apply",
+      previewState.isApplying
+        ? "execute_approved_in_flight"
+        : previewState.status === "applied"
+          ? "applied_needs_verification"
+          : applyControlsVisible
+            ? "available_execute_approved_route"
+            : "locked",
+    ],
+    [
+      "cancel",
+      previewState.reasonCode === "cancelled"
+        ? "cancelled_no_apply_success"
+        : plan43CancelOrStopAvailable
+          ? "available_for_in_flight_work"
+          : "locked",
+    ],
+    [
+      "resume",
+      reversibleSuiteCanResume
+        ? reversibleSuiteResumeBlocked
+          ? "blocked_by_agent_lab_leftovers"
+          : `available_from_prompt_${reversibleSuiteState.completed + 1}`
+        : "locked",
+    ],
+    [
+      "stop_or_kill",
+      reversibleSuiteState.status === "stopping"
+        ? "suite_stop_requested"
+        : reversibleSuiteState.status === "running"
+          ? "available_as_reviewable_stop"
+          : "no_process_kill_exposed",
+    ],
+  ];
+  const plan43ControlAuthorityItems = [
+    ["apply_without_approval", "false"],
+    ["commit", "false"],
+    ["push", "false"],
+    ["os_process_kill", "false"],
+    ["route_backed_apply", previewState.status === "approved" || previewState.isApplying || previewState.status === "applied" ? "/v1/actions/execute-approved" : "locked"],
+    ["route_backed_suite_stop", backendRunSync.runId ? "/v1/coding/runs/[runId]" : "browser_or_local_state_only"],
   ];
   const activeSessionItems = [
     {
@@ -10485,6 +10603,45 @@ export function CodingCockpitShell() {
                     </dl>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-43-controls-heading">
+              <p className={commandLabelClass}>Plan 4.3 controls</p>
+              <h2 id="plan-43-controls-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                Reviewable operator controls
+              </h2>
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <div className={`${commandInsetClass} p-3`}>
+                  <h3 className={`text-sm font-semibold ${commandTextClass}`}>Control ledger</h3>
+                  <dl className="mt-3 grid gap-2 text-xs">
+                    {plan43ControlLedgerItems.map(([label, value]) => (
+                      <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`plan43-control-${label}`}>
+                        <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                          {label}
+                        </dt>
+                        <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+                <div className={`${commandInsetClass} p-3`}>
+                  <h3 className={`text-sm font-semibold ${commandTextClass}`}>Control authority</h3>
+                  <dl className="mt-3 grid gap-2 text-xs">
+                    {[
+                      ...plan43ControlAuthorityItems,
+                      ["last_control_route", plan43LastControlRoute],
+                      ["last_control_status", plan43LastControlStatus],
+                    ].map(([label, value]) => (
+                      <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`plan43-authority-${label}`}>
+                        <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                          {label}
+                        </dt>
+                        <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
               </div>
             </section>
           </section>

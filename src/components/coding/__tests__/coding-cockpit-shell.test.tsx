@@ -1131,6 +1131,24 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).not.toContain("4.2.1 GO");
   });
 
+  it("renders the Plan 4.3 operator control ledger without hidden apply authority", () => {
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("Plan 4.3 controls");
+    expect(shellSrc).toContain("Reviewable operator controls");
+    expect(shellSrc).toContain("plan43ControlLedgerItems");
+    expect(shellSrc).toContain("plan43ControlAuthorityItems");
+    expect(shellSrc).toContain("plan_4_3_control_ledger");
+    expect(shellSrc).toContain("browser_operator_cancel");
+    expect(shellSrc).toContain("cancelled_no_apply_success");
+    expect(shellSrc).toContain("operator_control=cancel; route=browser_operator_cancel; apply_success=false");
+    expect(shellSrc).toContain("operator_control=reject; route=browser_operator_reject; apply_called=false");
+    expect(shellSrc).toContain('["commit", "false"]');
+    expect(shellSrc).toContain('["push", "false"]');
+    expect(shellSrc).toContain('["os_process_kill", "false"]');
+    expect(shellSrc).not.toContain("Plan 4.3 GO");
+    expect(shellSrc).not.toContain("4.3.1 GO");
+  });
+
   it("reads Plan 2 subsystem integration truth without a GO label", () => {
     const payload = {
       task: {

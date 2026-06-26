@@ -1,6 +1,6 @@
 # Plan 4/6 Status
 
-Status: `PLAN4_INCREMENT_4_2_2_GO`.
+Status: `PLAN4_INCREMENT_4_3_1_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_4_START_20260625`.
 
 Increment 4.1.1 started after Britton approval on 2026-06-25.
@@ -49,4 +49,16 @@ Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-piv
 
 Phase 4.2 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-2-closeout-review-20260625.md`.
 
-Next incomplete Plan 4 increment: `4.3.1`.
+Increment 4.3.1 status: `GO`.
+
+Increment 4.3.1 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-operator-controls-20260625.md`.
+
+Current 4.3.1 implemented change: `/coding` now displays a Plan 4.3 operator control ledger for edit, approve, reject, apply, cancel, resume, and stop/kill controls, including explicit no-commit, no-push, no-hidden-apply, and no-OS-process-kill authority.
+
+Focused 4.3.1 proof: `npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.3 operator control ledger without hidden apply authority'` passed on `/home/source/SpiritOS`.
+
+Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-browser-proof-20260625.md`.
+
+Browser/operator result: `/coding` visibly preserved an operator cancel control while `/v1/actions/execute-approved` was held in flight, showed `cancelled_no_apply_success`, and did not display apply success.
+
+Next incomplete Plan 4 increment: `4.3.2`.
