@@ -24,7 +24,11 @@ Increment 5.2.1 packet: `docs/source-proxy-human-brain-full-live-integration-piv
 
 Increment 5.2.1 proof artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-live-acceptance-proof-20260625.json`.
 
+Increment 5.2.1 central gate resolution analysis: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-resolution-20260626.md`.
+
 Increment 5.2.1 blocker: live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and recorded causal failure/readback events, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. Bypassing that gate would expand authority, so 5.2.1 is not GO.
+
+Central gate resolution: Outcome B. The live `.gate/state.json` is for `evaluation-round` temporary model-call evaluation and explicitly notes no apply approval. The running gate does not expose `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply`. Satisfying the gate for 5.2.1 requires a Britton-approved Plan 5 apply gate decision, not a code patch.
 
 Focused checks passed from `/home/source/SpiritOS`:
 

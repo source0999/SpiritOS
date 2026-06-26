@@ -62,11 +62,17 @@ Proof artifact:
 
 `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-live-acceptance-proof-20260625.json`
 
+Central gate resolution analysis:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-resolution-20260626.md`
+
 Blocker:
 
 `central_gate_blocked_apply`
 
 Live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and recorded causal failure/readback events, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. Do not bypass or expand apply authority inside Plan 5.
+
+Current resolution: Outcome B. The live gate state is for `evaluation-round` temporary model-call evaluation and explicitly notes no apply approval. 5.2.1 requires a Britton-approved Plan 5 apply gate decision before productive live proof can be retried.
 
 Next incomplete Plan 5 increment: `5.2.1`.
 

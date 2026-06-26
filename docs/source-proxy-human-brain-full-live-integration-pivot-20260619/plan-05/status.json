@@ -19,7 +19,9 @@
   "increment_5_2_1_status": "PROOF_BLOCKED_BY_CENTRAL_GATE",
   "increment_5_2_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-live-acceptance-20260625.md",
   "increment_5_2_1_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-live-acceptance-proof-20260625.json",
+  "increment_5_2_1_central_gate_resolution": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-resolution-20260626.md",
   "increment_5_2_1_blocker": "Live HTTPS /v1/actions/execute-approved forwarded to Source Proxy and recorded causal failure/readback events, but central_gate_check(\"apply\") blocked apply before workspace mutation. Bypassing the apply gate would expand authority.",
+  "increment_5_2_1_required_human_decision": "Britton must approve a Plan 5 apply gate before 5.2.1 can produce productive live apply proof. Current live gate is evaluation-round temporary model-call evaluation with no apply approval, and SOURCE_PROXY_GATE_ALLOWED_ACTIONS does not include apply.",
   "implemented_change": "Plan 5 acceptance harness validates consumed subsystem output on one causal trace, rejects unconsumed output, and requires phase-verifier consumption of the accepted output hash.",
   "required_fields": [
     "task_id",
