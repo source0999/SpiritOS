@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 4 State - 2026-06-25
 
-Status: `PLAN4_PHASE_4_3_GO`
+Status: `PLAN4_PHASE_4_4_GO`
 
 Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
 
@@ -189,6 +189,53 @@ Increment 4.3.2 verdict: `GO`.
 
 Phase 4.3 verdict: `GO`.
 
-Next incomplete Plan 4 increment: `4.4.1`.
+Increment 4.4.1 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-1-truth-ledger-20260625.md`
+
+4.4.1 implemented change:
+
+- `/coding` displays a Plan 4.4 truth ledger for prompt memory, research route, target candidates, provider/model research, assignment target, allowed files, changed files, verifier summary, verifier evidence, and checks.
+- Copied diagnostics include `plan_4_4_truth_ledger`.
+
+Focused 4.4.1 check:
+
+```text
+npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.4 truth ledger without laundering productive truth'
+1 targeted test passed
+```
+
+Browser/operator proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-1-browser-proof-20260625.md`
+
+Proof summary:
+
+- `/coding` was loaded from the existing Dell Next dev server at `https://10.0.0.186:3000/coding`.
+- Standalone Playwright route interception exercised `/v1/decisions/prompt-packet`, `/v1/verification/diff-preview`, and `/v1/actions/execute-approved`.
+- `/v1/actions/execute-approved` returned HTTP `502` with task id, trace id, invocation event id, consumer event id, consumer subsystem, output hash, reason code, route, and failed status.
+- The visible Plan 4.4 truth ledger preserved memory/research, assignment/verifier, and repair/productive-truth groups.
+- No apply success was displayed.
+- The screenshot was visually checked and was readable; DOM/JSON proof remains authoritative.
+
+Increment 4.4.1 verdict: `GO`.
+
+Increment 4.4.2 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-2-productive-truth-contract-20260625.md`
+
+4.4.2 implemented change:
+
+- `/coding` preserves the Plan 4.4 repair/productive-truth contract: repair state, next safe action, reason code, technical payload summary, visible result, productive truth status, and explicit apply-success claim state.
+
+Increment 4.4.2 verdict: `GO`.
+
+Phase 4.4 closeout review:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-4-closeout-review-20260625.md`
+
+Phase 4.4 verdict: `GO`.
+
+Next incomplete Plan 4 increment: `4.5.1`.
 
 Do not start Plan 5/6.

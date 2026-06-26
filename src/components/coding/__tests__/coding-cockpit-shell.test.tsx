@@ -1155,6 +1155,24 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).not.toContain("4.3.1 GO");
   });
 
+  it("renders the Plan 4.4 truth ledger without laundering productive truth", () => {
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("Plan 4.4 truth");
+    expect(shellSrc).toContain("Memory, research, verifier, and productive truth");
+    expect(shellSrc).toContain("plan44MemoryResearchItems");
+    expect(shellSrc).toContain("plan44AssignmentVerifierItems");
+    expect(shellSrc).toContain("plan44RepairProductiveTruthItems");
+    expect(shellSrc).toContain("plan_4_4_truth_ledger");
+    expect(shellSrc).toContain("memory_and_research");
+    expect(shellSrc).toContain("assignment_and_verifier");
+    expect(shellSrc).toContain("repair_and_productive_truth");
+    expect(shellSrc).toContain('"apply_success_claim"');
+    expect(shellSrc).toContain('"not_displayed"');
+    expect(shellSrc).toContain("codingVisibleResult.live_model_proof_status");
+    expect(shellSrc).not.toContain("Plan 4.4 GO");
+    expect(shellSrc).not.toContain("4.4.1 GO");
+  });
+
   it("reads Plan 2 subsystem integration truth without a GO label", () => {
     const payload = {
       task: {

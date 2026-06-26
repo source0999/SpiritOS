@@ -1,6 +1,6 @@
 # Plan 4/6 Status
 
-Status: `PLAN4_PHASE_4_3_GO`.
+Status: `PLAN4_PHASE_4_4_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_4_START_20260625`.
 
 Increment 4.1.1 started after Britton approval on 2026-06-25.
@@ -75,4 +75,24 @@ Browser/operator result: `/coding` visibly preserved route-backed stop state for
 
 Phase 4.3 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-3-closeout-review-20260625.md`.
 
-Next incomplete Plan 4 increment: `4.4.1`.
+Increment 4.4.1 status: `GO`.
+
+Increment 4.4.1 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-1-truth-ledger-20260625.md`.
+
+Current 4.4.1 implemented change: `/coding` now displays a Plan 4.4 truth ledger for prompt memory, research route, target candidates, provider/model research, assignment target, allowed files, changed files, verifier summary, verifier evidence, and checks.
+
+Focused 4.4.1 proof: `npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.4 truth ledger without laundering productive truth'` passed on `/home/source/SpiritOS`.
+
+Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-1-browser-proof-20260625.md`.
+
+Browser/operator result: `/coding` visibly preserved Plan 4.4 memory, research, assignment, verifier, repair, and productive-truth state after a controlled fail-closed `/v1/actions/execute-approved` response without displaying apply success.
+
+Increment 4.4.2 status: `GO`.
+
+Increment 4.4.2 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-2-productive-truth-contract-20260625.md`.
+
+Current 4.4.2 implemented change: `/coding` now preserves the Plan 4.4 repair/productive-truth contract, including repair state, next safe action, reason code, technical payload summary, visible result, productive truth status, and explicit apply-success claim state.
+
+Phase 4.4 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-4-closeout-review-20260625.md`.
+
+Next incomplete Plan 4 increment: `4.5.1`.

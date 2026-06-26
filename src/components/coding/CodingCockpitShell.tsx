@@ -4942,6 +4942,11 @@ export function CodingCockpitShell() {
       `last_control_route: ${plan43LastControlRoute}`,
       `last_control_status: ${plan43LastControlStatus}`,
       "",
+      "plan_4_4_truth_ledger:",
+      `memory_and_research: ${plan44MemoryResearchItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `assignment_and_verifier: ${plan44AssignmentVerifierItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `repair_and_productive_truth: ${plan44RepairProductiveTruthItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      "",
       "copy_paste_block_for_chatgpt_codex:",
       `Manual /coding prompt: ${task.trim() || "not drafted"}`,
       `Trial verdict: ${manualTrialVerdict.verdict}`,
@@ -9865,6 +9870,30 @@ export function CodingCockpitShell() {
     ["backend_sync_status", backendRunSync.status],
     ["interruption_source", reversibleSuiteState.interruptionSource],
   ];
+  const plan44MemoryResearchItems = [
+    ["prompt_memory", promptHistory.length > 0 ? `${promptHistory.length} retained` : "empty"],
+    ["latest_prompt", promptHistory.at(-1) ?? (task.trim() || "none")],
+    ["research_route", previewState.routeCalled ?? "waiting_for_prompt_packet"],
+    ["target_candidates", formatList(previewState.targetCandidates, "none")],
+    ["provider_research", `${activeProviderTruth.providerLabel}/${activeProviderTruth.modelLabel}`],
+  ];
+  const plan44AssignmentVerifierItems = [
+    ["assignment_target", currentTaskTarget],
+    ["allowed_files", formatList(previewState.allowedFiles, "none")],
+    ["changed_files", formatList(currentChangedFilesDiagnostics.changedFiles, "none")],
+    ["verifier_summary", previewState.verifierSummary],
+    ["verifier_evidence", previewState.checks.length > 0 ? `checks_recorded=${formatList(previewState.checks, "none")}` : "none"],
+    ["checks", formatList(previewState.checks, "none")],
+  ];
+  const plan44RepairProductiveTruthItems = [
+    ["repair_status", reversalStatus || "no repair/reversal recorded"],
+    ["next_safe_action", nextSafeAction],
+    ["reason_code", previewState.reasonCode ?? "none"],
+    ["technical_detail", previewState.technicalDetail ?? previewState.error ?? "none"],
+    ["visible_result", codingVisibleResult.primary_label],
+    ["productive_truth", codingVisibleResult.live_model_proof_status],
+    ["apply_success_claim", previewState.status === "applied" ? "visible_applied_state" : "not_displayed"],
+  ];
   const activeSessionItems = [
     {
       label: task.trim() ? "Current request" : "New coding chat",
@@ -10681,6 +10710,34 @@ export function CodingCockpitShell() {
                     ))}
                   </dl>
                 </div>
+              </div>
+            </section>
+
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-44-truth-heading">
+              <p className={commandLabelClass}>Plan 4.4 truth</p>
+              <h2 id="plan-44-truth-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                Memory, research, verifier, and productive truth
+              </h2>
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                {[
+                  ["Memory and research", plan44MemoryResearchItems],
+                  ["Assignment and verifier", plan44AssignmentVerifierItems],
+                  ["Repair and productive truth", plan44RepairProductiveTruthItems],
+                ].map(([title, rows]) => (
+                  <div className={`${commandInsetClass} p-3`} key={String(title)}>
+                    <h3 className={`text-sm font-semibold ${commandTextClass}`}>{String(title)}</h3>
+                    <dl className="mt-3 grid gap-2 text-xs">
+                      {(rows as string[][]).map(([label, value]) => (
+                        <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`plan44-${label}`}>
+                          <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                            {label}
+                          </dt>
+                          <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ))}
               </div>
             </section>
           </section>

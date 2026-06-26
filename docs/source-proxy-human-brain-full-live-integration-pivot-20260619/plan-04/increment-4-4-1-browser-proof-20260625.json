@@ -1,0 +1,75 @@
+{
+  "status": "PASS_BROWSER_OPERATOR_PLAN_4_4_1_TRUTH_LEDGER_VISIBLE",
+  "target_url": "https://10.0.0.186:3000/coding",
+  "command": "node_repl standalone Playwright chromium with installed Chrome executable and minimal page.route interception against /coding",
+  "input_path": "operator-style textarea click and keyboard typing after hydration, then visible Start coding button click",
+  "prompt_text": "In src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.4.1 browser proof comment.",
+  "injected_or_observed": {
+    "prompt_packet": "fulfilled with proposal_ready target candidates, allowed file assignment, provider truth, and generated diff",
+    "diff_preview": "fulfilled with preview_ready verifier summary and git diff --check",
+    "execute_approved": "fulfilled HTTP 502 fail-closed response with task_id, trace_id, invocation_event_id, consumer_event_id, consumer_subsystem, output_hash, route, reason_code, and failed status",
+    "execute_approved_intercepted_count": 1
+  },
+  "assertions": {
+    "plan44TruthVisible": true,
+    "memoryResearchVisible": true,
+    "assignmentVerifierVisible": true,
+    "repairProductiveTruthVisible": true,
+    "taskIdVisible": true,
+    "traceIdVisible": true,
+    "invocationEventVisible": true,
+    "consumerEventVisible": true,
+    "consumerSubsystemVisible": true,
+    "outputHashVisible": true,
+    "reasonCodeVisible": true,
+    "routeVisible": true,
+    "verifierEvidenceVisible": true,
+    "productiveTruthNotDisplayedAsSuccess": true,
+    "noApplySuccessDisplayed": true,
+    "executeApprovedAttempted": true,
+    "noPlan44GoVisible": true
+  },
+  "visible_plan44_excerpt": "PLAN 4.4 TRUTH\n\nMemory, research, verifier, and productive truth\nMemory and research\nPROMPT_MEMORY\n1 retained\nLATEST_PROMPT\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.4.1 browser proof comment.\nRESEARCH_ROUTE\n/v1/actions/execute-approved\nTARGET_CANDIDATES\nsrc/components/coding/CodingCockpitShell.tsx, src/components/coding/__tests__/coding-cockpit-shell.test.tsx\nPROVIDER_RESEARCH\nLocal / Ollama/qwen2.5-coder:7b\nAssignment and verifier\nASSIGNMENT_TARGET\nsrc/components/coding/CodingCockpitShell.tsx\nALLOWED_FILES\nsrc/components/coding/CodingCockpitShell.tsx\nCHANGED_FILES\nsrc/components/coding/CodingCockpitShell.tsx\nVERIFIER_SUMMARY\nChecks have not passed yet.\nVERIFIER_EVIDENCE\nchecks_recorded=git diff --check\nCHECKS\ngit diff --check\nRepair and productive truth\nREPAIR_STATUS\nno repair/reversal recorded\nNEXT_SAFE_ACTION\nResolve the reported blocker, then retry. No files have been changed.\nREASON_CODE\nplan4_441_productive_truth_apply_blocked\nTECHNICAL_DETAIL\n{\"ok\":false,\"error\":\"execute-approved failed closed for Plan 4.4.1 productive-truth proof.\",\"reason_code\":\"plan4_441_productive_truth_apply_blocked\",\"task_id\":\"task-plan4-441-truth-ledger\",\"route\":\"/v1/actions/execute-approved\",\"technical_payload_summary\":\"controlled Plan 4.4.1 truth ledger fail-closed response\",\"execution\":{\"trace_id\":\"trace-plan4-441-truth-ledger\",\"invocation_event_id\":\"invocation-plan4-441-truth-ledger\",\"causal_trace\":{\"trace_id\":\"trace-plan4-441-truth-ledger\",\"invocation_event_id\":\"invocation-plan4-441-truth-ledger\",\"consumer_event_id\":\"consumer-plan4-441-truth-ledger\",\"consumer_subsystem\":\"coding_operator_plan_4_4_truth_ledger\",\"status_after\":\"execute_approved_failed_closed_truth_preserved\"},\"output_hash\":\"sha256:plan4-441-truth-ledger\",\"status\":\"execute_approved_fail\nVISIBLE_RESULT\nFAIL\nPRODUCTIVE_TRUTH\nlive_model_proven\nAPPLY_SUCCESS_CLAIM\nnot_displayed",
+  "visible_plan42_excerpt": "PLAN 4.2 LEDGER\n\nBrain-stage and worker ledger\nStage 4\nCanonical coding route\nFAILED\nTrace\ntrace trace-plan4-441-truth-ledger\nCONSUMED EVENT RECORDED\nDecision\n/v1/actions/execute-approved\nPLAN4_441_PRODUCTIVE_TRUTH_APPLY_BLOCKED\nTask ledger\nTASK_ID\ntask-plan4-441-truth-ledger\nTASK_STATE\nFailed\nTARGET\nsrc/components/coding/CodingCockpitShell.tsx\nROUTE\n/v1/actions/execute-approved\nCONSUMER\ncoding_operator_plan_4_4_truth_ledger\nOutput contract\nTASK_ID\ntask-plan4-441-truth-ledger\nTRACE_ID\ntrace-plan4-441-truth-ledger\nINVOCATION_EVENT_ID\ninvocation-plan4-441-truth-ledger\nCONSUMER_EVENT_ID\nconsumer-plan4-441-truth-ledger\nCONSUMER_SUBSYSTEM\ncoding_operator_plan_4_4_truth_ledger\nOUTPUT_HASH\nsha256:plan4-441-truth-ledger\nSTATUS\nexecute_approved_failed_closed_truth_preserved\nProgress ledger\nREADING REQUEST\ndone\nFINDING FILES\ndone\nCALLING MODEL\nrunning\nEDITING FILES\nwaiting\nCHECKING\nrunning\nUNDOING TRIAL EDIT\nwaiting\nREADY TO REVIEW\ndone\nSpecialists and workers\nPROVIDER\nLocal / Ollama\nMODEL\nqwen2.5-coder:7b\nMODEL_SOURCE\nruntime\nPROVIDER_CALL_MADE\ntrue\nTRIAL_WORKER\nidle",
+  "visible_review_excerpt": "STATUS\n\nCoding runner\n\nNo live-run file changes are currently recorded.\n\nCURRENT TASK\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.4.1 browser proof comment.\nMODEL\nqwen2.5-coder:7b\nSTATE\nFailed\n\nREVIEW PANE\n\nReview pane\nFAIL: THE RUN FAILED BEFORE A USEFUL RESULT.\n0/100 LIVE APPLY PROOF\n\nexecute-approved failed closed for Plan 4.4.1 productive-truth proof.\n\nCopy current task diagnostics\nCopy trial diagnostics\n\nFAILURE DIAGNOSTICS\n\nREASON_CODE\nplan4_441_productive_truth_apply_blocked\nROUTE\n/v1/actions/execute-approved\nTASK_ID\ntask-plan4-441-truth-ledger\nTECHNICAL_DETAIL\n{\"ok\":false,\"error\":\"execute-approved failed closed for Plan 4.4.1 productive-truth proof.\",\"reason_code\":\"plan4_441_productive_truth_apply_blocked\",\"task_id\":\"task-plan4-441-truth-ledger\",\"route\":\"/v1/actions/execute-approved\",\"technical_payload_summary\":\"controlled Plan 4.4.1 truth ledger fail-closed response\",\"execution\":{\"trace_id\":\"trace-plan4-441-truth-ledger\",\"invocation_event_id\":\"invocation-plan4-441-truth-ledger\",\"causal_trace\":{\"trace_id\":\"trace-plan4-441-truth-ledger\",\"invocation_event_id\":\"invocation-plan4-441-truth-ledger\",\"consumer_event_id\":\"consumer-plan4-441-truth-ledger\",\"consumer_subsystem\":\"coding_operator_plan_4_4_truth_ledger\",\"status_after\":\"execute_approved_failed_closed_truth_preserved\"},\"output_hash\":\"sha256:plan4-441-truth-ledger\",\"status\":\"execute_approved_fail\nCHANGED FILES\nNone\nCHECKS\ngit diff --check\n\nCAUSAL TRACE\n\nTRACE_ID\ntrace-plan4-441-truth-ledger\nINVOCATION_EVENT_ID\ninvocation-plan4-441-truth-ledger\nCONSUMER_EVENT_ID\nconsumer-plan4-441-truth-ledger\nCONSUMER_SUBSYSTEM\ncoding_operator_plan_4_4_truth_ledger\nSTATUS_AFTER\nexecute_approved_failed_closed_truth_preserved\nReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n11 dummy fixture baseline(s) can be reset, then results will clear.",
+  "body_excerpt": "Receipt\nTrace\nCoding\n\nWORKSPACE\n\nCoding sessions\n\nSpiritOS\n\nNew chat\nCurrent request\nFailed\nActive task\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.4.1 browser proof comment.\nLive run status\nFailed\n\nACTIVE TASK\n\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.4.1 browser proof comment.\n\nsrc/components/coding/CodingCockpitShell.tsx\n\nTRIAL RUNNER\n\nTrial Runner\n\nRun one dummy Coder prompt or a later benchmark. Coder 001 creates LumaCart first.\n\nNo active run\n\nRun ID: none\n\nLast synced: 2026-06-26T02:00:40.381Z\n\nCATEGORY\nCoder\nDesigner\nCombined\nCOUNT\nMessy Coder 10\nMessy Coder 25\nMessy Coder 50\nMessy Coder 100\nMODE\nIndividual prompt\nBenchmark count\nSELECTED PROMPT\nCoder 001 - Init Dummy Product Site\nCoder 002 - Add Product Data\nCoder 003 - Render Product Cards\nCoder 004 - Add Search Filter\nCoder 005 - Add Category Chips\nCoder 006 - Add Fake Cart Count\nCoder 007 - Mobile Styling Pass\nCoder 008 - Add Tiny Tests / Smoke Checks\nCoder 009 - No-Op / Already Satisfied Proof\nCoder 010 - Protected Path Pressure Trap\nPASS_DUMMY_PROJECT_INIT\ndummy-product-site\nView prompt + boundaries\nRun selected promptRun all trials\n\nNo LumaCart prompt has been run in this panel.\n\nPrompt: coder-001-init-dummy-product-site\n\nREADY\nCopy diagnostics\nDONE\n0/10\nEDITS APPLIED\n0\nALREADY SATISFIED\n0\nSAFETY BLOCKS\n0\nTIMEOUTS\n0\nNEEDS FIX\n0\nREVERTED\n0\nCopy prompts\nCopy trial diagnosticsReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n11 dummy fixture baseline(s) can be reset, then results will clear.\n\nPHONE TRIAL\n\nBackground trial\n\nStart a reversible suite from the left rail, then use this panel as the quick sync check.\n\nReady\nPROGRESS\n0/10\nCONNECTION\nBrowser online\nSAVED\nWaiting\n\nPROMPT COMPOSER\n\nTask Composer\nCoding prompt\nStart coding\nUndo last change\n\nTimer — total: 46ms · prompt-packet: 0.0s · diff-preview: 0.0s · finished: 0.0s\n\nUndo is available after Start coding applies a reversible change.\n\nPROGRESS\n\nRun progress\nReading request\nDONE\nFinding files\nDONE\nCalling model\nRUNNING\nEditing files\nWAITING\nChecking\nRUNNING\nUndoing trial edit\nWAITING\nReady to review\nDONE\n\nPLAN 4.2 LEDGER\n\nBrain-stage and worker ledger\nStage 4\nCanonical coding route\nFAILED\nTrace\ntrace trace-plan4-441-truth-ledger\nCONSUMED EVENT RECORDED\nDecision\n/v1/actions/execute-approved\nPLAN4_441_PRODUCTIVE_TRUTH_APPLY_BLOCKED\nTask ledger\nTASK_ID\ntask-plan4-441-truth-ledger\nTASK_STATE\nFailed\nTARGET\nsrc/components/coding/CodingCockpitShell.tsx\nROUTE\n/v1/actions/execute-approved\nCONSUMER\ncoding_operator_plan_4_4_truth_ledger\nOutput contract\nTASK_ID\ntask-plan4-441-truth-ledger\nTRACE_ID\ntrace-plan4-441-truth-ledger\nINVOCATION_EVENT_ID\ninvocation-plan4-441-truth-ledger\nCONSUMER_EVENT_ID\nconsumer-plan4-441-truth-ledger\nCONSUMER_SUBSYSTEM\ncoding_operator_plan_4_4_truth_ledger\nOUTPUT_HASH\nsha256:plan4-441-truth-ledger\nSTATUS\nexecute_approved_failed_closed_truth_preserved\nProgress ledger\nREADING REQUEST\ndone\nFINDING FILES\ndone\nCALLING MODEL\nrunning\nEDITING FILES\nwaiting\nCHECKING\nrunning\nUNDOING TRIAL EDIT\nwaiting\nREADY TO REVIEW\ndone\nSpecialists and workers\nPROVIDER\nLocal / Ollama\nMODEL\nqwen2.5-coder:7b\nMODEL_SOURCE\nruntime\nPROVIDER_CALL_MADE\ntrue\nTRIAL_WORKER\nidle\n\nPLAN 4.3 CONTROLS\n\nReviewable operator controls\nControl ledger\nEDIT\ndraft_present; editing resets preview before apply\nAPPROVE\nlocked\nREJECT\nlocked\nAPPLY\nlocked\nCANCEL\nlocked\nRESUME\nlocked\nSTOP_OR_KILL\nno_process_kill_exposed\nControl authority\nAPPLY_WITHOUT_APPROVAL\nfalse\nCOMMIT\nfalse\nPUSH\nfalse\nOS_PROCESS_KILL\nfalse\nROUTE_BACKED_APPLY\nlocked\nROUTE_BACKED_SUITE_STOP\nbrowser_or_local_state_only\nLAST_CONTROL_ROUTE\nnone\nLAST_CONTROL_STATUS\nwaiting_for_operator_action\nControl contract\nBACKEND_RUN_ID\nnone\nTASK_ID\ntask-plan4-441-truth-ledger\nTRACE_ID\ntrace-plan4-441-truth-ledger\nINVOCATION_EVENT_ID\ninvocation-plan4-441-truth-ledger\nOUTPUT_HASH\nsha256:plan4-441-truth-ledger\nCONTROL_STATUS\nwaiting_for_operator_action\nCONTROL_ROUTE\nnone\nRESUME_FROM_PROMPT\nlocked\nBACKEND_SYNC_STATUS\nsynced\nINTERRUPTION_SOURCE\nnone\n\nPLAN 4.4 TRUTH\n\nMemory, research, verifier, and productive truth\nMemory and research\nPROMPT_MEMORY\n1 retained\nLATEST_PROMPT\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.4.1 browser proof comment.\nRESEARCH_ROUTE\n/v1/actions/execute-approved\nTARGET_CANDIDATES\nsrc/components/coding/CodingCockpitShell.tsx, src/components/coding/__tests__/coding-cockpit-shell.test.tsx\nPROVIDER_RESEARCH\nLocal / Ollama/qwen2.5-coder:7b\nAssignment and verifier\nASSIGNMENT_TARGET\nsrc/components/coding/CodingCockpitShell.tsx\nALLOWED_FILES\nsrc/components/coding/CodingCockpitShell.tsx\nCHANGED_FILES\nsrc/components/coding/CodingCockpitShell.tsx\nVERIFIER_SUMMARY\nChecks have not passed yet.\nVERIFIER_EVIDENCE\nchecks_recorded=git diff --check\nCHECKS\ngit diff --check\nRepair and productive truth\nREPAIR_STATUS\nno repair/reversal recorded\nNEXT_SAFE_ACTION\nResolve the reported blocker, then retry. No files have been changed.\nREASON_CODE\nplan4_441_productive_truth_apply_blocked\nTECHNICAL_DETAIL\n{\"ok\":false,\"error\":\"execute-approved failed closed for Plan 4.4.1 productive-truth proof.\",\"reason_code\":\"plan4_441_productive_truth_apply_blocked\",\"task_id\":\"task-plan4-441-truth-ledger\",\"route\":\"/v1/actions/execute-approved\",\"technical_payload_summary\":\"controlled Plan 4.4.1 truth ledger fail-closed response\",\"execution\":{\"trace_id\":\"trace-plan4-441-truth-ledger\",\"invocation_event_id\":\"invocation-plan4-441-truth-ledger\",\"causal_trace\":{\"trace_id\":\"trace-plan4-441-truth-ledger\",\"invocation_event_id\":\"invocation-plan4-441-truth-ledger\",\"consumer_event_id\":\"consumer-plan4-441-truth-ledger\",\"consumer_subsystem\":\"coding_operator_plan_4_4_truth_ledger\",\"status_after\":\"execute_approved_failed_closed_truth_preserved\"},\"output_hash\":\"sha256:plan4-441-truth-ledger\",\"status\":\"execute_approved_fail\nVISIBLE_RESULT\nFAIL\nPRODUCTIVE_TRUTH\nlive_model_proven\nAPPLY_SUCCESS_CLAIM\nnot_displayed\n\nSTATUS\n\nCoding runner\n\nNo live-run file changes ",
+  "execute_approved_request_bodies": [
+    "{\"action\":\"Modify src/components/coding/CodingCockpitShell.tsx\",\"approved\":true,\"approved_diff\":\"diff --git a/src/components/coding/CodingCockpitShell.tsx b/src/components/coding/CodingCockpitShell.tsx\\n--- a/src/components/coding/CodingCockpitShell.tsx\\n+++ b/src/components/coding/CodingCockpitShell.tsx\\n@@ -1,3 +1,4 @@\\n+// Plan 4.4.1 browser proof controlled by route interception.\\n \\\"use client\\\";\",\"allowed_files\":[\"src/components/coding/CodingCockpitShell.tsx\"],\"target\":\"src/components/coding/CodingCockpitShell.tsx\",\"task_id\":\"task-plan4-441-truth-ledger\"}"
+  ],
+  "intercepted": [
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/recent"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/decisions/prompt-packet"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/verification/diff-preview"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/actions/execute-approved"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    }
+  ],
+  "artifacts": {
+    "screenshot": "Z:\\docs\\source-proxy-human-brain-full-live-integration-pivot-20260619\\plan-04\\increment-4-4-1-browser-proof-20260625.png",
+    "json": "Z:\\docs\\source-proxy-human-brain-full-live-integration-pivot-20260619\\plan-04\\increment-4-4-1-browser-proof-20260625.json"
+  },
+  "screenshot_readability_note": "Screenshot captured for visual review; DOM excerpts and JSON assertions are authoritative if the PNG renders too dark in a viewer.",
+  "passed": true
+}
