@@ -653,6 +653,14 @@ export function shouldClearStaleLocalTrialStateAfterCloudClear({
   if (localRunnerActive) return false;
   if (backendRunSync.status !== "synced" || backendRunSync.runId) return false;
   if (agentLabBaselineLoadState !== "ready" || !agentLabBaselineClean) return false;
+  if (
+    reversibleSuiteState.status === "failed" &&
+    (reversibleSuiteState.interruptionSource === "browser_refresh_or_dev_reload" ||
+      reversibleSuiteState.interruptionSource === "user_stop") &&
+    reversibleSuiteState.completed < reversibleSuiteState.count
+  ) {
+    return false;
+  }
   const hasStaleLocalSuite =
     reversibleSuiteState.status !== "idle" ||
     reversibleSuiteState.results.length > 0 ||
@@ -4930,6 +4938,7 @@ export function CodingCockpitShell() {
       "plan_4_3_control_ledger:",
       `controls: ${plan43ControlLedgerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       `authority: ${plan43ControlAuthorityItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `control_contract: ${plan43ControlContractItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       `last_control_route: ${plan43LastControlRoute}`,
       `last_control_status: ${plan43LastControlStatus}`,
       "",
@@ -9839,6 +9848,23 @@ export function CodingCockpitShell() {
     ["route_backed_apply", previewState.status === "approved" || previewState.isApplying || previewState.status === "applied" ? "/v1/actions/execute-approved" : "locked"],
     ["route_backed_suite_stop", backendRunSync.runId ? "/v1/coding/runs/[runId]" : "browser_or_local_state_only"],
   ];
+  const plan43ControlContractItems = [
+    ["backend_run_id", backendRunSync.runId || reversibleSuiteState.suiteId || "none"],
+    ["task_id", previewState.taskId || "none"],
+    ["trace_id", previewState.traceId ?? "none"],
+    ["invocation_event_id", previewState.invocationEventId ?? "none"],
+    ["output_hash", previewState.outputHash ?? "none"],
+    ["control_status", plan43LastControlStatus],
+    ["control_route", plan43LastControlRoute],
+    [
+      "resume_from_prompt",
+      reversibleSuiteCanResume
+        ? String(reversibleSuiteState.completed + 1)
+        : "locked",
+    ],
+    ["backend_sync_status", backendRunSync.status],
+    ["interruption_source", reversibleSuiteState.interruptionSource],
+  ];
   const activeSessionItems = [
     {
       label: task.trim() ? "Current request" : "New coding chat",
@@ -10634,6 +10660,19 @@ export function CodingCockpitShell() {
                       ["last_control_status", plan43LastControlStatus],
                     ].map(([label, value]) => (
                       <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`plan43-authority-${label}`}>
+                        <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                          {label}
+                        </dt>
+                        <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+                <div className={`${commandInsetClass} p-3 lg:col-span-2`}>
+                  <h3 className={`text-sm font-semibold ${commandTextClass}`}>Control contract</h3>
+                  <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                    {plan43ControlContractItems.map(([label, value]) => (
+                      <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`plan43-contract-${label}`}>
                         <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
                           {label}
                         </dt>

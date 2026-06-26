@@ -1,0 +1,36 @@
+{
+  "status": "PASS_BROWSER_OPERATOR_PLAN_4_3_STOP_RESUME_CONTROL_CONTRACT_VISIBLE",
+  "target_url": "https://10.0.0.186:3000/coding",
+  "command": "node_repl standalone Playwright chromium with route interception against /coding durable run controls",
+  "injection": {
+    "active_run_route": "running durable run after one completed row",
+    "get_run_route": "returns current durable run by id",
+    "patch_run_route": "PATCH /v1/coding/runs/[runId] returns cancelled user_stop run",
+    "active_run_calls": 1,
+    "get_run_calls": 1,
+    "patch_run_calls": 1
+  },
+  "assertions": {
+    "plan43ControlsVisible": true,
+    "controlContractVisible": true,
+    "backendRunIdVisibleBeforeStop": true,
+    "routeBackedStopVisibleBeforeStop": true,
+    "stopAvailableBeforeClick": true,
+    "patchRouteCalled": true,
+    "resumeControlVisibleAfterStop": true,
+    "resumeFromPromptVisibleAfterStop": true,
+    "interruptionSourceVisibleAfterStop": true,
+    "noCommitAuthorityVisible": true,
+    "noPushAuthorityVisible": true,
+    "noProcessKillAuthorityVisible": true,
+    "noApplySuccessDisplayed": true
+  },
+  "before_stop_plan43_excerpt": "PLAN 4.3 CONTROLS\n\nReviewable operator controls\nControl ledger\nEDIT\nwaiting_for_draft\nAPPROVE\nlocked\nREJECT\nlocked\nAPPLY\nlocked\nCANCEL\navailable_for_in_flight_work\nRESUME\nlocked\nSTOP_OR_KILL\navailable_as_reviewable_stop\nControl authority\nAPPLY_WITHOUT_APPROVAL\nfalse\nCOMMIT\nfalse\nPUSH\nfalse\nOS_PROCESS_KILL\nfalse\nROUTE_BACKED_APPLY\nlocked\nROUTE_BACKED_SUITE_STOP\n/v1/coding/runs/[runId]\nLAST_CONTROL_ROUTE\nnone\nLAST_CONTROL_STATUS\nwaiting_for_operator_action\nControl contract\nBACKEND_RUN_ID\nrun-plan4-432-stop-resume-control\nTASK_ID\nnone\nTRACE_ID\nnone\nINVOCATION_EVENT_ID\nnone\nOUTPUT_HASH\nnone\nCONTROL_STATUS\nwaiting_for_operator_action\nCONTROL_ROUTE\nnone\nRESUME_FROM_PROMPT\nlocked\nBACKEND_SYNC_STATUS\nattached\nINTERRUPTION_SOURCE\nnone",
+  "after_stop_plan43_excerpt": "PLAN 4.3 CONTROLS\n\nReviewable operator controls\nControl ledger\nEDIT\nwaiting_for_draft\nAPPROVE\nlocked\nREJECT\nlocked\nAPPLY\nlocked\nCANCEL\nlocked\nRESUME\navailable_from_prompt_2\nSTOP_OR_KILL\nno_process_kill_exposed\nControl authority\nAPPLY_WITHOUT_APPROVAL\nfalse\nCOMMIT\nfalse\nPUSH\nfalse\nOS_PROCESS_KILL\nfalse\nROUTE_BACKED_APPLY\nlocked\nROUTE_BACKED_SUITE_STOP\nbrowser_or_local_state_only\nLAST_CONTROL_ROUTE\nnone\nLAST_CONTROL_STATUS\nwaiting_for_operator_action\nControl contract\nBACKEND_RUN_ID\nsuite-plan4-432-stop-resume-control\nTASK_ID\nnone\nTRACE_ID\nnone\nINVOCATION_EVENT_ID\nnone\nOUTPUT_HASH\nnone\nCONTROL_STATUS\nwaiting_for_operator_action\nCONTROL_ROUTE\nnone\nRESUME_FROM_PROMPT\n2\nBACKEND_SYNC_STATUS\nsynced\nINTERRUPTION_SOURCE\nuser_stop",
+  "artifacts": {
+    "before_stop_screenshot": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-2-browser-proof-before-stop-20260625.png",
+    "after_stop_screenshot": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-2-browser-proof-20260625.png",
+    "json": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-2-browser-proof-20260625.json"
+  },
+  "passed": true
+}

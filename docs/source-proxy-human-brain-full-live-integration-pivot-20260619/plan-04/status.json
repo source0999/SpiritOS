@@ -1,18 +1,19 @@
 {
   "plan": 4,
   "title": "Canonical /coding UI/API Consolidation",
-  "status": "PLAN4_INCREMENT_4_3_1_GO",
+  "status": "PLAN4_PHASE_4_3_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_4_START_20260625",
   "implementation_performed": true,
-  "current_increment": "4.3.1",
+  "current_increment": "4.3.2",
   "completed_increments": [
     "4.1.1",
     "4.1.2",
     "4.2.1",
     "4.2.2",
-    "4.3.1"
+    "4.3.1",
+    "4.3.2"
   ],
-  "implemented_change": "/coding displays a Plan 4.3 operator control ledger and preserves cancel/reject control outcomes without hidden apply, commit, push, or OS process-kill authority",
+  "implemented_change": "/coding displays a Plan 4.3 control contract and preserves route-backed stop/resume state without hidden apply, commit, push, or OS process-kill authority",
   "required_contract_fields": [
     "task_id",
     "trace_id",
@@ -70,6 +71,16 @@
       "command": "node_repl standalone Playwright chromium with page.route interception against /coding",
       "cwd": "Z:/",
       "result": "PASS_BROWSER_OPERATOR_PLAN_4_3_CANCEL_CONTROL_VISIBLE"
+    },
+    {
+      "command": "npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.3 operator control ledger without hidden apply authority|classifies clean cloud plus active null as stale local trial state instead of cleanup blocker'",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_2_TARGETED_TESTS"
+    },
+    {
+      "command": "node_repl standalone Playwright chromium with route interception against /coding durable run controls",
+      "cwd": "Z:/",
+      "result": "PASS_BROWSER_OPERATOR_PLAN_4_3_STOP_RESUME_CONTROL_CONTRACT_VISIBLE"
     }
   ],
   "live_canonical_route_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md",
@@ -87,6 +98,10 @@
   "increment_4_3_1_status": "GO",
   "increment_4_3_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-operator-controls-20260625.md",
   "increment_4_3_1_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-1-browser-proof-20260625.md",
-  "next_incomplete_increment": "4.3.2",
+  "increment_4_3_2_status": "GO",
+  "increment_4_3_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-2-control-contract-20260625.md",
+  "increment_4_3_2_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-2-browser-proof-20260625.md",
+  "phase_4_3_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-3-closeout-review-20260625.md",
+  "next_incomplete_increment": "4.4.1",
   "next_plan_authorized": false
 }

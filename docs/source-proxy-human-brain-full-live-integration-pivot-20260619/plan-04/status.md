@@ -1,6 +1,6 @@
 # Plan 4/6 Status
 
-Status: `PLAN4_INCREMENT_4_3_1_GO`.
+Status: `PLAN4_PHASE_4_3_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_4_START_20260625`.
 
 Increment 4.1.1 started after Britton approval on 2026-06-25.
@@ -61,4 +61,18 @@ Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-piv
 
 Browser/operator result: `/coding` visibly preserved an operator cancel control while `/v1/actions/execute-approved` was held in flight, showed `cancelled_no_apply_success`, and did not display apply success.
 
-Next incomplete Plan 4 increment: `4.3.2`.
+Increment 4.3.2 status: `GO`.
+
+Increment 4.3.2 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-2-control-contract-20260625.md`.
+
+Current 4.3.2 implemented change: `/coding` now displays a Plan 4.3 control contract for backend run id, task/trace/output fields, control route/status, resume prompt, backend sync status, and interruption source. Resumable interrupted suites are preserved from stale local cleanup.
+
+Focused 4.3.2 proof: `npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.3 operator control ledger without hidden apply authority|classifies clean cloud plus active null as stale local trial state instead of cleanup blocker'` passed on `/home/source/SpiritOS`.
+
+Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-3-2-browser-proof-20260625.md`.
+
+Browser/operator result: `/coding` visibly preserved route-backed stop state for `/v1/coding/runs/[runId]`, executed one stopped-run PATCH through interception, then preserved resume-from-prompt state without displaying apply success.
+
+Phase 4.3 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-3-closeout-review-20260625.md`.
+
+Next incomplete Plan 4 increment: `4.4.1`.

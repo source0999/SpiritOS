@@ -1137,7 +1137,13 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).toContain("Reviewable operator controls");
     expect(shellSrc).toContain("plan43ControlLedgerItems");
     expect(shellSrc).toContain("plan43ControlAuthorityItems");
+    expect(shellSrc).toContain("plan43ControlContractItems");
     expect(shellSrc).toContain("plan_4_3_control_ledger");
+    expect(shellSrc).toContain("control_contract");
+    expect(shellSrc).toContain("Control contract");
+    expect(shellSrc).toContain('"resume_from_prompt"');
+    expect(shellSrc).toContain('"backend_sync_status"');
+    expect(shellSrc).toContain('"interruption_source"');
     expect(shellSrc).toContain("browser_operator_cancel");
     expect(shellSrc).toContain("cancelled_no_apply_success");
     expect(shellSrc).toContain("operator_control=cancel; route=browser_operator_cancel; apply_success=false");
@@ -1431,6 +1437,24 @@ describe("CodingCockpitShell", () => {
           ...baseState,
           status: "running",
           suiteId: "suite-active-local-runner",
+        },
+      }),
+    ).toBe(false);
+    expect(
+      shouldClearStaleLocalTrialStateAfterCloudClear({
+        agentLabBaselineClean: true,
+        agentLabBaselineLoadState: "ready",
+        appliedRunReceipts: [],
+        backendRunSync: { runId: "", status: "synced" },
+        localRunnerActive: false,
+        reversibleSuiteState: {
+          ...baseState,
+          completed: 1,
+          count: 10,
+          interruptionSource: "user_stop",
+          status: "failed",
+          stopped: true,
+          suiteId: "suite-resumable-user-stop",
         },
       }),
     ).toBe(false);
