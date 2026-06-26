@@ -9,6 +9,8 @@ for f in plan.md status.md status.json gate-manifest.template.json operator-chec
 done
 python3 -m json.tool "$PLAN_DIR/status.json" >/dev/null
 python3 -m json.tool "$PLAN_DIR/gate-manifest.template.json" >/dev/null
+python3 -m json.tool "$PLAN_DIR/plan6-live-fail-closed-reliability-proof-20260626.json" >/dev/null
+python3 -m json.tool "$PLAN_DIR/plan6-mac-dell-dispatch-proof-20260626.json" >/dev/null
 python3 -m json.tool "$ROOT/status.json" >/dev/null
 if grep -R -E "preview_only_completion|advisory_only_completion|read_only_completion" "$PLAN_DIR/status.md" >/dev/null 2>&1; then
   echo "FAIL forbidden completion flag in status"

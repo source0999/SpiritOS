@@ -1,17 +1,17 @@
 {
   "plan": 6,
   "title": "Reliability and Daily-Driver Promotion",
-  "status": "PLAN6_BLOCKED_AT_6_4_1_MAC_DELL_DISPATCH_DECISION",
+  "status": "PLAN6_BLOCKED_AT_6_5_1_BRITTON_DAILY_DRIVER_TASK_SELECTION_REQUIRED",
   "gate_status": "PLAN6_START_APPROVED_BY_BRITTON_20260626",
   "previous_plan_status": "PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW",
   "approval_recorded": "Britton explicitly approved Plan 6 start in the Codex task prompt on 2026-06-26.",
   "implementation_performed": false,
   "live_proof_performed": true,
   "next_plan_authorized": false,
-  "current_phase": "6.4",
-  "next_incomplete_increment": "6.4.1",
-  "stop_condition": "Phase 6.4 requires repeated Mac/Dell dispatch and supervised soak; continuing requires a concrete Mac/Dell subsystem availability and authority decision not present in this run.",
-  "daily_driver_promotion_recommendation": "DENIED_NO_PRODUCTIVE_REPEATED_APPLY_PROOF",
+  "current_phase": "6.5",
+  "next_incomplete_increment": "6.5.1",
+  "stop_condition": "Phase 6.5 requires ten Britton-selected supervised daily-driver tasks; no such task set was provided in this scoped Mac/Dell dispatch run.",
+  "daily_driver_promotion_recommendation": "DENIED_PENDING_BRITTON_SELECTED_DAILY_DRIVER_TASKS_AND_PRODUCTIVE_PROOF",
   "increments": {
     "6.1.1": "GO_FAIL_CLOSED_CANONICAL_TRACE",
     "6.1.2": "GO_FIVE_TASK_FAIL_CLOSED_SET",
@@ -19,8 +19,8 @@
     "6.2.2": "GO_NO_TARGET_MUTATION_OR_UNCONSUMED_OUTPUT",
     "6.3.1": "GO_CENTRAL_GATE_FAULT_DECISION_BEARING",
     "6.3.2": "GO_FAILURE_OUTPUT_CONSUMED_DOWNSTREAM",
-    "6.4.1": "BLOCKED_PENDING_MAC_DELL_DISPATCH_DECISION",
-    "6.4.2": "NOT_STARTED",
+    "6.4.1": "GO_MAC_SYSTEM_STATUS_DISPATCH_CONSUMED",
+    "6.4.2": "GO_REPEATED_MAC_SAFE_CHECK_DISPATCH_CONSUMED",
     "6.5.1": "NOT_STARTED",
     "6.5.2": "NOT_STARTED",
     "6.6.1": "NOT_STARTED",
@@ -30,12 +30,14 @@
     "6.1": "GO_FAIL_CLOSED_RELIABILITY_ONLY",
     "6.2": "GO_FAIL_CLOSED_RELIABILITY_ONLY",
     "6.3": "GO_FAIL_CLOSED_FAULT_INJECTION",
-    "6.4": "BLOCKED_AT_6_4_1",
+    "6.4": "GO_MAC_DELL_DISPATCH_NO_WRITE",
     "6.5": "NOT_STARTED",
     "6.6": "NOT_STARTED"
   },
   "proof_artifacts": [
-    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-live-fail-closed-reliability-proof-20260626.json"
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-live-fail-closed-reliability-proof-20260626.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-mac-dell-dispatch-proof-20260626.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-4-mac-dell-dispatch-proof-20260626.md"
   ],
   "proof_summary": {
     "accepted_fail_closed_tasks": 17,
@@ -46,7 +48,28 @@
       500
     ],
     "coding_operator_surface_http_status": 200,
-    "plan6_fail_closed_target_exists_after": false
+    "plan6_fail_closed_target_exists_after": false,
+    "accepted_mac_dell_dispatch_tasks": 2,
+    "phase_6_4_accepted": 2,
+    "phase_6_4_task_ids": [
+      "task_7e10e93d5047",
+      "task_2bb328370253"
+    ],
+    "phase_6_4_trace_ids": [
+      "trace_899bcc3ff546497f",
+      "trace_0ae41c798ab54a47"
+    ],
+    "phase_6_4_output_hashes": [
+      "93dac22aff33a8ecc2b316ea143e2e79a0b267a3d467f88aff1d641e2eac7901",
+      "c7aed8892aa9655a2a06787e76574d5495bac05df066ba3b1a090d7ff2be08e8"
+    ],
+    "phase_6_4_mac_write_occurred": false,
+    "phase_6_4_dispatch_modes": [
+      "mac_system_status",
+      "mac_safe_check"
+    ],
+    "phase_6_4_consumer_subsystem": "cartographer_mac_assignment_consumer",
+    "phase_6_4_phase_consumer_subsystem": "plan6_phase_gate_consumer"
   },
   "forbidden_paths_touched": false,
   "product_code_changed": false,
