@@ -1,12 +1,14 @@
 # Plan 5/6 Status
 
-Status: `PLAN5_INCREMENT_5_2_1_GO`.
+Status: `PLAN5_PHASE_5_2_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_5_START_20260625`.
 Compression gate: `PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK`.
 
 Increment 5.1.1 status: `GO`.
 Increment 5.1.2 status: `GO`.
 Increment 5.2.1 status: `GO`.
+Increment 5.2.2 status: `GO`.
+Phase 5.2 status: `GO`.
 
 Implemented change: Plan 5 now has a bounded acceptance harness that validates a consumed subsystem output on one causal trace without invoking providers, applying patches, committing, pushing, or creating a parallel state engine.
 
@@ -63,6 +65,25 @@ GLM Plan 4 caveat F-1 carried forward: the `/coding` proof now includes a render
 
 GLM Plan 4 caveat F-2 carried forward: focused tests were refreshed from `/home/source/SpiritOS`, not from the Windows mapped drive root.
 
-Current Plan 5 next incomplete increment: `5.2.2`.
+Increment 5.2.2 proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-2-live-fail-closed-acceptance-20260626.md`.
+
+Increment 5.2.2 result: scoped apply gate was not required. The canonical live route `https://127.0.0.1:3000/v1/actions/execute-approved` returned 500 under the restored non-apply gate, did not create the harmless fail-closed proof target, and produced downstream operator and phase-verifier consumption on one trace.
+
+5.2.2 evidence:
+
+```text
+Task id: task_341690acc102
+Trace id: trace_c620c54ee2454a05
+Initial invocation event id: invocation_f4937f634871484b
+Initial failure event id: failure_6580fc7ac1a1464c
+Operator consumer event id: consumer_4f83c573a55e485e
+Phase verifier consumer event id: consumer_4498f2160a8444a2
+Accepted output hash: 775afd12eab0aa23f52f5ff25ac00b6dd6995cf14f266c7b93a5a6759771eec2
+Target mutated: false
+```
+
+Phase 5.2 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-2-closeout-review-20260626.md`.
+
+Current Plan 5 next incomplete increment: `5.3.1`.
 
 No Plan 6 work is authorized.

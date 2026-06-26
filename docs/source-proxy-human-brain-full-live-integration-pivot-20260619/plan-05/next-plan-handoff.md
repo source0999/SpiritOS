@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 5 State - 2026-06-25
 
-Status: `PLAN5_INCREMENT_5_2_1_GO`.
+Status: `PLAN5_PHASE_5_2_GO`.
 
 Britton approved Plan 5 start and resolved the Plan 0 compression decision gate for Plan 5 start:
 
@@ -94,6 +94,34 @@ Route status: 500
 Target remained: PLAN5_5_2_1_LIVE_ACCEPTANCE_TARGET=after
 ```
 
-Next incomplete Plan 5 increment: `5.2.2`.
+Increment 5.2.2 is complete:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-2-live-fail-closed-acceptance-20260626.md`
+
+Proof artifact:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-2-live-fail-closed-proof-20260626.json`
+
+Scoped apply gate required: no.
+
+Live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy under the restored non-apply runtime, failed closed with HTTP 500, did not create the harmless fail-closed proof target, and produced downstream operator and phase-verifier consumption on one trace.
+
+Key evidence:
+
+```text
+Task id: task_341690acc102
+Trace id: trace_c620c54ee2454a05
+Initial failure event id: failure_6580fc7ac1a1464c
+Operator consumer event id: consumer_4f83c573a55e485e
+Phase verifier consumer event id: consumer_4498f2160a8444a2
+Accepted output hash: 775afd12eab0aa23f52f5ff25ac00b6dd6995cf14f266c7b93a5a6759771eec2
+Target mutated: false
+```
+
+Phase 5.2 closeout review:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-2-closeout-review-20260626.md`
+
+Next incomplete Plan 5 increment: `5.3.1`.
 
 Do not start Plan 6.

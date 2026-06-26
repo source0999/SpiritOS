@@ -1,7 +1,7 @@
 {
   "plan": 5,
   "title": "Binary Whole-Brain Acceptance",
-  "status": "PLAN5_INCREMENT_5_2_1_GO",
+  "status": "PLAN5_PHASE_5_2_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_5_START_20260625",
   "compression_gate_status": "PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK",
   "implementation_performed": true,
@@ -9,7 +9,8 @@
   "completed_increments": [
     "5.1.1",
     "5.1.2",
-    "5.2.1"
+    "5.2.1",
+    "5.2.2"
   ],
   "increment_5_1_1_status": "GO",
   "increment_5_1_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-1-acceptance-harness-20260625.md",
@@ -37,6 +38,26 @@
     "accepted_output_hash": "ff31dc495813357b81cb517afc2656f6c1d527fd8217606f1899c754848a5641",
     "post_restore_blocked_probe_task_id": "task_df08d44a0a39"
   },
+  "increment_5_2_2_status": "GO",
+  "increment_5_2_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-2-live-fail-closed-acceptance-20260626.md",
+  "increment_5_2_2_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-2-live-fail-closed-proof-20260626.json",
+  "increment_5_2_2_result": "Canonical live execute-approved route failed closed under the restored non-apply runtime, did not create the harmless proof target, and the blocked output was consumed by coding_operator_surface and plan5_phase_acceptance_consumer on one trace.",
+  "increment_5_2_2_scoped_apply_gate_required": false,
+  "increment_5_2_2_evidence": {
+    "task_id": "task_341690acc102",
+    "trace_id": "trace_c620c54ee2454a05",
+    "initial_invocation_event_id": "invocation_f4937f634871484b",
+    "initial_failure_event_id": "failure_6580fc7ac1a1464c",
+    "initial_consumer_event_id": "consumer_0b483a06d6c24261",
+    "operator_consumer_event_id": "consumer_4f83c573a55e485e",
+    "phase_verifier_invocation_event_id": "invocation_3549e2348d13475d",
+    "phase_verifier_consumer_event_id": "consumer_4498f2160a8444a2",
+    "accepted_output_hash": "775afd12eab0aa23f52f5ff25ac00b6dd6995cf14f266c7b93a5a6759771eec2",
+    "execute_http_status": 500,
+    "target_mutated": false
+  },
+  "phase_5_2_status": "GO",
+  "phase_5_2_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-2-closeout-review-20260626.md",
   "implemented_change": "Plan 5 acceptance harness validates consumed subsystem output on one causal trace, rejects unconsumed output, and requires phase-verifier consumption of the accepted output hash.",
   "required_fields": [
     "task_id",
@@ -68,6 +89,6 @@
   ],
   "glm_caveat_f1_status": "ADDRESSED_FOR_5_1_1_RENDER_LEVEL_OPERATOR_ASSERTION",
   "glm_caveat_f2_status": "ADDRESSED_FOR_5_1_2_LINUX_PATH_TEST_REFRESH",
-  "next_incomplete_increment": "5.2.2",
+  "next_incomplete_increment": "5.3.1",
   "next_plan_authorized": false
 }
