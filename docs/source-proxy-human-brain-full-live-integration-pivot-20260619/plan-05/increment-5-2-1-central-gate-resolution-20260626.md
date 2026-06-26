@@ -90,10 +90,22 @@ This is an authority decision, not a code bug. Changing it without Britton appro
 
 ## Current Verdict
 
-Increment `5.2.1` remains:
+## 2026-06-26 Scoped Approval Update
 
-`PROOF_BLOCKED_BY_CENTRAL_GATE`
+Britton approved a scoped Plan 5 apply gate decision for increment `5.2.1` only.
+
+The scoped decision does not by itself update the already-running Source Proxy process environment. The live process still lacks `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply` and `SOURCE_PROXY_GATE_INCREMENT=5.2.1`.
+
+Because `central_gate_check` reads allowed actions and default increment from process environment, installing the scoped approval requires a Source Proxy runtime restart or equivalent process replacement. That runtime interruption was not approved in the scoped gate decision task.
+
+Updated artifact:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-approved-live-proof-20260626.md`
+
+Increment `5.2.1` now remains:
+
+`BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`
 
 Plan 5 status remains:
 
-`PLAN5_INCREMENT_5_2_1_PROOF_BLOCKED_BY_CENTRAL_GATE`
+`PLAN5_INCREMENT_5_2_1_BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`

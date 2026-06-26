@@ -1,6 +1,6 @@
 # Plan 5/6 Status
 
-Status: `PLAN5_INCREMENT_5_2_1_PROOF_BLOCKED_BY_CENTRAL_GATE`.
+Status: `PLAN5_INCREMENT_5_2_1_BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`.
 Plan gate: `BRITTON_APPROVED_PLAN_5_START_20260625`.
 Compression gate: `PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK`.
 
@@ -26,9 +26,13 @@ Increment 5.2.1 proof artifact: `docs/source-proxy-human-brain-full-live-integra
 
 Increment 5.2.1 central gate resolution analysis: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-resolution-20260626.md`.
 
+Increment 5.2.1 scoped approval retry artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-approved-live-proof-20260626.md`.
+
 Increment 5.2.1 blocker: live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and recorded causal failure/readback events, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. Bypassing that gate would expand authority, so 5.2.1 is not GO.
 
 Central gate resolution: Outcome B. The live `.gate/state.json` is for `evaluation-round` temporary model-call evaluation and explicitly notes no apply approval. The running gate does not expose `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply`. Satisfying the gate for 5.2.1 requires a Britton-approved Plan 5 apply gate decision, not a code patch.
+
+Scoped gate decision update: Britton approved a Plan 5 5.2.1 apply gate decision, but the running Source Proxy process cannot acquire `SOURCE_PROXY_GATE_INCREMENT=5.2.1` and `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply` without a runtime restart or equivalent process replacement. No runtime interruption was approved in this task, so no live retry was performed and 5.2.1 remains blocked.
 
 Focused checks passed from `/home/source/SpiritOS`:
 

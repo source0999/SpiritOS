@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 5 State - 2026-06-25
 
-Status: `PLAN5_INCREMENT_5_2_1_PROOF_BLOCKED_BY_CENTRAL_GATE`.
+Status: `PLAN5_INCREMENT_5_2_1_BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`.
 
 Britton approved Plan 5 start and resolved the Plan 0 compression decision gate for Plan 5 start:
 
@@ -66,6 +66,10 @@ Central gate resolution analysis:
 
 `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-resolution-20260626.md`
 
+Scoped approval retry artifact:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-approved-live-proof-20260626.md`
+
 Blocker:
 
 `central_gate_blocked_apply`
@@ -73,6 +77,8 @@ Blocker:
 Live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and recorded causal failure/readback events, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. Do not bypass or expand apply authority inside Plan 5.
 
 Current resolution: Outcome B. The live gate state is for `evaluation-round` temporary model-call evaluation and explicitly notes no apply approval. 5.2.1 requires a Britton-approved Plan 5 apply gate decision before productive live proof can be retried.
+
+Britton has now approved the scoped Plan 5 5.2.1 apply gate decision, but the running Source Proxy process does not expose `SOURCE_PROXY_GATE_INCREMENT=5.2.1` or `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply`. Because changing the running process environment requires a runtime restart or equivalent process replacement, and this task did not approve runtime interruption, 5.2.1 remains blocked until Britton approves that operator action.
 
 Next incomplete Plan 5 increment: `5.2.1`.
 
