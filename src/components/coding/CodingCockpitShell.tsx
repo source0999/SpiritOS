@@ -8791,7 +8791,45 @@ export function CodingCockpitShell() {
         });
         const applyPayload = await readJson(applyResponse);
         if (!applyResponse.ok) {
-          throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+          const applyFailureMessage = messageFromPayload(applyPayload, applyResponse.status);
+          const applyFailureReasonCode =
+            reasonCodeFromPreview(applyPayload) ?? reasonCodeFromErrorMessage(applyFailureMessage);
+          setPreviewState({
+            approvalAvailable: false,
+            approvedAt: null,
+            appliedAt: null,
+            applySummary: applyFailureMessage,
+            allowedFiles: packet.allowedFiles,
+            blocker: applyFailureMessage,
+            changedFiles,
+            checks: packet.checks,
+            currentPhase: manualTaskPhaseLabels.failed,
+            diff: proposedDiff,
+            error: applyFailureMessage,
+            events: [
+              ...previewReadyEvents.slice(0, -1),
+              manualEvent("failed", "failed", applyFailureMessage),
+            ],
+            forbiddenFiles: packet.forbiddenFiles,
+            isApplying: false,
+            isLoading: false,
+            ...providerTruthPatch(proposalProviderTruth),
+            plan2SubsystemIntegrations: proposalPlan2SubsystemIntegrations,
+            previewStatus: "execute-approved failed closed",
+            requirementSummary: gate.requirementSummary,
+            reasonCode: applyFailureReasonCode,
+            reviewerSummary: gate.reviewerSummary,
+            routeCalled: "/v1/actions/execute-approved",
+            selectedTarget: packet.selectedTarget,
+            status: "error",
+            targetCandidates: packet.targetCandidates,
+            targetMatch: gate.targetMatch,
+            taskId,
+            taskSpecAllowed: gate.taskSpecAllowed,
+            verifierSummary: gate.verifierSummary,
+            technicalDetail: safePayloadSummary(applyPayload),
+          });
+          return;
         }
         const appliedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
         const causalTrace = causalTraceFromPayload(applyPayload);
@@ -9051,7 +9089,26 @@ export function CodingCockpitShell() {
       });
       const applyPayload = await readJson(applyResponse);
       if (!applyResponse.ok) {
-        throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+        const applyFailureMessage = messageFromPayload(applyPayload, applyResponse.status);
+        const applyFailureReasonCode =
+          reasonCodeFromPreview(applyPayload) ?? reasonCodeFromErrorMessage(applyFailureMessage);
+        setPreviewState((current) => ({
+          ...current,
+          applySummary: applyFailureMessage,
+          currentPhase: manualTaskPhaseLabels.failed,
+          error: applyFailureMessage,
+          events: [
+            ...current.events,
+            manualEvent("failed", "failed", applyFailureMessage),
+          ],
+          isApplying: false,
+          reasonCode: applyFailureReasonCode,
+          routeCalled: "/v1/actions/execute-approved",
+          status: "error",
+          taskId,
+          technicalDetail: safePayloadSummary(applyPayload),
+        }));
+        return;
       }
       const appliedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, previewState.diff);
       const causalTrace = causalTraceFromPayload(applyPayload);
@@ -10328,7 +10385,7 @@ export function CodingCockpitShell() {
               <p className={`mt-1 text-sm ${commandMutedClass}`}>
                 {reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
                   ? reversibleSuiteState.currentPrompt || "Trial suite is running."
-                  : previewState.changedFiles.length > 0
+                  : previewState.status === "applied" && previewState.changedFiles.length > 0
                   ? "Files changed on disk. Review or undo this run before starting another."
                   : "No live-run file changes are currently recorded."}
               </p>
@@ -10379,6 +10436,26 @@ export function CodingCockpitShell() {
                 <Copy aria-hidden="true" size={16} />
                 Copy trial diagnostics
               </button>
+              {(previewState.status === "error" || previewState.error || previewState.reasonCode) ? (
+                <div className={`${commandInsetClass} mt-4 p-3`}>
+                  <p className={commandLabelClass}>Failure diagnostics</p>
+                  <dl className="mt-3 grid gap-2 text-xs">
+                    {[
+                      ["reason_code", previewState.reasonCode ?? "none"],
+                      ["route", previewState.routeCalled ?? "none"],
+                      ["task_id", previewState.taskId || "none"],
+                      ["technical_detail", previewState.technicalDetail ?? previewState.error ?? "none"],
+                    ].map(([label, value]) => (
+                      <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2" key={label}>
+                        <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                          {label}
+                        </dt>
+                        <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ) : null}
               <dl className="mt-4 grid gap-3 text-sm">
                 <div className={`${commandInsetClass} p-3`}>
                   <dt className={commandLabelClass}>Changed files</dt>

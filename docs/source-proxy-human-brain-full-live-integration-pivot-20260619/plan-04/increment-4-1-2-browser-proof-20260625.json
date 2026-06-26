@@ -1,0 +1,66 @@
+{
+  "targetUrl": "https://10.0.0.186:3000/coding",
+  "command": "node_repl Playwright with installed Chromium executable; page.route intercepted /v1/*",
+  "promptText": "Append one harmless Plan 4 browser proof sentence to docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md.",
+  "routeInjection": "Playwright page.route fulfilled /v1/actions/execute-approved with HTTP 502 fail-closed payload",
+  "interceptedExecuteApproved": 1,
+  "reasonCodeVisible": true,
+  "routeVisible": true,
+  "taskIdVisible": true,
+  "technicalPayloadVisible": true,
+  "failedEventVisible": true,
+  "noApplySuccessVisible": true,
+  "failedVisible": true,
+  "noFilesChangedVisible": true,
+  "diagnosticsPreserveReasonCode": true,
+  "diagnosticsPreserveRoute": true,
+  "diagnosticsPreserveTaskId": true,
+  "diagnosticsPreserveTechnicalPayload": true,
+  "diagnosticsPreserveFailedEvent": true,
+  "screenshotPath": "Z:/docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-2-browser-proof-20260625.png",
+  "evidencePath": "Z:/docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-2-browser-proof-20260625.json",
+  "domExcerpt": "less Plan 4 browser proof sentence to docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md.\nMODEL\nqwen2.5-coder:7b\nSTATE\nFailed\n\nREVIEW PANE\n\nReview pane\nFAIL: THE RUN FAILED BEFORE A USEFUL RESULT.\n0/100 LIVE APPLY PROOF\n\nexecute-approved returned success without the Plan 4 causal output contract.\n\nCopy current task diagnostics\nCopy trial diagnostics\n\nFAILURE DIAGNOSTICS\n\nREASON_CODE\nplan4_execute_approved_contract_missing\nROUTE\n/v1/actions/execute-approved\nTASK_ID\ntask-plan4-412-browser-failclosed\nTECHNICAL_DETAIL\n{\"error\":\"execute-approved returned success without the Plan 4 causal output contract.\",\"missing_fields\":[\"task_id\",\"trace_id\",\"invocation_event_id\",\"consumer_event_id\",\"consumer_subsystem\"],\"reason_code\":\"plan4_execute_approved_contract_missing\",\"task_id\":\"task-plan4-412-browser-failclosed\",\"route\":\"/v1/actions/execute-approved\",\"technical_payload_summary\":\"missing causal contract fields: task_id, trace_id, invocation_event_id, consumer_event_id, consumer_subsystem\"}\nCHANGED FILES\nNone\nCHECKS\ngit diff --check\nReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n9 dummy fixture baseline(s) can be reset, then results will clear.\n\nDiagnostics copied.\n\nS\nSPIRITOS\nCOLLAPSE\nDASHBOARD\nCHAT\nSOURCE\nMAP\nSCOUT\nORACLE\nMEDIA\nIMPORTER\nCONSOLE",
+  "diagnosticsExcerpt": "SpiritOS /coding diagnostics\r\ndiagnostic_version: manual-natural-runner.v1\r\nrun_id: task-plan4-412-browser-failclosed\r\ntimestamp: 2026-06-26T00:04:46.534Z\r\ncomposer_elapsed: 40ms\r\ncomposer_prompt_packet_ms: 10\r\ncomposer_diff_preview_ms: 8\r\ncomposer_total_ms: 40\r\nprompt: Append one harmless Plan 4 browser proof sentence to docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md.\r\nprovider: Local / Ollama\r\nmodel: qwen2.5-coder:7b\r\nprovider_call_made: true\r\nmodel_called_for_generation: ollama_chat/qwen2.5-coder:7b\r\ntarget_candidates: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nselected_target: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nallowed_files: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\ngenerated_diff_present: true\r\npreview_changed_files: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\napplied_changed_files: none\r\ndisk_changed_files: none\r\nchecks_run: git diff --check\r\nchecks_result: Checks passed.\r\nreversal_available: false\r\nreversal_status: none\r\nvisible_result_label: FAIL\r\nfailure_reason: execute-approved returned success without the Plan 4 causal output contract.\r\nendpoint_statuses: /v1/actions/execute-approved\r\nnext_recommended_action: Resolve the reported blocker, then retry. No files have been changed.\r\nsubmitted_prompt: Append one harmless Plan 4 browser proof sentence to docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md.\r\ntrial_verdict: UNKNOWN\r\ntrial_fixture_id: none\r\ntrial_expected_behavior: none\r\ntrial_actual_behavior: failed\r\ntrial_verdict_detail: Prompt does not match a known coding trial fixture.\r\nvisible_result_label: FAIL\r\nvisible_result_tone: danger\r\nvisible_result_summary: The run failed before a useful result.\r\nlive_model_proof_status: live_model_proven\r\nvisible_status: Failed\r\nraw_status: error\r\ncurrent_phase: Ready to review\r\ncurrent_step: Ready to review\r\nreason_code: plan4_execute_approved_contract_missing\r\nvisible_error: execute-approved returned success without the Plan 4 causal output contract.\r\ntechnical_detail: {\"error\":\"execute-approved returned success without the Plan 4 causal output contract.\",\"missing_fields\":[\"task_id\",\"trace_id\",\"invocation_event_id\",\"consumer_event_id\",\"consumer_subsystem\"],\"reason_code\":\"plan4_execute_approved_contract_missing\",\"task_id\":\"task-plan4-412-browser-failclosed\",\"route\":\"/v1/actions/execute-approved\",\"technical_payload_summary\":\"missing causal contract fields: task_id, trace_id, invocation_event_id, consumer_event_id, consumer_subsystem\"}\r\ntarget_candidates: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nselected_target: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nallowed_files: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\ninternal_allowed_files: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nforbidden_files: .env*, source_proxy/data/**, backend/volumes/**, backend/searxng_data/**, .spirit-backups/**, secrets, credentials\r\npreview_changed_files: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\ndisk_changed_files: none\r\napplied_changed_files: none\r\nchanged_files: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nverification_targets: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nchanged_file_paths: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nchanged_file_links: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md\r\nrelated_page_links: none inferred\r\nfile_open_available: false\r\nroute_inference_notes: docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-412-browser-proof-harmless.md: No related page inferred. Verify the file directly.\r\nchecks: git diff --check\r\nroute_called: /v1/actions/execute-approved\r\nprovider: Local / Ollama\r\nmodel: qwen2.5-coder:7b\r\nconfigured_model: qwen2.5-coder:7b\r\nruntime_route_model: ollama_chat/qwen2.5-coder:7b\r\nprovider_model_source: runtime\r\nprovider_model_status: available\r\nprovider_model_probe_ok: true\r\nprovider_model_selected_via: plan4_browser_intercept\r\nprovider_call_made: true\r\nprovider_call_authorized: true\r\nmodel_called_for_generation: ollama_chat/qwen2.5-coder:7b\r\nhermes_lane_available: true\r\nconfigured_local_model_is_hermes: no",
+  "intercepted": [
+    {
+      "method": "GET",
+      "url": "/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/self/status"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/trial-fixture-baseline"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/recent?limit=1"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/decisions/prompt-packet"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/verification/diff-preview"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/actions/execute-approved"
+    }
+  ]
+}

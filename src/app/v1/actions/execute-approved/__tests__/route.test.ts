@@ -25,6 +25,27 @@ function jsonRequest(body: unknown): Request {
   });
 }
 
+function executeApprovedContractPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    execution: {
+      invocation_event_id: "invoke-123",
+      task_id: "task-123",
+      trace_id: "trace-123",
+    },
+    task: {
+      causal_trace: {
+        consumer_event_id: "consume-123",
+        consumer_subsystem: "long_running_status_observer",
+        invocation_event_id: "invoke-123",
+        trace_id: "trace-123",
+      },
+      id: "task-123",
+    },
+    tool: "long_running_task_tracker",
+    ...overrides,
+  };
+}
+
 describe("execute-approved route", () => {
   beforeEach(() => {
     mockedSourceProxyFetch.mockReset();
@@ -62,7 +83,7 @@ describe("execute-approved route", () => {
         headers: new Headers({ "content-type": "application/json" }),
         status: 200,
         statusText: "OK",
-        text: async () => JSON.stringify({ ok: true }),
+        text: async () => JSON.stringify(executeApprovedContractPayload()),
       } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
     );
 
@@ -77,7 +98,18 @@ describe("execute-approved route", () => {
       }),
     );
 
-    await expect(response.json()).resolves.toEqual({ ok: true });
+    await expect(response.json()).resolves.toMatchObject({
+      execution: expect.objectContaining({
+        invocation_event_id: "invoke-123",
+        trace_id: "trace-123",
+      }),
+      task: expect.objectContaining({
+        causal_trace: expect.objectContaining({
+          consumer_event_id: "consume-123",
+          consumer_subsystem: "long_running_status_observer",
+        }),
+      }),
+    });
     expect(response.status).toBe(200);
     expect(mockedSourceProxyFetch).toHaveBeenCalledTimes(1);
     expect(mockedSourceProxyFetch).toHaveBeenCalledWith(
@@ -109,8 +141,15 @@ describe("execute-approved route", () => {
         status: 200,
         statusText: "OK",
         text: async () =>
-          JSON.stringify({
+          JSON.stringify(executeApprovedContractPayload({
             task: {
+              causal_trace: {
+                consumer_event_id: "consume-123",
+                consumer_subsystem: "long_running_status_observer",
+                invocation_event_id: "invoke-123",
+                trace_id: "trace-123",
+              },
+              id: "task-apply-proof",
               ast_snapshot: {
                 approved_execution_evidence: {
                   audit: {
@@ -120,7 +159,7 @@ describe("execute-approved route", () => {
               },
             },
             tool: "long_running_task_tracker",
-          }),
+          })),
       } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
     );
 
@@ -175,8 +214,15 @@ describe("execute-approved route", () => {
         status: 200,
         statusText: "OK",
         text: async () =>
-          JSON.stringify({
+          JSON.stringify(executeApprovedContractPayload({
             task: {
+              causal_trace: {
+                consumer_event_id: "consume-123",
+                consumer_subsystem: "long_running_status_observer",
+                invocation_event_id: "invoke-123",
+                trace_id: "trace-123",
+              },
+              id: "task-final-proof",
               ast_snapshot: {
                 approved_execution_evidence: {
                   audit: {
@@ -185,7 +231,7 @@ describe("execute-approved route", () => {
                 },
               },
             },
-          }),
+          })),
       } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
     );
     mockedUpsertCodingRunRow.mockResolvedValueOnce({
@@ -232,7 +278,15 @@ describe("execute-approved route", () => {
         headers: new Headers({ "content-type": "application/json" }),
         status: 200,
         statusText: "OK",
-        text: async () => JSON.stringify({ ok: true }),
+        text: async () => JSON.stringify(executeApprovedContractPayload({ task: {
+          causal_trace: {
+            consumer_event_id: "consume-123",
+            consumer_subsystem: "long_running_status_observer",
+            invocation_event_id: "invoke-123",
+            trace_id: "trace-123",
+          },
+          id: "task-revert-123",
+        } })),
       } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
     );
 
@@ -257,7 +311,9 @@ describe("execute-approved route", () => {
       }),
     );
 
-    await expect(response.json()).resolves.toEqual({ ok: true });
+    await expect(response.json()).resolves.toMatchObject({
+      task: expect.objectContaining({ id: "task-revert-123" }),
+    });
     expect(response.status).toBe(200);
     const [, init] = mockedSourceProxyFetch.mock.calls[0];
     expect(JSON.parse(String(init?.body))).toMatchObject({
@@ -364,5 +420,43 @@ describe("execute-approved route", () => {
     });
     expect(response.status).toBe(409);
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when Source Proxy success lacks the Plan 4 causal contract", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true }),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    const response = await POST(
+      jsonRequest({
+        action: "modify file",
+        allowed_files: ["src/demo.ts"],
+        approved: true,
+        approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
+        target: "src/demo.ts",
+        task_id: "task-123",
+      }),
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      error: "execute-approved returned success without the Plan 4 causal output contract.",
+      missing_fields: [
+        "task_id",
+        "trace_id",
+        "invocation_event_id",
+        "consumer_event_id",
+        "consumer_subsystem",
+      ],
+      reason_code: "plan4_execute_approved_contract_missing",
+      task_id: "task-123",
+    });
+    expect(response.status).toBe(502);
+    expect(mockedUpsertCodingRunRow).not.toHaveBeenCalled();
+    expect(mockedPatchCodingRun).not.toHaveBeenCalled();
   });
 });

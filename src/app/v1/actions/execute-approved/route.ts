@@ -200,6 +200,22 @@ export async function POST(request: Request) {
 
   const responseText = await response.text();
   const responseOk = response.ok ?? (response.status >= 200 && response.status < 300);
+  const contentType = response.headers.get("content-type") ?? "application/json";
+  const contractCheck = responseOk && contentType.includes("application/json")
+    ? plan4ExecuteApprovedContractCheck(responseText)
+    : { ok: true as const };
+  if (!contractCheck.ok) {
+    return Response.json(
+      {
+        error:
+          "execute-approved returned success without the Plan 4 causal output contract.",
+        missing_fields: contractCheck.missingFields,
+        reason_code: "plan4_execute_approved_contract_missing",
+        task_id: taskId,
+      },
+      { status: 502 },
+    );
+  }
   if (responseOk && trialSuiteId && trialPromptId) {
     await recordTrialApplyProof({
       allowedFiles,
@@ -215,7 +231,7 @@ export async function POST(request: Request) {
 
   return new Response(responseText, {
     headers: {
-      "content-type": response.headers.get("content-type") ?? "application/json",
+      "content-type": contentType,
     },
     status: response.status,
     statusText: response.statusText,
@@ -316,8 +332,35 @@ function parseJsonRecord(text: string): Record<string, unknown> {
   }
 }
 
+function plan4ExecuteApprovedContractCheck(text: string):
+  | { ok: true }
+  | { ok: false; missingFields: string[] } {
+  const payload = parseJsonRecord(text);
+  const task = asRecord(payload.task);
+  const execution = asRecord(payload.execution);
+  const executionTrace = asRecord(execution.causal_trace);
+  const taskTrace = asRecord(task.causal_trace);
+  const trace = Object.keys(executionTrace).length > 0 ? executionTrace : taskTrace;
+  const required = {
+    task_id: stringValue(execution.task_id) ?? stringValue(task.id),
+    trace_id: stringValue(execution.trace_id) ?? stringValue(trace.trace_id),
+    invocation_event_id:
+      stringValue(execution.invocation_event_id) ?? stringValue(trace.invocation_event_id),
+    consumer_event_id: stringValue(trace.consumer_event_id),
+    consumer_subsystem: stringValue(trace.consumer_subsystem),
+  };
+  const missingFields = Object.entries(required)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+  return missingFields.length === 0 ? { ok: true } : { ok: false, missingFields };
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function nestedRecord(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {

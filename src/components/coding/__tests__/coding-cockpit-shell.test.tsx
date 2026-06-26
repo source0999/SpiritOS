@@ -1084,6 +1084,16 @@ describe("CodingCockpitShell", () => {
     });
   });
 
+  it("preserves execute-approved causal contract failures on the operator surface", () => {
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("const applyFailureReasonCode =");
+    expect(shellSrc).toContain("reasonCodeFromPreview(applyPayload) ?? reasonCodeFromErrorMessage(applyFailureMessage)");
+    expect(shellSrc).toContain('previewStatus: "execute-approved failed closed"');
+    expect(shellSrc).toContain("Failure diagnostics");
+    expect(shellSrc).toContain('routeCalled: "/v1/actions/execute-approved"');
+    expect(shellSrc).toContain("technicalDetail: safePayloadSummary(applyPayload)");
+  });
+
   it("reads Plan 2 subsystem integration truth without a GO label", () => {
     const payload = {
       task: {

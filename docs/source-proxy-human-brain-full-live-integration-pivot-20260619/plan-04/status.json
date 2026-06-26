@@ -1,8 +1,48 @@
 {
   "plan": 4,
   "title": "Canonical /coding UI/API Consolidation",
-  "status": "PLAN_WRITTEN_NOT_STARTED",
-  "gate_status": "BLOCKED_PENDING_PLAN_0_COMPRESSION_DECISION",
-  "implementation_performed": false,
+  "status": "PLAN4_INCREMENT_4_1_2_GO",
+  "gate_status": "BRITTON_APPROVED_PLAN_4_START_20260625",
+  "implementation_performed": true,
+  "current_increment": "4.1.2",
+  "completed_increments": [
+    "4.1.1",
+    "4.1.2"
+  ],
+  "implemented_change": "execute-approved bridge fails closed when successful Source Proxy response lacks Plan 4 causal output contract fields",
+  "required_contract_fields": [
+    "task_id",
+    "trace_id",
+    "invocation_event_id",
+    "consumer_event_id",
+    "consumer_subsystem"
+  ],
+  "focused_checks": [
+    {
+      "command": "npm test -- --run src/app/v1/actions/execute-approved/__tests__/route.test.ts",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_10_TESTS"
+    },
+    {
+      "command": "npx --yes tsx /tmp/plan4-411-live-proof.mts",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_LIVE_ROUTE_ACCEPTS_CAUSAL_RESPONSE_AND_REJECTS_UNTRACEABLE_2XX"
+    },
+    {
+      "command": "npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'preserves execute-approved causal contract failures on the operator surface'",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_1_TARGETED_TEST"
+    },
+    {
+      "command": "node_repl Playwright chromium executable with page.route interception against https://10.0.0.186:3000/coding",
+      "cwd": "Z:/",
+      "result": "PASS_BROWSER_OPERATOR_FAIL_CLOSED_VISIBLE"
+    }
+  ],
+  "live_canonical_route_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md",
+  "increment_4_1_1_verdict": "GO",
+  "increment_4_1_2_status": "GO",
+  "increment_4_1_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-2-operator-surface-20260625.md",
+  "increment_4_1_2_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-2-browser-proof-20260625.md",
   "next_plan_authorized": false
 }

@@ -1,3 +1,58 @@
 # Plan 4/6 Next-Plan Handoff
 
-Previous plan required deliverables are listed in plan.md. Inputs required by the next plan are the final verdict, status JSON, causal trace evidence, Codex review, operator check result, evidence budget status, and Britton approval. Permission is still required before any next plan starts.
+Previous plan required deliverables are listed in plan.md. Inputs required by the next plan are the final verdict, status JSON, causal trace evidence, Codex review, operator check result, evidence budget status, and Britton approval.
+
+## Current Plan 4 State - 2026-06-25
+
+Status: `PLAN4_INCREMENT_4_1_2_GO`
+
+Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
+
+Focused check passed on `/home/source/SpiritOS`:
+
+```text
+npm test -- --run src/app/v1/actions/execute-approved/__tests__/route.test.ts
+10 tests passed
+```
+
+Live canonical-route proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md`
+
+Proof summary:
+
+- HTTP route accepted a successful apply-like response containing `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`.
+- HTTP route rejected an apply-like HTTP 200 response missing those fields with `502` and `reason_code: plan4_execute_approved_contract_missing`.
+- The proof used a temporary Source Proxy stub and did not perform real filesystem apply.
+
+Increment 4.1.1 verdict: `GO`.
+
+Increment 4.1.2 is code-ready and recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-2-operator-surface-20260625.md`
+
+4.1.2 implemented change:
+
+- `/coding` approved-apply failure handling now preserves the `/v1/actions/execute-approved` fail-closed reason code, route, technical payload summary, and failed task event on the operator surface.
+
+Focused 4.1.2 check:
+
+```text
+npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'preserves execute-approved causal contract failures on the operator surface'
+1 targeted test passed
+```
+
+Browser/operator proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-2-browser-proof-20260625.md`
+
+Proof summary:
+
+- `/coding` was loaded from the existing Dell Next dev server at `https://10.0.0.186:3000/coding`.
+- Playwright route interception fulfilled `/v1/actions/execute-approved` with an HTTP `502` fail-closed payload.
+- The visible operator surface preserved the reason code, route, task id, technical detail, and failed event.
+- No apply success was displayed.
+
+Increment 4.1.2 verdict: `GO`.
+
+Do not start Plan 5/6.
