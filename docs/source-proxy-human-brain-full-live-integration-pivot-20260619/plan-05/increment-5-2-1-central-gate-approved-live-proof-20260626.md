@@ -1,6 +1,6 @@
 # Plan 5 Increment 5.2.1 - Scoped Apply Gate Approval Retry
 
-Status: `BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`.
+Status: `RESOLVED_BY_SCOPED_RUNTIME_GATE_PROOF`.
 
 ## Human Decision Received
 
@@ -51,9 +51,13 @@ Updating only `.gate/state.json` would not satisfy the existing gate, because th
 
 ## Live Proof Retry
 
-No live apply retry was performed in this turn.
+No live apply retry was performed in the original scoped approval retry turn.
 
 Reason: satisfying the existing central gate requires changing the running Source Proxy process environment, which requires a runtime restart or equivalent process replacement. Britton approved the scoped 5.2.1 gate decision, but did not separately approve runtime interruption.
+
+Britton subsequently approved that scoped Source Proxy runtime restart/replacement for increment `5.2.1` only. The productive live proof is recorded in:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-scoped-runtime-gate-live-proof-20260626.md`
 
 ## Required Operator Action
 
@@ -79,8 +83,8 @@ That operator action must preserve the existing HTTPS Source Proxy route and mus
 
 ## Current Verdict
 
-Increment `5.2.1` remains not GO.
+Increment `5.2.1` is now GO by superseding scoped runtime proof.
 
 Current status:
 
-`PLAN5_INCREMENT_5_2_1_BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`
+`PLAN5_INCREMENT_5_2_1_GO`

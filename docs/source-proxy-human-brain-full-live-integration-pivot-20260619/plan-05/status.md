@@ -1,12 +1,12 @@
 # Plan 5/6 Status
 
-Status: `PLAN5_INCREMENT_5_2_1_BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`.
+Status: `PLAN5_INCREMENT_5_2_1_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_5_START_20260625`.
 Compression gate: `PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK`.
 
 Increment 5.1.1 status: `GO`.
 Increment 5.1.2 status: `GO`.
-Increment 5.2.1 status: `PROOF_BLOCKED_BY_CENTRAL_GATE`.
+Increment 5.2.1 status: `GO`.
 
 Implemented change: Plan 5 now has a bounded acceptance harness that validates a consumed subsystem output on one causal trace without invoking providers, applying patches, committing, pushing, or creating a parallel state engine.
 
@@ -28,11 +28,22 @@ Increment 5.2.1 central gate resolution analysis: `docs/source-proxy-human-brain
 
 Increment 5.2.1 scoped approval retry artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-approved-live-proof-20260626.md`.
 
-Increment 5.2.1 blocker: live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and recorded causal failure/readback events, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. Bypassing that gate would expand authority, so 5.2.1 is not GO.
+Increment 5.2.1 scoped runtime proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-scoped-runtime-gate-live-proof-20260626.md`.
 
-Central gate resolution: Outcome B. The live `.gate/state.json` is for `evaluation-round` temporary model-call evaluation and explicitly notes no apply approval. The running gate does not expose `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply`. Satisfying the gate for 5.2.1 requires a Britton-approved Plan 5 apply gate decision, not a code patch.
+Increment 5.2.1 result: Britton approved a scoped Source Proxy runtime replacement for 5.2.1 only. The canonical live route `https://127.0.0.1:3000/v1/actions/execute-approved` returned 200, applied only the harmless Plan 5 proof target, and produced downstream operator and phase-verifier consumption on one trace.
 
-Scoped gate decision update: Britton approved a Plan 5 5.2.1 apply gate decision, but the running Source Proxy process cannot acquire `SOURCE_PROXY_GATE_INCREMENT=5.2.1` and `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply` without a runtime restart or equivalent process replacement. No runtime interruption was approved in this task, so no live retry was performed and 5.2.1 remains blocked.
+Runtime restore: after proof, `.gate/state.json` was restored to the prior non-apply gate, the normal Source Proxy watchdog-managed runtime was restored, and a post-restore apply probe was blocked without mutation.
+
+5.2.1 evidence:
+
+```text
+Task id: task_5a15fd142a97
+Trace id: trace_86d67929bf7f4ddf
+Operator consumer event id: consumer_12402fbcc8e4411f
+Phase verifier consumer event id: consumer_fc85786f835d4e4e
+Accepted output hash: ff31dc495813357b81cb517afc2656f6c1d527fd8217606f1899c754848a5641
+Post-restore blocked probe task id: task_df08d44a0a39
+```
 
 Focused checks passed from `/home/source/SpiritOS`:
 
@@ -52,6 +63,6 @@ GLM Plan 4 caveat F-1 carried forward: the `/coding` proof now includes a render
 
 GLM Plan 4 caveat F-2 carried forward: focused tests were refreshed from `/home/source/SpiritOS`, not from the Windows mapped drive root.
 
-Current Plan 5 next incomplete increment: `5.2.1`.
+Current Plan 5 next incomplete increment: `5.2.2`.
 
 No Plan 6 work is authorized.

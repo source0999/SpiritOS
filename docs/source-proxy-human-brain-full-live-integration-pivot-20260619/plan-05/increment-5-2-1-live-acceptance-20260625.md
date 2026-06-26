@@ -1,6 +1,6 @@
 # Plan 5 Increment 5.2.1 - Live Acceptance Case
 
-Status: `PROOF_BLOCKED`.
+Status: `GO`.
 
 ## Plan Expectation
 
@@ -41,31 +41,38 @@ https://127.0.0.1:3000/v1/actions/execute-approved
 
 The approved diff targeted only the Plan 5 live proof target listed above.
 
+## Superseding Scoped Runtime Proof
+
+Britton subsequently approved a scoped Source Proxy runtime restart/replacement for Plan 5 increment `5.2.1` only. The productive live proof was completed in:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-scoped-runtime-gate-live-proof-20260626.md`
+
 ## Result
 
-The live route entered Source Proxy and recorded causal evidence, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. The live target still contains:
+The superseding scoped runtime proof entered Source Proxy through the canonical Next route and applied the harmless Plan 5 proof target. The live target now contains:
 
 ```text
-PLAN5_5_2_1_LIVE_ACCEPTANCE_TARGET=before
+PLAN5_5_2_1_LIVE_ACCEPTANCE_TARGET=after
 ```
 
-Task readback proves:
+Task and phase-gate readback prove:
 
 - task id present
 - trace id present
 - invocation event id present
 - consumer event id present
 - consumer subsystem present
-- downstream status readback consumed the failure
-- final task status changed to `failed_needs_human`
+- downstream operator surface consumed the output
+- Plan 5 phase verifier consumed the accepted output hash
+- final task status changed to `applied_needs_verification`
 
-No apply success was claimed. No commit or push authority was used.
+No commit or push authority was used.
 
 ## Blocker
 
-`central_gate_blocked_apply`
+Resolved by scoped runtime gate proof.
 
-Bypassing or expanding Source Proxy apply authority would be an authority expansion and is outside the approved Plan 5 scope. Therefore increment `5.2.1` is not GO.
+After proof, `.gate/state.json` was restored to the prior non-apply gate, the normal Source Proxy watchdog-managed runtime was restored, and a post-restore apply probe was blocked without mutation.
 
 ## Self-Check Against Plan 5
 
@@ -74,11 +81,11 @@ Bypassing or expanding Source Proxy apply authority would be an authority expans
 - Required causal fields present: yes, on task readback.
 - Output/status consumed downstream: yes, by `long_running_status_observer`.
 - Failure changed state/verdict: yes, `failed_needs_human`.
-- Productive apply proven: no.
-- GO claimed: no.
+- Productive apply proven: yes, only on the harmless Plan 5 proof target.
+- GO claimed: yes, after scoped proof and restore proof.
 - Forbidden paths touched: no.
 - Plan 6 started: no.
 
 ## Verdict
 
-Increment `5.2.1`: `PROOF_BLOCKED_BY_CENTRAL_GATE`.
+Increment `5.2.1`: `GO`.

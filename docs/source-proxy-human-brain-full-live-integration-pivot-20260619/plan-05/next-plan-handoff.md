@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 5 State - 2026-06-25
 
-Status: `PLAN5_INCREMENT_5_2_1_BLOCKED_REQUIRES_RUNTIME_GATE_RESTART`.
+Status: `PLAN5_INCREMENT_5_2_1_GO`.
 
 Britton approved Plan 5 start and resolved the Plan 0 compression decision gate for Plan 5 start:
 
@@ -54,7 +54,7 @@ python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness
 Ran 4 tests - OK
 ```
 
-Increment 5.2.1 is proof-blocked:
+Increment 5.2.1 is complete:
 
 `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-live-acceptance-20260625.md`
 
@@ -70,16 +70,30 @@ Scoped approval retry artifact:
 
 `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-central-gate-approved-live-proof-20260626.md`
 
-Blocker:
+Scoped runtime proof:
 
-`central_gate_blocked_apply`
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-2-1-scoped-runtime-gate-live-proof-20260626.md`
 
-Live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and recorded causal failure/readback events, but Source Proxy `central_gate_check("apply")` blocked apply before workspace mutation. Do not bypass or expand apply authority inside Plan 5.
+Live HTTPS `/v1/actions/execute-approved` forwarded to Source Proxy and applied only the harmless Plan 5 proof target under a scoped 5.2.1 runtime gate. The output was consumed by the `/coding` operator surface record and by the Plan 5 phase verifier on one trace.
 
-Current resolution: Outcome B. The live gate state is for `evaluation-round` temporary model-call evaluation and explicitly notes no apply approval. 5.2.1 requires a Britton-approved Plan 5 apply gate decision before productive live proof can be retried.
+Key evidence:
 
-Britton has now approved the scoped Plan 5 5.2.1 apply gate decision, but the running Source Proxy process does not expose `SOURCE_PROXY_GATE_INCREMENT=5.2.1` or `SOURCE_PROXY_GATE_ALLOWED_ACTIONS=apply`. Because changing the running process environment requires a runtime restart or equivalent process replacement, and this task did not approve runtime interruption, 5.2.1 remains blocked until Britton approves that operator action.
+```text
+Task id: task_5a15fd142a97
+Trace id: trace_86d67929bf7f4ddf
+Operator consumer event id: consumer_12402fbcc8e4411f
+Phase verifier consumer event id: consumer_fc85786f835d4e4e
+Accepted output hash: ff31dc495813357b81cb517afc2656f6c1d527fd8217606f1899c754848a5641
+```
 
-Next incomplete Plan 5 increment: `5.2.1`.
+After proof, `.gate/state.json` was restored to the prior non-apply gate, the normal Source Proxy watchdog-managed runtime was restored, and a post-restore apply probe was blocked without mutation:
+
+```text
+Post-restore blocked probe task id: task_df08d44a0a39
+Route status: 500
+Target remained: PLAN5_5_2_1_LIVE_ACCEPTANCE_TARGET=after
+```
+
+Next incomplete Plan 5 increment: `5.2.2`.
 
 Do not start Plan 6.
