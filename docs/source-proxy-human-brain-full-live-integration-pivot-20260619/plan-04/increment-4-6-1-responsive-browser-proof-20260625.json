@@ -1,0 +1,90 @@
+{
+  "status": "PASS_BROWSER_OPERATOR_PLAN_4_6_1_RESPONSIVE_ACCESSIBLE",
+  "target_url": "https://10.0.0.186:3000/coding",
+  "command": "node_repl Playwright chromium installed Chrome desktop/mobile contexts with route interception",
+  "assertions": {
+    "desktopLoaded": true,
+    "mobileLoaded": true,
+    "canonicalSequenceInvoked": true,
+    "failClosedVisible": true,
+    "causalFieldsVisible": true,
+    "noApplySuccessDisplayed": true,
+    "desktopAccessibilityOk": true,
+    "mobileAccessibilityOk": true
+  },
+  "desktopAccessibility": {
+    "hasMainTextarea": true,
+    "reviewPane": true,
+    "labelledPlanSections": true,
+    "buttonsHaveNames": true,
+    "linksHaveNames": true
+  },
+  "mobileAccessibility": {
+    "hasTextarea": true,
+    "startButtonVisible": true,
+    "labelledPlanSections": true,
+    "horizontalOverflow": false
+  },
+  "desktopIntercepted": [
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/recent"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/recent"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/decisions/prompt-packet"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/verification/diff-preview"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/actions/execute-approved"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    }
+  ],
+  "mobileIntercepted": [
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/recent"
+    }
+  ],
+  "executeApprovedInterceptedCount": 1,
+  "desktop_excerpt": "Receipt\nTrace\nCoding\n\nWORKSPACE\n\nCoding sessions\n\nSpiritOS\n\nNew chat\nCurrent request\nFailed\nActive task\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.6.1 responsive proof comment.\nLive run status\nFailed\n\nACTIVE TASK\n\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.6.1 responsive proof comment.\n\nsrc/components/coding/CodingCockpitShell.tsx\n\nTRIAL RUNNER\n\nTrial Runner\n\nRun one dummy Coder prompt or a later benchmark. Coder 001 creates LumaCart first.\n\nNo active run\n\nRun ID: none\n\nLast synced: 2026-06-26T02:23:46.233Z\n\nCATEGORY\nCoder\nDesigner\nCombined\nCOUNT\nMessy Coder 10\nMessy Coder 25\nMessy Coder 50\nMessy Coder 100\nMODE\nIndividual prompt\nBenchmark count\nSELECTED PROMPT\nCoder 001 - Init Dummy Product Site\nCoder 002 - Add Product Data\nCoder 003 - Render Product Cards\nCoder 004 - Add Search Filter\nCoder 005 - Add Category Chips\nCoder 006 - Add Fake Cart Count\nCoder 007 - Mobile Styling Pass\nCoder 008 - Add Tiny Tests / Smoke Checks\nCoder 009 - No-Op / Already Satisfied Proof\nCoder 010 - Protected Path Pressure Trap\nPASS_DUMMY_PROJECT_INIT\ndummy-product-site\nView prompt + boundaries\nRun selected promptRun all trials\n\nNo LumaCart prompt has been run in this panel.\n\nPrompt: coder-001-init-dummy-product-site\n\nREADY\nCopy diagnostics\nDONE\n0/10\nEDITS APPLIED\n0\nALREADY SATISFIED\n0\nSAFETY BLOCKS\n0\nTIMEOUTS\n0\nNEEDS FIX\n0\nREVERTED\n0\nCopy prompts\nCopy trial diagnosticsReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n11 dummy fixture baseline(s) can be reset, then results will clear.\n\nPHONE TRIAL\n\nBackground trial\n\nStart a reversible suite from the left rail, then use this panel as the quick sync check.\n\nReady\nPROGRESS\n0/10\nCONNECTION\nBrowser online\nSAVED\nWaiting\n\nPROMPT COMPOSER\n\nTask Composer\nCoding prompt\nStart coding\nUndo last change\n\nTimer — total: 383ms · prompt-packet: 0.0s · diff-preview: 0.1s · finished: 0.3s\n\nUndo is available after Start coding applies a reversible change.\n\nPROGRESS\n\nRun progress\nReading request\nDONE\nFinding files\nDONE\nCalling model\nRUNNING\nEditing files\nWAITING\nChecking\nRUNNING\nUndoing trial edit\nWAITING\nReady to review\nDONE\n\nPLAN 4.2 LEDGER\n\nBrain-stage and worker ledger\nStage 4\nCanonical coding route\nFAILED\nTrace\ntrace trace-plan4-461-responsive-proof\nCONSUMED EVENT RECORDED\nDecision\n/v1/actions/execute-approved\nPLAN4_461_RESPONSIVE_BROWSER_CONTRACT_BLOCKED\nTask ledger\nTASK_ID\ntask-plan4-461-responsive-proof\nTASK_STATE\nFailed\nTARGET\nsrc/components/coding/CodingCockpitShell.tsx\nROUTE\n/v1/actions/execute-approved\nCONSUMER\ncoding_operator_plan_4_6_responsive_browser_proof\nOutput contract\nTASK_ID\ntask-plan4-461-responsive-proof\nTRACE_ID\ntrace-plan4-461-responsive-proof\nINVOCATION_EVENT_ID\ninvocation-plan4-461-responsive-proof\nCONSUMER_EVENT_ID\nconsumer-plan4-461-responsive-proof\nCONSUMER_SUBSYSTEM\ncoding_operator_plan_4_6_responsive_browser_proof\nOUTPUT_HASH\nsha256:plan4-461-responsive-proof\nSTATUS\nexecute_approved_failed_closed_responsive_proof_preserved\nProgress ledger\nREADING REQUEST\ndone\nFINDING FILES\ndone\nCALLING MODEL\nrunning\nEDITING FILES\nwaiting\nCHECKING\nrunning\nUNDOING TRIAL EDIT\nwaiting\nREADY TO REVIEW\ndone\nSpecialists and workers\nPROVIDER\nLocal / Ollama\nMODEL\nqwen2.5-coder:7b\nMODEL_SOURCE\nruntime\nPROVIDER_CALL_MADE\ntrue\nTRIAL_WORKER\nidle\n\nPLAN 4.3 CONTROLS\n\nReviewable operator controls\nControl ledger\nEDIT\ndraft_present; editing resets preview before apply\nAPPROVE\nlocked\nREJECT\nlocked\nAPPLY\nlocked\nCANCEL\nlocked\nRESUME\nlocked\nSTOP_OR_KILL\nno_process_kill_exposed\nControl authority\nAPPLY_WITHOUT_APPROVAL\nfalse\nCOMMIT\nfalse\nPUSH\nfalse\nOS_PROCESS_KILL\nfalse\nROUTE_BACKED_APPLY\nlocked\nROUTE_BACKED_SUITE_STOP\nbrowser_or_local_state_only\nLAST_CONTROL_ROUTE\nnone\nLAST_CONTROL_STATUS\nwaiting_for_operator_action\nControl contract\nBACKEND_RUN_ID\nnone\nTASK_ID\ntask-plan4-461-responsive-proof\nTRACE_ID\ntrace-plan4-461-responsive-proof\nINVOCATION_EVENT_ID\ninvocation-plan4-461-responsive-proof\nOUTPUT_HASH\nsha256:plan4-461-responsive-proof\nCONTROL_STATUS\nwaiting_for_operator_action\nCONTROL_ROUTE\nnone\nRESUME_FROM_PROMPT\nlocked\nBACKEND_SYNC_STATUS\nsynced\nINTERRUPTION_SOURCE\nnone\n\nPLAN 4.4 TRUTH\n\nMemory, research, verifier, and productive truth\nMemory and research\nPROMPT_MEMORY\n1 retained\nLATEST_PROMPT\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.6.1 responsive proof comment.\nRESEARCH_ROUTE\n/v1/actions/execute-approved\nTARGET_CANDIDATES\nsrc/components/coding/CodingCockpitShell.tsx, src/components/coding/__tests__/coding-cockpit-shell.test.tsx\nPROVIDER_RESEARCH\nLocal / Ollama/qwen2.5-coder:7b\nAssignment and verifier\nASSIGNMENT_TARGET\nsrc/components/coding/CodingCockpitShell.tsx\nALLOWED_FILES\nsrc/components/coding/CodingCockpitShell.tsx\nCHANGED_FILES\nsrc/components/coding/CodingCockpitShell.tsx\nVERIFIER_SUMMARY\nChecks have not passed yet.\nVERIFIER_EVIDENCE\nchecks_recorded=git diff --check\nCHECKS\ngit diff --check\nRepair and productive truth\nREPAIR_STATUS\nno repair/reversal recorded\nNE",
+  "mobile_excerpt": "Receipt\nTrace\nCoding\n\nWORKSPACE\n\nCoding sessions\n\nSpiritOS\n\nNew chat\nNew coding chat\nReady\n\nACTIVE TASK\n\nNo active task\n\nDiscovering after start\n\nTRIAL RUNNER\n\nTrial Runner\n\nRun one dummy Coder prompt or a later benchmark. Coder 001 creates LumaCart first.\n\nNo active run\n\nRun ID: none\n\nLast synced: 2026-06-26T02:23:59.900Z\n\nCATEGORY\nCoder\nDesigner\nCombined\nCOUNT\nMessy Coder 10\nMessy Coder 25\nMessy Coder 50\nMessy Coder 100\nMODE\nIndividual prompt\nBenchmark count\nSELECTED PROMPT\nCoder 001 - Init Dummy Product Site\nCoder 002 - Add Product Data\nCoder 003 - Render Product Cards\nCoder 004 - Add Search Filter\nCoder 005 - Add Category Chips\nCoder 006 - Add Fake Cart Count\nCoder 007 - Mobile Styling Pass\nCoder 008 - Add Tiny Tests / Smoke Checks\nCoder 009 - No-Op / Already Satisfied Proof\nCoder 010 - Protected Path Pressure Trap\nPASS_DUMMY_PROJECT_INIT\ndummy-product-site\nView prompt + boundaries\nRun selected promptRun all trials\n\nNo LumaCart prompt has been run in this panel.\n\nPrompt: coder-001-init-dummy-product-site\n\nREADY\nCopy diagnostics\nDONE\n0/10\nEDITS APPLIED\n0\nALREADY SATISFIED\n0\nSAFETY BLOCKS\n0\nTIMEOUTS\n0\nNEEDS FIX\n0\nREVERTED\n0\nCopy prompts\nCopy trial diagnosticsReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n11 dummy fixture baseline(s) can be reset, then results will clear.\n\nPHONE TRIAL\n\nBackground trial\n\nStart a reversible suite from the left rail, then use this panel as the quick sync check.\n\nReady\nPROGRESS\n0/10\nCONNECTION\nBrowser online\nSAVED\nWaiting\n\nPROMPT COMPOSER\n\nTask Composer\nCoding prompt\nStart coding\nUndo last change\n\nUndo is available after Start coding applies a reversible change.\n\nPROGRESS\n\nRun progress\nReading request\nWAITING\nFinding files\nWAITING\nCalling model\nWAITING\nEditing files\nWAITING\nChecking\nWAITING\nUndoing trial edit\nWAITING\nReady to review\nWAITING\n\nPLAN 4.2 LEDGER\n\nBrain-stage and worker ledger\nStage 4\nCanonical coding route\nWAITING FOR TASK\nTrace\nno trace yet\nWAITING FOR CONSUMED EVENT\nDecision\nno route yet\nNOT STARTED\nTask ledger\nTASK_ID\nnone\nTASK_STATE\nReady\nTARGET\nDiscovering after start\nROUTE\nnone\nCONSUMER\nnone\nOutput contract\nTASK_ID\nnone\nTRACE_ID\nnone\nINVOCATION_EVENT_ID\nnone\nCONSUMER_EVENT_ID\nnone\nCONSUMER_SUBSYSTEM\nnone\nOUTPUT_HASH\nnone\nSTATUS\nnot started\nProgress ledger\nREADING REQUEST\nwaiting\nFINDING FILES\nwaiting\nCALLING MODEL\nwaiting\nEDITING FILES\nwaiting\nCHECKING\nwaiting\nUNDOING TRIAL EDIT\nwaiting\nREADY TO REVIEW\nwaiting\nSpecialists and workers\nPROVIDER\nLocal / Ollama\nMODEL\nqwen2.5-coder:7b\nMODEL_SOURCE\nconfig\nPROVIDER_CALL_MADE\nfalse\nTRIAL_WORKER\nidle\n\nPLAN 4.3 CONTROLS\n\nReviewable operator controls\nControl ledger\nEDIT\nwaiting_for_draft\nAPPROVE\nlocked\nREJECT\nlocked\nAPPLY\nlocked\nCANCEL\nlocked\nRESUME\nlocked\nSTOP_OR_KILL\nno_process_kill_exposed\nControl authority\nAPPLY_WITHOUT_APPROVAL\nfalse\nCOMMIT\nfalse\nPUSH\nfalse\nOS_PROCESS_KILL\nfalse\nROUTE_BACKED_APPLY\nlocked\nROUTE_BACKED_SUITE_STOP\nbrowser_or_local_state_only\nLAST_CONTROL_ROUTE\nnone\nLAST_CONTROL_STATUS\nwaiting_for_operator_action\nControl contract\nBACKEND_RUN_ID\nnone\nTASK_ID\nnone\nTRACE_ID\nnone\nINVOCATION_EVENT_ID\nnone\nOUTPUT_HASH\nnone\nCONTROL_STATUS\nwaiting_for_operator_action\nCONTROL_ROUTE\nnone\nRESUME_FROM_PROMPT\nlocked\nBACKEND_SYNC_STATUS\nsynced\nINTERRUPTION_SOURCE\nnone\n\nPLAN 4.4 TRUTH\n\nMemory, research, verifier, and productive truth\nMemory and research\nPROMPT_MEMORY\nempty\nLATEST_PROMPT\nnone\nRESEARCH_ROUTE\nwaiting_for_prompt_packet\nTARGET_CANDIDATES\nnone\nPROVIDER_RESEARCH\nLocal / Ollama/qwen2.5-coder:7b\nAssignment and verifier\nASSIGNMENT_TARGET\nDiscovering after start\nALLOWED_FILES\nnone\nCHANGED_FILES\nnone\nVERIFIER_SUMMARY\nWaiting for preview.\nVERIFIER_EVIDENCE\nchecks_recorded=git diff --check\nCHECKS\ngit diff --check\nRepair and productive truth\nREPAIR_STATUS\nno repair/reversal recorded\nNEXT_SAFE_ACTION\nWrite the task, then start the task. File discovery happens during the run.\nREASON_CODE\nnone\nTECHNICAL_DETAIL\nnone\nVISIBLE_RESULT\nPREVIEW ONLY\nPRODUCTIVE_TRUTH\nnot_live_model_proof\nAPPLY_SUCCESS_CLAIM\nnot_displayed\n\nPLAN 4.5 APIS\n\nCanonical and dormant route ledger\nCanonical route sequence\n1_PROMPT-PACKET\n/v1/decisions/prompt-packet -> /v1/decisions/prompt-packet; Task packet, repo research, provider truth, selected target, and allowed files.\n2_DIFF-PREVIEW\n/v1/verification/diff-preview -> /v1/verification/diff-preview; Verifier result, changed files, checks, and approval gate.\n3_EXECUTE-APPROVED\n/v1/actions/execute-approved -> /v1/actions/execute-approved; Approved apply, fail-closed causal contract, reversal, and no hidden success.\nSupporting routes\nDURABLE-RUNS\n/v1/coding/runs; Route-backed trial persistence, stop, resume, and mobile sync state.\nDormant parallel routes\nCODEX-ADAPTER\n/v1/coding/codex; Legacy adapter; guarded by SPIRIT_CODING_USE_PROXY and not mounted as canonical.\nBOUNDED-DIFF-PREVIEW\n/v1/coding/bounded-diff-preview; Legacy preview adapter; canonical preview runs through /v1/decisions/prompt-packet then /v1/verification/diff-preview.\nRESEARCH-PREV",
+  "artifacts": {
+    "desktop_screenshot": "Z:\\docs\\source-proxy-human-brain-full-live-integration-pivot-20260619\\plan-04\\increment-4-6-1-desktop-browser-proof-20260625.png",
+    "mobile_screenshot": "Z:\\docs\\source-proxy-human-brain-full-live-integration-pivot-20260619\\plan-04\\increment-4-6-1-mobile-browser-proof-20260625.png",
+    "json": "Z:\\docs\\source-proxy-human-brain-full-live-integration-pivot-20260619\\plan-04\\increment-4-6-1-responsive-browser-proof-20260625.json"
+  },
+  "screenshot_readability_note": "Screenshots captured for visual review; DOM excerpts and JSON assertions are authoritative if PNGs render too dark in a viewer.",
+  "passed": true
+}

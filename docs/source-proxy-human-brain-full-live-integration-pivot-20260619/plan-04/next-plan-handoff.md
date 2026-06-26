@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 4 State - 2026-06-25
 
-Status: `PLAN4_PHASE_4_5_GO`
+Status: `PLAN4_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`
 
 Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
 
@@ -308,6 +308,38 @@ Phase 4.5 closeout review:
 
 Phase 4.5 verdict: `GO`.
 
-Next incomplete Plan 4 increment: `4.6.1`.
+Increment 4.6.1 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-6-1-responsive-browser-proof-20260625.md`
+
+4.6.1 proof summary:
+
+- Desktop `/coding` proof passed.
+- Mobile `/coding` proof passed.
+- Accessibility checks passed for labelled sections, named controls/links, review pane, and mobile overflow.
+- The canonical route sequence was invoked.
+- The fail-closed execute-approved response changed the visible verdict.
+- No apply success was displayed.
+- Screenshots were visually checked and readable.
+
+Increment 4.6.1 verdict: `GO`.
+
+Increment 4.6.2 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-6-2-final-proof-review-20260625.md`
+
+Increment 4.6.2 verdict: `GO`.
+
+Phase 4.6 closeout review:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-6-closeout-review-20260625.md`
+
+Plan 4 final closeout packet:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/plan4-final-closeout-packet-20260625.md`
+
+Plan 4 final status: `PLAN4_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
+
+Next incomplete Plan 4 increment: `none`.
 
 Do not start Plan 5/6.
