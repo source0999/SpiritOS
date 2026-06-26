@@ -1,8 +1,43 @@
 {
   "plan": 5,
   "title": "Binary Whole-Brain Acceptance",
-  "status": "PLAN_WRITTEN_NOT_STARTED",
-  "gate_status": "BLOCKED_PENDING_PLAN_0_COMPRESSION_DECISION",
-  "implementation_performed": false,
+  "status": "PLAN5_INCREMENT_5_1_1_GO",
+  "gate_status": "BRITTON_APPROVED_PLAN_5_START_20260625",
+  "compression_gate_status": "PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK",
+  "implementation_performed": true,
+  "current_increment": "5.1.1",
+  "completed_increments": [
+    "5.1.1"
+  ],
+  "increment_5_1_1_status": "GO",
+  "increment_5_1_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-1-acceptance-harness-20260625.md",
+  "increment_5_1_1_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-1-acceptance-harness-proof-20260625.json",
+  "implemented_change": "Plan 5 acceptance harness validates consumed subsystem output on one causal trace and rejects unconsumed output.",
+  "required_fields": [
+    "task_id",
+    "trace_id",
+    "invocation_event_id",
+    "consumer_event_id",
+    "consumer_subsystem",
+    "state_fields_changed",
+    "focused_checks",
+    "git_status",
+    "evidence_budget_status"
+  ],
+  "focused_checks": [
+    {
+      "command": "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_2_TESTS"
+    },
+    {
+      "command": "npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders Plan 5 acceptance causal fields and authority flags on the operator surface'",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_1_TARGETED_TEST_40_SKIPPED"
+    }
+  ],
+  "glm_caveat_f1_status": "ADDRESSED_FOR_5_1_1_RENDER_LEVEL_OPERATOR_ASSERTION",
+  "glm_caveat_f2_status": "ADDRESSED_FOR_5_1_1_LINUX_PATH_TEST_REFRESH",
+  "next_incomplete_increment": "5.1.2",
   "next_plan_authorized": false
 }

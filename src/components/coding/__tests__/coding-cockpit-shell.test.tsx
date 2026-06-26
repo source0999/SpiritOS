@@ -1186,6 +1186,129 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).not.toContain("4.5.1 GO");
   });
 
+  it("renders Plan 5 acceptance causal fields and authority flags on the operator surface", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          allowed_files: [targetFile],
+          changed_files: [{ path: targetFile }],
+          coder_diagnostics: {
+            model: "ollama_chat/qwen2.5-coder:7b",
+            provider_call_made: true,
+          },
+          model: "ollama_chat/qwen2.5-coder:7b",
+          output_hash: "sha256:plan5-proposal",
+          proposed_diff: liveDiff,
+          provider: "ollama",
+          provider_call_made: true,
+          selected_target: targetFile,
+          status: "proposal_ready",
+          target: targetFile,
+          task_id: "task-plan5-acceptance-001",
+          trace_id: "trace-plan5-acceptance-001",
+        });
+      }
+      if (url.includes("/v1/verification/diff-preview")) {
+        return jsonResponse({
+          changed_files: [{ path: targetFile }],
+          git_apply_check_ok: true,
+          output_hash: "sha256:plan5-preview",
+          requirement_coverage: { ok: true, summary: "Requirement coverage passed." },
+          review_report: { passed: true },
+          status: "preview_ready",
+          task: {
+            ast_snapshot: {
+              plan_2_subsystem_integrations: {
+                browser_functional_verifier: {
+                  consumer_event_id: "consumer-plan5-acceptance-001",
+                  consumer_subsystem: "coding_operator_surface",
+                  invocation_event_id: "invocation-plan5-acceptance-001",
+                  output_hash: "sha256:plan5-verifier-output",
+                  status: "INTEGRATED_LIVE",
+                  trace_id: "trace-plan5-acceptance-001",
+                },
+              },
+            },
+          },
+          task_id: "task-plan5-acceptance-001",
+          task_spec_check: { ok: true },
+          trace_id: "trace-plan5-acceptance-001",
+        });
+      }
+      if (url.includes("/v1/actions/execute-approved")) {
+        return jsonResponse({
+          error: "execute-approved returned success without the Plan 4 causal output contract.",
+          execution: {
+            consumer_event_id: "consumer-plan5-acceptance-001",
+            consumer_subsystem: "coding_operator_surface",
+            invocation_event_id: "invocation-plan5-acceptance-001",
+            output_hash: "sha256:plan5-verifier-output",
+            status: "failed",
+            task_id: "task-plan5-acceptance-001",
+            trace_id: "trace-plan5-acceptance-001",
+          },
+          reason_code: "plan5_acceptance_contract_missing",
+          route: "/v1/actions/execute-approved",
+          status: "failed",
+          task: {
+            ast_snapshot: {
+              plan_2_subsystem_integrations: {
+                browser_functional_verifier: {
+                  consumer_event_id: "consumer-plan5-acceptance-001",
+                  consumer_subsystem: "coding_operator_surface",
+                  invocation_event_id: "invocation-plan5-acceptance-001",
+                  output_hash: "sha256:plan5-verifier-output",
+                  status: "INTEGRATED_LIVE",
+                  trace_id: "trace-plan5-acceptance-001",
+                },
+              },
+            },
+            causal_trace: {
+              consumer_event_id: "consumer-plan5-acceptance-001",
+              consumer_subsystem: "coding_operator_surface",
+              invocation_event_id: "invocation-plan5-acceptance-001",
+              trace_id: "trace-plan5-acceptance-001",
+            },
+            id: "task-plan5-acceptance-001",
+          },
+          technical_detail: "Plan 5 acceptance fail-closed proof payload",
+        }, 502);
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    fireEvent.change(screen.getByLabelText("Coding prompt"), {
+      target: {
+        value: `Target file: ${targetFile}\n\nAdd a visible Plan 5 acceptance marker for causal output consumption.`,
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Start coding" }));
+
+    await waitFor(() => {
+      expect(document.body.textContent ?? "").toContain("Failed");
+    });
+    const renderedText = document.body.textContent ?? "";
+    [
+      "task-plan5-acceptance-001",
+      "trace-plan5-acceptance-001",
+      "invocation-plan5-acceptance-001",
+      "consumer-plan5-acceptance-001",
+      "coding_operator_surface",
+      "sha256:plan5-verifier-output",
+      "/v1/actions/execute-approved",
+      "browser_functional_verifier",
+      "commit",
+      "push",
+      "os_process_kill",
+      "false",
+    ].forEach((text) => {
+      expect(renderedText).toContain(text);
+    });
+    expect(renderedText).not.toContain("LIVE PASS");
+    expect(renderedText).not.toContain("Applied approved diff.");
+  });
+
   it("reads Plan 2 subsystem integration truth without a GO label", () => {
     const payload = {
       task: {

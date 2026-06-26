@@ -1,0 +1,121 @@
+{
+  "command_context": "/home/source/SpiritOS",
+  "consumer_subsystem": "coding_operator_surface",
+  "failure_architect_reason": "browser_verifier_failed",
+  "failure_changed_verdict": true,
+  "failure_gate": {
+    "evidence": {
+      "consumer_event_id": "consumer_786a1a1edbea470a",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_5_budget",
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness"
+      ],
+      "git_status": "clean except ignored repomixes/",
+      "invocation_event_id": "invocation_3848c811216e47c5",
+      "output_hash": "9926a6742186ef6060ab44fb500a46e34d30ead9e1bff24f0b82b5f0175f15de",
+      "state_fields_changed": [
+        "ast_snapshot.plan_5_acceptance.browser_functional_verifier",
+        "status",
+        "ast_snapshot"
+      ],
+      "subsystem": "browser_functional_verifier",
+      "subsystem_status": "BLOCKED_ENV",
+      "task_id": "task_23ec9a91ec9d",
+      "trace_id": "trace_3e27ca0a41b84c5b"
+    },
+    "failure_changes_final_verdict": true,
+    "failures": [],
+    "forbidden_state_catalog": [
+      "preview_only_completion",
+      "advisory_only_completion",
+      "read_only_completion_for_action_capable_system",
+      "skipped_required_lane",
+      "unconsumed_output",
+      "fake_productive_go"
+    ],
+    "forbidden_states": [],
+    "missing_fields": [],
+    "output_consumed_downstream": true,
+    "plan": 5,
+    "required_fields": [
+      "task_id",
+      "trace_id",
+      "invocation_event_id",
+      "consumer_event_id",
+      "consumer_subsystem",
+      "state_fields_changed",
+      "focused_checks",
+      "git_status",
+      "evidence_budget_status"
+    ],
+    "required_verdict": "GO",
+    "same_trace": true,
+    "state_fields_changed_present": true,
+    "status": "GO",
+    "subsystem": "browser_functional_verifier"
+  },
+  "failure_task_status": "blocked",
+  "forbidden_states_present": [],
+  "increment": "5.1.1",
+  "no_preview_only_completion": true,
+  "output_consumed_downstream": true,
+  "plan": 5,
+  "same_trace": true,
+  "status": "PASS_PLAN5_5_1_1_ACCEPTANCE_HARNESS_PROOF",
+  "subsystem": "browser_functional_verifier",
+  "success_gate": {
+    "evidence": {
+      "consumer_event_id": "consumer_4a14de5160104d0a",
+      "consumer_subsystem": "coding_operator_surface",
+      "evidence_budget_status": "within_plan_5_budget",
+      "focused_checks": [
+        "python3 -m unittest source_proxy.tests.test_plan5_acceptance_harness",
+        "npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders Plan 5 acceptance causal fields and authority flags on the operator surface'"
+      ],
+      "git_status": "clean except ignored repomixes/",
+      "invocation_event_id": "invocation_1f44bb22597c4ec4",
+      "output_hash": "db015e5652094c826c4c62efe2b2c32789ddab7eda4ae8f0cbadbd9af1fb8060",
+      "state_fields_changed": [
+        "ast_snapshot.plan_5_acceptance.browser_functional_verifier",
+        "ast_snapshot"
+      ],
+      "subsystem": "browser_functional_verifier",
+      "subsystem_status": "INTEGRATED_LIVE",
+      "task_id": "task_cb81c281fdb0",
+      "trace_id": "trace_01a89f2827774f42"
+    },
+    "failure_changes_final_verdict": false,
+    "failures": [],
+    "forbidden_state_catalog": [
+      "preview_only_completion",
+      "advisory_only_completion",
+      "read_only_completion_for_action_capable_system",
+      "skipped_required_lane",
+      "unconsumed_output",
+      "fake_productive_go"
+    ],
+    "forbidden_states": [],
+    "missing_fields": [],
+    "output_consumed_downstream": true,
+    "plan": 5,
+    "required_fields": [
+      "task_id",
+      "trace_id",
+      "invocation_event_id",
+      "consumer_event_id",
+      "consumer_subsystem",
+      "state_fields_changed",
+      "focused_checks",
+      "git_status",
+      "evidence_budget_status"
+    ],
+    "required_verdict": "GO",
+    "same_trace": true,
+    "state_fields_changed_present": true,
+    "status": "GO",
+    "subsystem": "browser_functional_verifier"
+  },
+  "success_state_fields_changed": true,
+  "success_task_status": "queued"
+}
