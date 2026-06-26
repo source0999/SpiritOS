@@ -1,17 +1,18 @@
 {
   "plan": 5,
   "title": "Binary Whole-Brain Acceptance",
-  "status": "PLAN5_INCREMENT_5_3_1_GO",
+  "status": "PLAN5_PHASE_5_3_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_5_START_20260625",
   "compression_gate_status": "PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK",
   "implementation_performed": true,
-  "current_increment": "5.3.1",
+  "current_increment": "5.3.2",
   "completed_increments": [
     "5.1.1",
     "5.1.2",
     "5.2.1",
     "5.2.2",
-    "5.3.1"
+    "5.3.1",
+    "5.3.2"
   ],
   "increment_5_1_1_status": "GO",
   "increment_5_1_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-1-acceptance-harness-20260625.md",
@@ -73,6 +74,22 @@
     "accepted_output_hash": "1f479c551d7397bf1ed4a501edc1eea61f5ad9b75b0d3f6ff7caf793ce04bd41",
     "audit_failures": []
   },
+  "increment_5_3_2_status": "GO",
+  "increment_5_3_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-3-2-causal-crosscheck-20260626.md",
+  "increment_5_3_2_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-3-2-causal-crosscheck-proof-20260626.json",
+  "increment_5_3_2_result": "Causal anti-laundering crosscheck verified that the productive and fail-closed lanes stand on distinct evidence and that both outputs were consumed by the phase verifier.",
+  "increment_5_3_2_scoped_apply_gate_required": false,
+  "increment_5_3_2_evidence": {
+    "audit_task_id": "task_b78f4ae1b420",
+    "trace_id": "trace_62f0eed7b0a24603",
+    "operator_consumer_event_id": "consumer_a2be01648fdd4e43",
+    "phase_verifier_invocation_event_id": "invocation_c46b8d1b0dd54ab4",
+    "phase_verifier_consumer_event_id": "consumer_cbe44c9299e94b56",
+    "accepted_output_hash": "8fd23873d2abf0c4669f4c2d2a48759cc2c7a24c687e4acaac0e03e59a1d9b0c",
+    "audit_failures": []
+  },
+  "phase_5_3_status": "GO",
+  "phase_5_3_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-3-closeout-review-20260626.md",
   "implemented_change": "Plan 5 acceptance harness validates consumed subsystem output on one causal trace, rejects unconsumed output, and requires phase-verifier consumption of the accepted output hash.",
   "required_fields": [
     "task_id",
@@ -104,6 +121,6 @@
   ],
   "glm_caveat_f1_status": "ADDRESSED_FOR_5_1_1_RENDER_LEVEL_OPERATOR_ASSERTION",
   "glm_caveat_f2_status": "ADDRESSED_FOR_5_1_2_LINUX_PATH_TEST_REFRESH",
-  "next_incomplete_increment": "5.3.2",
+  "next_incomplete_increment": "5.4.1",
   "next_plan_authorized": false
 }

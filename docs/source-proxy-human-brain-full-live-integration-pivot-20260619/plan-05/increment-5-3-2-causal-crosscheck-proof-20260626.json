@@ -1,0 +1,24 @@
+{
+  "accepted_output_hash": "8fd23873d2abf0c4669f4c2d2a48759cc2c7a24c687e4acaac0e03e59a1d9b0c",
+  "audit_task_id": "task_b78f4ae1b420",
+  "checks": {
+    "both_outputs_consumed_by_phase_verifier": true,
+    "causal_audit_covered_both_lanes": true,
+    "causal_audit_failures_empty": true,
+    "fail_closed_lane_has_no_mutation": true,
+    "productive_lane_has_apply_success": true,
+    "productive_lane_has_restore_block": true,
+    "productive_trace_distinct_from_fail_closed_trace": true
+  },
+  "failures": [],
+  "increment": "5.3.2",
+  "operator_consumer_event_id": "consumer_a2be01648fdd4e43",
+  "output_consumed_by_operator": true,
+  "output_consumed_by_phase_verifier": true,
+  "phase_verifier_consumer_event_id": "consumer_cbe44c9299e94b56",
+  "phase_verifier_invocation_event_id": "invocation_c46b8d1b0dd54ab4",
+  "plan": 5,
+  "scoped_apply_gate_required": false,
+  "status": "GO",
+  "trace_id": "trace_62f0eed7b0a24603"
+}
