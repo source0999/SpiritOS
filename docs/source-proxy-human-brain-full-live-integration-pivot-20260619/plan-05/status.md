@@ -1,6 +1,6 @@
 # Plan 5/6 Status
 
-Status: `PLAN5_PHASE_5_2_GO`.
+Status: `PLAN5_INCREMENT_5_3_1_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_5_START_20260625`.
 Compression gate: `PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK`.
 
@@ -9,6 +9,7 @@ Increment 5.1.2 status: `GO`.
 Increment 5.2.1 status: `GO`.
 Increment 5.2.2 status: `GO`.
 Phase 5.2 status: `GO`.
+Increment 5.3.1 status: `GO`.
 
 Implemented change: Plan 5 now has a bounded acceptance harness that validates a consumed subsystem output on one causal trace without invoking providers, applying patches, committing, pushing, or creating a parallel state engine.
 
@@ -84,6 +85,21 @@ Target mutated: false
 
 Phase 5.2 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-2-closeout-review-20260626.md`.
 
-Current Plan 5 next incomplete increment: `5.3.1`.
+Increment 5.3.1 proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-3-1-causal-audit-20260626.md`.
+
+Increment 5.3.1 result: scoped apply gate was not required. The causal audit read durable Source Proxy task snapshots for the 5.2.1 productive trace and the 5.2.2 fail-closed trace, found no missing causal fields, and recorded the audit output as consumed by `coding_operator_surface` and `plan5_phase_acceptance_consumer`.
+
+5.3.1 evidence:
+
+```text
+Audit task id: task_38a088707f56
+Trace id: trace_7467bdea6cbc415d
+Operator consumer event id: consumer_cf570d1194144047
+Phase verifier consumer event id: consumer_efd4db60aecb4e2d
+Accepted output hash: 1f479c551d7397bf1ed4a501edc1eea61f5ad9b75b0d3f6ff7caf793ce04bd41
+Audit failures: []
+```
+
+Current Plan 5 next incomplete increment: `5.3.2`.
 
 No Plan 6 work is authorized.

@@ -1,16 +1,17 @@
 {
   "plan": 5,
   "title": "Binary Whole-Brain Acceptance",
-  "status": "PLAN5_PHASE_5_2_GO",
+  "status": "PLAN5_INCREMENT_5_3_1_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_5_START_20260625",
   "compression_gate_status": "PLAN0_COMPRESSION_DECISION_RESOLVED_FOR_PLAN5_START_NO_SEPARATE_PLAN0_WORK",
   "implementation_performed": true,
-  "current_increment": "5.2.1",
+  "current_increment": "5.3.1",
   "completed_increments": [
     "5.1.1",
     "5.1.2",
     "5.2.1",
-    "5.2.2"
+    "5.2.2",
+    "5.3.1"
   ],
   "increment_5_1_1_status": "GO",
   "increment_5_1_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-1-1-acceptance-harness-20260625.md",
@@ -58,6 +59,20 @@
   },
   "phase_5_2_status": "GO",
   "phase_5_2_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-2-closeout-review-20260626.md",
+  "increment_5_3_1_status": "GO",
+  "increment_5_3_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-3-1-causal-audit-20260626.md",
+  "increment_5_3_1_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-3-1-causal-audit-proof-20260626.json",
+  "increment_5_3_1_result": "Causal audit read durable Source Proxy task snapshots for 5.2.1 and 5.2.2, found no missing fields or trace mismatches, and recorded the audit output as consumed by coding_operator_surface and plan5_phase_acceptance_consumer.",
+  "increment_5_3_1_scoped_apply_gate_required": false,
+  "increment_5_3_1_evidence": {
+    "audit_task_id": "task_38a088707f56",
+    "trace_id": "trace_7467bdea6cbc415d",
+    "operator_consumer_event_id": "consumer_cf570d1194144047",
+    "phase_verifier_invocation_event_id": "invocation_71f476b823e946f4",
+    "phase_verifier_consumer_event_id": "consumer_efd4db60aecb4e2d",
+    "accepted_output_hash": "1f479c551d7397bf1ed4a501edc1eea61f5ad9b75b0d3f6ff7caf793ce04bd41",
+    "audit_failures": []
+  },
   "implemented_change": "Plan 5 acceptance harness validates consumed subsystem output on one causal trace, rejects unconsumed output, and requires phase-verifier consumption of the accepted output hash.",
   "required_fields": [
     "task_id",
@@ -89,6 +104,6 @@
   ],
   "glm_caveat_f1_status": "ADDRESSED_FOR_5_1_1_RENDER_LEVEL_OPERATOR_ASSERTION",
   "glm_caveat_f2_status": "ADDRESSED_FOR_5_1_2_LINUX_PATH_TEST_REFRESH",
-  "next_incomplete_increment": "5.3.1",
+  "next_incomplete_increment": "5.3.2",
   "next_plan_authorized": false
 }

@@ -1,0 +1,43 @@
+{
+  "accepted_output_hash": "1f479c551d7397bf1ed4a501edc1eea61f5ad9b75b0d3f6ff7caf793ce04bd41",
+  "audit_failures": [],
+  "audit_task_id": "task_38a088707f56",
+  "audited_increments": {
+    "5.2.1": {
+      "missing_phase_verifier_fields": [],
+      "missing_subsystem_fields": [],
+      "operator_event_present": true,
+      "output_hash": "ff31dc495813357b81cb517afc2656f6c1d527fd8217606f1899c754848a5641",
+      "output_hash_consumed_by_phase_verifier": true,
+      "phase_verifier_event_present": true,
+      "same_trace": true,
+      "subsystem": "source_proxy_execute_approved",
+      "task_id": "task_5a15fd142a97",
+      "task_status": "applied_needs_verification",
+      "trace_id": "trace_86d67929bf7f4ddf"
+    },
+    "5.2.2": {
+      "missing_phase_verifier_fields": [],
+      "missing_subsystem_fields": [],
+      "operator_event_present": true,
+      "output_hash": "775afd12eab0aa23f52f5ff25ac00b6dd6995cf14f266c7b93a5a6759771eec2",
+      "output_hash_consumed_by_phase_verifier": true,
+      "phase_verifier_event_present": true,
+      "same_trace": true,
+      "subsystem": "source_proxy_execute_approved_fail_closed",
+      "task_id": "task_341690acc102",
+      "task_status": "failed_needs_human",
+      "trace_id": "trace_c620c54ee2454a05"
+    }
+  },
+  "increment": "5.3.1",
+  "operator_consumer_event_id": "consumer_cf570d1194144047",
+  "output_consumed_by_operator": true,
+  "output_consumed_by_phase_verifier": true,
+  "phase_verifier_consumer_event_id": "consumer_efd4db60aecb4e2d",
+  "phase_verifier_invocation_event_id": "invocation_71f476b823e946f4",
+  "plan": 5,
+  "scoped_apply_gate_required": false,
+  "status": "GO",
+  "trace_id": "trace_7467bdea6cbc415d"
+}

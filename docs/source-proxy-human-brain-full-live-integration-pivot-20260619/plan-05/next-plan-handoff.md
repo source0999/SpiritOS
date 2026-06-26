@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 5 State - 2026-06-25
 
-Status: `PLAN5_PHASE_5_2_GO`.
+Status: `PLAN5_INCREMENT_5_3_1_GO`.
 
 Britton approved Plan 5 start and resolved the Plan 0 compression decision gate for Plan 5 start:
 
@@ -122,6 +122,29 @@ Phase 5.2 closeout review:
 
 `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/phase-5-2-closeout-review-20260626.md`
 
-Next incomplete Plan 5 increment: `5.3.1`.
+Increment 5.3.1 is complete:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-3-1-causal-audit-20260626.md`
+
+Proof artifact:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-05/increment-5-3-1-causal-audit-proof-20260626.json`
+
+Scoped apply gate required: no.
+
+The causal audit read durable Source Proxy task snapshots for the 5.2.1 productive trace and the 5.2.2 fail-closed trace. It found no missing causal fields or trace mismatches, then recorded the audit output as consumed by the operator surface and Plan 5 phase verifier.
+
+Key evidence:
+
+```text
+Audit task id: task_38a088707f56
+Trace id: trace_7467bdea6cbc415d
+Operator consumer event id: consumer_cf570d1194144047
+Phase verifier consumer event id: consumer_efd4db60aecb4e2d
+Accepted output hash: 1f479c551d7397bf1ed4a501edc1eea61f5ad9b75b0d3f6ff7caf793ce04bd41
+Audit failures: []
+```
+
+Next incomplete Plan 5 increment: `5.3.2`.
 
 Do not start Plan 6.
