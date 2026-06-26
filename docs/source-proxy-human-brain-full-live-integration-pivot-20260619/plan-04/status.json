@@ -1,10 +1,10 @@
 {
   "plan": 4,
   "title": "Canonical /coding UI/API Consolidation",
-  "status": "PLAN4_PHASE_4_4_GO",
+  "status": "PLAN4_INCREMENT_4_5_1_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_4_START_20260625",
   "implementation_performed": true,
-  "current_increment": "4.4.2",
+  "current_increment": "4.5.1",
   "completed_increments": [
     "4.1.1",
     "4.1.2",
@@ -13,9 +13,10 @@
     "4.3.1",
     "4.3.2",
     "4.4.1",
-    "4.4.2"
+    "4.4.2",
+    "4.5.1"
   ],
-  "implemented_change": "/coding displays a Plan 4.4 truth ledger for memory, research, assignments, verifier evidence, repair state, and productive truth without laundering fail-closed apply responses as success",
+  "implemented_change": "/coding displays a Plan 4.5 API consolidation ledger and the coding registry marks canonical, supporting, and dormant parallel routes without deleting dormant route files",
   "required_contract_fields": [
     "task_id",
     "trace_id",
@@ -93,6 +94,21 @@
       "command": "node_repl standalone Playwright chromium with installed Chrome executable and minimal page.route interception against /coding",
       "cwd": "Z:/",
       "result": "PASS_BROWSER_OPERATOR_PLAN_4_4_1_TRUTH_LEDGER_VISIBLE"
+    },
+    {
+      "command": "npm test -- --run src/lib/coding/__tests__/shell-registry.test.ts",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_3_TESTS"
+    },
+    {
+      "command": "npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.5 canonical and dormant API route ledger without fake GO wording'",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_1_TARGETED_TEST"
+    },
+    {
+      "command": "node_repl standalone Playwright chromium with installed Chrome executable and minimal page.route interception against /coding",
+      "cwd": "Z:/",
+      "result": "PASS_BROWSER_OPERATOR_PLAN_4_5_1_API_LEDGER_VISIBLE"
     }
   ],
   "live_canonical_route_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md",
@@ -121,6 +137,9 @@
   "increment_4_4_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-2-productive-truth-contract-20260625.md",
   "increment_4_4_2_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-4-1-browser-proof-20260625.md",
   "phase_4_4_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-4-closeout-review-20260625.md",
-  "next_incomplete_increment": "4.5.1",
+  "increment_4_5_1_status": "GO",
+  "increment_4_5_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-api-consolidation-ledger-20260625.md",
+  "increment_4_5_1_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-browser-proof-20260625.md",
+  "next_incomplete_increment": "4.5.2",
   "next_plan_authorized": false
 }

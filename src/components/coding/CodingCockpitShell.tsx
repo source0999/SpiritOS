@@ -117,6 +117,10 @@ import {
   type RouteAvailabilityFailure,
   waitForV1RoutesAfterHmr,
 } from "@/lib/coding/route-availability";
+import {
+  activeCodingApiRouteSequence,
+  codingApiRoutesByStatus,
+} from "@/lib/coding/shell-registry";
 
 const commandPanelClass =
   "rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-pill-bg)] shadow-[var(--ddv4-glass-shadow-drop)] backdrop-blur-xl";
@@ -4946,6 +4950,11 @@ export function CodingCockpitShell() {
       `memory_and_research: ${plan44MemoryResearchItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       `assignment_and_verifier: ${plan44AssignmentVerifierItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       `repair_and_productive_truth: ${plan44RepairProductiveTruthItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      "",
+      "plan_4_5_api_consolidation_ledger:",
+      `canonical_route_sequence: ${plan45CanonicalRouteItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `supporting_routes: ${plan45SupportingRouteItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `dormant_parallel_routes: ${plan45DormantRouteItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       "",
       "copy_paste_block_for_chatgpt_codex:",
       `Manual /coding prompt: ${task.trim() || "not drafted"}`,
@@ -9894,6 +9903,18 @@ export function CodingCockpitShell() {
     ["productive_truth", codingVisibleResult.live_model_proof_status],
     ["apply_success_claim", previewState.status === "applied" ? "visible_applied_state" : "not_displayed"],
   ];
+  const plan45CanonicalRouteItems = activeCodingApiRouteSequence.map((route, index) => [
+    `${index + 1}_${route.id}`,
+    `${route.route} -> ${route.sourceProxyRoute ?? "local state"}; ${route.operatorSurface}`,
+  ]);
+  const plan45SupportingRouteItems = codingApiRoutesByStatus("supporting").map((route) => [
+    route.id,
+    `${route.route}; ${route.operatorSurface}`,
+  ]);
+  const plan45DormantRouteItems = codingApiRoutesByStatus("dormant").map((route) => [
+    route.id,
+    `${route.route}; ${route.dormantReason ?? "dormant"}`,
+  ]);
   const activeSessionItems = [
     {
       label: task.trim() ? "Current request" : "New coding chat",
@@ -10729,6 +10750,34 @@ export function CodingCockpitShell() {
                     <dl className="mt-3 grid gap-2 text-xs">
                       {(rows as string[][]).map(([label, value]) => (
                         <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`plan44-${label}`}>
+                          <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
+                            {label}
+                          </dt>
+                          <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-45-api-heading">
+              <p className={commandLabelClass}>Plan 4.5 APIs</p>
+              <h2 id="plan-45-api-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                Canonical and dormant route ledger
+              </h2>
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                {[
+                  ["Canonical route sequence", plan45CanonicalRouteItems],
+                  ["Supporting routes", plan45SupportingRouteItems],
+                  ["Dormant parallel routes", plan45DormantRouteItems],
+                ].map(([title, rows]) => (
+                  <div className={`${commandInsetClass} p-3`} key={String(title)}>
+                    <h3 className={`text-sm font-semibold ${commandTextClass}`}>{String(title)}</h3>
+                    <dl className="mt-3 grid gap-2 text-xs">
+                      {(rows as string[][]).map(([label, value]) => (
+                        <div className="grid grid-cols-[8.75rem_minmax(0,1fr)] gap-2" key={`plan45-${label}`}>
                           <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">
                             {label}
                           </dt>

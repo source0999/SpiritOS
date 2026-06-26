@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  activeCodingApiRouteSequence,
   activeCodingShell,
+  codingApiRouteRegistry,
+  codingApiRoutesByStatus,
   codingShellById,
   codingShellRegistry,
   codingShellsByStatus,
@@ -27,6 +30,28 @@ describe("coding shell registry", () => {
     for (const shell of codingShellRegistry) {
       expect(shell.component).toMatch(/^src\/components\/coding\//);
       expect(shell.rollback.length).toBeGreaterThan(20);
+    }
+  });
+
+  it("marks the canonical /coding API sequence while keeping dormant alternates explicit", () => {
+    expect(activeCodingApiRouteSequence.map((route) => route.route)).toEqual([
+      "/v1/decisions/prompt-packet",
+      "/v1/verification/diff-preview",
+      "/v1/actions/execute-approved",
+    ]);
+    expect(codingApiRoutesByStatus("dormant").map((route) => route.route)).toEqual(
+      expect.arrayContaining([
+        "/v1/coding/codex",
+        "/v1/coding/bounded-diff-preview",
+        "/v1/coding/research-preview",
+        "/v1/coding/helper-agents/preview",
+      ]),
+    );
+    for (const route of codingApiRouteRegistry) {
+      expect(route.operatorSurface.length).toBeGreaterThan(20);
+      if (route.status === "dormant") {
+        expect(route.dormantReason?.length).toBeGreaterThan(20);
+      }
     }
   });
 });

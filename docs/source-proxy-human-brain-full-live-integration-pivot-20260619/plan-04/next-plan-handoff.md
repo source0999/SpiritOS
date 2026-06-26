@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 4 State - 2026-06-25
 
-Status: `PLAN4_PHASE_4_4_GO`
+Status: `PLAN4_INCREMENT_4_5_1_GO`
 
 Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
 
@@ -236,6 +236,42 @@ Phase 4.4 closeout review:
 
 Phase 4.4 verdict: `GO`.
 
-Next incomplete Plan 4 increment: `4.5.1`.
+Increment 4.5.1 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-api-consolidation-ledger-20260625.md`
+
+4.5.1 implemented change:
+
+- The coding shell registry now includes a typed API route registry.
+- `/coding` displays a Plan 4.5 API consolidation ledger.
+- The canonical route sequence is `/v1/decisions/prompt-packet` -> `/v1/verification/diff-preview` -> `/v1/actions/execute-approved`.
+- `/v1/coding/runs` is marked supporting.
+- `/v1/coding/codex`, `/v1/coding/bounded-diff-preview`, `/v1/coding/research-preview`, and `/v1/coding/helper-agents/preview` are marked dormant/advisory rather than canonical.
+
+Focused 4.5.1 checks:
+
+```text
+npm test -- --run src/lib/coding/__tests__/shell-registry.test.ts
+3 tests passed
+
+npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.5 canonical and dormant API route ledger without fake GO wording'
+1 targeted test passed
+```
+
+Browser/operator proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-browser-proof-20260625.md`
+
+Proof summary:
+
+- `/coding` was loaded from the existing Dell Next dev server at `https://10.0.0.186:3000/coding`.
+- Standalone Playwright route interception exercised the canonical route sequence.
+- Dormant parallel routes were visible as dormant but were not invoked.
+- No apply success was displayed.
+- The screenshot was visually checked and was readable; DOM/JSON proof remains authoritative.
+
+Increment 4.5.1 verdict: `GO`.
+
+Next incomplete Plan 4 increment: `4.5.2`.
 
 Do not start Plan 5/6.

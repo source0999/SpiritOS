@@ -1,6 +1,6 @@
 # Plan 4/6 Status
 
-Status: `PLAN4_PHASE_4_4_GO`.
+Status: `PLAN4_INCREMENT_4_5_1_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_4_START_20260625`.
 
 Increment 4.1.1 started after Britton approval on 2026-06-25.
@@ -95,4 +95,16 @@ Current 4.4.2 implemented change: `/coding` now preserves the Plan 4.4 repair/pr
 
 Phase 4.4 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-4-closeout-review-20260625.md`.
 
-Next incomplete Plan 4 increment: `4.5.1`.
+Increment 4.5.1 status: `GO`.
+
+Increment 4.5.1 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-api-consolidation-ledger-20260625.md`.
+
+Current 4.5.1 implemented change: `/coding` now displays a Plan 4.5 API consolidation ledger and the coding registry marks the canonical route sequence, supporting durable-run route, and dormant/advisory parallel routes.
+
+Focused 4.5.1 proof: `npm test -- --run src/lib/coding/__tests__/shell-registry.test.ts` passed on `/home/source/SpiritOS` with 3 tests, and `npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'renders the Plan 4.5 canonical and dormant API route ledger without fake GO wording'` passed on `/home/source/SpiritOS`.
+
+Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-5-1-browser-proof-20260625.md`.
+
+Browser/operator result: `/coding` visibly preserved the canonical route sequence, supporting route, and dormant parallel routes. The proof invoked the canonical sequence, did not invoke dormant routes, and displayed no apply success.
+
+Next incomplete Plan 4 increment: `4.5.2`.

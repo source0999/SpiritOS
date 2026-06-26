@@ -1173,6 +1173,19 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).not.toContain("4.4.1 GO");
   });
 
+  it("renders the Plan 4.5 canonical and dormant API route ledger without fake GO wording", () => {
+    const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
+    expect(shellSrc).toContain("Plan 4.5 APIs");
+    expect(shellSrc).toContain("Canonical and dormant route ledger");
+    expect(shellSrc).toContain("plan45CanonicalRouteItems");
+    expect(shellSrc).toContain("plan45SupportingRouteItems");
+    expect(shellSrc).toContain("plan45DormantRouteItems");
+    expect(shellSrc).toContain("plan_4_5_api_consolidation_ledger");
+    expect(shellSrc).toContain("dormant_parallel_routes");
+    expect(shellSrc).not.toContain("Plan 4.5 GO");
+    expect(shellSrc).not.toContain("4.5.1 GO");
+  });
+
   it("reads Plan 2 subsystem integration truth without a GO label", () => {
     const payload = {
       task: {
