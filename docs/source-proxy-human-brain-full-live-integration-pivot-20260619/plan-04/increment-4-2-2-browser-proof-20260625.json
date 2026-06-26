@@ -1,0 +1,64 @@
+{
+  "targetUrl": "https://10.0.0.186:3000/coding",
+  "command": "node_repl Playwright chromium executable with page.route interception against /coding",
+  "promptText": "In src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.2.2 browser proof comment.",
+  "routeInjection": "Playwright page.route fulfilled /v1/decisions/prompt-packet, /v1/verification/diff-preview, and /v1/actions/execute-approved; execute-approved returned HTTP 502 with full causal/output contract fields.",
+  "interceptedExecuteApproved": 1,
+  "outputContractVisible": true,
+  "traceIdVisible": true,
+  "invocationEventVisible": true,
+  "consumerEventVisible": true,
+  "consumerSubsystemVisible": true,
+  "outputHashVisible": true,
+  "statusAfterVisible": true,
+  "failedStateVisible": true,
+  "noApplySuccessVisible": true,
+  "noPlan42GoVisible": true,
+  "diagnosticsOutputContractVisible": true,
+  "screenshotPath": "Z:/docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-browser-proof-20260625.png",
+  "evidencePath": "Z:/docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-browser-proof-20260625.json",
+  "domExcerpt": "aseline clean — ready for a fresh Coder benchmark.\n\n9 dummy fixture baseline(s) can be reset, then results will clear.\n\nPHONE TRIAL\n\nBackground trial\n\nStart a reversible suite from the left rail, then use this panel as the quick sync check.\n\nReady\nPROGRESS\n0/10\nCONNECTION\nBrowser online\nSAVED\nWaiting\n\nPROMPT COMPOSER\n\nTask Composer\nCoding prompt\nStart coding\nUndo last change\n\nTimer — total: 81ms · prompt-packet: 0.0s · diff-preview: 0.0s · finished: 0.0s\n\nUndo is available after Start coding applies a reversible change.\n\nPROGRESS\n\nRun progress\nReading request\nDONE\nFinding files\nDONE\nCalling model\nRUNNING\nEditing files\nWAITING\nChecking\nRUNNING\nUndoing trial edit\nWAITING\nReady to review\nDONE\n\nPLAN 4.2 LEDGER\n\nBrain-stage and worker ledger\nStage 4\nCanonical coding route\nFAILED\nTrace\ntrace trace-plan4-422-output-contract\nCONSUMED EVENT RECORDED\nDecision\n/v1/actions/execute-approved\nPLAN4_EXECUTE_APPROVED_CONTRACT_MISSING\nTask ledger\nTASK_ID\ntask-plan4-422-output-contract\nTASK_STATE\nFailed\nTARGET\nsrc/components/coding/CodingCockpitShell.tsx\nROUTE\n/v1/actions/execute-approved\nCONSUMER\ncoding_operator_plan_4_2_output_contract_ledger\nOutput contract\nTASK_ID\ntask-plan4-422-output-contract\nTRACE_ID\ntrace-plan4-422-output-contract\nINVOCATION_EVENT_ID\ninvocation-plan4-422-output-contract\nCONSUMER_EVENT_ID\nconsumer-plan4-422-output-contract\nCONSUMER_SUBSYSTEM\ncoding_operator_plan_4_2_output_contract_ledger\nOUTPUT_HASH\nsha256:plan4-422-output-contract\nSTATUS\nexecute_approved_failed_closed_preserved\nProgress ledger\nREADING REQUEST\ndone\nFINDING FILES\ndone\nCALLING MODEL\nrunning\nEDITING FILES\nwaiting\nCHECKING\nrunning\nUNDOING TRIAL EDIT\nwaiting\nREADY TO REVIEW\ndone\nSpecialists and workers\nPROVIDER\nLocal / Ollama\nMODEL\nqwen2.5-coder:7b\nMODEL_SOURCE\nruntime\nPROVIDER_CALL_MADE\ntrue\nTRIAL_WORKER\nidle\n\nSTATUS\n\nCoding runner\n\nNo live-run file changes are currently recorded.\n\nCURRENT TASK\nIn src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.2.2 browser proof comment.\nMODEL\nqwen2.5-coder:7b\nSTATE\nFailed\n\nREVIEW PANE\n\nReview pane\nFAIL: THE RUN FAILED BEFORE A USEFUL RESULT.\n0/100 LIVE APPLY PROOF\n\nexecute-approved returned success without the Plan 4 causal output contract.\n\nCopy current task diagnostics\nCopy trial diagnostics\n\nFAILURE DIAGNOSTICS\n\nREASON_CODE\nplan4_execute_approved_contract_missing\nROUTE\n/v1/actions/execute-approved\nTASK_ID\ntask-plan4-422-output-contract\nTECHNICAL_DETAIL\n{\"error\":\"execute-approved returned success without the Plan 4 causal output contract.\",\"missing_fields\":[\"none_for_4_2_2_payload_preservation\"],\"reason_code\":\"plan4_execute_approved_contract_missing\",\"task_id\":\"task-plan4-422-output-contract\",\"route\":\"/v1/actions/execute-approved\",\"technical_payload_summary\":\"controlled Plan 4.2.2 output contract ledger fail-closed proof\",\"execution\":{\"trace_id\":\"trace-plan4-422-output-contract\",\"invocation_event_id\":\"invocation-plan4-422-output-contract\",\"causal_trace\":{\"trace_id\":\"trace-plan4-422-output-contract\",\"invocation_event_id\":\"invocation-plan4-422-output-contract\",\"consumer_event_id\":\"consumer-plan4-422-output-contract\",\"consumer_subsystem\":\"coding_operator_plan_4_2_output_contract_ledger\",\"status_after\":\"execute_approved_failed_closed_preserve\nCHANGED FILES\nNone\nCHECKS\ngit diff --check\n\nCAUSAL TRACE\n\nTRACE_ID\ntrace-plan4-422-output-contract\nINVOCATION_EVENT_ID\ninvocation-plan4-422-output-contract\nCONSUMER_EVENT_ID\nconsumer-plan4-422-output-contract\nCONSUMER_SUBSYSTEM\ncoding_operator_plan_4_2_output_contract_ledger\nSTATUS_AFTER\nexecute_approved_failed_closed_preserved\nReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n9 dummy fixture baseline(s) can be reset, then results will clear.\n\nDiagnostics copied.\n\nS\nSPIRITOS\nCOLLAPSE\nDASHBOARD\nCHAT\nSOURCE\nMAP\nSCOUT\nORACLE\nMEDIA\nIMPORTER\nCONSOLE",
+  "diagnosticsExcerpt": "_tests__/coding-cockpit-shell.test.tsx.\n- done: Finding files - Task packet built internally for src/components/coding/CodingCockpitShell.tsx.\n- running: Calling model - Calling the existing prompt-packet preview route.\n- done: Calling model - Preview diff returned. Sending it through diff verification.\n- running: Checking - Preparing checks: git diff --check.\n- done: Checking - Diff verification passed for the safety gate.\n- done: Ready to review - Changed files are inside allowed_files.\n- failed: Ready to review - execute-approved returned success without the Plan 4 causal output contract.\n\nplan_4_2_operator_ledger:\nbrain_stage_timeline: Stage 4=Failed (Canonical coding route); Trace=consumed event recorded (trace trace-plan4-422-output-contract); Decision=plan4_execute_approved_contract_missing (/v1/actions/execute-approved)\ntask_ledger: task_id=task-plan4-422-output-contract; task_state=Failed; target=src/components/coding/CodingCockpitShell.tsx; route=/v1/actions/execute-approved; consumer=coding_operator_plan_4_2_output_contract_ledger\noutput_contract: task_id=task-plan4-422-output-contract; trace_id=trace-plan4-422-output-contract; invocation_event_id=invocation-plan4-422-output-contract; consumer_event_id=consumer-plan4-422-output-contract; consumer_subsystem=coding_operator_plan_4_2_output_contract_ledger; output_hash=sha256:plan4-422-output-contract; status=execute_approved_failed_closed_preserved\nprogress_ledger: Reading request=done; Finding files=done; Calling model=running; Editing files=waiting; Checking=running; Undoing trial edit=waiting; Ready to review=done\nspecialists_and_workers: provider=Local / Ollama; model=qwen2.5-coder:7b; model_source=runtime; provider_call_made=true; trial_worker=idle\n\ncopy_paste_block_for_chatgpt_codex:\nManual /coding prompt: In src/components/coding/CodingCockpitShell.tsx, add one harmless Plan 4.2.2 browser proof comment.\nTrial verdict: UNKNOWN\nTrial fixture: none\nTrial detail: Prompt does not match a known coding trial fixture.\nObserved status: Failed\nReason code: plan4_execute_approved_contract_missing\nProvider: Local / Ollama\nModel: qwen2.5-coder:7b\nProvider/model source: runtime\nProvider/model selected via: pla",
+  "intercepted": [
+    {
+      "method": "GET",
+      "url": "/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/self/status"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/trial-fixture-baseline"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/recent?limit=1"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/decisions/prompt-packet"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/verification/diff-preview"
+    },
+    {
+      "method": "POST",
+      "url": "/v1/actions/execute-approved"
+    },
+    {
+      "method": "GET",
+      "url": "/v1/coding/runs/active"
+    }
+  ]
+}

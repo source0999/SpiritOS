@@ -147,6 +147,7 @@ type PreviewState = {
   isApplying: boolean;
   isLoading: boolean;
   model: string | null;
+  outputHash?: string | null;
   previewStatus: string;
   provider: string | null;
   providerCallAuthorized?: boolean;
@@ -2173,6 +2174,7 @@ function idlePreviewState(): PreviewState {
     isApplying: false,
     isLoading: false,
     model: providerTruth.modelLabel,
+    outputHash: null,
     previewStatus: "not started",
     provider: providerTruth.providerLabel,
     providerCallAuthorized: providerTruth.providerCallAuthorized,
@@ -4921,6 +4923,7 @@ export function CodingCockpitShell() {
       "plan_4_2_operator_ledger:",
       `brain_stage_timeline: ${plan42BrainStageTimelineItems.map((item) => `${item.label}=${item.status} (${item.meta})`).join("; ")}`,
       `task_ledger: ${plan42TaskLedgerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
+      `output_contract: ${plan42OutputContractItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       `progress_ledger: ${plan42ProgressLedgerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       `specialists_and_workers: ${plan42SpecialistWorkerItems.map(([label, value]) => `${label}=${value}`).join("; ")}`,
       "",
@@ -8797,6 +8800,7 @@ export function CodingCockpitShell() {
         });
         const applyPayload = await readJson(applyResponse);
         if (!applyResponse.ok) {
+          const applyFailureTrace = causalTraceFromPayload(applyPayload);
           const applyFailureMessage = messageFromPayload(applyPayload, applyResponse.status);
           const applyFailureReasonCode =
             reasonCodeFromPreview(applyPayload) ?? reasonCodeFromErrorMessage(applyFailureMessage);
@@ -8809,6 +8813,7 @@ export function CodingCockpitShell() {
             blocker: applyFailureMessage,
             changedFiles,
             checks: packet.checks,
+            causalStatusAfter: applyFailureTrace.causalStatusAfter,
             currentPhase: manualTaskPhaseLabels.failed,
             diff: proposedDiff,
             error: applyFailureMessage,
@@ -8819,7 +8824,9 @@ export function CodingCockpitShell() {
             forbiddenFiles: packet.forbiddenFiles,
             isApplying: false,
             isLoading: false,
+            invocationEventId: applyFailureTrace.invocationEventId,
             ...providerTruthPatch(proposalProviderTruth),
+            outputHash: outputHashFromPayload(applyPayload),
             plan2SubsystemIntegrations: proposalPlan2SubsystemIntegrations,
             previewStatus: "execute-approved failed closed",
             requirementSummary: gate.requirementSummary,
@@ -8832,6 +8839,9 @@ export function CodingCockpitShell() {
             targetMatch: gate.targetMatch,
             taskId,
             taskSpecAllowed: gate.taskSpecAllowed,
+            traceId: applyFailureTrace.traceId,
+            consumerEventId: applyFailureTrace.consumerEventId,
+            consumerSubsystem: applyFailureTrace.consumerSubsystem,
             verifierSummary: gate.verifierSummary,
             technicalDetail: safePayloadSummary(applyPayload),
           });
@@ -8890,6 +8900,7 @@ export function CodingCockpitShell() {
             plan2SubsystemIntegrationsFromPayload(applyPayload).length > 0
               ? plan2SubsystemIntegrationsFromPayload(applyPayload)
               : proposalPlan2SubsystemIntegrations,
+          outputHash: outputHashFromPayload(applyPayload),
           previewStatus: "live apply complete",
           requirementSummary: gate.requirementSummary,
           reasonCode: null,
@@ -9095,24 +9106,31 @@ export function CodingCockpitShell() {
       });
       const applyPayload = await readJson(applyResponse);
       if (!applyResponse.ok) {
+        const applyFailureTrace = causalTraceFromPayload(applyPayload);
         const applyFailureMessage = messageFromPayload(applyPayload, applyResponse.status);
         const applyFailureReasonCode =
           reasonCodeFromPreview(applyPayload) ?? reasonCodeFromErrorMessage(applyFailureMessage);
         setPreviewState((current) => ({
           ...current,
           applySummary: applyFailureMessage,
+          causalStatusAfter: applyFailureTrace.causalStatusAfter,
+          consumerEventId: applyFailureTrace.consumerEventId,
+          consumerSubsystem: applyFailureTrace.consumerSubsystem,
           currentPhase: manualTaskPhaseLabels.failed,
           error: applyFailureMessage,
           events: [
             ...current.events,
             manualEvent("failed", "failed", applyFailureMessage),
           ],
+          invocationEventId: applyFailureTrace.invocationEventId,
           isApplying: false,
+          outputHash: outputHashFromPayload(applyPayload),
           reasonCode: applyFailureReasonCode,
           routeCalled: "/v1/actions/execute-approved",
           status: "error",
           taskId,
           technicalDetail: safePayloadSummary(applyPayload),
+          traceId: applyFailureTrace.traceId,
         }));
         return;
       }
@@ -9157,6 +9175,7 @@ export function CodingCockpitShell() {
           plan2SubsystemIntegrationsFromPayload(applyPayload).length > 0
             ? plan2SubsystemIntegrationsFromPayload(applyPayload)
             : current.plan2SubsystemIntegrations,
+        outputHash: outputHashFromPayload(applyPayload),
         traceId: causalTrace.traceId,
         invocationEventId: causalTrace.invocationEventId,
         consumerEventId: causalTrace.consumerEventId,
@@ -9676,6 +9695,15 @@ export function CodingCockpitShell() {
     ["target", currentTaskTarget],
     ["route", previewState.routeCalled ?? "none"],
     ["consumer", previewState.consumerSubsystem ?? "none"],
+  ];
+  const plan42OutputContractItems = [
+    ["task_id", previewState.taskId || "none"],
+    ["trace_id", previewState.traceId ?? "none"],
+    ["invocation_event_id", previewState.invocationEventId ?? "none"],
+    ["consumer_event_id", previewState.consumerEventId ?? "none"],
+    ["consumer_subsystem", previewState.consumerSubsystem ?? "none"],
+    ["output_hash", previewState.outputHash ?? "none"],
+    ["status", previewState.causalStatusAfter ?? previewState.previewStatus],
   ];
   const plan42ProgressLedgerItems = simpleProgressItems.map((item) => [
     item.label,
@@ -10436,9 +10464,10 @@ export function CodingCockpitShell() {
                   </li>
                 ))}
               </ol>
-              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
                 {[
                   ["Task ledger", plan42TaskLedgerItems],
+                  ["Output contract", plan42OutputContractItems],
                   ["Progress ledger", plan42ProgressLedgerItems],
                   ["Specialists and workers", plan42SpecialistWorkerItems],
                 ].map(([title, rows]) => (
@@ -12369,6 +12398,25 @@ export function causalTraceFromPayload(payload: unknown): CausalTraceFields {
     consumerSubsystem: stringValue(trace.consumer_subsystem) ?? null,
     causalStatusAfter: stringValue(trace.status_after) ?? null,
   };
+}
+
+export function outputHashFromPayload(payload: unknown): string | null {
+  const record = asRecord(payload);
+  const task = asRecord(record.task);
+  const execution = asRecord(record.execution);
+  const taskExecution = asRecord(task.execution);
+  const taskAudit = nestedRecord(task, ["ast_snapshot", "approved_execution_evidence", "audit"]);
+  return (
+    stringValue(record.output_hash) ??
+    stringValue(record.outputHash) ??
+    stringValue(execution.output_hash) ??
+    stringValue(execution.outputHash) ??
+    stringValue(taskExecution.output_hash) ??
+    stringValue(taskExecution.outputHash) ??
+    stringValue(taskAudit.output_hash) ??
+    stringValue(taskAudit.outputHash) ??
+    null
+  );
 }
 
 export function plan2SubsystemIntegrationsFromPayload(payload: unknown): Plan2SubsystemIntegration[] {

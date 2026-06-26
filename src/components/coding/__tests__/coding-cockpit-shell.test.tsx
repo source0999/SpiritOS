@@ -7,6 +7,7 @@ import CodingCockpitShell, {
   changedFilesFromPayload,
   changedFileSnapshotsFromPayload,
   executeReadyReverseDiff,
+  outputHashFromPayload,
   plan2SubsystemIntegrationsFromPayload,
   reverseUnifiedDiff,
   snapshotRestored,
@@ -1084,6 +1085,25 @@ describe("CodingCockpitShell", () => {
     });
   });
 
+  it("reads output hashes from execute-approved payloads", () => {
+    expect(outputHashFromPayload({ output_hash: "sha256:top" })).toBe("sha256:top");
+    expect(outputHashFromPayload({ execution: { output_hash: "sha256:execution" } })).toBe("sha256:execution");
+    expect(outputHashFromPayload({ task: { execution: { outputHash: "sha256:task" } } })).toBe("sha256:task");
+    expect(
+      outputHashFromPayload({
+        task: {
+          ast_snapshot: {
+            approved_execution_evidence: {
+              audit: {
+                output_hash: "sha256:audit",
+              },
+            },
+          },
+        },
+      }),
+    ).toBe("sha256:audit");
+  });
+
   it("preserves execute-approved causal contract failures on the operator surface", () => {
     const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
     expect(shellSrc).toContain("const applyFailureReasonCode =");
@@ -1100,9 +1120,13 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).toContain("Brain-stage and worker ledger");
     expect(shellSrc).toContain("plan42BrainStageTimelineItems");
     expect(shellSrc).toContain("plan42TaskLedgerItems");
+    expect(shellSrc).toContain("plan42OutputContractItems");
     expect(shellSrc).toContain("plan42ProgressLedgerItems");
     expect(shellSrc).toContain("plan42SpecialistWorkerItems");
     expect(shellSrc).toContain("plan_4_2_operator_ledger");
+    expect(shellSrc).toContain("output_contract");
+    expect(shellSrc).toContain("Output contract");
+    expect(shellSrc).toContain("outputHashFromPayload(applyPayload)");
     expect(shellSrc).not.toContain("Plan 4.2 GO");
     expect(shellSrc).not.toContain("4.2.1 GO");
   });

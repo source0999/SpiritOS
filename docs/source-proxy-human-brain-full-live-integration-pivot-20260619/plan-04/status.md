@@ -1,6 +1,6 @@
 # Plan 4/6 Status
 
-Status: `PLAN4_INCREMENT_4_2_1_GO`.
+Status: `PLAN4_INCREMENT_4_2_2_GO`.
 Plan gate: `BRITTON_APPROVED_PLAN_4_START_20260625`.
 
 Increment 4.1.1 started after Britton approval on 2026-06-25.
@@ -37,4 +37,16 @@ Focused 4.2.1 proof: `npm test -- --run src/components/coding/__tests__/coding-c
 
 Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-browser-proof-20260625.md`.
 
-Next incomplete Plan 4 increment: `4.2.2`.
+Increment 4.2.2 status: `GO`.
+
+Increment 4.2.2 packet: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-output-contract-ledger-20260625.md`.
+
+Current 4.2.2 implemented change: `/coding` now preserves the Plan 4 typed output contract in the visible Plan 4.2 ledger and copied diagnostics, including causal trace fields, consumer event/subsystem, output hash, and status.
+
+Focused 4.2.2 proof: `npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'reads output hashes from execute-approved payloads|renders the Plan 4.2 brain-stage and worker ledger without fake GO wording'` passed on `/home/source/SpiritOS`.
+
+Browser/operator proof: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-browser-proof-20260625.md`.
+
+Phase 4.2 closeout review: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-2-closeout-review-20260625.md`.
+
+Next incomplete Plan 4 increment: `4.3.1`.

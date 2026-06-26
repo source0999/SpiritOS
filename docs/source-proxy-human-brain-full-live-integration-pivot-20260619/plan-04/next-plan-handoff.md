@@ -4,7 +4,7 @@ Previous plan required deliverables are listed in plan.md. Inputs required by th
 
 ## Current Plan 4 State - 2026-06-25
 
-Status: `PLAN4_INCREMENT_4_2_1_GO`
+Status: `PLAN4_INCREMENT_4_2_2_GO`
 
 Increment 4.1.1 has a focused code guard in `/v1/actions/execute-approved`: a successful Source Proxy apply response must include `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, and `consumer_subsystem`, or the route returns `plan4_execute_approved_contract_missing` instead of a false success.
 
@@ -85,6 +85,41 @@ Proof summary:
 
 Increment 4.2.1 verdict: `GO`.
 
-Next incomplete Plan 4 increment: `4.2.2`.
+Increment 4.2.2 is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-output-contract-ledger-20260625.md`
+
+4.2.2 implemented change:
+
+- `/coding` preserves the typed Plan 4 output contract in the visible Plan 4.2 ledger and copied diagnostics.
+- The output contract includes task id, trace id, invocation event id, consumer event id, consumer subsystem, output hash, and status.
+- Fail-closed execute-approved responses preserve those fields when the payload provides them.
+
+Focused 4.2.2 check:
+
+```text
+npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'reads output hashes from execute-approved payloads|renders the Plan 4.2 brain-stage and worker ledger without fake GO wording'
+2 targeted tests passed
+```
+
+Browser/operator proof passed and is recorded here:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-browser-proof-20260625.md`
+
+Proof summary:
+
+- `/coding` was loaded from the existing Dell Next dev server at `https://10.0.0.186:3000/coding`.
+- Playwright route interception exercised `/v1/decisions/prompt-packet`, `/v1/verification/diff-preview`, and `/v1/actions/execute-approved`.
+- The visible output-contract ledger preserved task id, trace id, invocation event id, consumer event id, consumer subsystem, output hash, and status.
+- Copied diagnostics preserved the same `output_contract`.
+- No apply success was displayed.
+
+Phase 4.2 closeout review:
+
+`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-2-closeout-review-20260625.md`
+
+Increment 4.2.2 verdict: `GO`.
+
+Next incomplete Plan 4 increment: `4.3.1`.
 
 Do not start Plan 5/6.

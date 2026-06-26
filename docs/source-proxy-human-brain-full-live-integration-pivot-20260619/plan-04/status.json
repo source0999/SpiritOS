@@ -1,14 +1,15 @@
 {
   "plan": 4,
   "title": "Canonical /coding UI/API Consolidation",
-  "status": "PLAN4_INCREMENT_4_2_1_GO",
+  "status": "PLAN4_INCREMENT_4_2_2_GO",
   "gate_status": "BRITTON_APPROVED_PLAN_4_START_20260625",
   "implementation_performed": true,
-  "current_increment": "4.2.1",
+  "current_increment": "4.2.2",
   "completed_increments": [
     "4.1.1",
     "4.1.2",
-    "4.2.1"
+    "4.2.1",
+    "4.2.2"
   ],
   "implemented_change": "execute-approved bridge fails closed when successful Source Proxy response lacks Plan 4 causal output contract fields",
   "required_contract_fields": [
@@ -48,6 +49,16 @@
       "command": "node_repl Playwright chromium executable with page.route interception against /coding",
       "cwd": "Z:/",
       "result": "PASS_BROWSER_OPERATOR_PLAN_4_2_LEDGER_VISIBLE"
+    },
+    {
+      "command": "npm test -- --run src/components/coding/__tests__/coding-cockpit-shell.test.tsx -t 'reads output hashes from execute-approved payloads|renders the Plan 4.2 brain-stage and worker ledger without fake GO wording'",
+      "cwd": "/home/source/SpiritOS",
+      "result": "PASS_2_TARGETED_TESTS"
+    },
+    {
+      "command": "node_repl Playwright chromium executable with page.route interception against /coding",
+      "cwd": "Z:/",
+      "result": "PASS_BROWSER_OPERATOR_PLAN_4_2_OUTPUT_CONTRACT_VISIBLE_AND_COPIED"
     }
   ],
   "live_canonical_route_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-1-1-live-proof-20260625.md",
@@ -58,6 +69,10 @@
   "increment_4_2_1_status": "GO",
   "increment_4_2_1_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-operator-ledger-20260625.md",
   "increment_4_2_1_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-1-browser-proof-20260625.md",
-  "next_incomplete_increment": "4.2.2",
+  "increment_4_2_2_status": "GO",
+  "increment_4_2_2_packet": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-output-contract-ledger-20260625.md",
+  "increment_4_2_2_browser_proof": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/increment-4-2-2-browser-proof-20260625.md",
+  "phase_4_2_closeout_review": "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-04/phase-4-2-closeout-review-20260625.md",
+  "next_incomplete_increment": "4.3.1",
   "next_plan_authorized": false
 }
