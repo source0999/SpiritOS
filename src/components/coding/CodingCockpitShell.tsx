@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, FileText, Plus, ShieldCheck } from "lucide-react";
 
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
@@ -648,6 +648,7 @@ type AppliedRunReceipt = {
 const appliedRunReceiptStorageKey = "spiritos:coding:applied-run-receipts:v1";
 const promptHistoryStorageKey = "spiritos:coding:prompt-history:v1";
 const reversibleSuiteStorageKey = "spiritos:coding:reversible-suite-state:v1";
+const dummyCoderRunStorageKey = "spiritos:coding:dummy-coder-selected-run:v1";
 
 type BackendRunSyncState = {
   runId: string;
@@ -812,6 +813,125 @@ function clearStoredReversibleSuiteState() {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(reversibleSuiteStorageKey);
   window.localStorage.removeItem(reversibleSuiteStorageKey);
+}
+
+function defaultDummyCoderRunState(
+  message = "No LumaCart prompt has been run in this panel.",
+  status: DummyCoder10RunState["status"] = "idle",
+): DummyCoder10RunState {
+  return {
+    changedFiles: [],
+    checksRun: [],
+    diffSource: null,
+    errorText: null,
+    fallbackUsed: null,
+    generatedDiffByBackend: null,
+    generationSource: null,
+    grader: null,
+    message,
+    modelOutputClassification: null,
+    packet: null,
+    rawBackendStatus: null,
+    recommendedNextAction: null,
+    scaffoldUsed: null,
+    selectedPromptId: null,
+    taskId: null,
+    status,
+    trialResultTrustStatus: null,
+    verificationStatus: null,
+  };
+}
+
+function storedDummyCoderRunSnapshot(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(dummyCoderRunStorageKey);
+}
+
+function isDummyCoderRunStatus(value: unknown): value is DummyCoder10RunState["status"] {
+  return (
+    value === "idle" ||
+    value === "starting" ||
+    value === "request_sent" ||
+    value === "running" ||
+    value === "complete" ||
+    value === "blocked" ||
+    value === "applied" ||
+    value === "cleared" ||
+    value === "error"
+  );
+}
+
+function storedStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function storedStringOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function storedBooleanOrNull(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
+
+function loadStoredDummyCoderRunState(): DummyCoder10RunState {
+  if (typeof window === "undefined") return defaultDummyCoderRunState();
+  try {
+    const parsed = JSON.parse(storedDummyCoderRunSnapshot() ?? "null") as Record<string, unknown> | null;
+    if (!parsed || typeof parsed !== "object" || !isDummyCoderRunStatus(parsed.status)) {
+      return defaultDummyCoderRunState();
+    }
+    if (parsed.status === "idle" || parsed.status === "cleared") {
+      return defaultDummyCoderRunState(storedStringOrNull(parsed.message) ?? undefined, parsed.status);
+    }
+    const selectedPromptId = storedStringOrNull(parsed.selectedPromptId);
+    const selectedPromptKnown = selectedPromptId
+      ? dummyCoder10Prompts.some((prompt) => prompt.id === selectedPromptId)
+      : false;
+    if (!selectedPromptKnown) return defaultDummyCoderRunState();
+    return {
+      changedFiles: storedStringArray(parsed.changedFiles),
+      checksRun: storedStringArray(parsed.checksRun),
+      diffSource: storedStringOrNull(parsed.diffSource),
+      errorText: storedStringOrNull(parsed.errorText),
+      fallbackUsed: storedBooleanOrNull(parsed.fallbackUsed),
+      generatedDiffByBackend: storedBooleanOrNull(parsed.generatedDiffByBackend),
+      generationSource: storedStringOrNull(parsed.generationSource),
+      grader:
+        parsed.grader && typeof parsed.grader === "object"
+          ? (parsed.grader as DummyCoder10GradingResult)
+          : null,
+      message: storedStringOrNull(parsed.message) ?? "Selected prompt state restored after browser refresh.",
+      modelOutputClassification: storedStringOrNull(parsed.modelOutputClassification),
+      packet: parsed.packet ?? null,
+      rawBackendStatus: storedStringOrNull(parsed.rawBackendStatus),
+      recommendedNextAction: storedStringOrNull(parsed.recommendedNextAction),
+      scaffoldUsed: storedBooleanOrNull(parsed.scaffoldUsed),
+      selectedPromptId,
+      taskId: storedStringOrNull(parsed.taskId),
+      status:
+        parsed.status === "starting" || parsed.status === "request_sent" || parsed.status === "running"
+          ? parsed.status
+          : parsed.status,
+      trialResultTrustStatus: storedStringOrNull(parsed.trialResultTrustStatus),
+      verificationStatus: storedStringOrNull(parsed.verificationStatus),
+    };
+  } catch {
+    return defaultDummyCoderRunState();
+  }
+}
+
+function storeDummyCoderRunState(state: DummyCoder10RunState) {
+  if (typeof window === "undefined") return;
+  if (state.status === "idle" || state.status === "cleared") {
+    window.localStorage.removeItem(dummyCoderRunStorageKey);
+    return;
+  }
+  window.localStorage.setItem(dummyCoderRunStorageKey, JSON.stringify(state));
+}
+
+function clearStoredDummyCoderRunState() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(dummyCoderRunStorageKey);
 }
 
 function durableRunStatusForSuite(state: ReversibleSuiteState): DurableCodingRunStatus {
@@ -3555,29 +3675,16 @@ export function CodingCockpitShell() {
     () => defaultReversibleSuiteState(),
   );
   const [reversibleTrialCount, setReversibleTrialCount] = useState<ReversibleTrialCount>(10);
-  const [selectedDummyCoderPromptId, setSelectedDummyCoderPromptId] = useState(dummyCoder10Prompts[0].id);
-  const [dummyCoderRunCopyStatus, setDummyCoderRunCopyStatus] = useState("");
-  const [dummyCoderRunState, setDummyCoderRunState] = useState<DummyCoder10RunState>({
-    changedFiles: [],
-    checksRun: [],
-    diffSource: null,
-    fallbackUsed: null,
-    generatedDiffByBackend: null,
-    generationSource: null,
-    grader: null,
-    message: "No LumaCart prompt has been run in this panel.",
-    errorText: null,
-    modelOutputClassification: null,
-    packet: null,
-    rawBackendStatus: null,
-    recommendedNextAction: null,
-    scaffoldUsed: null,
-    selectedPromptId: null,
-    taskId: null,
-    status: "idle",
-    trialResultTrustStatus: null,
-    verificationStatus: null,
+  const [selectedDummyCoderPromptId, setSelectedDummyCoderPromptId] = useState(() => {
+    const stored = loadStoredDummyCoderRunState();
+    return stored.selectedPromptId && dummyCoder10Prompts.some((prompt) => prompt.id === stored.selectedPromptId)
+      ? stored.selectedPromptId
+      : dummyCoder10Prompts[0].id;
   });
+  const [dummyCoderRunCopyStatus, setDummyCoderRunCopyStatus] = useState("");
+  const [dummyCoderRunState, setDummyCoderRunState] = useState<DummyCoder10RunState>(
+    () => loadStoredDummyCoderRunState(),
+  );
   const [composerTiming, setComposerTiming] = useState<ComposerTimingState>({
     diffPreviewMs: null,
     promptPacketMs: null,
@@ -3634,6 +3741,10 @@ export function CodingCockpitShell() {
   useEffect(() => {
     appliedRunReceiptsRef.current = appliedRunReceipts;
   }, [appliedRunReceipts]);
+
+  useEffect(() => {
+    storeDummyCoderRunState(dummyCoderRunState);
+  }, [dummyCoderRunState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -5186,6 +5297,17 @@ export function CodingCockpitShell() {
     });
   }
 
+  const updateDummyCoderRunState = useCallback(
+    (nextState: DummyCoder10RunState | ((current: DummyCoder10RunState) => DummyCoder10RunState)) => {
+      setDummyCoderRunState((current) => {
+        const next = typeof nextState === "function" ? nextState(current) : nextState;
+        storeDummyCoderRunState(next);
+        return next;
+      });
+    },
+    [],
+  );
+
   function designReportText() {
     return [
       "SpiritOS design report",
@@ -5758,27 +5880,8 @@ export function CodingCockpitShell() {
 
   function clearDummyCoder10RunState(message = "No applied selected-prompt edits to reverse. Results cleared.") {
     setDummyCoderRunCopyStatus("");
-    setDummyCoderRunState({
-      changedFiles: [],
-      checksRun: [],
-      diffSource: null,
-      errorText: null,
-      fallbackUsed: null,
-      generatedDiffByBackend: null,
-      generationSource: null,
-      grader: null,
-      message,
-      modelOutputClassification: null,
-      packet: null,
-      rawBackendStatus: null,
-      recommendedNextAction: null,
-      scaffoldUsed: null,
-      selectedPromptId: null,
-      taskId: null,
-      status: "cleared",
-      trialResultTrustStatus: null,
-      verificationStatus: null,
-    });
+    clearStoredDummyCoderRunState();
+    updateDummyCoderRunState(defaultDummyCoderRunState(message, "cleared"));
   }
 
   function selectedPromptReceiptFromState(state = dummyCoderRunState) {
@@ -5792,7 +5895,7 @@ export function CodingCockpitShell() {
     const prompt = selectedDummyCoderPrompt;
     const packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
     setDummyCoderRunCopyStatus("");
-    setDummyCoderRunState({
+    updateDummyCoderRunState({
       changedFiles: [],
       checksRun: [],
       diffSource: null,
@@ -5828,7 +5931,7 @@ export function CodingCockpitShell() {
       if (!taskId) {
         throw new Error("Long-running task create did not return a task id.");
       }
-      setDummyCoderRunState((current) => ({
+      updateDummyCoderRunState((current) => ({
         ...current,
         message: `Running task ${taskId}`,
         rawBackendStatus: "task_created",
@@ -5836,7 +5939,7 @@ export function CodingCockpitShell() {
         taskId,
       }));
 
-      setDummyCoderRunState((current) => ({
+      updateDummyCoderRunState((current) => ({
         ...current,
         message: "Request sent",
         rawBackendStatus: "request_sent",
@@ -5864,7 +5967,7 @@ export function CodingCockpitShell() {
         headers: { "Content-Type": "application/json" },
         method: "POST",
       }, TRIAL_PROMPT_PACKET_TIMEOUT_MS);
-      setDummyCoderRunState((current) => ({
+      updateDummyCoderRunState((current) => ({
         ...current,
         message: `Running task ${taskId}`,
         rawBackendStatus: `/v1/decisions/prompt-packet:${response.status}`,
@@ -5914,7 +6017,7 @@ export function CodingCockpitShell() {
       let verificationStatus = stringValue(record.verification_status) ?? stringValue(record.checks_result) ?? null;
       let applyMessage: string | null = null;
       if (response.ok && proposedDiff.trim() && selectedTarget) {
-        setDummyCoderRunState((current) => ({
+        updateDummyCoderRunState((current) => ({
           ...current,
           message: `Running task ${taskId}: previewing diff`,
           rawBackendStatus,
@@ -5950,7 +6053,7 @@ export function CodingCockpitShell() {
         if (diffStatus === "blocked") {
           throw new Error(messageFromPayload(diffPayload, diffResponse.status));
         }
-        setDummyCoderRunState((current) => ({
+        updateDummyCoderRunState((current) => ({
           ...current,
           changedFiles: previewChangedFiles,
           message: `Running task ${taskId}: applying diff`,
@@ -6036,9 +6139,9 @@ export function CodingCockpitShell() {
             : applyMessage
               ? "applied"
               : response.ok
-                ? "complete"
-                : "error";
-      setDummyCoderRunState({
+              ? "complete"
+              : "error";
+      updateDummyCoderRunState({
         changedFiles: appliedChangedFiles,
         checksRun,
         diffSource,
@@ -6064,7 +6167,7 @@ export function CodingCockpitShell() {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Dummy Coder 10 prompt failed.";
-      setDummyCoderRunState((current) => ({
+      updateDummyCoderRunState((current) => ({
         ...current,
         errorText: message,
         message,

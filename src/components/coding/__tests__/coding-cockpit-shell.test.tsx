@@ -22,6 +22,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const targetFile = "src/components/coding/CodingCockpitShell.tsx";
+const dummyCoderRunStorageKey = "spiritos:coding:dummy-coder-selected-run:v1";
 const liveDiff = [
   `diff --git a/${targetFile} b/${targetFile}`,
   `--- a/${targetFile}`,
@@ -357,6 +358,12 @@ describe("CodingCockpitShell", () => {
     expect(within(activePreview).getByText("/v1/decisions/prompt-packet request_sent")).toBeInTheDocument();
     expect(within(activePreview).getByText("not recorded yet")).toBeInTheDocument();
     expect(within(activePreview).getByText("Runner prompt sent. Waiting for backend result.")).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+      rawBackendStatus: "request_sent",
+      selectedPromptId: "coder-001-init-dummy-product-site",
+      status: "request_sent",
+      taskId: "task_pending_001",
+    });
 
     const activePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
     expect(within(activePipeline).getByText("task_pending_001")).toBeInTheDocument();
@@ -398,9 +405,59 @@ describe("CodingCockpitShell", () => {
     fireEvent.click(within(runner).getByRole("button", { name: "Reverse trial edits and clear results" }));
 
     await waitFor(() => expect(within(runner).getByText("Cleared")).toBeInTheDocument());
+    expect(window.localStorage.getItem(dummyCoderRunStorageKey)).toBeNull();
     fireEvent.click(within(runner).getByRole("button", { name: "Copy diagnostics" }));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
     expect(String(writeText.mock.calls.at(-1)?.[0] ?? "")).toContain("selected_prompt_result: none");
+  });
+
+  it("rehydrates selected-prompt result after a browser refresh", async () => {
+    installCommonFetchMock();
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: ["tests/ui-agent-trials/fixtures/dummy-product-site/package.json"],
+        checksRun: ["git diff --check"],
+        diffSource: "model",
+        errorText: null,
+        fallbackUsed: false,
+        generatedDiffByBackend: true,
+        generationSource: "model",
+        grader: {
+          label: "PASS",
+          reason: "Dummy project init created the expected files.",
+          recommendedNextAction: "Review the applied diff.",
+          resultState: "PASS_DUMMY_PROJECT_INIT",
+          score: 1,
+        },
+        message: "Applied approved diff.",
+        modelOutputClassification: "unified_diff",
+        packet: null,
+        rawBackendStatus: "applied",
+        recommendedNextAction: "Review the applied diff.",
+        scaffoldUsed: false,
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        status: "applied",
+        taskId: "task_reload_001",
+        trialResultTrustStatus: "trusted",
+        verificationStatus: "Applied approved diff.",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    await waitFor(() => expect(within(runner).getByText("Applied / review")).toBeInTheDocument());
+    expect(within(runner).getByText(/Task task_reload_001/)).toBeInTheDocument();
+    expect(within(runner).getByText(/Changed: tests\/ui-agent-trials\/fixtures\/dummy-product-site\/package\.json/)).toBeInTheDocument();
+
+    const activePreview = screen.getByRole("region", { name: "Active run preview" });
+    await waitFor(() => expect(within(activePreview).getByText("Selected trial applied")).toBeInTheDocument());
+    expect(within(activePreview).getByText("task_reload_001")).toBeInTheDocument();
+
+    const activePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
+    expect(within(activePipeline).getByText("task_reload_001")).toBeInTheDocument();
+    expect(within(activePipeline).getByText("Route observed: applied")).toBeInTheDocument();
   });
 
   it("runs natural prompts as live apply, records proof, enables diagnostics, and offers run-only revert", async () => {
