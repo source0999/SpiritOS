@@ -37,14 +37,14 @@ function jsonResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), { status });
 }
 
-function installCommonFetchMock(extra?: (url: string, init?: RequestInit) => Response | null) {
+function installCommonFetchMock(extra?: (url: string, init?: RequestInit) => Response | Promise<Response> | null) {
   const calls: Array<{ body: string; url: string }> = [];
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
     const url = String(input);
     const body = typeof init?.body === "string" ? init.body : "";
     calls.push({ body, url });
 
-    const handled = extra?.(url, init);
+    const handled = await extra?.(url, init);
     if (handled) return handled;
 
     if (url.includes("/v1/self/status")) {
@@ -306,6 +306,39 @@ describe("CodingCockpitShell", () => {
     expect(JSON.stringify(body)).not.toMatch(/run_full_suite|25|50|100/i);
   });
 
+  it("shows selected-prompt starting state while waiting for backend task id", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/tasks/long-running")) {
+        return new Promise<Response>(() => undefined);
+      }
+      return null;
+    });
+    render(<CodingCockpitShell />);
+
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(within(runner).getByRole("button", { name: "Run selected prompt" })).toBeDisabled());
+    expect(within(runner).getAllByText("Starting selected prompt. Waiting for backend task id.").length).toBeGreaterThan(0);
+    expect(within(runner).getByText("Starting selected prompt...")).toBeInTheDocument();
+
+    const activePreview = screen.getByRole("region", { name: "Active run preview" });
+    expect(within(activePreview).getByText("Starting selected prompt. Waiting for backend task id.")).toBeInTheDocument();
+    expect(within(activePreview).getByText("pending selected-trial task")).toBeInTheDocument();
+    expect(within(activePreview).getByText("/v1/tasks/long-running:creating_task")).toBeInTheDocument();
+    expect(within(activePreview).getByText("not recorded yet")).toBeInTheDocument();
+
+    const activePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
+    expect(within(activePipeline).getByText("pending selected-trial task")).toBeInTheDocument();
+    expect(within(activePipeline).getAllByText("Waiting for backend task id.").length).toBeGreaterThan(0);
+    expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+      rawBackendStatus: "/v1/tasks/long-running:creating_task",
+      selectedPromptId: "coder-001-init-dummy-product-site",
+      status: "starting",
+      taskId: null,
+    });
+  });
+
   it("shows selected-prompt pending state immediately after click", async () => {
     const promptPacketGate: { release: () => void } = { release: () => undefined };
     installCommonFetchMock((url) => {
@@ -370,6 +403,60 @@ describe("CodingCockpitShell", () => {
     expect(within(activePipeline).getAllByText("running").length).toBeGreaterThan(0);
     expect(within(activePipeline).getAllByText("Waiting for backend result.").length).toBeGreaterThan(0);
     promptPacketGate.release();
+  });
+
+  it("fails selected-prompt start visibly when task creation returns no task id", async () => {
+    const calls = installCommonFetchMock((url) => {
+      if (url.includes("/v1/tasks/long-running")) {
+        return jsonResponse({ status: "created_without_id" });
+      }
+      return null;
+    });
+    render(<CodingCockpitShell />);
+
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(within(runner).getByText("Failed")).toBeInTheDocument());
+    expect(within(runner).getAllByText("No backend task id returned by /v1/tasks/long-running.").length).toBeGreaterThan(0);
+    expect(calls.some((call) => call.url.includes("/v1/decisions/prompt-packet"))).toBe(false);
+
+    const activePreview = screen.getByRole("region", { name: "Active run preview" });
+    expect(within(activePreview).getByText("No backend task id returned by /v1/tasks/long-running.")).toBeInTheDocument();
+    expect(within(activePreview).getByText("pending selected-trial task")).toBeInTheDocument();
+    expect(within(activePreview).getByText("/v1/tasks/long-running:no_task_id")).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+      rawBackendStatus: "/v1/tasks/long-running:no_task_id",
+      selectedPromptId: "coder-001-init-dummy-product-site",
+      status: "error",
+      taskId: null,
+    });
+  });
+
+  it("times out selected-prompt start visibly when task creation does not return", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/tasks/long-running")) {
+        return Promise.reject(new DOMException("The operation was aborted.", "AbortError"));
+      }
+      return null;
+    });
+    render(<CodingCockpitShell />);
+
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(within(runner).getByText("Timeout")).toBeInTheDocument());
+    expect(within(runner).getAllByText("No backend task id returned yet. The selected prompt may be stuck before task creation.").length).toBeGreaterThan(0);
+
+    const activePreview = screen.getByRole("region", { name: "Active run preview" });
+    expect(within(activePreview).getByText("Selected trial timeout")).toBeInTheDocument();
+    expect(within(activePreview).getByText("/v1/tasks/long-running:timeout")).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+      rawBackendStatus: "/v1/tasks/long-running:timeout",
+      selectedPromptId: "coder-001-init-dummy-product-site",
+      status: "timeout",
+      taskId: null,
+    });
   });
 
   it("clears selected-prompt blocked result with the Trial Runner reverse clear action", async () => {
@@ -458,6 +545,29 @@ describe("CodingCockpitShell", () => {
     const activePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
     expect(within(activePipeline).getByText("task_reload_001")).toBeInTheDocument();
     expect(within(activePipeline).getByText("Route observed: applied")).toBeInTheDocument();
+  });
+
+  it("rehydrates stale selected-prompt in-flight state as a clearable error", async () => {
+    installCommonFetchMock();
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: [],
+        checksRun: [],
+        message: "Request sent",
+        rawBackendStatus: "request_sent",
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        status: "request_sent",
+        taskId: "task_stale_001",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    await waitFor(() => expect(within(runner).getByText("Timeout")).toBeInTheDocument());
+    expect(within(runner).getByText("Selected prompt timed out before the backend returned a prompt-packet result.")).toBeInTheDocument();
+    expect(within(runner).getByRole("button", { name: "Run selected prompt" })).toBeEnabled();
   });
 
   it("runs natural prompts as live apply, records proof, enables diagnostics, and offers run-only revert", async () => {

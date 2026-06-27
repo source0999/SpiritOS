@@ -268,7 +268,7 @@ type ReversibleSuiteAbort = {
   step: string;
 };
 type DummyCoder10RunState = {
-  status: "idle" | "starting" | "request_sent" | "running" | "complete" | "blocked" | "applied" | "cleared" | "error";
+  status: "idle" | "starting" | "request_sent" | "running" | "complete" | "blocked" | "applied" | "cleared" | "error" | "timeout";
   selectedPromptId: string | null;
   taskId: string | null;
   message: string;
@@ -474,6 +474,9 @@ const TRIAL_BETWEEN_PROMPTS_STALE_MS = 45_000;
 const TRIAL_DURABLE_ROW_SYNC_TIMEOUT_MS = 20_000;
 const TRIAL_LONG_RUNNING_TIMEOUT_MS = 30_000;
 const TRIAL_LONG_RUNNING_MAX_ATTEMPTS = 3;
+const SELECTED_PROMPT_WAITING_FOR_TASK_ID = "Starting selected prompt. Waiting for backend task id.";
+const SELECTED_PROMPT_TASK_ID_STUCK_MESSAGE =
+  "No backend task id returned yet. The selected prompt may be stuck before task creation.";
 const TRIAL_CLEANUP_DRAIN_MAX_PASSES = 3;
 const TRIAL_CLEANUP_ROUTE_HEALTH_ATTEMPTS = 8;
 const PROTECTED_FORBIDDEN_FILES = [
@@ -649,6 +652,7 @@ const appliedRunReceiptStorageKey = "spiritos:coding:applied-run-receipts:v1";
 const promptHistoryStorageKey = "spiritos:coding:prompt-history:v1";
 const reversibleSuiteStorageKey = "spiritos:coding:reversible-suite-state:v1";
 const dummyCoderRunStorageKey = "spiritos:coding:dummy-coder-selected-run:v1";
+const dummyCoderRunInFlightStaleMs = 120_000;
 
 type BackendRunSyncState = {
   runId: string;
@@ -857,7 +861,8 @@ function isDummyCoderRunStatus(value: unknown): value is DummyCoder10RunState["s
     value === "blocked" ||
     value === "applied" ||
     value === "cleared" ||
-    value === "error"
+    value === "error" ||
+    value === "timeout"
   );
 }
 
@@ -888,6 +893,21 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
       ? dummyCoder10Prompts.some((prompt) => prompt.id === selectedPromptId)
       : false;
     if (!selectedPromptKnown) return defaultDummyCoderRunState();
+    const storedAt = typeof parsed.storedAt === "number" ? parsed.storedAt : null;
+    const inFlight = parsed.status === "starting" || parsed.status === "request_sent" || parsed.status === "running";
+    if (inFlight && (!storedAt || Date.now() - storedAt > dummyCoderRunInFlightStaleMs)) {
+      return {
+        ...defaultDummyCoderRunState(
+          "Previous selected prompt timed out before returning a result. Clear it, then run the prompt again.",
+          "timeout",
+        ),
+        errorText: "Selected prompt timed out before the backend returned a prompt-packet result.",
+        rawBackendStatus: storedStringOrNull(parsed.rawBackendStatus) ?? "stale_request",
+        recommendedNextAction: "Clear the stale selected-prompt state, then rerun Prompt 1.",
+        selectedPromptId,
+        taskId: storedStringOrNull(parsed.taskId),
+      };
+    }
     return {
       changedFiles: storedStringArray(parsed.changedFiles),
       checksRun: storedStringArray(parsed.checksRun),
@@ -926,7 +946,7 @@ function storeDummyCoderRunState(state: DummyCoder10RunState) {
     window.localStorage.removeItem(dummyCoderRunStorageKey);
     return;
   }
-  window.localStorage.setItem(dummyCoderRunStorageKey, JSON.stringify(state));
+  window.localStorage.setItem(dummyCoderRunStorageKey, JSON.stringify({ ...state, storedAt: Date.now() }));
 }
 
 function clearStoredDummyCoderRunState() {
@@ -2365,7 +2385,7 @@ function selectedRunnerRouteLabel(state: DummyCoder10RunState): string {
   if (state.status === "request_sent") return "/v1/decisions/prompt-packet request_sent";
   if (state.status === "running") return state.rawBackendStatus ?? "selected runner running";
   if (state.status === "blocked") return state.rawBackendStatus ?? "selected runner blocked";
-  if (state.status === "error") return state.rawBackendStatus ?? "selected runner failed";
+  if (state.status === "error" || state.status === "timeout") return state.rawBackendStatus ?? "selected runner failed";
   if (state.status === "applied") return state.rawBackendStatus ?? "selected runner applied";
   if (state.status === "complete") return state.rawBackendStatus ?? "selected runner complete";
   return state.rawBackendStatus ?? "selected runner";
@@ -2382,7 +2402,8 @@ function selectedRunnerPreviewState(
 
   const active = state.status === "starting" || state.status === "request_sent" || state.status === "running";
   const blocked = state.status === "blocked";
-  const failed = state.status === "error";
+  const waitingForTaskId = state.status === "starting" && !state.taskId;
+  const failed = state.status === "error" || state.status === "timeout";
   const applied = state.status === "applied";
   const complete = state.status === "complete";
   const routeLabel = selectedRunnerRouteLabel(state);
@@ -2398,7 +2419,9 @@ function selectedRunnerPreviewState(
             ? "ready"
             : "satisfied"
           : "idle";
-  const currentPhase = state.status === "starting"
+  const currentPhase = waitingForTaskId
+    ? SELECTED_PROMPT_WAITING_FOR_TASK_ID
+    : state.status === "starting"
     ? "Creating selected trial task."
     : active
       ? "Backend request sent. Waiting for model/diff result."
@@ -2441,13 +2464,15 @@ function selectedRunnerPreviewState(
       : failed
         ? state.rawBackendStatus ?? "selected_runner_failed"
         : null,
-    requirementSummary: state.verificationStatus ?? (active ? "Waiting for backend result." : state.message),
+    requirementSummary: state.verificationStatus ?? (waitingForTaskId ? "Waiting for backend task id." : active ? "Waiting for backend result." : state.message),
     reviewerSummary: blocked
       ? "Selected runner stopped at a blocked boundary."
       : failed
         ? "Selected runner failed before review."
         : active
-          ? "Waiting for backend result."
+          ? waitingForTaskId
+            ? "Waiting for backend task id."
+            : "Waiting for backend result."
           : "Selected runner result recorded.",
     routeCalled: routeLabel,
     selectedTarget: prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot,
@@ -2460,9 +2485,11 @@ function selectedRunnerPreviewState(
     invocationEventId: null,
     consumerEventId: null,
     consumerSubsystem: null,
-    verifierSummary: state.verificationStatus ?? (active ? "Waiting for backend result." : "No verification recorded yet."),
+    verifierSummary: state.verificationStatus ?? (waitingForTaskId ? "Waiting for backend task id." : active ? "Waiting for backend result." : "No verification recorded yet."),
     technicalDetail: active
-      ? "selected_runner_backend_request_sent"
+      ? waitingForTaskId
+        ? "selected_runner_waiting_for_task_id"
+        : "selected_runner_backend_request_sent"
       : blocked
         ? "selected_runner_blocked"
         : failed
@@ -2478,7 +2505,7 @@ function selectedRunnerDisplayText(
   const title = `Coder ${String(prompt.number).padStart(3, "0")} - ${prompt.title}`;
   if (state.status === "starting") {
     return {
-      detail: "Runner prompt is creating a backend task. Preview has not returned yet.",
+      detail: SELECTED_PROMPT_WAITING_FOR_TASK_ID,
       title: "Runner starting",
     };
   }
@@ -2500,10 +2527,10 @@ function selectedRunnerDisplayText(
       title: "Selected trial blocked",
     };
   }
-  if (state.status === "error") {
+  if (state.status === "error" || state.status === "timeout") {
     return {
       detail: state.errorText ?? state.message ?? "Selected trial failed before a usable result.",
-      title: "Selected trial failed",
+      title: state.status === "timeout" ? "Selected trial timeout" : "Selected trial failed",
     };
   }
   if (state.status === "applied") {
@@ -3433,6 +3460,8 @@ function buildCodingPipelineSteps({
     previewState.isLoading ||
     previewState.isApplying ||
     previewState.events.length > 0;
+  const waitingForSelectedTaskId =
+    previewState.technicalDetail === "selected_runner_waiting_for_task_id" && !previewState.taskId;
   const hasPreviewDiff =
     Boolean(previewState.diff.trim()) ||
     currentChangedFilesDiagnostics.previewChangedFiles.length > 0;
@@ -3483,6 +3512,8 @@ function buildCodingPipelineSteps({
       label: "Preview diff",
       status: !hasStarted
         ? "pending"
+        : waitingForSelectedTaskId
+          ? "pending"
         : previewState.isLoading
           ? "running"
           : isFailed && !hasPreviewResult
@@ -3496,6 +3527,8 @@ function buildCodingPipelineSteps({
         ? formatList(currentChangedFilesDiagnostics.previewChangedFiles, "Preview diff has no changed files.")
         : previewState.status === "satisfied"
           ? "No diff required."
+          : waitingForSelectedTaskId
+            ? "Waiting for backend task id."
           : previewState.isLoading && previewState.taskId
             ? "Waiting for backend result."
           : previewState.blocker ?? previewState.error ?? "No preview diff yet.",
@@ -5891,6 +5924,46 @@ export function CodingCockpitShell() {
     ) ?? null;
   }
 
+  function failSelectedPromptStart(error: unknown) {
+    const message = error instanceof Error ? error.message : "Dummy Coder 10 prompt failed.";
+    const timeoutLayer = timeoutLayerFromError(error);
+    const timedOut =
+      timeoutLayer !== "network_fetch_error" &&
+      timeoutLayer !== "unknown_timeout" &&
+      /timeout|abort/i.test(`${message} ${timeoutLayer}`);
+    updateDummyCoderRunState((current) => {
+      const taskCreationFailed = !current.taskId && current.status === "starting";
+      if (taskCreationFailed && timedOut) {
+        return {
+          ...current,
+          errorText: SELECTED_PROMPT_TASK_ID_STUCK_MESSAGE,
+          message: SELECTED_PROMPT_TASK_ID_STUCK_MESSAGE,
+          rawBackendStatus: "/v1/tasks/long-running:timeout",
+          recommendedNextAction: "Retry Prompt 1 after confirming the long-running task route can create a durable task id.",
+          status: "timeout",
+        };
+      }
+      if (taskCreationFailed) {
+        return {
+          ...current,
+          errorText: message,
+          message,
+          rawBackendStatus: "/v1/tasks/long-running:no_task_id",
+          recommendedNextAction: "Inspect /v1/tasks/long-running before running this prompt again.",
+          status: "error",
+        };
+      }
+      return {
+        ...current,
+        errorText: message,
+        message,
+        rawBackendStatus: current.rawBackendStatus ?? "request_failed",
+        recommendedNextAction: "Inspect the prompt-packet route before running this prompt again.",
+        status: timedOut ? "timeout" : "error",
+      };
+    });
+  }
+
   async function handleRunDummyCoder10Prompt() {
     const prompt = selectedDummyCoderPrompt;
     const packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
@@ -5904,10 +5977,10 @@ export function CodingCockpitShell() {
       generatedDiffByBackend: null,
       generationSource: null,
       grader: null,
-      message: "Starting selected prompt...",
+      message: SELECTED_PROMPT_WAITING_FOR_TASK_ID,
       modelOutputClassification: null,
       packet,
-      rawBackendStatus: null,
+      rawBackendStatus: "/v1/tasks/long-running:creating_task",
       recommendedNextAction: null,
       scaffoldUsed: null,
       selectedPromptId: prompt.id,
@@ -5929,13 +6002,13 @@ export function CodingCockpitShell() {
       }
       const taskId = taskIdFromPayload(taskPayload);
       if (!taskId) {
-        throw new Error("Long-running task create did not return a task id.");
+        throw new Error("No backend task id returned by /v1/tasks/long-running.");
       }
       updateDummyCoderRunState((current) => ({
         ...current,
-        message: `Running task ${taskId}`,
+        message: `Request sent with task ${taskId}`,
         rawBackendStatus: "task_created",
-        status: "running",
+        status: "request_sent",
         taskId,
       }));
 
@@ -6166,15 +6239,7 @@ export function CodingCockpitShell() {
         verificationStatus,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Dummy Coder 10 prompt failed.";
-      updateDummyCoderRunState((current) => ({
-        ...current,
-        errorText: message,
-        message,
-        rawBackendStatus: "request_failed",
-        recommendedNextAction: "Inspect the prompt-packet route before running this prompt again.",
-        status: "error",
-      }));
+      failSelectedPromptStart(error);
     }
   }
 
@@ -10815,6 +10880,8 @@ export function CodingCockpitShell() {
                         className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
                           dummyCoderRunState.status === "error" || dummyCoderRunState.grader?.label === "INVALID"
                             ? "border-rose-300/40 bg-rose-300/10 text-rose-100"
+                            : dummyCoderRunState.status === "timeout"
+                              ? "border-rose-300/40 bg-rose-300/10 text-rose-100"
                             : dummyCoderRunState.status === "blocked" || dummyCoderRunState.grader?.label === "NEEDS_FIX"
                               ? "border-amber-300/40 bg-amber-300/10 text-amber-100"
                               : dummyCoderRunState.status === "applied" || dummyCoderRunState.grader
@@ -10834,6 +10901,8 @@ export function CodingCockpitShell() {
                                   ? "Needs fix"
                                   : dummyCoderRunState.status === "applied"
                                     ? "Applied / review"
+                                    : dummyCoderRunState.status === "timeout"
+                                      ? "Timeout"
                                     : dummyCoderRunState.status === "error"
                                       ? "Failed"
                                       : dummyCoderRunState.status === "cleared"
@@ -11453,7 +11522,7 @@ export function CodingCockpitShell() {
               <dl className="mt-4 grid gap-2 text-xs">
                 {[
                   ["Model", reversibleSuiteState.status !== "idle" ? reversibleSuiteState.model : activeRunProviderTruth.modelLabel],
-                  ["Task ID", activeRunDisplay.previewState.taskId || "none"],
+                  ["Task ID", activeRunDisplay.taskLabel],
                   ["Trace ID", activeRunDisplay.previewState.traceId ?? "none"],
                   ["Output hash", activeRunDisplay.previewState.outputHash ?? "none"],
                 ].map(([label, value]) => (
