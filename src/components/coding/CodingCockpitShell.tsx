@@ -4176,6 +4176,8 @@ export function CodingCockpitShell() {
     }
     if (dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared") {
       clearDummyCoder10RunState();
+      setReversibleSuiteCopyStatus("Selected-prompt result cleared. No applied edits were recorded.");
+      return;
     }
     const baseline = await refreshAgentLabBaseline();
     const resultsSnapshot = reversibleSuiteState.results;
@@ -4746,20 +4748,20 @@ export function CodingCockpitShell() {
     : trialRunnerBlock.message;
   const reversibleSuiteFinished =
     reversibleSuiteState.status === "done" || reversibleSuiteState.status === "failed";
+  const hasSelectedPromptResult =
+    dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared";
   const canCleanUpTrialRunner =
     !isReverting &&
     !reversibleSuiteBusy &&
     !backgroundCleanupActive &&
-    agentLabBaselineLoadState !== "loading" &&
-    (reversibleSuiteState.results.length > 0 ||
-      canRevertTrialRuns ||
-      suitePendingRevertCount > 0 ||
-      agentLabHasLeftovers ||
-      (dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared") ||
-      (reversibleTrialCategory === "Coder" && agentLabBaselineLoadState === "error") ||
-      (reversibleSuiteCanResume && Boolean(reversibleSuiteState.suiteId || backendRunSync.runId)));
-  const hasSelectedPromptResult =
-    dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared";
+    (hasSelectedPromptResult ||
+      (agentLabBaselineLoadState !== "loading" &&
+        (reversibleSuiteState.results.length > 0 ||
+          canRevertTrialRuns ||
+          suitePendingRevertCount > 0 ||
+          agentLabHasLeftovers ||
+          (reversibleTrialCategory === "Coder" && agentLabBaselineLoadState === "error") ||
+          (reversibleSuiteCanResume && Boolean(reversibleSuiteState.suiteId || backendRunSync.runId)))));
   const selectedPromptTrialLabel: ReversibleSuitePromptResult["visible_result_label"] =
     dummyCoderRunState.status === "starting" ||
     dummyCoderRunState.status === "request_sent" ||

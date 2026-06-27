@@ -462,7 +462,7 @@ describe("CodingCockpitShell", () => {
   it("clears selected-prompt blocked result with the Trial Runner reverse clear action", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    installCommonFetchMock((url) => {
+    const calls = installCommonFetchMock((url) => {
       if (url.includes("/v1/decisions/prompt-packet")) {
         return jsonResponse({
           coder_diagnostics: {
@@ -489,10 +489,16 @@ describe("CodingCockpitShell", () => {
     const activePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
     expect(within(activePipeline).getAllByText("blocked").length).toBeGreaterThan(0);
     expect(within(activePipeline).queryByText("failed")).not.toBeInTheDocument();
+    expect(within(runner).getByRole("button", { name: "Reverse trial edits and clear results" })).toBeEnabled();
+    const baselineCallsBeforeClear = calls.filter((call) => call.url.includes("/v1/coding/agent-lab-baseline")).length;
     fireEvent.click(within(runner).getByRole("button", { name: "Reverse trial edits and clear results" }));
 
     await waitFor(() => expect(within(runner).getByText("Cleared")).toBeInTheDocument());
     expect(window.localStorage.getItem(dummyCoderRunStorageKey)).toBeNull();
+    expect(within(runner).getAllByText("Selected-prompt result cleared. No applied edits were recorded.").length).toBeGreaterThan(0);
+    expect(calls.filter((call) => call.url.includes("/v1/coding/agent-lab-baseline")).length).toBe(baselineCallsBeforeClear);
+    await waitFor(() => expect(within(activePreview).getByText("not created")).toBeInTheDocument());
+    expect(within(activePreview).queryByText("Selected trial blocked")).not.toBeInTheDocument();
     fireEvent.click(within(runner).getByRole("button", { name: "Copy diagnostics" }));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
     expect(String(writeText.mock.calls.at(-1)?.[0] ?? "")).toContain("selected_prompt_result: none");
