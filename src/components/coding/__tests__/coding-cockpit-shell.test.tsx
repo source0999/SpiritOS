@@ -193,6 +193,10 @@ describe("CodingCockpitShell", () => {
 
     expect(screen.getByRole("heading", { name: "Active run preview" })).toBeInTheDocument();
     expect(screen.getByText("Active run")).toBeInTheDocument();
+    const idleActivePreview = screen.getByRole("region", { name: "Active run preview" });
+    expect(within(idleActivePreview).getByText("not created")).toBeInTheDocument();
+    expect(within(idleActivePreview).getByText("waiting for prompt packet")).toBeInTheDocument();
+    expect(within(idleActivePreview).getByText("not recorded")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Task transcript" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Task Composer" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Describe what you want SpiritOS to change.")).toBeInTheDocument();
@@ -209,6 +213,8 @@ describe("CodingCockpitShell", () => {
     ].forEach((step) => {
       expect(within(progress).getByText(step)).toBeInTheDocument();
     });
+    const idlePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
+    expect(within(idlePipeline).getAllByText("pending").length).toBeGreaterThanOrEqual(6);
 
     expect(screen.getByRole("button", { name: "Copy current task diagnostics" })).toBeDisabled();
     expect(screen.queryByText("Advanced details")).not.toBeInTheDocument();
@@ -345,6 +351,17 @@ describe("CodingCockpitShell", () => {
     fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
 
     await waitFor(() => expect(within(runner).getByRole("button", { name: "Run selected prompt" })).toBeDisabled());
+    const activePreview = screen.getByRole("region", { name: "Active run preview" });
+    await waitFor(() => expect(within(activePreview).getByText("task_pending_001")).toBeInTheDocument());
+    expect(within(activePreview).queryByText("not created")).not.toBeInTheDocument();
+    expect(within(activePreview).getByText("/v1/decisions/prompt-packet request_sent")).toBeInTheDocument();
+    expect(within(activePreview).getByText("not recorded yet")).toBeInTheDocument();
+    expect(within(activePreview).getByText("Runner prompt sent. Waiting for backend result.")).toBeInTheDocument();
+
+    const activePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
+    expect(within(activePipeline).getByText("task_pending_001")).toBeInTheDocument();
+    expect(within(activePipeline).getAllByText("running").length).toBeGreaterThan(0);
+    expect(within(activePipeline).getAllByText("Waiting for backend result.").length).toBeGreaterThan(0);
     promptPacketGate.release();
   });
 
@@ -371,6 +388,13 @@ describe("CodingCockpitShell", () => {
     fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
 
     await waitFor(() => expect(within(runner).getByText("Needs fix")).toBeInTheDocument());
+    const activePreview = screen.getByRole("region", { name: "Active run preview" });
+    await waitFor(() => expect(within(activePreview).getByText("Selected trial blocked")).toBeInTheDocument());
+    await waitFor(() => expect(within(activePreview).getByText("task_test_123")).toBeInTheDocument());
+    expect(within(activePreview).getByText("not recorded yet")).toBeInTheDocument();
+    const activePipeline = screen.getByRole("status", { name: "Single-lane pipeline" });
+    expect(within(activePipeline).getAllByText("blocked").length).toBeGreaterThan(0);
+    expect(within(activePipeline).queryByText("failed")).not.toBeInTheDocument();
     fireEvent.click(within(runner).getByRole("button", { name: "Reverse trial edits and clear results" }));
 
     await waitFor(() => expect(within(runner).getByText("Cleared")).toBeInTheDocument());

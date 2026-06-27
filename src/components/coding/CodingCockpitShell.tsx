@@ -437,6 +437,17 @@ type CodingPipelineStep = {
   label: string;
   status: CodingPipelineStepStatus;
 };
+type ActiveRunDisplaySource = "composer" | "selected-runner";
+type ActiveRunDisplay = {
+  detail: string;
+  pipelineDetail: string;
+  previewState: PreviewState;
+  routeLabel: string;
+  source: ActiveRunDisplaySource;
+  taskLabel: string;
+  title: string;
+  traceLabel: string;
+};
 
 const manualTaskPhaseLabels = {
   received: "Reading request",
@@ -2226,6 +2237,220 @@ function idlePreviewState(): PreviewState {
   };
 }
 
+function selectedRunnerRouteLabel(state: DummyCoder10RunState): string {
+  if (state.rawBackendStatus?.startsWith("/v1/")) {
+    return state.rawBackendStatus;
+  }
+  if (state.status === "starting") return "/v1/tasks/long-running starting";
+  if (state.status === "request_sent") return "/v1/decisions/prompt-packet request_sent";
+  if (state.status === "running") return state.rawBackendStatus ?? "selected runner running";
+  if (state.status === "blocked") return state.rawBackendStatus ?? "selected runner blocked";
+  if (state.status === "error") return state.rawBackendStatus ?? "selected runner failed";
+  if (state.status === "applied") return state.rawBackendStatus ?? "selected runner applied";
+  if (state.status === "complete") return state.rawBackendStatus ?? "selected runner complete";
+  return state.rawBackendStatus ?? "selected runner";
+}
+
+function selectedRunnerPreviewState(
+  state: DummyCoder10RunState,
+  prompt: DummyCoder10Prompt,
+  providerTruth: CodingProviderModelTruth,
+): PreviewState | null {
+  if (state.status === "idle" || state.status === "cleared" || !state.selectedPromptId) {
+    return null;
+  }
+
+  const active = state.status === "starting" || state.status === "request_sent" || state.status === "running";
+  const blocked = state.status === "blocked";
+  const failed = state.status === "error";
+  const applied = state.status === "applied";
+  const complete = state.status === "complete";
+  const routeLabel = selectedRunnerRouteLabel(state);
+  const base = idlePreviewState();
+  const status: PreviewState["status"] = failed
+    ? "error"
+    : blocked
+      ? "blocked"
+      : applied
+        ? "applied"
+        : complete
+          ? state.changedFiles.length > 0
+            ? "ready"
+            : "satisfied"
+          : "idle";
+  const currentPhase = state.status === "starting"
+    ? "Creating selected trial task."
+    : active
+      ? "Backend request sent. Waiting for model/diff result."
+      : blocked
+        ? "Selected trial blocked safely."
+        : failed
+          ? "Selected trial failed before a usable result."
+          : applied
+            ? "Selected trial applied; review receipt and changed files."
+            : "Selected trial result recorded.";
+
+  return {
+    ...base,
+    allowedFiles: [prompt.allowedWriteRoot],
+    applySummary: applied ? state.message : "",
+    blocker: blocked ? state.message || state.rawBackendStatus || "Selected trial blocked safely." : null,
+    changedFiles: state.changedFiles,
+    checks: state.checksRun.length > 0 ? state.checksRun : ["git diff --check"],
+    currentPhase,
+    error: failed ? state.errorText ?? state.message ?? "Selected trial failed." : null,
+    forbiddenFiles: prompt.forbiddenFiles,
+    isApplying: false,
+    isLoading: active,
+    model: providerTruth.modelLabel,
+    previewStatus: state.rawBackendStatus ?? state.status,
+    provider: providerTruth.providerLabel,
+    providerCallAuthorized: providerTruth.providerCallAuthorized,
+    providerCallMade: providerTruth.providerCallMade,
+    providerModelBlockedReason: providerTruth.blockedReason,
+    providerModelApiBaseHost: providerTruth.providerModelApiBaseHost,
+    providerModelProbeOk: providerTruth.providerModelProbeOk,
+    providerModelSelectedVia: providerTruth.providerModelSelectedVia,
+    providerModelSource: providerTruth.source,
+    providerModelStatus: providerTruth.status,
+    configuredModelIsHermes: providerTruth.configuredModelIsHermes,
+    hermesLaneAvailable: providerTruth.hermesLaneAvailable,
+    hermesUsedForThisRun: providerTruth.hermesUsedForThisRun,
+    reasonCode: blocked
+      ? state.grader?.resultState ?? state.rawBackendStatus ?? "selected_runner_blocked"
+      : failed
+        ? state.rawBackendStatus ?? "selected_runner_failed"
+        : null,
+    requirementSummary: state.verificationStatus ?? (active ? "Waiting for backend result." : state.message),
+    reviewerSummary: blocked
+      ? "Selected runner stopped at a blocked boundary."
+      : failed
+        ? "Selected runner failed before review."
+        : active
+          ? "Waiting for backend result."
+          : "Selected runner result recorded.",
+    routeCalled: routeLabel,
+    selectedTarget: prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot,
+    status,
+    targetCandidates: prompt.primaryExpectedTargets,
+    targetMatch: true,
+    taskId: state.taskId ?? "",
+    taskSpecAllowed: true,
+    traceId: null,
+    invocationEventId: null,
+    consumerEventId: null,
+    consumerSubsystem: null,
+    verifierSummary: state.verificationStatus ?? (active ? "Waiting for backend result." : "No verification recorded yet."),
+    technicalDetail: active
+      ? "selected_runner_backend_request_sent"
+      : blocked
+        ? "selected_runner_blocked"
+        : failed
+          ? "selected_runner_failed"
+          : null,
+  };
+}
+
+function selectedRunnerDisplayText(
+  state: DummyCoder10RunState,
+  prompt: DummyCoder10Prompt,
+): { detail: string; title: string } {
+  const title = `Coder ${String(prompt.number).padStart(3, "0")} - ${prompt.title}`;
+  if (state.status === "starting") {
+    return {
+      detail: "Runner prompt is creating a backend task. Preview has not returned yet.",
+      title: "Runner starting",
+    };
+  }
+  if (state.status === "request_sent") {
+    return {
+      detail: "Runner prompt sent. Waiting for backend result.",
+      title: "Runner request sent",
+    };
+  }
+  if (state.status === "running") {
+    return {
+      detail: "Selected trial is running. Preview has not returned yet.",
+      title: "Selected trial running",
+    };
+  }
+  if (state.status === "blocked") {
+    return {
+      detail: state.message || "Selected trial stopped at a blocked boundary. No hidden apply is shown.",
+      title: "Selected trial blocked",
+    };
+  }
+  if (state.status === "error") {
+    return {
+      detail: state.errorText ?? state.message ?? "Selected trial failed before a usable result.",
+      title: "Selected trial failed",
+    };
+  }
+  if (state.status === "applied") {
+    return {
+      detail: state.message || "Selected trial applied; review changed files and receipt before treating it as done.",
+      title: "Selected trial applied",
+    };
+  }
+  return {
+    detail: state.message || `Selected trial result recorded for ${title}.`,
+    title: state.changedFiles.length > 0 ? "Selected trial preview ready" : "Selected trial result",
+  };
+}
+
+function buildActiveRunDisplay({
+  draftReady,
+  previewState,
+  selectedPrompt,
+  selectedRunnerState,
+  selectedProviderTruth,
+}: {
+  draftReady: boolean;
+  previewState: PreviewState;
+  selectedPrompt: DummyCoder10Prompt;
+  selectedRunnerState: DummyCoder10RunState;
+  selectedProviderTruth: CodingProviderModelTruth;
+}): ActiveRunDisplay {
+  const composerHasActiveRun =
+    previewState.status !== "idle" ||
+    previewState.isLoading ||
+    previewState.isApplying ||
+    previewState.events.length > 0;
+
+  if (!composerHasActiveRun) {
+    const selectedPreviewState = selectedRunnerPreviewState(
+      selectedRunnerState,
+      selectedPrompt,
+      selectedProviderTruth,
+    );
+    if (selectedPreviewState) {
+      const selectedText = selectedRunnerDisplayText(selectedRunnerState, selectedPrompt);
+      return {
+        detail: selectedText.detail,
+        pipelineDetail: selectedText.detail,
+        previewState: selectedPreviewState,
+        routeLabel: selectedRunnerRouteLabel(selectedRunnerState),
+        source: "selected-runner",
+        taskLabel: selectedRunnerState.taskId ?? "pending selected-trial task",
+        title: selectedText.title,
+        traceLabel: "not recorded yet",
+      };
+    }
+  }
+
+  const composerText = activeRunPreviewText(previewState, draftReady);
+  return {
+    detail: composerText.detail,
+    pipelineDetail: composerText.detail,
+    previewState,
+    routeLabel: previewState.routeCalled ?? "waiting for prompt packet",
+    source: "composer",
+    taskLabel: previewState.taskId || "not created",
+    title: composerText.title,
+    traceLabel: previewState.traceId ?? "not recorded",
+  };
+}
+
 function providerTruthForPreviewState(
   previewState: PreviewState,
   configuredTruth?: CodingProviderModelTruth | null,
@@ -3151,6 +3376,8 @@ function buildCodingPipelineSteps({
         ? formatList(currentChangedFilesDiagnostics.previewChangedFiles, "Preview diff has no changed files.")
         : previewState.status === "satisfied"
           ? "No diff required."
+          : previewState.isLoading && previewState.taskId
+            ? "Waiting for backend result."
           : previewState.blocker ?? previewState.error ?? "No preview diff yet.",
     },
     {
@@ -9923,11 +10150,25 @@ export function CodingCockpitShell() {
               : previewState.status === "satisfied"
                 ? (previewState.blocker ?? "No diff was required because the target already satisfies the task.")
                 : previewState.error ?? previewState.blocker ?? previewState.applySummary ?? codingVisibleResult.plain_summary;
-  const activeRunPreview = activeRunPreviewText(previewState, draftReady);
-  const codingPipelineSteps = buildCodingPipelineSteps({
-    applyPreflightNeedsFix,
-    currentChangedFilesDiagnostics,
+  const activeRunDisplay = buildActiveRunDisplay({
+    draftReady,
     previewState,
+    selectedPrompt: selectedDummyCoderPrompt,
+    selectedProviderTruth,
+    selectedRunnerState: dummyCoderRunState,
+  });
+  const activeRunPreview = { detail: activeRunDisplay.detail, title: activeRunDisplay.title };
+  const activeRunChangedFilesDiagnostics = buildChangedFilesDiagnostics({
+    appliedAt: activeRunDisplay.previewState.appliedAt,
+    diff: activeRunDisplay.previewState.diff,
+    status: activeRunDisplay.previewState.status,
+    verificationChangedFiles: activeRunDisplay.previewState.changedFiles,
+  });
+  const activeRunProviderTruth = providerTruthForPreviewState(activeRunDisplay.previewState, selectedProviderTruth);
+  const codingPipelineSteps = buildCodingPipelineSteps({
+    applyPreflightNeedsFix: activeRunDisplay.source === "composer" ? applyPreflightNeedsFix : false,
+    currentChangedFilesDiagnostics: activeRunChangedFilesDiagnostics,
+    previewState: activeRunDisplay.previewState,
   });
   const simpleProgressItems = [
     "Reading request",
@@ -10782,9 +11023,9 @@ export function CodingCockpitShell() {
               </div>
               <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
                 {[
-                  ["Task", previewState.taskId || "not created"],
-                  ["Route", previewState.routeCalled ?? "waiting for prompt packet"],
-                  ["Trace", previewState.traceId ?? "not recorded"],
+                  ["Task", activeRunDisplay.taskLabel],
+                  ["Route", activeRunDisplay.routeLabel],
+                  ["Trace", activeRunDisplay.traceLabel],
                 ].map(([label, value]) => (
                   <div className={`${commandInsetClass} min-w-0 p-3`} key={label}>
                     <dt className={commandLabelClass}>{label}</dt>
@@ -11082,9 +11323,9 @@ export function CodingCockpitShell() {
               <p className={`mt-1 text-sm ${commandMutedClass}`}>
                 {reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
                   ? reversibleSuiteState.currentPrompt || "Trial suite is running."
-                  : previewState.status === "applied" && previewState.changedFiles.length > 0
+                  : activeRunDisplay.previewState.status === "applied" && activeRunDisplay.previewState.changedFiles.length > 0
                   ? "Files changed on disk. Review or undo this run before starting another."
-                  : activeRunPreview.detail}
+                  : activeRunDisplay.pipelineDetail}
               </p>
               <ol className="mt-4 space-y-2">
                 {codingPipelineSteps.map((step, index) => (
@@ -11108,10 +11349,10 @@ export function CodingCockpitShell() {
               </ol>
               <dl className="mt-4 grid gap-2 text-xs">
                 {[
-                  ["Model", reversibleSuiteState.status !== "idle" ? reversibleSuiteState.model : currentPreviewProviderTruth.modelLabel],
-                  ["Task ID", previewState.taskId || "none"],
-                  ["Trace ID", previewState.traceId ?? "none"],
-                  ["Output hash", previewState.outputHash ?? "none"],
+                  ["Model", reversibleSuiteState.status !== "idle" ? reversibleSuiteState.model : activeRunProviderTruth.modelLabel],
+                  ["Task ID", activeRunDisplay.previewState.taskId || "none"],
+                  ["Trace ID", activeRunDisplay.previewState.traceId ?? "none"],
+                  ["Output hash", activeRunDisplay.previewState.outputHash ?? "none"],
                 ].map(([label, value]) => (
                   <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-2" key={label}>
                     <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">{label}</dt>
