@@ -1,6 +1,6 @@
 {
   "approval_recorded": "Britton explicitly approved Plan 6 start in the Codex task prompt on 2026-06-26.",
-  "current_phase": "6.addendum",
+  "current_phase": "6.conditional-hardening",
   "daily_driver_promotion_recommendation": "CONDITIONAL_DAILY_DRIVER_CANDIDATE",
   "forbidden_paths_touched": false,
   "full_daily_driver_promotion": "NOT_APPROVED",
@@ -23,9 +23,9 @@
   },
   "live_proof_performed": true,
   "next_britton_decision_required": [
-    "accept_PARTIAL_DAILY_DRIVER_CANDIDATE",
-    "request_targeted_fixes",
-    "authorize_additional_productive_soak",
+    "accept_conditional_baseline",
+    "authorize_plan_7",
+    "authorize_real_product_code_soak",
     "deny_promotion"
   ],
   "next_incomplete_increment": null,
@@ -58,7 +58,10 @@
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-partial-candidate-targeted-fixes-addendum-20260627.md",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-addendum-approval-records-20260627.json",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-proof-20260627.json",
-    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-decision-20260627.md"
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-decision-20260627.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-operator-approval-20260627.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-verifier-20260627.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-candidate-hardening-closeout-20260627.md"
   ],
   "proof_summary": {
     "accepted_fail_closed_tasks": 17,
@@ -113,8 +116,8 @@
     "no_unrestricted_apply_readiness",
     "plan7_not_authorized"
   ],
-  "status": "PLAN6_PARTIAL_CANDIDATE_ADDENDUM_SOAK_COMPLETE",
-  "stop_condition": "Plan 6 partial-candidate addendum decision packet complete. No full promotion and no Plan 7 authorization.",
+  "status": "PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE",
+  "stop_condition": "Final Plan 6 conditional-candidate hardening closeout complete. No full promotion and no Plan 7 authorization.",
   "title": "Reliability and Daily-Driver Promotion",
   "validation": {
     "linux_replay_path": "/home/source/SpiritOS",
@@ -140,6 +143,41 @@
       "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-addendum-approval-records-20260627.json",
       "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-proof-20260627.json",
       "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-decision-20260627.md"
+    ]
+  },
+  "conditional_hardening": {
+    "label": "plan6-conditional-hardening-closeout-20260627",
+    "status": "PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE",
+    "recommendation": "CONDITIONAL_DAILY_DRIVER_CANDIDATE",
+    "full_daily_driver_promotion": "NOT_APPROVED",
+    "plan7_status": "NOT_STARTED_NOT_AUTHORIZED",
+    "scoped_apply_used": true,
+    "official_central_gate_used": true,
+    "gate_state_hash_before": "1f33f25264d315e0337f0bc0b0f8947a9aa2cf83fac96278a690128e8e4ca7e8",
+    "gate_state_hash_after": "1f33f25264d315e0337f0bc0b0f8947a9aa2cf83fac96278a690128e8e4ca7e8",
+    "gate_state_unchanged": true,
+    "post_restore_apply_probe_blocked": true,
+    "coding_probe": {
+      "restart_performed": false,
+      "http_code": 200,
+      "coding_shell_marker": true,
+      "receipt_marker": true,
+      "trace_marker": true
+    },
+    "artifacts": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-operator-approval-20260627.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-verifier-20260627.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-candidate-hardening-closeout-20260627.md"
+    ],
+    "remaining_caveats": [
+      "operator_approval_manifest_is_repo_artifact_not_external_enforcement",
+      "verifier_artifact_is_separate_but_generated_by_this_run",
+      "consumer_verifier_identities_remain_instrumentation",
+      "productive_proof_docs_test_adjacent_only",
+      "no_product_code_soak",
+      "no_mac_write",
+      "no_full_daily_driver_go",
+      "plan7_not_authorized"
     ]
   }
 }

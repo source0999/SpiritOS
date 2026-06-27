@@ -1,12 +1,20 @@
 # Plan 6/6 Status
 
-Status: `PLAN6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
+Status: `PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE`.
 Plan gate: `PLAN6_START_APPROVED_BY_BRITTON_20260626`.
-Promotion recommendation: `PARTIAL_DAILY_DRIVER_CANDIDATE`.
+Promotion recommendation: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`.
 Full daily-driver promotion: `NOT_APPROVED`.
 Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
 
 No product-code implementation has been performed. No next-plan work is authorized.
+
+## Current Hardening State
+
+Britton reviewed the GLM Plan 6 addendum audit and accepted Plan 6 as `CONDITIONAL_DAILY_DRIVER_CANDIDATE_WITH_CAVEATS`.
+
+The final hardening pass is complete as `PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE`. This reduces the remaining caveats with an explicit operator approval manifest, field-level operator-check assertions, a separate final verifier artifact, Linux/live replay refresh, and leading handoff-header cleanup.
+
+Next decision required: Britton decides whether to accept the conditional baseline, authorize Plan 7, authorize real product-code soak, or deny promotion.
 
 ## Start Gate
 
@@ -151,3 +159,23 @@ Completed addendum tasks:
 - Task E: `GO_DECISION_PACKET_COMPLETE`
 
 The addendum improves the recommendation from PARTIAL to CONDITIONAL because it externalizes approval records, adds an independent after-the-fact addendum audit record, refreshes Linux replay checks, and completes five narrow supervised Plan 6 tasks. It does not approve full promotion, broaden apply authority, authorize product-code changes, authorize Mac writes, or start Plan 7.
+
+## Plan 6 Conditional-Candidate Hardening - 2026-06-27
+
+Status: `PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE`.
+
+Promotion recommendation after hardening: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`.
+
+Full daily-driver promotion: `NOT_APPROVED`.
+
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
+
+Hardening artifacts:
+
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-operator-approval-20260627.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-verifier-20260627.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-candidate-hardening-closeout-20260627.md`
+
+Caveats reduced: explicit operator decision separated from the soak proof, field-level operator-check validation, separate verifier artifact, Linux/live replay refresh, and leading header consistency.
+
+Caveats remaining: the approval manifest and verifier are still repo artifacts generated in this run, consumer/verifier identities remain instrumentation, productive proof remains Plan 6 docs/test-adjacent, no Mac write occurred, no product-code soak occurred, no full promotion is approved, and Plan 7 is not authorized.

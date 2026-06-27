@@ -1,8 +1,8 @@
 # Plan 6/6 Next-Step Handoff
 
-Status: `PLAN6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`
+Status: `PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE`
 
-Promotion recommendation: `PARTIAL_DAILY_DRIVER_CANDIDATE`
+Promotion recommendation: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`
 
 Full daily-driver promotion: `NOT_APPROVED`
 
@@ -10,7 +10,7 @@ Plan 7: `NOT_STARTED / NOT_AUTHORIZED`
 
 ## Current State
 
-Plan 6 Phase 6.6 final closeout has been completed for Britton review. The closeout preserves the GLM Plan 6 audit caveats and does not claim full promotion.
+Plan 6 conditional-candidate hardening is complete for Britton review. The hardening preserves the GLM addendum caveats, reduces them where possible inside Plan 6, and does not claim full promotion.
 
 Completed Plan 6 phases:
 
@@ -74,6 +74,24 @@ Required next Britton decision:
 - or deny promotion.
 
 Do not start Plan 7 without explicit Britton authorization.
+
+## Plan 6 Conditional-Candidate Hardening - 2026-06-27
+
+Status: `PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE`
+
+Final hardening recommendation: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`
+
+Full daily-driver promotion: `NOT_APPROVED`
+
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`
+
+Hardening artifacts:
+
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-operator-approval-20260627.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-verifier-20260627.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-candidate-hardening-closeout-20260627.md`
+
+Stop condition: final hardening closeout complete. Britton must decide whether to accept the conditional baseline, authorize Plan 7, authorize real product-code soak, or deny promotion.
 
 ## Plan 6 Partial-Candidate Addendum - 2026-06-27
 

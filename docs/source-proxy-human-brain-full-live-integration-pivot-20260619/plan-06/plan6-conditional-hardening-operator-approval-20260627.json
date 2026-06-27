@@ -1,0 +1,90 @@
+{
+  "plan": 6,
+  "artifact": "plan6-conditional-hardening-operator-approval-20260627",
+  "operator_decision_source": "Britton chat approval for conditional hardening + closeout",
+  "decision_timestamp": "2026-06-27T12:49:55+00:00",
+  "approved_scope": [
+    "Final Plan 6 conditional-candidate hardening and closeout only",
+    "Field-level Plan 6 operator-check hardening",
+    "Plan 6 status and handoff header cleanup",
+    "Separate final verifier artifact",
+    "Final hardening closeout packet",
+    "Linux/live replay refresh without service restart"
+  ],
+  "denied_scope": [
+    "FULL_DAILY_DRIVER_GO",
+    "Plan 7",
+    "Product source code changes",
+    "Package/env/secrets changes",
+    "Mac writes",
+    "Mac optimizer work",
+    "SpiritFlix/media/Jellyfin/Obsidian work",
+    "Generated XML or repomix changes",
+    "Broad apply authority",
+    "Service restart for proof"
+  ],
+  "allowed_files": [
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/operator-check.sh",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/status.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/status.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/next-plan-handoff.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/new-chat-start.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-operator-approval-20260627.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-hardening-verifier-20260627.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-conditional-candidate-hardening-closeout-20260627.md"
+  ],
+  "forbidden_paths": [
+    "SpiritFlix",
+    "media",
+    "Jellyfin",
+    "Mac optimizer",
+    "Obsidian",
+    "secrets",
+    "env files",
+    "package files",
+    "generated XML packs",
+    "repomixes/",
+    "Plan 7 or work outside Plan 6",
+    "external irreversible systems",
+    "broad product-code files"
+  ],
+  "approval_tokens": [
+    {
+      "token": "plan6-conditional-hardening-f2ad1e50a90d41b69adb",
+      "approved_increment": "plan6-conditional-hardening-closeout-20260627",
+      "allowed_action": "apply",
+      "scope": "single final Plan 6 hardening/closeout pass over allowed files only"
+    }
+  ],
+  "central_gate_receipt": {
+    "action": "apply",
+    "increment_id": "plan6-conditional-hardening-closeout-20260627",
+    "run_id": "plan6-conditional-hardening-closeout",
+    "gate_state_before": "APPROVED_INCREMENT",
+    "approved_increment": "plan6-conditional-hardening-closeout-20260627",
+    "approval_token_id": "plan6-conditional-hardening-f2ad1e50a90d41b69adb",
+    "checked_at": "2026-06-27T12:49:55.599481+00:00",
+    "central_gate_check_passed": true
+  },
+  "gate_state_hash_before": "1f33f25264d315e0337f0bc0b0f8947a9aa2cf83fac96278a690128e8e4ca7e8",
+  "gate_state_hash_after": "1f33f25264d315e0337f0bc0b0f8947a9aa2cf83fac96278a690128e8e4ca7e8",
+  "gate_state_unchanged": true,
+  "post_restore_blocked_apply_probe": {
+    "blocked": true,
+    "reason_code": "increment_mismatch",
+    "payload": {
+      "gate_state_before": "RUNNING_INCREMENT",
+      "approved_increment": "evaluation-round",
+      "central_gate_check_passed": false,
+      "blocked_reason": "increment_mismatch"
+    },
+    "mutation_observed": false
+  },
+  "full_daily_driver_go": "NOT_APPROVED",
+  "plan7_authorization": "NOT_AUTHORIZED",
+  "mac_write_authorization": "NOT_AUTHORIZED",
+  "broad_apply_authorization": "NOT_AUTHORIZED",
+  "rollback_expectations": "After commit, rollback with git show --format= --binary <hardening_commit> -- <allowed files> | git apply -R.",
+  "post_restore_blocked_apply_proof_required": true,
+  "honesty_note": "This is an operator-visible repo artifact recording Britton's chat decision. It is not cryptographic external enforcement and is not a third-party approval system."
+}

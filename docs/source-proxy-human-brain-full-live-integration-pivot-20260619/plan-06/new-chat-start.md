@@ -1,12 +1,12 @@
-# New Chat Start - Plan 6/6 Final Closeout
+# New Chat Start - Plan 6 Conditional-Candidate Hardening
 
 Plan: `plan-06/plan.md`.
 
 Previous plan verdict: `PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
 
-Current Plan 6 status: `PLAN6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
+Current Plan 6 status: `PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE`.
 
-Promotion recommendation: `PARTIAL_DAILY_DRIVER_CANDIDATE`.
+Promotion recommendation: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`.
 
 Full daily-driver promotion: `NOT_APPROVED`.
 
@@ -52,3 +52,15 @@ Full daily-driver promotion: `NOT_APPROVED`.
 Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
 
 Do not claim full promotion. Do not start Plan 7 without explicit Britton authorization.
+
+## Plan 6 Conditional-Candidate Hardening - 2026-06-27
+
+Current hardening status: `PLAN6_CONDITIONAL_CANDIDATE_HARDENING_COMPLETE`.
+
+Final hardening recommendation: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`.
+
+Full daily-driver promotion: `NOT_APPROVED`.
+
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
+
+Next Britton decision: accept the conditional baseline, authorize Plan 7, authorize real product-code soak, or deny promotion.
