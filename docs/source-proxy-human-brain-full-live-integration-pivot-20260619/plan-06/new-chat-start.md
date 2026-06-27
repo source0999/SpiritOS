@@ -1,28 +1,42 @@
-# New Chat Start - Plan 6/6
-
-Only Plan 6/6 is in scope after Britton explicitly approves it.
+# New Chat Start - Plan 6/6 Final Closeout
 
 Plan: `plan-06/plan.md`.
 
 Previous plan verdict: `PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
 
-Current Plan 6 status: `PLAN6_BLOCKED_AT_6_5_1_BRITTON_DAILY_DRIVER_TASK_SELECTION_REQUIRED`.
+Current Plan 6 status: `PLAN6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`.
 
-Completed Plan 6 proof through Phase 6.4:
+Promotion recommendation: `PARTIAL_DAILY_DRIVER_CANDIDATE`.
+
+Full daily-driver promotion: `NOT_APPROVED`.
+
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
+
+## Completed Plan 6 Phases
 
 - Phase 6.1: `GO_FAIL_CLOSED_RELIABILITY_ONLY`
 - Phase 6.2: `GO_FAIL_CLOSED_RELIABILITY_ONLY`
 - Phase 6.3: `GO_FAIL_CLOSED_FAULT_INJECTION`
 - Phase 6.4: `GO_MAC_DELL_DISPATCH_NO_WRITE`
-
-Next incomplete increment: `6.5.1`. Do not continue until Britton supplies ten supervised daily-driver tasks.
-
-Hard stops: first Obsidian write, first Mac write, authority expansion, route migration, framework adoption, intentional runtime interruption, credential/auth conflict, irreversible/external action, plan boundary.
-
-Do not promote without Britton approval.
-
-GLM must use Codex Quick Gates for low-risk increments and Codex Deep Reviews at phase and plan boundaries.
-
 - Phase 6.5: `GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE`
-- Daily-driver recommendation after Phase 6.5: `PARTIAL`
-- Next incomplete increment: `6.6.1`; do not continue without Britton review/approval.
+- Phase 6.6: `PLAN6_PHASE_6_6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`
+
+## Final Closeout Artifacts
+
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-6-final-closeout-review-20260626.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-final-closeout-packet-20260626.md`
+
+## Required Caveats
+
+- This is not a full promotion.
+- Phase 6.5 tasks 8 and 9 used scoped apply authority self-issued by the trial script, not externally tokenized by a separate Britton apply approval.
+- Consumer/verifier subsystem identities and the PARTIAL recommendation were trial-supplied instrumentation, not independent downstream authority.
+- Productive proof was narrow, docs/test-adjacent only, not product-code daily-driver readiness.
+- No Mac write occurred.
+- No Plan 7 work is authorized.
+
+## Required Next Action
+
+Britton review and decision whether to accept `PARTIAL_DAILY_DRIVER_CANDIDATE`, request targeted fixes, authorize additional productive soak, or deny promotion.
+
+Do not start Plan 7 without explicit Britton authorization.

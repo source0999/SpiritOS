@@ -1,8 +1,9 @@
 {
   "approval_recorded": "Britton explicitly approved Plan 6 start in the Codex task prompt on 2026-06-26.",
   "current_phase": "6.6",
-  "daily_driver_promotion_recommendation": "PARTIAL",
+  "daily_driver_promotion_recommendation": "PARTIAL_DAILY_DRIVER_CANDIDATE",
   "forbidden_paths_touched": false,
+  "full_daily_driver_promotion": "NOT_APPROVED",
   "gate_status": "PLAN6_START_APPROVED_BY_BRITTON_20260626",
   "generated_xml_or_repomix_changed": false,
   "implementation_performed": false,
@@ -17,11 +18,17 @@
     "6.4.2": "GO_REPEATED_MAC_SAFE_CHECK_DISPATCH_CONSUMED",
     "6.5.1": "GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE",
     "6.5.2": "PARTIAL_DAILY_DRIVER_DECISION_PACKET",
-    "6.6.1": "NOT_STARTED",
-    "6.6.2": "NOT_STARTED"
+    "6.6.1": "PLAN6_PHASE_6_6_FINAL_CLOSEOUT_REVIEW_COMPLETE",
+    "6.6.2": "PLAN6_FINAL_CLOSEOUT_PACKET_COMPLETE"
   },
   "live_proof_performed": true,
-  "next_incomplete_increment": "6.6.1",
+  "next_britton_decision_required": [
+    "accept_PARTIAL_DAILY_DRIVER_CANDIDATE",
+    "request_targeted_fixes",
+    "authorize_additional_productive_soak",
+    "deny_promotion"
+  ],
+  "next_incomplete_increment": null,
   "next_plan_authorized": false,
   "package_or_env_changed": false,
   "phases": {
@@ -30,19 +37,24 @@
     "6.3": "GO_FAIL_CLOSED_FAULT_INJECTION",
     "6.4": "GO_MAC_DELL_DISPATCH_NO_WRITE",
     "6.5": "GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE",
-    "6.6": "NOT_STARTED"
+    "6.6": "PLAN6_PHASE_6_6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW"
   },
   "plan": 6,
+  "plan7_status": "NOT_STARTED_NOT_AUTHORIZED",
   "previous_plan_status": "PLAN5_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW",
   "product_code_changed": false,
   "proof_artifacts": [
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-1-through-6-3-fail-closed-reliability-20260626.md",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-4-mac-dell-dispatch-proof-20260626.md",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-5-supervised-daily-driver-trial-20260626.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-6-final-closeout-review-20260626.md",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-evidence-index-20260626.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-final-closeout-packet-20260626.md",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-live-fail-closed-reliability-proof-20260626.json",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-mac-dell-dispatch-proof-20260626.json",
-    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json"
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/glm-plan6-daily-driver-candidate-integrity-audit-20260626.md"
   ],
   "proof_summary": {
     "accepted_fail_closed_tasks": 17,
@@ -51,6 +63,7 @@
     "execute_approved_route_statuses": [
       500
     ],
+    "full_daily_driver_go": false,
     "phase_6_1_accepted": 5,
     "phase_6_2_accepted": 10,
     "phase_6_3_accepted": 2,
@@ -76,6 +89,7 @@
     ],
     "phase_6_5_go_tasks": 10,
     "phase_6_5_mac_write_occurred": false,
+    "phase_6_5_productive_scope": "docs_test_adjacent_only",
     "phase_6_5_productive_tasks": [
       8,
       9
@@ -85,8 +99,26 @@
     "phase_6_5_supervised_tasks": 10,
     "plan6_fail_closed_target_exists_after": false
   },
-  "status": "PLAN6_PHASE_6_5_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE",
-  "stop_condition": "Phase 6.5 completed; stop before Phase 6.6/final closeout pending Britton review of the daily-driver recommendation.",
+  "remaining_limitations": [
+    "not_full_daily_driver_go",
+    "productive_proof_docs_test_adjacent_only",
+    "phase_6_5_tasks_8_9_apply_authority_self_issued_by_trial_script",
+    "consumer_verifier_identities_trial_supplied_instrumentation",
+    "no_first_mac_write",
+    "no_product_code_daily_driver_readiness",
+    "no_unrestricted_apply_readiness",
+    "plan7_not_authorized"
+  ],
+  "status": "PLAN6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW",
+  "stop_condition": "Plan 6 final closeout ready for Britton review. Required next action is Britton decision to accept PARTIAL daily-driver candidate, request targeted fixes, authorize additional productive soak, or deny promotion. Plan 7 is not authorized.",
   "title": "Reliability and Daily-Driver Promotion",
+  "validation": {
+    "linux_replay_path": "/home/source/SpiritOS",
+    "mac_pytest": "PASS_7_PASSED_8_DESELECTED",
+    "operator_check": "PASS",
+    "proof_json_validation": "PASS",
+    "status_json_validation": "PASS",
+    "unittest_acceptance_harness": "PASS_4_TESTS_OK"
+  },
   "work_outside_plan_6_started": false
 }

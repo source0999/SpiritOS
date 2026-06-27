@@ -1,62 +1,76 @@
 # Plan 6/6 Next-Step Handoff
 
-Plan 6 has started with Britton approval and is currently blocked at increment `6.5.1`.
+Status: `PLAN6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW`
 
-## Current Status
+Promotion recommendation: `PARTIAL_DAILY_DRIVER_CANDIDATE`
 
-`PLAN6_BLOCKED_AT_6_5_1_BRITTON_DAILY_DRIVER_TASK_SELECTION_REQUIRED`
+Full daily-driver promotion: `NOT_APPROVED`
 
-Completed in this run:
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`
+
+## Current State
+
+Plan 6 Phase 6.6 final closeout has been completed for Britton review. The closeout preserves the GLM Plan 6 audit caveats and does not claim full promotion.
+
+Completed Plan 6 phases:
 
 ```text
-6.1.1 GO_FAIL_CLOSED_CANONICAL_TRACE
-6.1.2 GO_FIVE_TASK_FAIL_CLOSED_SET
-Phase 6.1 GO_FAIL_CLOSED_RELIABILITY_ONLY
-6.2.1 GO_TEN_TASK_FAIL_CLOSED_GAUNTLET
-6.2.2 GO_NO_TARGET_MUTATION_OR_UNCONSUMED_OUTPUT
-Phase 6.2 GO_FAIL_CLOSED_RELIABILITY_ONLY
-6.3.1 GO_CENTRAL_GATE_FAULT_DECISION_BEARING
-6.3.2 GO_FAILURE_OUTPUT_CONSUMED_DOWNSTREAM
-Phase 6.3 GO_FAIL_CLOSED_FAULT_INJECTION
-6.4.1 GO_MAC_SYSTEM_STATUS_DISPATCH_CONSUMED
-6.4.2 GO_REPEATED_MAC_SAFE_CHECK_DISPATCH_CONSUMED
-Phase 6.4 GO_MAC_DELL_DISPATCH_NO_WRITE
+6.1 GO_FAIL_CLOSED_RELIABILITY_ONLY
+6.2 GO_FAIL_CLOSED_RELIABILITY_ONLY
+6.3 GO_FAIL_CLOSED_FAULT_INJECTION
+6.4 GO_MAC_DELL_DISPATCH_NO_WRITE
+6.5 GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE
+6.6 PLAN6_PHASE_6_6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW
 ```
 
-Proof artifacts:
+## Closeout Artifacts
 
-`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-live-fail-closed-reliability-proof-20260626.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-6-final-closeout-review-20260626.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-final-closeout-packet-20260626.md`
 
-`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-mac-dell-dispatch-proof-20260626.json`
+## Supporting Evidence
 
-`docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/phase-6-4-mac-dell-dispatch-proof-20260626.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-live-fail-closed-reliability-proof-20260626.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-mac-dell-dispatch-proof-20260626.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-daily-driver-promotion-decision-20260626.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/glm-plan6-daily-driver-candidate-integrity-audit-20260626.md`
 
-The fail-closed proof artifact contains 17 accepted fail-closed tasks with `task_id`, `trace_id`, `invocation_event_id`, `consumer_event_id`, `consumer_subsystem`, subsystem invoked, output hash, changed state fields, focused checks, git status note, evidence budget status, forbidden-state scan, operator-visible result, phase-verifier consumption, and final verdict/state change evidence.
+## Evidence Summary
 
-The Phase 6.4 dispatch proof contains two accepted Mac/Dell dispatch tasks:
+- 17 accepted fail-closed canonical route tasks across Phases 6.1-6.3.
+- 2/2 no-write Mac/Dell dispatch tasks consumed downstream in Phase 6.4.
+- 10/10 supervised Phase 6.5 tasks GO.
+- 7 governance/safety/readiness tasks.
+- 2 scoped productive docs/test-adjacent tasks.
+- 1 final promotion decision packet.
 
-- `6.4.1`: task `task_7e10e93d5047`, trace `trace_899bcc3ff546497f`, job `system_status`, output hash `93dac22aff33a8ecc2b316ea143e2e79a0b267a3d467f88aff1d641e2eac7901`.
-- `6.4.2`: task `task_2bb328370253`, trace `trace_0ae41c798ab54a47`, job `run_safe_check` with allowlisted `git rev-parse HEAD`, output hash `c7aed8892aa9655a2a06787e76574d5495bac05df066ba3b1a090d7ff2be08e8`.
+## Preserved Caveats
 
-Both Mac/Dell dispatch proofs recorded `mac_worker` consumption by `cartographer_mac_assignment_consumer` and phase-verifier consumption by `plan6_phase_gate_consumer` on the same trace. No Mac write occurred.
+- Phase 6.5 tasks 8 and 9 used scoped apply authority self-issued by the trial script, not externally tokenized by a separate Britton apply approval.
+- Consumer/verifier subsystem identities and the PARTIAL recommendation were trial-supplied instrumentation, not independent downstream authority.
+- Linux replay checks passed in Phase 6.6, but promotion beyond PARTIAL still requires fresh Britton decision.
+- Productive proof remains narrow and docs/test-adjacent only.
+- No Mac write occurred.
+
+## Linux Replay Results
+
+- Acceptance harness unittest: PASS, 4 tests OK.
+- Mac pytest lane: PASS, 7 passed / 8 deselected.
+- Plan 6 operator check: PASS.
+- `status.json` and required Plan 6 proof JSON files: PASS.
 
 ## Boundary
 
-Next incomplete increment: `6.5.1`.
+Next incomplete increment: none inside Plan 6.
 
-Stop reason: Phase 6.5 requires ten Britton-selected supervised daily-driver tasks. This scoped continuation authorized Mac/Dell dispatch only and did not provide the ten daily-driver task set.
+Stop reason: Plan 6 final closeout is ready for Britton review. Plan 7 is not started and not authorized.
 
-Do not open a first Mac write, touch Mac optimizer paths, restart services, broaden authority, or open a productive apply gate without a fresh Britton decision. Do not start Plan 7.
+Required next Britton decision:
 
-Daily-driver promotion is not recommended from the current evidence. The completed proof set establishes repeated fail-closed reliability and repeated no-write Mac/Dell dispatch, not repeated productive daily-driver readiness.
+- accept `PARTIAL_DAILY_DRIVER_CANDIDATE`,
+- request targeted fixes,
+- authorize additional productive soak,
+- or deny promotion.
 
-
-## Phase 6.5 Completion
-
-`GO_SUPERVISED_DAILY_DRIVER_TRIAL_COMPLETE`
-
-Daily-driver recommendation: `PARTIAL`.
-
-Next incomplete increment: `6.6.1`. Stop before Phase 6.6/final closeout pending Britton review of the Phase 6.5 promotion decision.
-
-Primary proof artifact: `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json`
+Do not start Plan 7 without explicit Britton authorization.
