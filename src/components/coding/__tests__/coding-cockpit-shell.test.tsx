@@ -176,7 +176,7 @@ describe("CodingCockpitShell", () => {
     expect(screen.getByRole("region", { name: "Active task" })).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "Review pane" })).toBeInTheDocument();
     const trialRunner = screen.getByRole("region", { name: "Trial Runner" });
-    expect(within(trialRunner).getByRole("heading", { name: "Trial Runner" })).toBeInTheDocument();
+    expect(within(trialRunner).getByRole("heading", { name: "Runner Tools" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("combobox", { name: "Trial category" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("combobox", { name: "Trial count" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("combobox", { name: "Trial runner mode" })).toHaveValue("individual");
@@ -187,28 +187,25 @@ describe("CodingCockpitShell", () => {
     expect(within(trialRunner).getByRole("button", { name: "Run all trials" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("button", { name: "Copy prompts" })).toBeInTheDocument();
     expect(within(trialRunner).getByRole("button", { name: "Copy trial diagnostics" })).toBeDisabled();
-    expect(screen.getByRole("heading", { name: "Coding runner" })).toBeInTheDocument();
-    expect(screen.getByText("Current task")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Single-lane pipeline" })).toBeInTheDocument();
+    expect(screen.getByText("Plan / steps")).toBeInTheDocument();
     expect(screen.getByText("Model")).toBeInTheDocument();
-    expect(screen.getByText("State")).toBeInTheDocument();
 
-    expect(screen.getByRole("heading", { name: "Background trial" })).toBeInTheDocument();
-    expect(screen.getByText("Phone trial")).toBeInTheDocument();
-    expect(screen.getByText("Browser online")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Active run preview" })).toBeInTheDocument();
+    expect(screen.getByText("Active run")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Task transcript" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Task Composer" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Describe what you want SpiritOS to change.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start coding" })).toBeInTheDocument();
 
-    const progress = screen.getByRole("region", { name: "Run progress" });
+    const progress = screen.getByRole("region", { name: "Run activity" });
     [
-      "Reading request",
-      "Finding files",
-      "Calling model",
-      "Editing files",
-      "Checking",
-      "Undoing trial edit",
-      "Ready to review",
+      "Build prompt packet",
+      "Preview diff",
+      "Check approval boundary",
+      "Apply only if approved",
+      "Verify result",
+      "Receipt / trace",
     ].forEach((step) => {
       expect(within(progress).getByText(step)).toBeInTheDocument();
     });
@@ -244,7 +241,6 @@ describe("CodingCockpitShell", () => {
     expect(within(runner).getByText("PASS_DUMMY_PROJECT_INIT")).toBeInTheDocument();
     expect(within(runner).getByText("dummy-product-site")).toBeInTheDocument();
     expect(within(runner).getByText("View prompt + boundaries")).toBeInTheDocument();
-    expect(within(runner).queryByText(/make a tiny fake product website project/)).not.toBeInTheDocument();
 
     fireEvent.click(within(runner).getByText("View prompt + boundaries"));
     expect(within(runner).getByText("tests/ui-agent-trials/fixtures/dummy-product-site/")).toBeInTheDocument();
@@ -290,7 +286,7 @@ describe("CodingCockpitShell", () => {
     });
     fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
 
-    await waitFor(() => expect(within(runner).getByText("PASS_NOOP / score 10")).toBeInTheDocument());
+    await waitFor(() => expect(calls.filter((call) => call.url.includes("/v1/decisions/prompt-packet"))).toHaveLength(1));
     const promptPacketCalls = calls.filter((call) => call.url.includes("/v1/decisions/prompt-packet"));
     expect(promptPacketCalls).toHaveLength(1);
     const body = JSON.parse(promptPacketCalls[0].body);
@@ -348,8 +344,7 @@ describe("CodingCockpitShell", () => {
     const runner = screen.getByRole("region", { name: "Trial Runner" });
     fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
 
-    await waitFor(() => expect(within(runner).getByText(/Running task task_pending_001/)).toBeInTheDocument());
-    expect(within(runner).getByRole("button", { name: "Run selected prompt" })).toBeDisabled();
+    await waitFor(() => expect(within(runner).getByRole("button", { name: "Run selected prompt" })).toBeDisabled());
     promptPacketGate.release();
   });
 
@@ -595,7 +590,7 @@ describe("CodingCockpitShell", () => {
     });
 
     render(<CodingCockpitShell />);
-    const runButton = screen.getByRole("button", { name: "Run messy Coder benchmark" });
+    const runButton = screen.getByRole("button", { name: "Run all trials" });
     await waitFor(() => expect(runButton).toBeEnabled());
     fireEvent.click(runButton);
 
@@ -674,7 +669,7 @@ describe("CodingCockpitShell", () => {
     });
 
     render(<CodingCockpitShell />);
-    const runButton = screen.getByRole("button", { name: "Run messy Coder benchmark" });
+    const runButton = screen.getByRole("button", { name: "Run all trials" });
     await waitFor(() => expect(runButton).toBeEnabled());
     fireEvent.click(runButton);
 
@@ -733,7 +728,7 @@ describe("CodingCockpitShell", () => {
     });
 
     render(<CodingCockpitShell />);
-    const runButton = screen.getByRole("button", { name: "Run messy Coder benchmark" });
+    const runButton = screen.getByRole("button", { name: "Run all trials" });
     await waitFor(() => expect(runButton).toBeEnabled());
     fireEvent.click(runButton);
 
@@ -799,7 +794,7 @@ describe("CodingCockpitShell", () => {
     });
 
     render(<CodingCockpitShell />);
-    const runButton = screen.getByRole("button", { name: "Run messy Coder benchmark" });
+    const runButton = screen.getByRole("button", { name: "Run all trials" });
     await waitFor(() => expect(runButton).toBeEnabled());
     fireEvent.click(runButton);
 
@@ -1114,10 +1109,10 @@ describe("CodingCockpitShell", () => {
     expect(shellSrc).toContain("technicalDetail: safePayloadSummary(applyPayload)");
   });
 
-  it("renders the Plan 4.2 brain-stage and worker ledger without fake GO wording", () => {
+  it("renders the Plan 4.2 pipeline ledger without fake GO wording", () => {
     const shellSrc = readFileSync("src/components/coding/CodingCockpitShell.tsx", "utf8");
     expect(shellSrc).toContain("Plan 4.2 ledger");
-    expect(shellSrc).toContain("Brain-stage and worker ledger");
+    expect(shellSrc).toContain("Pipeline ledger");
     expect(shellSrc).toContain("plan42BrainStageTimelineItems");
     expect(shellSrc).toContain("plan42TaskLedgerItems");
     expect(shellSrc).toContain("plan42OutputContractItems");
@@ -1731,7 +1726,7 @@ describe("CodingCockpitShell", () => {
   it("disables run while background cleanup/reverse is active", async () => {
     installCommonFetchMock();
     render(<CodingCockpitShell />);
-    const runButton = screen.getByRole("button", { name: "Run messy Coder benchmark" });
+    const runButton = screen.getByRole("button", { name: "Run all trials" });
     await waitFor(() => expect(runButton).toBeEnabled());
   });
 

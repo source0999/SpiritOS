@@ -431,6 +431,12 @@ type ManualTaskEvent = {
   label: string;
   status: ManualTaskEventStatus;
 };
+type CodingPipelineStepStatus = "pending" | "running" | "complete" | "blocked" | "failed" | "skipped";
+type CodingPipelineStep = {
+  detail: string;
+  label: string;
+  status: CodingPipelineStepStatus;
+};
 
 const manualTaskPhaseLabels = {
   received: "Reading request",
@@ -2981,6 +2987,247 @@ function readableTaskState(previewState: PreviewState, draftReady: boolean): str
   if (previewState.status === "blocked" || previewState.status === "error") return "Failed";
   if (draftReady) return "Needs input";
   return "Ready";
+}
+
+function codingStepStatusClass(status: CodingPipelineStepStatus): string {
+  if (status === "complete") return "border-emerald-300/40 bg-emerald-300/10 text-emerald-100";
+  if (status === "running") return "border-sky-300/40 bg-sky-300/10 text-sky-100";
+  if (status === "blocked") return "border-amber-300/40 bg-amber-300/10 text-amber-100";
+  if (status === "failed") return "border-rose-300/40 bg-rose-300/10 text-rose-100";
+  if (status === "skipped") return "border-slate-300/30 bg-slate-300/10 text-slate-300";
+  return "border-[var(--ddv4-pill-border)] text-[var(--ddv4-fg-muted)]";
+}
+
+function activeRunPreviewText(
+  previewState: PreviewState,
+  draftReady: boolean,
+): { detail: string; title: string } {
+  if (previewState.isApplying) {
+    return {
+      detail: "Approved diff is being sent through execute-approved. Apply success is not shown until the route returns it.",
+      title: "Apply approved diff",
+    };
+  }
+  if (previewState.isLoading) {
+    return {
+      detail: previewState.currentPhase || "Existing preview route is running. No files have been changed yet.",
+      title: previewState.currentPhase === manualTaskPhaseLabels.promptPacket
+        ? "Building prompt packet"
+        : previewState.currentPhase === manualTaskPhaseLabels.preview
+          ? "Previewing diff"
+          : "Working",
+    };
+  }
+  if (previewState.status === "ready" && previewState.approvalAvailable) {
+    return {
+      detail: "Preview is ready. Human approval is required before the apply route can run.",
+      title: "Waiting for approval",
+    };
+  }
+  if (previewState.status === "approved") {
+    return {
+      detail: "Approval is recorded, but files are still unchanged until apply is explicitly run.",
+      title: "Apply gated",
+    };
+  }
+  if (previewState.status === "applied") {
+    return {
+      detail: previewState.outputHash || previewState.traceId
+        ? "Apply completed with receipt or trace fields available for review."
+        : "Apply completed. Review changed files and verification before treating this as done.",
+      title: "Receipt / trace ready",
+    };
+  }
+  if (previewState.status === "satisfied") {
+    return {
+      detail: previewState.blocker ?? "Coder reported no diff was required. No files were changed.",
+      title: "Already satisfied",
+    };
+  }
+  if (isUsefulClarificationBlock(previewState)) {
+    return {
+      detail: previewState.blocker ?? "The run stopped at a clarification boundary. No files were changed.",
+      title: "Clarification blocked",
+    };
+  }
+  if (isExpectedSafetyBlock(previewState) || previewState.status === "blocked") {
+    return {
+      detail: previewState.blocker ?? "The approval or safety boundary stopped the run. No hidden apply success is shown.",
+      title: "Apply blocked",
+    };
+  }
+  if (previewState.status === "error" || previewState.error) {
+    return {
+      detail: previewState.error ?? "A route, runtime, verifier, or unexpected error stopped this run.",
+      title: "Run failed",
+    };
+  }
+  if (draftReady) {
+    return {
+      detail: "Draft is ready. Start coding will build a prompt packet and preview a diff before any apply.",
+      title: "Ready to start",
+    };
+  }
+  return {
+    detail: "Ready. Describe a change to build a prompt packet and preview a diff.",
+    title: "Ready",
+  };
+}
+
+function buildCodingPipelineSteps({
+  applyPreflightNeedsFix,
+  currentChangedFilesDiagnostics,
+  previewState,
+}: {
+  applyPreflightNeedsFix: boolean;
+  currentChangedFilesDiagnostics: ReturnType<typeof buildChangedFilesDiagnostics>;
+  previewState: PreviewState;
+}): CodingPipelineStep[] {
+  const hasStarted =
+    previewState.status !== "idle" ||
+    previewState.isLoading ||
+    previewState.isApplying ||
+    previewState.events.length > 0;
+  const hasPreviewDiff =
+    Boolean(previewState.diff.trim()) ||
+    currentChangedFilesDiagnostics.previewChangedFiles.length > 0;
+  const hasPreviewResult =
+    hasPreviewDiff ||
+    previewState.status === "ready" ||
+    previewState.status === "approved" ||
+    previewState.status === "applied" ||
+    previewState.status === "satisfied";
+  const isFailed = previewState.status === "error" || Boolean(previewState.error);
+  const isBlocked =
+    previewState.status === "blocked" ||
+    isExpectedSafetyBlock(previewState) ||
+    isUsefulClarificationBlock(previewState) ||
+    previewState.reasonCode === "human_rejected_preview" ||
+    previewState.reasonCode === "preview_only_no_apply_requested";
+  const receiptOrTraceReady = Boolean(
+    previewState.traceId ||
+      previewState.outputHash ||
+      previewState.invocationEventId ||
+      previewState.consumerEventId ||
+      previewState.appliedAt,
+  );
+  const verificationRecorded =
+    previewState.verifierSummary.toLowerCase().includes("passed") ||
+    previewState.checks.length > 0 ||
+    currentChangedFilesDiagnostics.diskChangedFiles.length > 0;
+
+  return [
+    {
+      label: "Build prompt packet",
+      status: !hasStarted
+        ? "pending"
+        : previewState.isLoading && !hasPreviewResult
+          ? "running"
+          : isFailed && !previewState.routeCalled
+            ? "failed"
+            : isBlocked && !previewState.routeCalled
+              ? "blocked"
+              : "complete",
+      detail: previewState.routeCalled
+        ? `Route observed: ${previewState.routeCalled}`
+        : hasStarted
+          ? previewState.currentPhase
+          : "Waiting for a task.",
+    },
+    {
+      label: "Preview diff",
+      status: !hasStarted
+        ? "pending"
+        : previewState.isLoading
+          ? "running"
+          : isFailed && !hasPreviewResult
+            ? "failed"
+            : isBlocked && !hasPreviewResult
+              ? "blocked"
+              : hasPreviewResult
+                ? "complete"
+                : "pending",
+      detail: hasPreviewDiff
+        ? formatList(currentChangedFilesDiagnostics.previewChangedFiles, "Preview diff has no changed files.")
+        : previewState.status === "satisfied"
+          ? "No diff required."
+          : previewState.blocker ?? previewState.error ?? "No preview diff yet.",
+    },
+    {
+      label: "Check approval boundary",
+      status: previewState.status === "approved" || previewState.status === "applied"
+        ? "complete"
+        : isFailed
+          ? "failed"
+          : previewState.status === "ready" && previewState.approvalAvailable
+            ? "blocked"
+            : isBlocked || applyPreflightNeedsFix
+              ? "blocked"
+              : hasPreviewResult
+                ? "complete"
+                : "pending",
+      detail: previewState.status === "ready" && previewState.approvalAvailable
+        ? "Human approval required before apply."
+        : applyPreflightNeedsFix
+          ? "Apply preflight needs a safer scope."
+          : previewState.reasonCode ?? previewState.reviewerSummary,
+    },
+    {
+      label: "Apply only if approved",
+      status: previewState.isApplying
+        ? "running"
+        : previewState.status === "applied"
+          ? "complete"
+          : previewState.status === "satisfied" || previewState.reasonCode === "preview_only_no_apply_requested"
+            ? "skipped"
+            : isFailed
+              ? "failed"
+              : previewState.status === "approved" || (previewState.status === "ready" && previewState.approvalAvailable) || isBlocked
+                ? "blocked"
+                : "pending",
+      detail: previewState.status === "applied"
+        ? previewState.applySummary || "Apply route returned applied."
+        : previewState.status === "approved"
+          ? "Approved; waiting for explicit apply action."
+          : previewState.status === "ready" && previewState.approvalAvailable
+            ? "Locked behind human approval."
+            : "No apply has run.",
+    },
+    {
+      label: "Verify result",
+      status: isFailed
+        ? "failed"
+        : previewState.status === "applied" && !verificationRecorded
+          ? "pending"
+          : verificationRecorded && hasPreviewResult
+            ? "complete"
+            : isBlocked
+              ? "blocked"
+              : "pending",
+      detail: previewState.status === "applied" && !verificationRecorded
+        ? "Post-apply verification still required."
+        : previewState.verifierSummary,
+    },
+    {
+      label: "Receipt / trace",
+      status: receiptOrTraceReady
+        ? "complete"
+        : isFailed
+          ? "failed"
+          : previewState.status === "idle"
+            ? "pending"
+            : previewState.status === "satisfied" || isBlocked
+              ? "skipped"
+              : "pending",
+      detail: receiptOrTraceReady
+        ? [
+            previewState.taskId ? `task ${previewState.taskId}` : "",
+            previewState.traceId ? `trace ${previewState.traceId}` : "",
+            previewState.outputHash ? `hash ${previewState.outputHash}` : "",
+          ].filter(Boolean).join(" | ")
+        : "No receipt or trace field recorded yet.",
+    },
+  ];
 }
 
 function trialVerdictBadgeClass(verdict: "FAIL" | "PASS" | "PENDING" | "UNKNOWN") {
@@ -9676,6 +9923,12 @@ export function CodingCockpitShell() {
               : previewState.status === "satisfied"
                 ? (previewState.blocker ?? "No diff was required because the target already satisfies the task.")
                 : previewState.error ?? previewState.blocker ?? previewState.applySummary ?? codingVisibleResult.plain_summary;
+  const activeRunPreview = activeRunPreviewText(previewState, draftReady);
+  const codingPipelineSteps = buildCodingPipelineSteps({
+    applyPreflightNeedsFix,
+    currentChangedFilesDiagnostics,
+    previewState,
+  });
   const simpleProgressItems = [
     "Reading request",
     "Finding files",
@@ -10029,8 +10282,8 @@ export function CodingCockpitShell() {
               <p className={`mt-2 text-xs ${commandMutedClass}`}>{currentTaskTarget}</p>
             </section>
             <section className={`${commandInsetClass} p-3`} aria-label="Trial Runner">
-              <p className={commandLabelClass}>Trial Runner</p>
-              <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>Trial Runner</h3>
+              <p className={commandLabelClass}>Runner tools</p>
+              <h3 className={`mt-2 text-base font-semibold ${commandTextClass}`}>Runner Tools</h3>
               <p className={`mt-1 text-xs leading-5 ${commandMutedClass}`}>
                 Run one dummy Coder prompt or a later benchmark. Coder 001 creates LumaCart first.
               </p>
@@ -10514,24 +10767,24 @@ export function CodingCockpitShell() {
           </aside>
 
           <section className="flex min-w-0 flex-col gap-5">
-            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="phone-trial-heading">
+            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="active-run-preview-heading">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className={commandLabelClass}>Phone trial</p>
-                  <h2 id="phone-trial-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
-                    Background trial
+                  <p className={commandLabelClass}>Active run</p>
+                  <h2 id="active-run-preview-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
+                    Active run preview
                   </h2>
-                  <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{phoneBackgroundDetail}</p>
+                  <p className={`mt-2 text-sm leading-6 ${commandMutedClass}`}>{activeRunPreview.detail}</p>
                 </div>
                 <span className="inline-flex min-h-9 shrink-0 items-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-xs font-semibold text-[var(--ddv4-fg)]">
-                  {phoneBackgroundState}
+                  {activeRunPreview.title}
                 </span>
               </div>
               <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
                 {[
-                  ["Progress", `${reversibleSuiteState.completed}/${reversibleSuiteState.count}`],
-                  ["Connection", phoneNetworkState],
-                  ["Saved", reversibleSuiteState.results.length > 0 ? "Yes" : "Waiting"],
+                  ["Task", previewState.taskId || "not created"],
+                  ["Route", previewState.routeCalled ?? "waiting for prompt packet"],
+                  ["Trace", previewState.traceId ?? "not recorded"],
                 ].map(([label, value]) => (
                   <div className={`${commandInsetClass} min-w-0 p-3`} key={label}>
                     <dt className={commandLabelClass}>{label}</dt>
@@ -10539,7 +10792,27 @@ export function CodingCockpitShell() {
                   </div>
                 ))}
               </dl>
-              {phoneResumeAction}
+              <details className={`${commandInsetClass} mt-3 overflow-hidden`}>
+                <summary className={`min-h-10 cursor-pointer px-3 py-2 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}>
+                  Runner sync
+                </summary>
+                <dl className="grid gap-2 border-t border-[var(--ddv4-surface-border-soft)] p-3 text-xs sm:grid-cols-3">
+                  {[
+                    ["Trial progress", `${reversibleSuiteState.completed}/${reversibleSuiteState.count}`],
+                    ["Connection", phoneNetworkState],
+                    ["Saved", reversibleSuiteState.results.length > 0 ? "Yes" : "Waiting"],
+                  ].map(([label, value]) => (
+                    <div className="min-w-0" key={label}>
+                      <dt className={commandLabelClass}>{label}</dt>
+                      <dd className={`mt-1 truncate ${commandMutedClass}`} title={value}>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="px-3 pb-3">
+                  <p className={`text-xs leading-5 ${commandMutedClass}`}>{phoneBackgroundDetail}</p>
+                  {phoneResumeAction}
+                </div>
+              </details>
             </section>
 
             <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="task-composer-heading">
@@ -10626,26 +10899,32 @@ export function CodingCockpitShell() {
             </section>
 
             <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="progress-heading">
-              <p className={commandLabelClass}>Progress</p>
+              <p className={commandLabelClass}>Activity</p>
               <h2 id="progress-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
-                Run progress
+                Run activity
               </h2>
               <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {simpleProgressItems.map((item) => (
+                {codingPipelineSteps.map((item) => (
                   <li className={`${commandInsetClass} min-h-16 p-3`} key={item.label}>
                     <div className={`text-sm font-semibold ${commandTextClass}`}>{item.label}</div>
-                    <div className={`mt-1 text-xs uppercase tracking-[0.12em] ${commandMutedClass}`}>
+                    <div className={`mt-2 inline-flex min-h-7 items-center rounded-md border px-2 text-xs font-semibold uppercase tracking-[0.12em] ${codingStepStatusClass(item.status)}`}>
                       {item.status}
                     </div>
+                    <p className={`mt-2 line-clamp-2 text-xs leading-5 ${commandMutedClass}`}>{item.detail}</p>
                   </li>
                 ))}
               </ol>
             </section>
 
-            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-42-ledger-heading">
+            <details className={`${commandPanelClass} overflow-hidden`}>
+              <summary className={`min-h-12 cursor-pointer px-4 py-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}>
+                Diagnostics
+              </summary>
+              <div className="space-y-4 border-t border-[var(--ddv4-surface-border-soft)] p-4 sm:p-5">
+            <section className={`${commandInsetClass} p-4`} aria-labelledby="plan-42-ledger-heading">
               <p className={commandLabelClass}>Plan 4.2 ledger</p>
               <h2 id="plan-42-ledger-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
-                Brain-stage and worker ledger
+                Pipeline ledger
               </h2>
               <ol className="mt-4 grid gap-2 sm:grid-cols-3">
                 {plan42BrainStageTimelineItems.map((item) => (
@@ -10663,7 +10942,7 @@ export function CodingCockpitShell() {
                   ["Task ledger", plan42TaskLedgerItems],
                   ["Output contract", plan42OutputContractItems],
                   ["Progress ledger", plan42ProgressLedgerItems],
-                  ["Specialists and workers", plan42SpecialistWorkerItems],
+                  ["Provider and runner", plan42SpecialistWorkerItems],
                 ].map(([title, rows]) => (
                   <div className={`${commandInsetClass} p-3`} key={String(title)}>
                     <h3 className={`text-sm font-semibold ${commandTextClass}`}>{String(title)}</h3>
@@ -10682,7 +10961,7 @@ export function CodingCockpitShell() {
               </div>
             </section>
 
-            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-43-controls-heading">
+            <section className={`${commandInsetClass} p-4`} aria-labelledby="plan-43-controls-heading">
               <p className={commandLabelClass}>Plan 4.3 controls</p>
               <h2 id="plan-43-controls-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
                 Reviewable operator controls
@@ -10734,7 +11013,7 @@ export function CodingCockpitShell() {
               </div>
             </section>
 
-            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-44-truth-heading">
+            <section className={`${commandInsetClass} p-4`} aria-labelledby="plan-44-truth-heading">
               <p className={commandLabelClass}>Plan 4.4 truth</p>
               <h2 id="plan-44-truth-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
                 Memory, research, verifier, and productive truth
@@ -10762,7 +11041,7 @@ export function CodingCockpitShell() {
               </div>
             </section>
 
-            <section className={`${commandPanelClass} p-4 sm:p-5`} aria-labelledby="plan-45-api-heading">
+            <section className={`${commandInsetClass} p-4`} aria-labelledby="plan-45-api-heading">
               <p className={commandLabelClass}>Plan 4.5 APIs</p>
               <h2 id="plan-45-api-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>
                 Canonical and dormant route ledger
@@ -10789,39 +11068,56 @@ export function CodingCockpitShell() {
                 ))}
               </div>
             </section>
+              </div>
+            </details>
           </section>
 
           <aside
             aria-label="Review pane"
             className={`${commandPanelClass} space-y-4 p-4 min-[920px]:col-span-2 min-[1200px]:col-span-1 min-[1200px]:sticky min-[1200px]:top-4 min-[1200px]:max-h-[calc(100dvh-2rem)] min-[1200px]:overflow-auto`}
           >
-            <section role="status" aria-live="polite">
-              <p className={commandLabelClass}>Status</p>
-              <h2 className={`mt-2 text-lg font-semibold ${commandTextClass}`}>Coding runner</h2>
+            <section role="status" aria-live="polite" aria-labelledby="pipeline-steps-heading">
+              <p className={commandLabelClass}>Plan / steps</p>
+              <h2 id="pipeline-steps-heading" className={`mt-2 text-lg font-semibold ${commandTextClass}`}>Single-lane pipeline</h2>
               <p className={`mt-1 text-sm ${commandMutedClass}`}>
                 {reversibleSuiteState.status === "running" || reversibleSuiteState.status === "stopping"
                   ? reversibleSuiteState.currentPrompt || "Trial suite is running."
                   : previewState.status === "applied" && previewState.changedFiles.length > 0
                   ? "Files changed on disk. Review or undo this run before starting another."
-                  : "No live-run file changes are currently recorded."}
+                  : activeRunPreview.detail}
               </p>
-              <dl className="mt-4 grid gap-3 text-sm">
-                <div className={`${commandInsetClass} p-3`}>
-                  <dt className={commandLabelClass}>Current task</dt>
-                  <dd className={`mt-1 break-words ${commandTextClass}`}>
-                    {reversibleSuiteState.status !== "idle" ? reversibleSuiteState.currentPrompt || "Trial runner" : currentTaskTitle}
-                  </dd>
-                </div>
-                <div className={`${commandInsetClass} p-3`}>
-                  <dt className={commandLabelClass}>Model</dt>
-                  <dd className={`mt-1 break-words ${commandTextClass}`}>
-                    {reversibleSuiteState.status !== "idle" ? reversibleSuiteState.model : currentPreviewProviderTruth.modelLabel}
-                  </dd>
-                </div>
-                <div className={`${commandInsetClass} p-3`}>
-                  <dt className={commandLabelClass}>State</dt>
-                  <dd className={`mt-1 ${commandTextClass}`}>{liveRunnerState}</dd>
-                </div>
+              <ol className="mt-4 space-y-2">
+                {codingPipelineSteps.map((step, index) => (
+                  <li className={`${commandInsetClass} p-3`} key={step.label}>
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] text-xs font-semibold text-[var(--ddv4-fg-muted)]">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className={`text-sm font-semibold ${commandTextClass}`}>{step.label}</p>
+                          <span className={`inline-flex min-h-7 items-center rounded-md border px-2 text-[10px] font-semibold uppercase tracking-[0.12em] ${codingStepStatusClass(step.status)}`}>
+                            {step.status}
+                          </span>
+                        </div>
+                        <p className={`mt-2 break-words text-xs leading-5 ${commandMutedClass}`}>{step.detail}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <dl className="mt-4 grid gap-2 text-xs">
+                {[
+                  ["Model", reversibleSuiteState.status !== "idle" ? reversibleSuiteState.model : currentPreviewProviderTruth.modelLabel],
+                  ["Task ID", previewState.taskId || "none"],
+                  ["Trace ID", previewState.traceId ?? "none"],
+                  ["Output hash", previewState.outputHash ?? "none"],
+                ].map(([label, value]) => (
+                  <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-2" key={label}>
+                    <dt className="font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg-faint)]">{label}</dt>
+                    <dd className={`break-all font-mono ${commandTextClass}`}>{value}</dd>
+                  </div>
+                ))}
               </dl>
             </section>
 
