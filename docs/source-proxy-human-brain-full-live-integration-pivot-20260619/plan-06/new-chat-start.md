@@ -40,3 +40,15 @@ Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
 Britton review and decision whether to accept `PARTIAL_DAILY_DRIVER_CANDIDATE`, request targeted fixes, authorize additional productive soak, or deny promotion.
 
 Do not start Plan 7 without explicit Britton authorization.
+
+## Plan 6 Partial-Candidate Addendum - 2026-06-27
+
+Current Plan 6 addendum status: `PLAN6_PARTIAL_CANDIDATE_ADDENDUM_SOAK_COMPLETE`.
+
+Updated promotion recommendation: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`.
+
+Full daily-driver promotion: `NOT_APPROVED`.
+
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
+
+Do not claim full promotion. Do not start Plan 7 without explicit Britton authorization.

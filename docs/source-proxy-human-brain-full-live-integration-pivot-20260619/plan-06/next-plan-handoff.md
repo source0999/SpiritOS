@@ -74,3 +74,22 @@ Required next Britton decision:
 - or deny promotion.
 
 Do not start Plan 7 without explicit Britton authorization.
+
+## Plan 6 Partial-Candidate Addendum - 2026-06-27
+
+Status: `PLAN6_PARTIAL_CANDIDATE_ADDENDUM_SOAK_COMPLETE`
+
+Updated promotion recommendation: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`
+
+Full daily-driver promotion: `NOT_APPROVED`
+
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`
+
+Addendum artifacts:
+
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-partial-candidate-targeted-fixes-addendum-20260627.md`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-addendum-approval-records-20260627.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-proof-20260627.json`
+- `docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-decision-20260627.md`
+
+Stop condition: addendum decision packet complete. Britton must decide whether to accept the conditional candidate, request another targeted soak, request fixes, deny promotion, or separately authorize Plan 7. No Plan 7 work is authorized here.

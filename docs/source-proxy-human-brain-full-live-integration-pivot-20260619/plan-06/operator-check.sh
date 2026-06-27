@@ -15,6 +15,12 @@ python3 -m json.tool "$PLAN_DIR/plan6-supervised-daily-driver-trial-proof-202606
 test -f "$PLAN_DIR/phase-6-5-supervised-daily-driver-trial-20260626.md"
 test -f "$PLAN_DIR/plan6-daily-driver-promotion-decision-20260626.md"
 python3 -m json.tool "$ROOT/status.json" >/dev/null
+
+# Plan 6 partial-candidate addendum checks
+test -f "$PLAN_DIR/plan6-partial-candidate-targeted-fixes-addendum-20260627.md"
+test -f "$PLAN_DIR/plan6-additional-productive-soak-decision-20260627.md"
+python3 -m json.tool "$PLAN_DIR/plan6-addendum-approval-records-20260627.json" >/dev/null
+python3 -m json.tool "$PLAN_DIR/plan6-additional-productive-soak-proof-20260627.json" >/dev/null
 if grep -R -E "preview_only_completion|advisory_only_completion|read_only_completion" "$PLAN_DIR/status.md" >/dev/null 2>&1; then
   echo "FAIL forbidden completion flag in status"
   exit 1

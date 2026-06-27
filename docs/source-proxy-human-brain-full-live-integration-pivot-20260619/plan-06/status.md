@@ -129,3 +129,25 @@ Plan 6 final closeout is ready for Britton review.
 Required next action: Britton review and decision whether to accept `PARTIAL_DAILY_DRIVER_CANDIDATE`, request targeted fixes, authorize additional productive soak, or deny promotion.
 
 No Plan 7 work is authorized.
+
+## Plan 6 Partial-Candidate Addendum - 2026-06-27
+
+Status: `PLAN6_PARTIAL_CANDIDATE_ADDENDUM_SOAK_COMPLETE`.
+
+Promotion recommendation after addendum: `CONDITIONAL_DAILY_DRIVER_CANDIDATE`.
+
+Full daily-driver promotion: `NOT_APPROVED`.
+
+Plan 7: `NOT_STARTED / NOT_AUTHORIZED`.
+
+Britton accepted `PARTIAL_DAILY_DRIVER_CANDIDATE` and authorized targeted fixes plus exactly five supervised productive soak tasks inside the Plan 6 partial-candidate boundary.
+
+Completed addendum tasks:
+
+- Task A: `GO_PRODUCTIVE_PLAN6_DOCS_PATCH`
+- Task B: `GO_TEST_ADJACENT_PLAN6_SCRIPT_PATCH`
+- Task C: `GO_PRODUCTIVE_PLAN6_STATUS_PATCH`
+- Task D: `GO_ACCEPTANCE_HARNESS_OUTPUT_CONSUMED`
+- Task E: `GO_DECISION_PACKET_COMPLETE`
+
+The addendum improves the recommendation from PARTIAL to CONDITIONAL because it externalizes approval records, adds an independent after-the-fact addendum audit record, refreshes Linux replay checks, and completes five narrow supervised Plan 6 tasks. It does not approve full promotion, broaden apply authority, authorize product-code changes, authorize Mac writes, or start Plan 7.

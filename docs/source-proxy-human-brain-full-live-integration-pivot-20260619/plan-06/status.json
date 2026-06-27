@@ -1,7 +1,7 @@
 {
   "approval_recorded": "Britton explicitly approved Plan 6 start in the Codex task prompt on 2026-06-26.",
-  "current_phase": "6.6",
-  "daily_driver_promotion_recommendation": "PARTIAL_DAILY_DRIVER_CANDIDATE",
+  "current_phase": "6.addendum",
+  "daily_driver_promotion_recommendation": "CONDITIONAL_DAILY_DRIVER_CANDIDATE",
   "forbidden_paths_touched": false,
   "full_daily_driver_promotion": "NOT_APPROVED",
   "gate_status": "PLAN6_START_APPROVED_BY_BRITTON_20260626",
@@ -54,7 +54,11 @@
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-live-fail-closed-reliability-proof-20260626.json",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-mac-dell-dispatch-proof-20260626.json",
     "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-supervised-daily-driver-trial-proof-20260626.json",
-    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/glm-plan6-daily-driver-candidate-integrity-audit-20260626.md"
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/glm-plan6-daily-driver-candidate-integrity-audit-20260626.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-partial-candidate-targeted-fixes-addendum-20260627.md",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-addendum-approval-records-20260627.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-proof-20260627.json",
+    "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-decision-20260627.md"
   ],
   "proof_summary": {
     "accepted_fail_closed_tasks": 17,
@@ -109,8 +113,8 @@
     "no_unrestricted_apply_readiness",
     "plan7_not_authorized"
   ],
-  "status": "PLAN6_FINAL_CLOSEOUT_READY_FOR_BRITTON_REVIEW",
-  "stop_condition": "Plan 6 final closeout ready for Britton review. Required next action is Britton decision to accept PARTIAL daily-driver candidate, request targeted fixes, authorize additional productive soak, or deny promotion. Plan 7 is not authorized.",
+  "status": "PLAN6_PARTIAL_CANDIDATE_ADDENDUM_SOAK_COMPLETE",
+  "stop_condition": "Plan 6 partial-candidate addendum decision packet complete. No full promotion and no Plan 7 authorization.",
   "title": "Reliability and Daily-Driver Promotion",
   "validation": {
     "linux_replay_path": "/home/source/SpiritOS",
@@ -120,5 +124,22 @@
     "status_json_validation": "PASS",
     "unittest_acceptance_harness": "PASS_4_TESTS_OK"
   },
-  "work_outside_plan_6_started": false
+  "work_outside_plan_6_started": false,
+  "addendum": {
+    "label": "plan6-partial-candidate-addendum-20260627",
+    "status": "PLAN6_PARTIAL_CANDIDATE_ADDENDUM_SOAK_COMPLETE",
+    "tasks_requested": 5,
+    "tasks_completed": 5,
+    "scoped_apply_used": true,
+    "apply_scope": "Plan 6 addendum docs/status/proof/operator-check targets only",
+    "full_daily_driver_promotion": "NOT_APPROVED",
+    "plan7_status": "NOT_STARTED_NOT_AUTHORIZED",
+    "recommendation": "CONDITIONAL_DAILY_DRIVER_CANDIDATE",
+    "artifacts": [
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-partial-candidate-targeted-fixes-addendum-20260627.md",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-addendum-approval-records-20260627.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-proof-20260627.json",
+      "docs/source-proxy-human-brain-full-live-integration-pivot-20260619/plan-06/plan6-additional-productive-soak-decision-20260627.md"
+    ]
+  }
 }
