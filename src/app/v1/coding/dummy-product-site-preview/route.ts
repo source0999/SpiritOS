@@ -53,6 +53,26 @@ function contentTypeFor(path: string): string {
 }
 
 /**
+ * Normalizes a served index.html so the LumaCart page actually renders.
+ *
+ * The model-authored fixture commonly writes `main.js` using ES module syntax
+ * (`import products from './products.js'`) but loads it with a plain `<script src=...>`.
+ * A classic script that contains an `import` statement throws a SyntaxError and the page
+ * stays blank. This rewrite marks any external `<script src=...>` without an explicit type
+ * as `type="module"` so relative ESM imports resolve against the viewer route. It only
+ * touches the type attribute and leaves everything else (content, paths) untouched.
+ */
+function normalizeHtmlForPreview(html: string): string {
+  return html.replace(
+    /<script\b([^>]*?)\bsrc=(["'])([^"']+)\2([^>]*?)>/gi,
+    (match, before, _quote, _src, after) => {
+      const attrs = `${before} ${after}`;
+      return /\btype\s*=/.test(attrs) ? match : `<script type="module"${attrs} src=${_quote}${_src}${_quote}>`;
+    },
+  );
+}
+
+/**
  * Serves the LumaCart dummy-product-site fixture as a viewable page so Britton can click one
  * link and see the page the coder agent made, instead of copy-pasting fixture paths. Read-only:
  * it never writes, applies, or commits. Handles index.html and its relative asset references
@@ -109,7 +129,9 @@ export async function GET(request: Request) {
         },
       );
     }
-    return new Response(content, {
+    const isHtml = fixturePath.toLowerCase().endsWith(".html");
+    const servedContent = isHtml ? normalizeHtmlForPreview(content) : content;
+    return new Response(servedContent, {
       headers: {
         "content-type": contentTypeFor(fixturePath),
         "cache-control": "no-store",

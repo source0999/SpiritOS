@@ -39,7 +39,7 @@ describe("coding dummy-product-site preview route", () => {
     mockedSourceProxyFetch.mockResolvedValueOnce(
       proxyResponse({
         content:
-          "<!doctype html><html><head><title>LumaCart</title></head><body><h1>LumaCart</h1></body></html>",
+          "<!doctype html><html><head><title>LumaCart</title><link rel=\"stylesheet\" href=\"src/styles.css\"></head><body><h1>LumaCart</h1><script src=\"src/main.js\"></script></body></html>",
       }),
     );
 
@@ -48,6 +48,10 @@ describe("coding dummy-product-site preview route", () => {
     expect(response.headers.get("content-type")).toContain("text/html");
     const text = await response.text();
     expect(text).toContain("<h1>LumaCart</h1>");
+    // The model-authored main.js uses ESM imports; the viewer must mark external scripts as
+    // type="module" so the page is not blank.
+    expect(text).toContain('<script type="module"  src="src/main.js">');
+    expect(text).toContain('href="src/styles.css"');
     const body = JSON.parse(
       String((mockedSourceProxyFetch.mock.calls[0]?.[1]?.body as string) ?? "{}"),
     );
@@ -99,5 +103,18 @@ describe("coding dummy-product-site preview route", () => {
     expect(response.status).toBe(200);
     const text = await response.text();
     expect(text).toContain("empty");
+  });
+
+  it("leaves scripts that already declare a type untouched", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      proxyResponse({
+        content:
+          "<html><body><script type=\"application/json\" src=\"data.json\"></script></body></html>",
+      }),
+    );
+    const response = await GET(requestFor("/v1/coding/dummy-product-site-preview"));
+    const text = await response.text();
+    expect(text).toContain('type="application/json"');
+    expect(text).not.toContain("type=\"module\"");
   });
 });
