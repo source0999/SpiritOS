@@ -1,0 +1,148 @@
+import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+
+type JsonRecord = Record<string, unknown>;
+
+const FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
+
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" ? (value as JsonRecord) : {};
+}
+
+/**
+ * Resolves the relative asset path from the request URL to a fixture-relative path.
+ * The "Open LumaCart page" link points at the viewer root, and the generated index.html
+ * references assets with relative paths like "src/styles.css" / "src/main.js", which the
+ * browser resolves against the viewer root. We map any sub-path back under the fixture root.
+ *
+ * Only relative paths under the fixture root are allowed. Absolute, parent-traversal, or
+ * encoded paths that escape the fixture root are rejected so the route cannot be used to
+ * read arbitrary repo files.
+ */
+export function resolveFixturePath(rawPath: string | null | undefined): string | null {
+  if (!rawPath) return `${FIXTURE_ROOT}index.html`;
+  // Strip a leading slash so "/src/styles.css" -> "src/styles.css".
+  const trimmed = rawPath.replace(/^\/+/, "");
+  if (!trimmed) return `${FIXTURE_ROOT}index.html`;
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(trimmed);
+    } catch {
+      return trimmed;
+    }
+  })();
+  // Reject anything that tries to escape the fixture root.
+  if (decoded.includes("..") || decoded.startsWith("/") || /^[A-Za-z]:/.test(decoded)) {
+    return null;
+  }
+  return `${FIXTURE_ROOT}${decoded}`;
+}
+
+function contentTypeFor(path: string): string {
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html; charset=utf-8";
+  if (lower.endsWith(".css")) return "text/css; charset=utf-8";
+  if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript; charset=utf-8";
+  if (lower.endsWith(".json")) return "application/json; charset=utf-8";
+  if (lower.endsWith(".svg")) return "image/svg+xml";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".ico")) return "image/x-icon";
+  return "text/plain; charset=utf-8";
+}
+
+/**
+ * Normalizes a served index.html so the LumaCart page actually renders.
+ *
+ * The model-authored fixture commonly writes `main.js` using ES module syntax
+ * (`import products from './products.js'`) but loads it with a plain `<script src=...>`.
+ * A classic script that contains an `import` statement throws a SyntaxError and the page
+ * stays blank. This rewrite marks any external `<script src=...>` without an explicit type
+ * as `type="module"` so relative ESM imports resolve against the viewer route. It only
+ * touches the type attribute and leaves everything else (content, paths) untouched.
+ */
+function normalizeHtmlForPreview(html: string): string {
+  return html.replace(
+    /<script\b([^>]*?)\bsrc=(["'])([^"']+)\2([^>]*?)>/gi,
+    (match, before, _quote, _src, after) => {
+      const attrs = `${before} ${after}`;
+      return /\btype\s*=/.test(attrs) ? match : `<script type="module"${attrs} src=${_quote}${_src}${_quote}>`;
+    },
+  );
+}
+
+/**
+ * Shared viewer handler for the LumaCart dummy-product-site fixture. Used by the root route
+ * (the "Open LumaCart page" link) and the catch-all route (relative asset requests like
+ * src/styles.css, src/main.js). Read-only: never writes, applies, or commits.
+ */
+export async function serveFixtureAsset(fixtureSubPath: string | null | undefined): Promise<Response> {
+  if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
+    return new Response("SPIRIT_CODING_USE_PROXY is not true", {
+      headers: { "content-type": "text/plain; charset=utf-8" },
+      status: 409,
+    });
+  }
+
+  const fixturePath = resolveFixturePath(fixtureSubPath);
+  if (!fixturePath) {
+    return new Response("Refusing to read a path outside the LumaCart fixture root.", {
+      headers: { "content-type": "text/plain; charset=utf-8" },
+      status: 400,
+    });
+  }
+
+  try {
+    const response = await sourceProxyFetch("/v1/workspace/read", {
+      body: JSON.stringify({ max_bytes: 1_000_000, path: fixturePath }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      return new Response(
+        text || `Could not read ${fixturePath} (Source Proxy HTTP ${response.status}).`,
+        {
+          headers: { "content-type": "text/plain; charset=utf-8" },
+          status: response.status === 404 ? 404 : 502,
+        },
+      );
+    }
+    const payload = asRecord(await response.json().catch(() => ({})));
+    const content =
+      typeof payload.content === "string"
+        ? payload.content
+        : typeof payload.excerpt === "string"
+          ? payload.excerpt
+          : "";
+    if (!content.trim()) {
+      return new Response(
+        fixturePath.endsWith("index.html")
+          ? "LumaCart index.html exists but is empty. Run Prompt 1 to create the fixture."
+          : `${fixturePath} is empty.`,
+        {
+          headers: { "content-type": "text/plain; charset=utf-8" },
+          status: 200,
+        },
+      );
+    }
+    const isHtml = fixturePath.toLowerCase().endsWith(".html");
+    const servedContent = isHtml ? normalizeHtmlForPreview(content) : content;
+    return new Response(servedContent, {
+      headers: {
+        "content-type": contentTypeFor(fixturePath),
+        "cache-control": "no-store",
+      },
+      status: 200,
+    });
+  } catch (error) {
+    return new Response(
+      error instanceof Error ? error.message : "Failed to read LumaCart fixture.",
+      {
+        headers: { "content-type": "text/plain; charset=utf-8" },
+        status: 502,
+      },
+    );
+  }
+}
