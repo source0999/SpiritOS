@@ -745,6 +745,41 @@ describe("CodingCockpitShell", () => {
     expect(receiptRow).not.toBeNull();
   });
 
+  it("surfaces live task step progress while the selected-prompt run is in flight", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/tasks/long-running/task_progress_001")) {
+        return jsonResponse({
+          task: {
+            id: "task_progress_001",
+            status: "running",
+            steps: ["Capture task scope.", "Coder is generating the LumaCart starter files."],
+          },
+        });
+      }
+      return null;
+    });
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: [],
+        message: "Request sent",
+        rawBackendStatus: "request_sent",
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        status: "request_sent",
+        taskId: "task_progress_001",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    // The latest task step must surface as live progress instead of a silent "Request sent".
+    await waitFor(() =>
+      expect(within(runner).getByText(/generating the LumaCart starter files/)).toBeInTheDocument(),
+    );
+    // Still in flight, so the Cancel button must remain available.
+    expect(within(runner).getByRole("button", { name: "Cancel run" })).toBeInTheDocument();
+  });
+
   it("reconciles restored selected-prompt request_sent state from terminal durable task status", async () => {
     installCommonFetchMock((url) => {
       if (url.includes("/v1/tasks/long-running/task_sync_001")) {

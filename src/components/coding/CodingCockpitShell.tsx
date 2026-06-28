@@ -464,9 +464,14 @@ const manualTaskPhaseLabels = {
   failed: "Ready to review",
 } as const;
 
-/** Match CodingAgentInterface prompt-packet patience; proxy coder sync deadline defaults to 180s. */
+/**
+ * Match CodingAgentInterface prompt-packet patience; proxy coder sync deadline defaults to 180s.
+ * The buffer used to be 180s (360s total), which left the UI stuck for 6 minutes on a slow/hung
+ * model call. The proxy itself gives up at 180s, so keep the frontend deadline just above that to
+ * fail faster with an honest timeout instead of a silent black box.
+ */
 const MANUAL_PROMPT_PACKET_TIMEOUT_MS = 180_000;
-const TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS = 180_000;
+const TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS = 45_000;
 const TRIAL_PROMPT_PACKET_TIMEOUT_MS = MANUAL_PROMPT_PACKET_TIMEOUT_MS + TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS;
 const TRIAL_PROMPT_PACKET_MAX_ATTEMPTS = 2;
 const TRIAL_POST_MODEL_STAGE_TIMEOUT_MS = 60_000;
@@ -5403,12 +5408,7 @@ export function CodingCockpitShell() {
         const payload = await readJson(response);
         const task = asRecord(asRecord(payload).task ?? payload);
         const status = stringValue(task.status);
-        if (!response.ok || !status) return;
-        const terminalStatus =
-          status === "blocked" ||
-          status === "failed" ||
-          status === "cancelled";
-        if (!terminalStatus || cancelled) return;
+        if (!response.ok || !status || cancelled) return;
         const steps = arrayOfStrings(task.steps);
         const taskMessage =
           stringValue(task.truncated_test_results) ??
@@ -5416,6 +5416,40 @@ export function CodingCockpitShell() {
           stringValue(task.error) ??
           steps.at(-1) ??
           `Selected prompt task ${status}.`;
+        // While the packet fetch is still in flight, surface the latest task step as live progress
+        // so the run is not a silent black box for minutes. This is purely informational; it must not
+        // flip the run to a terminal state unless the task actually reached one.
+        const inFlight =
+          status === "starting" ||
+          status === "running" ||
+          status === "queued" ||
+          status === "pending" ||
+          status === "request_sent";
+        if (inFlight) {
+          updateDummyCoderRunState((current) => {
+            if (current.taskId !== taskIdForSync) return current;
+            if (current.status !== "starting" && current.status !== "request_sent" && current.status !== "running") {
+              return current;
+            }
+            return {
+              ...current,
+              message: taskMessage,
+              rawBackendStatus: status,
+              status: "running",
+            };
+          });
+          return;
+        }
+        // The task reached a terminal state. blocked/failed/cancelled are hard stops; complete means
+        // the backend finished but the packet route may still be slow, so surface it as a recoverable
+        // signal rather than leaving the runner stuck on request_sent.
+        const terminalStatus =
+          status === "blocked" ||
+          status === "failed" ||
+          status === "cancelled" ||
+          status === "complete";
+        if (!terminalStatus || cancelled) return;
+        const completed = status === "complete";
         updateDummyCoderRunState((current) => {
           if (current.taskId !== taskIdForSync) return current;
           if (current.status !== "starting" && current.status !== "request_sent" && current.status !== "running") {
@@ -5424,10 +5458,12 @@ export function CodingCockpitShell() {
           return {
             ...current,
             errorText: status === "failed" || status === "cancelled" ? taskMessage : null,
-            message: taskMessage,
+            message: completed
+              ? `${taskMessage} The prompt-packet route is still finalizing; if this hangs, cancel and rerun Prompt 1.`
+              : taskMessage,
             rawBackendStatus: status,
             recommendedNextAction: stringValue(task.next_action) ?? current.recommendedNextAction,
-            status: status === "blocked" ? "blocked" : "error",
+            status: completed ? "running" : status === "blocked" ? "blocked" : "error",
             verificationStatus: stringValue(task.post_apply_verification) ?? current.verificationStatus,
           };
         });
