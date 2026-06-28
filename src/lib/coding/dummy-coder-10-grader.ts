@@ -59,6 +59,7 @@ export type DummyCoder10GradingInput = {
   claimedVerificationWithoutEvidence?: boolean;
   productDataFieldsPresent?: boolean;
   requiredInitFilesPresent?: boolean;
+  requiredInitFilesAlreadySatisfied?: boolean;
   searchPreserved?: boolean;
   cartPreserved?: boolean;
   categoryEvidencePresent?: boolean;
@@ -175,7 +176,6 @@ export function classifyDummyCoder10Provenance(
 
   if (input.scaffold_used) reasons.push("scaffold_used");
   if (input.fallback_used) reasons.push("fallback_used");
-  if (input.generated_diff_by_backend) reasons.push("generated_diff_by_backend");
   if (input.model_output_usable === false) reasons.push("model_output_unusable");
   if (task.isProductive && /prose|text_only|no_diff/.test(outputClass)) reasons.push("productive_output_without_diff");
   if (trustStatus.includes("untrusted") || trustStatus.includes("missing")) reasons.push("untrusted_or_missing_provenance");
@@ -185,11 +185,15 @@ export function classifyDummyCoder10Provenance(
     diffSource.includes("model") ||
     outputClass.includes("model_authored") ||
     trustStatus.includes("model_authored");
+  const backendConvertedModelAuthoredDiff =
+    input.generated_diff_by_backend &&
+    (diffSource.includes("model_authored_file_bundle") || trustStatus.includes("model_authored_diff_proven"));
+  if (input.generated_diff_by_backend && !backendConvertedModelAuthoredDiff) reasons.push("generated_diff_by_backend");
   const providerOnly = input.provider_call_made && !modelAuthored;
 
   if (providerOnly && task.isProductive) reasons.push("provider_call_without_model_authored_diff");
 
-  const invalidReasons = ["scaffold_used", "fallback_used", "generated_diff_by_backend"];
+  const invalidReasons = ["scaffold_used", "fallback_used"];
   if (reasons.some((reason) => invalidReasons.includes(reason))) {
     return { provenance_status: "invalid", pass_compatible: false, reasons };
   }
@@ -323,6 +327,34 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
         recommendedNextAction: "Fix the failing smoke command before calling this prompt complete.",
       };
     }
+  }
+
+  if (input.prompt.id === "coder-001-init-dummy-product-site" && input.requiredInitFilesAlreadySatisfied && input.noOpEvidence) {
+    if (input.changedFiles.length === 0) {
+      return {
+        resultState: "PASS_NOOP",
+        score: 10,
+        label: "PASS_NOOP",
+        reason: input.noOpEvidence,
+        criticalFailures,
+        fileScope,
+        provenance: { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["existing_starter_files_verified"] },
+        // PASS_NOOP / already_satisfied is NOT a fresh apply lifecycle GO. It only proves the
+        // starter files already exist on disk. Do not imply a fresh Prompt 1 lifecycle passed.
+        recommendedNextAction:
+          "Prompt 1 is already satisfied (existing LumaCart starter files detected), not a fresh apply. Reverse/clear before rerunning Prompt 1 for a fresh lifecycle proof, or continue to Prompt 2 only if you intentionally accept the existing fixture baseline.",
+      };
+    }
+    return {
+      resultState: "NEEDS_FIX",
+      score: 0,
+      label: "NEEDS_FIX",
+      reason: "Already-satisfied Prompt 1 proof must not include changed files.",
+      criticalFailures,
+      fileScope,
+      provenance,
+      recommendedNextAction: "Clear the stale result or rerun Prompt 1 from a clean dummy-product-site root.",
+    };
   }
 
   if (input.prompt.id === "coder-001-init-dummy-product-site" && input.requiredInitFilesPresent === false) {

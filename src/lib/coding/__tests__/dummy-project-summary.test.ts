@@ -51,4 +51,21 @@ describe("dummy project factual summary", () => {
       "Import status is flagged for review",
     );
   });
+
+  it("never reports 'not present' when dummy fixture files exist (no contradictory state)", () => {
+    const summary = buildExistingDummyProjectSummary({
+      files: [`${root}index.html`, `${root}src/main.js`],
+    });
+
+    // The contradiction to guard against: files present + "LumaCart is not present".
+    expect(summary).toContain("LumaCart exists under");
+    expect(summary).not.toContain("not present");
+  });
+
+  it("reports absent only when no dummy fixture files exist", () => {
+    const summary = buildExistingDummyProjectSummary({ files: [] });
+
+    expect(summary).toContain("LumaCart is not present");
+    expect(summary).not.toContain("LumaCart exists");
+  });
 });

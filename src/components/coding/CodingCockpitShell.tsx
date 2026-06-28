@@ -41,6 +41,7 @@ import {
   allUnrevertedSuiteResultsInReversePromptOrder,
   buildDeleteFileReverseDiff,
   isAgentLabTrialPath,
+  isDummyProductSiteTrialPath,
   pathIsAllowedForTrialReverse,
   uniqueAgentLabTargetsFromResults,
 } from "@/lib/coding/agent-lab-cleanup";
@@ -4683,6 +4684,21 @@ export function CodingCockpitShell() {
   );
   const agentLabHasStaleLeftoversOutsideCurrentSuite =
     currentSuiteAgentLabFileClassification.staleLeftoverFiles.length > 0;
+  // Baseline wording must name the fixture that is actually dirty. The probe covers both the
+  // /agent-lab area and the LumaCart dummy-product-site fixture, so generic "Agent Lab
+  // baseline dirty" wording is wrong when the only leftovers are LumaCart fixture files.
+  const dirtyBaselineFileSplit = useMemo(() => {
+    const dirty = agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files ?? [];
+    const agentLabFiles = dirty.filter((path) => isAgentLabTrialPath(path));
+    const dummyProductSiteFiles = dirty.filter((path) => isDummyProductSiteTrialPath(path));
+    return { agentLabFiles, dummyProductSiteFiles };
+  }, [agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files]);
+  const dirtyBaselineScope =
+    dirtyBaselineFileSplit.dummyProductSiteFiles.length > 0 && dirtyBaselineFileSplit.agentLabFiles.length === 0
+      ? "dummy-product-site"
+      : dirtyBaselineFileSplit.agentLabFiles.length > 0 && dirtyBaselineFileSplit.dummyProductSiteFiles.length === 0
+        ? "agent-lab"
+        : "mixed";
   const agentLabBaselineBlocksRun =
     reversibleTrialCategory === "Coder" &&
     (agentLabBaselineLoadState !== "ready" || agentLabHasLeftovers);
@@ -4791,7 +4807,11 @@ export function CodingCockpitShell() {
           : agentLabBaselineSnapshot
             ? agentLabBaselineSnapshot.baseline_clean_for_fresh_suite
               ? "Agent Lab baseline clean — ready for a fresh Coder benchmark."
-              : `Agent Lab baseline dirty (${agentLabBaselineSnapshot.baseline_dirty_agent_lab_files.length} leftover file(s)). Reverse before running.`
+              : dirtyBaselineScope === "dummy-product-site"
+                ? `Dummy product-site baseline dirty (${dirtyBaselineFileSplit.dummyProductSiteFiles.length} leftover file(s)). Reverse before a fresh Coder benchmark.`
+                : dirtyBaselineScope === "agent-lab"
+                  ? `Agent Lab baseline dirty (${dirtyBaselineFileSplit.agentLabFiles.length} leftover file(s)). Reverse before running.`
+                  : `Baseline dirty (${agentLabBaselineSnapshot.baseline_dirty_agent_lab_files.length} leftover file(s)). Reverse before running.`
             : "Agent Lab baseline not loaded yet."
       : null;
   const trialReversalHelpText =
@@ -4802,7 +4822,11 @@ export function CodingCockpitShell() {
           ? "Selected prompt applied reversible edits. This button reverses them and clears the selected-prompt result."
           : "No applied selected-prompt edits to reverse. This button clears the selected-prompt result."
       : agentLabHasLeftovers
-        ? `Agent Lab still has ${agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files.length ?? 0} leftover file(s) on disk. Reverse them before a fresh Coder benchmark.`
+        ? dirtyBaselineScope === "dummy-product-site"
+          ? `LumaCart fixture still has ${dirtyBaselineFileSplit.dummyProductSiteFiles.length} leftover file(s) on disk. Reverse/clear them before a fresh Coder benchmark.`
+          : dirtyBaselineScope === "agent-lab"
+            ? `Agent Lab still has ${dirtyBaselineFileSplit.agentLabFiles.length} leftover file(s) on disk. Reverse them before a fresh Coder benchmark.`
+            : `Baseline still has ${agentLabBaselineSnapshot?.baseline_dirty_agent_lab_files.length ?? 0} leftover file(s) on disk. Reverse them before a fresh Coder benchmark.`
         : suitePendingRevertCount > 0
       ? suitePassReversibleRowCount > suitePendingRevertTargetCount
         ? `Current suite made ${suitePendingRevertTargetCount} dummy fixture edit(s). Product-code PASS rows may be no-op checks; this button reverses fixtures and clears results.`
@@ -5343,6 +5367,72 @@ export function CodingCockpitShell() {
     [],
   );
 
+  useEffect(() => {
+    const taskId = dummyCoderRunState.taskId;
+    const active =
+      dummyCoderRunState.status === "starting" ||
+      dummyCoderRunState.status === "request_sent" ||
+      dummyCoderRunState.status === "running";
+    if (!taskId || !active) return;
+    const taskIdForSync = taskId;
+    let cancelled = false;
+    let timer: number | null = null;
+
+    async function syncSelectedPromptTask() {
+      try {
+        const response = await fetchWithTimeout(
+          `/v1/tasks/long-running/${encodeURIComponent(taskIdForSync)}`,
+          { cache: "no-store" },
+          TRIAL_LONG_RUNNING_TIMEOUT_MS,
+        );
+        const payload = await readJson(response);
+        const task = asRecord(asRecord(payload).task ?? payload);
+        const status = stringValue(task.status);
+        if (!response.ok || !status) return;
+        const terminalStatus =
+          status === "blocked" ||
+          status === "failed" ||
+          status === "cancelled";
+        if (!terminalStatus || cancelled) return;
+        const steps = arrayOfStrings(task.steps);
+        const taskMessage =
+          stringValue(task.truncated_test_results) ??
+          stringValue(task.message) ??
+          stringValue(task.error) ??
+          steps.at(-1) ??
+          `Selected prompt task ${status}.`;
+        updateDummyCoderRunState((current) => {
+          if (current.taskId !== taskIdForSync) return current;
+          if (current.status !== "starting" && current.status !== "request_sent" && current.status !== "running") {
+            return current;
+          }
+          return {
+            ...current,
+            errorText: status === "failed" || status === "cancelled" ? taskMessage : null,
+            message: taskMessage,
+            rawBackendStatus: status,
+            recommendedNextAction: stringValue(task.next_action) ?? current.recommendedNextAction,
+            status: status === "blocked" ? "blocked" : "error",
+            verificationStatus: stringValue(task.post_apply_verification) ?? current.verificationStatus,
+          };
+        });
+        if (timer != null) {
+          window.clearInterval(timer);
+          timer = null;
+        }
+      } catch {
+        // Keep the prompt-packet request as the primary result path; this sync is only a stuck-state escape hatch.
+      }
+    }
+
+    void syncSelectedPromptTask();
+    timer = window.setInterval(() => void syncSelectedPromptTask(), 3000);
+    return () => {
+      cancelled = true;
+      if (timer != null) window.clearInterval(timer);
+    };
+  }, [dummyCoderRunState.status, dummyCoderRunState.taskId, updateDummyCoderRunState]);
+
   function designReportText() {
     return [
       "SpiritOS design report",
@@ -5855,8 +5945,18 @@ export function CodingCockpitShell() {
     [selectedDummyCoderPromptId],
   );
   const existingDummyProjectSummary = useMemo(
-    () => buildExistingDummyProjectSummary({ files: [] }),
-    [],
+    () => {
+      // Baseline truth must come from the same Source Proxy sweep that the UI shows
+      // for "baseline dirty/clean", not from a hardcoded empty file list. A hardcoded
+      // empty list produced the contradictory report: "already_satisfied / files present"
+      // alongside "LumaCart is not present". Filter the baseline probe to the
+      // dummy-product-site fixture root so the summary reflects disk truth.
+      const dummyFiles = (agentLabBaselineSnapshot?.baseline_agent_lab_files ?? []).filter(
+        (path) => isDummyProductSiteTrialPath(path),
+      );
+      return buildExistingDummyProjectSummary({ files: dummyFiles });
+    },
+    [agentLabBaselineSnapshot?.baseline_agent_lab_files],
   );
   const selectedDummyCoderPacket = useMemo(
     () => buildDummyCoder10RunnerPacket(selectedDummyCoderPrompt, existingDummyProjectSummary),
@@ -6080,13 +6180,18 @@ export function CodingCockpitShell() {
         stringValue(record.model_output_classification) ?? stringValue(coderDiagnostics.model_output_classification) ?? null;
       const trialResultTrustStatus =
         stringValue(record.trial_result_trust_status) ?? stringValue(coderDiagnostics.trial_result_trust_status) ?? null;
+      const alreadySatisfied = record.already_satisfied === true || record.alreadySatisfied === true;
+      const existingStarterFilesPresent =
+        coderDiagnostics.existing_starter_files_present === true ||
+        coderDiagnostics.existingStarterFilesPresent === true;
       const blockedReason =
         prompt.allowBlockedPass && /protect|secret|env|source_proxy|blocked/i.test(`${reasonCode} ${rawBackendStatus}`)
           ? reasonCode ?? rawBackendStatus
           : null;
       const noOpEvidence =
-        prompt.allowNoopPass && /category|already|no[_ -]?changes|satisfied/i.test(`${reasonCode} ${rawBackendStatus}`)
-          ? stringValue(record.simple_reason) ?? stringValue(record.reason) ?? rawBackendStatus
+        (prompt.allowNoopPass || (prompt.id === "coder-001-init-dummy-product-site" && existingStarterFilesPresent)) &&
+        /category|already|no[_ -]?changes|satisfied/i.test(`${reasonCode} ${rawBackendStatus}`)
+          ? stringValue(record.simple_reason) ?? stringValue(record.reason) ?? stringValue(record.message) ?? rawBackendStatus
           : null;
       let appliedChangedFiles = changedFiles;
       let verificationStatus = stringValue(record.verification_status) ?? stringValue(record.checks_result) ?? null;
@@ -6191,7 +6296,12 @@ export function CodingCockpitShell() {
         noOpEvidence,
         prompt,
         requiredInitFilesPresent: prompt.id === "coder-001-init-dummy-product-site"
-          ? prompt.primaryExpectedTargets.every((target) => appliedChangedFiles.includes(target))
+          ? alreadySatisfied && existingStarterFilesPresent
+            ? true
+            : prompt.primaryExpectedTargets.every((target) => appliedChangedFiles.includes(target))
+          : undefined,
+        requiredInitFilesAlreadySatisfied: prompt.id === "coder-001-init-dummy-product-site"
+          ? alreadySatisfied && existingStarterFilesPresent
           : undefined,
         provenance: {
           diff_source: diffSource,

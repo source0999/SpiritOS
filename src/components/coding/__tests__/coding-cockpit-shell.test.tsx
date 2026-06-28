@@ -504,6 +504,186 @@ describe("CodingCockpitShell", () => {
     expect(String(writeText.mock.calls.at(-1)?.[0] ?? "")).toContain("selected_prompt_result: none");
   });
 
+  it("accepts selected Prompt 1 when the LumaCart starter files already exist", async () => {
+    const calls = installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          already_satisfied: true,
+          alreadySatisfied: true,
+          changed_files: [],
+          checks_run: ["existing dummy product site starter files present"],
+          coder_diagnostics: {
+            diff_source: "already_satisfied_existing_dummy_product_site",
+            existing_starter_files_present: true,
+            generated_diff_by_backend: false,
+            generation_source: "disk_inspection",
+            model_output_classification: "already_satisfied_noop",
+            trial_result_trust_status: "existing_files_verified_no_diff_needed",
+          },
+          message: "Prompt 1 already satisfied: LumaCart starter files already exist.",
+          proposed_diff: "",
+          provider_call_made: false,
+          reason_code: "coder_no_changes_needed",
+          status: "already_satisfied",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(within(runner).getByText("PASS_NOOP")).toBeInTheDocument());
+    expect(
+      within(runner).getAllByText("Prompt 1 already satisfied: LumaCart starter files already exist.").length,
+    ).toBeGreaterThan(0);
+    expect(calls.some((call) => call.url.includes("/v1/actions/execute-approved"))).toBe(false);
+    expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+      grader: { resultState: "PASS_NOOP" },
+      rawBackendStatus: "already_satisfied",
+      selectedPromptId: "coder-001-init-dummy-product-site",
+      status: "complete",
+    });
+  });
+
+  it("names the dummy product-site fixture (not Agent Lab) when only LumaCart leftovers are dirty", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/coding/agent-lab-baseline")) {
+        return jsonResponse({
+          baseline_agent_lab_files: [
+            "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          ],
+          baseline_checked_at: new Date().toISOString(),
+          baseline_clean_for_fresh_suite: false,
+          baseline_dirty_agent_lab_files: [
+            "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          ],
+          baseline_unreverted_receipts: [],
+          visible_label: "BASELINE DIRTY",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+
+    // Fixture-specific wording: must say dummy product-site, must not say Agent Lab baseline dirty.
+    await waitFor(() =>
+      expect(within(runner).getByText(/Dummy product-site baseline dirty/)).toBeInTheDocument(),
+    );
+    expect(within(runner).queryByText(/Agent Lab baseline dirty/)).not.toBeInTheDocument();
+    expect(within(runner).getByText(/LumaCart fixture still has 2 leftover file/)).toBeInTheDocument();
+  });
+
+  it("keeps Agent Lab wording when only agent-lab leftovers are dirty", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/coding/agent-lab-baseline")) {
+        return jsonResponse({
+          baseline_agent_lab_files: ["src/app/agent-lab/page.tsx"],
+          baseline_checked_at: new Date().toISOString(),
+          baseline_clean_for_fresh_suite: false,
+          baseline_dirty_agent_lab_files: ["src/app/agent-lab/page.tsx"],
+          baseline_unreverted_receipts: [],
+          visible_label: "BASELINE DIRTY",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+
+    await waitFor(() =>
+      expect(within(runner).getByText(/Agent Lab baseline dirty/)).toBeInTheDocument(),
+    );
+    expect(within(runner).queryByText(/Dummy product-site baseline dirty/)).not.toBeInTheDocument();
+  });
+
+  it("reports LumaCart exists (not absent) in diagnostics when baseline fixture files are present", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/coding/agent-lab-baseline")) {
+        return jsonResponse({
+          baseline_agent_lab_files: [
+            "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+          ],
+          baseline_checked_at: new Date().toISOString(),
+          baseline_clean_for_fresh_suite: false,
+          baseline_dirty_agent_lab_files: [
+            "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+          ],
+          baseline_unreverted_receipts: [],
+          visible_label: "BASELINE DIRTY",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Copy diagnostics" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const diagnostics = String(writeText.mock.calls.at(-1)?.[0] ?? "");
+    // The contradictory state is gone: files present => summary says LumaCart exists, never "not present".
+    expect(diagnostics).toContain("existing_dummy_project_summary: LumaCart exists under");
+    expect(diagnostics).not.toContain("LumaCart is not present");
+  });
+
+  it("reconciles restored selected-prompt request_sent state from terminal durable task status", async () => {
+    installCommonFetchMock((url) => {
+      if (url.includes("/v1/tasks/long-running/task_sync_001")) {
+        return jsonResponse({
+          task: {
+            id: "task_sync_001",
+            next_action: "Retry Local Coder with stricter output repair.",
+            status: "blocked",
+            steps: ["Capture task scope.", "Coder blocked before producing an approvable diff."],
+            truncated_test_results:
+              "coder_status=blocked; reason_code=coder_backend_diff_generation_failed; Model-authored file bundle produced an empty diff.",
+          },
+        });
+      }
+      return null;
+    });
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: [],
+        checksRun: [],
+        message: "Request sent",
+        rawBackendStatus: "request_sent",
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        status: "request_sent",
+        storedAt: Date.now(),
+        taskId: "task_sync_001",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+
+    const activePreview = screen.getByRole("region", { name: "Active run preview" });
+    await waitFor(() => expect(within(activePreview).getByText("Selected trial blocked")).toBeInTheDocument());
+    expect(within(activePreview).getByText("task_sync_001")).toBeInTheDocument();
+    expect(within(activePreview).getByText("blocked")).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+      rawBackendStatus: "blocked",
+      recommendedNextAction: "Retry Local Coder with stricter output repair.",
+      status: "blocked",
+      taskId: "task_sync_001",
+    });
+  });
+
   it("rehydrates selected-prompt result after a browser refresh", async () => {
     installCommonFetchMock();
     window.localStorage.setItem(

@@ -60,12 +60,27 @@ describe("dummy Coder 10 provenance classifier", () => {
     });
   });
 
-  it("rejects scaffold, fallback, backend-generated, and provider-only wins", () => {
+  it("allows backend-converted model-authored bundle diffs", () => {
+    expect(
+      classifyDummyCoder10Provenance(
+        {
+          ...modelProvenance,
+          diff_source: "model_authored_file_bundle_backend_converted_to_diff",
+          generated_diff_by_backend: true,
+          trial_result_trust_status: "model_authored_diff_proven",
+        },
+        prompt001,
+      ),
+    ).toMatchObject({
+      provenance_status: "pass_compatible",
+      pass_compatible: true,
+    });
+  });
+
+  it("rejects scaffold, fallback, raw backend-generated, and provider-only wins", () => {
     expect(classifyDummyCoder10Provenance({ scaffold_used: true }, prompt001).provenance_status).toBe("invalid");
     expect(classifyDummyCoder10Provenance({ fallback_used: true }, prompt001).provenance_status).toBe("invalid");
-    expect(classifyDummyCoder10Provenance({ generated_diff_by_backend: true }, prompt001).provenance_status).toBe(
-      "invalid",
-    );
+    expect(classifyDummyCoder10Provenance({ generated_diff_by_backend: true }, prompt001).provenance_status).toBe("needs_fix");
     expect(classifyDummyCoder10Provenance({ provider_call_made: true }, prompt001)).toMatchObject({
       provenance_status: "needs_fix",
       pass_compatible: false,
@@ -167,5 +182,37 @@ describe("dummy Coder 10 grading mapper", () => {
     expect(result.resultState).toBe("PASS_DUMMY_PROJECT_INIT");
     expect(result.score).toBe(10);
     expect(result.label).toBe("PASS");
+  });
+
+  it("classifies Prompt 1 already-satisfied as PASS_NOOP, not a fresh apply GO", () => {
+    const already = gradeDummyCoder10Result({
+      prompt: prompt001,
+      changedFiles: [],
+      noOpEvidence: "Prompt 1 already satisfied: LumaCart starter files already exist.",
+      requiredInitFilesAlreadySatisfied: true,
+      provenance: modelProvenance,
+    });
+
+    expect(already.resultState).toBe("PASS_NOOP");
+    expect(already.label).toBe("PASS_NOOP");
+    expect(already.score).toBe(10);
+    // The recommendation must distinguish already-satisfied from a fresh apply lifecycle GO,
+    // and must not imply the full Prompt 1 lifecycle passed.
+    expect(already.recommendedNextAction.toLowerCase()).toContain("not a fresh apply");
+    expect(already.recommendedNextAction.toLowerCase()).toContain("reverse/clear");
+  });
+
+  it("downgrades Prompt 1 already-satisfied proof that includes changed files", () => {
+    const result = gradeDummyCoder10Result({
+      prompt: prompt001,
+      changedFiles: ["tests/ui-agent-trials/fixtures/dummy-product-site/README.md"],
+      noOpEvidence: "Prompt 1 already satisfied.",
+      requiredInitFilesAlreadySatisfied: true,
+      provenance: modelProvenance,
+    });
+
+    expect(result.resultState).toBe("NEEDS_FIX");
+    expect(result.label).toBe("NEEDS_FIX");
+    expect(result.recommendedNextAction.toLowerCase()).toContain("clean dummy-product-site root");
   });
 });
