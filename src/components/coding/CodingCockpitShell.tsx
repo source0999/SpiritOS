@@ -3686,6 +3686,7 @@ function isCombinedTask(task: string) {
 export function CodingCockpitShell() {
   const stopReversibleSuiteAfterCurrentRef = useRef(false);
   const suiteFetchAbortRef = useRef<AbortController | null>(null);
+  const selectedPromptAbortRef = useRef<AbortController | null>(null);
   const reversibleSuiteClearVersionRef = useRef(0);
   const localReversibleSuiteRunningRef = useRef(false);
   const autoResumeSuiteIdRef = useRef("");
@@ -4169,7 +4170,17 @@ export function CodingCockpitShell() {
         await handleRevertReceipt(selectedPromptReceipt);
         await clearReversibleSuitePanel({ syncBackend: true });
         clearDummyCoder10RunState("Selected-prompt edits reversed. Results cleared.");
-        setReversibleSuiteCopyStatus("Selected-prompt edits reversed. Trial Runner results cleared.");
+        // Reverting the applied diff does not reliably delete freshly-created fixture files
+        // (e.g. the LumaCart starter set), which left the baseline "dirty" and forced a second
+        // reverse click to actually sweep the files. Sweep leftovers + refresh the baseline here
+        // so a single reverse/clear returns disk and UI to clean truth together.
+        const sweepNote = await sweepAgentLabLeftoverFilesViaServer();
+        await refreshAgentLabBaseline();
+        setReversibleSuiteCopyStatus(
+          sweepNote && !sweepNote.toLowerCase().includes("no leftover")
+            ? `Selected-prompt edits reversed and leftover fixture files swept. ${sweepNote}`
+            : "Selected-prompt edits reversed. Trial Runner results cleared.",
+        );
       } catch (error) {
         setReversibleSuiteCopyStatus(
           error instanceof Error ? error.message : "Selected-prompt reverse failed.",
@@ -6079,10 +6090,33 @@ export function CodingCockpitShell() {
     });
   }
 
+  function handleCancelSelectedPrompt() {
+    // Abort any in-flight selected-prompt fetch and reset to a clean idle state. This gives the
+    // user an escape from a long/hung "request_sent"/"running" run without waiting for the
+    // full packet timeout or treating it as an error.
+    selectedPromptAbortRef.current?.abort();
+    selectedPromptAbortRef.current = null;
+    updateDummyCoderRunState((current) => {
+      if (
+        current.status !== "starting" &&
+        current.status !== "request_sent" &&
+        current.status !== "running"
+      ) {
+        return current;
+      }
+      return defaultDummyCoderRunState("Selected-prompt run cancelled. Baseline left unchanged.", "cleared");
+    });
+  }
+
   async function handleRunDummyCoder10Prompt() {
     const prompt = selectedDummyCoderPrompt;
     const packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
     setDummyCoderRunCopyStatus("");
+    // Allow the user to cancel a long/hung selected-prompt run (live model calls can take a while
+    // and previously there was no escape from "request_sent" other than waiting for the 360s timeout).
+    selectedPromptAbortRef.current?.abort();
+    const abortController = new AbortController();
+    selectedPromptAbortRef.current = abortController;
     updateDummyCoderRunState({
       changedFiles: [],
       checksRun: [],
@@ -6110,6 +6144,7 @@ export function CodingCockpitShell() {
         body: JSON.stringify({ description: prompt.submittedPrompt }),
         headers: { "content-type": "application/json" },
         method: "POST",
+        signal: abortController.signal,
       }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
       const taskPayload = await readJson(taskResponse);
       if (!taskResponse.ok) {
@@ -6154,6 +6189,7 @@ export function CodingCockpitShell() {
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
+        signal: abortController.signal,
       }, TRIAL_PROMPT_PACKET_TIMEOUT_MS);
       updateDummyCoderRunState((current) => ({
         ...current,
@@ -6370,7 +6406,19 @@ export function CodingCockpitShell() {
         void refreshAgentLabBaseline();
       }
     } catch (error) {
+      // A user-initiated cancel is not a failure: handleCancelSelectedPrompt already reset state.
+      const aborted =
+        abortController.signal.aborted ||
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && /abort/i.test(error.message));
+      if (aborted) {
+        return;
+      }
       failSelectedPromptStart(error);
+    } finally {
+      if (selectedPromptAbortRef.current === abortController) {
+        selectedPromptAbortRef.current = null;
+      }
     }
   }
 
@@ -10974,6 +11022,17 @@ export function CodingCockpitShell() {
                     ) : null}
                     Run selected prompt
                   </button>
+                  {(dummyCoderRunState.status === "running" ||
+                    dummyCoderRunState.status === "starting" ||
+                    dummyCoderRunState.status === "request_sent") ? (
+                    <button
+                      className={`inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                      onClick={handleCancelSelectedPrompt}
+                      type="button"
+                    >
+                      Cancel run
+                    </button>
+                  ) : null}
                   {reversibleSuiteRunBlocked ? (
                     <p className={`text-xs font-semibold text-amber-200`}>{reversibleSuiteRunBlockedMessage}</p>
                   ) : null}

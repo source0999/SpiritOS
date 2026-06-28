@@ -681,6 +681,32 @@ describe("CodingCockpitShell", () => {
     expect(within(runner).getByRole("button", { name: "Copy changed paths" })).toBeInTheDocument();
   });
 
+  it("shows a Cancel run button while a selected-prompt run is in flight", async () => {
+    installCommonFetchMock();
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: [],
+        message: "Request sent",
+        rawBackendStatus: "request_sent",
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        status: "request_sent",
+        taskId: "task_cancel_001",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    await waitFor(() =>
+      expect(within(runner).getByRole("button", { name: "Cancel run" })).toBeInTheDocument(),
+    );
+    // Cancelling resets the runner out of the in-flight state.
+    fireEvent.click(within(runner).getByRole("button", { name: "Cancel run" }));
+    await waitFor(() =>
+      expect(within(runner).queryByRole("button", { name: "Cancel run" })).not.toBeInTheDocument(),
+    );
+  });
+
   it("marks the Receipt / trace step complete (not pending) after an applied selected-prompt run", async () => {
     installCommonFetchMock();
     window.localStorage.setItem(
