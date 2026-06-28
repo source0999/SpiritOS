@@ -1,15 +1,11 @@
-import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
-type JsonRecord = Record<string, unknown>;
-
+const REPO_ROOT = process.cwd();
 const FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
 
-function asRecord(value: unknown): JsonRecord {
-  return value && typeof value === "object" ? (value as JsonRecord) : {};
-}
-
 /**
- * Resolves the relative asset path from the request URL to a fixture-relative path.
+ * Resolves the relative asset path from the request URL to an absolute on-disk fixture path.
  * The "Open LumaCart page" link points at the viewer root, and the generated index.html
  * references assets with relative paths like "src/styles.css" / "src/main.js", which the
  * browser resolves against the viewer root. We map any sub-path back under the fixture root.
@@ -37,8 +33,8 @@ export function resolveFixturePath(rawPath: string | null | undefined): string |
   return `${FIXTURE_ROOT}${decoded}`;
 }
 
-function contentTypeFor(path: string): string {
-  const lower = path.toLowerCase();
+function contentTypeFor(relPath: string): string {
+  const lower = relPath.toLowerCase();
   if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html; charset=utf-8";
   if (lower.endsWith(".css")) return "text/css; charset=utf-8";
   if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript; charset=utf-8";
@@ -65,9 +61,9 @@ function contentTypeFor(path: string): string {
 function normalizeHtmlForPreview(html: string): string {
   return html.replace(
     /<script\b([^>]*?)\bsrc=(["'])([^"']+)\2([^>]*?)>/gi,
-    (match, before, _quote, _src, after) => {
+    (match, before, quote, src, after) => {
       const attrs = `${before} ${after}`;
-      return /\btype\s*=/.test(attrs) ? match : `<script type="module"${attrs} src=${_quote}${_src}${_quote}>`;
+      return /\btype\s*=/.test(attrs) ? match : `<script type="module"${attrs} src=${quote}${src}${quote}>`;
     },
   );
 }
@@ -76,17 +72,27 @@ function normalizeHtmlForPreview(html: string): string {
  * Shared viewer handler for the LumaCart dummy-product-site fixture. Used by the root route
  * (the "Open LumaCart page" link) and the catch-all route (relative asset requests like
  * src/styles.css, src/main.js). Read-only: never writes, applies, or commits.
+ *
+ * Reads the fixture directly from the repo working tree on disk. The fixture is a plain static
+ * site that Prompt 1 wrote under tests/ui-agent-trials/fixtures/dummy-product-site/, so there is
+ * no need to round-trip through Source Proxy just to view it (the proxy round-trip was fragile
+ * and produced a blank page when the workspace-read response shape differed).
  */
 export async function serveFixtureAsset(fixtureSubPath: string | null | undefined): Promise<Response> {
-  if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
-    return new Response("SPIRIT_CODING_USE_PROXY is not true", {
+  const fixtureRelPath = resolveFixturePath(fixtureSubPath);
+  if (!fixtureRelPath) {
+    return new Response("Refusing to read a path outside the LumaCart fixture root.", {
       headers: { "content-type": "text/plain; charset=utf-8" },
-      status: 409,
+      status: 400,
     });
   }
 
-  const fixturePath = resolveFixturePath(fixtureSubPath);
-  if (!fixturePath) {
+  // Resolve to an absolute path and confirm the normalized result still lives under the fixture
+  // root (guards against symlink or OS-specific normalization escapes).
+  const absRoot = path.resolve(REPO_ROOT, FIXTURE_ROOT);
+  const absTarget = path.resolve(REPO_ROOT, fixtureRelPath);
+  const relFromRoot = path.relative(absRoot, absTarget);
+  if (relFromRoot.startsWith("..") || path.isAbsolute(relFromRoot)) {
     return new Response("Refusing to read a path outside the LumaCart fixture root.", {
       headers: { "content-type": "text/plain; charset=utf-8" },
       status: 400,
@@ -94,54 +100,40 @@ export async function serveFixtureAsset(fixtureSubPath: string | null | undefine
   }
 
   try {
-    const response = await sourceProxyFetch("/v1/workspace/read", {
-      body: JSON.stringify({ max_bytes: 1_000_000, path: fixturePath }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    });
-    if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      return new Response(
-        text || `Could not read ${fixturePath} (Source Proxy HTTP ${response.status}).`,
-        {
-          headers: { "content-type": "text/plain; charset=utf-8" },
-          status: response.status === 404 ? 404 : 502,
-        },
-      );
-    }
-    const payload = asRecord(await response.json().catch(() => ({})));
-    const content =
-      typeof payload.content === "string"
-        ? payload.content
-        : typeof payload.excerpt === "string"
-          ? payload.excerpt
-          : "";
+    const content = await readFile(absTarget, "utf8");
     if (!content.trim()) {
       return new Response(
-        fixturePath.endsWith("index.html")
+        fixtureRelPath.endsWith("index.html")
           ? "LumaCart index.html exists but is empty. Run Prompt 1 to create the fixture."
-          : `${fixturePath} is empty.`,
+          : `${fixtureRelPath} is empty.`,
         {
           headers: { "content-type": "text/plain; charset=utf-8" },
           status: 200,
         },
       );
     }
-    const isHtml = fixturePath.toLowerCase().endsWith(".html");
+    const isHtml = fixtureRelPath.toLowerCase().endsWith(".html");
     const servedContent = isHtml ? normalizeHtmlForPreview(content) : content;
     return new Response(servedContent, {
       headers: {
-        "content-type": contentTypeFor(fixturePath),
+        "content-type": contentTypeFor(fixtureRelPath),
         "cache-control": "no-store",
       },
       status: 200,
     });
   } catch (error) {
+    const notFound =
+      error instanceof Error &&
+      ("code" in error && (error as NodeJS.ErrnoException).code === "ENOENT");
     return new Response(
-      error instanceof Error ? error.message : "Failed to read LumaCart fixture.",
+      notFound
+        ? `${fixtureRelPath} not found on disk. Run Prompt 1 to create the LumaCart fixture.`
+        : error instanceof Error
+          ? error.message
+          : "Failed to read LumaCart fixture.",
       {
         headers: { "content-type": "text/plain; charset=utf-8" },
-        status: 502,
+        status: notFound ? 404 : 500,
       },
     );
   }
