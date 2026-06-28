@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Copy, FileText, Plus, ShieldCheck } from "lucide-react";
+import { Copy, ExternalLink, FileText, Plus, ShieldCheck } from "lucide-react";
 
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
 import {
@@ -5951,12 +5951,21 @@ export function CodingCockpitShell() {
       // empty list produced the contradictory report: "already_satisfied / files present"
       // alongside "LumaCart is not present". Filter the baseline probe to the
       // dummy-product-site fixture root so the summary reflects disk truth.
-      const dummyFiles = (agentLabBaselineSnapshot?.baseline_agent_lab_files ?? []).filter(
+      const probeFiles = (agentLabBaselineSnapshot?.baseline_agent_lab_files ?? []).filter(
         (path) => isDummyProductSiteTrialPath(path),
       );
-      return buildExistingDummyProjectSummary({ files: dummyFiles });
+      // The baseline probe is captured before a run; immediately after a successful apply the
+      // probe is stale. Union in the just-applied changed files so the summary cannot say
+      // "LumaCart is not present" right after the run created the fixture files.
+      const appliedDummyFiles = (dummyCoderRunState.changedFiles ?? []).filter((path) =>
+        isDummyProductSiteTrialPath(path),
+      );
+      return buildExistingDummyProjectSummary({
+        files: [...probeFiles, ...appliedDummyFiles],
+      });
     },
-    [agentLabBaselineSnapshot?.baseline_agent_lab_files],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [agentLabBaselineSnapshot?.baseline_agent_lab_files, dummyCoderRunState.changedFiles],
   );
   const selectedDummyCoderPacket = useMemo(
     () => buildDummyCoder10RunnerPacket(selectedDummyCoderPrompt, existingDummyProjectSummary),
@@ -6350,6 +6359,12 @@ export function CodingCockpitShell() {
         trialResultTrustStatus,
         verificationStatus,
       });
+      // After a successful apply, the pre-run baseline probe is stale. Refresh it so the
+      // baseline status, dirty wording, and existing-project summary reflect disk truth
+      // (otherwise the UI keeps showing "clean" while the fixture files were just created).
+      if (selectedPromptStatus === "applied") {
+        void refreshAgentLabBaseline();
+      }
     } catch (error) {
       failSelectedPromptStart(error);
     }
@@ -11064,23 +11079,26 @@ export function CodingCockpitShell() {
                           </p>
                         ) : null}
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {dummyCoderRunState.changedFiles.map((path) => (
+                          {dummyCoderRunState.changedFiles.some((path) => isDummyProductSiteTrialPath(path)) ? (
+                            <a
+                              className={`inline-flex min-h-8 items-center gap-1 rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
+                              href="/v1/coding/dummy-product-site-preview"
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              <ExternalLink aria-hidden="true" size={12} />
+                              Open LumaCart page
+                            </a>
+                          ) : null}
+                          {dummyCoderRunState.changedFiles.length > 0 ? (
                             <button
                               className={`inline-flex min-h-8 items-center rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
-                              key={path}
-                              onClick={() => void copyTextToClipboard(path)}
+                              onClick={() => void copyTextToClipboard(dummyCoderRunState.changedFiles.join("\n"))}
                               type="button"
                             >
-                              Copy changed path
+                              Copy changed paths
                             </button>
-                          ))}
-                          <button
-                            className={`inline-flex min-h-8 items-center rounded-md border border-[var(--ddv4-pill-border)] px-2 text-[11px] font-semibold text-[var(--ddv4-fg)] hover:bg-[var(--ddv4-surface-fill)] ${commandFocusClass}`}
-                            onClick={() => void copyTextToClipboard(selectedDummyCoderPrompt.fixtureRoot)}
-                            type="button"
-                          >
-                            Copy target root
-                          </button>
+                          ) : null}
                         </div>
                       </article>
                       {reversibleSuiteReversalPanel}

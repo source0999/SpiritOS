@@ -640,6 +640,47 @@ describe("CodingCockpitShell", () => {
     expect(diagnostics).not.toContain("LumaCart is not present");
   });
 
+  it("shows an Open LumaCart page link (not copy-path button spam) after an applied Prompt 1", async () => {
+    installCommonFetchMock();
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: [
+          "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+          "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        ],
+        checksRun: ["git diff --check"],
+        grader: {
+          label: "PASS",
+          reason: "Dummy project init created the expected files.",
+          recommendedNextAction: "Inspect changed files before continuing.",
+          resultState: "PASS_DUMMY_PROJECT_INIT",
+          score: 10,
+        },
+        message: "Applied approved diff.",
+        rawBackendStatus: "applied",
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        status: "applied",
+        taskId: "task_open_link_001",
+        verificationStatus: "Applied approved diff.",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    await waitFor(() => expect(within(runner).getByText(/Applied \/ review/)).toBeInTheDocument());
+
+    const link = within(runner).getByRole("link", { name: /Open LumaCart page/ });
+    expect(link).toHaveAttribute("href", "/v1/coding/dummy-product-site-preview");
+    expect(link).toHaveAttribute("target", "_blank");
+    // The old per-file copy button spam and the standalone "Copy target root" button are gone.
+    expect(within(runner).queryByRole("button", { name: "Copy changed path" })).not.toBeInTheDocument();
+    expect(within(runner).queryByRole("button", { name: "Copy target root" })).not.toBeInTheDocument();
+    // A single combined copy-all-paths button remains.
+    expect(within(runner).getByRole("button", { name: "Copy changed paths" })).toBeInTheDocument();
+  });
+
   it("reconciles restored selected-prompt request_sent state from terminal durable task status", async () => {
     installCommonFetchMock((url) => {
       if (url.includes("/v1/tasks/long-running/task_sync_001")) {
