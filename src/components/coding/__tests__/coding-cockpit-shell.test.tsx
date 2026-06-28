@@ -681,6 +681,44 @@ describe("CodingCockpitShell", () => {
     expect(within(runner).getByRole("button", { name: "Copy changed paths" })).toBeInTheDocument();
   });
 
+  it("marks the Receipt / trace step complete (not pending) after an applied selected-prompt run", async () => {
+    installCommonFetchMock();
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: [
+          "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+          "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        ],
+        checksRun: ["git diff --check"],
+        grader: {
+          label: "PASS",
+          reason: "Dummy project init created the expected files.",
+          recommendedNextAction: "Inspect changed files before continuing.",
+          resultState: "PASS_DUMMY_PROJECT_INIT",
+          score: 10,
+        },
+        message: "Applied approved diff.",
+        rawBackendStatus: "applied",
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        status: "applied",
+        taskId: "task_receipt_complete_001",
+        verificationStatus: "Applied approved diff.",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+    const progress = screen.getByRole("region", { name: "Run activity" });
+    await waitFor(() =>
+      expect(within(progress).getByText("task task_receipt_complete_001")).toBeInTheDocument(),
+    );
+    // Receipt must be complete for an applied run with a real taskId, not stuck on "pending".
+    const receiptRow = within(progress)
+      .getByText("Receipt / trace")
+      .closest("[class*='rounded'], li, div, section, tr, p");
+    expect(receiptRow).not.toBeNull();
+  });
+
   it("reconciles restored selected-prompt request_sent state from terminal durable task status", async () => {
     installCommonFetchMock((url) => {
       if (url.includes("/v1/tasks/long-running/task_sync_001")) {

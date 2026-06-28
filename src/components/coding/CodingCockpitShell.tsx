@@ -3484,7 +3484,11 @@ function buildCodingPipelineSteps({
       previewState.outputHash ||
       previewState.invocationEventId ||
       previewState.consumerEventId ||
-      previewState.appliedAt,
+      previewState.appliedAt ||
+      // The selected-prompt runner records a real backend taskId on apply and has no trace/hash,
+      // so a non-empty taskId on an applied run is a valid receipt anchor (otherwise the Receipt
+      // step stays "pending" forever even after a successful applied PASS_DUMMY_PROJECT_INIT).
+      (previewState.status === "applied" && previewState.taskId),
   );
   const verificationRecorded =
     previewState.verifierSummary.toLowerCase().includes("passed") ||
