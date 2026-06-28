@@ -640,6 +640,50 @@ describe("CodingCockpitShell", () => {
     expect(diagnostics).not.toContain("LumaCart is not present");
   });
 
+  it("includes a production_time line with elapsed duration in diagnostics", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    installCommonFetchMock();
+    const startedAt = Date.parse("2026-06-28T11:00:00.000Z");
+    const finishedAt = Date.parse("2026-06-28T11:02:30.000Z"); // 150s later
+    window.localStorage.setItem(
+      dummyCoderRunStorageKey,
+      JSON.stringify({
+        changedFiles: [
+          "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        ],
+        checksRun: ["git apply --check"],
+        finishedAt,
+        grader: {
+          label: "PASS",
+          reason: "Bounded model-authored dummy-root result with verification evidence.",
+          recommendedNextAction: "Inspect changed files before continuing.",
+          resultState: "PASS_DUMMY_PROJECT_INIT",
+          score: 10,
+        },
+        message: "Applied approved diff.",
+        rawBackendStatus: "applied",
+        selectedPromptId: "coder-001-init-dummy-product-site",
+        startedAt,
+        status: "applied",
+        taskId: "task_timing_001",
+        verificationStatus: "Applied approved diff.",
+      }),
+    );
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Copy diagnostics" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const diagnostics = String(writeText.mock.calls.at(-1)?.[0] ?? "");
+    // production_time must surface the elapsed wall-clock duration and ISO timestamps.
+    expect(diagnostics).toContain("production_time: 2m 30s");
+    expect(diagnostics).toContain("started 2026-06-28T11:00:00.000Z");
+    expect(diagnostics).toContain("finished 2026-06-28T11:02:30.000Z");
+  });
+
   it("shows an Open LumaCart page link (not copy-path button spam) after an applied Prompt 1", async () => {
     installCommonFetchMock();
     window.localStorage.setItem(

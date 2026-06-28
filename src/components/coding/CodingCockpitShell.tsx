@@ -288,6 +288,10 @@ type DummyCoder10RunState = {
   recommendedNextAction: string | null;
   grader: DummyCoder10GradingResult | null;
   packet: unknown | null;
+  // Wall-clock production timing for the diagnostics report. startedAt is captured when the run
+  // begins (status -> starting); finishedAt when it reaches a terminal applied/complete/error state.
+  startedAt: number | null;
+  finishedAt: number | null;
 };
 
 function buildRouteUnavailableSuitePromptResult(
@@ -499,7 +503,11 @@ function formatElapsedMs(startedAt: number | null, endedAt: number = performance
   if (startedAt == null) return "—";
   const ms = Math.max(0, endedAt - startedAt);
   if (ms < 1000) return `${Math.round(ms)}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
+  const totalSeconds = Math.round(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
 }
 
 function elapsedMs(startedAt: number | null, endedAt: number = performance.now()): number | null {
@@ -845,6 +853,8 @@ function defaultDummyCoderRunState(
     recommendedNextAction: null,
     scaffoldUsed: null,
     selectedPromptId: null,
+    startedAt: null,
+    finishedAt: null,
     taskId: null,
     status,
     trialResultTrustStatus: null,
@@ -933,6 +943,8 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
       recommendedNextAction: storedStringOrNull(parsed.recommendedNextAction),
       scaffoldUsed: storedBooleanOrNull(parsed.scaffoldUsed),
       selectedPromptId,
+      startedAt: typeof parsed.startedAt === "number" ? parsed.startedAt : null,
+      finishedAt: typeof parsed.finishedAt === "number" ? parsed.finishedAt : null,
       taskId: storedStringOrNull(parsed.taskId),
       status:
         parsed.status === "starting" || parsed.status === "request_sent" || parsed.status === "running"
@@ -6025,6 +6037,12 @@ export function CodingCockpitShell() {
 
   function dummyCoder10DiagnosticsText(state = dummyCoderRunState) {
     const grader = state.grader;
+    const productionTime =
+      state.startedAt != null && state.finishedAt != null
+        ? formatElapsedMs(state.startedAt, state.finishedAt)
+        : state.startedAt != null
+          ? "in progress"
+          : "—";
     if (state.status === "cleared" || !state.selectedPromptId) {
       return [
         "selected_prompt_result: none",
@@ -6064,6 +6082,7 @@ export function CodingCockpitShell() {
       `file_scope_status: ${grader?.fileScope.file_scope_status ?? "not graded"}`,
       `provenance_status: ${grader?.provenance.provenance_status ?? "not graded"}`,
       `recommended_next_action: ${state.recommendedNextAction ?? grader?.recommendedNextAction ?? "none"}`,
+      `production_time: ${productionTime} (started ${state.startedAt ? new Date(state.startedAt).toISOString() : "n/a"}${state.finishedAt ? `, finished ${new Date(state.finishedAt).toISOString()}` : ""})`,
       `existing_dummy_project_summary: ${existingDummyProjectSummary}`,
     ].join("\n");
   }
@@ -6099,6 +6118,7 @@ export function CodingCockpitShell() {
         return {
           ...current,
           errorText: SELECTED_PROMPT_TASK_ID_STUCK_MESSAGE,
+          finishedAt: Date.now(),
           message: SELECTED_PROMPT_TASK_ID_STUCK_MESSAGE,
           rawBackendStatus: "/v1/tasks/long-running:timeout",
           recommendedNextAction: "Retry Prompt 1 after confirming the long-running task route can create a durable task id.",
@@ -6109,6 +6129,7 @@ export function CodingCockpitShell() {
         return {
           ...current,
           errorText: message,
+          finishedAt: Date.now(),
           message,
           rawBackendStatus: "/v1/tasks/long-running:no_task_id",
           recommendedNextAction: "Inspect /v1/tasks/long-running before running this prompt again.",
@@ -6118,6 +6139,7 @@ export function CodingCockpitShell() {
       return {
         ...current,
         errorText: message,
+        finishedAt: Date.now(),
         message,
         rawBackendStatus: current.rawBackendStatus ?? "request_failed",
         recommendedNextAction: "Inspect the prompt-packet route before running this prompt again.",
@@ -6142,6 +6164,11 @@ export function CodingCockpitShell() {
       }
       return defaultDummyCoderRunState("Selected-prompt run cancelled. Baseline left unchanged.", "cleared");
     });
+    updateDummyCoderRunState((current) =>
+      current.status === "cleared"
+        ? { ...current, finishedAt: Date.now(), startedAt: current.startedAt ?? Date.now() }
+        : current,
+    );
   }
 
   async function handleRunDummyCoder10Prompt() {
@@ -6169,6 +6196,8 @@ export function CodingCockpitShell() {
       recommendedNextAction: null,
       scaffoldUsed: null,
       selectedPromptId: prompt.id,
+      startedAt: Date.now(),
+      finishedAt: null,
       taskId: null,
       status: "starting",
       trialResultTrustStatus: null,
@@ -6411,12 +6440,14 @@ export function CodingCockpitShell() {
               : response.ok
               ? "complete"
               : "error";
-      updateDummyCoderRunState({
+      updateDummyCoderRunState((current) => ({
+        ...current,
         changedFiles: appliedChangedFiles,
         checksRun,
         diffSource,
         errorText: null,
         fallbackUsed,
+        finishedAt: Date.now(),
         generatedDiffByBackend,
         generationSource,
         grader,
@@ -6430,11 +6461,12 @@ export function CodingCockpitShell() {
           grader.recommendedNextAction,
         scaffoldUsed,
         selectedPromptId: prompt.id,
+        startedAt: current.startedAt ?? Date.now(),
         status: selectedPromptStatus,
         taskId,
         trialResultTrustStatus,
         verificationStatus,
-      });
+      }));
       // After a successful apply, the pre-run baseline probe is stale. Refresh it so the
       // baseline status, dirty wording, and existing-project summary reflect disk truth
       // (otherwise the UI keeps showing "clean" while the fixture files were just created).
