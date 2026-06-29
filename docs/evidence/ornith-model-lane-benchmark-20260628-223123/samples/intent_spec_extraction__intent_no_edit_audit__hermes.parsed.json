@@ -1,0 +1,35 @@
+{
+  "constraints": [
+    "No cloud fallback",
+    "No hidden tools",
+    "No file mutation",
+    "No model promotion",
+    "No access to SpiritFlix, Jellyfin, media files, transcodes, or model storage"
+  ],
+  "current_info_needed": [
+    "Path to Source Proxy evidence folder",
+    "List of files in evidence folder",
+    "Timestamp of last audit run",
+    "Audit log contents"
+  ],
+  "forbidden_paths": [
+    "/var/spiritos/media",
+    "/var/spiritos/transcodes",
+    "/var/spiritos/models"
+  ],
+  "request_type": "Evidence Verification",
+  "role": "Audit",
+  "success_criteria": [
+    "Evidence folder contains valid audit logs",
+    "No unauthorized modifications detected",
+    "PASS declaration is supported by evidence"
+  ],
+  "target": "Source Proxy evidence folder",
+  "verifier_requirements": [
+    "Evidence folder path must be provided",
+    "Audit logs must be readable",
+    "No new prompt batches created",
+    "No automatic reruns",
+    "No code patching"
+  ]
+}

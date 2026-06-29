@@ -1,0 +1,10 @@
+{
+  "blockers": [
+    "No evidence provided to confirm that the prompt was fully executed locally without any cloud fallback."
+  ],
+  "evidence_required": true,
+  "fake_go_detected": false,
+  "protected_path_risk": "N/A",
+  "repair_instructions": "Please provide a detailed receipt or log that confirms all actions were performed strictly within the local environment, adhering to the rules provided.",
+  "verdict": "NO-GO"
+}

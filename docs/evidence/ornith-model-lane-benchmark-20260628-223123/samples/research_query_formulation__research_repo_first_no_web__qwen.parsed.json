@@ -1,0 +1,14 @@
+{
+  "fallback_claim_risk": "low",
+  "provenance_requirements": [],
+  "queries": [
+    {
+      "query": "current_research state in this repo",
+      "type": "repo_search"
+    }
+  ],
+  "recommended_providers": [],
+  "requires_current_research": false,
+  "score_only_query_quality": true,
+  "source_need": "local_repo"
+}

@@ -1,0 +1,21 @@
+{
+  "source_need": "Information about the latest upstream release notes for SpiritOS.",
+  "requires_current_research": true,
+  "recommended_providers": [
+    "DuckDuckGo",
+    "Google",
+    "Yandex",
+    "SearxNG (if available)",
+    "Scout (if available)"
+  ],
+  "queries": [
+    "site:dell.com/content/dam/spiritos/en/release-notes.html",
+    "spiritos upstream release notes",
+    "spiritos latest changes",
+    "spiritos release notes [current date]",
+    "spiritos software update notes"
+  ],
+  "provenance_requirements": "Document the search queries used, the dates the searches were performed, and the providers consulted.  Include the URLs of the release notes accessed.",
+  "fallback_caiim_risk": "Avoid any phrasing that implies a cloud fallback. Explicitly state that the search is being conducted using only local resources. If providers return zero sources, label the run as 'NO_SOURCES_FOUND_LOCAL' and document this in the provenance.",
+  "score_only_query_quality": "4"
+}

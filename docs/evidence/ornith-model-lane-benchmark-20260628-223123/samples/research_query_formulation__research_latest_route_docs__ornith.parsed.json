@@ -1,0 +1,15 @@
+{
+  "fallback_claim_risk": "HIGH",
+  "provenance_requirements": "URL + timestamp + version string from Ollama docs or changelog",
+  "queries": [
+    "Ollama API JSON mode support in latest version",
+    "Ollama API keep_alive parameter for generate endpoint"
+  ],
+  "recommended_providers": [
+    "SearXNG",
+    "Scout"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": 8.5,
+  "source_need": "YES"
+}

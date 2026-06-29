@@ -1,0 +1,173 @@
+{
+  "latency_ms": 26,
+  "model_names": [
+    "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M",
+    "gemma3n:e4b",
+    "hermes4:latest",
+    "hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M",
+    "hermes3:8b-abliterated",
+    "mannix/llama3-8b-ablitered-v3:latest",
+    "qwen2.5-coder:7b",
+    "llama3.1:8b",
+    "llama3:latest"
+  ],
+  "raw": {
+    "models": [
+      {
+        "details": {
+          "families": [
+            "qwen35"
+          ],
+          "family": "qwen35",
+          "format": "gguf",
+          "parameter_size": "8.95B",
+          "parent_model": "",
+          "quantization_level": "unknown"
+        },
+        "digest": "0e5b9bbae3c65e96f2b7cb38e0ff9cd96085ee43b9340f037bbacd0dcfb6ef60",
+        "model": "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M",
+        "modified_at": "2026-06-28T22:03:58.647682752-04:00",
+        "name": "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M",
+        "size": 5629109111
+      },
+      {
+        "details": {
+          "families": [
+            "gemma3n"
+          ],
+          "family": "gemma3n",
+          "format": "gguf",
+          "parameter_size": "6.9B",
+          "parent_model": "",
+          "quantization_level": "Q4_K_M"
+        },
+        "digest": "15cb39fd9394fd2549f6df9081cfc84dd134ecf2c9c5be911e5629920489ac32",
+        "model": "gemma3n:e4b",
+        "modified_at": "2026-06-09T22:36:50.88396207-04:00",
+        "name": "gemma3n:e4b",
+        "size": 7547589116
+      },
+      {
+        "details": {
+          "families": [
+            "qwen3"
+          ],
+          "family": "qwen3",
+          "format": "gguf",
+          "parameter_size": "14.8B",
+          "parent_model": "",
+          "quantization_level": "Q4_K_M"
+        },
+        "digest": "3e79497c964380ab2cf68708d4b1dce602484aa3989bc5d2322630efc6e731a7",
+        "model": "hermes4:latest",
+        "modified_at": "2026-05-29T19:47:02.020002088-04:00",
+        "name": "hermes4:latest",
+        "size": 9001755837
+      },
+      {
+        "details": {
+          "families": [
+            "qwen3"
+          ],
+          "family": "qwen3",
+          "format": "gguf",
+          "parameter_size": "14.8B",
+          "parent_model": "",
+          "quantization_level": "unknown"
+        },
+        "digest": "ce5cb56a789801c7b6c575b313d5f3779a4d208c742c2f8f3fd43393e90d92a5",
+        "model": "hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M",
+        "modified_at": "2026-05-29T19:45:49.353447581-04:00",
+        "name": "hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M",
+        "size": 9001755690
+      },
+      {
+        "details": {
+          "families": [
+            "llama"
+          ],
+          "family": "llama",
+          "format": "gguf",
+          "parameter_size": "8.0B",
+          "parent_model": "",
+          "quantization_level": "Q4_0"
+        },
+        "digest": "621eb9c2e65e986b4ab002c354e4da35d7041a746dcec0bbcb67b5f2c70e1f3f",
+        "model": "hermes3:8b-abliterated",
+        "modified_at": "2026-05-24T22:02:47.182678608-04:00",
+        "name": "hermes3:8b-abliterated",
+        "size": 4675905733
+      },
+      {
+        "details": {
+          "families": [
+            "llama"
+          ],
+          "family": "llama",
+          "format": "gguf",
+          "parameter_size": "8.0B",
+          "parent_model": "",
+          "quantization_level": "Q4_0"
+        },
+        "digest": "46688a22037ee2799d368c0c0497c38f53d596a10fd3a201089f7e6ea8477301",
+        "model": "mannix/llama3-8b-ablitered-v3:latest",
+        "modified_at": "2026-05-24T22:02:36.820607791-04:00",
+        "name": "mannix/llama3-8b-ablitered-v3:latest",
+        "size": 4675905733
+      },
+      {
+        "details": {
+          "families": [
+            "qwen2"
+          ],
+          "family": "qwen2",
+          "format": "gguf",
+          "parameter_size": "7.6B",
+          "parent_model": "",
+          "quantization_level": "Q4_K_M"
+        },
+        "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+        "model": "qwen2.5-coder:7b",
+        "modified_at": "2026-05-17T21:36:01.722215506-04:00",
+        "name": "qwen2.5-coder:7b",
+        "size": 4683087561
+      },
+      {
+        "details": {
+          "families": [
+            "llama"
+          ],
+          "family": "llama",
+          "format": "gguf",
+          "parameter_size": "8.0B",
+          "parent_model": "",
+          "quantization_level": "Q4_K_M"
+        },
+        "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+        "model": "llama3.1:8b",
+        "modified_at": "2026-05-17T21:25:37.251728579-04:00",
+        "name": "llama3.1:8b",
+        "size": 4920753328
+      },
+      {
+        "details": {
+          "families": [
+            "llama"
+          ],
+          "family": "llama",
+          "format": "gguf",
+          "parameter_size": "8.0B",
+          "parent_model": "",
+          "quantization_level": "Q4_0"
+        },
+        "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+        "model": "llama3:latest",
+        "modified_at": "2026-04-16T23:00:59.305368764-04:00",
+        "name": "llama3:latest",
+        "size": 4661224676
+      }
+    ]
+  },
+  "reason": "ollama_inventory_read",
+  "status": "used"
+}

@@ -1,0 +1,23 @@
+{
+  "fallback_claim_risk": "high",
+  "provenance_requirements": [],
+  "queries": [
+    {
+      "query_details": {
+        "api_name": "Ollama API",
+        "features_to_check": [
+          "JSON mode",
+          "keep_alive for generate requests"
+        ]
+      },
+      "query_type": "api_check"
+    }
+  ],
+  "recommended_providers": [
+    "SearXNG",
+    "Scout"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": 85,
+  "source_need": "local"
+}

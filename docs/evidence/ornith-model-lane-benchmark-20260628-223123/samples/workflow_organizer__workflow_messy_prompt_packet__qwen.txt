@@ -1,0 +1,51 @@
+{
+  "execution_packet": {
+    "task_description": "Fix the proxy thing, test local Qwen, don't touch SpiritFlix, prove it for real, update the closeout, but no fake GO and no media stuff.",
+    "allowed_files": [
+      "/path/to/local/qwen/config",
+      "/path/to/proxy/logs"
+    ],
+    "forbidden_files": [
+      "/path/to/spiritflix/*",
+      "/path/to/jellyfin/*",
+      "/path/to/media/files/*",
+      "/path/to/transcodes/*",
+      "/path/to/model/storage/*"
+    ],
+    "verification_steps": [
+      {
+        "step": "1",
+        "description": "Check the current configuration of Qwen and ensure it is set to use the local model.",
+        "command": "cat /path/to/local/qwen/config | grep model_path"
+      },
+      {
+        "step": "2",
+        "description": "Restart the proxy service to apply any changes made.",
+        "command": "systemctl restart proxy_service"
+      },
+      {
+        "step": "3",
+        "description": "Test local Qwen by sending a request and verifying the response.",
+        "command": "curl -X GET http://localhost:8080/qwen/test"
+      },
+      {
+        "step": "4",
+        "description": "Check proxy logs for any errors or warnings related to Qwen.",
+        "command": "tail /path/to/proxy/logs"
+      }
+    ],
+    "rollback": {
+      "description": "If the test fails, revert the configuration and restart the proxy service.",
+      "commands": [
+        "mv /path/to/local/qwen/config.bak /path/to/local/qwen/config",
+        "systemctl restart proxy_service"
+      ]
+    },
+    "missing_evidence": "No evidence provided to prove that the task has been completed successfully.",
+    "closeout_fields": {
+      "task_status": "NOT_COMPLETED",
+      "reason": "Missing evidence of successful completion."
+    },
+    "routing_change_requires_approval": false
+  }
+}

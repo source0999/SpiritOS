@@ -1,0 +1,12 @@
+{
+  "fallback_claim_risk": "If no evidence is found in the local repository, the risk is low since the question is repo-first. However, if the query is misinterpreted and external sources are consulted, it could introduce unnecessary complexity.",
+  "provenance_requirements": "The answer must be a file path within the local repository that contains references to 'current_research' in the context of Source Proxy's downstream state recording.",
+  "queries": [
+    "grep -r \"current_research\" /path/to/repo",
+    "find /path/to/repo -type f -exec grep -l \"current_research\" {} \\;"
+  ],
+  "recommended_providers": [],
+  "requires_current_research": false,
+  "score_only_query_quality": 0.9,
+  "source_need": "The query seeks to locate the specific file or directory within the local repository where Source Proxy records the current_research downstream state. This is a repo-first question, so the answer must be derived solely from the local codebase without external web content."
+}

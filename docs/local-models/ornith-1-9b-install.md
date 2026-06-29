@@ -74,6 +74,22 @@ The lane disallows:
 - superiority claims before benchmark evidence
 - product PASS declarations without behavior evidence
 
+## Benchmark Pointer
+
+The first full local model-lane benchmark is summarized in:
+
+```text
+docs/local-models/ornith-1-9b-benchmark.md
+```
+
+Evidence root:
+
+```text
+docs/evidence/ornith-model-lane-benchmark-20260628-223123/
+```
+
+Result: no default routing change. Ornith remains challenger-only unless Britton explicitly approves a secondary lane after reviewing the evidence.
+
 ## Rollback
 
 Rollback routing without deleting the model:

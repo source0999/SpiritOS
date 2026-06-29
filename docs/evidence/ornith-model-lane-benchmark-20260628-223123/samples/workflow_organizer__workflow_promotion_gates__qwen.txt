@@ -1,0 +1,36 @@
+{
+  "execution_packet": null,
+  "allowed_files": [],
+  "forbidden_files": ["SpiritFlix", "Jellyfin", "media files", "transcodes", "model storage"],
+  "verification_steps": [
+    {
+      "step": "Check for local-only reasoning",
+      "evidence_required": true
+    },
+    {
+      "step": "Ensure no cloud fallback",
+      "evidence_required": true
+    },
+    {
+      "step": "Confirm no hidden tools",
+      "evidence_required": true
+    },
+    {
+      "step": "Verify no file mutation",
+      "evidence_required": true
+    },
+    {
+      "step": "Prefer NO-GO or NEEDS_MORE_EVIDENCE when proof is missing",
+      "evidence_required": true
+    }
+  ],
+  "rollback": false,
+  "missing_evidence": [
+    "Local-only reasoning evidence",
+    "No cloud fallback evidence",
+    "No hidden tools evidence",
+    "No file mutation evidence"
+  ],
+  "closeout_fields": null,
+  "routing_change_requires_approval": false
+}

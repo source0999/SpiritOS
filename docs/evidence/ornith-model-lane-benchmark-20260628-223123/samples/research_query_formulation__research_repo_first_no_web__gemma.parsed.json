@@ -1,0 +1,14 @@
+{
+  "fallback_caiim_risk": "Low. The information is expected to be present within the local codebase.",
+  "provenance_requirements": "The search should be limited to files within the current repository to ensure local-only reasoning.",
+  "queries": [
+    "grep -r 'current_research' .",
+    "find . -name '*.py' -exec grep -H 'current_research' {} +",
+    "find . -name '*.js' -exec grep -H 'current_research' {} +",
+    "find . -name '*.yaml' -exec grep -H 'current_research' {} +"
+  ],
+  "recommended_providers": [],
+  "requires_current_research": false,
+  "score_o_nly_query_quality": 1.0,
+  "source_need": "Find where Source Proxy records current_research downdream state in this repo."
+}

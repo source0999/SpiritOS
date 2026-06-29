@@ -1,0 +1,34 @@
+{
+  "fallback_claim_risk": "high",
+  "provenance_requirements": [
+    {
+      "description": "Ensure the release notes are from within the last 24 hours to avoid outdated information.",
+      "type": "timestamp"
+    },
+    {
+      "description": "Verify the release notes with a known good signature or hash to ensure authenticity.",
+      "type": "signature"
+    }
+  ],
+  "queries": [
+    {
+      "branch": "main",
+      "provider": "GitHub",
+      "query_type": "release_notes",
+      "repo": "SearXNG/SearXNG"
+    },
+    {
+      "branch": "master",
+      "provider": "GitLab",
+      "query_type": "release_notes",
+      "repo": "searx/searx"
+    }
+  ],
+  "recommended_providers": [
+    "GitHub",
+    "GitLab"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": false,
+  "source_need": "current_release_notes"
+}

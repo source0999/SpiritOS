@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-06-29T03:46:13Z",
+  "results": [
+    {
+      "key": "qwen_default_coder",
+      "model": "qwen2.5-coder:7b",
+      "status": "used",
+      "latency_ms": 3698,
+      "output_hash": "add05902adc252bdd096233f6f8246bace4899a0980e4d1354fbafd236c573cc",
+      "response_excerpt": "{ \"ok\":true }",
+      "provider_errors": []
+    },
+    {
+      "key": "ornith_challenger",
+      "model": "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M",
+      "status": "used",
+      "latency_ms": 67766,
+      "output_hash": "4062edaf750fb8074e7e83e0c9028c94e32468a8b6f1614774328ef045150f93",
+      "response_excerpt": "{\"ok\":true}",
+      "provider_errors": []
+    },
+    {
+      "key": "gemma_intent",
+      "model": "gemma3n:e4b",
+      "status": "used",
+      "latency_ms": 78813,
+      "output_hash": "4300d4e45e836ccd4946ff5e566c14ed0f3cfe8be4c1f43966ff4ae0ae3bf9bb",
+      "response_excerpt": "{ \"ok\": true }",
+      "provider_errors": []
+    },
+    {
+      "key": "hermes_critic",
+      "model": "hermes4:latest",
+      "status": "used",
+      "latency_ms": 117008,
+      "output_hash": "57bab96172bd9be17baa734ba871e26cedff627030de74d5f90cb3fda951cb6d",
+      "response_excerpt": "{\n  \"response\": {\n    \"json\": \"{\\",
+      "provider_errors": []
+    }
+  ],
+  "hermes_resmoked_at": "2026-06-29T03:48:56Z"
+}

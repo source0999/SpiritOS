@@ -1,0 +1,1 @@
+{"source_need": "YES", "requires_current_research": true, "recommended_providers": ["SearXNG", "Scout"], "queries": ["Ollama API JSON mode support in latest version", "Ollama API keep_alive parameter for generate endpoint"], "provenance_requirements": "URL + timestamp + version string from Ollama docs or changelog", "fallback_claim_risk": "HIGH", "score_only_query_quality": 8.5}

@@ -1,0 +1,10 @@
+{
+  "target": "Source Proxy evidence folder",
+  "role": "local-only auditor",
+  "request_type": "audit",
+  "constraints": "local-only reasoning, no cloud fallback, no hidden tools, no file mutation, no model promotion",
+  "success_criteria": "determine if the PASS was real",
+  "forbidden_paths": "SpiritFlix, Jellyfin, media files, transcodes, model storage",
+  "verifier_requirements": "no new prompt batches, no rerun automatically, no patch code",
+  "current_info_needed": "evidence folder contents"
+}

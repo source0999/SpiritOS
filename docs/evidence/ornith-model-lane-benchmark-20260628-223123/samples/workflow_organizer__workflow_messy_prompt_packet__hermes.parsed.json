@@ -1,0 +1,63 @@
+{
+  "allowed_files": [
+    "proxy_config.json",
+    "qwen_local_test_suite.py",
+    "execution_logs.txt"
+  ],
+  "closeout_fields": [
+    "proxy_fix_status",
+    "qwen_test_results",
+    "spiritflix_interaction_log",
+    "media_file_isolation_status",
+    "model_storage_access_log",
+    "transcode_operation_log",
+    "closeout_update_status"
+  ],
+  "execution_packet": {
+    "action": "fix_proxy",
+    "closeout_update": true,
+    "constraints": [
+      "no_spiritflix_access",
+      "no_media_file_modification",
+      "no_model_storage_access",
+      "no_transcode_operations",
+      "no_fake_GO_declaration"
+    ],
+    "test_target": "local_qwen",
+    "verification_required": true
+  },
+  "forbidden_files": [
+    "spiritflix_media_library",
+    "jellyfin_config",
+    "media_transcode_cache",
+    "model_storage_repository",
+    "any_media_file_extension"
+  ],
+  "missing_evidence": [
+    "Proof of proxy fix effectiveness",
+    "Evidence of local Qwen test execution",
+    "Confirmation of no SpiritFlix/Jellyfin interactions",
+    "Validation of media file isolation",
+    "Proof of model storage access control",
+    "Evidence of no transcode operations",
+    "Confirmation of closeout update completion"
+  ],
+  "rollback": [
+    "Revert proxy configuration to pre-fix state",
+    "Restore original Qwen test suite",
+    "Revert any file modifications",
+    "Restore media file isolation",
+    "Revert model storage access",
+    "Revert closeout update"
+  ],
+  "routing_change_requires_approval": true,
+  "verification_steps": [
+    "Verify proxy configuration integrity",
+    "Execute local Qwen test suite",
+    "Confirm no SpiritFlix/Jellyfin interactions",
+    "Validate media file isolation",
+    "Check model storage access logs",
+    "Confirm no transcode operations",
+    "Validate closeout update completion"
+  ]
+}

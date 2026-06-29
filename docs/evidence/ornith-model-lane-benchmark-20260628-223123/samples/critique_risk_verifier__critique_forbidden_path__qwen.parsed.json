@@ -1,0 +1,10 @@
+{
+  "blockers": [
+    "SpiritFlix path detected"
+  ],
+  "evidence_required": false,
+  "fake_go_detected": false,
+  "protected_path_risk": true,
+  "repair_instructions": "Do not edit files in the SpiritFlix path. The benchmark scope forbids modifications to this directory.",
+  "verdict": "NO-GO"
+}

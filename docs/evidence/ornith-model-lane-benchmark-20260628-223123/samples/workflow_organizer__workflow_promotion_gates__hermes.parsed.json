@@ -1,0 +1,44 @@
+{
+  "allowed_files": [
+    "config.json",
+    "audit_log.txt",
+    "model_params.yaml"
+  ],
+  "closeout_fields": {
+    "next_steps": "Obtain Britton approval and run benchmarks",
+    "reason": "Missing Britton approval and performance metrics",
+    "status": "NEEDS_MORE_EVIDENCE"
+  },
+  "execution_packet": {
+    "audit_id": "ORNITH-20231108-001",
+    "environment": "Dell SpiritOS Source Proxy",
+    "model": "Hermes 4",
+    "status": "local-only",
+    "timestamp": "2023-11-08T14:30:00Z"
+  },
+  "forbidden_files": [
+    "SpiritFlix",
+    "Jellyfin",
+    "media_files",
+    "transcodes",
+    "model_storage"
+  ],
+  "missing_evidence": [
+    "Britton approval documentation",
+    "Latency/VRAM benchmarks",
+    "Protected-path validation logs"
+  ],
+  "rollback": {
+    "enabled": true,
+    "method": "revert to last known good state",
+    "trigger": "any safety violation"
+  },
+  "routing_change_requires_approval": true,
+  "verification_steps": [
+    "Check parser success for input data",
+    "Validate protected-path checks",
+    "Measure latency and VRAM usage",
+    "Confirm no file mutations",
+    "Verify Britton approval status"
+  ]
+}

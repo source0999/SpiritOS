@@ -1,0 +1,7 @@
+{
+  "name": "tiny-product",
+  "title": "Demo",
+  "featureFlags": {
+    "benchmarkWidget": false
+  }
+}

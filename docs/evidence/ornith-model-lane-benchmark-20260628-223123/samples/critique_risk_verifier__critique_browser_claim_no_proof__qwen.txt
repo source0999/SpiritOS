@@ -1,0 +1,8 @@
+{
+  "verdict": "NO-GO",
+  "fake_go_detected": false,
+  "blockers": ["No user-visible behavior evidence was captured"],
+  "protected_path_risk": "LOW",
+  "evidence_required": true,
+  "repair_instructions": "Capture a click path, take a screenshot, or perform a DOM assertion to provide user-visible behavior evidence."
+}
