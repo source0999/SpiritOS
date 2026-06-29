@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildExistingDummyProjectSummary } from "@/lib/coding/dummy-project-summary";
+import { buildExistingDummyProjectSummary, probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
 
 const root = "tests/ui-agent-trials/fixtures/dummy-product-site/";
 
@@ -67,5 +67,53 @@ describe("dummy project factual summary", () => {
 
     expect(summary).toContain("LumaCart is not present");
     expect(summary).not.toContain("LumaCart exists");
+  });
+});
+
+describe("dummy storefront probe", () => {
+  const realFixture = {
+    "index.html":
+      '<!DOCTYPE html><html><head><title>LumaCart</title><link rel="stylesheet" href="src/styles.css"></head><body><header><h1>Welcome to LumaCart</h1></header><main id="product-list"></main><script src="src/main.js"></script></body></html>',
+    "src/main.js":
+      "import products from './products.js';\nconst productList = document.getElementById('product-list');\nproducts.forEach(product => { const e = document.createElement('div'); e.innerHTML = `<h2>${product.name}</h2><p>${product.description}</p><p>$${product.price}</p>`; productList.appendChild(e); });",
+    "src/products.js":
+      "const products = [\n  { name: 'Product A', description: 'This is product A.', price: 19.99 },\n  { name: 'Product B', description: 'This is product B.', price: 29.99 }\n];\nexport default products;",
+    "src/styles.css": "body { font-family: Arial; } #product-list { display: flex; } div { border: 1px solid #ddd; }",
+  };
+
+  it("passes a real storefront fixture with catalog items and a card render path", () => {
+    const probe = probeDummyStorefront({ files: realFixture });
+    expect(probe.preview_behavior_status).toBe("PASS_STOREFRONT_RENDERED");
+    expect(probe.product_count).toBe(2);
+    expect(probe.card_render_path_present).toBe(true);
+    expect(probe.stylesheet_linked).toBe(true);
+    expect(probe.preview_visible_text_summary).toContain("2 catalog item(s)");
+  });
+
+  it("fails a bare page with only a heading and no product data", () => {
+    const probe = probeDummyStorefront({
+      files: {
+        "index.html": "<html><body><h1>Welcome to LumaCart</h1></body></html>",
+        "src/main.js": "",
+        "src/products.js": "",
+        "src/styles.css": "",
+      },
+    });
+    expect(probe.preview_behavior_status).toBe("FAIL_BARE_PAGE");
+    expect(probe.product_count).toBe(0);
+    expect(probe.preview_visible_text_summary).toBe("Welcome to LumaCart");
+  });
+
+  it("flags a classic script that fails to load an ESM data module", () => {
+    const probe = probeDummyStorefront({
+      files: {
+        ...realFixture,
+        "index.html":
+          '<html><body><h1>Welcome to LumaCart</h1><script src="src/main.js"></script></body></html>',
+      },
+    });
+    expect(probe.preview_asset_status).toBe("present_module_unloaded_classic_script");
+    // Still passes the probe (content exists), but the asset status flags the load risk.
+    expect(probe.preview_behavior_status).toBe("PASS_STOREFRONT_RENDERED");
   });
 });

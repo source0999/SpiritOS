@@ -3,6 +3,7 @@ import {
   type DummyCoder10Prompt,
   type DummyCoder10ResultState,
 } from "@/lib/coding/dummy-coder-10-prompts";
+import type { DummyStorefrontProbeResult } from "@/lib/coding/dummy-project-summary";
 
 export type DummyCoder10UiLabel = "PASS" | "PASS_NOOP" | "PASS_BLOCKED" | "NEEDS_FIX" | "INVALID";
 export type DummyCoder10FileScopeStatus = "inside_dummy_root" | "unexpected_dummy_files" | "critical_failure";
@@ -63,6 +64,9 @@ export type DummyCoder10GradingInput = {
   searchPreserved?: boolean;
   cartPreserved?: boolean;
   categoryEvidencePresent?: boolean;
+  /** Storefront render probe result from the fixture contents. When FAIL_BARE_PAGE on a storefront
+   * init prompt, the grader must not return full PASS — HTTP 200 / files-present alone is not proof. */
+  storefrontProbe?: DummyStorefrontProbeResult | null;
   provenance?: DummyCoder10ProvenanceInput;
 };
 
@@ -406,6 +410,29 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
       fileScope,
       provenance,
       recommendedNextAction: "Retry the selected prompt or inspect whether an explicit no-op rule applies.",
+    };
+  }
+
+  // Storefront proof gate for the dummy-product-site init prompt: files-present + HTTP 200 must
+  // not equal PASS. If the storefront probe says the fixture only renders a bare heading (no
+  // catalog/product cards), downgrade PASS_DUMMY_PROJECT_INIT to NEEDS_FIX so a bare page cannot
+  // pass as a real storefront.
+  const isStorefrontInitPrompt = input.prompt.id === "coder-001-init-dummy-product-site";
+  if (
+    isStorefrontInitPrompt &&
+    input.storefrontProbe &&
+    input.storefrontProbe.preview_behavior_status === "FAIL_BARE_PAGE"
+  ) {
+    return {
+      resultState: "NEEDS_FIX",
+      score: 6,
+      label: "NEEDS_FIX",
+      reason: `LumaCart fixture only renders a bare page (${input.storefrontProbe.preview_visible_text_summary}); a storefront PASS requires visible catalog/product content.`,
+      criticalFailures,
+      fileScope,
+      provenance,
+      recommendedNextAction:
+        "Re-run Prompt 1 so the model emits product data and a card render path (products.js + main.js), not only a heading.",
     };
   }
 

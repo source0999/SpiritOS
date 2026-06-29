@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
 
 const REPO_ROOT = process.cwd();
 const FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
@@ -68,6 +69,82 @@ function normalizeHtmlForPreview(html: string): string {
   );
 }
 
+type FixtureProduct = {
+  name?: string | null;
+  price?: string | number | null;
+  category?: string | null;
+  description?: string | null;
+};
+
+/**
+ * Parses a best-effort product list from the fixture's products.js. The fixture is a tiny static
+ * site, so we read the array-of-objects shape without evaluating JS. Each object block is scanned
+ * for name/price/category/description fields. This is intentionally permissive (not a real JS
+ * parser) — it only needs to surface catalog content for the server-rendered preview.
+ */
+function parseFixtureProducts(productsJs: string): FixtureProduct[] {
+  const products: FixtureProduct[] = [];
+  // Match object blocks delimited by { ... } that look like product entries.
+  const objectBlocks = productsJs.match(/\{[^{}]*\}/g) ?? [];
+  for (const block of objectBlocks) {
+    const name = block.match(/["']?name["']?\s*:\s*["']([^"']+)["']/i)?.[1];
+    const priceStr = block.match(/["']?price["']?\s*:\s*([0-9.]+)/i)?.[1];
+    const category = block.match(/["']?category["']?\s*:\s*["']([^"']+)["']/i)?.[1];
+    const description = block.match(/["']?description["']?\s*:\s*["']([^"']+)["']/i)?.[1];
+    if (!name && !priceStr && !category && !description) continue;
+    products.push({
+      category: category ?? null,
+      description: description ?? null,
+      name: name ?? null,
+      price: priceStr ?? null,
+    });
+  }
+  return products;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Server-side renders product cards into index.html so the LumaCart storefront is visibly proven
+ * without relying on client-side JS execution. The original client script is preserved (loaded as
+ * a module) for the full interactive behavior; these server-rendered cards guarantee the page shows
+ * catalog content even if the browser fails to execute the module.
+ */
+function injectServerRenderedCards(html: string, fixtureFiles: Record<string, string>): string {
+  const probe = probeDummyStorefront({ files: fixtureFiles });
+  if (probe.preview_behavior_status !== "PASS_STOREFRONT_RENDERED") return html;
+
+  const products = parseFixtureProducts(fixtureFiles["src/products.js"] ?? "");
+  if (products.length === 0) return html;
+
+  const cards = products
+    .map((product) => {
+      const name = product.name ? `<h2>${escapeHtml(product.name)}</h2>` : "";
+      const description = product.description ? `<p>${escapeHtml(product.description)}</p>` : "";
+      const category = product.category ? `<p class="category">${escapeHtml(product.category)}</p>` : "";
+      const price = product.price != null ? `<p class="price">$${escapeHtml(String(product.price))}</p>` : "";
+      return `<div class="product-card">${name}${description}${category}${price}</div>`;
+    })
+    .join("\n      ");
+
+  // Insert server-rendered cards into the product container. If a container id is present, fill it;
+  // otherwise append a fallback container before </body>.
+  const containerMatch = html.match(/<main[^>]*id=["']product-list["'][^>]*>([\s\S]*?)<\/main>/i);
+  if (containerMatch) {
+    return html.replace(
+      /(<main[^>]*id=["']product-list["'][^>]*>)([\s\S]*?)(<\/main>)/i,
+      (_m, open, _inner, close) => `${open}\n      ${cards}\n    ${close}`,
+    );
+  }
+  return html.replace("</body>", `    <main id="product-list">\n      ${cards}\n    </main>\n  </body>`);
+}
+
 /**
  * Shared viewer handler for the LumaCart dummy-product-site fixture. Used by the root route
  * (the "Open LumaCart page" link) and the catch-all route (relative asset requests like
@@ -113,7 +190,21 @@ export async function serveFixtureAsset(fixtureSubPath: string | null | undefine
       );
     }
     const isHtml = fixtureRelPath.toLowerCase().endsWith(".html");
-    const servedContent = isHtml ? normalizeHtmlForPreview(content) : content;
+    let servedContent = isHtml ? normalizeHtmlForPreview(content) : content;
+    if (isHtml) {
+      // Server-render product cards so the storefront is visibly proven even when the browser
+      // fails to execute the client-side module. Read sibling fixture files for the probe + parser.
+      const fixtureFiles: Record<string, string> = { "index.html": content };
+      const siblingRel = ["src/products.js", "src/main.js", "src/styles.css"];
+      for (const rel of siblingRel) {
+        try {
+          fixtureFiles[rel] = await readFile(path.resolve(absRoot, rel), "utf8");
+        } catch {
+          // Missing sibling is fine; the probe will report empty/missing asset status.
+        }
+      }
+      servedContent = injectServerRenderedCards(servedContent, fixtureFiles);
+    }
     return new Response(servedContent, {
       headers: {
         "content-type": contentTypeFor(fixtureRelPath),

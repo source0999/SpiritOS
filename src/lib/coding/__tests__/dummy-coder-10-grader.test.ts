@@ -215,4 +215,56 @@ describe("dummy Coder 10 grading mapper", () => {
     expect(result.label).toBe("NEEDS_FIX");
     expect(result.recommendedNextAction.toLowerCase()).toContain("clean dummy-product-site root");
   });
+
+  it("downgrades Prompt 1 to NEEDS_FIX when the storefront probe says bare page", () => {
+    const result = gradeDummyCoder10Result({
+      prompt: prompt001,
+      changedFiles: [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      ],
+      checksRun: ["git apply --check"],
+      provenance: modelProvenance,
+      requiredInitFilesPresent: true,
+      storefrontProbe: {
+        preview_behavior_status: "FAIL_BARE_PAGE",
+        preview_visible_text_summary: "Welcome to LumaCart",
+        preview_asset_status: "empty",
+        product_count: 0,
+        card_render_path_present: false,
+        stylesheet_linked: false,
+      },
+    });
+
+    expect(result.resultState).toBe("NEEDS_FIX");
+    expect(result.label).toBe("NEEDS_FIX");
+    expect(result.reason).toContain("bare page");
+    expect(result.score).toBe(6);
+  });
+
+  it("keeps Prompt 1 PASS when the storefront probe confirms rendered content", () => {
+    const result = gradeDummyCoder10Result({
+      prompt: prompt001,
+      changedFiles: [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      ],
+      checksRun: ["git apply --check"],
+      provenance: modelProvenance,
+      requiredInitFilesPresent: true,
+      storefrontProbe: {
+        preview_behavior_status: "PASS_STOREFRONT_RENDERED",
+        preview_visible_text_summary: "Welcome to LumaCart, 2 catalog item(s), prices",
+        preview_asset_status: "present",
+        product_count: 2,
+        card_render_path_present: true,
+        stylesheet_linked: true,
+      },
+    });
+
+    expect(result.resultState).toBe("PASS_DUMMY_PROJECT_INIT");
+    expect(result.label).toBe("PASS");
+    expect(result.score).toBe(10);
+  });
 });

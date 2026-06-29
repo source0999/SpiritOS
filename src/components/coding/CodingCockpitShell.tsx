@@ -72,7 +72,7 @@ import {
   type DummyCoder10Prompt,
 } from "@/lib/coding/dummy-coder-10-prompts";
 import { gradeDummyCoder10Result, type DummyCoder10GradingResult } from "@/lib/coding/dummy-coder-10-grader";
-import { buildExistingDummyProjectSummary } from "@/lib/coding/dummy-project-summary";
+import { buildExistingDummyProjectSummary, probeDummyStorefront, type DummyStorefrontProbeResult } from "@/lib/coding/dummy-project-summary";
 import {
   mapVisibleResultBadge,
   type VisibleResultBadge,
@@ -292,6 +292,9 @@ type DummyCoder10RunState = {
   // begins (status -> starting); finishedAt when it reaches a terminal applied/complete/error state.
   startedAt: number | null;
   finishedAt: number | null;
+  // Storefront render probe result (coder-001 only). Null on other prompts or when the fixture
+  // contents could not be read. Surfaces whether the page renders real storefront content.
+  storefrontProbe: DummyStorefrontProbeResult | null;
 };
 
 function buildRouteUnavailableSuitePromptResult(
@@ -855,6 +858,7 @@ function defaultDummyCoderRunState(
     selectedPromptId: null,
     startedAt: null,
     finishedAt: null,
+    storefrontProbe: null,
     taskId: null,
     status,
     trialResultTrustStatus: null,
@@ -945,6 +949,10 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
       selectedPromptId,
       startedAt: typeof parsed.startedAt === "number" ? parsed.startedAt : null,
       finishedAt: typeof parsed.finishedAt === "number" ? parsed.finishedAt : null,
+      storefrontProbe:
+        parsed.storefrontProbe && typeof parsed.storefrontProbe === "object"
+          ? (parsed.storefrontProbe as DummyStorefrontProbeResult)
+          : null,
       taskId: storedStringOrNull(parsed.taskId),
       status:
         parsed.status === "starting" || parsed.status === "request_sent" || parsed.status === "running"
@@ -6083,6 +6091,10 @@ export function CodingCockpitShell() {
       `provenance_status: ${grader?.provenance.provenance_status ?? "not graded"}`,
       `recommended_next_action: ${state.recommendedNextAction ?? grader?.recommendedNextAction ?? "none"}`,
       `production_time: ${productionTime} (started ${state.startedAt ? new Date(state.startedAt).toISOString() : "n/a"}${state.finishedAt ? `, finished ${new Date(state.finishedAt).toISOString()}` : ""})`,
+      `preview_behavior_status: ${state.storefrontProbe?.preview_behavior_status ?? "not probed"}`,
+      `preview_visible_text_summary: ${state.storefrontProbe?.preview_visible_text_summary ?? "not probed"}`,
+      `preview_asset_status: ${state.storefrontProbe?.preview_asset_status ?? "not probed"}`,
+      `preview_product_count: ${state.storefrontProbe?.product_count ?? "not probed"}`,
       `existing_dummy_project_summary: ${existingDummyProjectSummary}`,
     ].join("\n");
   }
@@ -6198,6 +6210,7 @@ export function CodingCockpitShell() {
       selectedPromptId: prompt.id,
       startedAt: Date.now(),
       finishedAt: null,
+      storefrontProbe: null,
       taskId: null,
       status: "starting",
       trialResultTrustStatus: null,
@@ -6398,6 +6411,35 @@ export function CodingCockpitShell() {
         updateAppliedRunReceipts((receipts) => appendAppliedRunReceipt(receipts, receipt));
       }
 
+      // Storefront proof probe: read the just-applied fixture contents and verify the page would
+      // render catalog/product content, not only a bare heading. HTTP 200 / files-present must not
+      // equal PASS for the storefront init prompt.
+      let storefrontProbe: DummyStorefrontProbeResult | null = null;
+      if (prompt.id === "coder-001-init-dummy-product-site") {
+        try {
+          const fixtureEntries = await Promise.all(
+            ["index.html", "src/products.js", "src/main.js", "src/styles.css"].map(async (rel) => {
+              try {
+                const fileResponse = await fetchWithTimeout(
+                  `/v1/coding/dummy-product-site-preview/${rel}`,
+                  { cache: "no-store" },
+                  TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+                );
+                const text = fileResponse.ok ? await fileResponse.text() : "";
+                return [rel, text] as const;
+              } catch {
+                return [rel, ""] as const;
+              }
+            }),
+          );
+          storefrontProbe = probeDummyStorefront({
+            files: Object.fromEntries(fixtureEntries),
+          });
+        } catch {
+          storefrontProbe = null;
+        }
+      }
+
       const grader = gradeDummyCoder10Result({
         blockedReason,
         categoryEvidencePresent: prompt.id === "coder-009-noop-category-proof" ? Boolean(noOpEvidence) : undefined,
@@ -6428,6 +6470,7 @@ export function CodingCockpitShell() {
           scaffold_used: scaffoldUsed,
           trial_result_trust_status: trialResultTrustStatus,
         },
+        storefrontProbe,
         verificationEvidence: checksRun.length > 0 || record.verification_status ? [String(record.verification_status ?? "recorded")] : [],
       });
       const selectedPromptStatus: DummyCoder10RunState["status"] =
@@ -6463,6 +6506,7 @@ export function CodingCockpitShell() {
         selectedPromptId: prompt.id,
         startedAt: current.startedAt ?? Date.now(),
         status: selectedPromptStatus,
+        storefrontProbe,
         taskId,
         trialResultTrustStatus,
         verificationStatus,
