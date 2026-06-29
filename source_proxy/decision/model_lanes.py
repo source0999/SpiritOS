@@ -27,6 +27,7 @@ DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_GEMMA_MODEL = "gemma3n:e4b"
 DEFAULT_HERMES_MODEL = "hermes4:latest"
 DEFAULT_QWEN_CODER_MODEL = "qwen2.5-coder:7b"
+DEFAULT_ORNITH_CHALLENGER_MODEL = "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M"
 
 
 @dataclass(frozen=True)
@@ -49,7 +50,7 @@ class ModelLane:
 
 
 def model_lane_registry() -> dict[str, Any]:
-    lanes = [_qwen(), _hermes(), _gemma(), _manual_handoff(), _cloud_future()]
+    lanes = [_qwen(), _ornith_challenger(), _hermes(), _gemma(), _manual_handoff(), _cloud_future()]
     return {
         "registry_version": MODEL_LANE_REGISTRY_VERSION,
         "mode": "metadata_only_no_model_calls",
@@ -58,6 +59,7 @@ def model_lane_registry() -> dict[str, Any]:
         "promotion_policy": "evidence_driven_operator_review",
         "global_rules": [
             "qwen_local_coder remains the primary coding/action lane",
+            "ornith_coder_challenger is benchmark-prep only until comparative evidence promotes it",
             "preview/future sidecars cannot edit files",
             "preview/future sidecars cannot declare product success without behavior evidence",
             "cloud/API routes require Britton approval before use",
@@ -817,6 +819,44 @@ def _qwen() -> ModelLane:
         evidence_required_for_promotion=["behavior retest results", "receipt evidence", "false-positive audit"],
         known_failure_modes=["malformed action JSON", "weak UI state changes", "missing behavior evidence"],
         promotion_status="primary_preserved_not_promoted_by_this_task",
+    )
+
+
+def _ornith_challenger() -> ModelLane:
+    model = (
+        os.environ.get("SOURCE_PROXY_ORNITH_CHALLENGER_OLLAMA_MODEL", "").strip()
+        or DEFAULT_ORNITH_CHALLENGER_MODEL
+    )
+    return ModelLane(
+        lane_id="ornith_coder_challenger",
+        display_name="Ornith coder challenger",
+        role="coder/scaffold/workflow organization challenger",
+        status="installed_challenger_benchmark_prep_only",
+        allowed_uses=[
+            "future Qwen-vs-Ornith benchmark comparison",
+            f"explicit challenger smoke or benchmark runs using {model}",
+        ],
+        disallowed_uses=[
+            "default coding lane",
+            "silent replacement for qwen_local_coder",
+            "declaring superiority before benchmark evidence",
+            "production routing without operator approval",
+        ],
+        cost_class="local_compute",
+        privacy_class="local",
+        approval_required="explicit_benchmark_or_operator_selection_required",
+        evidence_required_for_promotion=[
+            "Qwen-vs-Ornith identical-prompt benchmark receipts",
+            "behavior and diff verification results",
+            "VRAM/runtime stability evidence on RTX 3060 12GB",
+            "false-positive and no-diff failure audit",
+        ],
+        known_failure_modes=[
+            "slow cold-load latency",
+            "reasoning/template artifacts in short responses",
+            "unproven SpiritOS coding contract behavior",
+        ],
+        promotion_status="not_promoted_challenger_only",
     )
 
 
