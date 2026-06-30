@@ -3282,6 +3282,64 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["diagnostics_summary"]["content_validation"]["ok"], True)
         self.assertEqual(payload["diagnostics_summary"]["structured_honesty_gate"]["status"], "passed")
 
+    def test_prompt_packet_coder_002_builds_product_data_bundle(self) -> None:
+        client = self._decision_client()
+        fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        _write(fixture_root / "src/products.js", "const products = [];\nexport default products;\n")
+        model_bundle = "\n".join(
+            [
+                '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js">',
+                "const products = [",
+                "  { id: 'lamp', name: 'Desk Lamp', price: 24.99, category: 'Home', description: 'A compact lamp for small desks.' },",
+                "  { id: 'mug', name: 'Travel Mug', price: 15.5, category: 'Kitchen', description: 'A simple mug for warm drinks.' },",
+                "  { id: 'notebook', name: 'Pocket Notebook', price: 7.25, category: 'Office', description: 'A small notebook for quick notes.' },",
+                "  { id: 'planter', name: 'Mini Planter', price: 12, category: 'Decor', description: 'A ceramic planter for tiny plants.' },",
+                "  { id: 'tote', name: 'Canvas Tote', price: 18, category: 'Bags', description: 'A light tote for daily errands.' },",
+                "  { id: 'speaker', name: 'Desk Speaker', price: 39.99, category: 'Electronics', description: 'A small speaker for work playlists.' },",
+                "];",
+                "export default products;",
+                "</file>",
+            ]
+        )
+
+        with (
+            mock.patch.dict(os.environ, {"SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED": "1"}),
+            mock.patch("source_proxy.api.decision._run_fip4_qwen_coder") as fip4_mock,
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet") as fip3_mock,
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_dummy_product_site_llm_with_wall_timeout",
+                return_value=model_bundle,
+            ),
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "add real fake product data to the LumaCart dummy site.",
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_DUMMY_DATA_CHANGE",
+                    "selected_prompt_id": "coder-002-add-product-data",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        fip4_mock.assert_not_called()
+        fip3_mock.assert_not_called()
+        self.assertEqual(payload["status"], "preview_ready")
+        self.assertEqual(payload["reason_code"], "dummy_product_site_prompt2_bundle")
+        self.assertEqual(payload["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js")
+        self.assertEqual(payload["changed_files"], ["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"])
+        self.assertIn("Desk Lamp", payload["proposed_diff"])
+        self.assertIn("export default products", payload["proposed_diff"])
+        self.assertEqual(payload["diagnostics_summary"]["trial_result_trust_status"], "model_authored_diff_proven")
+        self.assertEqual(payload["task_spec"]["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js")
+        self.assertIn("product data field validation", payload["checks_run"])
+
     def test_prompt_packet_coder_003_builds_fixture_context_packet(self) -> None:
         client = self._decision_client()
         fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"

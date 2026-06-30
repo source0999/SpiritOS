@@ -1,14 +1,17 @@
 /// <reference types="vitest/globals" />
 
-import { readFile } from "node:fs/promises";
-
 import { resolveFixturePath, serveFixtureAsset } from "../_handler";
 
+const readFileMock = vi.hoisted(() => vi.fn());
+
 vi.mock("node:fs/promises", () => ({
-  readFile: vi.fn(),
+  default: {
+    readFile: readFileMock,
+  },
+  readFile: readFileMock,
 }));
 
-const mockedReadFile = vi.mocked(readFile);
+const mockedReadFile = vi.mocked(readFileMock);
 
 function asErrnoError(code: string): NodeJS.ErrnoException {
   const err = new Error(`${code}: no such file`) as NodeJS.ErrnoException;
@@ -49,10 +52,10 @@ describe("coding dummy-product-site preview handler", () => {
         return '<!doctype html><html><head><title>LumaCart</title><link rel="stylesheet" href="src/styles.css"></head><body><header><h1>Welcome to LumaCart</h1></header><main id="product-list"></main><script src="src/main.js"></script></body></html>';
       }
       if (p.endsWith("src/products.js")) {
-        return "const products = [\n  { name: 'Product A', description: 'This is product A.', price: 19.99 },\n  { name: 'Product B', description: 'This is product B.', price: 29.99 }\n];\nexport default products;";
+        return "const products = [\n  { name: 'Product A', category: 'Demo', description: 'This is product A.', price: 19.99 },\n  { name: 'Product B', category: 'Demo', description: 'This is product B.', price: 29.99 },\n  { name: 'Product C', category: 'Demo', description: 'This is product C.', price: 9.99 },\n  { name: 'Product D', category: 'Demo', description: 'This is product D.', price: 12.99 },\n  { name: 'Product E', category: 'Demo', description: 'This is product E.', price: 14.99 },\n  { name: 'Product F', category: 'Demo', description: 'This is product F.', price: 16.99 }\n];\nexport default products;";
       }
       if (p.endsWith("src/main.js")) {
-        return "import products from './products.js'; products.forEach(p => { const e = document.createElement('div'); e.innerHTML = `<h2>${p.name}</h2>`; document.getElementById('product-list').appendChild(e); });";
+        return "import products from './products.js'; products.forEach(p => { const e = document.createElement('div'); e.className = 'product-card'; e.innerHTML = `<h2>${p.name}</h2><p>${p.category}</p><p>${p.description}</p><p>$${p.price}</p>`; document.getElementById('product-list').appendChild(e); });";
       }
       if (p.endsWith("src/styles.css")) {
         return "body { font-family: Arial; } div { border: 1px solid #ddd; }";
@@ -72,7 +75,7 @@ describe("coding dummy-product-site preview handler", () => {
     expect(text).toContain("Product B");
     expect(text).toContain("$19.99");
     // The module script is still loaded as type=module so the interactive path is preserved.
-    expect(text).toContain('<script type="module"  src="src/main.js">');
+    expect(text).toMatch(/<script\b[^>]*type="module"[^>]*src="src\/main\.js"/);
   });
 
   it("serves relative fixture assets (src/styles.css, src/main.js) with correct content types", async () => {

@@ -1,46 +1,10 @@
 const products = [
-  {
-    id: '1',
-    name: 'Product A',
-    category: 'Electronics',
-    description: 'This is product A.',
-    price: 19.99
-  },
-  {
-    id: '2',
-    name: 'Product B',
-    category: 'Clothing',
-    description: 'This is product B.',
-    price: 29.99
-  },
-  {
-    id: '3',
-    name: 'Product C',
-    category: 'Books',
-    description: 'This is product C.',
-    price: 14.99
-  },
-  {
-    id: '4',
-    name: 'Product D',
-    category: 'Home & Garden',
-    description: 'This is product D.',
-    price: 24.99
-  },
-  {
-    id: '5',
-    name: 'Product E',
-    category: 'Toys',
-    description: 'This is product E.',
-    price: 19.99
-  },
-  {
-    id: '6',
-    name: 'Product F',
-    category: 'Beauty & Personal Care',
-    description: 'This is product F.',
-    price: 29.99
-  }
+  { id: 'desk-lamp', name: 'Desk Lamp', price: 24.99, category: 'Home', description: 'Small lamp for a tidy desk.' },
+  { id: 'coffee-maker', name: 'Coffee Maker', price: 19.99, category: 'Kitchen', description: 'Easy-to-use coffee maker for busy mornings.' },
+  { id: 'water-bottle', name: 'Water Bottle', price: 7.99, category: 'Beverages', description: 'Stainless steel water bottle for staying hydrated.' },
+  { id: 'headphones', name: 'Headphones', price: 49.99, category: 'Electronics', description: 'Noise-cancelling headphones for a comfortable listening experience.' },
+  { id: 't-shirt', name: 'T-Shirt', price: 15.99, category: 'Apparel', description: 'Comfortable cotton t-shirt in various colors.' },
+  { id: 'book', name: 'Book', price: 12.99, category: 'Books', description: 'A classic novel for your bookshelf.' }
 ];
 
 export default products;

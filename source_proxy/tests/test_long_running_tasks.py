@@ -243,6 +243,32 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             "one_write_capable_task_per_scope",
         )
 
+    def test_create_ignores_pre_execution_safety_block_on_same_scope(self) -> None:
+        poisoned = create_long_running_task(
+            "Target file: source_proxy/main.py\nUpdate implementation."
+        )
+        update_long_running_task(
+            poisoned["task"]["id"],
+            status="running",
+            current_agent_role="coder",
+            architect_status="planned",
+            open_diffs=[],
+            causal_events=[
+                {
+                    "event_type": "failure",
+                    "notes": ["approved_diff_blocked"],
+                }
+            ],
+        )
+
+        retry = create_long_running_task(
+            "Target file: source_proxy/main.py\nRetry the same implementation."
+        )
+
+        self.assertEqual(retry["task"]["status"], "queued")
+        self.assertEqual(retry["task"]["scope_key"], "source_proxy/main.py")
+        self.assertNotEqual(retry["task"]["architect_reason"], "write_scope_conflict")
+
     def test_create_allows_read_only_parallel_review_on_same_scope(self) -> None:
         first = create_long_running_task(
             "Target file: source_proxy/main.py\nUpdate implementation."

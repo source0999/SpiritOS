@@ -828,6 +828,20 @@ def _task_is_waiting_for_coder_output(task: LongRunningTask) -> bool:
     )
 
 
+def _task_has_pre_execution_safety_block(task: LongRunningTask) -> bool:
+    if task.status in _terminal_or_waiting_statuses():
+        return False
+    if _has_approved_execution(task.open_diffs):
+        return False
+    for event in task.causal_events:
+        if not isinstance(event, dict):
+            continue
+        notes = event.get("notes")
+        if isinstance(notes, list) and "approved_diff_blocked" in notes:
+            return True
+    return False
+
+
 def get_long_running_task_snapshot(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
     return _task_envelope(task)
@@ -976,17 +990,36 @@ def execute_approved_long_running_task(
         task_spec=trial_task_spec,
     )
     if verification["status"] == "blocked":
+        before_blocked = task.status
+        task.status = "blocked"
+        task.architect_status = "blocked"
+        task.architect_reason = "approved_diff_blocked"
+        blocked_reasons = [
+            str(reason).strip()
+            for reason in verification.get("blocked_reasons", [])
+            if str(reason).strip()
+        ]
+        task.truncated_test_results = (
+            "reason_code: approved_diff_blocked"
+            + (f"; blocked_reasons={'; '.join(blocked_reasons)[:1000]}" if blocked_reasons else "")
+        )
         _append_causal_event(
             task,
             event_type="failure",
             subsystem="source_proxy_long_running",
             approval_id=approval_id,
             run_id=run_id,
-            status_before=status_before,
+            status_before=before_blocked,
             status_after=task.status,
-            changed_state_fields=[],
+            changed_state_fields=[
+                "status",
+                "architect_status",
+                "architect_reason",
+                "truncated_test_results",
+            ],
             notes=["approved_diff_blocked"],
         )
+        task.updated_at = _now_iso()
         _save_task(task)
         raise LongRunningTaskError(
             "Approved diff was blocked by safety verification.",
@@ -3098,10 +3131,10 @@ def _live_long_running_tasks() -> list[LongRunningTask]:
     combined: dict[str, LongRunningTask] = {
         task.id: task
         for task in _load_recent_tasks(limit=MAX_LONG_TASKS)
-        if task.status not in terminal
+        if task.status not in terminal and not _task_has_pre_execution_safety_block(task)
     }
     for task in _tasks.values():
-        if task.status not in terminal:
+        if task.status not in terminal and not _task_has_pre_execution_safety_block(task):
             combined[task.id] = task
     return list(combined.values())
 
@@ -3657,6 +3690,7 @@ DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS = (
 DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE = 0.02
 DUMMY_PRODUCT_SITE_INDEX = f"{DUMMY_PRODUCT_SITE_ROOT}index.html"
 DUMMY_PRODUCT_SITE_MAIN = f"{DUMMY_PRODUCT_SITE_ROOT}src/main.js"
+DUMMY_PRODUCT_SITE_PRODUCTS = f"{DUMMY_PRODUCT_SITE_ROOT}src/products.js"
 DUMMY_PRODUCT_SITE_STYLES = f"{DUMMY_PRODUCT_SITE_ROOT}src/styles.css"
 PROMPT3_STATIC_CLASSIC_RETRY_FEEDBACK = (
     "Your previous diff used static import but did not change index.html to type=module. "
@@ -4123,6 +4157,208 @@ def propose_dummy_product_site_create_diff(
     }
 
 
+def propose_dummy_product_site_product_data_diff(
+    *,
+    task: str,
+    workspace_root: Path | None = None,
+    llm_call: Callable[[str, str], str] | None = None,
+    model_alias: str | None = None,
+) -> dict[str, Any]:
+    root = (workspace_root or _workspace_root()).resolve()
+    selected_alias = model_alias or _dummy_product_site_create_model_alias()
+    target_abs = root / DUMMY_PRODUCT_SITE_PRODUCTS
+    diagnostics: dict[str, Any] = {
+        "context_mode": "dummy_product_site_product_data",
+        "context_slices": _dummy_product_site_product_data_context_slices(root),
+        "target_exists": target_abs.is_file(),
+        "source_proxy_run_id": f"prompt2-{uuid4().hex[:12]}",
+        "scaffold_used": False,
+        "fallback_used": False,
+        "generated_diff_by_backend": False,
+        "provider_call_made": False,
+        "stage_events": [],
+    }
+    if not target_abs.is_file():
+        diagnostics["final_reason_code"] = "target_missing"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_PRODUCTS,
+            notes=["CODER_BLOCKED reason_code: target_missing"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason="Prompt 2 requires the existing LumaCart src/products.js file.",
+            needed_context="Run or restore Prompt 1 before Prompt 2.",
+            reason_code="target_missing",
+        )
+
+    prompt = _render_dummy_product_site_product_data_prompt(task, root)
+    model_timeout_seconds = _dummy_product_site_model_timeout_seconds()
+    attempt_started = time.perf_counter()
+    diagnostics["model_alias"] = selected_alias
+    diagnostics["model_name"] = route_model_for_alias(selected_alias) or ""
+    diagnostics["prompt_context_byte_size"] = len(prompt.encode("utf-8"))
+    _record_prompt3_stage(
+        diagnostics,
+        "prompt2_model_call_started",
+        model_alias=selected_alias,
+        model_name=diagnostics["model_name"],
+        timeout_seconds=model_timeout_seconds,
+        prompt_context_byte_size=diagnostics["prompt_context_byte_size"],
+    )
+    try:
+        _record_coder_provider_model_truth(
+            diagnostics,
+            selected_alias=selected_alias,
+            provider_call_made=True,
+        )
+        raw_response = (
+            llm_call(prompt, selected_alias)
+            if llm_call is not None
+            else _call_dummy_product_site_llm_with_wall_timeout(
+                prompt,
+                selected_alias,
+                model_timeout_seconds,
+            )
+        )
+    except Exception as error:  # noqa: BLE001
+        elapsed_ms = (time.perf_counter() - attempt_started) * 1000
+        timed_out = (
+            "timeout" in type(error).__name__.lower()
+            or "timeout" in str(error).lower()
+            or "timed out" in str(error).lower()
+        )
+        _record_prompt3_stage(
+            diagnostics,
+            "prompt2_model_call_timeout" if timed_out else "prompt2_model_call_failed",
+            elapsed_ms=elapsed_ms,
+            error_type=type(error).__name__,
+            error_message=str(error)[:240],
+        )
+        diagnostics["model_call_elapsed_ms"] = round(elapsed_ms, 2)
+        diagnostics["final_reason_code"] = "coder_model_timeout" if timed_out else "coder_model_router_error"
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
+        return _dummy_product_site_model_failure_payload(
+            diagnostics=diagnostics,
+            error=error,
+            timeout_seconds=model_timeout_seconds,
+        )
+
+    elapsed_ms = (time.perf_counter() - attempt_started) * 1000
+    _record_prompt3_stage(
+        diagnostics,
+        "prompt2_model_call_finished",
+        elapsed_ms=elapsed_ms,
+        raw_response_length=len(raw_response or ""),
+    )
+    diagnostics["model_call_elapsed_ms"] = round(elapsed_ms, 2)
+    diagnostics["generation_source"] = "model"
+    diagnostics["diff_source"] = "pending_backend_diff_from_model_prompt2_file_bundle"
+    diagnostics["raw_response_length"] = len(raw_response or "")
+    diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
+    diagnostics["model_output_classification"] = "model_structured_file_bundle"
+
+    files, parse_error = _parse_dummy_product_site_file_bundle(raw_response or "")
+    diagnostics.update(_dummy_product_site_parse_meta(raw_response or "", files))
+    if parse_error or files is None:
+        diagnostics["validation_status"] = "prompt2_file_bundle_validation_failed"
+        diagnostics["parse_status"] = "failed"
+        diagnostics["parse_error_message"] = parse_error or "No files parsed."
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["final_reason_code"] = "coder_file_bundle_validation_failed"
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_PRODUCTS,
+            notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=diagnostics["parse_error_message"],
+            needed_context="Return only one file block for tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js.",
+            reason_code="coder_file_bundle_validation_failed",
+        )
+
+    diagnostics["parse_status"] = "passed"
+    validation = _validate_dummy_product_site_product_data_files(files)
+    diagnostics["content_validation"] = validation
+    if not validation["ok"]:
+        reason_code = str(validation["missing"][0] if validation["missing"] else "PRODUCT_DATA_CONTRACT_FAILED")
+        diagnostics["validation_status"] = "prompt2_contract_failed"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["recommended_next_action"] = "retry_prompt2_product_data_contract"
+        diagnostics["final_reason_code"] = reason_code
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_PRODUCTS,
+            notes=[f"CODER_BLOCKED reason_code: {reason_code}"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=str(validation["summary"]),
+            needed_context=", ".join(str(item) for item in validation["missing"][:8]),
+            reason_code=reason_code,
+        )
+
+    file = files[0]
+    unified = _prompt3_git_header_diff(
+        file["path"],
+        generate_unified_diff_from_content(root, file["path"], file["content"]),
+    )
+    if not unified.strip():
+        diagnostics["validation_status"] = "NO_DIFF"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["final_reason_code"] = "NO_DIFF"
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_PRODUCTS,
+            notes=["CODER_BLOCKED reason_code: NO_DIFF"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason="Model-authored Prompt 2 product data produced an empty diff.",
+            needed_context="Return changed product data for src/products.js.",
+            reason_code="NO_DIFF",
+        )
+
+    apply_ok, apply_error = _git_apply_generated_diff_ok(root, unified)
+    if not apply_ok:
+        diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["final_reason_code"] = "coder_backend_diff_generation_failed"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_PRODUCTS,
+            notes=["CODER_BLOCKED reason_code: coder_backend_diff_generation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=f"Generated diff did not pass git apply --check: {apply_error}",
+            needed_context="Retry with a clean Prompt 2 products.js file block under the dummy root.",
+            reason_code="coder_backend_diff_generation_failed",
+        )
+
+    diagnostics["validation_status"] = "preview_ready"
+    diagnostics["changed_files"] = [DUMMY_PRODUCT_SITE_PRODUCTS]
+    diagnostics["generated_diff_length"] = len(unified)
+    diagnostics["generated_diff_by_backend"] = True
+    diagnostics["diff_produced"] = True
+    diagnostics["apply_attempted"] = True
+    diagnostics["diff_source"] = "model_authored_prompt2_file_bundle_backend_converted_to_diff"
+    diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
+    diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
+    diagnostics["final_reason_code"] = "dummy_product_site_prompt2_bundle"
+    return {
+        "proposed_diff": unified,
+        "target": DUMMY_PRODUCT_SITE_PRODUCTS,
+        "coder_notes": [
+            "Model-authored Prompt 2 product data file bundle validated.",
+            "CODER_PREVIEW reason_code: dummy_product_site_prompt2_bundle",
+        ],
+        "bundle": None,
+        "reason_code": "dummy_product_site_prompt2_bundle",
+        "coder_diagnostics": diagnostics,
+        "changed_files": [DUMMY_PRODUCT_SITE_PRODUCTS],
+        "checks_run": ["git apply --check", "product data field validation"],
+    }
+
+
 def propose_dummy_product_site_render_cards_diff(
     *,
     task: str,
@@ -4495,9 +4731,93 @@ def _prompt3_git_header_diff(path: str, diff_text: str) -> str:
     return f"diff --git a/{normalized} b/{normalized}\n{diff_text}"
 
 
+def _dummy_product_site_product_data_context_slices(root: Path) -> list[dict[str, str]]:
+    try:
+        content = (root / DUMMY_PRODUCT_SITE_PRODUCTS).read_text(
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError:
+        content = ""
+    return [{"path": DUMMY_PRODUCT_SITE_PRODUCTS, "content": content}]
+
+
+def _render_dummy_product_site_product_data_prompt(task: str, root: Path) -> str:
+    try:
+        current_products = (root / DUMMY_PRODUCT_SITE_PRODUCTS).read_text(
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError:
+        current_products = ""
+    return "\n".join(
+        [
+            "You are Coder 002 for the isolated LumaCart dummy fixture.",
+            task.strip(),
+            "Return only one file block. Do not return markdown or prose.",
+            f"Required path: {DUMMY_PRODUCT_SITE_PRODUCTS}.",
+            "The file must export an array of at least 6 fake products.",
+            "Each product must include id, name, price, category, and description.",
+            "Use simple fake store data only; do not use real user/private data.",
+            "Prefer `const products = [...]` followed by `export default products;`.",
+            "Do not edit index.html, src/main.js, src/styles.css, production app files, docs, Source Proxy, or root package files.",
+            "Preferred format:",
+            f'<file path="{DUMMY_PRODUCT_SITE_PRODUCTS}">',
+            "const products = [",
+            "  { id: 'desk-lamp', name: 'Desk Lamp', price: 24.99, category: 'Home', description: 'Small lamp for a tidy desk.' },",
+            "];",
+            "export default products;",
+            "</file>",
+            "Current src/products.js:",
+            current_products,
+        ]
+    )
+
+
+def _validate_dummy_product_site_product_data_files(files: list[dict[str, str]]) -> dict[str, Any]:
+    missing: list[str] = []
+    paths = [file["path"].replace("\\", "/").lstrip("./") for file in files]
+    if paths != [DUMMY_PRODUCT_SITE_PRODUCTS]:
+        missing.append("PROMPT2_MUST_ONLY_CHANGE_PRODUCTS_JS")
+    content = files[0]["content"] if files else ""
+    if not content.strip():
+        missing.append("EMPTY_PRODUCTS_JS")
+    lowered = content.lower()
+    for keyword in DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS:
+        if keyword in lowered:
+            missing.append(f"BLACKLIST_KEYWORD:{keyword.strip()}")
+            break
+    if len(content.splitlines()) > DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE:
+        missing.append("PRODUCTS_JS_LINE_CAP_EXCEEDED")
+    if not re.search(r"\bexport\s+default\s+products\b", content) and not re.search(
+        r"\bexport\s+const\s+products\s*=",
+        content,
+    ):
+        missing.append("MISSING_PRODUCTS_EXPORT")
+    object_blocks = re.findall(r"\{[^{}]*\}", content, flags=re.DOTALL)
+    product_like = [
+        block
+        for block in object_blocks
+        if all(re.search(rf"\b{field}\s*:", block) for field in ("id", "name", "price", "category", "description"))
+    ]
+    if len(product_like) < 6:
+        missing.append("TOO_FEW_PRODUCT_RECORDS")
+    for field in ("id", "name", "price", "category", "description"):
+        if len(re.findall(rf"\b{field}\s*:", content)) < 6:
+            missing.append(f"MISSING_PRODUCT_FIELD:{field}")
+    return {
+        "ok": not missing,
+        "missing": list(dict.fromkeys(missing)),
+        "product_count": len(product_like),
+        "summary": "Prompt 2 product data file bundle passed validation."
+        if not missing
+        else "Prompt 2 product data file bundle failed validation.",
+    }
+
+
 def _dummy_product_site_prompt3_context_slices(root: Path) -> list[dict[str, str]]:
     slices: list[dict[str, str]] = []
-    for path in [DUMMY_PRODUCT_SITE_INDEX, DUMMY_PRODUCT_SITE_MAIN, f"{DUMMY_PRODUCT_SITE_ROOT}src/products.js", DUMMY_PRODUCT_SITE_STYLES]:
+    for path in [DUMMY_PRODUCT_SITE_INDEX, DUMMY_PRODUCT_SITE_MAIN, DUMMY_PRODUCT_SITE_PRODUCTS, DUMMY_PRODUCT_SITE_STYLES]:
         try:
             content = (root / path).read_text(encoding="utf-8", errors="replace")
         except OSError:

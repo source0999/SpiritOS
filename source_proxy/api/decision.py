@@ -60,6 +60,7 @@ from source_proxy.tasks.long_running import (
     forbidden_paths_for_context_mode,
     generate_unified_diff_from_content,
     propose_dummy_product_site_create_diff,
+    propose_dummy_product_site_product_data_diff,
     propose_dummy_product_site_render_cards_diff,
     propose_coder_agent_diff_payload_from_plan,
     reset_coder_timing_diagnostics,
@@ -6298,9 +6299,15 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         )
     )
     dummy_product_site_render_cards = _dummy_product_site_render_cards_mode(reset_request)
+    dummy_product_site_product_data = _dummy_product_site_product_data_mode(reset_request)
     fip3_model_packet = (
         {}
-        if target_gate_blocked or dummy_product_site_create or dummy_product_site_render_cards
+        if (
+            target_gate_blocked
+            or dummy_product_site_create
+            or dummy_product_site_product_data
+            or dummy_product_site_render_cards
+        )
         else await build_fip3_model_lane_packet(
             task=trial_task,
             route_payload=route_payload,
@@ -6430,6 +6437,16 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                         None,
                         functools.partial(
                             propose_dummy_product_site_create_diff,
+                            task=trial_task,
+                            workspace_root=_workspace_root(),
+                        ),
+                    )
+                elif dummy_product_site_product_data:
+                    architect_plan = None
+                    coder = await asyncio.get_running_loop().run_in_executor(
+                        None,
+                        functools.partial(
+                            propose_dummy_product_site_product_data_diff,
                             task=trial_task,
                             workspace_root=_workspace_root(),
                         ),
@@ -6659,6 +6676,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         task_spec_payload = _task_spec_payload_for_response(architect_plan, coder_packet_payload)
         if _dummy_product_site_create_mode(reset_request):
             task_spec_payload = _dummy_product_site_create_task_spec()
+        elif dummy_product_site_product_data:
+            task_spec_payload = _dummy_product_site_product_data_task_spec()
         elif dummy_product_site_render_cards:
             task_spec_payload = _dummy_product_site_render_cards_task_spec()
         if reason_code in TARGET_HARD_BLOCK_REASON_CODES or reason_code == "target_unresolved":
@@ -6693,8 +6712,20 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "task_summary": _short_task_summary(reset_request.task),
             "selected_prompt_id": reset_request.selected_prompt_id or reset_request.trial_prompt_id,
             "selectedPromptId": reset_request.selected_prompt_id or reset_request.trial_prompt_id,
-            "selected_prompt_number": 3 if _dummy_product_site_render_cards_mode(reset_request) else None,
-            "selectedPromptNumber": 3 if _dummy_product_site_render_cards_mode(reset_request) else None,
+            "selected_prompt_number": (
+                2
+                if dummy_product_site_product_data
+                else 3
+                if _dummy_product_site_render_cards_mode(reset_request)
+                else None
+            ),
+            "selectedPromptNumber": (
+                2
+                if dummy_product_site_product_data
+                else 3
+                if _dummy_product_site_render_cards_mode(reset_request)
+                else None
+            ),
             "relevant_context": "\n".join(context_lines),
             "context_metadata": {
                 "context_inclusion_mode": "coder_agent_repomix",
@@ -7181,6 +7212,18 @@ def _dummy_product_site_render_cards_mode(request: PromptPacketRequest) -> bool:
     )
 
 
+def _dummy_product_site_product_data_mode(request: PromptPacketRequest) -> bool:
+    prompt_id = str(request.selected_prompt_id or request.trial_prompt_id or "").strip()
+    expected_state = str(request.expected_result_state or "").strip()
+    packet = request.dummy_coder_10_packet if isinstance(request.dummy_coder_10_packet, dict) else {}
+    packet_state = str(packet.get("expected_result_state") or "").strip()
+    return (
+        prompt_id == "coder-002-add-product-data"
+        or expected_state == "PASS_DUMMY_DATA_CHANGE"
+        or packet_state == "PASS_DUMMY_DATA_CHANGE"
+    )
+
+
 def _dummy_product_site_render_cards_plan(
     request: PromptPacketRequest,
     task: str,
@@ -7371,6 +7414,41 @@ def _dummy_product_site_create_task_spec() -> dict[str, Any]:
         "verification": ["git diff --check"],
         "risk_tier": "low",
         "source": "dummy-coder-001-create-mode",
+    }
+
+
+def _dummy_product_site_product_data_task_spec() -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "task_type": "modify_existing_file",
+        "target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "allowed_files": [
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        ],
+        "forbidden_files": [
+            "src/app/**",
+            "src/components/**",
+            "src/lib/**",
+            "source_proxy/**",
+            "docs/**",
+            ".env*",
+            "package.json",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+        ],
+        "literal_requirements": [
+            "at least 6 products",
+            "id",
+            "name",
+            "price",
+            "category",
+            "description",
+            "export default products",
+        ],
+        "verification": ["git apply --check", "product data field validation"],
+        "risk_tier": "low",
+        "source": "dummy-coder-002-product-data",
     }
 
 

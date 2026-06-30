@@ -18,6 +18,7 @@ const FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
 export function resolveFixturePath(rawPath: string | null | undefined): string | null {
   if (!rawPath) return `${FIXTURE_ROOT}index.html`;
   // Strip a leading slash so "/src/styles.css" -> "src/styles.css".
+  const hadLeadingSlash = /^\/+/.test(rawPath);
   const trimmed = rawPath.replace(/^\/+/, "");
   if (!trimmed) return `${FIXTURE_ROOT}index.html`;
   const decoded = (() => {
@@ -29,6 +30,9 @@ export function resolveFixturePath(rawPath: string | null | undefined): string |
   })();
   // Reject anything that tries to escape the fixture root.
   if (decoded.includes("..") || decoded.startsWith("/") || /^[A-Za-z]:/.test(decoded)) {
+    return null;
+  }
+  if (hadLeadingSlash && decoded !== "index.html" && !decoded.startsWith("src/")) {
     return null;
   }
   return `${FIXTURE_ROOT}${decoded}`;
@@ -111,10 +115,9 @@ function escapeHtml(value: string): string {
 }
 
 /**
- * Server-side renders product cards into index.html so the LumaCart storefront is visibly proven
- * without relying on client-side JS execution. The original client script is preserved (loaded as
- * a module) for the full interactive behavior; these server-rendered cards guarantee the page shows
- * catalog content even if the browser fails to execute the module.
+ * Adds no-script product cards to index.html so the LumaCart storefront still has visible fallback
+ * markup without duplicating cards when the client-side module renders normally. The original
+ * client script is preserved (loaded as a module) for the full interactive behavior.
  */
 function injectServerRenderedCards(html: string, fixtureFiles: Record<string, string>): string {
   const probe = probeDummyStorefront({ files: fixtureFiles });
@@ -132,6 +135,7 @@ function injectServerRenderedCards(html: string, fixtureFiles: Record<string, st
       return `<div class="product-card">${name}${description}${category}${price}</div>`;
     })
     .join("\n      ");
+  const fallback = `<noscript>\n      ${cards}\n    </noscript>`;
 
   // Insert server-rendered cards into the product container. If a container id is present, fill it;
   // otherwise append a fallback container before </body>.
@@ -139,10 +143,10 @@ function injectServerRenderedCards(html: string, fixtureFiles: Record<string, st
   if (containerMatch) {
     return html.replace(
       /(<main[^>]*id=["']product-list["'][^>]*>)([\s\S]*?)(<\/main>)/i,
-      (_m, open, _inner, close) => `${open}\n      ${cards}\n    ${close}`,
+      (_m, open, _inner, close) => `${open}\n      ${fallback}\n    ${close}`,
     );
   }
-  return html.replace("</body>", `    <main id="product-list">\n      ${cards}\n    </main>\n  </body>`);
+  return html.replace("</body>", `    <main id="product-list">\n      ${fallback}\n    </main>\n  </body>`);
 }
 
 /**
@@ -194,7 +198,7 @@ export async function serveFixtureAsset(fixtureSubPath: string | null | undefine
     if (isHtml) {
       // Server-render product cards so the storefront is visibly proven even when the browser
       // fails to execute the client-side module. Read sibling fixture files for the probe + parser.
-      const fixtureFiles: Record<string, string> = { "index.html": content };
+      const fixtureFiles: Record<string, string> = { "index.html": servedContent };
       const siblingRel = ["src/products.js", "src/main.js", "src/styles.css"];
       for (const rel of siblingRel) {
         try {
