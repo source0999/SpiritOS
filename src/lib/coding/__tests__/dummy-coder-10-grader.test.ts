@@ -9,6 +9,7 @@ import {
 } from "@/lib/coding/dummy-coder-10-grader";
 
 const prompt001 = dummyCoder10Prompts[0];
+const prompt002 = dummyCoder10Prompts[1];
 const prompt003 = dummyCoder10Prompts[2];
 const prompt008 = dummyCoder10Prompts[7];
 const prompt009 = dummyCoder10Prompts[8];
@@ -215,6 +216,23 @@ describe("dummy Coder 10 grading mapper", () => {
     expect(result.resultState).toBe("NEEDS_FIX");
     expect(result.label).toBe("NEEDS_FIX");
     expect(result.recommendedNextAction.toLowerCase()).toContain("clean dummy-product-site root");
+  });
+
+  it("classifies Prompt 2 already-satisfied product data as PASS_NOOP, not a fresh apply GO", () => {
+    const result = gradeDummyCoder10Result({
+      prompt: prompt002,
+      changedFiles: [],
+      noOpEvidence:
+        "Prompt 2 already satisfied: existing src/products.js has id, name, price, category, and description for 6 products.",
+      productDataFieldsPresent: true,
+      provenance: modelProvenance,
+    });
+
+    expect(result.resultState).toBe("PASS_NOOP");
+    expect(result.label).toBe("PASS_NOOP");
+    expect(result.score).toBe(10);
+    expect(result.recommendedNextAction.toLowerCase()).toContain("not a fresh apply");
+    expect(result.recommendedNextAction.toLowerCase()).toContain("prompt 3");
   });
 
   it("downgrades Prompt 1 to NEEDS_FIX when the storefront probe says bare page", () => {

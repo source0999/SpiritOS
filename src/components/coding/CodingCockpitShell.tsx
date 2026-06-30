@@ -6162,8 +6162,8 @@ export function CodingCockpitShell() {
       `grader_score: ${grader?.score ?? "not graded"}`,
       `grader_reason: ${grader?.reason ?? "not graded"}`,
       `critical_failures: ${formatList(grader?.criticalFailures ?? [], "none")}`,
-      `file_scope_status: ${grader?.fileScope.file_scope_status ?? "not graded"}`,
-      `provenance_status: ${grader?.provenance.provenance_status ?? "not graded"}`,
+      `file_scope_status: ${grader?.fileScope?.file_scope_status ?? "not graded"}`,
+      `provenance_status: ${grader?.provenance?.provenance_status ?? "not graded"}`,
       `recommended_next_action: ${state.recommendedNextAction ?? grader?.recommendedNextAction ?? "none"}`,
       `production_time: ${productionTime} (started ${state.startedAt ? new Date(state.startedAt).toISOString() : "n/a"}${state.finishedAt ? `, finished ${new Date(state.finishedAt).toISOString()}` : ""})`,
       `preview_behavior_status: ${state.storefrontProbe?.preview_behavior_status ?? "not probed"}`,
@@ -6389,12 +6389,26 @@ export function CodingCockpitShell() {
       const existingStarterFilesPresent =
         coderDiagnostics.existing_starter_files_present === true ||
         coderDiagnostics.existingStarterFilesPresent === true;
+      const existingProductDataValidation = asRecord(
+        coderDiagnostics.existing_product_data_validation ?? coderDiagnostics.existingProductDataValidation,
+      );
+      const productDataFieldsPresent =
+        coderDiagnostics.existing_product_data_present === true ||
+        coderDiagnostics.existingProductDataPresent === true ||
+        existingProductDataValidation.ok === true;
+      const prompt2AlreadySatisfied =
+        prompt.id === "coder-002-add-product-data" &&
+        alreadySatisfied &&
+        productDataFieldsPresent &&
+        /already|satisfied|no[_ -]?changes|coder_no_changes_needed/i.test(`${reasonCode} ${rawBackendStatus}`);
       const blockedReason =
         prompt.allowBlockedPass && /protect|secret|env|source_proxy|blocked/i.test(`${reasonCode} ${rawBackendStatus}`)
           ? reasonCode ?? rawBackendStatus
           : null;
       const noOpEvidence =
-        (prompt.allowNoopPass || (prompt.id === "coder-001-init-dummy-product-site" && existingStarterFilesPresent)) &&
+        (prompt.allowNoopPass ||
+          prompt2AlreadySatisfied ||
+          (prompt.id === "coder-001-init-dummy-product-site" && existingStarterFilesPresent)) &&
         /category|already|no[_ -]?changes|satisfied/i.test(`${reasonCode} ${rawBackendStatus}`)
           ? stringValue(record.simple_reason) ?? stringValue(record.reason) ?? stringValue(record.message) ?? rawBackendStatus
           : null;
@@ -6549,6 +6563,7 @@ export function CodingCockpitShell() {
           checksRun.length === 0,
         commandFailed: /fail|error/i.test(String(record.checks_result ?? record.verification_status ?? "")),
         noOpEvidence,
+        productDataFieldsPresent: prompt.id === "coder-002-add-product-data" ? productDataFieldsPresent : undefined,
         prompt,
         requiredInitFilesPresent: prompt.id === "coder-001-init-dummy-product-site"
           ? alreadySatisfied && existingStarterFilesPresent

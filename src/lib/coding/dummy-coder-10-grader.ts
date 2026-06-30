@@ -374,6 +374,32 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
     };
   }
 
+  if (input.prompt.id === "coder-002-add-product-data" && input.noOpEvidence) {
+    if (input.changedFiles.length === 0 && input.productDataFieldsPresent === true) {
+      return {
+        resultState: "PASS_NOOP",
+        score: 10,
+        label: "PASS_NOOP",
+        reason: input.noOpEvidence,
+        criticalFailures,
+        fileScope,
+        provenance: { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["existing_product_data_verified"] },
+        recommendedNextAction:
+          "Prompt 2 is already satisfied (existing LumaCart product data verified), not a fresh apply. Continue to Prompt 3, or reverse/clear the dummy-product-site fixture before rerunning Prompt 2 for a fresh lifecycle proof.",
+      };
+    }
+    return {
+      resultState: "NEEDS_FIX",
+      score: 0,
+      label: "NEEDS_FIX",
+      reason: "Prompt 2 no-op proof requires existing product data validation and zero changed files.",
+      criticalFailures,
+      fileScope,
+      provenance,
+      recommendedNextAction: "Fix src/products.js product data or rerun Prompt 2 from a clean fixture baseline.",
+    };
+  }
+
   if (input.prompt.id === "coder-002-add-product-data" && input.productDataFieldsPresent === false) {
     return {
       resultState: "NEEDS_FIX",

@@ -3838,6 +3838,62 @@ def _dummy_product_site_already_satisfied_payload(*, diagnostics: dict[str, Any]
     }
 
 
+def _dummy_product_site_product_data_already_satisfied_payload(
+    *,
+    diagnostics: dict[str, Any],
+    validation: dict[str, Any],
+) -> dict[str, Any]:
+    satisfied_diagnostics = {
+        **diagnostics,
+        "validation_status": "already_satisfied",
+        "already_satisfied": True,
+        "no_changes_needed": True,
+        "existing_product_data_present": True,
+        "existing_product_data_validation": validation,
+        "generated_diff_length": 0,
+        "normalized_diff_length": 0,
+        "generated_diff_by_backend": False,
+        "diff_source": "already_satisfied_existing_dummy_product_data",
+        "generation_source": "disk_inspection",
+        "model_output_classification": "already_satisfied_noop",
+        "trial_result_trust_status": "existing_product_data_verified_no_diff_needed",
+        "recommended_next_action": "Prompt 2 already satisfied; continue with Prompt 3 or reverse the fixture before rerunning Prompt 2 for a fresh apply proof.",
+        "checks_run": ["existing Prompt 2 product data field validation"],
+        "changed_files": [],
+        "final_reason_code": "coder_no_changes_needed",
+        "diff_produced": False,
+        "apply_attempted": False,
+    }
+    return {
+        "proposed_diff": "",
+        "target": DUMMY_PRODUCT_SITE_PRODUCTS,
+        "coder_notes": [
+            "Existing LumaCart product data already satisfies Prompt 2.",
+            "CODER_NO_CHANGES_NEEDED: Prompt 2 already satisfied.",
+        ],
+        "coder_diagnostics": satisfied_diagnostics,
+        "coderDiagnostics": satisfied_diagnostics,
+        "bundle": None,
+        "coder_agent_local_diff": False,
+        "coderAgentLocalDiff": False,
+        "coder_blocked": False,
+        "coderBlocked": False,
+        "already_satisfied": True,
+        "alreadySatisfied": True,
+        "changed_files": [],
+        "checks_run": ["existing Prompt 2 product data field validation"],
+        "reason_code": "coder_no_changes_needed",
+        "reasonCode": "coder_no_changes_needed",
+        "blocked_reason": "",
+        "blockedReason": "",
+        "needed_context": "",
+        "neededContext": "",
+        "status": "already_satisfied",
+        "message": "Prompt 2 already satisfied: LumaCart product data already has 6 valid products.",
+        "simple_reason": "Prompt 2 already satisfied: existing src/products.js has id, name, price, category, and description for 6 products.",
+    }
+
+
 def _call_dummy_product_site_llm_with_wall_timeout(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
     result_queue: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
 
@@ -4209,6 +4265,17 @@ def propose_dummy_product_site_product_data_diff(
             reason="Prompt 2 requires the existing LumaCart src/products.js file.",
             needed_context="Run or restore Prompt 1 before Prompt 2.",
             reason_code="target_missing",
+        )
+
+    current_product_data = target_abs.read_text(encoding="utf-8", errors="replace")
+    existing_validation = _validate_dummy_product_site_product_data_files(
+        [{"path": DUMMY_PRODUCT_SITE_PRODUCTS, "content": current_product_data}]
+    )
+    diagnostics["existing_product_data_validation"] = existing_validation
+    if existing_validation["ok"]:
+        return _dummy_product_site_product_data_already_satisfied_payload(
+            diagnostics=diagnostics,
+            validation=existing_validation,
         )
 
     prompt = _render_dummy_product_site_product_data_prompt(task, root)

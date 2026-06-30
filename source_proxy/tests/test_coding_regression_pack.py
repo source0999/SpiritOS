@@ -3340,6 +3340,63 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["task_spec"]["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js")
         self.assertIn("product data field validation", payload["checks_run"])
 
+    def test_prompt_packet_coder_002_reports_already_satisfied_product_data(self) -> None:
+        client = self._decision_client()
+        fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        _write(
+            fixture_root / "src/products.js",
+            "\n".join(
+                [
+                    "const products = [",
+                    "  { id: 'lamp', name: 'Desk Lamp', price: 24.99, category: 'Home', description: 'A compact lamp for small desks.' },",
+                    "  { id: 'mug', name: 'Travel Mug', price: 15.5, category: 'Kitchen', description: 'A simple mug for warm drinks.' },",
+                    "  { id: 'notebook', name: 'Pocket Notebook', price: 7.25, category: 'Office', description: 'A small notebook for quick notes.' },",
+                    "  { id: 'planter', name: 'Mini Planter', price: 12, category: 'Decor', description: 'A ceramic planter for tiny plants.' },",
+                    "  { id: 'tote', name: 'Canvas Tote', price: 18, category: 'Bags', description: 'A light tote for daily errands.' },",
+                    "  { id: 'speaker', name: 'Desk Speaker', price: 39.99, category: 'Electronics', description: 'A small speaker for work playlists.' },",
+                    "];",
+                    "export default products;",
+                    "",
+                ]
+            ),
+        )
+
+        with (
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_dummy_product_site_llm_with_wall_timeout",
+                return_value="this should not be called",
+            ) as llm_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "add real fake product data to the LumaCart dummy site.",
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_DUMMY_DATA_CHANGE",
+                    "selected_prompt_id": "coder-002-add-product-data",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        llm_mock.assert_not_called()
+        self.assertEqual(payload["status"], "already_satisfied")
+        self.assertEqual(payload["reason_code"], "coder_no_changes_needed")
+        self.assertTrue(payload["already_satisfied"])
+        self.assertEqual(payload["changed_files"], [])
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertEqual(
+            payload["diagnostics_summary"]["trial_result_trust_status"],
+            "existing_product_data_verified_no_diff_needed",
+        )
+        self.assertTrue(payload["coder_diagnostics"]["existing_product_data_validation"]["ok"])
+        self.assertIn("existing Prompt 2 product data field validation", payload["checks_run"])
+
     def test_prompt_packet_coder_003_builds_fixture_context_packet(self) -> None:
         client = self._decision_client()
         fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
