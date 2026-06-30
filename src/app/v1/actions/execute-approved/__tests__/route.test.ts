@@ -3,7 +3,7 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-store";
 
-import { POST } from "../route";
+import { isSelectedDummyCoderApply, selectedPrompt3DiffViolations, POST } from "../route";
 
 vi.mock("@/lib/source-proxy-origin", () => ({
   sourceProxyFetch: vi.fn(),
@@ -132,6 +132,117 @@ describe("execute-approved route", () => {
       push_authority: false,
       target: "src/demo.ts",
     });
+  });
+
+  it("forwards selected prompt bundle diffs under a wildcard allowed root", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify(executeApprovedContractPayload()),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    const approvedDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/README.md b/tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+      "new file mode 100644",
+      "--- /dev/null",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+      "@@ -0,0 +1 @@",
+      "+# LumaCart",
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "new file mode 100644",
+      "--- /dev/null",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "@@ -0,0 +1 @@",
+      "+console.log('LumaCart');",
+      "",
+    ].join("\n");
+
+    const response = await POST(
+      jsonRequest({
+        action: "Run selected dummy Coder prompt coder-001-init-dummy-product-site",
+        allowed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        approved: true,
+        approved_diff: approvedDiff,
+        target: "tests/ui-agent-trials/fixtures/dummy-product-site/",
+        task_id: "task-selected-001",
+      }),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      task: expect.objectContaining({ id: "task-123" }),
+    });
+    expect(response.status).toBe(200);
+    const [, init] = mockedSourceProxyFetch.mock.calls[0];
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      allowed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+      changed_files: [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      ],
+      target: "tests/ui-agent-trials/fixtures/dummy-product-site/",
+    });
+  });
+
+  it("limits selected dummy local apply eligibility to the isolated fixture root", () => {
+    expect(
+      isSelectedDummyCoderApply(
+        "Run selected dummy Coder prompt coder-002-add-product-data",
+        ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        ["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"],
+      ),
+    ).toBe(true);
+    expect(
+      isSelectedDummyCoderApply(
+        "Run selected dummy Coder prompt coder-002-add-product-data",
+        ["src/components/**"],
+        ["src/components/coding/CodingCockpitShell.tsx"],
+      ),
+    ).toBe(false);
+    expect(
+      isSelectedDummyCoderApply(
+        "modify file",
+        ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        ["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"],
+      ),
+    ).toBe(false);
+    expect(
+      isSelectedDummyCoderApply(
+        "Run selected dummy Coder prompt coder-001-init-dummy-product-site",
+        ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        ["tests/ui-agent-trials/fixtures/dummy-product-site/README.md"],
+      ),
+    ).toBe(false);
+  });
+
+  it("classifies Prompt 3 module wiring before local selected apply", () => {
+    const staticMainOnly = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "@@ -1,2 +1,4 @@",
+      "+import products from './products.js';",
+      "+products.forEach((product) => { card.className = 'product-card'; category.textContent = product.category; });",
+    ].join("\n");
+    const moduleIndexAndStaticMain = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "@@ -8,1 +8,1 @@",
+      "-  <script src=\"src/main.js\"></script>",
+      "+  <script type=\"module\" src=\"src/main.js\"></script>",
+      staticMainOnly,
+    ].join("\n");
+    const dynamicMainOnly = staticMainOnly.replace(
+      "import products from './products.js';",
+      "const module = await import('./products.js'); const products = module.default ?? [];",
+    );
+
+    expect(selectedPrompt3DiffViolations(staticMainOnly)).toContain("STATIC_IMPORT_CLASSIC_SCRIPT");
+    expect(selectedPrompt3DiffViolations(moduleIndexAndStaticMain)).not.toContain("STATIC_IMPORT_CLASSIC_SCRIPT");
+    expect(selectedPrompt3DiffViolations(dynamicMainOnly)).not.toContain("STATIC_IMPORT_CLASSIC_SCRIPT");
   });
 
   it("records suite apply proof server-side before browser post-apply parsing can reload", async () => {

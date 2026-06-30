@@ -899,14 +899,15 @@ export function selectedPromptModelTask(prompt: DummyCoder10Prompt) {
     `Pass expectations: ${prompt.passExpectations.join("; ")}`,
     `Fail conditions: ${prompt.failConditions.join("; ")}`,
     prompt.id === "coder-003-render-product-cards"
-      ? "Implementation notes: src/products.js is the source of truth. Render cards dynamically in src/main.js. The current index.html may load src/main.js as a classic script, so use dynamic import('./products.js') from src/main.js unless valid module-script wiring is also changed. Do not hardcode duplicate product cards in index.html."
+      ? "Implementation notes: src/products.js is the source of truth. Render cards dynamically in src/main.js. This selected-prompt packet replaces src/main.js only, so use dynamic import('./products.js') from src/main.js unless the diff also includes matching index.html module-script wiring. Do not hardcode duplicate product cards in index.html."
       : "",
     prompt.projectContract,
   ].filter(Boolean).join("\n");
 }
 
-export function selectedPrompt3DiffViolations(diff: string) {
+export function selectedPrompt3DiffViolations(diff: string, context?: { currentIndexHtml?: string }) {
   const normalized = diff.replace(/\r\n/g, "\n");
+  const currentIndexHtml = context?.currentIndexHtml ?? "";
   const violations: string[] = [];
   if (
     /Product Name|Description: This is a description|grid grid-cols|<main id=["']product-list["'][\s\S]*<div class=["'](?:card|product-card)/i.test(
@@ -915,6 +916,12 @@ export function selectedPrompt3DiffViolations(diff: string) {
   ) {
     violations.push("hardcoded_or_generic_cards_in_index_html");
   }
+  const hasDynamicProductsImport = /import\s*\(\s*['"]\.\/products\.js['"]\s*\)/i.test(normalized);
+  const hasStaticProductsImport = /import\s+[\s\S]*?\s+from\s*['"]\.\/products\.js['"]/i.test(normalized);
+  const diffAddsModuleScript = /^\+\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
+  const currentIndexHasModuleScript = /<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/i.test(currentIndexHtml);
+  const diffRemovesModuleScript = /^-\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
+  const hasModuleScriptWiring = diffAddsModuleScript || (currentIndexHasModuleScript && !diffRemovesModuleScript);
   if (
     !/src\/main\.js/i.test(normalized) ||
     !/\.\/products\.js/i.test(normalized) ||
@@ -922,11 +929,14 @@ export function selectedPrompt3DiffViolations(diff: string) {
   ) {
     violations.push("missing_dynamic_products_render_path");
   }
-  if (
-    /import\s+[\s\S]*?from\s*['"]\.\/products\.js['"]/i.test(normalized) &&
-    !/type=["']module["']/i.test(normalized)
-  ) {
+  if (hasStaticProductsImport && !hasModuleScriptWiring) {
     violations.push("static_products_import_without_module_script_wiring");
+  }
+  if (!hasStaticProductsImport && !hasDynamicProductsImport) {
+    violations.push("missing_products_import");
+  }
+  if (/^\+.*\b(?:const|let|var)\s+products\s*=\s*\[/im.test(normalized) || (/Product A/.test(normalized) && /Product F/.test(normalized))) {
+    violations.push("product_data_duplicated");
   }
   return violations;
 }

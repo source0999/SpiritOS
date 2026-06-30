@@ -1,6 +1,14 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-store";
+import { execFile } from "node:child_process";
 import { createHash } from "crypto";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+const DUMMY_CODER_10_FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -115,7 +123,7 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  if (target.trim() && !changedFiles.includes(target.trim())) {
+  if (target.trim() && !changedFiles.some((file) => pathMatchesTarget(file, target))) {
     return Response.json(
       {
         changed_files: changedFiles,
@@ -125,7 +133,7 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
-  const unexpectedFiles = changedFiles.filter((file) => !allowedFiles.includes(file));
+  const unexpectedFiles = changedFiles.filter((file) => !pathMatchesAnyAllowed(file, allowedFiles));
   if (unexpectedFiles.length > 0) {
     return Response.json(
       {
@@ -163,6 +171,29 @@ export async function POST(request: Request) {
       },
       { status: 409 },
     );
+  }
+
+  if (isSelectedDummyCoderApply(action, allowedFiles, changedFiles)) {
+    const prompt3Violations = await selectedPrompt3ApplyViolations(approvedDiff, action);
+    if (prompt3Violations.length > 0) {
+      return Response.json(
+        {
+          changed_files: changedFiles,
+          error: "Prompt 3 model diff rejected before apply.",
+          prompt_3_render_contract_violations: prompt3Violations,
+          reason_code: prompt3Violations[0],
+        },
+        { status: 422 },
+      );
+    }
+    const applyResult = await applySelectedDummyCoderDiff({
+      action,
+      approvedDiff,
+      changedFiles,
+      target,
+      taskId,
+    });
+    return Response.json(applyResult);
   }
 
   // Approved real diffs execute through Source proxy's long-running task layer.
@@ -238,6 +269,101 @@ export async function POST(request: Request) {
   });
 }
 
+export function isSelectedDummyCoderApply(action: string, allowedFiles: string[], changedFiles: string[]) {
+  return (
+    /^Run selected dummy Coder prompt coder-00[23]-/.test(action) &&
+    allowedFiles.length === 1 &&
+    allowedFiles[0] === `${DUMMY_CODER_10_FIXTURE_ROOT}**` &&
+    changedFiles.length > 0 &&
+    changedFiles.every((file) => file.startsWith(DUMMY_CODER_10_FIXTURE_ROOT))
+  );
+}
+
+export async function selectedPrompt3ApplyViolations(approvedDiff: string, action: string) {
+  if (!/^Run selected dummy Coder prompt coder-003-/.test(action)) return [];
+  let currentIndexHtml = "";
+  try {
+    currentIndexHtml = await readFile(path.join(process.cwd(), DUMMY_CODER_10_FIXTURE_ROOT, "index.html"), "utf8");
+  } catch {
+    currentIndexHtml = "";
+  }
+  return selectedPrompt3DiffViolations(approvedDiff, currentIndexHtml);
+}
+
+export function selectedPrompt3DiffViolations(diff: string, currentIndexHtml = "") {
+  const normalized = diff.replace(/\r\n/g, "\n");
+  const violations: string[] = [];
+  const hasDynamicProductsImport = /import\s*\(\s*['"]\.\/products\.js['"]\s*\)/i.test(normalized);
+  const hasStaticProductsImport = /import\s+[\s\S]*?\s+from\s*['"]\.\/products\.js['"]/i.test(normalized);
+  const diffAddsModuleScript = /^\+\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
+  const currentIndexHasModuleScript = /<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/i.test(currentIndexHtml);
+  const diffRemovesModuleScript = /^-\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
+  const hasModuleScriptWiring = diffAddsModuleScript || (currentIndexHasModuleScript && !diffRemovesModuleScript);
+
+  if (hasStaticProductsImport && !hasModuleScriptWiring) {
+    violations.push("STATIC_IMPORT_CLASSIC_SCRIPT");
+  }
+  if (!hasStaticProductsImport && !hasDynamicProductsImport) {
+    violations.push("MISSING_PRODUCTS_IMPORT");
+  }
+  if (/^\+.*<(?:article|div)\b[^>]*(?:product-card|card)/im.test(normalized) && /index\.html/i.test(normalized)) {
+    violations.push("HARDCODED_INDEX_CARDS");
+  }
+  if (/^\+.*\b(?:const|let|var)\s+products\s*=\s*\[/im.test(normalized) || (/Product A/.test(normalized) && /Product F/.test(normalized))) {
+    violations.push("PRODUCT_DATA_DUPLICATED");
+  }
+  return [...new Set(violations)];
+}
+
+async function applySelectedDummyCoderDiff(input: {
+  action: string;
+  approvedDiff: string;
+  changedFiles: string[];
+  target: string;
+  taskId: string;
+}) {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "spiritos-selected-dummy-"));
+  const patchPath = path.join(tempDir, "approved.patch");
+  try {
+    await writeFile(patchPath, input.approvedDiff, "utf8");
+    await execFileAsync("git", ["apply", "--check", patchPath], { cwd: process.cwd() });
+    await execFileAsync("git", ["apply", patchPath], { cwd: process.cwd() });
+  } finally {
+    await rm(tempDir, { force: true, recursive: true });
+  }
+  const now = new Date().toISOString();
+  return {
+    action: input.action,
+    applied_changed_files: input.changedFiles,
+    changed_files: input.changedFiles,
+    checks_result: "git apply --check passed; selected dummy fixture diff applied",
+    checks_run: ["git apply --check"],
+    disk_changed_files: input.changedFiles,
+    execution: {
+      invocation_event_id: `selected_dummy_apply_${diffHashForApprovedDiff(input.approvedDiff).slice(0, 12)}`,
+      task_id: input.taskId,
+      trace_id: `selected_dummy_trace_${diffHashForApprovedDiff(input.approvedDiff).slice(0, 12)}`,
+    },
+    status: "applied",
+    target: input.target,
+    task: {
+      causal_trace: {
+        consumer_event_id: `selected_dummy_disk_${diffHashForApprovedDiff(input.approvedDiff).slice(0, 12)}`,
+        consumer_subsystem: "next_execute_approved_selected_dummy_fixture",
+        invocation_event_id: `selected_dummy_apply_${diffHashForApprovedDiff(input.approvedDiff).slice(0, 12)}`,
+        trace_id: `selected_dummy_trace_${diffHashForApprovedDiff(input.approvedDiff).slice(0, 12)}`,
+      },
+      execution: {
+        applied_changed_files: input.changedFiles,
+        changed_files: input.changedFiles,
+        disk_changed_files: input.changedFiles,
+      },
+      id: input.taskId,
+    },
+    updated_at: now,
+  };
+}
+
 async function recordTrialApplyProof(input: {
   allowedFiles: string[];
   approvedDiff: string;
@@ -253,7 +379,7 @@ async function recordTrialApplyProof(input: {
     ...changedFilesFromPayload(payload),
     ...input.changedFiles,
     ...changedFilesFromApprovedDiff(input.approvedDiff),
-  ]).filter((file) => input.allowedFiles.includes(file));
+  ]).filter((file) => pathMatchesAnyAllowed(file, input.allowedFiles));
   if (appliedChangedFiles.length === 0) return;
   const now = new Date().toISOString();
   const endpointStatuses = [
@@ -411,6 +537,32 @@ function normalizeRepoPath(value: string) {
 
 function stringArrayValue(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function pathMatchesTarget(filePath: string, target: string): boolean {
+  const normalizedFile = normalizeRepoPath(filePath);
+  const normalizedTarget = normalizeRepoPath(target);
+  if (!normalizedTarget) return false;
+  if (normalizedFile === normalizedTarget) return true;
+  const targetRoot = normalizedTarget.endsWith("/") ? normalizedTarget : `${normalizedTarget}/`;
+  return normalizedFile.startsWith(targetRoot);
+}
+
+function pathMatchesAnyAllowed(filePath: string, allowedFiles: string[]): boolean {
+  const normalizedFile = normalizeRepoPath(filePath);
+  return allowedFiles.some((allowed) => {
+    const normalizedAllowed = normalizeRepoPath(allowed);
+    if (!normalizedAllowed) return false;
+    if (normalizedAllowed.endsWith("/**")) {
+      return normalizedFile.startsWith(normalizedAllowed.slice(0, -3));
+    }
+    if (normalizedAllowed.endsWith("*")) {
+      return normalizedFile.startsWith(normalizedAllowed.slice(0, -1));
+    }
+    if (normalizedFile === normalizedAllowed) return true;
+    const allowedRoot = normalizedAllowed.endsWith("/") ? normalizedAllowed : `${normalizedAllowed}/`;
+    return normalizedFile.startsWith(allowedRoot);
+  });
 }
 
 function changedFilesFromApprovedDiff(diff: string): string[] {

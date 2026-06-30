@@ -336,6 +336,7 @@ describe("CodingCockpitShell", () => {
     expect(task).toContain("Does not hardcode duplicate product cards in HTML.");
     expect(task).toContain("Hardcodes all cards in HTML.");
     expect(task).toContain("Render cards dynamically in src/main.js");
+    expect(task).toContain("replaces src/main.js only");
     expect(task).toContain("dynamic import('./products.js')");
     expect(task).not.toContain("src/app/**");
     expect(task).not.toContain("source_proxy/**");
@@ -385,6 +386,38 @@ describe("CodingCockpitShell", () => {
         ].join("\n"),
       ),
     ).toContain("static_products_import_without_module_script_wiring");
+    expect(
+      selectedPrompt3DiffViolations(
+        [
+          "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "@@ -8,1 +8,1 @@",
+          "-  <script src=\"src/main.js\"></script>",
+          "+  <script type=\"module\" src=\"src/main.js\"></script>",
+          "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "@@ -1,3 +1,6 @@",
+          "+import products from './products.js';",
+          "+card.className = 'product-card';",
+          "+category.textContent = product.category;",
+        ].join("\n"),
+      ),
+    ).not.toContain("static_products_import_without_module_script_wiring");
+    expect(
+      selectedPrompt3DiffViolations(
+        [
+          "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "@@ -1,3 +1,7 @@",
+          "+const products = [{ name: 'Product A', category: 'Electronics', price: 1, description: 'A' }];",
+          "+card.className = 'product-card';",
+          "+category.textContent = product.category;",
+        ].join("\n"),
+      ),
+    ).toContain("product_data_duplicated");
   });
 
   it("shows selected-prompt starting state while waiting for backend task id", async () => {

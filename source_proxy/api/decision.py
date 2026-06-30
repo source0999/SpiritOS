@@ -7267,7 +7267,7 @@ def _dummy_product_site_render_cards_plan(
                 ),
             ],
             constraints=ContentConstraints(
-                must_contain=["import(", "./products.js", "product-card", "product.category"],
+                must_contain=["./products.js", "product-card", "product.category"],
                 must_not_contain=["Product Name", "Product Description"],
                 preserve_imports=[],
                 preserve_exports=[],
@@ -7332,7 +7332,7 @@ def _dummy_product_site_render_cards_source_task(
             task,
             "",
             "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
-            "Implementation notes: src/products.js is the source of truth. Render cards dynamically in src/main.js; the current index.html loads src/main.js as a classic script, so the replacement src/main.js must literally contain import('./products.js') or import(\"./products.js\") and consume module.default or module.products. Do not use a static import unless the diff also provides valid type=\"module\" script wiring. Do not hardcode duplicate product cards in index.html.",
+            "Implementation notes: src/products.js is the source of truth. This selected-prompt packet replaces src/main.js only, so keep the current classic script loading and use dynamic import('./products.js') or import(\"./products.js\"). A static import is valid only with a matching index.html module-script change, which this single-file packet cannot provide. Do not hardcode duplicate product cards in index.html.",
             f"Pass expectations: {'; '.join(pass_expectations)}" if pass_expectations else "",
             f"Fail conditions: {'; '.join(fail_conditions)}" if fail_conditions else "",
             project_contract,

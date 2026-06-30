@@ -9,6 +9,7 @@ import {
 } from "@/lib/coding/dummy-coder-10-grader";
 
 const prompt001 = dummyCoder10Prompts[0];
+const prompt003 = dummyCoder10Prompts[2];
 const prompt008 = dummyCoder10Prompts[7];
 const prompt009 = dummyCoder10Prompts[8];
 const prompt010 = dummyCoder10Prompts[9];
@@ -264,6 +265,59 @@ describe("dummy Coder 10 grading mapper", () => {
     });
 
     expect(result.resultState).toBe("PASS_DUMMY_PROJECT_INIT");
+    expect(result.label).toBe("PASS");
+    expect(result.score).toBe(10);
+  });
+
+  it("downgrades Prompt 3 when storefront proof is missing or partial", () => {
+    const result = gradeDummyCoder10Result({
+      prompt: prompt003,
+      changedFiles: ["tests/ui-agent-trials/fixtures/dummy-product-site/index.html"],
+      checksRun: ["git apply --check"],
+      provenance: modelProvenance,
+      storefrontProbe: {
+        preview_behavior_status: "FAIL_BARE_PAGE",
+        preview_visible_text_summary: "Welcome to LumaCart, 3 catalog item(s), prices",
+        preview_asset_status: "present_module_unloaded_classic_script",
+        product_count: 3,
+        card_render_path_present: false,
+        category_render_path_present: false,
+        description_render_path_present: false,
+        price_render_path_present: true,
+        stylesheet_linked: true,
+      },
+    });
+
+    expect(result.resultState).toBe("NEEDS_FIX");
+    expect(result.label).toBe("NEEDS_FIX");
+    expect(result.reason).toContain("Prompt 3 storefront proof incomplete");
+  });
+
+  it("allows Prompt 3 only with dynamic six-product storefront proof", () => {
+    const result = gradeDummyCoder10Result({
+      prompt: prompt003,
+      changedFiles: [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+      ],
+      checksRun: ["git apply --check"],
+      provenance: modelProvenance,
+      storefrontProbe: {
+        preview_behavior_status: "PASS_STOREFRONT_RENDERED",
+        preview_visible_text_summary: "Welcome to LumaCart, 6 catalog item(s), prices, categories",
+        preview_asset_status: "present",
+        product_count: 6,
+        card_render_path_present: true,
+        category_render_path_present: true,
+        description_render_path_present: true,
+        price_render_path_present: true,
+        stylesheet_linked: true,
+        visible_product_names: ["Product A", "Product B", "Product C", "Product D", "Product E", "Product F"],
+      },
+    });
+
+    expect(result.resultState).toBe("PASS_DUMMY_UI_CHANGE");
     expect(result.label).toBe("PASS");
     expect(result.score).toBe(10);
   });

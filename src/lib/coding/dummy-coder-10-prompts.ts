@@ -410,6 +410,8 @@ export function buildDummyCoder10RunnerPacket(prompt: DummyCoder10Prompt, existi
     primary_expected_targets: prompt.primaryExpectedTargets,
     optional_targets: prompt.optionalTargets,
     forbidden_files: prompt.forbiddenFiles,
+    pass_expectations: prompt.passExpectations,
+    fail_conditions: prompt.failConditions,
     expected_result_state: prompt.expectedResultState,
     expected_result_states: prompt.expectedResultStates ?? [prompt.expectedResultState],
     trial_mode_contract: {

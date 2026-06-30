@@ -51,6 +51,8 @@ describe("dummy Coder 10 prompt bank", () => {
 
     expect(packet.submitted_prompt).toBe(dummyCoder10Prompts[0].submittedPrompt);
     expect(packet.fixture_root).toBe(DUMMY_CODER_10_FIXTURE_ROOT);
+    expect(packet.pass_expectations).toEqual(dummyCoder10Prompts[0].passExpectations);
+    expect(packet.fail_conditions).toEqual(dummyCoder10Prompts[0].failConditions);
     expect(packet.trial_mode_contract).toMatchObject({
       require_model_authored_diff: true,
       allow_scaffold_pass: false,

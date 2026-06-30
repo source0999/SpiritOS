@@ -436,6 +436,34 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
     };
   }
 
+  if (input.prompt.id === "coder-003-render-product-cards") {
+    const probe = input.storefrontProbe;
+    const missingProof =
+      !probe ||
+      probe.preview_behavior_status !== "PASS_STOREFRONT_RENDERED" ||
+      probe.preview_asset_status !== "present" ||
+      probe.product_count < 6 ||
+      !probe.card_render_path_present ||
+      !probe.category_render_path_present ||
+      !probe.description_render_path_present ||
+      !probe.price_render_path_present;
+    if (missingProof) {
+      return {
+        resultState: "NEEDS_FIX",
+        score: 6,
+        label: "NEEDS_FIX",
+        reason: probe
+          ? `Prompt 3 storefront proof incomplete: ${probe.preview_visible_text_summary}; asset_status=${probe.preview_asset_status}; product_count=${probe.product_count}.`
+          : "Prompt 3 requires storefront preview proof before PASS.",
+        criticalFailures,
+        fileScope,
+        provenance,
+        recommendedNextAction:
+          "Retry Prompt 3 with fixture context until src/main.js dynamically renders all 6 products from src/products.js with name, price, category, and description.",
+      };
+    }
+  }
+
   const hasVerification = (input.checksRun?.length ?? 0) > 0 || (input.verificationEvidence?.length ?? 0) > 0;
   const scopePenalty = fileScope.file_scope_status === "unexpected_dummy_files";
   const score = hasVerification ? (scopePenalty ? 8 : 10) : scopePenalty ? 6 : 8;

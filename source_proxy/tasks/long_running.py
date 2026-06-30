@@ -5,12 +5,16 @@ import hashlib
 import html
 import json
 import os
+import queue
 import re
 import sqlite3
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
+import urllib.error
+import urllib.request
 from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -943,7 +947,12 @@ def execute_approved_long_running_task(
     from source_proxy.planning.plan import load_plan
 
     architect_plan = load_plan(task_id)
-    is_reversible_live_trial = action.lower().startswith("live trial") or action.lower().startswith("revert live trial")
+    normalized_action = action.lower()
+    is_reversible_live_trial = (
+        normalized_action.startswith("live trial")
+        or normalized_action.startswith("revert live trial")
+        or normalized_action.startswith("run selected dummy coder prompt")
+    )
     trial_task_spec = (
         _reversible_live_trial_task_spec(
             action=action,
@@ -1149,7 +1158,7 @@ def _reversible_live_trial_task_spec(
     target: str | None,
 ) -> dict[str, Any]:
     if _approved_diff_is_dummy_product_site_bundle(approved_diff):
-        is_revert = action.lower().startswith("revert live trial")
+        is_revert = action.lower().startswith("revert")
         return {
             "schema_version": 1,
             "task_type": "delete_file" if is_revert else "create_file_bundle",
@@ -3646,6 +3655,240 @@ DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS = (
     "token",
 )
 DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE = 0.02
+DUMMY_PRODUCT_SITE_INDEX = f"{DUMMY_PRODUCT_SITE_ROOT}index.html"
+DUMMY_PRODUCT_SITE_MAIN = f"{DUMMY_PRODUCT_SITE_ROOT}src/main.js"
+
+
+def _dummy_product_site_prompt3_diff_violations(
+    *,
+    root: Path,
+    unified_diff: str,
+    replacement_target: str,
+    replacement_content: str,
+) -> list[str]:
+    normalized_target = replacement_target.replace("\\", "/").lstrip("./")
+    if normalized_target != DUMMY_PRODUCT_SITE_MAIN:
+        return []
+    diff_text = (unified_diff or "").replace("\r\n", "\n").replace("\r", "\n")
+    content = replacement_content or ""
+    try:
+        current_index = (root / DUMMY_PRODUCT_SITE_INDEX).read_text(
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError:
+        current_index = ""
+
+    violations: list[str] = []
+    has_dynamic_import = bool(re.search(r"import\s*\(\s*['\"]\.\/products\.js['\"]\s*\)", content))
+    has_static_import = bool(re.search(r"import\s+[\s\S]*?\s+from\s*['\"]\.\/products\.js['\"]", content))
+    index_already_module = bool(re.search(r"<script\b[^>]*type=['\"]module['\"][^>]*src=['\"]src/main\.js['\"]", current_index))
+    diff_adds_module_script = bool(
+        re.search(r"^\+\s*<script\b[^>]*type=['\"]module['\"][^>]*src=['\"]src/main\.js['\"]", diff_text, re.MULTILINE)
+    )
+    diff_removes_module_script = bool(
+        re.search(r"^-\s*<script\b[^>]*type=['\"]module['\"][^>]*src=['\"]src/main\.js['\"]", diff_text, re.MULTILINE)
+    )
+    has_module_wiring = diff_adds_module_script or (index_already_module and not diff_removes_module_script)
+
+    if has_static_import and not has_module_wiring:
+        violations.append("STATIC_IMPORT_CLASSIC_SCRIPT")
+    if not has_static_import and not has_dynamic_import:
+        violations.append("MISSING_PRODUCTS_IMPORT")
+    if re.search(r"\b(?:const|let|var)\s+products\s*=\s*\[", content) or (
+        "Product A" in content and "Product F" in content
+    ):
+        violations.append("PRODUCT_DATA_DUPLICATED")
+    if re.search(r"^\+.*<(?:article|div)\b[^>]*(?:product-card|card)", diff_text, re.MULTILINE) and DUMMY_PRODUCT_SITE_INDEX in diff_text:
+        violations.append("HARDCODED_INDEX_CARDS")
+
+    return list(dict.fromkeys(violations))
+
+
+def _dummy_product_site_model_timeout_seconds() -> float:
+    raw = os.getenv("SOURCE_PROXY_DUMMY_PRODUCT_SITE_MODEL_TIMEOUT_SECONDS", "45").strip()
+    try:
+        return max(5.0, min(float(raw), 180.0))
+    except ValueError:
+        return 45.0
+
+
+def _dummy_product_site_existing_starter_files_present(root: Path) -> bool:
+    try:
+        fixture_root = (root / DUMMY_PRODUCT_SITE_ROOT).resolve()
+        if not fixture_root.is_dir():
+            return False
+        combined = []
+        for expected in DUMMY_PRODUCT_SITE_STARTER_FILES:
+            path = (fixture_root / expected).resolve()
+            if not path.is_file():
+                return False
+            content = path.read_text(encoding="utf-8", errors="replace")
+            if not content.strip():
+                return False
+            combined.append(content)
+        return "lumacart" in "\n".join(combined).lower()
+    except Exception:
+        return False
+
+
+def _dummy_product_site_already_satisfied_payload(*, diagnostics: dict[str, Any]) -> dict[str, Any]:
+    satisfied_diagnostics = {
+        **diagnostics,
+        "validation_status": "already_satisfied",
+        "already_satisfied": True,
+        "no_changes_needed": True,
+        "existing_starter_files_present": True,
+        "generated_diff_length": 0,
+        "normalized_diff_length": 0,
+        "generated_diff_by_backend": False,
+        "diff_source": "already_satisfied_existing_dummy_product_site",
+        "generation_source": "disk_inspection",
+        "model_output_classification": "already_satisfied_noop",
+        "trial_result_trust_status": "existing_files_verified_no_diff_needed",
+        "recommended_next_action": "Prompt 1 already satisfied; continue with the next dummy-product-site prompt.",
+        "checks_run": ["existing dummy product site starter files present"],
+    }
+    return {
+        "proposed_diff": "",
+        "target": DUMMY_PRODUCT_SITE_ROOT,
+        "coder_notes": [
+            "Existing LumaCart dummy product site starter files are already present.",
+            "CODER_NO_CHANGES_NEEDED: Prompt 1 already satisfied.",
+        ],
+        "coder_diagnostics": satisfied_diagnostics,
+        "coderDiagnostics": satisfied_diagnostics,
+        "bundle": None,
+        "coder_agent_local_diff": False,
+        "coderAgentLocalDiff": False,
+        "coder_blocked": False,
+        "coderBlocked": False,
+        "already_satisfied": True,
+        "alreadySatisfied": True,
+        "changed_files": [],
+        "checks_run": ["existing dummy product site starter files present"],
+        "reason_code": "coder_no_changes_needed",
+        "reasonCode": "coder_no_changes_needed",
+        "blocked_reason": "",
+        "blockedReason": "",
+        "needed_context": "",
+        "neededContext": "",
+        "status": "already_satisfied",
+        "message": "Prompt 1 already satisfied: LumaCart starter files already exist.",
+    }
+
+
+def _call_dummy_product_site_llm_with_wall_timeout(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
+    result_queue: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
+
+    def worker() -> None:
+        try:
+            result = _call_dummy_product_site_llm_raw(prompt, selected_alias, timeout_seconds)
+            result_queue.put(("ok", result), block=False)
+        except Exception as error:  # noqa: BLE001
+            result_queue.put(("error", error), block=False)
+
+    thread = threading.Thread(target=worker, name="dummy-product-site-coder", daemon=True)
+    thread.start()
+    try:
+        status, value = result_queue.get(timeout=timeout_seconds)
+    except queue.Empty as error:
+        raise TimeoutError(f"Prompt 1 Coder model call timed out after {timeout_seconds:g}s") from error
+    if status == "error":
+        raise value
+    return str(value or "")
+
+
+def _call_dummy_product_site_llm_raw(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
+    if _dummy_product_site_direct_ollama_enabled(selected_alias):
+        return _call_dummy_product_site_ollama_direct(prompt, selected_alias, timeout_seconds)
+    return _call_coder_llm(
+        prompt,
+        model_alias=selected_alias,
+        timeout_seconds=timeout_seconds,
+        num_retries=0,
+    )
+
+
+def _dummy_product_site_direct_ollama_enabled(selected_alias: str) -> bool:
+    if os.getenv("SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA", "1").strip().lower() in {"0", "false", "no", "off"}:
+        return False
+    provider = route_provider_for_alias(selected_alias)
+    return provider in {"ollama", "local"} or selected_alias in {"coder", "local"}
+
+
+def _call_dummy_product_site_ollama_direct(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
+    central_gate_check("model_call", run_id=f"dummy_product_site_ollama:{selected_alias}")
+    resolved_model = route_model_for_alias(selected_alias) or ""
+    model = resolved_model.removeprefix("ollama_chat/") or resolve_coder_ollama_model_name(probe=False)
+    route = resolve_ollama_route(probe=False)
+    api_base = (route.api_base or "http://127.0.0.1:11434").rstrip("/")
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0,
+            "num_ctx": int(os.getenv("SOURCE_PROXY_DUMMY_PRODUCT_SITE_NUM_CTX", "8192")),
+            "num_predict": int(os.getenv("SOURCE_PROXY_DUMMY_PRODUCT_SITE_NUM_PREDICT", "1200")),
+        },
+    }
+    request = urllib.request.Request(
+        f"{api_base}/api/generate",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"content-type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        response_payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(response_payload, dict):
+        return ""
+    raw = response_payload.get("response")
+    return raw if isinstance(raw, str) else ""
+
+
+def _dummy_product_site_model_failure_payload(
+    *,
+    diagnostics: dict[str, Any],
+    error: Exception,
+    repair: bool = False,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
+    error_text = str(error)
+    error_kind = type(error).__name__
+    timed_out = "timeout" in error_kind.lower() or "timed out" in error_text.lower() or "timeout" in error_text.lower()
+    reason_code = "coder_model_timeout" if timed_out else "coder_model_router_error"
+    diagnostics["validation_status"] = reason_code
+    diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+    diagnostics["recommended_next_action"] = (
+        "retry_after_local_coder_model_recovers"
+        if timed_out
+        else "check_model_route_or_use_configured_stronger_model"
+    )
+    diagnostics["model_error_type"] = error_kind
+    diagnostics["model_error_message"] = error_text[:500]
+    if timeout_seconds is not None:
+        diagnostics["model_timeout_seconds"] = timeout_seconds
+    if repair:
+        diagnostics["repair_attempted"] = True
+        diagnostics["repair_error_message"] = error_text
+    return _coder_blocked_payload(
+        target=DUMMY_PRODUCT_SITE_ROOT,
+        notes=[f"CODER_BLOCKED reason_code: {reason_code}"],
+        diagnostics=diagnostics,
+        bundle_name=None,
+        reason=(
+            "Coder model timed out before returning Prompt 1 file blocks."
+            if timed_out
+            else "Coder model/router call failed."
+        ),
+        needed_context=(
+            f"Prompt 1 exceeded the bounded {timeout_seconds:g}s model budget; warm or repair the local Coder model, then retry."
+            if timed_out and timeout_seconds is not None
+            else error_text
+        ),
+        reason_code=reason_code,
+    )
 
 
 def propose_dummy_product_site_create_diff(
@@ -3691,6 +3934,8 @@ def propose_dummy_product_site_create_diff(
         selected_alias=selected_alias,
         provider_call_made=False,
     )
+    if _dummy_product_site_existing_starter_files_present(root):
+        return _dummy_product_site_already_satisfied_payload(diagnostics=diagnostics)
     alias_error = None if llm_call is not None else _coder_model_alias_configuration_error(selected_alias)
     if alias_error is not None:
         reason, needed_context = alias_error
@@ -3705,6 +3950,7 @@ def propose_dummy_product_site_create_diff(
             reason_code="coder_model_not_configured",
         )
     prompt = _render_dummy_product_site_create_prompt(task)
+    model_timeout_seconds = _dummy_product_site_model_timeout_seconds()
     try:
         _record_coder_provider_model_truth(
             diagnostics,
@@ -3714,18 +3960,17 @@ def propose_dummy_product_site_create_diff(
         raw_response = (
             llm_call(prompt, selected_alias)
             if llm_call is not None
-            else _call_coder_llm(prompt, model_alias=selected_alias)
+            else _call_dummy_product_site_llm_with_wall_timeout(
+                prompt,
+                selected_alias,
+                model_timeout_seconds,
+            )
         )
     except Exception as error:  # noqa: BLE001
-        diagnostics["validation_status"] = "coder_model_router_error"
-        return _coder_blocked_payload(
-            target=DUMMY_PRODUCT_SITE_ROOT,
-            notes=["CODER_BLOCKED reason_code: coder_model_router_error"],
+        return _dummy_product_site_model_failure_payload(
             diagnostics=diagnostics,
-            bundle_name=None,
-            reason="Coder model/router call failed.",
-            needed_context=str(error),
-            reason_code="coder_model_router_error",
+            error=error,
+            timeout_seconds=model_timeout_seconds,
         )
     diagnostics["generation_source"] = "model"
     diagnostics["diff_source"] = "pending_backend_diff_from_model_file_bundle"
@@ -3745,20 +3990,18 @@ def propose_dummy_product_site_create_diff(
             repair_response = (
                 llm_call(repair_prompt, selected_alias)
                 if llm_call is not None
-                else _call_coder_llm(repair_prompt, model_alias=selected_alias)
+                else _call_dummy_product_site_llm_with_wall_timeout(
+                    repair_prompt,
+                    selected_alias,
+                    model_timeout_seconds,
+                )
             )
         except Exception as error:  # noqa: BLE001
-            diagnostics["validation_status"] = "coder_model_router_error"
-            diagnostics["repair_attempted"] = True
-            diagnostics["repair_error_message"] = str(error)
-            return _coder_blocked_payload(
-                target=DUMMY_PRODUCT_SITE_ROOT,
-                notes=["CODER_BLOCKED reason_code: coder_model_router_error"],
+            return _dummy_product_site_model_failure_payload(
                 diagnostics=diagnostics,
-                bundle_name=None,
-                reason="Coder model/router repair call failed.",
-                needed_context=str(error),
-                reason_code="coder_model_router_error",
+                error=error,
+                repair=True,
+                timeout_seconds=model_timeout_seconds,
             )
         diagnostics["repair_attempted"] = True
         diagnostics["repair_raw_response_length"] = len(repair_response or "")
@@ -5338,6 +5581,31 @@ def propose_coder_agent_diff_payload_from_plan(
                 "or use Cloud/API route only if configured and explicitly chosen."
             ),
             reason_code="coder_backend_diff_generation_failed",
+        )
+
+    prompt3_violations = _dummy_product_site_prompt3_diff_violations(
+        root=root,
+        unified_diff=unified,
+        replacement_target=replacement_target,
+        replacement_content=content,
+    )
+    if prompt3_violations:
+        diagnostics["validation_status"] = "prompt_3_render_contract_rejected"
+        diagnostics["prompt_3_render_contract_violations"] = prompt3_violations
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        reason = f"Prompt 3 model output rejected before apply: {', '.join(prompt3_violations)}"
+        notes.append(f"CODER_BLOCKED reason_code: {prompt3_violations[0]}")
+        return _coder_blocked_payload(
+            target=replacement_target,
+            notes=notes,
+            diagnostics=diagnostics,
+            bundle_name=bundle_name,
+            reason=reason,
+            needed_context=(
+                "Regenerate Prompt 3 with coherent products.js module wiring: static import requires "
+                "index.html type=\"module\" script wiring, while classic script loading requires dynamic import('./products.js')."
+            ),
+            reason_code=prompt3_violations[0],
         )
 
     task_spec_check = task_spec_diff_check(task_spec.to_dict(), _parse_changed_files(unified))

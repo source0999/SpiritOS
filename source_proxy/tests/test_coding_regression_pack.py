@@ -3383,7 +3383,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["diagnostics_summary"]["trial_result_trust_status"], "model_authored_diff_proven")
         self.assertNotEqual(payload["reason_code"], "coder_visual_improvement_diff_too_shallow")
         self.assertNotIn("import { products }", payload["task_spec"]["literal_requirements"])
-        self.assertIn("import(", payload["task_spec"]["literal_requirements"])
+        self.assertNotIn("import(", payload["task_spec"]["literal_requirements"])
         self.assertIn("./products.js", payload["task_spec"]["literal_requirements"])
         self.assertNotIn("Product A", payload["task_spec"]["literal_requirements"])
         self.assertNotIn("viewport", payload["task_spec"]["literal_requirements"])
@@ -3395,6 +3395,78 @@ class CodingRegressionPackTests(unittest.TestCase):
         ]
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", context_paths)
         self.assertTrue(payload["coder_packet"]["target_file"]["exists"])
+
+    def test_prompt_packet_coder_003_rejects_static_import_with_classic_script(self) -> None:
+        client = self._decision_client()
+        fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        _write(
+            fixture_root / "index.html",
+            "\n".join(
+                [
+                    "<!doctype html>",
+                    '<main id="product-list"></main>',
+                    '<script src="src/main.js"></script>',
+                ]
+            )
+            + "\n",
+        )
+        _write(fixture_root / "src/main.js", "console.log('LumaCart');\n")
+        _write(
+            fixture_root / "src/products.js",
+            "\n".join(
+                [
+                    "const products = [",
+                    "  { id: 'a', name: 'Product A', category: 'Lighting', description: 'Desk light', price: '$20' },",
+                    "  { id: 'b', name: 'Product B', category: 'Storage', description: 'Shelf', price: '$35' },",
+                    "];",
+                    "export default products;",
+                ]
+            )
+            + "\n",
+        )
+        _write(fixture_root / "src/styles.css", ".product-card { display: block; }\n")
+        model_json = json.dumps(
+            {
+                "action": "replace_file",
+                "target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+                "content_lines": [
+                    "import products from './products.js';",
+                    "const pageName = 'LumaCart';",
+                    "const list = document.querySelector('#product-list');",
+                    "products.forEach((product) => {",
+                    "  const card = document.createElement('article');",
+                    "  card.className = 'product-card';",
+                    "  card.innerHTML = `<h2>${product.name}</h2><p>${product.category}</p><p>${product.description}</p><strong>${product.price}</strong>`;",
+                    "  list.appendChild(card);",
+                    "});",
+                ],
+                "notes": "Render product cards from products.js.",
+            }
+        )
+
+        with (
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet", return_value={}),
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch("source_proxy.tasks.long_running._call_coder_llm", return_value=model_json),
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "Render LumaCart product cards from src/products.js.",
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_PRODUCTS_RENDERED",
+                    "selected_prompt_id": "coder-003-render-product-cards",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["status"], "blocked")
+        self.assertEqual(payload["reason_code"], "STATIC_IMPORT_CLASSIC_SCRIPT")
 
     def test_prompt_packet_coder_001_accepts_xml_file_blocks_and_reports_contract(self) -> None:
         client = self._decision_client()
