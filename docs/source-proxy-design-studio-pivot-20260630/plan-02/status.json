@@ -1,0 +1,190 @@
+{
+  "plan": 2,
+  "title": "Design DNA and Token Extraction",
+  "status": "COMPLETE_GO_PLAN_3_NOT_AUTHORIZED",
+  "gate_status": "PLAN_2_COMPLETE_PENDING_BRITTON_PLAN_3_APPROVAL",
+  "implementation_performed": false,
+  "model_routing_changed": false,
+  "prompt_4_or_5_run": false,
+  "obsidian_write_paths_mutated": false,
+  "mac_worker_touched": false,
+  "media_or_spiritflix_touched": false,
+  "parallel_apply_path_created": false,
+  "daily_driver_go_claimed": false,
+  "next_plan_authorized": false,
+  "overview": {
+    "what_plan_did": "Established the evidence boundary for future SpiritOS design DNA, token proposal, and visual memory extraction.",
+    "what_it_accomplished": "Confirmed DNA must be evidence-based, tokens must be typed/scoped/reversible, and visual memory must reuse the existing visual index without authority expansion.",
+    "what_it_did_not_authorize": "No implementation, visual/browser run, token write, design memory write, model routing change, Prompt 4/5, media work, apply action, daily-driver GO, or Plan 3 start.",
+    "next_plan_preview": "Plan 3/8, Design Packet and Coder Handoff Contract, is expected to define how DNA/token inputs become a structured design packet and bounded coder handoff."
+  },
+  "increments": [
+    {
+      "id": "2.1.1",
+      "scope": "Existing visual DNA extraction: predecessor authority and Plan 2 entry gate.",
+      "producer": "Plan 2 execution",
+      "consumer": "2.1.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/plan-01/status.json:3-14",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-01/status.json:147-166",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-01/next-plan-handoff.md:3-27"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.1.2",
+      "scope": "Existing visual DNA extraction: evidence-based SpiritOS DNA.",
+      "producer": "2.1.1",
+      "consumer": "2.1.3",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/spiritos-design-dna.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/spiritos-design-dna.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/spiritos-design-dna.md:26-38",
+        "src/app/coding/design-demo/page.tsx:4-16",
+        "src/app/coding/design-demo/page.tsx:20-26"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.1.3",
+      "scope": "Existing visual DNA extraction: current UI trait inventory anchors.",
+      "producer": "2.1.2",
+      "consumer": "2.2.1",
+      "repo_references": [
+        "src/styles/spiritflix.css:2-18",
+        "src/styles/spiritflix.css:33-60",
+        "src/styles/spiritflix.css:74-87",
+        "src/components/spiritflix/SpiritFlixApp.tsx:1231-1235",
+        "src/components/spiritflix/SpiritFlixHome.tsx:579-638",
+        "src/components/spiritflix/SpiritFlixHome.tsx:1482-1520",
+        "src/components/spiritflix/SpiritFlixPlayer.tsx:2750-2770",
+        "src/components/spiritflix/SpiritFlixPlayer.tsx:2886-3165",
+        "src/components/spiritflix/SpiritFlixRail.tsx:76-134"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.2.1",
+      "scope": "Token proposal schema: typed/scoped/reversible token rule.",
+      "producer": "2.1.3",
+      "consumer": "2.2.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-token-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-token-contract.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/design-token-contract.md:26-38"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.2.2",
+      "scope": "Token proposal schema: design packet consumption requirement.",
+      "producer": "2.2.1",
+      "consumer": "2.2.3",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:15",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:24-37",
+        "src/app/v1/coding/design-vault/preview/route.ts:3",
+        "src/app/v1/coding/design-vault/preview/route.ts:9",
+        "src/app/v1/coding/design-vault/preview/route.ts:11",
+        "src/app/v1/coding/design-vault/preview/route.ts:14-22",
+        "src/app/v1/coding/design-vault/preview/route.ts:29",
+        "src/app/v1/coding/design-vault/preview/route.ts:37",
+        "src/app/v1/coding/design-vault/preview/route.ts:47"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.2.3",
+      "scope": "Token proposal schema: acceptance and visual-verification proof boundary.",
+      "producer": "2.2.2",
+      "consumer": "2.3.1",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:15",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:24-37",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:15",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:24-37"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.3.1",
+      "scope": "Token consumption proof: visual memory reuse.",
+      "producer": "2.2.3",
+      "consumer": "2.3.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-memory-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-memory-contract.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/design-memory-contract.md:26-38",
+        "source_proxy/vector/visual_index.py:10-13",
+        "source_proxy/vector/visual_index.py:23",
+        "source_proxy/vector/visual_index.py:33-48",
+        "source_proxy/vector/visual_index.py:62-85",
+        "source_proxy/vector/visual_index.py:88-107"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.3.2",
+      "scope": "Token consumption proof: visual index test boundary.",
+      "producer": "2.3.1",
+      "consumer": "2.3.3",
+      "repo_references": [
+        "source_proxy/vector/visual_index.py:165-189",
+        "source_proxy/tests/test_visual_index.py:8-14",
+        "source_proxy/tests/test_visual_index.py:22-36",
+        "source_proxy/tests/test_visual_index.py:50-66",
+        "source_proxy/tests/test_visual_index.py:71-82"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "2.3.3",
+      "scope": "Token consumption proof: Plan 2 closeout and Plan 3 stop line.",
+      "producer": "2.3.2",
+      "consumer": "Plan 2 closeout and next-plan-handoff.md",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:15",
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:24-37",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:15",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:24-37",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-02/plan.md"
+      ],
+      "verdict": "GO"
+    }
+  ],
+  "codex_self_checks": {
+    "path_scope_check": "PASS",
+    "forbidden_path_check": "PASS",
+    "json_status_validity_check": "PASS",
+    "repo_reference_citation_check": "PASS",
+    "fake_go_trap_check": "PASS",
+    "consumed_output_check": "PASS",
+    "unrelated_dirty_files_preserved_check": "PASS"
+  },
+  "manual_britton_check": {
+    "scope": "Plan 2/8 only",
+    "evidence_reviewed": true,
+    "visual_design_acceptance": "not_relevant_no_visual_execution_or_token_application_authorized",
+    "authority_boundary_confirmed": true,
+    "fake_go_traps_reviewed": true,
+    "next_increment_allowed": false,
+    "verdict": "PASS"
+  },
+  "remaining_blockers": [
+    "Plan 3 requires explicit future Britton approval.",
+    "Plan 2 does not confer daily-driver GO or implementation GO."
+  ],
+  "changed_files_intended": [
+    "docs/source-proxy-design-studio-pivot-20260630/plan-02/status.md",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-02/status.json",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-02/next-plan-handoff.md"
+  ]
+}

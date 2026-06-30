@@ -1,0 +1,173 @@
+{
+  "plan": 8,
+  "title": "Memory, Regression Pack, and Operator Handoff",
+  "status": "COMPLETE_GO_WORKFLOW_CLOSED_NO_NEXT_PLAN",
+  "gate_status": "PLAN_8_COMPLETE_WORKFLOW_CLOSEOUT_NO_IMPLEMENTATION_GO",
+  "implementation_performed": false,
+  "model_routing_changed": false,
+  "prompt_4_or_5_run": false,
+  "obsidian_write_paths_mutated": false,
+  "mac_worker_touched": false,
+  "media_or_spiritflix_touched": false,
+  "visual_memory_ingest_run": false,
+  "regression_pack_run": false,
+  "operator_handoff_implementation_authorized": false,
+  "apply_action_performed": false,
+  "post_apply_verification_run": false,
+  "parallel_apply_path_created": false,
+  "daily_driver_go_claimed": false,
+  "next_plan_authorized": false,
+  "workflow_closed": true,
+  "overview": {
+    "what_plan_did": "Closed the Design Studio Pivot workflow with evidence-only boundaries for memory reuse, regression-pack expectations, and operator handoff.",
+    "what_it_accomplished": "Confirmed future visual memory must reuse existing visual index ingest/query contracts, future regression coverage must preserve approval/protected-path/no-diff/post-apply verification gates, and operator handoff must keep authority limits explicit.",
+    "what_it_did_not_authorize": "No implementation, route change, model routing change, Prompt 4/5 run, visual ingest run, regression-pack run, apply action, post-apply verification run, media work, Obsidian write, Mac worker touch, daily-driver GO, or next-plan start.",
+    "next_plan_preview": "No Plan 9 exists in this workflow. Future implementation or validation execution requires a new explicit Britton-approved packet."
+  },
+  "workflow_overview": {
+    "plans_completed": [
+      "Plan 0/8 - Truth Freeze, Sandbox Inventory, and Compression Gate",
+      "Plan 1/8 - Design Lane Intake and Authority Boundary",
+      "Plan 2/8 - Design DNA and Token Extraction",
+      "Plan 3/8 - Design Packet and Coder Handoff Contract",
+      "Plan 4/8 - Visual Verification and Browser Evidence",
+      "Plan 5/8 - Critic, Anti-Template, and Uniqueness Gates",
+      "Plan 6/8 - Bounded Repair Loop and Failure Taxonomy",
+      "Plan 7/8 - Approval Reuse, Apply Isolation, and Post-Apply Verification",
+      "Plan 8/8 - Memory, Regression Pack, and Operator Handoff"
+    ],
+    "authority_summary": "Planning/evidence docs only; no implementation or daily-driver authority granted.",
+    "future_work_requires_new_approval": true
+  },
+  "increments": [
+    {
+      "id": "8.1.1",
+      "scope": "Visual memory reuse: predecessor authority and Plan 8 entry gate.",
+      "producer": "Plan 8 execution",
+      "consumer": "8.1.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/plan-07/status.json:3-23",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-07/status.json:180-199",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-07/next-plan-handoff.md:3-39"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.1.2",
+      "scope": "Visual memory reuse: existing visual index ingest/query shape.",
+      "producer": "8.1.1",
+      "consumer": "8.1.3",
+      "repo_references": [
+        "source_proxy/vector/visual_index.py:11-18",
+        "source_proxy/vector/visual_index.py:33-85",
+        "source_proxy/vector/visual_index.py:88-107",
+        "source_proxy/vector/visual_index.py:234-263"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.1.3",
+      "scope": "Visual memory reuse: visual index regression expectations.",
+      "producer": "8.1.2",
+      "consumer": "8.2.1",
+      "repo_references": [
+        "source_proxy/tests/test_visual_index.py:32-75"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.2.1",
+      "scope": "Regression pack: final labels and safe preview/allowed-file expectations.",
+      "producer": "8.1.3",
+      "consumer": "8.2.2",
+      "repo_references": [
+        "source_proxy/tests/test_coding_regression_pack.py:62-75",
+        "source_proxy/tests/test_coding_regression_pack.py:247-260",
+        "source_proxy/tests/test_coding_regression_pack.py:377-394"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.2.2",
+      "scope": "Regression pack: protected-path and no-diff expectations.",
+      "producer": "8.2.1",
+      "consumer": "8.2.3",
+      "repo_references": [
+        "source_proxy/tests/test_coding_regression_pack.py:2678-2700",
+        "source_proxy/tests/test_coding_regression_pack.py:4549-4578"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.2.3",
+      "scope": "Regression pack: post-apply verification expectations.",
+      "producer": "8.2.2",
+      "consumer": "8.3.1",
+      "repo_references": [
+        "source_proxy/tests/test_coding_regression_pack.py:4580-4628"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.3.1",
+      "scope": "Operator handoff: acceptance boundary.",
+      "producer": "8.2.3",
+      "consumer": "8.3.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:3-18",
+        "docs/source-proxy-design-studio-pivot-20260630/execution-handoff.md:3-18"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.3.2",
+      "scope": "Operator handoff: self-check and manual-check requirements.",
+      "producer": "8.3.1",
+      "consumer": "8.3.3",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:3-18",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:3-18"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "8.3.3",
+      "scope": "Operator handoff: final workflow closeout and no-next-plan stop line.",
+      "producer": "8.3.2",
+      "consumer": "Final workflow closeout and next-plan-handoff.md",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/master-plan.md:3-33",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-08/plan.md"
+      ],
+      "verdict": "GO"
+    }
+  ],
+  "codex_self_checks": {
+    "path_scope_check": "PASS",
+    "forbidden_path_check": "PASS",
+    "json_status_validity_check": "PASS",
+    "repo_reference_citation_check": "PASS",
+    "fake_go_trap_check": "PASS",
+    "consumed_output_check": "PASS",
+    "unrelated_dirty_files_preserved_check": "PASS"
+  },
+  "manual_britton_check": {
+    "scope": "Plan 8/8 only",
+    "evidence_reviewed": true,
+    "visual_design_acceptance": "not_relevant_no_visual_ingest_regression_apply_or_runtime_execution_authorized",
+    "authority_boundary_confirmed": true,
+    "fake_go_traps_reviewed": true,
+    "next_increment_allowed": false,
+    "verdict": "PASS"
+  },
+  "remaining_blockers": [
+    "No future plan is authorized by this workflow.",
+    "Any implementation or validation run beyond docs/status closeout requires a new explicit Britton-approved packet.",
+    "The workflow remains planning/evidence only and does not claim daily-driver readiness."
+  ],
+  "changed_files_intended": [
+    "docs/source-proxy-design-studio-pivot-20260630/plan-08/status.md",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-08/status.json",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-08/next-plan-handoff.md"
+  ]
+}

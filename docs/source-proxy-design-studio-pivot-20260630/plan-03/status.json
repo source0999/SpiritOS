@@ -1,0 +1,193 @@
+{
+  "plan": 3,
+  "title": "Design Packet and Coder Handoff Contract",
+  "status": "COMPLETE_GO_PLAN_4_NOT_AUTHORIZED",
+  "gate_status": "PLAN_3_COMPLETE_PENDING_BRITTON_PLAN_4_APPROVAL",
+  "implementation_performed": false,
+  "model_routing_changed": false,
+  "prompt_4_or_5_run": false,
+  "obsidian_write_paths_mutated": false,
+  "mac_worker_touched": false,
+  "media_or_spiritflix_touched": false,
+  "parallel_apply_path_created": false,
+  "daily_driver_go_claimed": false,
+  "next_plan_authorized": false,
+  "overview": {
+    "what_plan_did": "Established the evidence boundary for future design packets and coder handoffs.",
+    "what_it_accomplished": "Confirmed design packets require explicit fields and downstream consumers, coder handoffs require bounded implementation draft fields, and apply behavior must reuse existing approved-action and verification paths.",
+    "what_it_did_not_authorize": "No implementation, design packet generation, coder patch, visual/browser run, verifier/model/repair run, Prompt 4/5, media work, apply action, daily-driver GO, or Plan 4 start.",
+    "next_plan_preview": "Plan 4/8, Visual Verification and Browser Evidence, is expected to define screenshot, DOM, interaction, responsive, and explicit failure-label proof for design outputs."
+  },
+  "increments": [
+    {
+      "id": "3.1.1",
+      "scope": "Packet schema: predecessor authority and Plan 3 entry gate.",
+      "producer": "Plan 3 execution",
+      "consumer": "3.1.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/plan-02/status.json:3-19",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-02/next-plan-handoff.md:3-35"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.1.2",
+      "scope": "Packet schema: required design packet fields and consumer.",
+      "producer": "3.1.1",
+      "consumer": "3.1.3",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:25-38",
+        "src/app/v1/coding/design-vault/preview/route.ts:3",
+        "src/app/v1/coding/design-vault/preview/route.ts:6-11",
+        "src/app/v1/coding/design-vault/preview/route.ts:14-22"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.1.3",
+      "scope": "Packet schema: current task/intake/decomposition anchors.",
+      "producer": "3.1.2",
+      "consumer": "3.2.1",
+      "repo_references": [
+        "source_proxy/decision/task_spec_intake.py:38-66",
+        "source_proxy/decision/task_spec_intake.py:80-110",
+        "source_proxy/decision/packet_decomposition.py:19-33",
+        "source_proxy/decision/packet_decomposition.py:49-66",
+        "source_proxy/decision/packet_decomposition.py:72-85",
+        "source_proxy/decision/packet_decomposition.py:90-130",
+        "source_proxy/decision/packet_decomposition.py:135-153",
+        "source_proxy/decision/human_messy_homepage.py:64-102",
+        "source_proxy/decision/human_messy_homepage.py:156-161"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.2.1",
+      "scope": "Coder handoff draft: bounded task draft fields.",
+      "producer": "3.1.3",
+      "consumer": "3.2.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/coder-handoff-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/coder-handoff-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/coder-handoff-contract.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/coder-handoff-contract.md:25-38",
+        "src/app/v1/coding/design-vault/preview/route.ts:3",
+        "src/app/v1/coding/design-vault/preview/route.ts:6-11"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.2.2",
+      "scope": "Coder handoff draft: existing approved apply boundary.",
+      "producer": "3.2.1",
+      "consumer": "3.2.3",
+      "repo_references": [
+        "src/app/v1/actions/execute-approved/route.ts:28-47",
+        "src/app/v1/actions/execute-approved/route.ts:66-70",
+        "src/app/v1/actions/execute-approved/route.ts:85-176",
+        "src/app/v1/actions/execute-approved/route.ts:199",
+        "source_proxy/tests/test_coding_regression_pack.py:50-59",
+        "source_proxy/tests/test_coding_regression_pack.py:65-74",
+        "source_proxy/tests/test_coding_regression_pack.py:168-221"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.2.3",
+      "scope": "Coder handoff draft: behavior and verification requirements.",
+      "producer": "3.2.2",
+      "consumer": "3.3.1",
+      "repo_references": [
+        "source_proxy/decision/artifact_behavior_contract.py:7",
+        "source_proxy/decision/artifact_behavior_contract.py:10-36",
+        "source_proxy/decision/artifact_behavior_contract.py:46-62",
+        "source_proxy/decision/artifact_behavior_contract.py:350-369",
+        "source_proxy/decision/verifier_lane.py:9-15",
+        "source_proxy/decision/verifier_lane.py:39-59",
+        "source_proxy/decision/verifier_lane.py:73-131",
+        "source_proxy/tests/test_verification_contracts.py:39-73",
+        "source_proxy/tests/test_verification_contracts.py:85-136"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.3.1",
+      "scope": "Downstream consumption proof: repair/handoff failure boundary.",
+      "producer": "3.2.3",
+      "consumer": "3.3.2",
+      "repo_references": [
+        "source_proxy/decision/artifact_repair_contract.py:7-8",
+        "source_proxy/decision/artifact_repair_contract.py:25-75",
+        "source_proxy/decision/artifact_repair_contract.py:85-99",
+        "source_proxy/decision/artifact_repair_loop.py:16-46",
+        "source_proxy/decision/artifact_repair_loop.py:50-75",
+        "source_proxy/decision/artifact_repair_loop.py:96-104"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.3.2",
+      "scope": "Downstream consumption proof: acceptance and visual proof boundary.",
+      "producer": "3.3.1",
+      "consumer": "3.3.3",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:11-17",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:24-38",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:11-17",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:24-38",
+        "docs/source-proxy-design-studio-pivot-20260630/design-lane-authority-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-lane-authority-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-lane-authority-contract.md:11-17",
+        "docs/source-proxy-design-studio-pivot-20260630/design-lane-authority-contract.md:24-38"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "3.3.3",
+      "scope": "Downstream consumption proof: Plan 3 closeout and Plan 4 stop line.",
+      "producer": "3.3.2",
+      "consumer": "Plan 3 closeout and next-plan-handoff.md",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:3-17",
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:24-38",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:3-17",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:24-38",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-03/plan.md"
+      ],
+      "verdict": "GO"
+    }
+  ],
+  "codex_self_checks": {
+    "path_scope_check": "PASS",
+    "forbidden_path_check": "PASS",
+    "json_status_validity_check": "PASS",
+    "repo_reference_citation_check": "PASS",
+    "fake_go_trap_check": "PASS",
+    "consumed_output_check": "PASS",
+    "unrelated_dirty_files_preserved_check": "PASS"
+  },
+  "manual_britton_check": {
+    "scope": "Plan 3/8 only",
+    "evidence_reviewed": true,
+    "visual_design_acceptance": "not_relevant_no_visual_execution_packet_generation_or_coder_patch_authorized",
+    "authority_boundary_confirmed": true,
+    "fake_go_traps_reviewed": true,
+    "next_increment_allowed": false,
+    "verdict": "PASS"
+  },
+  "remaining_blockers": [
+    "Plan 4 requires explicit future Britton approval.",
+    "Plan 3 does not confer daily-driver GO or implementation GO."
+  ],
+  "changed_files_intended": [
+    "docs/source-proxy-design-studio-pivot-20260630/plan-03/status.md",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-03/status.json",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-03/next-plan-handoff.md"
+  ]
+}

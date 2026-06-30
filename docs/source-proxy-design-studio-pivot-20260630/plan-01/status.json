@@ -1,0 +1,173 @@
+{
+  "plan": 1,
+  "title": "Design Lane Intake and Authority Boundary",
+  "status": "COMPLETE_GO_PLAN_2_NOT_AUTHORIZED",
+  "gate_status": "PLAN_1_COMPLETE_PENDING_BRITTON_PLAN_2_APPROVAL",
+  "implementation_performed": false,
+  "model_routing_changed": false,
+  "prompt_4_or_5_run": false,
+  "obsidian_write_paths_mutated": false,
+  "mac_worker_touched": false,
+  "media_or_spiritflix_touched": false,
+  "parallel_apply_path_created": false,
+  "daily_driver_go_claimed": false,
+  "next_plan_authorized": false,
+  "increments": [
+    {
+      "id": "1.1.1",
+      "scope": "Prompt intake classification: predecessor authority and Plan 1 entry gate.",
+      "producer": "Plan 1 execution",
+      "consumer": "1.1.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/plan-00/status.json:4-14",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-00/status.json:147-165",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-00/next-plan-handoff.md:3-27"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.1.2",
+      "scope": "Prompt intake classification: route/workspace/safety vocabulary.",
+      "producer": "1.1.1",
+      "consumer": "1.1.3",
+      "repo_references": [
+        "source_proxy/decision/task_spec_intake.py:33",
+        "source_proxy/decision/task_spec_intake.py:38-66",
+        "source_proxy/decision/task_spec_intake.py:86-132",
+        "source_proxy/decision/task_spec_intake.py:151-190",
+        "source_proxy/decision/router.py:59",
+        "source_proxy/decision/router.py:96-148",
+        "source_proxy/decision/router.py:268-284",
+        "source_proxy/decision/router.py:303-373"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.1.3",
+      "scope": "Prompt intake classification: artifact design packet boundary.",
+      "producer": "1.1.2",
+      "consumer": "1.2.1",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:25-38",
+        "source_proxy/decision/human_messy_homepage.py:69",
+        "source_proxy/decision/human_messy_homepage.py:85",
+        "source_proxy/decision/human_messy_homepage.py:170-188",
+        "source_proxy/decision/human_messy_homepage.py:201-222",
+        "source_proxy/decision/human_messy_homepage.py:342-386"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.2.1",
+      "scope": "Design authority boundary: design lane may propose but not apply.",
+      "producer": "1.1.3",
+      "consumer": "1.2.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-lane-authority-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-lane-authority-contract.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/design-lane-authority-contract.md:25-38"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.2.2",
+      "scope": "Design authority boundary: preview acceptance does not apply.",
+      "producer": "1.2.1",
+      "consumer": "1.2.3",
+      "repo_references": [
+        "src/app/v1/coding/design-vault/preview/route.ts:1-22",
+        "docs/source-proxy-design-studio-pivot-20260630/coder-handoff-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/coder-handoff-contract.md:11-15",
+        "docs/source-proxy-design-studio-pivot-20260630/coder-handoff-contract.md:25-38"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.2.3",
+      "scope": "Design authority boundary: approved apply isolation.",
+      "producer": "1.2.2",
+      "consumer": "1.3.1",
+      "repo_references": [
+        "src/app/v1/actions/execute-approved/route.ts:16-18",
+        "src/app/v1/actions/execute-approved/route.ts:28-47",
+        "src/app/v1/actions/execute-approved/route.ts:66-70",
+        "src/app/v1/actions/execute-approved/route.ts:85-154"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.3.1",
+      "scope": "Manual acceptance gate: manual check fields required.",
+      "producer": "1.2.3",
+      "consumer": "1.3.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:3-15",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:23-38"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.3.2",
+      "scope": "Manual acceptance gate: verification cannot promote unsupported PASS.",
+      "producer": "1.3.1",
+      "consumer": "1.3.3",
+      "repo_references": [
+        "source_proxy/decision/artifact_behavior_contract.py:26-39",
+        "source_proxy/decision/artifact_behavior_contract.py:49-62",
+        "source_proxy/decision/artifact_behavior_contract.py:350-387",
+        "source_proxy/decision/verifier_lane.py:9-15",
+        "source_proxy/decision/verifier_lane.py:39-66",
+        "source_proxy/decision/verifier_lane.py:73-115",
+        "source_proxy/decision/verifier_lane.py:132",
+        "source_proxy/decision/verifier_lane.py:138-170",
+        "source_proxy/decision/verifier_lane.py:188-229",
+        "source_proxy/decision/artifact_repair_contract.py:8",
+        "source_proxy/decision/artifact_repair_contract.py:26-74",
+        "source_proxy/decision/artifact_repair_contract.py:105-187",
+        "source_proxy/decision/artifact_repair_contract.py:237-275"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "1.3.3",
+      "scope": "Manual acceptance gate: Plan 1 closeout and Plan 2 stop line.",
+      "producer": "1.3.2",
+      "consumer": "Plan 1 closeout and next-plan-handoff.md",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:3-15",
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:23-38",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-01/plan.md"
+      ],
+      "verdict": "GO"
+    }
+  ],
+  "codex_self_checks": {
+    "path_scope_check": "PASS",
+    "forbidden_path_check": "PASS",
+    "json_status_validity_check": "PASS",
+    "repo_reference_citation_check": "PASS",
+    "fake_go_trap_check": "PASS",
+    "consumed_output_check": "PASS",
+    "unrelated_dirty_files_preserved_check": "PASS"
+  },
+  "manual_britton_check": {
+    "scope": "Plan 1/8 only",
+    "evidence_reviewed": true,
+    "visual_design_acceptance": "not_relevant_no_visual_execution_authorized",
+    "authority_boundary_confirmed": true,
+    "fake_go_traps_reviewed": true,
+    "next_increment_allowed": false,
+    "verdict": "PASS"
+  },
+  "remaining_blockers": [
+    "Plan 2 requires explicit future Britton approval.",
+    "Plan 1 does not confer daily-driver GO or implementation GO."
+  ],
+  "changed_files_intended": [
+    "docs/source-proxy-design-studio-pivot-20260630/plan-01/status.md",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-01/status.json",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-01/next-plan-handoff.md"
+  ]
+}

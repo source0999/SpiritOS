@@ -1,0 +1,206 @@
+{
+  "plan": 5,
+  "title": "Critic, Anti-Template, and Uniqueness Gates",
+  "status": "COMPLETE_GO_PLAN_6_NOT_AUTHORIZED",
+  "gate_status": "PLAN_5_COMPLETE_PENDING_BRITTON_PLAN_6_APPROVAL",
+  "implementation_performed": false,
+  "model_routing_changed": false,
+  "prompt_4_or_5_run": false,
+  "obsidian_write_paths_mutated": false,
+  "mac_worker_touched": false,
+  "media_or_spiritflix_touched": false,
+  "critic_execution_performed": false,
+  "anti_template_check_run": false,
+  "uniqueness_comparison_run": false,
+  "verifier_model_or_repair_run": false,
+  "parallel_apply_path_created": false,
+  "daily_driver_go_claimed": false,
+  "next_plan_authorized": false,
+  "overview": {
+    "what_plan_did": "Established the evidence boundary for future critic, anti-template, and uniqueness gates.",
+    "what_it_accomplished": "Confirmed critic review must be consumed by repair/rejection, anti-template checks must compare against DNA/refs/task intent, and uniqueness must compare against prior artifacts, visual refs, and SpiritOS UI surfaces.",
+    "what_it_did_not_authorize": "No implementation, critic run, anti-template run, uniqueness comparison run, visual/browser run, verifier/model/repair run, Prompt 4/5, media work, apply action, daily-driver GO, or Plan 6 start.",
+    "next_plan_preview": "Plan 6/8, Bounded Repair Loop and Failure Taxonomy, is expected to define causal bounded repair attempts and explicit failure classes."
+  },
+  "increments": [
+    {
+      "id": "5.1.1",
+      "scope": "Critic rubric: predecessor authority and Plan 5 entry gate.",
+      "producer": "Plan 5 execution",
+      "consumer": "5.1.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/plan-04/status.json:3-22",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-04/status.json:167-186",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-04/next-plan-handoff.md:3-38"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.1.2",
+      "scope": "Critic rubric: advisory critic contract.",
+      "producer": "5.1.1",
+      "consumer": "5.1.3",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-critic-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-critic-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-critic-contract.md:10-18",
+        "docs/source-proxy-design-studio-pivot-20260630/design-critic-contract.md:29-37",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:10-19",
+        "docs/source-proxy-design-studio-pivot-20260630/visual-verification-contract.md:24-37"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.1.3",
+      "scope": "Critic rubric: behavior/verifier support for review outcomes.",
+      "producer": "5.1.2",
+      "consumer": "5.2.1",
+      "repo_references": [
+        "source_proxy/decision/verifier_lane.py:9-15",
+        "source_proxy/decision/verifier_lane.py:73-132",
+        "source_proxy/decision/artifact_behavior_contract.py:25-40",
+        "source_proxy/decision/artifact_behavior_contract.py:46-62",
+        "source_proxy/decision/artifact_behavior_contract.py:69-271",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:10-19",
+        "docs/source-proxy-design-studio-pivot-20260630/acceptance-rubric.md:24-37"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.2.1",
+      "scope": "Anti-template checks: generic output rejection contract.",
+      "producer": "5.1.3",
+      "consumer": "5.2.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/anti-template-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/anti-template-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/anti-template-contract.md:10-18",
+        "docs/source-proxy-design-studio-pivot-20260630/anti-template-contract.md:29-37",
+        "docs/source-proxy-design-studio-pivot-20260630/spiritos-design-dna.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/spiritos-design-dna.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/spiritos-design-dna.md:10-19",
+        "docs/source-proxy-design-studio-pivot-20260630/spiritos-design-dna.md:24-37"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.2.2",
+      "scope": "Anti-template checks: visual refs and memory constraints.",
+      "producer": "5.2.1",
+      "consumer": "5.2.3",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-memory-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-memory-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-memory-contract.md:10-19",
+        "docs/source-proxy-design-studio-pivot-20260630/design-memory-contract.md:24-37",
+        "source_proxy/vector/visual_index.py:10-13",
+        "source_proxy/vector/visual_index.py:33-48",
+        "source_proxy/vector/visual_index.py:62-85",
+        "source_proxy/vector/visual_index.py:88-107",
+        "source_proxy/vector/visual_index.py:165-189",
+        "source_proxy/tests/test_visual_index.py:32-36",
+        "source_proxy/tests/test_visual_index.py:50-66",
+        "source_proxy/tests/test_visual_index.py:71-82"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.2.3",
+      "scope": "Anti-template checks: packet drift and manual proof signals.",
+      "producer": "5.2.2",
+      "consumer": "5.3.1",
+      "repo_references": [
+        "src/app/v1/coding/design-vault/preview/route.ts:14-29",
+        "src/app/v1/coding/design-vault/preview/route.ts:37-39",
+        "src/app/coding/design-demo/page.tsx:16",
+        "docs/source-proxy-design-studio-pivot-20260630/design-token-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-token-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-token-contract.md:10-19",
+        "docs/source-proxy-design-studio-pivot-20260630/design-token-contract.md:24-37"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.3.1",
+      "scope": "Uniqueness checks: uniqueness comparison contract.",
+      "producer": "5.2.3",
+      "consumer": "5.3.2",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/design-uniqueness-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-uniqueness-contract.md:3-5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-uniqueness-contract.md:10-18",
+        "docs/source-proxy-design-studio-pivot-20260630/design-uniqueness-contract.md:29-37",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:10-18",
+        "docs/source-proxy-design-studio-pivot-20260630/design-packet-contract.md:24-37"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.3.2",
+      "scope": "Uniqueness checks: repair/rejection downstream consumers.",
+      "producer": "5.3.1",
+      "consumer": "5.3.3",
+      "repo_references": [
+        "source_proxy/decision/artifact_repair_contract.py:6-8",
+        "source_proxy/decision/artifact_repair_contract.py:22-94",
+        "source_proxy/decision/artifact_repair_loop.py:16-47",
+        "source_proxy/decision/artifact_repair_loop.py:50-75",
+        "source_proxy/decision/artifact_repair_loop.py:96-111",
+        "docs/source-proxy-design-studio-pivot-20260630/repair-loop-contract.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/repair-loop-contract.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/repair-loop-contract.md:10-18",
+        "docs/source-proxy-design-studio-pivot-20260630/repair-loop-contract.md:25-37"
+      ],
+      "verdict": "GO"
+    },
+    {
+      "id": "5.3.3",
+      "scope": "Uniqueness checks: Plan 5 closeout and Plan 6 stop line.",
+      "producer": "5.3.2",
+      "consumer": "Plan 5 closeout and next-plan-handoff.md",
+      "repo_references": [
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:3-18",
+        "docs/source-proxy-design-studio-pivot-20260630/codex-self-run-contract.md:25-37",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:1",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:5",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:10-18",
+        "docs/source-proxy-design-studio-pivot-20260630/manual-checks.md:25-37",
+        "docs/source-proxy-design-studio-pivot-20260630/plan-05/plan.md"
+      ],
+      "verdict": "GO"
+    }
+  ],
+  "codex_self_checks": {
+    "path_scope_check": "PASS",
+    "forbidden_path_check": "PASS",
+    "json_status_validity_check": "PASS",
+    "repo_reference_citation_check": "PASS",
+    "fake_go_trap_check": "PASS",
+    "consumed_output_check": "PASS",
+    "unrelated_dirty_files_preserved_check": "PASS"
+  },
+  "manual_britton_check": {
+    "scope": "Plan 5/8 only",
+    "evidence_reviewed": true,
+    "visual_design_acceptance": "not_relevant_no_critic_antitemplate_uniqueness_visual_or_repair_execution_authorized",
+    "authority_boundary_confirmed": true,
+    "fake_go_traps_reviewed": true,
+    "next_increment_allowed": false,
+    "verdict": "PASS"
+  },
+  "remaining_blockers": [
+    "Plan 6 requires explicit future Britton approval.",
+    "Plan 5 does not confer daily-driver GO, critic GO, anti-template GO, uniqueness GO, repair GO, or implementation GO."
+  ],
+  "changed_files_intended": [
+    "docs/source-proxy-design-studio-pivot-20260630/plan-05/status.md",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-05/status.json",
+    "docs/source-proxy-design-studio-pivot-20260630/plan-05/next-plan-handoff.md"
+  ]
+}
