@@ -12,8 +12,13 @@ import CodingCockpitShell, {
   reverseUnifiedDiff,
   snapshotRestored,
   reversibleSuiteExceptionLabel,
+  selectedPrompt3DiffViolations,
+  selectedPromptModelTask,
+  selectedPromptTarget,
+  selectedPromptTaskDescription,
   shouldClearStaleLocalTrialStateAfterCloudClear,
 } from "@/components/coding/CodingCockpitShell";
+import { dummyCoder10Prompts } from "@/lib/coding/dummy-coder-10-prompts";
 
 const navMock = vi.hoisted(() => ({ path: "/coding" }));
 
@@ -304,6 +309,82 @@ describe("CodingCockpitShell", () => {
       expect.arrayContaining(["src/app/**", "source_proxy/**", "package.json", ".env*", ".git/**"]),
     );
     expect(JSON.stringify(body)).not.toMatch(/run_full_suite|25|50|100/i);
+  });
+
+  it("includes selected LumaCart target and scope in the long-running task description", () => {
+    const prompt002 = dummyCoder10Prompts.find((prompt) => prompt.id === "coder-002-add-product-data");
+    expect(prompt002).toBeTruthy();
+
+    const description = selectedPromptTaskDescription(prompt002!);
+
+    expect(description).toContain("Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js");
+    expect(description).toContain("Allowed files: tests/ui-agent-trials/fixtures/dummy-product-site/**");
+    expect(description).toContain("Forbidden files: src/app/**");
+    expect(description).toContain("Pass expectations: Adds at least 6 fake products.");
+    expect(description).toContain("Fail conditions: Edits production files.");
+    expect(description).toContain("Keep all work inside the dummy project root.");
+    expect(description).toContain(prompt002!.submittedPrompt);
+  });
+
+  it("keeps protected path globs out of the selected-prompt model task", () => {
+    const prompt003 = dummyCoder10Prompts.find((prompt) => prompt.id === "coder-003-render-product-cards");
+    expect(prompt003).toBeTruthy();
+
+    const task = selectedPromptModelTask(prompt003!);
+
+    expect(task).toContain("Products render from src/products.js.");
+    expect(task).toContain("Does not hardcode duplicate product cards in HTML.");
+    expect(task).toContain("Hardcodes all cards in HTML.");
+    expect(task).toContain("Render cards dynamically in src/main.js");
+    expect(task).toContain("dynamic import('./products.js')");
+    expect(task).not.toContain("src/app/**");
+    expect(task).not.toContain("source_proxy/**");
+    expect(selectedPromptTarget(prompt003!)).toBe(
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+    );
+  });
+
+  it("rejects Prompt 3 hardcoded card diffs before apply", () => {
+    const hardcodedIndexDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "@@ -10,1 +10,8 @@",
+      "-  <main id=\"product-list\"></main>",
+      "+  <main id=\"product-list\">",
+      "+    <div class=\"card\"><h2>Product Name</h2><p>Description: This is a description of the product.</p></div>",
+      "+  </main>",
+    ].join("\n");
+    const dynamicMainDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "@@ -1,3 +1,6 @@",
+      "+const module = await import('./products.js');",
+      "+const products = module.default ?? module.products ?? [];",
+      "+products.forEach((product) => {",
+      "+  card.className = 'product-card';",
+      "+  category.textContent = product.category;",
+      "+});",
+    ].join("\n");
+
+    expect(selectedPrompt3DiffViolations(hardcodedIndexDiff)).toContain(
+      "hardcoded_or_generic_cards_in_index_html",
+    );
+    expect(selectedPrompt3DiffViolations(dynamicMainDiff)).toEqual([]);
+    expect(
+      selectedPrompt3DiffViolations(
+        [
+          "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "@@ -1,3 +1,6 @@",
+          "+import products from './products.js';",
+          "+card.className = 'product-card';",
+          "+category.textContent = product.category;",
+        ].join("\n"),
+      ),
+    ).toContain("static_products_import_without_module_script_wiring");
   });
 
   it("shows selected-prompt starting state while waiting for backend task id", async () => {

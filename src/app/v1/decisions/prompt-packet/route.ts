@@ -12,7 +12,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const bodyText = await request.text();
+  const startedAt = Date.now();
+  let bodyText = await request.text();
+  bodyText = await enrichPrompt3FixtureContext(bodyText);
   const directDocsOnlyPreview = await docsOnlyPreviewPayload(bodyText, {
     reason_code: "docs_only_bff_direct_preview",
     status: "preview_ready",
@@ -31,17 +33,31 @@ export async function POST(request: Request) {
       method: "POST",
     });
   } catch (error) {
-    return Response.json(
-      {
-        error:
-          "The coding page could not reach the Source proxy. Check that the proxy is running and that SOURCE_PROXY_ORIGIN, SOURCE_PROXY_HOST, and SOURCE_PROXY_PORT point to it.",
-        detail: error instanceof Error ? error.message : "Unknown connection error.",
-      },
-      { status: 502 },
+    return promptPacketTransportBlockedResponse(
+      bodyText,
+      error,
+      "source_proxy_prompt_packet_fetch",
+      startedAt,
+      502,
     );
   }
 
-  const responseText = await response.text();
+  let responseText: string;
+  try {
+    responseText = await response.text();
+  } catch (error) {
+    return promptPacketTransportBlockedResponse(
+      bodyText,
+      error,
+      "source_proxy_prompt_packet_body_read",
+      startedAt,
+      504,
+      {
+        source_proxy_status: response.status,
+        source_proxy_status_text: response.statusText,
+      },
+    );
+  }
   const contentType = response.headers.get("content-type") ?? "application/json";
   let body =
     contentType.includes("application/json") && response.ok
@@ -64,6 +80,109 @@ export async function POST(request: Request) {
 
 type JsonRecord = Record<string, unknown>;
 
+function promptPacketTransportBlockedResponse(
+  bodyText: string,
+  error: unknown,
+  timeoutStage: "source_proxy_prompt_packet_fetch" | "source_proxy_prompt_packet_body_read",
+  startedAt: number,
+  status: number,
+  upstream: JsonRecord = {},
+) {
+  const metadata = promptPacketRequestMetadata(bodyText);
+  const detail = error instanceof Error ? error.message : "Unknown connection error.";
+  const reasonCode =
+    timeoutStage === "source_proxy_prompt_packet_body_read"
+      ? "source_proxy_prompt_packet_body_read_failed"
+      : "source_proxy_prompt_packet_fetch_failed";
+  const errorText =
+    timeoutStage === "source_proxy_prompt_packet_body_read"
+      ? "The coding page lost the Source Proxy long response before a prompt packet body was returned."
+      : "The coding page could not reach the Source Proxy prompt-packet endpoint.";
+
+  return Response.json(
+    {
+      error: errorText,
+      detail,
+      status: "blocked",
+      prompt_packet_status: "blocked",
+      terminal_verdict: "BLOCKED_TIMEOUT",
+      result_label: "BLOCKED",
+      reason_code: reasonCode,
+      blocked_reason: errorText,
+      needed_context:
+        "Retry the selected prompt after checking the active long-running task status; do not treat this as a model-authored diff.",
+      proposed_diff: "",
+      generation_source: "none",
+      scaffold_used: false,
+      fallback_used: false,
+      selected_prompt_id: metadata.selected_prompt_id,
+      selected_prompt_number: metadata.selected_prompt_number,
+      task_id: metadata.task_id,
+      active_task_id: metadata.task_id,
+      selected_target: metadata.selected_target,
+      target: metadata.selected_target,
+      target_files: metadata.target_files,
+      allowed_files: metadata.allowed_files,
+      wants_implementation: metadata.wants_implementation,
+      coder_diagnostics: {
+        ...upstream,
+        timeout_stage: timeoutStage,
+        production_time_ms: Date.now() - startedAt,
+        reason_code: reasonCode,
+        error_type: error instanceof Error ? error.name : typeof error,
+        error_message: detail,
+      },
+    },
+    { status },
+  );
+}
+
+function promptPacketRequestMetadata(bodyText: string) {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(bodyText);
+  } catch {
+    payload = null;
+  }
+  const record = isRecord(payload) ? payload : {};
+  const selectedPromptId =
+    stringFromUnknown(record.selected_prompt_id) ?? stringFromUnknown(record.trial_prompt_id);
+  return {
+    allowed_files: stringArrayFromUnknown(record.allowed_files),
+    selected_prompt_id: selectedPromptId,
+    selected_prompt_number: numberFromUnknown(record.selected_prompt_number) ?? promptNumberFromId(selectedPromptId),
+    selected_target:
+      stringFromUnknown(record.selected_target) ??
+      stringArrayFromUnknown(record.target_files)[0] ??
+      stringFromUnknown(record.target_file) ??
+      "",
+    target_files: stringArrayFromUnknown(record.target_files),
+    task_id:
+      stringFromUnknown(record.active_task_id) ??
+      stringFromUnknown(record.task_id) ??
+      "",
+    wants_implementation: record.wants_implementation === true,
+  };
+}
+
+function stringArrayFromUnknown(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+}
+
+function numberFromUnknown(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function promptNumberFromId(promptId: string | null) {
+  if (!promptId) return null;
+  const match = promptId.match(/coder-00(\d)-/);
+  return match ? Number(match[1]) : null;
+}
+
 async function docsOnlyPreviewPayload(
   _bodyText: string,
   _overrides: JsonRecord,
@@ -76,6 +195,81 @@ async function docsOnlyFallbackPreview(
   _responseBodyText: string,
 ): Promise<string | null> {
   return null;
+}
+
+async function enrichPrompt3FixtureContext(bodyText: string) {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(bodyText);
+  } catch {
+    return bodyText;
+  }
+  if (!isRecord(payload)) return bodyText;
+  const selectedPromptId =
+    stringFromUnknown(payload.selected_prompt_id) ?? stringFromUnknown(payload.trial_prompt_id);
+  if (selectedPromptId !== "coder-003-render-product-cards") return bodyText;
+
+  const context = await readPrompt3FixtureContext();
+  const task = stringFromUnknown(payload.task) ?? stringFromUnknown(payload.prompt) ?? "";
+  const enrichedTask = [
+    task,
+    "",
+    "Prompt 3 fixture context:",
+    "src/products.js is the source of truth. Do not duplicate the product array or hardcode product cards in index.html.",
+    "Render all exported products dynamically in src/main.js. Cards must show name, price, category, and description.",
+    "Current index.html may load src/main.js as a classic script; either provide valid module script wiring or make src/main.js use dynamic import('./products.js') so preview actually runs.",
+    "src/styles.css may be updated for a simple responsive card grid.",
+    `Current index.html:\n${context.indexHtml}`,
+    `Current src/main.js:\n${context.mainJs}`,
+    `Current src/products.js:\n${context.productsJs}`,
+    `Current src/styles.css:\n${context.stylesCss}`,
+  ].filter(Boolean).join("\n");
+  const packet = isRecord(payload.dummy_coder_10_packet)
+    ? { ...payload.dummy_coder_10_packet }
+    : {};
+  const enriched = {
+    ...payload,
+    dummy_coder_10_packet: {
+      ...packet,
+      fixture_context: context,
+      prompt_3_contract: {
+        data_source: "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        required_render_target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        allowed_style_target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        index_contract: "Keep a product-list mount point and script wiring; do not hardcode product cards.",
+        expected_product_count: context.productCount,
+      },
+    },
+    selected_target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+    target_file: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+    task: enrichedTask,
+  };
+  return JSON.stringify(enriched);
+}
+
+async function readPrompt3FixtureContext() {
+  const root = path.join(process.cwd(), "tests/ui-agent-trials/fixtures/dummy-product-site");
+  const [indexHtml, mainJs, productsJs, stylesCss] = await Promise.all([
+    readFixtureContextFile(root, "index.html"),
+    readFixtureContextFile(root, "src/main.js"),
+    readFixtureContextFile(root, "src/products.js"),
+    readFixtureContextFile(root, "src/styles.css"),
+  ]);
+  return {
+    indexHtml,
+    mainJs,
+    productCount: (productsJs.match(/\bid\s*:/g) ?? []).length,
+    productsJs,
+    stylesCss,
+  };
+}
+
+async function readFixtureContextFile(root: string, relativePath: string) {
+  try {
+    return await readFile(path.join(root, relativePath), "utf8");
+  } catch {
+    return "";
+  }
 }
 
 async function enrichProviderModelTruthFromStatus(responseBodyText: string) {

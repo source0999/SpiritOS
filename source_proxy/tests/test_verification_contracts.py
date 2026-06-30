@@ -26,6 +26,16 @@ class VerificationContractTests(unittest.TestCase):
             )
         )
 
+    def test_lumacart_prompt_3_render_task_is_not_subjective_visual_polish(self) -> None:
+        self.assertFalse(
+            task_requests_subjective_improvement(
+                "coder-003-render-product-cards\n"
+                "make the dummy LumaCart page actually show the products as cards.\n"
+                "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js\n"
+                "Implementation notes: src/products.js is the source of truth. Render cards dynamically in src/main.js."
+            )
+        )
+
     def test_visual_diff_line_materiality_filter(self) -> None:
         self.assertTrue(_visual_diff_line_is_non_material("// refined spacing"))
         self.assertTrue(_visual_diff_line_is_non_material("export type Theme = string"))

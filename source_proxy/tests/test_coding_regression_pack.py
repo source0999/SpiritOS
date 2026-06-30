@@ -2895,6 +2895,9 @@ class CodingRegressionPackTests(unittest.TestCase):
         client = self._decision_client()
 
         with (
+            mock.patch.dict(os.environ, {"SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED": "1"}),
+            mock.patch("source_proxy.api.decision._run_fip4_qwen_coder") as fip4_mock,
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet") as fip3_mock,
             mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
             mock.patch(
                 "source_proxy.tasks.long_running._call_coder_llm",
@@ -3023,6 +3026,41 @@ class CodingRegressionPackTests(unittest.TestCase):
         )
         self.assertFalse((self.root / "tests/ui-agent-trials/fixtures/dummy-product-site").exists())
 
+    def test_dummy_product_site_create_mode_reports_already_satisfied_when_starter_files_exist(self) -> None:
+        fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        files = {
+            "README.md": "# LumaCart\nIsolated dummy coder trial fixture.\n",
+            "package.json": '{"name":"lumacart-dummy","private":true}\n',
+            "index.html": '<div id="app">LumaCart</div>\n',
+            "src/main.js": "import { products } from './products.js';\nconsole.log('LumaCart', products.length);\n",
+            "src/products.js": "export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];\n",
+            "src/styles.css": "body { font-family: system-ui; }\n",
+        }
+        for path, content in files.items():
+            target = fixture_root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+        llm_mock = mock.Mock(return_value="this should not be called")
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=llm_mock,
+            model_alias="coder",
+        )
+
+        llm_mock.assert_not_called()
+        self.assertEqual(payload["status"], "already_satisfied")
+        self.assertEqual(payload["reason_code"], "coder_no_changes_needed")
+        self.assertTrue(payload["already_satisfied"])
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertEqual(payload["changed_files"], [])
+        self.assertTrue(payload["coder_diagnostics"]["existing_starter_files_present"])
+        self.assertEqual(
+            payload["coder_diagnostics"]["trial_result_trust_status"],
+            "existing_files_verified_no_diff_needed",
+        )
+
     def test_dummy_product_site_create_mode_accepts_xml_file_blocks(self) -> None:
         files = [
             ("README.md", "# LumaCart\nIsolated dummy coder trial fixture."),
@@ -3051,6 +3089,23 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
         self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "xml_file_blocks")
         self.assertEqual(payload["coder_diagnostics"]["file_block_repair_source"], "xml_file_blocks")
+
+    def test_dummy_product_site_create_mode_times_out_cleanly(self) -> None:
+        def timed_out(_prompt: str, _alias: str) -> str:
+            raise TimeoutError("model load timed out")
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=timed_out,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "coder_model_timeout")
+        self.assertEqual(payload["proposed_diff"], "")
+        self.assertTrue(payload["coder_blocked"])
+        self.assertEqual(payload["coder_diagnostics"]["validation_status"], "coder_model_timeout")
+        self.assertEqual(payload["coder_diagnostics"]["recommended_next_action"], "retry_after_local_coder_model_recovers")
 
     def test_dummy_product_site_create_mode_blocks_caps_and_blacklist_before_diff(self) -> None:
         model_blocks = "\n".join(
@@ -3177,9 +3232,12 @@ class CodingRegressionPackTests(unittest.TestCase):
         ]
 
         with (
+            mock.patch.dict(os.environ, {"SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED": "1"}),
+            mock.patch("source_proxy.api.decision._run_fip4_qwen_coder") as fip4_mock,
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet") as fip3_mock,
             mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
             mock.patch(
-                "source_proxy.tasks.long_running._call_coder_llm",
+                "source_proxy.tasks.long_running._call_dummy_product_site_llm_raw",
                 return_value=json.dumps(
                     {
                         "action": "create_file_bundle",
@@ -3210,6 +3268,8 @@ class CodingRegressionPackTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200, response.text)
         payload = response.json()
+        fip4_mock.assert_not_called()
+        fip3_mock.assert_not_called()
         self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
         self.assertEqual(payload["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/")
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/README.md", payload["changed_files"])
@@ -3221,6 +3281,120 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["diagnostics_summary"]["structured_output_mode"], "json_create_file_bundle")
         self.assertEqual(payload["diagnostics_summary"]["content_validation"]["ok"], True)
         self.assertEqual(payload["diagnostics_summary"]["structured_honesty_gate"]["status"], "passed")
+
+    def test_prompt_packet_coder_003_builds_fixture_context_packet(self) -> None:
+        client = self._decision_client()
+        fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        _write(
+            fixture_root / "index.html",
+            "\n".join(
+                [
+                    "<!doctype html>",
+                    '<main id="product-list"></main>',
+                    '<script type="module" src="src/main.js"></script>',
+                ]
+            )
+            + "\n",
+        )
+        _write(
+            fixture_root / "src/main.js",
+            "\n".join(
+                [
+                    "import products from './products.js';",
+                    "const list = document.querySelector('#product-list');",
+                    "products.forEach((product) => {",
+                    "  const card = document.createElement('div');",
+                    "  card.textContent = product.name;",
+                    "  list.appendChild(card);",
+                    "});",
+                ]
+            )
+            + "\n",
+        )
+        _write(
+            fixture_root / "src/products.js",
+            "\n".join(
+                [
+                    "const products = [",
+                    "  { id: 'a', name: 'Product A', category: 'Lighting', description: 'Desk light', price: '$20' },",
+                    "  { id: 'b', name: 'Product B', category: 'Storage', description: 'Shelf', price: '$35' },",
+                    "];",
+                    "export default products;",
+                ]
+            )
+            + "\n",
+        )
+        _write(fixture_root / "src/styles.css", ".product-card { display: block; }\n")
+        model_json = json.dumps(
+            {
+                "action": "replace_file",
+                "target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+                "content_lines": [
+                    "const list = document.querySelector('#product-list');",
+                    "async function renderProducts() {",
+                    "const module = await import('./products.js');",
+                    "const products = module.default ?? module.products ?? [];",
+                    "list.innerHTML = '';",
+                    "products.forEach((product) => {",
+                    "  const card = document.createElement('article');",
+                    "  card.className = 'product-card';",
+                    "  card.innerHTML = `<h2>${product.name}</h2><p>${product.category}</p><p>${product.description}</p><strong>${product.price}</strong>`;",
+                    "  list.appendChild(card);",
+                    "});",
+                    "}",
+                    "renderProducts();",
+                ],
+                "notes": "Render product cards from products.js.",
+            }
+        )
+
+        with (
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet", return_value={}),
+            mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
+            mock.patch("source_proxy.tasks.long_running._call_coder_llm", return_value=model_json),
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js\n"
+                        "Render LumaCart product cards from src/products.js.\n\n"
+                        "Prompt 3 fixture context:\n"
+                        "Current index.html includes UTF-8, viewport, stylesheet, src/styles.css, and Welcome to LumaCart.\n"
+                        "Current src/products.js includes Product A, Electronics, and This is product A."
+                    ),
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_PRODUCTS_RENDERED",
+                    "selected_prompt_id": "coder-003-render-product-cards",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertNotEqual(payload["reason_code"], "coder_packet_missing_context")
+        self.assertEqual(payload["status"], "preview_ready")
+        self.assertEqual(payload["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js")
+        self.assertIn("product-card", payload["proposed_diff"])
+        self.assertIn("src/products.js", payload["relevant_context"])
+        self.assertEqual(payload["diagnostics_summary"]["trial_result_trust_status"], "model_authored_diff_proven")
+        self.assertNotEqual(payload["reason_code"], "coder_visual_improvement_diff_too_shallow")
+        self.assertNotIn("import { products }", payload["task_spec"]["literal_requirements"])
+        self.assertIn("import(", payload["task_spec"]["literal_requirements"])
+        self.assertIn("./products.js", payload["task_spec"]["literal_requirements"])
+        self.assertNotIn("Product A", payload["task_spec"]["literal_requirements"])
+        self.assertNotIn("viewport", payload["task_spec"]["literal_requirements"])
+        self.assertEqual(payload["task_spec"]["task_type"], "modify_existing_file")
+        context_paths = [
+            item["path"]
+            for item in payload["coder_packet"]["context_slices"]
+            if isinstance(item, dict)
+        ]
+        self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", context_paths)
+        self.assertTrue(payload["coder_packet"]["target_file"]["exists"])
 
     def test_prompt_packet_coder_001_accepts_xml_file_blocks_and_reports_contract(self) -> None:
         client = self._decision_client()

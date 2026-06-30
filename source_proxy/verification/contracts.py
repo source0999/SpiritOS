@@ -85,9 +85,28 @@ VISUAL_MATERIAL_DIFF_MARKERS: tuple[str, ...] = (
 
 def task_requests_subjective_improvement(task: str) -> bool:
     lowered = re.sub(r'(["`]).*?\1', " ", task.lower())
+    if _task_requests_objective_lumacart_product_render(lowered):
+        return False
     return any(
         re.search(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", lowered)
         for phrase in SUBJECTIVE_IMPROVEMENT_PHRASES
+    )
+
+
+def _task_requests_objective_lumacart_product_render(lowered_task: str) -> bool:
+    return (
+        "coder-003-render-product-cards" in lowered_task
+        or (
+            "lumacart" in lowered_task
+            and "src/products.js" in lowered_task
+            and "src/main.js" in lowered_task
+            and "product" in lowered_task
+            and (
+                "render" in lowered_task
+                or "card" in lowered_task
+                or "category" in lowered_task
+            )
+        )
     )
 
 

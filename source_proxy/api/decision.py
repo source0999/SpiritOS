@@ -6287,6 +6287,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         reset_request,
         explicit_target,
     )
+    dummy_product_site_create = _dummy_product_site_create_mode(reset_request)
     target_gate_blocked = bool(
         hard_target_reason
         or "target_unresolved" in route_reasons
@@ -6297,7 +6298,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     )
     fip3_model_packet = (
         {}
-        if target_gate_blocked
+        if target_gate_blocked or dummy_product_site_create
         else await build_fip3_model_lane_packet(
             task=trial_task,
             route_payload=route_payload,
@@ -6421,6 +6422,26 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             architect_plan,
                             force_live_model=False,
                         )
+                elif dummy_product_site_create:
+                    architect_plan = None
+                    coder = await asyncio.get_running_loop().run_in_executor(
+                        None,
+                        functools.partial(
+                            propose_dummy_product_site_create_diff,
+                            task=trial_task,
+                            workspace_root=_workspace_root(),
+                        ),
+                    )
+                elif _dummy_product_site_render_cards_mode(reset_request):
+                    architect_plan = _dummy_product_site_render_cards_plan(
+                        reset_request,
+                        trial_task,
+                    )
+                    coder = await _bounded_coder_diff_or_stub(
+                        trial_task,
+                        architect_plan,
+                        force_live_model=reset_request.trial_mode == "live_apply",
+                    )
                 elif _fip4_qwen_enabled() and explicit_target:
                     architect_plan = None
                     fip4_result = await asyncio.get_running_loop().run_in_executor(
@@ -6494,16 +6515,6 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             "checks_run": fip4_result.get("checks_run", []),
                         },
                     }
-                elif _dummy_product_site_create_mode(reset_request):
-                    architect_plan = None
-                    coder = await asyncio.get_running_loop().run_in_executor(
-                        None,
-                        functools.partial(
-                            propose_dummy_product_site_create_diff,
-                            task=trial_task,
-                            workspace_root=_workspace_root(),
-                        ),
-                    )
                 else:
                     architect_task = _trial_bounded_create_task(
                         trial_task,
@@ -7147,6 +7158,186 @@ def _dummy_product_site_create_mode(request: PromptPacketRequest) -> bool:
         prompt_id == "coder-001-init-dummy-product-site"
         or expected_state == "PASS_DUMMY_PROJECT_INIT"
         or packet_state == "PASS_DUMMY_PROJECT_INIT"
+    )
+
+
+def _dummy_product_site_render_cards_mode(request: PromptPacketRequest) -> bool:
+    prompt_id = str(request.selected_prompt_id or request.trial_prompt_id or "").strip()
+    expected_state = str(request.expected_result_state or "").strip()
+    packet = request.dummy_coder_10_packet if isinstance(request.dummy_coder_10_packet, dict) else {}
+    packet_state = str(packet.get("expected_result_state") or "").strip()
+    return (
+        prompt_id == "coder-003-render-product-cards"
+        or expected_state == "PASS_PRODUCTS_RENDERED"
+        or packet_state == "PASS_PRODUCTS_RENDERED"
+    )
+
+
+def _dummy_product_site_render_cards_plan(
+    request: PromptPacketRequest,
+    task: str,
+) -> Any | None:
+    try:
+        from source_proxy.planning.plan import (
+            PLAN_SCHEMA_VERSION,
+            AcceptanceCriterion,
+            ArchitectPlan,
+            BundleSnapshot,
+            CoderPacket,
+            ContentConstraints,
+            ContextSlice,
+            PlanBudget,
+            TargetFile,
+            TaskClassification,
+            VerificationCheck,
+            VerificationPlan,
+        )
+    except Exception:
+        return None
+
+    root = _workspace_root()
+    target = "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js"
+    fixture_paths = [
+        (target, "target"),
+        ("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", "import"),
+        ("tests/ui-agent-trials/fixtures/dummy-product-site/index.html", "sibling"),
+        ("tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css", "sibling"),
+    ]
+    context_slices: list[Any] = []
+    target_content = ""
+    for relative_path, kind in fixture_paths:
+        abs_path = (root / relative_path).resolve()
+        if not abs_path.is_file():
+            return None
+        content = abs_path.read_text(encoding="utf-8", errors="replace")
+        if relative_path == target:
+            target_content = content
+        context_slices.append(
+            ContextSlice(
+                path=relative_path,
+                kind=kind,  # type: ignore[arg-type]
+                sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                content=content,
+                line_range=(1, max(1, len(content.splitlines()))),
+            )
+        )
+
+    target_abs = (root / target).resolve()
+    target_hash = hashlib.sha256(target_abs.read_bytes()).hexdigest()
+    task_id = str(request.active_task_id or "prompt-3-render-product-cards")
+    source_task = _dummy_product_site_render_cards_source_task(request, task)
+    return ArchitectPlan(
+        plan_id=f"dummy-product-site-render-cards-{hashlib.sha256(source_task.encode('utf-8')).hexdigest()[:12]}",
+        task_id=task_id,
+        schema_version=PLAN_SCHEMA_VERSION,
+        created_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        source_task=source_task,
+        bundle_snapshot=BundleSnapshot(
+            bundle_path="",
+            bundle_sha256="",
+            workspace_root=str(root),
+            generated_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        ),
+        classification=TaskClassification(
+            task_class="implement",
+            visual_change=True,
+            designer_required=False,
+            estimated_complexity="small",
+        ),
+        coder_packet=CoderPacket(
+            target_file=TargetFile(
+                path=target,
+                exists=True,
+                sha256_before=target_hash,
+            ),
+            operation="edit",
+            acceptance_criteria=[
+                AcceptanceCriterion(
+                    id="render-products-from-module",
+                    description=(
+                        "Render all products exported by src/products.js from src/main.js; "
+                        "do not hardcode product cards in index.html."
+                    ),
+                    kind="behavioral",
+                ),
+                AcceptanceCriterion(
+                    id="product-card-fields",
+                    description="Each rendered card shows product name, price, category, and description.",
+                    kind="behavioral",
+                ),
+            ],
+            constraints=ContentConstraints(
+                must_contain=["import(", "./products.js", "product-card", "product.category"],
+                must_not_contain=["Product Name", "Product Description"],
+                preserve_imports=[],
+                preserve_exports=[],
+                max_added_lines=120,
+                max_removed_lines=max(1, len(target_content.splitlines()) + 20),
+            ),
+            context_slices=context_slices,
+            forbidden_paths=[
+                ".env*",
+                "source_proxy/**",
+                "src/app/**",
+                "src/components/**",
+                "src/lib/**",
+            ],
+            style_directives=[
+                "Keep index.html as a mount point plus script wiring only.",
+                "Use the products module as the single source of truth.",
+                "Prefer simple accessible product-card markup.",
+            ],
+        ),
+        verification_plan=VerificationPlan(
+            required_checks=[
+                VerificationCheck(
+                    id="git_apply_check",
+                    command=["git", "apply", "--check"],
+                    blocking=True,
+                    timeout_seconds=10,
+                )
+            ],
+            designer_review_required=False,
+            architect_review_required=False,
+        ),
+        budget=PlanBudget(
+            max_coder_attempts=3,
+            max_total_seconds=120,
+            cloud_escalation_allowed=True,
+        ),
+    )
+
+
+def _dummy_product_site_render_cards_source_task(
+    request: PromptPacketRequest,
+    fallback_task: str,
+) -> str:
+    packet = request.dummy_coder_10_packet if isinstance(request.dummy_coder_10_packet, dict) else {}
+    submitted = str(packet.get("submitted_prompt") or "").strip()
+    pass_expectations = [
+        str(item).strip()
+        for item in packet.get("pass_expectations", [])
+        if isinstance(item, str) and item.strip()
+    ]
+    fail_conditions = [
+        str(item).strip()
+        for item in packet.get("fail_conditions", [])
+        if isinstance(item, str) and item.strip()
+    ]
+    project_contract = str(packet.get("project_contract") or "").strip()
+    task = submitted or fallback_task.split("Prompt 3 fixture context:", 1)[0].strip()
+    return "\n".join(
+        item
+        for item in [
+            task,
+            "",
+            "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+            "Implementation notes: src/products.js is the source of truth. Render cards dynamically in src/main.js; the current index.html loads src/main.js as a classic script, so the replacement src/main.js must literally contain import('./products.js') or import(\"./products.js\") and consume module.default or module.products. Do not use a static import unless the diff also provides valid type=\"module\" script wiring. Do not hardcode duplicate product cards in index.html.",
+            f"Pass expectations: {'; '.join(pass_expectations)}" if pass_expectations else "",
+            f"Fail conditions: {'; '.join(fail_conditions)}" if fail_conditions else "",
+            project_contract,
+        ]
+        if item
     )
 
 

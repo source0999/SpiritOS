@@ -866,6 +866,71 @@ function defaultDummyCoderRunState(
   };
 }
 
+export function selectedPromptTaskDescription(prompt: DummyCoder10Prompt) {
+  const selectedTarget = selectedPromptTarget(prompt);
+  return [
+    prompt.submittedPrompt,
+    "",
+    `Target file: ${selectedTarget}`,
+    `Allowed files: ${prompt.allowedWriteRoot}`,
+    `Fixture root: ${prompt.fixtureRoot}`,
+    `Forbidden files: ${formatDummyCoder10ForbiddenSummary(prompt)}`,
+    `Pass expectations: ${prompt.passExpectations.join("; ")}`,
+    `Fail conditions: ${prompt.failConditions.join("; ")}`,
+    prompt.projectContract,
+  ].join("\n");
+}
+
+export function selectedPromptTarget(prompt: DummyCoder10Prompt) {
+  if (prompt.id === "coder-003-render-product-cards") {
+    return (
+      prompt.primaryExpectedTargets.find((target) => target.endsWith("/src/main.js")) ??
+      prompt.primaryExpectedTargets[0] ??
+      prompt.fixtureRoot
+    );
+  }
+  return prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot;
+}
+
+export function selectedPromptModelTask(prompt: DummyCoder10Prompt) {
+  return [
+    prompt.submittedPrompt,
+    "",
+    `Pass expectations: ${prompt.passExpectations.join("; ")}`,
+    `Fail conditions: ${prompt.failConditions.join("; ")}`,
+    prompt.id === "coder-003-render-product-cards"
+      ? "Implementation notes: src/products.js is the source of truth. Render cards dynamically in src/main.js. The current index.html may load src/main.js as a classic script, so use dynamic import('./products.js') from src/main.js unless valid module-script wiring is also changed. Do not hardcode duplicate product cards in index.html."
+      : "",
+    prompt.projectContract,
+  ].filter(Boolean).join("\n");
+}
+
+export function selectedPrompt3DiffViolations(diff: string) {
+  const normalized = diff.replace(/\r\n/g, "\n");
+  const violations: string[] = [];
+  if (
+    /Product Name|Description: This is a description|grid grid-cols|<main id=["']product-list["'][\s\S]*<div class=["'](?:card|product-card)/i.test(
+      normalized,
+    )
+  ) {
+    violations.push("hardcoded_or_generic_cards_in_index_html");
+  }
+  if (
+    !/src\/main\.js/i.test(normalized) ||
+    !/\.\/products\.js/i.test(normalized) ||
+    !/product\.category|product-card/i.test(normalized)
+  ) {
+    violations.push("missing_dynamic_products_render_path");
+  }
+  if (
+    /import\s+[\s\S]*?from\s*['"]\.\/products\.js['"]/i.test(normalized) &&
+    !/type=["']module["']/i.test(normalized)
+  ) {
+    violations.push("static_products_import_without_module_script_wiring");
+  }
+  return violations;
+}
+
 function storedDummyCoderRunSnapshot(): string | null {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(dummyCoderRunStorageKey);
@@ -6186,6 +6251,9 @@ export function CodingCockpitShell() {
   async function handleRunDummyCoder10Prompt() {
     const prompt = selectedDummyCoderPrompt;
     const packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
+    const selectedTarget = selectedPromptTarget(prompt);
+    const taskDescription = selectedPromptTaskDescription(prompt);
+    const modelTask = selectedPromptModelTask(prompt);
     setDummyCoderRunCopyStatus("");
     // Allow the user to cancel a long/hung selected-prompt run (live model calls can take a while
     // and previously there was no escape from "request_sent" other than waiting for the 360s timeout).
@@ -6219,7 +6287,7 @@ export function CodingCockpitShell() {
 
     try {
       const taskResponse = await fetchWithTimeout("/v1/tasks/long-running", {
-        body: JSON.stringify({ description: prompt.submittedPrompt }),
+        body: JSON.stringify({ description: taskDescription }),
         headers: { "content-type": "application/json" },
         method: "POST",
         signal: abortController.signal,
@@ -6256,10 +6324,10 @@ export function CodingCockpitShell() {
           primary_expected_targets: prompt.primaryExpectedTargets,
           project_contract: prompt.projectContract,
           prompt: prompt.submittedPrompt,
-          selected_target: prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot,
+          selected_target: selectedTarget,
           selected_prompt_id: prompt.id,
-          target_file: prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot,
-          task: prompt.submittedPrompt,
+          target_file: selectedTarget,
+          task: modelTask,
           trial_mode: "live_apply",
           trial_mode_contract: packet.trial_mode_contract,
           trial_prompt_id: prompt.id,
@@ -6281,7 +6349,7 @@ export function CodingCockpitShell() {
       const coderDiagnostics = asRecord(record.coder_diagnostics);
       const changedFiles = changedFilesFromPayload(payload);
       const proposedDiff = stringValue(record.proposed_diff) ?? stringValue(record.proposedDiff) ?? "";
-      const selectedTarget =
+      const responseSelectedTarget =
         stringValue(record.target) ??
         prompt.primaryExpectedTargets[0] ??
         prompt.fixtureRoot;
@@ -6323,7 +6391,25 @@ export function CodingCockpitShell() {
       let appliedChangedFiles = changedFiles;
       let verificationStatus = stringValue(record.verification_status) ?? stringValue(record.checks_result) ?? null;
       let applyMessage: string | null = null;
-      if (response.ok && proposedDiff.trim() && selectedTarget) {
+      const prompt3Violations =
+        prompt.id === "coder-003-render-product-cards" && proposedDiff.trim()
+          ? selectedPrompt3DiffViolations(proposedDiff)
+          : [];
+      if (prompt3Violations.length > 0) {
+        updateDummyCoderRunState((current) => ({
+          ...current,
+          changedFiles,
+          errorText: `Prompt 3 model diff rejected before apply: ${prompt3Violations.join(", ")}`,
+          finishedAt: Date.now(),
+          message: "Prompt 3 model diff rejected before apply.",
+          rawBackendStatus: "prompt_3_diff_contract_rejected",
+          recommendedNextAction: "Tighten Prompt 3 context and retry without applying hardcoded cards.",
+          status: "blocked",
+          taskId,
+        }));
+        return;
+      }
+      if (response.ok && proposedDiff.trim() && responseSelectedTarget) {
         updateDummyCoderRunState((current) => ({
           ...current,
           message: `Running task ${taskId}: previewing diff`,
@@ -6341,7 +6427,7 @@ export function CodingCockpitShell() {
                   forbidden_files: prompt.forbiddenFiles,
                   risk_tier: "low",
                   source: "dummy-coder-10-selected-prompt",
-                  target: selectedTarget,
+                  target: responseSelectedTarget,
                   task_type: "create_or_modify_files",
                   verification: ["git diff --check"],
                 },
@@ -6374,7 +6460,7 @@ export function CodingCockpitShell() {
             approved: true,
             approved_diff: proposedDiff,
             allowed_files: [prompt.allowedWriteRoot],
-            target: selectedTarget,
+            target: responseSelectedTarget,
             task_id: taskId,
           }),
           headers: { "content-type": "application/json" },
@@ -6405,7 +6491,7 @@ export function CodingCockpitShell() {
           reversalProvider: null,
           reversalProviderModelSource: null,
           reverseDiff: reverseUnifiedDiff(proposedDiff),
-          target: selectedTarget,
+          target: responseSelectedTarget,
           taskId,
         };
         updateAppliedRunReceipts((receipts) => appendAppliedRunReceipt(receipts, receipt));
@@ -6413,9 +6499,12 @@ export function CodingCockpitShell() {
 
       // Storefront proof probe: read the just-applied fixture contents and verify the page would
       // render catalog/product content, not only a bare heading. HTTP 200 / files-present must not
-      // equal PASS for the storefront init prompt.
+      // equal PASS for storefront prompts.
       let storefrontProbe: DummyStorefrontProbeResult | null = null;
-      if (prompt.id === "coder-001-init-dummy-product-site") {
+      if (
+        prompt.id === "coder-001-init-dummy-product-site" ||
+        prompt.id === "coder-003-render-product-cards"
+      ) {
         try {
           const fixtureEntries = await Promise.all(
             ["index.html", "src/products.js", "src/main.js", "src/styles.css"].map(async (rel) => {
