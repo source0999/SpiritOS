@@ -27,6 +27,7 @@ DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_GEMMA_MODEL = "gemma3n:e4b"
 DEFAULT_HERMES_MODEL = "hermes4:latest"
 DEFAULT_QWEN_CODER_MODEL = "qwen2.5-coder:7b"
+DEFAULT_QWEN_14B_CHALLENGER_MODEL = "qwen2.5-coder:14b"
 DEFAULT_ORNITH_CHALLENGER_MODEL = "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M"
 
 
@@ -50,7 +51,7 @@ class ModelLane:
 
 
 def model_lane_registry() -> dict[str, Any]:
-    lanes = [_qwen(), _ornith_challenger(), _hermes(), _gemma(), _manual_handoff(), _cloud_future()]
+    lanes = [_qwen(), _qwen_14b_challenger(), _ornith_challenger(), _hermes(), _gemma(), _manual_handoff(), _cloud_future()]
     return {
         "registry_version": MODEL_LANE_REGISTRY_VERSION,
         "mode": "metadata_only_no_model_calls",
@@ -59,6 +60,7 @@ def model_lane_registry() -> dict[str, Any]:
         "promotion_policy": "evidence_driven_operator_review",
         "global_rules": [
             "qwen_local_coder remains the primary coding/action lane",
+            "qwen14b_coder_challenger is benchmark-prep only until comparative evidence promotes it",
             "ornith_coder_challenger is benchmark-prep only until comparative evidence promotes it",
             "preview/future sidecars cannot edit files",
             "preview/future sidecars cannot declare product success without behavior evidence",
@@ -819,6 +821,44 @@ def _qwen() -> ModelLane:
         evidence_required_for_promotion=["behavior retest results", "receipt evidence", "false-positive audit"],
         known_failure_modes=["malformed action JSON", "weak UI state changes", "missing behavior evidence"],
         promotion_status="primary_preserved_not_promoted_by_this_task",
+    )
+
+
+def _qwen_14b_challenger() -> ModelLane:
+    model = (
+        os.environ.get("SOURCE_PROXY_QWEN14B_CHALLENGER_OLLAMA_MODEL", "").strip()
+        or DEFAULT_QWEN_14B_CHALLENGER_MODEL
+    )
+    return ModelLane(
+        lane_id="qwen14b_coder_challenger",
+        display_name="Qwen 14B coder challenger",
+        role="coder/repair/workflow challenger",
+        status="installed_challenger_benchmark_prep_only",
+        allowed_uses=[
+            "future Qwen-7B-vs-Qwen-14B-vs-Ornith benchmark comparison",
+            f"explicit challenger smoke or benchmark runs using {model}",
+        ],
+        disallowed_uses=[
+            "default coding lane",
+            "silent replacement for qwen_local_coder",
+            "production routing without benchmark evidence and operator approval",
+            "declaring superiority before identical-prompt benchmark evidence",
+        ],
+        cost_class="local_compute_heavier_runtime",
+        privacy_class="local",
+        approval_required="explicit_benchmark_or_operator_selection_required",
+        evidence_required_for_promotion=[
+            "Qwen 7B vs Qwen 14B vs Ornith identical-prompt benchmark receipts",
+            "coder, repair, workflow organizer, closeout, and verifier-support role results",
+            "VRAM/RAM stability evidence on RTX 3060 12GB",
+            "false-positive and no-diff failure audit",
+        ],
+        known_failure_modes=[
+            "slow cold-load latency",
+            "higher VRAM pressure than qwen_local_coder",
+            "unproven SpiritOS coding contract behavior",
+        ],
+        promotion_status="not_promoted_challenger_only",
     )
 
 

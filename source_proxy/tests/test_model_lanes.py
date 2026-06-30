@@ -22,6 +22,7 @@ def test_model_lane_registry_is_metadata_only_and_preserves_qwen_primary() -> No
     lane_ids = {lane["lane_id"] for lane in registry["lanes"]}
     assert {
         "qwen_local_coder",
+        "qwen14b_coder_challenger",
         "ornith_coder_challenger",
         "hermes_sidecar_verifier_preview",
         "gemma_sidecar_context_preview",
@@ -53,6 +54,18 @@ def test_ornith_challenger_is_not_primary_or_silent_replacement() -> None:
     assert "silent replacement for qwen_local_coder" in ornith["disallowed_uses"]
 
 
+def test_qwen14b_challenger_is_not_primary_or_silent_replacement() -> None:
+    registry = model_lane_registry()
+    qwen14b = get_model_lane("qwen14b_coder_challenger")
+
+    assert registry["primary_coder_lane"] == "qwen_local_coder"
+    assert qwen14b["status"] == "installed_challenger_benchmark_prep_only"
+    assert qwen14b["privacy_class"] == "local"
+    assert qwen14b["cost_class"] == "local_compute_heavier_runtime"
+    assert qwen14b["promotion_status"] == "not_promoted_challenger_only"
+    assert "silent replacement for qwen_local_coder" in qwen14b["disallowed_uses"]
+
+
 def test_lane_selection_observability_does_not_swap_primary_lane() -> None:
     observability = lane_selection_observability(task_type="disposable_artifact")
 
@@ -69,6 +82,7 @@ def test_model_lanes_preview_is_inspectable_without_execution() -> None:
     assert preview["would_call_models"] is False
     assert preview["would_start_workers"] is False
     assert preview["active_primary_lane"] == "qwen_local_coder"
+    assert "qwen14b_coder_challenger" in {lane["lane_id"] for lane in preview["available_lanes"]}
     assert "ornith_coder_challenger" in {lane["lane_id"] for lane in preview["available_lanes"]}
     assert "hermes_sidecar_verifier_preview" in preview["future_sidecar_lanes"]
     assert preview["verifier_requirement"] is True
