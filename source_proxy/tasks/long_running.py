@@ -842,6 +842,20 @@ def _task_has_pre_execution_safety_block(task: LongRunningTask) -> bool:
     return False
 
 
+def _task_is_abandoned_pre_preview_write_lock(task: LongRunningTask) -> bool:
+    if task.status != "queued":
+        return False
+    if task.current_agent_role != "architect" or task.architect_status != "idle":
+        return False
+    if task.open_diffs or task.causal_events:
+        return False
+    try:
+        created = datetime.fromisoformat(task.created_at)
+    except ValueError:
+        return False
+    return (datetime.now(UTC) - created).total_seconds() > 15 * 60
+
+
 def get_long_running_task_snapshot(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
     return _task_envelope(task)
@@ -2818,6 +2832,7 @@ def _save_task(task: LongRunningTask) -> None:
             ON CONFLICT(id) DO UPDATE SET
                 description = excluded.description,
                 status = excluded.status,
+                created_at = excluded.created_at,
                 updated_at = excluded.updated_at,
                 cancelled_at = excluded.cancelled_at,
                 steps_json = excluded.steps_json,
@@ -3131,10 +3146,16 @@ def _live_long_running_tasks() -> list[LongRunningTask]:
     combined: dict[str, LongRunningTask] = {
         task.id: task
         for task in _load_recent_tasks(limit=MAX_LONG_TASKS)
-        if task.status not in terminal and not _task_has_pre_execution_safety_block(task)
+        if task.status not in terminal
+        and not _task_has_pre_execution_safety_block(task)
+        and not _task_is_abandoned_pre_preview_write_lock(task)
     }
     for task in _tasks.values():
-        if task.status not in terminal and not _task_has_pre_execution_safety_block(task):
+        if (
+            task.status not in terminal
+            and not _task_has_pre_execution_safety_block(task)
+            and not _task_is_abandoned_pre_preview_write_lock(task)
+        ):
             combined[task.id] = task
     return list(combined.values())
 

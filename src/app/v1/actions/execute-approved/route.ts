@@ -331,6 +331,7 @@ async function applySelectedDummyCoderDiff(input: {
   } finally {
     await rm(tempDir, { force: true, recursive: true });
   }
+  const trackerUpdate = await markSelectedDummyTaskApplied(input.taskId, input.changedFiles);
   const now = new Date().toISOString();
   return {
     action: input.action,
@@ -346,6 +347,7 @@ async function applySelectedDummyCoderDiff(input: {
     },
     status: "applied",
     target: input.target,
+    task_tracker_update: trackerUpdate,
     task: {
       causal_trace: {
         consumer_event_id: `selected_dummy_disk_${diffHashForApprovedDiff(input.approvedDiff).slice(0, 12)}`,
@@ -362,6 +364,36 @@ async function applySelectedDummyCoderDiff(input: {
     },
     updated_at: now,
   };
+}
+
+async function markSelectedDummyTaskApplied(taskId: string, changedFiles: string[]) {
+  try {
+    const response = await sourceProxyFetch(
+      `/v1/tasks/long-running/${encodeURIComponent(taskId)}/selected-dummy-applied`,
+      {
+        body: JSON.stringify({
+          changed_files: changedFiles,
+          reason_code: "selected_dummy_apply_completed",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+    const responseText = await response.text();
+    return {
+      ok: response.ok,
+      status: response.status,
+      task_id: taskId,
+      body: responseText.slice(0, 1000),
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error),
+      ok: false,
+      status: 0,
+      task_id: taskId,
+    };
+  }
 }
 
 async function recordTrialApplyProof(input: {

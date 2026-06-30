@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from contextlib import closing
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -269,6 +270,30 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(retry["task"]["scope_key"], "source_proxy/main.py")
         self.assertNotEqual(retry["task"]["architect_reason"], "write_scope_conflict")
 
+    def test_create_ignores_abandoned_pre_preview_write_lock_on_same_scope(self) -> None:
+        stale = create_long_running_task(
+            "Target file: source_proxy/main.py\nUpdate implementation."
+        )
+        old = (datetime.now(UTC) - timedelta(minutes=20)).isoformat()
+        update_long_running_task(
+            stale["task"]["id"],
+            status="queued",
+            current_agent_role="architect",
+            architect_status="idle",
+            architect_reason="",
+            open_diffs=[],
+            causal_events=[],
+            created_at=old,
+        )
+
+        retry = create_long_running_task(
+            "Target file: source_proxy/main.py\nRetry the same implementation."
+        )
+
+        self.assertEqual(retry["task"]["status"], "queued")
+        self.assertEqual(retry["task"]["scope_key"], "source_proxy/main.py")
+        self.assertNotEqual(retry["task"]["architect_reason"], "write_scope_conflict")
+
     def test_create_allows_read_only_parallel_review_on_same_scope(self) -> None:
         first = create_long_running_task(
             "Target file: source_proxy/main.py\nUpdate implementation."
@@ -392,6 +417,37 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
 
         self.assertEqual(cancelled.status_code, 200)
         self.assertEqual(cancelled.json()["task"]["status"], "cancelled")
+
+    def test_router_marks_selected_dummy_apply_completed(self) -> None:
+        app = FastAPI()
+        app.include_router(long_running_tasks_router)
+        client = TestClient(app)
+
+        created = client.post(
+            "/v1/tasks/long-running",
+            json={
+                "description": (
+                    "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js\n"
+                    "Add LumaCart product data."
+                )
+            },
+        )
+        task_id = created.json()["task"]["id"]
+        response = client.post(
+            f"/v1/tasks/long-running/{task_id}/selected-dummy-applied",
+            json={
+                "changed_files": [
+                    "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"
+                ]
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()["task"]
+        self.assertEqual(payload["status"], "completed")
+        self.assertEqual(payload["architect_status"], "completed")
+        self.assertEqual(payload["architect_reason"], "selected_dummy_apply_completed")
+        self.assertIn("selected_dummy_apply_completed", payload["truncated_test_results"])
 
     def test_router_returns_saved_architect_plan(self) -> None:
         app = FastAPI()

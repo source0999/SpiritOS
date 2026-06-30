@@ -75,7 +75,10 @@ describe("coding dummy-product-site preview handler", () => {
     expect(text).toContain("Product B");
     expect(text).toContain("$19.99");
     // The module script is still loaded as type=module so the interactive path is preserved.
-    expect(text).toMatch(/<script\b[^>]*type="module"[^>]*src="src\/main\.js"/);
+    expect(text).toContain('href="/v1/coding/dummy-product-site-preview/src/styles.css"');
+    expect(text).toMatch(
+      /<script\b[^>]*type="module"[^>]*src="\/v1\/coding\/dummy-product-site-preview\/src\/main\.js"/,
+    );
   });
 
   it("serves relative fixture assets (src/styles.css, src/main.js) with correct content types", async () => {

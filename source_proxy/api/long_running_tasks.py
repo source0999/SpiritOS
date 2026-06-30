@@ -20,6 +20,7 @@ from source_proxy.tasks.long_running import (
     list_long_running_tasks,
     record_post_apply_verification,
     reject_long_running_task_plan,
+    update_long_running_task,
 )
 
 router = APIRouter(prefix="/v1/tasks")
@@ -56,6 +57,11 @@ class LongRunningTaskVerificationRequest(BaseModel):
     run_code_verification: bool = False
     skip_reason: str | None = Field(default=None, max_length=1000)
     verification_note: str | None = Field(default=None, max_length=1000)
+
+
+class LongRunningTaskSelectedDummyApplyRequest(BaseModel):
+    changed_files: list[str] = Field(default_factory=list)
+    reason_code: str = Field(default="selected_dummy_apply_completed", max_length=120)
 
 
 class LongRunningTaskRejectPlanRequest(BaseModel):
@@ -299,6 +305,30 @@ async def long_running_task_verify(
 async def long_running_task_cancel(task_id: str) -> dict[str, Any]:
     try:
         return cancel_long_running_task(task_id)
+    except LongRunningTaskError as error:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": str(error), "reason_code": error.reason_code},
+        ) from error
+
+
+@router.post("/long-running/{task_id}/selected-dummy-applied")
+async def long_running_task_selected_dummy_applied(
+    task_id: str,
+    request: LongRunningTaskSelectedDummyApplyRequest,
+) -> dict[str, Any]:
+    try:
+        changed = ", ".join(request.changed_files[:8])
+        return update_long_running_task(
+            task_id,
+            status="completed",
+            current_agent_role="debugger",
+            architect_status="completed",
+            architect_reason=request.reason_code,
+            truncated_test_results=(
+                f"reason_code: {request.reason_code}; changed_files={changed}"
+            ),
+        )
     except LongRunningTaskError as error:
         raise HTTPException(
             status_code=404,

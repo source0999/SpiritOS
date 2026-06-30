@@ -61,15 +61,21 @@ function contentTypeFor(relPath: string): string {
  * A classic script that contains an `import` statement throws a SyntaxError and the page
  * stays blank. This rewrite marks any external `<script src=...>` without an explicit type
  * as `type="module"` so relative ESM imports resolve against the viewer route. It only
- * touches the type attribute and leaves everything else (content, paths) untouched.
+ * also rewrites fixture-relative src/ and href assets to this preview route, because the
+ * extensionless viewer URL would otherwise resolve them under /v1/coding/.
  */
 function normalizeHtmlForPreview(html: string): string {
-  return html.replace(
+  const withModuleScripts = html.replace(
     /<script\b([^>]*?)\bsrc=(["'])([^"']+)\2([^>]*?)>/gi,
     (match, before, quote, src, after) => {
       const attrs = `${before} ${after}`;
       return /\btype\s*=/.test(attrs) ? match : `<script type="module"${attrs} src=${quote}${src}${quote}>`;
     },
+  );
+  return withModuleScripts.replace(
+    /\b(src|href)=(["'])src\/([^"']+)\2/gi,
+    (_match, attr, quote, assetPath) =>
+      `${attr}=${quote}/v1/coding/dummy-product-site-preview/src/${assetPath}${quote}`,
   );
 }
 
