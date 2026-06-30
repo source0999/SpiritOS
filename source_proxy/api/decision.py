@@ -60,6 +60,7 @@ from source_proxy.tasks.long_running import (
     forbidden_paths_for_context_mode,
     generate_unified_diff_from_content,
     propose_dummy_product_site_create_diff,
+    propose_dummy_product_site_render_cards_diff,
     propose_coder_agent_diff_payload_from_plan,
     reset_coder_timing_diagnostics,
     snapshot_coder_timing_diagnostics,
@@ -6433,14 +6434,14 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                         ),
                     )
                 elif _dummy_product_site_render_cards_mode(reset_request):
-                    architect_plan = _dummy_product_site_render_cards_plan(
-                        reset_request,
-                        trial_task,
-                    )
-                    coder = await _bounded_coder_diff_or_stub(
-                        trial_task,
-                        architect_plan,
-                        force_live_model=reset_request.trial_mode == "live_apply",
+                    architect_plan = None
+                    coder = await asyncio.get_running_loop().run_in_executor(
+                        None,
+                        functools.partial(
+                            propose_dummy_product_site_render_cards_diff,
+                            task=trial_task,
+                            workspace_root=_workspace_root(),
+                        ),
                     )
                 elif _fip4_qwen_enabled() and explicit_target:
                     architect_plan = None
@@ -6657,6 +6658,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         task_spec_payload = _task_spec_payload_for_response(architect_plan, coder_packet_payload)
         if _dummy_product_site_create_mode(reset_request):
             task_spec_payload = _dummy_product_site_create_task_spec()
+        elif _dummy_product_site_render_cards_mode(reset_request):
+            task_spec_payload = _dummy_product_site_render_cards_task_spec()
         if reason_code in TARGET_HARD_BLOCK_REASON_CODES or reason_code == "target_unresolved":
             task_spec_payload = intake_as_legacy_task_spec(intake)
         manual_browser_prompt = _coder_agent_manual_browser_prompt_text(
@@ -6687,6 +6690,10 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "increment_label": increment_label,
             "increment_goal": increment_goal,
             "task_summary": _short_task_summary(reset_request.task),
+            "selected_prompt_id": reset_request.selected_prompt_id or reset_request.trial_prompt_id,
+            "selectedPromptId": reset_request.selected_prompt_id or reset_request.trial_prompt_id,
+            "selected_prompt_number": 3 if _dummy_product_site_render_cards_mode(reset_request) else None,
+            "selectedPromptNumber": 3 if _dummy_product_site_render_cards_mode(reset_request) else None,
             "relevant_context": "\n".join(context_lines),
             "context_metadata": {
                 "context_inclusion_mode": "coder_agent_repomix",
@@ -7331,8 +7338,8 @@ def _dummy_product_site_render_cards_source_task(
         for item in [
             task,
             "",
-            "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
-            "Implementation notes: src/products.js is the source of truth. This selected-prompt packet replaces src/main.js only, so keep the current classic script loading and use dynamic import('./products.js') or import(\"./products.js\"). A static import is valid only with a matching index.html module-script change, which this single-file packet cannot provide. Do not hardcode duplicate product cards in index.html.",
+            "Target files: tests/ui-agent-trials/fixtures/dummy-product-site/index.html and tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+            "Implementation notes: src/products.js is the source of truth. Option A is mandatory for Prompt 3: change index.html to <script type=\"module\" src=\"src/main.js\"></script>, statically import products from './products.js'; in src/main.js, and render every product dynamically from that imported array. Do not use dynamic import, do not duplicate product data, and do not hardcode product cards in index.html. src/styles.css may be updated for a simple card layout.",
             f"Pass expectations: {'; '.join(pass_expectations)}" if pass_expectations else "",
             f"Fail conditions: {'; '.join(fail_conditions)}" if fail_conditions else "",
             project_contract,
@@ -7363,6 +7370,42 @@ def _dummy_product_site_create_task_spec() -> dict[str, Any]:
         "verification": ["git diff --check"],
         "risk_tier": "low",
         "source": "dummy-coder-001-create-mode",
+    }
+
+
+def _dummy_product_site_render_cards_task_spec() -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "task_type": "create_file_bundle",
+        "target": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+        "allowed_files": [
+            "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        ],
+        "forbidden_files": [
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+            "src/app/**",
+            "src/components/**",
+            "src/lib/**",
+            "source_proxy/**",
+            "docs/**",
+            ".env*",
+            "package.json",
+            "package-lock.json",
+        ],
+        "literal_requirements": [
+            '<script type="module" src="src/main.js"></script>',
+            "import products from './products.js';",
+            "product-card",
+            "product.name",
+            "product.category",
+            "product.description",
+            "product.price",
+        ],
+        "verification": ["git apply --check", "prompt3 option-a wiring validation"],
+        "risk_tier": "low",
+        "source": "dummy-coder-003-option-a-render-cards",
     }
 
 

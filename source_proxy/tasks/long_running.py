@@ -3657,6 +3657,11 @@ DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS = (
 DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE = 0.02
 DUMMY_PRODUCT_SITE_INDEX = f"{DUMMY_PRODUCT_SITE_ROOT}index.html"
 DUMMY_PRODUCT_SITE_MAIN = f"{DUMMY_PRODUCT_SITE_ROOT}src/main.js"
+DUMMY_PRODUCT_SITE_STYLES = f"{DUMMY_PRODUCT_SITE_ROOT}src/styles.css"
+PROMPT3_STATIC_CLASSIC_RETRY_FEEDBACK = (
+    "Your previous diff used static import but did not change index.html to type=module. "
+    "Return a corrected diff that changes index.html to module script and imports products in src/main.js."
+)
 
 
 def _dummy_product_site_prompt3_diff_violations(
@@ -4109,6 +4114,380 @@ def propose_dummy_product_site_create_diff(
         "coder_diagnostics": diagnostics,
         "changed_files": changed_files,
         "checks_run": ["git apply --check"],
+    }
+
+
+def propose_dummy_product_site_render_cards_diff(
+    *,
+    task: str,
+    workspace_root: Path | None = None,
+    llm_call: Callable[[str, str], str] | None = None,
+    model_alias: str | None = None,
+) -> dict[str, Any]:
+    """Model-authored multi-file render path for Prompt 3 LumaCart cards."""
+    root = (workspace_root or _workspace_root()).resolve()
+    selected_alias = model_alias or _dummy_product_site_create_model_alias()
+    diagnostics: dict[str, Any] = {
+        **_base_coder_diagnostics(DUMMY_PRODUCT_SITE_ROOT),
+        "context_mode": "dummy_product_site_render_cards",
+        "context_slices": _dummy_product_site_prompt3_context_slices(root),
+        "target_exists": (root / DUMMY_PRODUCT_SITE_ROOT).is_dir(),
+        "target_action": "edit fixture files",
+        "trial_mode": "live_apply",
+        "expected_result_state": "PASS_PRODUCTS_RENDERED",
+        "selected_prompt_id": "coder-003-render-product-cards",
+        "selected_prompt_number": 3,
+        "expected_root": DUMMY_PRODUCT_SITE_ROOT,
+        "allowed_files": [
+            DUMMY_PRODUCT_SITE_INDEX,
+            DUMMY_PRODUCT_SITE_MAIN,
+            DUMMY_PRODUCT_SITE_STYLES,
+        ],
+        "forbidden_paths": [
+            f"{DUMMY_PRODUCT_SITE_ROOT}src/products.js",
+            "src/app/**",
+            "src/components/**",
+            "src/lib/**",
+            "source_proxy/**",
+            "docs/**",
+            ".env*",
+            "package.json",
+            "package-lock.json",
+        ],
+    }
+    _set_trial_generation_provenance(diagnostics, trial_mode=True)
+    _record_coder_provider_model_truth(
+        diagnostics,
+        selected_alias=selected_alias,
+        provider_call_made=False,
+    )
+    alias_error = None if llm_call is not None else _coder_model_alias_configuration_error(selected_alias)
+    if alias_error is not None:
+        reason, needed_context = alias_error
+        diagnostics["validation_status"] = "coder_model_not_configured"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_model_not_configured"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=needed_context,
+            needed_context=reason,
+            reason_code="coder_model_not_configured",
+        )
+
+    model_timeout_seconds = _dummy_product_site_model_timeout_seconds()
+    prompt = _render_dummy_product_site_render_cards_prompt(task, root)
+    result = _call_and_validate_dummy_product_site_render_cards(
+        root=root,
+        prompt=prompt,
+        selected_alias=selected_alias,
+        model_timeout_seconds=model_timeout_seconds,
+        llm_call=llm_call,
+        diagnostics=diagnostics,
+        attempt_label="initial",
+    )
+    if result.get("reason_code") == "STATIC_IMPORT_CLASSIC_SCRIPT":
+        diagnostics["prompt3_retry_attempted"] = True
+        diagnostics["prompt3_retry_reason"] = "STATIC_IMPORT_CLASSIC_SCRIPT"
+        diagnostics["retry_feedback"] = PROMPT3_STATIC_CLASSIC_RETRY_FEEDBACK
+        retry_prompt = _render_dummy_product_site_render_cards_retry_prompt(
+            task,
+            feedback=PROMPT3_STATIC_CLASSIC_RETRY_FEEDBACK,
+            root=root,
+        )
+        result = _call_and_validate_dummy_product_site_render_cards(
+            root=root,
+            prompt=retry_prompt,
+            selected_alias=selected_alias,
+            model_timeout_seconds=model_timeout_seconds,
+            llm_call=llm_call,
+            diagnostics=diagnostics,
+            attempt_label="retry",
+        )
+        diagnostics["retry_count"] = 1
+        diagnostics["coder_attempt_count"] = 2
+    return result
+
+
+def _call_and_validate_dummy_product_site_render_cards(
+    *,
+    root: Path,
+    prompt: str,
+    selected_alias: str,
+    model_timeout_seconds: float,
+    llm_call: Callable[[str, str], str] | None,
+    diagnostics: dict[str, Any],
+    attempt_label: str,
+) -> dict[str, Any]:
+    try:
+        _record_coder_provider_model_truth(
+            diagnostics,
+            selected_alias=selected_alias,
+            provider_call_made=True,
+        )
+        raw_response = (
+            llm_call(prompt, selected_alias)
+            if llm_call is not None
+            else _call_dummy_product_site_llm_with_wall_timeout(
+                prompt,
+                selected_alias,
+                model_timeout_seconds,
+            )
+        )
+    except Exception as error:  # noqa: BLE001
+        return _dummy_product_site_model_failure_payload(
+            diagnostics=diagnostics,
+            error=error,
+            timeout_seconds=model_timeout_seconds,
+        )
+
+    diagnostics["generation_source"] = "model"
+    diagnostics["diff_source"] = "pending_backend_diff_from_model_prompt3_file_bundle"
+    diagnostics[f"{attempt_label}_raw_response_length"] = len(raw_response or "")
+    diagnostics[f"{attempt_label}_raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
+    diagnostics["raw_response_length"] = len(raw_response or "")
+    diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
+    diagnostics["model_output_classification"] = "model_structured_file_bundle"
+    files, parse_error = _parse_dummy_product_site_file_bundle(raw_response or "")
+    diagnostics.update(_dummy_product_site_parse_meta(raw_response or "", files))
+    if parse_error:
+        diagnostics["validation_status"] = "prompt3_file_bundle_validation_failed"
+        diagnostics["parse_error_message"] = parse_error
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=parse_error,
+            needed_context="Return only Prompt 3 file blocks for index.html, src/main.js, and optional src/styles.css.",
+            reason_code="coder_file_bundle_validation_failed",
+        )
+
+    assert files is not None
+    validation = _validate_dummy_product_site_prompt3_files(root, files)
+    diagnostics["content_validation"] = validation
+    if not validation["ok"]:
+        reason_code = str(validation["missing"][0] if validation["missing"] else "PROMPT3_CONTRACT_FAILED")
+        diagnostics["validation_status"] = "prompt3_contract_failed"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["recommended_next_action"] = "retry_prompt3_option_a_contract"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=[f"CODER_BLOCKED reason_code: {reason_code}"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=str(validation["summary"]),
+            needed_context=", ".join(str(item) for item in validation["missing"][:8]),
+            reason_code=reason_code,
+        )
+
+    diffs: list[str] = []
+    for file in files:
+        diffs.append(
+            _prompt3_git_header_diff(
+                file["path"],
+                generate_unified_diff_from_content(root, file["path"], file["content"]),
+            )
+        )
+    unified = "\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n"
+    if not unified.strip():
+        diagnostics["validation_status"] = "NO_DIFF"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: NO_DIFF"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason="Model-authored Prompt 3 file bundle produced an empty diff.",
+            needed_context="Return changed index.html and src/main.js file blocks.",
+            reason_code="NO_DIFF",
+        )
+    apply_ok, apply_error = _git_apply_generated_diff_ok(root, unified)
+    if not apply_ok:
+        diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
+        diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        return _coder_blocked_payload(
+            target=DUMMY_PRODUCT_SITE_ROOT,
+            notes=["CODER_BLOCKED reason_code: coder_backend_diff_generation_failed"],
+            diagnostics=diagnostics,
+            bundle_name=None,
+            reason=f"Generated diff did not pass git apply --check: {apply_error}",
+            needed_context="Retry with a clean Prompt 3 file bundle under the dummy root.",
+            reason_code="coder_backend_diff_generation_failed",
+        )
+
+    changed_files = [
+        file["path"]
+        for file in files
+        if generate_unified_diff_from_content(root, file["path"], file["content"]).strip()
+    ]
+    diagnostics["validation_status"] = "preview_ready"
+    diagnostics["changed_files"] = changed_files
+    diagnostics["generated_diff_length"] = len(unified)
+    diagnostics["generated_diff_by_backend"] = True
+    diagnostics["diff_source"] = "model_authored_prompt3_file_bundle_backend_converted_to_diff"
+    diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
+    diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
+    return {
+        "proposed_diff": unified,
+        "target": DUMMY_PRODUCT_SITE_ROOT,
+        "coder_notes": [
+            "Model-authored Prompt 3 file bundle validated.",
+            "CODER_PREVIEW reason_code: dummy_product_site_prompt3_bundle",
+        ],
+        "bundle": None,
+        "reason_code": "dummy_product_site_prompt3_bundle",
+        "coder_diagnostics": diagnostics,
+        "changed_files": changed_files,
+        "checks_run": ["git apply --check", "prompt3 option-a wiring validation"],
+    }
+
+
+def _prompt3_git_header_diff(path: str, diff_text: str) -> str:
+    if not diff_text.strip() or diff_text.startswith("diff --git "):
+        return diff_text
+    normalized = path.replace("\\", "/").lstrip("./")
+    return f"diff --git a/{normalized} b/{normalized}\n{diff_text}"
+
+
+def _dummy_product_site_prompt3_context_slices(root: Path) -> list[dict[str, str]]:
+    slices: list[dict[str, str]] = []
+    for path in [DUMMY_PRODUCT_SITE_INDEX, DUMMY_PRODUCT_SITE_MAIN, f"{DUMMY_PRODUCT_SITE_ROOT}src/products.js", DUMMY_PRODUCT_SITE_STYLES]:
+        try:
+            content = (root / path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            content = ""
+        slices.append({"path": path, "content": content})
+    return slices
+
+
+def _render_dummy_product_site_render_cards_prompt(task: str, root: Path) -> str:
+    return "\n".join(
+        [
+            "You are Coder 003 for the isolated LumaCart dummy fixture.",
+            task.strip(),
+            "Return only file blocks. Do not return markdown or prose.",
+            "Required paths: tests/ui-agent-trials/fixtures/dummy-product-site/index.html and tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js.",
+            "Optional path: tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css.",
+            "Do not modify tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js.",
+            "Option A is mandatory:",
+            '1. index.html must contain exactly <script type="module" src="src/main.js"></script>.',
+            "2. src/main.js must contain exactly import products from './products.js';",
+            "3. Do not use dynamic import().",
+            "4. Render all products dynamically from imported products.",
+            "5. Each card must include product name, category, description, and price.",
+            "6. Card markup must include product-card.",
+            "7. Do not duplicate the product array in src/main.js.",
+            "8. Do not hardcode product cards in index.html.",
+            "Preferred format, repeated once per file:",
+            '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/index.html">',
+            "<!doctype html>",
+            "</file>",
+            "Current fixture context:",
+            _dummy_product_site_prompt3_current_context(root),
+        ]
+    )
+
+
+def _render_dummy_product_site_render_cards_retry_prompt(
+    task: str,
+    *,
+    feedback: str,
+    root: Path,
+) -> str:
+    return "\n".join(
+        [
+            feedback,
+            "Return a fresh corrected response. Return only file blocks.",
+            _render_dummy_product_site_render_cards_prompt(task, root),
+        ]
+    )
+
+
+def _dummy_product_site_prompt3_current_context(root: Path) -> str:
+    chunks: list[str] = []
+    for path in [DUMMY_PRODUCT_SITE_INDEX, DUMMY_PRODUCT_SITE_MAIN, f"{DUMMY_PRODUCT_SITE_ROOT}src/products.js", DUMMY_PRODUCT_SITE_STYLES]:
+        try:
+            content = (root / path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            content = ""
+        chunks.append(f"--- {path} ---\n{content}")
+    return "\n".join(chunks)
+
+
+def _validate_dummy_product_site_prompt3_files(root: Path, files: list[dict[str, str]]) -> dict[str, Any]:
+    missing: list[str] = []
+    allowed = {DUMMY_PRODUCT_SITE_INDEX, DUMMY_PRODUCT_SITE_MAIN, DUMMY_PRODUCT_SITE_STYLES}
+    paths = [file["path"].replace("\\", "/").lstrip("./") for file in files]
+    path_set = set(paths)
+    duplicates = sorted(path for path in path_set if paths.count(path) > 1)
+    for duplicate in duplicates:
+        missing.append(f"duplicate file rejected: {duplicate}")
+    for path in paths:
+        if path not in allowed:
+            missing.append(f"outside_prompt3_allowed_files: {path}")
+        if path.startswith(("source_proxy/", "src/app/", "src/components/", "src/lib/", "docs/")):
+            missing.append(f"forbidden path rejected: {path}")
+        if path.endswith("src/products.js"):
+            missing.append("PRODUCT_DATA_DUPLICATED")
+    if DUMMY_PRODUCT_SITE_INDEX not in path_set:
+        main_content = next((file["content"] for file in files if file["path"].replace("\\", "/").lstrip("./") == DUMMY_PRODUCT_SITE_MAIN), "")
+        if re.search(r"import\s+[\s\S]*?\s+from\s*['\"]\.\/products\.js['\"]", main_content):
+            missing.append("STATIC_IMPORT_CLASSIC_SCRIPT")
+        else:
+            missing.append("missing required file: index.html")
+    if DUMMY_PRODUCT_SITE_MAIN not in path_set:
+        missing.append("missing required file: src/main.js")
+
+    by_path = {file["path"].replace("\\", "/").lstrip("./"): file["content"] for file in files}
+    index_content = by_path.get(DUMMY_PRODUCT_SITE_INDEX, "")
+    main_content = by_path.get(DUMMY_PRODUCT_SITE_MAIN, "")
+    if DUMMY_PRODUCT_SITE_INDEX in path_set and '<script type="module" src="src/main.js"></script>' not in index_content:
+        missing.append("STATIC_IMPORT_CLASSIC_SCRIPT")
+    if re.search(r"<(?:article|div)\b[^>]*(?:product-card|card)", index_content, re.IGNORECASE) or (
+        "Product A" in index_content and "Product F" in index_content
+    ):
+        missing.append("HARDCODED_INDEX_CARDS")
+    if not re.search(r"import\s+products\s+from\s*['\"]\.\/products\.js['\"]\s*;", main_content):
+        missing.append("MISSING_PRODUCTS_IMPORT")
+    if re.search(r"import\s*\(\s*['\"]\.\/products\.js['\"]\s*\)", main_content):
+        missing.append("DYNAMIC_IMPORT_NOT_ALLOWED")
+    if re.search(r"\b(?:const|let|var)\s+products\s*=\s*\[", main_content) or (
+        "Product A" in main_content and "Product F" in main_content
+    ):
+        missing.append("PRODUCT_DATA_DUPLICATED")
+    for token in ("product-card", "product.name", "product.category", "product.description", "product.price"):
+        if token not in main_content:
+            missing.append("PRODUCT_RENDER_CONTRACT_FAILED")
+            break
+    if not re.search(r"\bproducts\s*\.\s*(?:forEach|map)\s*\(", main_content):
+        missing.append("TOO_FEW_PRODUCTS")
+    for file in files:
+        content = file["content"]
+        if not content.strip():
+            missing.append(f"empty content: {file['path']}")
+        if len(content.splitlines()) > DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE:
+            missing.append(f"file line cap exceeded: {file['path']}")
+        lowered = content.lower()
+        for keyword in DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS:
+            if keyword in lowered:
+                missing.append(f"blacklist keyword rejected: {keyword.strip()} in {file['path']}")
+                break
+    return {
+        "ok": not missing,
+        "missing": list(dict.fromkeys(missing)),
+        "summary": "Prompt 3 Option A file bundle passed validation."
+        if not missing
+        else "Prompt 3 Option A file bundle failed validation.",
+        "current_index_module": bool(
+            re.search(
+                r"<script\b[^>]*type=['\"]module['\"][^>]*src=['\"]src/main\.js['\"]",
+                (root / DUMMY_PRODUCT_SITE_INDEX).read_text(encoding="utf-8", errors="replace")
+                if (root / DUMMY_PRODUCT_SITE_INDEX).is_file()
+                else "",
+            )
+        ),
     }
 
 

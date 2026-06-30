@@ -149,6 +149,8 @@ export const dummyCoder10Prompts: DummyCoder10Prompt[] = [
     optionalTargets: [`${DUMMY_CODER_10_FIXTURE_ROOT}src/products.js`],
     expectedResultState: "PASS_DUMMY_UI_CHANGE",
     passExpectations: [
+      "index.html loads src/main.js with a module script.",
+      "src/main.js statically imports products from ./products.js.",
       "Products render from src/products.js.",
       "Cards show name, price, category, and description.",
       "Does not hardcode duplicate product cards in HTML.",
@@ -157,6 +159,7 @@ export const dummyCoder10Prompts: DummyCoder10Prompt[] = [
     ],
     failConditions: [
       "Ignores existing product data.",
+      "Uses dynamic import instead of the required module-script/static-import wiring.",
       "Hardcodes all cards in HTML.",
       "Breaks project structure.",
       "Edits SpiritOS UI files.",

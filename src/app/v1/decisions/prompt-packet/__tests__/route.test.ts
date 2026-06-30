@@ -268,12 +268,16 @@ describe("prompt-packet route", () => {
     expect(body.selected_target).toBe("tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js");
     expect(body.target_file).toBe("tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js");
     expect(body.task).toContain("Prompt 3 fixture context:");
-    expect(body.task).toContain("Render all exported products dynamically in src/main.js.");
+    expect(body.task).toContain("Option A is mandatory");
+    expect(body.task).toContain('<script type="module" src="src/main.js"></script>');
+    expect(body.task).toContain("import products from './products.js';");
     expect(body.task).toContain("Do not duplicate the product array or hardcode product cards in index.html.");
-    expect(body.task).toContain("dynamic import('./products.js')");
+    expect(body.task).toContain("Do not use dynamic import().");
     expect(body.dummy_coder_10_packet.prompt_3_contract).toMatchObject({
       data_source: "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      data_source_read_only: true,
       expected_product_count: expect.any(Number),
+      required_index_target: "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
       required_render_target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
     });
   });

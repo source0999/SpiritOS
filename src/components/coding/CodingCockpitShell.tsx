@@ -899,7 +899,7 @@ export function selectedPromptModelTask(prompt: DummyCoder10Prompt) {
     `Pass expectations: ${prompt.passExpectations.join("; ")}`,
     `Fail conditions: ${prompt.failConditions.join("; ")}`,
     prompt.id === "coder-003-render-product-cards"
-      ? "Implementation notes: src/products.js is the source of truth. Render cards dynamically in src/main.js. This selected-prompt packet replaces src/main.js only, so use dynamic import('./products.js') from src/main.js unless the diff also includes matching index.html module-script wiring. Do not hardcode duplicate product cards in index.html."
+      ? "Implementation notes: src/products.js is the source of truth. Option A is mandatory: change index.html to <script type=\"module\" src=\"src/main.js\"></script>, statically import products from './products.js'; in src/main.js, and render cards dynamically from imported products. Do not use dynamic import, do not duplicate product data, and do not hardcode product cards in index.html."
       : "",
     prompt.projectContract,
   ].filter(Boolean).join("\n");

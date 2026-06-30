@@ -333,11 +333,14 @@ describe("CodingCockpitShell", () => {
     const task = selectedPromptModelTask(prompt003!);
 
     expect(task).toContain("Products render from src/products.js.");
+    expect(task).toContain("index.html loads src/main.js with a module script.");
+    expect(task).toContain("src/main.js statically imports products from ./products.js.");
     expect(task).toContain("Does not hardcode duplicate product cards in HTML.");
     expect(task).toContain("Hardcodes all cards in HTML.");
-    expect(task).toContain("Render cards dynamically in src/main.js");
-    expect(task).toContain("replaces src/main.js only");
-    expect(task).toContain("dynamic import('./products.js')");
+    expect(task).toContain("Option A is mandatory");
+    expect(task).toContain('<script type="module" src="src/main.js"></script>');
+    expect(task).toContain("import products from './products.js';");
+    expect(task).toContain("Do not use dynamic import");
     expect(task).not.toContain("src/app/**");
     expect(task).not.toContain("source_proxy/**");
     expect(selectedPromptTarget(prompt003!)).toBe(
