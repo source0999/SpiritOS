@@ -1,0 +1,10 @@
+{
+  "name": "lumacart",
+  "version": "1.0.0",
+  "description": "A dummy product site for testing purposes.",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Server started'"
+  },
+  "dependencies": {}
+}

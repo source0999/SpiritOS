@@ -3356,7 +3356,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         )
 
         with (
-            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet", return_value={}),
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet", return_value={}) as fip3_mock,
             mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
             mock.patch(
                 "source_proxy.tasks.long_running._call_dummy_product_site_llm_with_wall_timeout",
@@ -3410,6 +3410,21 @@ class CodingRegressionPackTests(unittest.TestCase):
         ]
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", context_paths)
         self.assertTrue(payload["coder_packet"]["target_file"]["exists"])
+        fip3_mock.assert_not_called()
+        diagnostics = payload["coder_diagnostics"]
+        self.assertTrue(str(diagnostics["source_proxy_run_id"]).startswith("prompt3-"))
+        self.assertEqual(diagnostics["model_alias"], "coder")
+        self.assertGreater(diagnostics["prompt_context_byte_size"], 0)
+        self.assertEqual(diagnostics["context_slice_count"], 4)
+        self.assertEqual(diagnostics["parse_status"], "passed")
+        self.assertTrue(diagnostics["diff_produced"])
+        self.assertTrue(diagnostics["apply_attempted"])
+        self.assertEqual(diagnostics["final_reason_code"], "dummy_product_site_prompt3_bundle")
+        stage_names = [event["stage"] for event in diagnostics["stage_events"]]
+        self.assertIn("prompt_packet_assembled", stage_names)
+        self.assertIn("initial_model_call_started", stage_names)
+        self.assertIn("initial_model_call_finished", stage_names)
+        self.assertIn("initial_git_apply_check_done", stage_names)
 
     def test_prompt_packet_coder_003_rejects_static_import_with_classic_script(self) -> None:
         client = self._decision_client()
@@ -3463,7 +3478,7 @@ class CodingRegressionPackTests(unittest.TestCase):
 
         mocked_llm = mock.Mock(return_value=model_json)
         with (
-            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet", return_value={}),
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet", return_value={}) as fip3_mock,
             mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
             mock.patch(
                 "source_proxy.tasks.long_running._call_dummy_product_site_llm_with_wall_timeout",
@@ -3493,6 +3508,17 @@ class CodingRegressionPackTests(unittest.TestCase):
             "Your previous diff used static import but did not change index.html to type=module.",
             mocked_llm.call_args_list[1].args[0],
         )
+        fip3_mock.assert_not_called()
+        diagnostics = payload["coder_diagnostics"]
+        self.assertEqual(diagnostics["retry_count"], 1)
+        self.assertEqual(diagnostics["coder_attempt_count"], 2)
+        self.assertEqual(diagnostics["final_reason_code"], "STATIC_IMPORT_CLASSIC_SCRIPT")
+        self.assertFalse(diagnostics["diff_produced"])
+        self.assertFalse(diagnostics["apply_attempted"])
+        stage_names = [event["stage"] for event in diagnostics["stage_events"]]
+        self.assertIn("initial_model_call_finished", stage_names)
+        self.assertIn("retry_model_call_started", stage_names)
+        self.assertIn("retry_validation_done", stage_names)
 
     def test_prompt_packet_coder_001_accepts_xml_file_blocks_and_reports_contract(self) -> None:
         client = self._decision_client()

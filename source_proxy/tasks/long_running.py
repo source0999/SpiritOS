@@ -3798,7 +3798,7 @@ def _call_dummy_product_site_llm_with_wall_timeout(prompt: str, selected_alias: 
     try:
         status, value = result_queue.get(timeout=timeout_seconds)
     except queue.Empty as error:
-        raise TimeoutError(f"Prompt 1 Coder model call timed out after {timeout_seconds:g}s") from error
+        raise TimeoutError(f"Dummy product site Coder model call timed out after {timeout_seconds:g}s") from error
     if status == "error":
         raise value
     return str(value or "")
@@ -3863,6 +3863,12 @@ def _dummy_product_site_model_failure_payload(
     error_kind = type(error).__name__
     timed_out = "timeout" in error_kind.lower() or "timed out" in error_text.lower() or "timeout" in error_text.lower()
     reason_code = "coder_model_timeout" if timed_out else "coder_model_router_error"
+    prompt_label = (
+        "Prompt 3"
+        if diagnostics.get("selected_prompt_number") == 3
+        or diagnostics.get("selected_prompt_id") == "coder-003-render-product-cards"
+        else "Prompt 1"
+    )
     diagnostics["validation_status"] = reason_code
     diagnostics["trial_result_trust_status"] = "model_output_not_usable"
     diagnostics["recommended_next_action"] = (
@@ -3883,12 +3889,12 @@ def _dummy_product_site_model_failure_payload(
         diagnostics=diagnostics,
         bundle_name=None,
         reason=(
-            "Coder model timed out before returning Prompt 1 file blocks."
+            f"Coder model timed out before returning {prompt_label} file blocks."
             if timed_out
             else "Coder model/router call failed."
         ),
         needed_context=(
-            f"Prompt 1 exceeded the bounded {timeout_seconds:g}s model budget; warm or repair the local Coder model, then retry."
+            f"{prompt_label} exceeded the bounded {timeout_seconds:g}s model budget; warm or repair the local Coder model, then retry."
             if timed_out and timeout_seconds is not None
             else error_text
         ),
@@ -4129,6 +4135,7 @@ def propose_dummy_product_site_render_cards_diff(
     selected_alias = model_alias or _dummy_product_site_create_model_alias()
     diagnostics: dict[str, Any] = {
         **_base_coder_diagnostics(DUMMY_PRODUCT_SITE_ROOT),
+        "source_proxy_run_id": f"prompt3-{uuid4().hex}",
         "context_mode": "dummy_product_site_render_cards",
         "context_slices": _dummy_product_site_prompt3_context_slices(root),
         "target_exists": (root / DUMMY_PRODUCT_SITE_ROOT).is_dir(),
@@ -4161,6 +4168,14 @@ def propose_dummy_product_site_render_cards_diff(
         selected_alias=selected_alias,
         provider_call_made=False,
     )
+    _record_prompt3_stage(
+        diagnostics,
+        "coder_lane_probe",
+        model_alias=selected_alias,
+        model_name=route_model_for_alias(selected_alias) or "",
+        coder_lane_available=selected_alias in available_model_aliases(),
+        available_model_aliases=sorted(available_model_aliases()),
+    )
     alias_error = None if llm_call is not None else _coder_model_alias_configuration_error(selected_alias)
     if alias_error is not None:
         reason, needed_context = alias_error
@@ -4177,6 +4192,15 @@ def propose_dummy_product_site_render_cards_diff(
 
     model_timeout_seconds = _dummy_product_site_model_timeout_seconds()
     prompt = _render_dummy_product_site_render_cards_prompt(task, root)
+    diagnostics["prompt_context_byte_size"] = len(prompt.encode("utf-8"))
+    diagnostics["prompt_context_char_count"] = len(prompt)
+    diagnostics["context_slice_count"] = len(diagnostics.get("context_slices") or [])
+    _record_prompt3_stage(
+        diagnostics,
+        "prompt_packet_assembled",
+        prompt_context_byte_size=diagnostics["prompt_context_byte_size"],
+        context_slice_count=diagnostics["context_slice_count"],
+    )
     result = _call_and_validate_dummy_product_site_render_cards(
         root=root,
         prompt=prompt,
@@ -4209,6 +4233,28 @@ def propose_dummy_product_site_render_cards_diff(
     return result
 
 
+def _record_prompt3_stage(
+    diagnostics: dict[str, Any],
+    stage: str,
+    *,
+    elapsed_ms: float | None = None,
+    **data: Any,
+) -> None:
+    timestamps = diagnostics.setdefault("stage_timestamps", {})
+    if isinstance(timestamps, dict):
+        timestamps[stage] = datetime.now(UTC).isoformat()
+    elapsed = diagnostics.setdefault("elapsed_ms_by_stage", {})
+    if isinstance(elapsed, dict) and elapsed_ms is not None:
+        elapsed[stage] = round(elapsed_ms, 2)
+    stages = diagnostics.setdefault("stage_events", [])
+    if isinstance(stages, list):
+        event = {"stage": stage}
+        if elapsed_ms is not None:
+            event["elapsed_ms"] = round(elapsed_ms, 2)
+        event.update(data)
+        stages.append(event)
+
+
 def _call_and_validate_dummy_product_site_render_cards(
     *,
     root: Path,
@@ -4219,6 +4265,20 @@ def _call_and_validate_dummy_product_site_render_cards(
     diagnostics: dict[str, Any],
     attempt_label: str,
 ) -> dict[str, Any]:
+    attempt_started = time.perf_counter()
+    diagnostics["coder_attempt_count"] = max(int(diagnostics.get("coder_attempt_count") or 0), 1)
+    diagnostics["retry_count"] = int(diagnostics.get("retry_count") or 0)
+    diagnostics["model_alias"] = selected_alias
+    diagnostics["model_name"] = route_model_for_alias(selected_alias) or ""
+    diagnostics[f"{attempt_label}_prompt_context_byte_size"] = len(prompt.encode("utf-8"))
+    _record_prompt3_stage(
+        diagnostics,
+        f"{attempt_label}_model_call_started",
+        model_alias=selected_alias,
+        model_name=diagnostics["model_name"],
+        timeout_seconds=model_timeout_seconds,
+        prompt_context_byte_size=diagnostics[f"{attempt_label}_prompt_context_byte_size"],
+    )
     try:
         _record_coder_provider_model_truth(
             diagnostics,
@@ -4235,12 +4295,45 @@ def _call_and_validate_dummy_product_site_render_cards(
             )
         )
     except Exception as error:  # noqa: BLE001
+        elapsed_ms = (time.perf_counter() - attempt_started) * 1000
+        timed_out = "timeout" in type(error).__name__.lower() or "timeout" in str(error).lower() or "timed out" in str(error).lower()
+        _record_prompt3_stage(
+            diagnostics,
+            f"{attempt_label}_{'model_call_timeout' if timed_out else 'model_call_failed'}",
+            elapsed_ms=elapsed_ms,
+            error_type=type(error).__name__,
+            error_message=str(error)[:240],
+        )
+        diagnostics["model_call_started_at"] = diagnostics.get("stage_timestamps", {}).get(
+            f"{attempt_label}_model_call_started"
+        )
+        diagnostics["model_call_timeout_at" if timed_out else "model_call_failed_at"] = diagnostics.get(
+            "stage_timestamps", {}
+        ).get(f"{attempt_label}_{'model_call_timeout' if timed_out else 'model_call_failed'}")
+        diagnostics["model_call_elapsed_ms"] = round(elapsed_ms, 2)
+        diagnostics["final_reason_code"] = "coder_model_timeout" if timed_out else "coder_model_router_error"
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
         return _dummy_product_site_model_failure_payload(
             diagnostics=diagnostics,
             error=error,
             timeout_seconds=model_timeout_seconds,
         )
 
+    elapsed_ms = (time.perf_counter() - attempt_started) * 1000
+    _record_prompt3_stage(
+        diagnostics,
+        f"{attempt_label}_model_call_finished",
+        elapsed_ms=elapsed_ms,
+        raw_response_length=len(raw_response or ""),
+    )
+    diagnostics["model_call_started_at"] = diagnostics.get("stage_timestamps", {}).get(
+        f"{attempt_label}_model_call_started"
+    )
+    diagnostics["model_call_finished_at"] = diagnostics.get("stage_timestamps", {}).get(
+        f"{attempt_label}_model_call_finished"
+    )
+    diagnostics["model_call_elapsed_ms"] = round(elapsed_ms, 2)
     diagnostics["generation_source"] = "model"
     diagnostics["diff_source"] = "pending_backend_diff_from_model_prompt3_file_bundle"
     diagnostics[f"{attempt_label}_raw_response_length"] = len(raw_response or "")
@@ -4248,12 +4341,25 @@ def _call_and_validate_dummy_product_site_render_cards(
     diagnostics["raw_response_length"] = len(raw_response or "")
     diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
     diagnostics["model_output_classification"] = "model_structured_file_bundle"
+    parse_started = time.perf_counter()
+    _record_prompt3_stage(diagnostics, f"{attempt_label}_parse_started")
     files, parse_error = _parse_dummy_product_site_file_bundle(raw_response or "")
+    _record_prompt3_stage(
+        diagnostics,
+        f"{attempt_label}_parse_done",
+        elapsed_ms=(time.perf_counter() - parse_started) * 1000,
+        parse_status="failed" if parse_error else "passed",
+        parsed_file_count=len(files or []),
+    )
     diagnostics.update(_dummy_product_site_parse_meta(raw_response or "", files))
     if parse_error:
         diagnostics["validation_status"] = "prompt3_file_bundle_validation_failed"
+        diagnostics["parse_status"] = "failed"
         diagnostics["parse_error_message"] = parse_error
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["final_reason_code"] = "coder_file_bundle_validation_failed"
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
@@ -4265,13 +4371,26 @@ def _call_and_validate_dummy_product_site_render_cards(
         )
 
     assert files is not None
+    diagnostics["parse_status"] = "passed"
+    validation_started = time.perf_counter()
+    _record_prompt3_stage(diagnostics, f"{attempt_label}_validation_started")
     validation = _validate_dummy_product_site_prompt3_files(root, files)
+    _record_prompt3_stage(
+        diagnostics,
+        f"{attempt_label}_validation_done",
+        elapsed_ms=(time.perf_counter() - validation_started) * 1000,
+        validation_status="passed" if validation["ok"] else "failed",
+        validation_missing=validation.get("missing", []),
+    )
     diagnostics["content_validation"] = validation
     if not validation["ok"]:
         reason_code = str(validation["missing"][0] if validation["missing"] else "PROMPT3_CONTRACT_FAILED")
         diagnostics["validation_status"] = "prompt3_contract_failed"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
         diagnostics["recommended_next_action"] = "retry_prompt3_option_a_contract"
+        diagnostics["final_reason_code"] = reason_code
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=[f"CODER_BLOCKED reason_code: {reason_code}"],
@@ -4282,6 +4401,8 @@ def _call_and_validate_dummy_product_site_render_cards(
             reason_code=reason_code,
         )
 
+    diff_started = time.perf_counter()
+    _record_prompt3_stage(diagnostics, f"{attempt_label}_diff_generation_started")
     diffs: list[str] = []
     for file in files:
         diffs.append(
@@ -4291,9 +4412,19 @@ def _call_and_validate_dummy_product_site_render_cards(
             )
         )
     unified = "\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n"
+    _record_prompt3_stage(
+        diagnostics,
+        f"{attempt_label}_diff_generation_done",
+        elapsed_ms=(time.perf_counter() - diff_started) * 1000,
+        generated_diff_length=len(unified),
+        diff_produced=bool(unified.strip()),
+    )
     if not unified.strip():
         diagnostics["validation_status"] = "NO_DIFF"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["final_reason_code"] = "NO_DIFF"
+        diagnostics["diff_produced"] = False
+        diagnostics["apply_attempted"] = False
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: NO_DIFF"],
@@ -4303,10 +4434,22 @@ def _call_and_validate_dummy_product_site_render_cards(
             needed_context="Return changed index.html and src/main.js file blocks.",
             reason_code="NO_DIFF",
         )
+    diagnostics["diff_produced"] = True
+    diagnostics["apply_attempted"] = True
+    apply_started = time.perf_counter()
+    _record_prompt3_stage(diagnostics, f"{attempt_label}_git_apply_check_started")
     apply_ok, apply_error = _git_apply_generated_diff_ok(root, unified)
+    _record_prompt3_stage(
+        diagnostics,
+        f"{attempt_label}_git_apply_check_done",
+        elapsed_ms=(time.perf_counter() - apply_started) * 1000,
+        apply_check_status="passed" if apply_ok else "failed",
+        apply_error=apply_error[:240] if apply_error else "",
+    )
     if not apply_ok:
         diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["final_reason_code"] = "coder_backend_diff_generation_failed"
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_backend_diff_generation_failed"],
@@ -4329,6 +4472,7 @@ def _call_and_validate_dummy_product_site_render_cards(
     diagnostics["diff_source"] = "model_authored_prompt3_file_bundle_backend_converted_to_diff"
     diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
     diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
+    diagnostics["final_reason_code"] = "dummy_product_site_prompt3_bundle"
     return {
         "proposed_diff": unified,
         "target": DUMMY_PRODUCT_SITE_ROOT,

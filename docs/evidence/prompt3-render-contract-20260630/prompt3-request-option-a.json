@@ -1,0 +1,31 @@
+﻿{
+  "active_task_id": "prompt3-option-a-20260630",
+  "task": "make the dummy LumaCart page actually show the products as cards. name price category and desc should show. simple grid is fine.",
+  "selected_prompt_id": "coder-003-render-product-cards",
+  "trial_prompt_id": "coder-003-render-product-cards",
+  "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+  "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+  "wants_implementation": true,
+  "needs_codebase_context": true,
+  "trial_mode": "live_apply",
+  "expected_result_state": "PASS_PRODUCTS_RENDERED",
+  "dummy_coder_10_packet": {
+    "expected_result_state": "PASS_PRODUCTS_RENDERED",
+    "submitted_prompt": "make the dummy LumaCart page actually show the products as cards. name price category and desc should show. simple grid is fine.",
+    "pass_expectations": [
+      "index.html loads src/main.js with a module script.",
+      "src/main.js statically imports products from ./products.js.",
+      "Products render from src/products.js.",
+      "Cards show name, price, category, and description.",
+      "Does not hardcode duplicate product cards in HTML.",
+      "Existing product data remains intact."
+    ],
+    "fail_conditions": [
+      "Ignores existing product data.",
+      "Uses dynamic import instead of the required module-script/static-import wiring.",
+      "Hardcodes all cards in HTML.",
+      "Breaks project structure.",
+      "Edits SpiritOS UI files."
+    ]
+  }
+}

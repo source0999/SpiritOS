@@ -1,0 +1,17 @@
+{
+  "status": null,
+  "reason_code": null,
+  "selected_prompt_id": null,
+  "selected_prompt_number": null,
+  "provider_call_made": null,
+  "generation_source": null,
+  "model_output_classification": null,
+  "scaffold_used": null,
+  "fallback_used": null,
+  "trial_result_trust_status": null,
+  "changed_files": null,
+  "checks_run": null,
+  "proposed_diff_len": 0,
+  "blocked_reason": null,
+  "needed_context": null
+}

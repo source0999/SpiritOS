@@ -6297,9 +6297,10 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             and not allowed_create_target
         )
     )
+    dummy_product_site_render_cards = _dummy_product_site_render_cards_mode(reset_request)
     fip3_model_packet = (
         {}
-        if target_gate_blocked or dummy_product_site_create
+        if target_gate_blocked or dummy_product_site_create or dummy_product_site_render_cards
         else await build_fip3_model_lane_packet(
             task=trial_task,
             route_payload=route_payload,
@@ -6433,7 +6434,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             workspace_root=_workspace_root(),
                         ),
                     )
-                elif _dummy_product_site_render_cards_mode(reset_request):
+                elif dummy_product_site_render_cards:
                     architect_plan = None
                     coder = await asyncio.get_running_loop().run_in_executor(
                         None,
@@ -6658,7 +6659,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         task_spec_payload = _task_spec_payload_for_response(architect_plan, coder_packet_payload)
         if _dummy_product_site_create_mode(reset_request):
             task_spec_payload = _dummy_product_site_create_task_spec()
-        elif _dummy_product_site_render_cards_mode(reset_request):
+        elif dummy_product_site_render_cards:
             task_spec_payload = _dummy_product_site_render_cards_task_spec()
         if reason_code in TARGET_HARD_BLOCK_REASON_CODES or reason_code == "target_unresolved":
             task_spec_payload = intake_as_legacy_task_spec(intake)

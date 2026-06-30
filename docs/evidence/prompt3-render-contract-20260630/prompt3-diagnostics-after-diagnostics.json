@@ -1,0 +1,97 @@
+{
+  "status": "preview_ready",
+  "reason_code": "dummy_product_site_prompt3_bundle",
+  "selected_prompt_id": "coder-003-render-product-cards",
+  "selected_prompt_number": 3,
+  "provider_call_made": true,
+  "generation_source": "model",
+  "proposed_diff_present": true,
+  "changed_files": [
+    "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+    "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+    "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+  ],
+  "source_proxy_run_id": "prompt3-e1fb85eebcf8438780eb1dfc9935fc5f",
+  "model_alias": "coder",
+  "model_name": "ollama_chat/qwen2.5-coder:7b",
+  "prompt_context_byte_size": 5940,
+  "context_slice_count": 4,
+  "model_call_elapsed_ms": 42333.66,
+  "raw_response_length": 1422,
+  "parse_status": "passed",
+  "retry_count": 0,
+  "coder_attempt_count": 1,
+  "final_reason_code": "dummy_product_site_prompt3_bundle",
+  "diff_produced": true,
+  "apply_attempted": true,
+  "validation_status": "preview_ready",
+  "trial_result_trust_status": "model_authored_diff_proven",
+  "stage_events": [
+    {
+      "stage": "coder_lane_probe",
+      "model_alias": "coder",
+      "model_name": "ollama_chat/qwen2.5-coder:7b",
+      "coder_lane_available": true,
+      "available_model_aliases": [
+        "anthropic",
+        "coder",
+        "deepseek",
+        "local",
+        "openai"
+      ]
+    },
+    {
+      "stage": "prompt_packet_assembled",
+      "prompt_context_byte_size": 5940,
+      "context_slice_count": 4
+    },
+    {
+      "stage": "initial_model_call_started",
+      "model_alias": "coder",
+      "model_name": "ollama_chat/qwen2.5-coder:7b",
+      "timeout_seconds": 120,
+      "prompt_context_byte_size": 5940
+    },
+    {
+      "stage": "initial_model_call_finished",
+      "elapsed_ms": 42333.66,
+      "raw_response_length": 1422
+    },
+    {
+      "stage": "initial_parse_started"
+    },
+    {
+      "stage": "initial_parse_done",
+      "elapsed_ms": 0.37,
+      "parse_status": "passed",
+      "parsed_file_count": 3
+    },
+    {
+      "stage": "initial_validation_started"
+    },
+    {
+      "stage": "initial_validation_done",
+      "elapsed_ms": 0.67,
+      "validation_status": "passed",
+      "validation_missing": []
+    },
+    {
+      "stage": "initial_diff_generation_started"
+    },
+    {
+      "stage": "initial_diff_generation_done",
+      "elapsed_ms": 1.1,
+      "generated_diff_length": 1713,
+      "diff_produced": true
+    },
+    {
+      "stage": "initial_git_apply_check_started"
+    },
+    {
+      "stage": "initial_git_apply_check_done",
+      "elapsed_ms": 75.72,
+      "apply_check_status": "passed",
+      "apply_error": ""
+    }
+  ]
+}
