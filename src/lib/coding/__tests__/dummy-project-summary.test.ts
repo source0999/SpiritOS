@@ -73,9 +73,9 @@ describe("dummy project factual summary", () => {
 describe("dummy storefront probe", () => {
   const realFixture = {
     "index.html":
-      '<!DOCTYPE html><html><head><title>LumaCart</title><link rel="stylesheet" href="src/styles.css"></head><body><header><h1>Welcome to LumaCart</h1></header><main id="product-list"></main><script src="src/main.js"></script></body></html>',
+      '<!DOCTYPE html><html><head><title>LumaCart</title><link rel="stylesheet" href="src/styles.css"></head><body><header><h1>Welcome to LumaCart</h1></header><main id="product-list"></main><script type="module" src="src/main.js"></script></body></html>',
     "src/main.js":
-      "import products from './products.js';\nconst productList = document.getElementById('product-list');\nproducts.forEach(product => { const e = document.createElement('div'); e.innerHTML = `<h2>${product.name}</h2><p>${product.description}</p><p>$${product.price}</p>`; productList.appendChild(e); });",
+      "import products from './products.js';\nconst productList = document.getElementById('product-list');\nproducts.forEach(product => { const e = document.createElement('div'); e.className = 'product-card'; e.innerHTML = `<h2>${product.name}</h2><p>${product.description}</p><p>${product.category}</p><p>$${product.price}</p>`; productList.appendChild(e); });",
     "src/products.js":
       "const products = [\n  { name: 'Product A', description: 'This is product A.', price: 19.99 },\n  { name: 'Product B', description: 'This is product B.', price: 29.99 }\n];\nexport default products;",
     "src/styles.css": "body { font-family: Arial; } #product-list { display: flex; } div { border: 1px solid #ddd; }",
@@ -86,7 +86,11 @@ describe("dummy storefront probe", () => {
     expect(probe.preview_behavior_status).toBe("PASS_STOREFRONT_RENDERED");
     expect(probe.product_count).toBe(2);
     expect(probe.card_render_path_present).toBe(true);
+    expect(probe.category_render_path_present).toBe(true);
+    expect(probe.description_render_path_present).toBe(true);
+    expect(probe.price_render_path_present).toBe(true);
     expect(probe.stylesheet_linked).toBe(true);
+    expect(probe.visible_product_names).toEqual(["Product A", "Product B"]);
     expect(probe.preview_visible_text_summary).toContain("2 catalog item(s)");
   });
 
@@ -113,7 +117,6 @@ describe("dummy storefront probe", () => {
       },
     });
     expect(probe.preview_asset_status).toBe("present_module_unloaded_classic_script");
-    // Still passes the probe (content exists), but the asset status flags the load risk.
-    expect(probe.preview_behavior_status).toBe("PASS_STOREFRONT_RENDERED");
+    expect(probe.preview_behavior_status).toBe("FAIL_BARE_PAGE");
   });
 });

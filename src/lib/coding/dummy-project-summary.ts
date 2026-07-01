@@ -105,8 +105,15 @@ export type DummyStorefrontProbeResult = {
   product_count: number;
   /** True when a card/container render path exists in the script that consumes product data. */
   card_render_path_present: boolean;
+  /** True when the script renders categories from product data. */
+  category_render_path_present?: boolean;
+  /** True when the script renders descriptions from product data. */
+  description_render_path_present?: boolean;
+  /** True when the script renders prices from product data. */
+  price_render_path_present?: boolean;
   /** True when a stylesheet is linked and non-empty. */
   stylesheet_linked: boolean;
+  visible_product_names?: string[];
 };
 
 const HEADING_RE = /<h1[^>]*>\s*([^<]+?)\s*<\/h1>/i;
@@ -135,6 +142,9 @@ export function probeDummyStorefront(input: DummyStorefrontProbeInput): DummySto
   const productNameMatchesAlt = products.match(/\b(?:name|title)\s*:\s*['"]([^'"]+)['"]/g) ?? [];
   const rawProductNameHits = Math.max(productNameMatches.length, productNameMatchesAlt.length);
   const product_count = rawProductNameHits > 0 ? rawProductNameHits : 0;
+  const visible_product_names = [
+    ...products.matchAll(/\b(?:name|title)\s*:\s*['"]([^'"]+)['"]/g),
+  ].map((match) => match[1]).filter(Boolean);
 
   // A card render path exists if the script references product data and creates DOM elements
   // while iterating over the data.
@@ -144,6 +154,9 @@ export function probeDummyStorefront(input: DummyStorefrontProbeInput): DummySto
     scriptImportsData &&
     /(innerHTML|appendChild|createElement|insertAdjacentHTML|textContent)/.test(script) &&
     /(forEach|for\s*\(|map\s*\(|\.length)/.test(script);
+  const category_render_path_present = scriptImportsData && /\bproduct\.category\b|\bcategory\b/i.test(script);
+  const description_render_path_present = scriptImportsData && /\bproduct\.description\b|\bdescription\b/i.test(script);
+  const price_render_path_present = scriptImportsData && /\bproduct\.price\b|\bprice\b/i.test(script);
 
   const stylesheet_linked = /<link[^>]+rel=["']stylesheet["']/i.test(html) && styles.length > 0;
 
@@ -167,7 +180,7 @@ export function probeDummyStorefront(input: DummyStorefrontProbeInput): DummySto
   const preview_visible_text_summary = visibleBits.length > 0 ? visibleBits.join(", ") : "bare page";
 
   const hasVisibleStorefront =
-    product_count >= 1 && card_render_path_present && preview_asset_status !== "empty";
+    product_count >= 1 && card_render_path_present && preview_asset_status === "present";
 
   return {
     preview_behavior_status: hasVisibleStorefront ? "PASS_STOREFRONT_RENDERED" : "FAIL_BARE_PAGE",
@@ -175,6 +188,10 @@ export function probeDummyStorefront(input: DummyStorefrontProbeInput): DummySto
     preview_asset_status,
     product_count,
     card_render_path_present,
+    category_render_path_present,
+    description_render_path_present,
+    price_render_path_present,
     stylesheet_linked,
+    visible_product_names,
   };
 }

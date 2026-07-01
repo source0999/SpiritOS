@@ -1,3 +1,3 @@
 # LumaCart
 
-Welcome to LumaCart! This is a dummy project for testing the UI agent.
+This is an isolated dummy coder trial fixture for testing the coder agent. It contains a tiny static fake product website.
