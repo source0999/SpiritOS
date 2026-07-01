@@ -1,0 +1,680 @@
+{
+  "url": "https://127.0.0.1:3000/spiritflix/benchmark/player?autoplay=0&itemId=ai-subtitle-pilot&sourcePath=%2Fmnt%2Fspirit-8tb%2Fmedia%2Fanime%2FRurouni%20Kenshin%20(1996)%2FSeason%2002%2FRurouni%20Kenshin%20(1996)%20-%20S02E03%20%5BDVD%20576p%20Mobile%5D.mp4",
+  "sourcePath": "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 02/Rurouni Kenshin (1996) - S02E03 [DVD 576p Mobile].mp4",
+  "states": [
+    {
+      "label": "initial captions on",
+      "captionLabel": "Turn subtitles off",
+      "captionPressed": "true",
+      "captionDisabled": false,
+      "captionText": "On",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "showing"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "captions off 1",
+      "captionLabel": "Turn subtitles on",
+      "captionPressed": "false",
+      "captionDisabled": false,
+      "captionText": "Off",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "disabled"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "captions on 1",
+      "captionLabel": "Turn subtitles off",
+      "captionPressed": "true",
+      "captionDisabled": false,
+      "captionText": "On",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "showing"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "captions off 2",
+      "captionLabel": "Turn subtitles on",
+      "captionPressed": "false",
+      "captionDisabled": false,
+      "captionText": "Off",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "disabled"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "captions on 2",
+      "captionLabel": "Turn subtitles off",
+      "captionPressed": "true",
+      "captionDisabled": false,
+      "captionText": "On",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "showing"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "captions off 3",
+      "captionLabel": "Turn subtitles on",
+      "captionPressed": "false",
+      "captionDisabled": false,
+      "captionText": "Off",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "disabled"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "captions on 3",
+      "captionLabel": "Turn subtitles off",
+      "captionPressed": "true",
+      "captionDisabled": false,
+      "captionText": "On",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "showing"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "before audio switch",
+      "captionLabel": "Turn subtitles off",
+      "captionPressed": "true",
+      "captionDisabled": false,
+      "captionText": "On",
+      "audioLabel": "Switch audio to English dub",
+      "audioPressed": "false",
+      "audioDisabled": true,
+      "audioText": "Sub",
+      "currentSrc": "https://127.0.0.1:3000/api/spiritflix/stream?serverUrl=http%3A%2F%2Fspirit.tailb69ea6.ts.net%3A8096&itemId=ai-subtitle-pilot&audioStreamIndex=1",
+      "readyState": 0,
+      "networkState": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "showing"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "after audio switch captions retained",
+      "captionLabel": "Turn subtitles off",
+      "captionPressed": "true",
+      "captionDisabled": false,
+      "captionText": "On",
+      "audioLabel": "Switch audio to Japanese sub",
+      "audioPressed": "true",
+      "audioDisabled": false,
+      "audioText": "Dub",
+      "currentSrc": "blob:https://127.0.0.1:3000/31d0f4de-6709-4d8d-9637-8f3a40a5a1c7",
+      "readyState": 0,
+      "networkState": 0,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "showing"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "after audio captions off",
+      "captionLabel": "Turn subtitles on",
+      "captionPressed": "false",
+      "captionDisabled": false,
+      "captionText": "Off",
+      "audioLabel": "Switch audio to Japanese sub",
+      "audioPressed": "true",
+      "audioDisabled": false,
+      "audioText": "Dub",
+      "currentSrc": "blob:https://127.0.0.1:3000/31d0f4de-6709-4d8d-9637-8f3a40a5a1c7",
+      "readyState": 0,
+      "networkState": 0,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "disabled"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    },
+    {
+      "label": "after audio captions on",
+      "captionLabel": "Turn subtitles off",
+      "captionPressed": "true",
+      "captionDisabled": false,
+      "captionText": "On",
+      "audioLabel": "Switch audio to Japanese sub",
+      "audioPressed": "true",
+      "audioDisabled": false,
+      "audioText": "Dub",
+      "currentSrc": "blob:https://127.0.0.1:3000/31d0f4de-6709-4d8d-9637-8f3a40a5a1c7",
+      "readyState": 0,
+      "networkState": 0,
+      "tracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "language": "eng",
+          "kind": "subtitles",
+          "mode": "disabled"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "language": "en",
+          "kind": "captions",
+          "mode": "showing"
+        }
+      ],
+      "domTracks": [
+        {
+          "index": 0,
+          "label": "SubtitleHandler",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-282894e9d081f31c",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 1,
+          "label": "English Forced",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=caption-48c402f3d2476d3e",
+          "default": false,
+          "source": "embedded"
+        },
+        {
+          "index": 2,
+          "label": "English Dub AI Captions",
+          "src": "https://127.0.0.1:3000/api/spiritflix/captions/file?key=7902d559989f124c188ca3b2&track=ai-en",
+          "default": true,
+          "source": "generated"
+        }
+      ]
+    }
+  ],
+  "consoleLines": [
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: [HMR] connected",
+    "pageerror: Error: Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>\n      <LoadingBoundary name=\"player/\" loading={null}>\n        <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>\n          <RedirectBoundary>\n            <RedirectErrorBoundary router={{...}}>\n              <InnerLayoutRouter url={\"/spiritf...\"} tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>\n                <SegmentViewNode type=\"page\" pagePath=\"spiritflix...\">\n                  <SegmentTrieNode>\n                  <ClientPageRoot Component={function SpiritFlixBenchmarkPlayerPage} serverProvidedParams={{...}}>\n                    <SpiritFlixBenchmarkPlayerPage params={Promise} searchParams={Promise}>\n                      <main data-spiritflix-benchmark=\"player\" data-spiritflix-item-id=\"ai-subtitl...\">\n                        <SpiritFlixPlayer client={{...}} item={{Id:\"ai-sub...\", ...}} queue={null} ...>\n                          <section className={\"spiritfl...\"} ref={{current:null}} style={{...}} ...>\n                            <div className=\"spiritflix...\">\n                              <video\n                                ref={{current:null}}\n                                playsInline={true}\n                                controls={false}\n                                loop={false}\n                                controlsList=\"nodownload noplaybackrate noremoteplayback\"\n                                preload=\"metadata\"\n+                               data-spiritflix-playback-source=\"canonical_mp4\"\n-                               data-spiritflix-playback-source=\"jellyfin_direct_mp4\"\n                                onWaiting={function onWaiting}\n                                onStalled={function onStalled}\n                                onError={function onError}\n                                onCanPlay={function onCanPlay}\n                                onPlaying={function onPlaying}\n                                onPlay={function onPlay}\n                                onPause={function onPause}\n                                onTimeUpdate={function onTimeUpdate}\n                                onLoadedMetadata={function onLoadedMetadata}\n                                onEnded={function onEnded}\n                              >\n                            <div>\n                            <div className=\"spiritflix...\">\n                              <button>\n                              <div className=\"spiritflix...\">\n                                <strong>\n                                <span>\n+                                 proxied stream\n-                                 direct stream\n                              ...\n                            ...\n                ...\n              ...\n\n    at throwOnHydrationMismatch (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:5466:11)\n    at prepareToHydrateHostInstance (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:5562:21)\n    at completeWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:12925:15)\n    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:987:30)\n    at completeUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19133:19)\n    at performUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:19006:11)\n    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:18983:9)\n    at renderRootConcurrent (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:18965:15)\n    at performWorkOnRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:17823:11)\n    at performWorkOnRootViaSchedulerTask (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:20472:7)\n    at MessagePort.performWorkUntilDeadline (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js:45:48)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "warning: The resource https://127.0.0.1:3000/_next/static/media/e4af272ccee01ff0-s.p.woff2?v=1782604400334 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "warning: The resource https://127.0.0.1:3000/_next/static/media/bb3ef058b751a6ad-s.p.woff2?v=1782604400334 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 400 (Bad Request)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 400 (Bad Request)",
+    "error: Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  ]
+}

@@ -1,0 +1,34 @@
+﻿{
+    "api_model_alias":  "coder",
+    "needs_codebase_context":  true,
+    "expected_result_state":  "PASS_PRODUCTS_RENDERED",
+    "task":  "make the dummy LumaCart page actually show the products as cards. name price category and desc should show. simple grid is fine.",
+    "selected_prompt_id":  "coder-003-render-product-cards",
+    "selected_prompt_number":  3,
+    "trial_mode":  "live_apply",
+    "dummy_coder_10_packet":  {
+                                  "project_contract":  "Keep all work inside tests/ui-agent-trials/fixtures/dummy-product-site/. Do not touch SpiritOS app, SpiritFlix, source_proxy, docs, root package files, secrets, or media.",
+                                  "pass_expectations":  [
+                                                            "Products render from src/products.js.",
+                                                            "Cards show name, price, category, and description.",
+                                                            "Does not hardcode duplicate product cards in HTML.",
+                                                            "Empty product list has a reasonable empty state.",
+                                                            "Existing product data remains intact."
+                                                        ],
+                                  "expected_result_state":  "PASS_DUMMY_UI_CHANGE",
+                                  "submitted_prompt":  "make the dummy LumaCart page actually show the products as cards. name price category and desc should show. simple grid is fine.",
+                                  "fail_conditions":  [
+                                                          "Ignores existing product data.",
+                                                          "Hardcodes all cards in HTML.",
+                                                          "Breaks project structure.",
+                                                          "Edits SpiritOS UI files."
+                                                      ]
+                              },
+    "target_file":  "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+    "allowed_files":  [
+                          "tests/ui-agent-trials/fixtures/dummy-product-site/**"
+                      ],
+    "trial_prompt_id":  "coder-003-render-product-cards",
+    "wants_implementation":  true,
+    "selected_target":  "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js"
+}
