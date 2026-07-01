@@ -1,0 +1,41 @@
+{
+  "plan": 8,
+  "title": "Design Packet to Coder Packet and Preview UI",
+  "stage": "Stage 4 - Coder, Proof, and Repair",
+  "status": "COMPLETE_GO_PLAN_09_BLOCKED_ON_SANDBOX_APPLY_HARD_STOP",
+  "implementation_performed": true,
+  "auto_continue_after_master_approval": true,
+  "requires_britton_between_plans": false,
+  "next_plan_auto_continue_if_plan_go": false,
+  "hard_stop_required_for_authority_escalation": true,
+  "authority_hard_stops_require_human_approval": true,
+  "increments": {
+    "8.1.1": "COMPLETE_GO",
+    "8.1.2": "COMPLETE_GO",
+    "8.2.1": "COMPLETE_GO",
+    "8.2.2": "COMPLETE_GO",
+    "8.3.1": "COMPLETE_GO",
+    "8.3.2": "COMPLETE_GO"
+  },
+  "implemented_files": [
+    "src/app/v1/coding/design-studio/preview/route.ts",
+    "src/app/v1/coding/design-studio/preview/__tests__/route.test.ts",
+    "src/components/coding/DesignStudioShell.tsx",
+    "src/components/coding/__tests__/design-studio-shell.test.tsx"
+  ],
+  "validation": {
+    "focused_route_vitest_linux": "PASS",
+    "focused_shell_vitest_linux": "PASS",
+    "typecheck": "PASS",
+    "diff_check": "PASS"
+  },
+  "authority_guard": {
+    "sandbox_apply_performed": false,
+    "real_app_apply_performed": false,
+    "model_call_made": false,
+    "provider_call_made": false,
+    "obsidian_writeback_performed": false,
+    "memory_promotion_performed": false
+  },
+  "plan_09_blocked_on_first_sandbox_apply_hard_stop": true
+}

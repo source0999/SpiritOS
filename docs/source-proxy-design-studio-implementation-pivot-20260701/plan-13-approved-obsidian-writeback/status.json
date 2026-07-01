@@ -1,0 +1,12 @@
+{
+  "plan": 13,
+  "title": "Approved Obsidian Design Memory Writeback",
+  "stage": "Stage 5 - Writeback and Acceptance",
+  "status": "PLAN_WRITTEN_NOT_STARTED",
+  "implementation_performed": false,
+  "auto_continue_after_master_approval": true,
+  "requires_britton_between_plans": false,
+  "next_plan_auto_continue_if_plan_go": true,
+  "hard_stop_required_for_authority_escalation": true,
+  "authority_hard_stops_require_human_approval": true
+}

@@ -1,0 +1,36 @@
+{
+  "plan": 0,
+  "title": "Freeze Current Design Docs and Dirty-Tree Boundary",
+  "stage": "Stage 1 - Foundation",
+  "status": "COMPLETE_GO_PLAN_01_READY_AFTER_ACCEPTED_PIVOT_APPROVAL",
+  "implementation_performed": false,
+  "auto_continue_after_master_approval": true,
+  "requires_britton_between_plans": false,
+  "next_plan_auto_continue_if_plan_go": true,
+  "hard_stop_required_for_authority_escalation": true,
+  "authority_hard_stops_require_human_approval": true,
+  "increments": {
+    "0.1.1": "COMPLETE_GO",
+    "0.1.2": "COMPLETE_GO",
+    "0.2.1": "COMPLETE_WITH_BOUNDARY_RISK",
+    "0.2.2": "COMPLETE_GO_FOR_DOCS_ONLY"
+  },
+  "validation": {
+    "required_files": "PASS",
+    "status_json_contract": "PASS",
+    "contract_grep": "PASS",
+    "diff_check": "PASS",
+    "predecessor_status_scan": "PASS",
+    "messy_prompt_contract_scan": "PASS",
+    "dirty_tree_capture": "PARTIAL_PASS_WITH_BOUNDARY_RISK",
+    "staging_check": "PASS"
+  },
+  "dirty_tree_boundary": {
+    "full_status_timeout": true,
+    "tracked_status_captured": true,
+    "untracked_listing_captured": true,
+    "pre_existing_protected_runtime_paths_present": true,
+    "no_staged_files": true
+  },
+  "plan_01_ready_after_accepted_pivot_approval": true
+}
