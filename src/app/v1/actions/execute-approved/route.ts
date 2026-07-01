@@ -186,14 +186,25 @@ export async function POST(request: Request) {
         { status: 422 },
       );
     }
-    const applyResult = await applySelectedDummyCoderDiff({
-      action,
-      approvedDiff,
-      changedFiles,
-      target,
-      taskId,
-    });
-    return Response.json(applyResult);
+    try {
+      const applyResult = await applySelectedDummyCoderDiff({
+        action,
+        approvedDiff,
+        changedFiles,
+        target,
+        taskId,
+      });
+      return Response.json(applyResult);
+    } catch (error) {
+      const payload = selectedDummyApplyErrorPayload(error, {
+        action,
+        approvedDiff,
+        changedFiles,
+        target,
+        taskId,
+      });
+      return Response.json(payload, { status: selectedDummyApplyErrorStatus(error) });
+    }
   }
 
   // Approved real diffs execute through Source proxy's long-running task layer.
@@ -282,28 +293,73 @@ export function isSelectedDummyCoderApply(action: string, allowedFiles: string[]
 export async function selectedPrompt3ApplyViolations(approvedDiff: string, action: string) {
   if (!/^Run selected dummy Coder prompt coder-003-/.test(action)) return [];
   let currentIndexHtml = "";
+  let currentMainJs = "";
   try {
     currentIndexHtml = await readFile(path.join(process.cwd(), DUMMY_CODER_10_FIXTURE_ROOT, "index.html"), "utf8");
   } catch {
     currentIndexHtml = "";
   }
-  return selectedPrompt3DiffViolations(approvedDiff, currentIndexHtml);
+  try {
+    currentMainJs = await readFile(path.join(process.cwd(), DUMMY_CODER_10_FIXTURE_ROOT, "src/main.js"), "utf8");
+  } catch {
+    currentMainJs = "";
+  }
+  return selectedPrompt3DiffViolations(approvedDiff, currentIndexHtml, currentMainJs);
 }
 
-export function selectedPrompt3DiffViolations(diff: string, currentIndexHtml = "") {
+export function selectedPrompt3DiffViolations(diff: string, currentIndexHtml = "", currentMainJs = "") {
   const normalized = diff.replace(/\r\n/g, "\n");
   const violations: string[] = [];
   const hasDynamicProductsImport = /import\s*\(\s*['"]\.\/products\.js['"]\s*\)/i.test(normalized);
   const hasStaticProductsImport = /import\s+[\s\S]*?\s+from\s*['"]\.\/products\.js['"]/i.test(normalized);
   const diffAddsModuleScript = /^\+\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
   const currentIndexHasModuleScript = /<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/i.test(currentIndexHtml);
+  const currentPreviewHasRenderedProductCards =
+    /class=["'][^"']*\bproduct-card\b/i.test(currentIndexHtml) &&
+    /class=["'][^"']*\bcategory\b/i.test(currentIndexHtml) &&
+    /class=["'][^"']*\bprice\b/i.test(currentIndexHtml);
   const diffRemovesModuleScript = /^-\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
-  const hasModuleScriptWiring = diffAddsModuleScript || (currentIndexHasModuleScript && !diffRemovesModuleScript);
+  const hasCurrentRenderWiring = currentIndexHasModuleScript || currentPreviewHasRenderedProductCards;
+  const hasModuleScriptWiring = diffAddsModuleScript || (hasCurrentRenderWiring && !diffRemovesModuleScript);
+  const currentMainHasStaticProductsImport = /import\s+products\s+from\s*['"]\.\/products\.js['"]\s*;/i.test(currentMainJs);
+  const currentMainHasRenderPath =
+    /products\s*\.\s*(?:forEach|map)\s*\(/i.test(currentMainJs) &&
+    /product-card/.test(currentMainJs) &&
+    /product\.name/.test(currentMainJs) &&
+    /product\.category/.test(currentMainJs) &&
+    /product\.description/.test(currentMainJs) &&
+    /product\.price/.test(currentMainJs);
+  const diffTouchesMainJs = /src\/main\.js/i.test(normalized);
+  const diffRemovesProductsImport =
+    diffTouchesMainJs && /^-.*import\s+products\s+from\s*['"]\.\/products\.js['"]/im.test(normalized);
+  const diffRemovesRenderPath =
+    diffTouchesMainJs && /^-.*(?:product-card|product\.name|product\.category|product\.description|product\.price)/im.test(normalized);
+  const productsImportWillBePresent =
+    hasStaticProductsImport ||
+    hasDynamicProductsImport ||
+    (currentMainHasStaticProductsImport && !diffRemovesProductsImport);
+  const existingRenderPathStillPresent =
+    hasCurrentRenderWiring &&
+    productsImportWillBePresent &&
+    currentMainHasRenderPath &&
+    !diffRemovesModuleScript &&
+    !diffRemovesProductsImport &&
+    !diffRemovesRenderPath;
+  const diffAddsRenderPath =
+    diffTouchesMainJs &&
+    /product\.category|product-card/i.test(normalized);
+  const renderScriptCanRun = hasDynamicProductsImport || hasModuleScriptWiring;
+  const renderPathWillBePresent =
+    existingRenderPathStillPresent ||
+    (productsImportWillBePresent && renderScriptCanRun && diffAddsRenderPath);
 
-  if (hasStaticProductsImport && !hasModuleScriptWiring) {
+  if (!renderPathWillBePresent) {
+    violations.push("MISSING_DYNAMIC_PRODUCTS_RENDER_PATH");
+  }
+  if ((hasStaticProductsImport || currentMainHasStaticProductsImport) && !hasModuleScriptWiring) {
     violations.push("STATIC_IMPORT_CLASSIC_SCRIPT");
   }
-  if (!hasStaticProductsImport && !hasDynamicProductsImport) {
+  if (!productsImportWillBePresent && !existingRenderPathStillPresent) {
     violations.push("MISSING_PRODUCTS_IMPORT");
   }
   if (/^\+.*<(?:article|div)\b[^>]*(?:product-card|card)/im.test(normalized) && /index\.html/i.test(normalized)) {
@@ -324,10 +380,29 @@ async function applySelectedDummyCoderDiff(input: {
 }) {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "spiritos-selected-dummy-"));
   const patchPath = path.join(tempDir, "approved.patch");
+  let checksResult = "git apply --recount --check passed; selected dummy fixture diff applied";
+  let checksRun = ["git apply --recount --check"];
+  let applyMode = "git_apply_recount";
+  let stalePatchRecovered = false;
   try {
     await writeFile(patchPath, input.approvedDiff, "utf8");
-    await execFileAsync("git", ["apply", "--check", patchPath], { cwd: process.cwd() });
-    await execFileAsync("git", ["apply", patchPath], { cwd: process.cwd() });
+    try {
+      await runSelectedDummyGitApply(["apply", "--recount", "--check", patchPath], "git apply --recount --check");
+      await runSelectedDummyGitApply(["apply", "--recount", patchPath], "git apply --recount");
+    } catch (error) {
+      const recovered = await tryRecoverSelectedDummyProductsApply(input);
+      if (!recovered) {
+        throw error;
+      }
+      checksResult =
+        "git apply --recount --check failed; validated and wrote model-authored products.js replacement content";
+      checksRun = [
+        "git apply --recount --check",
+        "model-authored products.js replacement validation",
+      ];
+      applyMode = "model_authored_products_replacement_after_stale_context";
+      stalePatchRecovered = true;
+    }
   } finally {
     await rm(tempDir, { force: true, recursive: true });
   }
@@ -336,9 +411,10 @@ async function applySelectedDummyCoderDiff(input: {
   return {
     action: input.action,
     applied_changed_files: input.changedFiles,
+    apply_mode: applyMode,
     changed_files: input.changedFiles,
-    checks_result: "git apply --check passed; selected dummy fixture diff applied",
-    checks_run: ["git apply --check"],
+    checks_result: checksResult,
+    checks_run: checksRun,
     disk_changed_files: input.changedFiles,
     execution: {
       invocation_event_id: `selected_dummy_apply_${diffHashForApprovedDiff(input.approvedDiff).slice(0, 12)}`,
@@ -362,7 +438,123 @@ async function applySelectedDummyCoderDiff(input: {
       },
       id: input.taskId,
     },
+    stale_patch_recovered: stalePatchRecovered,
     updated_at: now,
+  };
+}
+
+async function tryRecoverSelectedDummyProductsApply(input: {
+  action: string;
+  approvedDiff: string;
+  changedFiles: string[];
+}) {
+  const productsPath = `${DUMMY_CODER_10_FIXTURE_ROOT}src/products.js`;
+  const changedFiles = input.changedFiles.map(normalizeRepoPath);
+  if (!/coder-002-add-product-data/.test(input.action)) {
+    return false;
+  }
+  if (changedFiles.length !== 1 || changedFiles[0] !== productsPath) {
+    return false;
+  }
+  const replacement = selectedDummyProductsReplacementFromDiff(input.approvedDiff, productsPath);
+  if (!replacement.ok) {
+    return false;
+  }
+  await writeFile(path.join(process.cwd(), productsPath), replacement.content, "utf8");
+  return true;
+}
+
+class SelectedDummyApplyError extends Error {
+  readonly cause: unknown;
+  readonly reasonCode: string;
+  readonly stage: string;
+  readonly status: number;
+  readonly details: Record<string, unknown>;
+
+  constructor(input: {
+    cause: unknown;
+    message: string;
+    reasonCode: string;
+    stage: string;
+    status?: number;
+  }) {
+    super(input.message);
+    this.name = "SelectedDummyApplyError";
+    this.cause = input.cause;
+    this.reasonCode = input.reasonCode;
+    this.stage = input.stage;
+    this.status = input.status ?? 409;
+    this.details = execErrorDetails(input.cause);
+  }
+}
+
+async function runSelectedDummyGitApply(
+  args: string[],
+  stage: "git apply --recount --check" | "git apply --recount",
+) {
+  try {
+    await execFileAsync("git", args, { cwd: process.cwd() });
+  } catch (error) {
+    throw new SelectedDummyApplyError({
+      cause: error,
+      message: `Selected dummy fixture apply failed during ${stage}.`,
+      reasonCode: stage === "git apply --recount --check"
+        ? "selected_dummy_git_apply_check_failed"
+        : "selected_dummy_git_apply_failed",
+      stage,
+    });
+  }
+}
+
+function selectedDummyApplyErrorStatus(error: unknown) {
+  return error instanceof SelectedDummyApplyError ? error.status : 500;
+}
+
+function selectedDummyApplyErrorPayload(
+  error: unknown,
+  input: {
+    action: string;
+    approvedDiff: string;
+    changedFiles: string[];
+    target: string;
+    taskId: string;
+  },
+) {
+  const selectedError = error instanceof SelectedDummyApplyError ? error : null;
+  const details = selectedError?.details ?? execErrorDetails(error);
+  const message = error instanceof Error ? error.message : String(error);
+  return {
+    action: input.action,
+    changed_files: input.changedFiles,
+    command: details.command ?? null,
+    diff_hash: diffHashForApprovedDiff(input.approvedDiff),
+    error: selectedError
+      ? selectedError.message
+      : "Selected dummy fixture apply route failed before returning an apply result.",
+    exit_code: details.exit_code ?? null,
+    message,
+    reason_code: selectedError?.reasonCode ?? "selected_dummy_apply_unexpected_error",
+    recommended_next_action: selectedError
+      ? "Inspect the approved diff against the current dummy fixture state, then clear/reverse stale selected-prompt leftovers before retrying."
+      : "Inspect Next route logs for /v1/actions/execute-approved and retry after clearing stale selected-prompt state.",
+    route: "/v1/actions/execute-approved",
+    signal: details.signal ?? null,
+    stage: selectedError?.stage ?? "selected dummy apply",
+    stderr: details.stderr ?? "",
+    stdout: details.stdout ?? "",
+    target: input.target,
+    task_id: input.taskId,
+  };
+}
+
+function execErrorDetails(error: unknown): Record<string, unknown> {
+  const record = error && typeof error === "object" ? (error as Record<string, unknown>) : {};
+  return {
+    command: typeof record.cmd === "string" ? record.cmd : "",
+    exit_code: typeof record.code === "number" || typeof record.code === "string" ? record.code : null,
+    signal: typeof record.signal === "string" ? record.signal : null,
+    stderr: typeof record.stderr === "string" ? record.stderr.slice(0, 4000) : "",
+    stdout: typeof record.stdout === "string" ? record.stdout.slice(0, 4000) : "",
   };
 }
 
@@ -614,6 +806,76 @@ function changedFilesFromApprovedDiff(diff: string): string[] {
     }
   }
   return [...files];
+}
+
+export function selectedDummyProductsReplacementFromDiff(
+  diff: string,
+  targetPath = `${DUMMY_CODER_10_FIXTURE_ROOT}src/products.js`,
+):
+  | { ok: true; content: string }
+  | { ok: false; reason: string } {
+  const normalizedTarget = normalizeRepoPath(targetPath);
+  const changedFiles = changedFilesFromApprovedDiff(diff).map(normalizeRepoPath);
+  if (changedFiles.length !== 1 || changedFiles[0] !== normalizedTarget) {
+    return { ok: false, reason: "diff_must_touch_only_products_js" };
+  }
+  const diffHeaders = diff.match(/^diff --git /gm) ?? [];
+  if (diffHeaders.length !== 1) {
+    return { ok: false, reason: "diff_must_have_one_file_section" };
+  }
+  if (!new RegExp(`^\\+\\+\\+ b/${escapeRegExp(normalizedTarget)}\\s*$`, "m").test(diff)) {
+    return { ok: false, reason: "diff_missing_products_new_path" };
+  }
+
+  const nextLines: string[] = [];
+  let inHunk = false;
+  for (const line of diff.split(/\r?\n/)) {
+    if (line.startsWith("@@")) {
+      inHunk = true;
+      continue;
+    }
+    if (!inHunk || line === "" || line.startsWith("\\ No newline at end of file")) {
+      continue;
+    }
+    if (line.startsWith("+") && !line.startsWith("+++")) {
+      nextLines.push(line.slice(1));
+      continue;
+    }
+    if (line.startsWith(" ")) {
+      nextLines.push(line.slice(1));
+    }
+  }
+
+  const content = `${nextLines.join("\n").trimEnd()}\n`;
+  const validationFailure = selectedDummyPrompt2ProductsContentFailure(content);
+  if (validationFailure) {
+    return { ok: false, reason: validationFailure };
+  }
+  return { ok: true, content };
+}
+
+function selectedDummyPrompt2ProductsContentFailure(content: string): string | null {
+  if (content.length > 20000) {
+    return "products_content_too_large";
+  }
+  if (!/\b(?:const|let|var)\s+products\s*=\s*\[/m.test(content)) {
+    return "missing_products_array";
+  }
+  if (!/\bexport\s+default\s+products\s*;?/m.test(content)) {
+    return "missing_default_products_export";
+  }
+  const requiredFieldCounts = ["id", "name", "price", "category", "description"].map((field) => {
+    const matches = content.match(new RegExp(`\\b${field}\\s*:`, "g"));
+    return matches?.length ?? 0;
+  });
+  if (requiredFieldCounts.some((count) => count < 6)) {
+    return "missing_six_complete_product_fields";
+  }
+  return null;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function agentLabClientDirectiveViolations(diff: string): string[] {

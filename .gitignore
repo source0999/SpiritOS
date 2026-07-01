@@ -132,6 +132,7 @@ fold7-media-grabber/
 data/source-proxy/visual-index/
 docs/evidence/**/workspace/
 docs/evidence/**/http-server.pid
+docs/evidence/source-proxy-full-integration-pivot/fip-0-receipts/
 
 # Generated root context packs for LLM handoff/review; keep out of git history.
 /*-context.xml

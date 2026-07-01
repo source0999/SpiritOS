@@ -1,10 +1,25 @@
 /// <reference types="vitest/globals" />
 
+import { execFile } from "node:child_process";
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-store";
 
-import { isSelectedDummyCoderApply, selectedPrompt3DiffViolations, POST } from "../route";
+import {
+  isSelectedDummyCoderApply,
+  selectedDummyProductsReplacementFromDiff,
+  selectedPrompt3DiffViolations,
+  POST,
+} from "../route";
 
+vi.mock("node:child_process", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  const execFileMock = vi.fn();
+  return {
+    ...actual,
+    default: { ...actual, execFile: execFileMock },
+    execFile: execFileMock,
+  };
+});
 vi.mock("@/lib/source-proxy-origin", () => ({
   sourceProxyFetch: vi.fn(),
 }));
@@ -16,6 +31,7 @@ vi.mock("@/lib/coding/durable-run-store", () => ({
 const mockedSourceProxyFetch = vi.mocked(sourceProxyFetch);
 const mockedPatchCodingRun = vi.mocked(patchCodingRun);
 const mockedUpsertCodingRunRow = vi.mocked(upsertCodingRunRow);
+const mockedExecFile = vi.mocked(execFile);
 
 function jsonRequest(body: unknown): Request {
   return new Request("http://localhost/v1/actions/execute-approved", {
@@ -48,6 +64,7 @@ function executeApprovedContractPayload(overrides: Record<string, unknown> = {})
 
 describe("execute-approved route", () => {
   beforeEach(() => {
+    mockedExecFile.mockReset();
     mockedSourceProxyFetch.mockReset();
     mockedPatchCodingRun.mockReset();
     mockedUpsertCodingRunRow.mockReset();
@@ -243,6 +260,207 @@ describe("execute-approved route", () => {
     expect(selectedPrompt3DiffViolations(staticMainOnly)).toContain("STATIC_IMPORT_CLASSIC_SCRIPT");
     expect(selectedPrompt3DiffViolations(moduleIndexAndStaticMain)).not.toContain("STATIC_IMPORT_CLASSIC_SCRIPT");
     expect(selectedPrompt3DiffViolations(dynamicMainOnly)).not.toContain("STATIC_IMPORT_CLASSIC_SCRIPT");
+    expect(
+      selectedPrompt3DiffViolations(
+        [
+          "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "@@ -8,1 +8,1 @@",
+          "-  <script src=\"src/main.js\"></script>",
+          "+  <script type=\"module\" src=\"src/main.js\"></script>",
+          "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "@@ -4,6 +4,8 @@",
+          " products.forEach(product => {",
+          "   const productElement = document.createElement('div');",
+          "+  productElement.classList.add('product-card');",
+          "   productElement.innerHTML = `",
+          "     <h2>${product.name}</h2>",
+          "+    <p>${product.category}</p>",
+          "     <p>${product.description}</p>",
+          "     <p>$${product.price}</p>",
+        ].join("\n"),
+        '<script src="src/main.js"></script>',
+        [
+          "import products from './products.js';",
+          "const productList = document.getElementById('product-list');",
+          "products.forEach(product => {",
+          "  const productElement = document.createElement('div');",
+          "  productElement.innerHTML = `<h2>${product.name}</h2><p>${product.description}</p><p>$${product.price}</p>`;",
+          "  productList.appendChild(productElement);",
+          "});",
+        ].join("\n"),
+      ),
+    ).toEqual([]);
+  });
+
+  it("allows Prompt 3 style-only diffs when the current fixture already renders product cards", () => {
+    const stylesOnly = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css b/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+      "@@ -1 +1 @@",
+      "-.product-card { padding: 8px; }",
+      "+.product-card { padding: 12px; display: grid; gap: 6px; }",
+      "",
+    ].join("\n");
+    const currentIndexHtml = '<script type="module" src="src/main.js"></script>';
+    const renderedPreviewHtml = [
+      '<article class="product-card">',
+      '<p class="category">Lighting</p>',
+      '<p class="price">$34.99</p>',
+      "</article>",
+    ].join("");
+    const currentMainJs = [
+      "import products from './products.js';",
+      "products.forEach(product => {",
+      "  const productCard = document.createElement('div');",
+      "  productCard.classList.add('product-card');",
+      "  product.name; product.category; product.description; product.price;",
+      "});",
+    ].join("\n");
+
+    expect(selectedPrompt3DiffViolations(stylesOnly)).toContain("MISSING_PRODUCTS_IMPORT");
+    expect(selectedPrompt3DiffViolations(stylesOnly, currentIndexHtml, currentMainJs)).toEqual([]);
+    expect(selectedPrompt3DiffViolations(stylesOnly, renderedPreviewHtml, currentMainJs)).toEqual([]);
+  });
+
+  it("uses git apply --recount for selected dummy fixture diffs", async () => {
+    mockedExecFile.mockImplementation((...args: unknown[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback !== "function") {
+        throw new Error("expected callback");
+      }
+      callback(null, "", "");
+      return {} as ReturnType<typeof execFile>;
+    });
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ ok: true }),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    const approvedDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "@@ -1,99 +1,99 @@",
+      " const products = [",
+      "-  { name: 'Product A' }",
+      "+  { id: 'desk-lamp', name: 'Desk Lamp', price: 24.99, category: 'Home', description: 'Small lamp.' }",
+      " ];",
+      "",
+    ].join("\n");
+
+    const response = await POST(
+      jsonRequest({
+        action: "Run selected dummy Coder prompt coder-002-add-product-data",
+        allowed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        approved: true,
+        approved_diff: approvedDiff,
+        target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        task_id: "task-selected-recount",
+      }),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      checks_run: ["git apply --recount --check"],
+      status: "applied",
+    });
+    expect(response.status).toBe(200);
+    const checkArgs = mockedExecFile.mock.calls[0]?.[1] as string[];
+    const applyArgs = mockedExecFile.mock.calls[1]?.[1] as string[];
+    expect(checkArgs.slice(0, 3)).toEqual(["apply", "--recount", "--check"]);
+    expect(applyArgs.slice(0, 2)).toEqual(["apply", "--recount"]);
+  });
+
+  it("reconstructs a valid Prompt 2 products.js replacement from a stale unified diff", () => {
+    const approvedDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "@@ -1,10 +1,12 @@",
+      " const products = [",
+      "-  { name: 'Product A', description: 'Old starter item.', price: 19.99 },",
+      "-  { name: 'Product B', description: 'Old starter item.', price: 29.99 }",
+      "+  { id: 'desk-lamp', name: 'Desk Lamp', price: 24.99, category: 'Home', description: 'Small lamp for a tidy desk.' },",
+      "+  { id: 'coffee-maker', name: 'Coffee Maker', price: 149.99, category: 'Appliances', description: 'Efficient coffee maker for busy mornings.' },",
+      "+  { id: 'water-bottle', name: 'Water Bottle', price: 7.99, category: 'Beverages', description: 'Stainless steel water bottle for staying hydrated.' },",
+      "+  { id: 'headphones', name: 'Headphones', price: 49.99, category: 'Electronics', description: 'Noise-cancelling headphones for focused work.' },",
+      "+  { id: 't-shirt', name: 'T-Shirt', price: 19.99, category: 'Apparel', description: 'Comfortable cotton shirt in simple colors.' },",
+      "+  { id: 'book', name: 'Book', price: 12.99, category: 'Books', description: 'A compact paperback for a weekend read.' }",
+      " ];",
+      " ",
+      " export default products;",
+      "",
+    ].join("\n");
+
+    const replacement = selectedDummyProductsReplacementFromDiff(approvedDiff);
+
+    expect(replacement).toMatchObject({ ok: true });
+    if (!replacement.ok) {
+      throw new Error(replacement.reason);
+    }
+    expect(replacement.content).toContain("id: 'desk-lamp'");
+    expect(replacement.content).toContain("category: 'Books'");
+    expect(replacement.content).toContain("export default products;");
+    expect(replacement.content).not.toContain("Old starter item");
+  });
+
+  it("returns structured selected dummy apply diagnostics when git apply check fails", async () => {
+    mockedExecFile.mockImplementation((...args: unknown[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback !== "function") {
+        throw new Error("expected callback");
+      }
+      const error = Object.assign(new Error("patch does not apply"), {
+        code: 1,
+        cmd: "git apply --recount --check approved.patch",
+        stderr: "error: patch failed: tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js:1",
+        stdout: "",
+      });
+      callback(error, "", error.stderr);
+      return {} as ReturnType<typeof execFile>;
+    });
+
+    const approvedDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "@@ -1,3 +1,3 @@",
+      " const products = [",
+      "-  { name: 'Old product' }",
+      "+  { id: 'new-product', name: 'New product', price: 9.99, category: 'Home', description: 'Simple item.' }",
+      " ];",
+      "",
+    ].join("\n");
+
+    const response = await POST(
+      jsonRequest({
+        action: "Run selected dummy Coder prompt coder-002-add-product-data",
+        allowed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        approved: true,
+        approved_diff: approvedDiff,
+        target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        task_id: "task-selected-002",
+      }),
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      changed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"],
+      error: "Selected dummy fixture apply failed during git apply --recount --check.",
+      reason_code: "selected_dummy_git_apply_check_failed",
+      route: "/v1/actions/execute-approved",
+      stage: "git apply --recount --check",
+      stderr: expect.stringContaining("patch failed"),
+      task_id: "task-selected-002",
+    });
+    expect(response.status).toBe(409);
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 
   it("records suite apply proof server-side before browser post-apply parsing can reload", async () => {

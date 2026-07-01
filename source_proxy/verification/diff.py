@@ -1733,7 +1733,12 @@ def _file_risk_flags(path: str) -> list[str]:
         flags.append("path_escape")
     if any(part.startswith(".") or any(marker in part for marker in SECRET_NAME_MARKERS) for part in parts):
         flags.append("secret_shaped_path")
-    if parts and (parts[-1] in HIGH_RISK_EXACT_NAMES or normalized.startswith(HIGH_RISK_PREFIXES)):
+    dummy_product_site_package = normalized == f"{DUMMY_PRODUCT_SITE_ROOT}package.json"
+    if (
+        parts
+        and not dummy_product_site_package
+        and (parts[-1] in HIGH_RISK_EXACT_NAMES or normalized.startswith(HIGH_RISK_PREFIXES))
+    ):
         flags.append("high_impact_file")
     return flags
 

@@ -276,6 +276,38 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertEqual(payload["self_correction"]["severity"], "high")
         self.assertFalse(payload["limits"]["file_writes_allowed"])
 
+    def test_dummy_product_site_package_is_not_high_impact(self) -> None:
+        app = FastAPI()
+        app.include_router(diff_verification_router)
+        client = TestClient(app)
+
+        response = client.post(
+            "/v1/verification/diff-preview",
+            json={
+                "task_spec": {
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "target": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+                    "task_type": "create_file_bundle",
+                },
+                "unified_diff": "\n".join(
+                    [
+                        "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/package.json b/tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+                        "new file mode 100644",
+                        "--- /dev/null",
+                        "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+                        "@@ -0,0 +1 @@",
+                        '+{"name":"lumacart-dummy","private":true}',
+                    ]
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "preview_ready")
+        self.assertEqual(payload["risk"], "low")
+        self.assertEqual(payload["changed_files"][0]["risk_flags"], [])
+
     def test_manual_result_preview_blocks_secret_shaped_path(self) -> None:
         app = FastAPI()
         app.include_router(diff_verification_router)

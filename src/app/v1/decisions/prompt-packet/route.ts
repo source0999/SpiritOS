@@ -1,4 +1,5 @@
 import { mergeRepoFirstResearchSources } from "@/app/v1/decisions/_repo-research";
+import { probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
 import { sourceProxyFetch, sourceProxyLongJsonFetch } from "@/lib/source-proxy-origin";
 
 import { readFile } from "node:fs/promises";
@@ -15,6 +16,10 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   let bodyText = await request.text();
   bodyText = await enrichPrompt3FixtureContext(bodyText);
+  const prompt3AlreadySatisfied = await prompt3AlreadySatisfiedPayload(bodyText);
+  if (prompt3AlreadySatisfied) {
+    return Response.json(prompt3AlreadySatisfied);
+  }
   const directDocsOnlyPreview = await docsOnlyPreviewPayload(bodyText, {
     reason_code: "docs_only_bff_direct_preview",
     status: "preview_ready",
@@ -265,6 +270,72 @@ async function readPrompt3FixtureContext() {
     productCount: (productsJs.match(/\bid\s*:/g) ?? []).length,
     productsJs,
     stylesCss,
+  };
+}
+
+async function prompt3AlreadySatisfiedPayload(bodyText: string) {
+  const metadata = promptPacketRequestMetadata(bodyText);
+  if (metadata.selected_prompt_id !== "coder-003-render-product-cards") return null;
+
+  const context = await readPrompt3FixtureContext();
+  const probe = probeDummyStorefront({
+    files: {
+      "index.html": context.indexHtml,
+      "src/main.js": context.mainJs,
+      "src/products.js": context.productsJs,
+      "src/styles.css": context.stylesCss,
+    },
+  });
+  const alreadyRendered =
+    probe.preview_behavior_status === "PASS_STOREFRONT_RENDERED" &&
+    probe.preview_asset_status === "present" &&
+    probe.product_count >= 6 &&
+    probe.card_render_path_present &&
+    probe.category_render_path_present &&
+    probe.description_render_path_present &&
+    probe.price_render_path_present;
+  if (!alreadyRendered) return null;
+
+  const target = "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js";
+  const checksRun = ["existing Prompt 3 storefront render validation"];
+  return {
+    active_task_id: metadata.task_id,
+    already_satisfied: true,
+    alreadySatisfied: true,
+    allowed_files: metadata.allowed_files,
+    changed_files: [],
+    checks_run: checksRun,
+    coder_diagnostics: {
+      checks_run: checksRun,
+      existing_product_cards_present: true,
+      existing_product_cards_validation: {
+        ok: true,
+        storefront_probe: probe,
+      },
+      generation_source: "disk_inspection",
+      model_output_classification: "already_satisfied_noop",
+      reason_code: "coder_no_changes_needed",
+      trial_result_trust_status: "existing_product_cards_verified_no_diff_needed",
+    },
+    diff_source: "already_satisfied_existing_dummy_product_cards",
+    fallback_used: false,
+    generated_diff_by_backend: false,
+    generation_source: "disk_inspection",
+    message: "already_satisfied",
+    model_output_classification: "already_satisfied_noop",
+    proposed_diff: "",
+    reason: "already_satisfied",
+    reason_code: "coder_no_changes_needed",
+    scaffold_used: false,
+    selected_prompt_id: metadata.selected_prompt_id,
+    selected_prompt_number: metadata.selected_prompt_number,
+    selected_target: target,
+    simple_reason: "already_satisfied",
+    status: "already_satisfied",
+    target,
+    task_id: metadata.task_id,
+    trial_result_trust_status: "existing_product_cards_verified_no_diff_needed",
+    verification_status: "existing storefront render validation passed",
   };
 }
 
