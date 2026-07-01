@@ -7,6 +7,7 @@ const DEFAULT_DEV_HOSTS = [
   "127.0.0.1",
   "10.0.0.186",
   "100.111.32.31",
+  "spirit.tailb69ea6.ts.net",
   "admin.sourc3code.dev",
   "*.ts.net",
 ] as const;

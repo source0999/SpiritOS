@@ -183,6 +183,15 @@ function visibleItems(items?: JellyfinItem[]): JellyfinItem[] {
   return (items ?? []).filter(isVisibleSpiritFlixItem);
 }
 
+function uniqueItemsById(items: JellyfinItem[]): JellyfinItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.Id)) return false;
+    seen.add(item.Id);
+    return true;
+  });
+}
+
 function getItemFields(fields: "card" | "full" = "card"): string {
   return fields === "full" ? GOONER_ITEM_FIELDS : CARD_ITEM_FIELDS;
 }
@@ -382,6 +391,28 @@ export class JellyfinClient {
     return page.items;
   }
 
+  async getAllLibraryItems(
+    parentId: string,
+    options: Pick<JellyfinItemPageOptions, "searchTerm" | "fields" | "signal"> & { pageSize?: number } = {},
+  ): Promise<JellyfinItem[]> {
+    const { searchTerm = "", fields = "full", signal, pageSize = 500 } = options;
+    const items: JellyfinItem[] = [];
+    let startIndex = 0;
+
+    for (;;) {
+      const page = await this.getLibraryItemsPage(parentId, {
+        searchTerm,
+        startIndex,
+        limit: pageSize,
+        fields,
+        signal,
+      });
+      items.push(...page.items);
+      if (!page.hasMore || page.items.length === 0) return uniqueItemsById(items);
+      startIndex = page.startIndex + page.items.length;
+    }
+  }
+
   async getItem(itemId: string): Promise<JellyfinItem | null> {
     if (!this.userId || !itemId) return null;
     const query = toQuery({
@@ -485,7 +516,6 @@ export class JellyfinClient {
       Recursive: true,
       IncludeItemTypes: "Movie,Episode,Video",
       Fields: getItemFields(fields),
-      Filters: "IsPlayed",
       ImageTypeLimit: 1,
       EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
       SortBy: "DatePlayed",
@@ -696,12 +726,13 @@ export class JellyfinClient {
     return URL.createObjectURL(await response.blob());
   }
 
-  getStreamUrl(itemId: string): string {
+  getStreamUrl(itemId: string, options: { audioStreamIndex?: number } = {}): string {
     const directServerUrl = getDirectServerUrl(this.serverUrl);
     const query = toQuery({
       serverUrl: directServerUrl,
       itemId,
       token: this.token,
+      audioStreamIndex: options.audioStreamIndex,
     });
     if (isHttpsPage()) return `/api/spiritflix/stream?${query}`;
 
@@ -709,11 +740,12 @@ export class JellyfinClient {
       Static: "true",
       api_key: this.token,
       PlaySessionId: `spiritflix-${itemId}`,
+      AudioStreamIndex: options.audioStreamIndex,
     });
     return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${directQuery}`;
   }
 
-  getHlsUrl(itemId: string): string {
+  getHlsUrl(itemId: string, options: { audioStreamIndex?: number } = {}): string {
     const directServerUrl = getDirectServerUrl(this.serverUrl);
     const playbackProfile = getHlsPlaybackProfile();
     const query = toQuery({
@@ -728,6 +760,7 @@ export class JellyfinClient {
       AudioBitrate: playbackProfile.audioBitrate,
       MaxWidth: playbackProfile.maxWidth,
       MaxHeight: playbackProfile.maxHeight,
+      AudioStreamIndex: options.audioStreamIndex,
     });
     const path = `/Videos/${encodeURIComponent(itemId)}/master.m3u8?${query}`;
     if (isHttpsPage()) {

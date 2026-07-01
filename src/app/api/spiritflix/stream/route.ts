@@ -23,15 +23,20 @@ export async function GET(request: NextRequest) {
   const serverUrl = normalizeJellyfinServerUrl(searchParams.get("serverUrl") ?? "");
   const itemId = searchParams.get("itemId") ?? "";
   const token = searchParams.get("token") ?? "";
+  const audioStreamIndex = searchParams.get("audioStreamIndex");
 
   if (!isAllowedServer(serverUrl) || !/^[a-fA-F0-9-]+$/.test(itemId) || !token) {
     return NextResponse.json({ error: "Invalid stream request." }, { status: 400 });
+  }
+  if (audioStreamIndex && !/^\d+$/.test(audioStreamIndex)) {
+    return NextResponse.json({ error: "Invalid audio stream request." }, { status: 400 });
   }
 
   const upstream = new URL(`${serverUrl}/Videos/${itemId}/Stream`);
   upstream.searchParams.set("Static", "true");
   upstream.searchParams.set("api_key", token);
   upstream.searchParams.set("PlaySessionId", `spiritflix-${itemId}`);
+  if (audioStreamIndex) upstream.searchParams.set("AudioStreamIndex", audioStreamIndex);
 
   const headers: HeadersInit = {};
   const range = request.headers.get("Range");

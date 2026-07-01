@@ -13,9 +13,10 @@ import { SPIRITFLIX_DEFAULT_SERVER } from "@/lib/spiritflix-jellyfin-client";
 export default function SpiritFlixBenchmarkPlayerPage() {
   const searchParams = useSearchParams();
   const itemId = searchParams.get("itemId") ?? SPIRITFLIX_BENCHMARK_DEFAULT_ITEM_ID;
+  const sourcePath = searchParams.get("sourcePath") ?? undefined;
   const autoPlay = searchParams.get("autoplay") !== "0";
   const markedRef = useRef(false);
-  const item = useMemo(() => createBenchmarkItem(itemId), [itemId]);
+  const item = useMemo(() => createBenchmarkItem(itemId, undefined, sourcePath), [itemId, sourcePath]);
   const client = useMemo(() => createSpiritFlixBenchmarkClient(item, SPIRITFLIX_DEFAULT_SERVER), [item]);
 
   useEffect(() => {

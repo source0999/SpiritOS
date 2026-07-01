@@ -510,6 +510,12 @@
   padding: 0 clamp(1rem, 5vw, 4rem);
 }
 
+.spiritflix-rows--anime {
+  gap: 1.25rem;
+  margin-top: 0;
+  padding-top: calc(env(safe-area-inset-top) + 7.75rem);
+}
+
 .spiritflix-rail {
   min-width: 0;
 }
@@ -527,6 +533,43 @@
   color: #fff;
   font-size: clamp(1rem, 2vw, 1.2rem);
   letter-spacing: 0;
+}
+
+.spiritflix-rail__title-copy {
+  display: inline-grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.spiritflix-rail__title-meta,
+.spiritflix-library-v2__count {
+  color: var(--sf-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.spiritflix-rail__title-button {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.spiritflix-rail__title-button svg {
+  flex: 0 0 auto;
+  color: var(--sf-muted);
+}
+
+.spiritflix-rail__title-button:hover {
+  background: transparent;
+  box-shadow: none;
 }
 
 .spiritflix-rail__controls {
@@ -737,30 +780,150 @@
 
 .spiritflix-anime-view {
   display: grid;
-  gap: 1.1rem;
+  gap: 1.25rem;
   min-width: 0;
-  padding: 1rem 0 5rem;
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
 }
 
-.spiritflix-anime-view__header {
+.spiritflix-anime-hero {
+  position: relative;
+  display: flex;
+  min-height: clamp(20rem, 42dvh, 29rem);
+  align-items: end;
+  overflow: hidden;
+  margin: 0 calc(-1 * clamp(1rem, 5vw, 4rem));
+  padding: clamp(3.2rem, 9dvh, 5.75rem) clamp(1rem, 5vw, 4rem) clamp(1.6rem, 5dvh, 3.25rem);
+  isolation: isolate;
+}
+
+.spiritflix-anime-hero--empty {
+  background:
+    linear-gradient(90deg, rgba(5, 5, 10, 0.95), rgba(15, 8, 18, 0.62)),
+    #08080f;
+}
+
+.spiritflix-anime-hero__ambient,
+.spiritflix-anime-hero__image,
+.spiritflix-anime-hero__shade {
+  position: absolute;
+  inset: 0;
+}
+
+.spiritflix-anime-hero__ambient {
+  z-index: -3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.28;
+  filter: blur(36px) saturate(1.2);
+  transform: scale(1.08);
+}
+
+.spiritflix-anime-hero__image {
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.58;
+  filter: brightness(0.78) contrast(1.08) saturate(1.08);
+}
+
+.spiritflix-anime-hero__shade {
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(5, 5, 10, 0.98) 0%, rgba(5, 5, 10, 0.72) 46%, rgba(5, 5, 10, 0.18) 82%),
+    linear-gradient(0deg, var(--sf-bg) 0%, rgba(5, 5, 10, 0.45) 28%, rgba(5, 5, 10, 0.12) 62%);
+}
+
+.spiritflix-anime-hero__content {
+  position: relative;
   display: grid;
-  gap: 0.45rem;
-  max-width: 54rem;
+  width: min(100%, 48rem);
+  gap: 0.65rem;
 }
 
-.spiritflix-anime-view__header h1 {
+.spiritflix-anime-hero h1 {
+  display: -webkit-box;
+  max-width: 18ch;
   margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: #fff;
-  font-size: clamp(2.1rem, 5vw, 4rem);
+  font-size: clamp(2.2rem, 6vw, 3.85rem);
   font-weight: 950;
-  line-height: 0.95;
+  line-height: 0.98;
+  text-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.72);
 }
 
-.spiritflix-anime-view__header p {
-  margin: 0;
-  color: rgba(226, 232, 240, 0.78);
+.spiritflix-anime-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  color: rgba(248, 250, 252, 0.82);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.spiritflix-anime-hero__meta span {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 0 0.7rem;
+  background: rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.spiritflix-anime-now {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+  max-width: min(100%, 38rem);
+  margin-top: 0.25rem;
+}
+
+.spiritflix-anime-now__play {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.9rem;
+  border: 0;
+  border-radius: 0.42rem;
+  padding: 0 1rem;
+  background: #fff;
+  color: #05050a;
+  font-size: 0.9rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.spiritflix-anime-now__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.spiritflix-anime-now__copy strong,
+.spiritflix-anime-now__copy small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-anime-now__copy strong {
+  color: #fff;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 900;
+}
+
+.spiritflix-anime-now__copy small {
+  color: rgba(226, 232, 240, 0.76);
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
 .spiritflix-anime-series,
@@ -772,16 +935,122 @@
 }
 
 .spiritflix-anime-series {
-  gap: 0.8rem;
+  gap: 0.9rem;
+}
+
+.spiritflix-anime-series-picker {
+  display: flex;
+  gap: 0.82rem;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.1rem 0.15rem 0.7rem;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.spiritflix-anime-series-picker::-webkit-scrollbar {
+  display: none;
+}
+
+.spiritflix-anime-series-picker button {
+  position: relative;
+  display: grid;
+  flex: 0 0 clamp(13rem, 23vw, 18rem);
+  min-width: 0;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  scroll-snap-align: start;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 0.5rem;
+  padding: 0;
+  background: #11111b;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.spiritflix-anime-series-picker button:hover,
+.spiritflix-anime-series-picker button:focus-visible,
+.spiritflix-anime-series-picker button.is-active {
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 1rem 2.6rem rgba(0, 0, 0, 0.36);
+}
+
+.spiritflix-anime-series-picker button.is-active::after {
+  position: absolute;
+  left: 0.72rem;
+  right: 0.72rem;
+  bottom: 0.55rem;
+  height: 0.22rem;
+  border-radius: 999px;
+  background: #e50914;
+  content: "";
+}
+
+.spiritflix-anime-series-picker__art,
+.spiritflix-anime-series-picker__art .spiritflix-image-frame,
+.spiritflix-anime-series-picker__art .spiritflix-image-fallback {
+  position: absolute;
+  inset: 0;
+}
+
+.spiritflix-anime-series-picker__art img,
+.spiritflix-anime-series-picker__art .spiritflix-image-frame__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 220ms ease, filter 220ms ease;
+}
+
+.spiritflix-anime-series-picker button:hover .spiritflix-anime-series-picker__art img,
+.spiritflix-anime-series-picker button:hover .spiritflix-anime-series-picker__art .spiritflix-image-frame__image {
+  transform: scale(1.045);
+  filter: brightness(1.04) saturate(1.08);
+}
+
+.spiritflix-anime-series-picker__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.48) 48%, rgba(0, 0, 0, 0.12) 100%);
+}
+
+.spiritflix-anime-series-picker__copy {
+  position: relative;
+  align-self: end;
+  display: grid;
+  min-width: 0;
+  gap: 0.22rem;
+  padding: 0.72rem 0.78rem 0.92rem;
+}
+
+.spiritflix-anime-series-picker strong,
+.spiritflix-anime-series-picker span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spiritflix-anime-series-picker strong {
+  font-size: 0.94rem;
+  font-weight: 950;
+}
+
+.spiritflix-anime-series-picker span {
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .spiritflix-anime-seasons {
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
 .spiritflix-anime-season,
 .spiritflix-anime-episodes {
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .spiritflix-anime-series__header,
@@ -807,7 +1076,7 @@
 }
 
 .spiritflix-anime-season__header h3 {
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-size: 1.22rem;
 }
 
 .spiritflix-anime-series__header span,
@@ -820,15 +1089,15 @@
 
 .spiritflix-anime-episode {
   display: grid;
-  grid-template-columns: minmax(5.6rem, 7rem) minmax(0, 1fr) 2.4rem;
+  grid-template-columns: 8.7rem minmax(0, 1fr) 2.4rem;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.95rem;
   min-width: 0;
-  min-height: 4.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.62rem 0.72rem;
-  background: rgba(255, 255, 255, 0.055);
+  min-height: 5.7rem;
+  border: 0;
+  border-radius: 0.36rem;
+  padding: 0.5rem 0.72rem 0.5rem 0.5rem;
+  background: rgba(255, 255, 255, 0.048);
   color: #fff;
   cursor: pointer;
   text-align: left;
@@ -836,21 +1105,38 @@
 
 .spiritflix-anime-episode:hover,
 .spiritflix-anime-episode:focus-visible {
-  border-color: rgba(34, 211, 238, 0.38);
-  background: rgba(34, 211, 238, 0.1);
+  background: rgba(255, 255, 255, 0.11);
 }
 
-.spiritflix-anime-episode__number {
-  color: rgba(226, 232, 240, 0.74);
-  font-size: 0.82rem;
-  font-weight: 950;
-  text-transform: uppercase;
+.spiritflix-anime-episode__thumb {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 8.2rem;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.3rem;
+  background: #11111b;
+}
+
+.spiritflix-anime-episode__thumb .spiritflix-image-frame,
+.spiritflix-anime-episode__thumb .spiritflix-image-fallback,
+.spiritflix-anime-episode__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .spiritflix-anime-episode__copy {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.12rem;
   min-width: 0;
+}
+
+.spiritflix-anime-episode__copy > span {
+  color: rgba(226, 232, 240, 0.58);
+  font-size: 0.74rem;
+  font-weight: 950;
+  text-transform: uppercase;
 }
 
 .spiritflix-anime-episode__copy strong,
@@ -863,7 +1149,7 @@
 
 .spiritflix-anime-episode__copy strong {
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 900;
 }
 
@@ -880,8 +1166,23 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 999px;
-  background: rgba(34, 211, 238, 0.14);
-  color: #e0f2fe;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.spiritflix-anime-episode__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.22rem;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.spiritflix-anime-episode__progress span {
+  display: block;
+  height: 100%;
+  background: #e50914;
 }
 
 .spiritflix-library-v2__header {
@@ -1274,10 +1575,38 @@
   min-width: 0;
 }
 
-.spiritflix-resume-section__header > div:first-child {
-  display: grid;
+.spiritflix-resume-section__header > div:first-child,
+.spiritflix-section-title-button {
+  display: inline-grid;
   min-width: 0;
   gap: 0.18rem;
+}
+
+.spiritflix-section-title-button {
+  grid-template-columns: minmax(0, auto) auto;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.spiritflix-section-title-button svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--sf-muted);
+}
+
+.spiritflix-section-title-button:not(.spiritflix-section-title-button--compact) h3,
+.spiritflix-section-title-button:not(.spiritflix-section-title-button--compact) > span {
+  grid-column: 1;
+}
+
+.spiritflix-section-title-button:hover {
+  background: transparent;
+  box-shadow: none;
 }
 
 .spiritflix-resume-section__header h3 {
@@ -1439,7 +1768,8 @@
   gap: 0.8rem;
 }
 
-.spiritflix-model-section__header > span {
+.spiritflix-model-section__header > span,
+.spiritflix-section-title-button--compact span {
   overflow: hidden;
   color: var(--sf-muted);
   font-size: 0.78rem;
@@ -1447,6 +1777,16 @@
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.spiritflix-section-title-button--compact {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.spiritflix-section-title-button--compact svg {
+  grid-column: auto;
+  grid-row: auto;
 }
 
 .spiritflix-model-strip {
@@ -1510,11 +1850,19 @@
 }
 
 .spiritflix-model-card img,
-.spiritflix-model-card .spiritflix-image-fallback {
+.spiritflix-model-card .spiritflix-image-fallback,
+.spiritflix-model-card__placeholder {
   width: 4.05rem;
   height: 4.05rem;
   border-radius: 0.55rem;
   object-fit: cover;
+}
+
+.spiritflix-model-card__placeholder {
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.76);
 }
 
 .spiritflix-model-card > span,
@@ -2611,10 +2959,21 @@
   padding-inline: 0.72rem;
 }
 
-.spiritflix-player__tool--audio span {
+.spiritflix-player__tool--audio span,
+.spiritflix-player__tool--tiktok span {
   line-height: 1;
   font-size: 0.78rem;
   font-weight: 900;
+}
+
+.spiritflix-player__tool--tiktok {
+  gap: 0.34rem;
+  min-width: 5.2rem;
+  padding-inline: 0.65rem;
+}
+
+.spiritflix-player__tool--tiktok svg {
+  transform: rotate(180deg);
 }
 
 .spiritflix-player button.is-active {
@@ -3214,9 +3573,14 @@
 }
 
 .spiritflix-player__queue-thumb-fallback {
+  display: grid;
+  place-items: center;
   background:
     linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(139, 92, 246, 0.22)),
     rgba(15, 23, 42, 0.72);
+  color: rgba(248, 250, 252, 0.82);
+  font-size: 0.76rem;
+  font-weight: 900;
 }
 
 .spiritflix-player__queue-select strong {
@@ -3383,6 +3747,18 @@
   .spiritflix-gallery-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .spiritflix-rows--anime {
+    padding-top: calc(env(safe-area-inset-top) + 7.35rem);
+  }
+
+  .spiritflix-anime-hero {
+    min-height: clamp(18.5rem, 39dvh, 25rem);
+  }
+
+  .spiritflix-anime-series-picker button {
+    flex-basis: clamp(12.5rem, 31vw, 16rem);
+  }
 }
 
 @media (max-width: 760px) {
@@ -3434,6 +3810,12 @@
     padding-right: 0.9rem;
   }
 
+  .spiritflix-rows--anime {
+    gap: 1rem;
+    margin-top: 0;
+    padding-top: calc(env(safe-area-inset-top) + 10.4rem);
+  }
+
   .spiritflix-library-v2__header {
     align-items: start;
     flex-direction: column;
@@ -3463,6 +3845,42 @@
 
   .spiritflix-library-v2 {
     gap: 0.9rem;
+  }
+
+  .spiritflix-anime-hero {
+    min-height: clamp(17rem, 35dvh, 21.5rem);
+    margin-left: -0.9rem;
+    margin-right: -0.9rem;
+    padding: 2.35rem 0.9rem 1.45rem;
+  }
+
+  .spiritflix-anime-hero h1 {
+    max-width: 16ch;
+    font-size: clamp(2rem, 6.8vw, 2.75rem);
+  }
+
+  .spiritflix-anime-hero__meta {
+    gap: 0.35rem;
+    font-size: 0.76rem;
+  }
+
+  .spiritflix-anime-hero__meta span {
+    min-height: 1.55rem;
+    padding: 0 0.55rem;
+  }
+
+  .spiritflix-anime-series-picker button {
+    flex-basis: min(15rem, 58vw);
+  }
+
+  .spiritflix-anime-episode {
+    grid-template-columns: 7rem minmax(0, 1fr) 2.15rem;
+    gap: 0.68rem;
+    min-height: 5rem;
+  }
+
+  .spiritflix-anime-episode__thumb {
+    width: 6.65rem;
   }
 
   .spiritflix-library-modebar {
@@ -3582,6 +4000,49 @@
 
   .spiritflix-rail__controls {
     display: none;
+  }
+
+  .spiritflix-anime-hero {
+    min-height: 16.75rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .spiritflix-anime-hero h1 {
+    max-width: 15ch;
+    font-size: clamp(1.78rem, 8.4vw, 2.28rem);
+  }
+
+  .spiritflix-anime-now {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    gap: 0.5rem;
+  }
+
+  .spiritflix-anime-now__play {
+    justify-content: center;
+    width: 100%;
+    min-height: 2.55rem;
+  }
+
+  .spiritflix-anime-series__header,
+  .spiritflix-anime-season__header {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .spiritflix-anime-episode {
+    grid-template-columns: 5.45rem minmax(0, 1fr) 2rem;
+    min-height: 4.55rem;
+    padding-right: 0.55rem;
+  }
+
+  .spiritflix-anime-episode__thumb {
+    width: 5.15rem;
+  }
+
+  .spiritflix-anime-episode__copy strong {
+    font-size: 0.9rem;
   }
 
   .spiritflix-modal__panel {
@@ -3723,7 +4184,7 @@
     bottom: calc(max(0.8rem, env(safe-area-inset-bottom)) + 14.1rem);
     z-index: 13;
     display: grid;
-    grid-template-columns: 2.2rem;
+    grid-template-columns: repeat(2, minmax(2.35rem, auto));
     gap: 0.3rem;
     border: 1px solid rgba(255, 255, 255, 0.11);
     border-radius: 1rem;
@@ -3787,6 +4248,13 @@
     background: transparent;
     color: #c4b5fd;
     box-shadow: none;
+  }
+
+  .spiritflix-player__tools .spiritflix-player__tool--tiktok {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+    padding-inline: 0.55rem;
   }
 
   .spiritflix-player__button-row button svg {
@@ -3975,6 +4443,73 @@
 
   .spiritflix-library-grid {
     gap: 0.65rem;
+  }
+
+  .spiritflix-rows--anime {
+    padding-top: calc(env(safe-area-inset-top) + 9.7rem);
+  }
+
+  .spiritflix-anime-view {
+    gap: 0.9rem;
+  }
+
+  .spiritflix-anime-hero {
+    min-height: 15.5rem;
+    padding-top: 1.8rem;
+  }
+
+  .spiritflix-anime-hero h1 {
+    font-size: clamp(1.62rem, 8.8vw, 2rem);
+  }
+
+  .spiritflix-anime-hero__meta span {
+    max-width: 100%;
+  }
+
+  .spiritflix-anime-now__copy strong,
+  .spiritflix-anime-now__copy small {
+    white-space: normal;
+  }
+
+  .spiritflix-anime-series-picker {
+    gap: 0.62rem;
+  }
+
+  .spiritflix-anime-series-picker button {
+    flex-basis: min(13.5rem, 72vw);
+  }
+
+  .spiritflix-anime-series__header h2 {
+    font-size: 1.35rem;
+  }
+
+  .spiritflix-anime-season__header h3 {
+    font-size: 1.05rem;
+  }
+
+  .spiritflix-anime-episode {
+    grid-template-columns: 4.6rem minmax(0, 1fr) 1.8rem;
+    gap: 0.52rem;
+    min-height: 4.2rem;
+    padding: 0.42rem 0.45rem 0.42rem 0.42rem;
+  }
+
+  .spiritflix-anime-episode__thumb {
+    width: 4.35rem;
+  }
+
+  .spiritflix-anime-episode__copy > span,
+  .spiritflix-anime-episode__copy small {
+    font-size: 0.7rem;
+  }
+
+  .spiritflix-anime-episode__copy strong {
+    font-size: 0.82rem;
+  }
+
+  .spiritflix-anime-episode__play {
+    width: 1.8rem;
+    height: 1.8rem;
   }
 
   .spiritflix-gallery-grid {
@@ -4259,14 +4794,17 @@
   }
 
   .spiritflix-player__tools-overflow {
-    position: absolute;
-    top: calc(50% + 2.55rem);
+    position: fixed;
+    top: 50%;
     right: max(0.72rem, env(safe-area-inset-right));
     bottom: auto;
     z-index: 13;
     display: grid;
-    grid-template-columns: 2.2rem;
+    grid-template-columns: repeat(2, minmax(2.35rem, auto));
     gap: 0.3rem;
+    max-height: calc(100dvh - max(0.7rem, env(safe-area-inset-top)) - max(0.7rem, env(safe-area-inset-bottom)) - 1.4rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     border: 1px solid rgba(255, 255, 255, 0.11);
     border-radius: 1rem;
     padding: 0.34rem;
@@ -4274,7 +4812,7 @@
     box-shadow: 0 0.9rem 2rem rgba(0, 0, 0, 0.38);
     opacity: 0;
     pointer-events: none;
-    transform: translateX(0.45rem) scale(0.98);
+    transform: translateY(-50%) translateX(0.45rem) scale(0.98);
     transition:
       opacity 150ms ease,
       transform 150ms ease;
@@ -4284,7 +4822,7 @@
   .spiritflix-player__tools.is-open .spiritflix-player__tools-overflow {
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(0) scale(1);
+    transform: translateY(-50%) translateX(0) scale(1);
   }
 
   .spiritflix-player__shuffle-picker {
@@ -4329,6 +4867,13 @@
     background: transparent;
     color: #c4b5fd;
     box-shadow: none;
+  }
+
+  .spiritflix-player__tools .spiritflix-player__tool--tiktok {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+    padding-inline: 0.55rem;
   }
 
   .spiritflix-player__button-row button svg {
@@ -4396,6 +4941,47 @@
   .spiritflix-player__time {
     min-width: 2.6rem;
     font-size: 0.74rem;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape), (orientation: landscape) and (any-pointer: coarse) {
+  .spiritflix-player__controls,
+  .spiritflix-player.is-awake .spiritflix-player__controls,
+  .spiritflix-player:focus-within .spiritflix-player__controls,
+  .spiritflix-player.is-controls-hidden .spiritflix-player__controls,
+  .spiritflix-player.is-controls-hidden:focus-within .spiritflix-player__controls {
+    transform: none;
+  }
+
+  .spiritflix-delete-editor,
+  .spiritflix-model-editor,
+  .spiritflix-tag-editor {
+    position: fixed;
+    top: max(0.62rem, env(safe-area-inset-top));
+    right: max(0.72rem, env(safe-area-inset-right));
+    bottom: max(0.62rem, env(safe-area-inset-bottom));
+    width: min(34rem, calc(100vw - max(0.72rem, env(safe-area-inset-left)) - max(0.72rem, env(safe-area-inset-right))));
+    max-height: none;
+    align-content: start;
+    overscroll-behavior: contain;
+  }
+
+  .spiritflix-tag-editor__chips {
+    max-height: min(11rem, calc(100dvh - 14.5rem));
+  }
+
+  .spiritflix-model-editor .spiritflix-tag-editor__chips {
+    max-height: min(9.5rem, calc(100dvh - 17rem));
+  }
+
+  .spiritflix-tag-editor__actions {
+    position: sticky;
+    bottom: -0.85rem;
+    z-index: 2;
+    margin: 0 -0.85rem -0.85rem;
+    padding: 0.55rem 0.85rem 0.85rem;
+    background: rgba(9, 9, 18, 0.96);
+    backdrop-filter: blur(18px);
   }
 }
 

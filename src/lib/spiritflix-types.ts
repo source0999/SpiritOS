@@ -80,6 +80,38 @@ export interface JellyfinItem {
   ManualModelName?: string;
 }
 
+export interface SpiritFlixCaptionTrack {
+  id: string;
+  jellyfinItemId?: string;
+  mediaPath: string;
+  sourceType: "embedded" | "external" | "generated";
+  format: "srt" | "ass" | "ssa" | "vtt" | "mov_text" | "pgs" | "unknown";
+  language?: string;
+  label: string;
+  kind: "subtitles" | "captions";
+  default?: boolean;
+  forced?: boolean;
+  sdh?: boolean;
+  streamIndex?: number;
+  sourcePath?: string;
+  generatedBy?: string;
+  reviewStatus: "source" | "draft" | "reviewed" | "approved";
+}
+
+export interface SpiritFlixCaptionManifestTrack extends Omit<SpiritFlixCaptionTrack, "format"> {
+  sourceFormat: SpiritFlixCaptionTrack["format"] | string;
+  outputFormat: "vtt";
+  cachePath?: string;
+  publicUrl?: string;
+}
+
+export interface SpiritFlixCaptionManifest {
+  mediaPath: string;
+  mediaKey: string;
+  generatedAt: string;
+  tracks: SpiritFlixCaptionManifestTrack[];
+}
+
 export interface SpiritFlixManualTagSummary {
   tag: string;
   label: string;
@@ -106,6 +138,9 @@ export interface SpiritFlixManualTagIndex {
 export interface SpiritFlixManualModelSummary {
   modelName: string;
   count: number;
+  catalogCount?: number;
+  assignedCount?: number;
+  source?: "manual" | "registry" | "merged";
 }
 
 export interface SpiritFlixManualModelRecord {

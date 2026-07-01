@@ -33,6 +33,7 @@ describe("JellyfinClient playback URLs", () => {
     expect(streamUrl.searchParams.get("serverUrl")).toBe("http://100.111.32.31:8096");
     expect(streamUrl.searchParams.get("itemId")).toBe("item-1");
     expect(streamUrl.searchParams.get("token")).toBe("token-1");
+    expect(streamUrl.searchParams.get("audioStreamIndex")).toBe(null);
 
     const hlsUrl = new URL(client.getHlsUrl("item-1"), "https://100.111.32.31:3000/spiritflix");
     expect(hlsUrl.pathname).toBe("/api/spiritflix/hls");
@@ -40,6 +41,22 @@ describe("JellyfinClient playback URLs", () => {
     expect(hlsUrl.searchParams.get("token")).toBe("token-1");
     expect(hlsUrl.searchParams.get("path")).toContain("/Videos/item-1/master.m3u8");
     expect(hlsUrl.searchParams.get("path")).toContain("VideoBitrate=4000000");
+  });
+
+  it("passes requested audio stream index through playback URLs", () => {
+    vi.spyOn(window, "location", "get").mockReturnValue({
+      ...window.location,
+      protocol: "https:",
+      hostname: "10.0.0.186",
+      href: "https://10.0.0.186:3000/spiritflix",
+    } as Location);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const streamUrl = new URL(client.getStreamUrl("item-1", { audioStreamIndex: 2 }), "https://10.0.0.186:3000/spiritflix");
+    const hlsUrl = new URL(client.getHlsUrl("item-1", { audioStreamIndex: 2 }), "https://10.0.0.186:3000/spiritflix");
+
+    expect(streamUrl.searchParams.get("audioStreamIndex")).toBe("2");
+    expect(hlsUrl.searchParams.get("path")).toContain("AudioStreamIndex=2");
   });
 
   it("requests a higher HLS profile on unfolded high-density screens", () => {
@@ -214,6 +231,34 @@ describe("JellyfinClient paged card queries", () => {
     expect(path.searchParams.get("Limit")).toBe("10");
     expect(path.searchParams.get("StartIndex")).toBe("20");
     expect(path.searchParams.get("Fields")).not.toContain("Overview");
+    expect(page.items).toHaveLength(1);
+    expect(page.hasMore).toBe(true);
+  });
+
+  it("pages watch history by playback activity instead of fully played state only", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        Items: [{ Id: "history-1", Name: "History 1", Type: "Video", MediaType: "Video" }],
+        TotalRecordCount: 42,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const page = await client.getWatchHistoryPage("library-1", {
+      limit: 10,
+      startIndex: 20,
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1]?.body as string) as { path: string };
+    const path = new URL(`http://jellyfin.local${body.path}`);
+    expect(path.pathname).toBe("/Users/user-1/Items");
+    expect(path.searchParams.get("ParentId")).toBe("library-1");
+    expect(path.searchParams.get("Filters")).toBeNull();
+    expect(path.searchParams.get("SortBy")).toBe("DatePlayed");
+    expect(path.searchParams.get("SortOrder")).toBe("Descending");
+    expect(path.searchParams.get("Limit")).toBe("10");
+    expect(path.searchParams.get("StartIndex")).toBe("20");
     expect(page.items).toHaveLength(1);
     expect(page.hasMore).toBe(true);
   });

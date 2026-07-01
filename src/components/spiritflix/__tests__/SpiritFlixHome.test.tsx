@@ -80,7 +80,10 @@ const emptyGallery: SpiritFlixGalleryResponse = {
   },
 };
 
-function createClient(gallery: SpiritFlixGalleryResponse = emptyGallery): JellyfinClient {
+function createClient(
+  gallery: SpiritFlixGalleryResponse = emptyGallery,
+  overrides: Partial<JellyfinClient> = {},
+): JellyfinClient {
   return {
     getFaceOrganizerMetadata: vi.fn().mockResolvedValue({
       knownPerformers: [],
@@ -91,6 +94,8 @@ function createClient(gallery: SpiritFlixGalleryResponse = emptyGallery): Jellyf
     getGallery: vi.fn().mockResolvedValue(gallery),
     getImageProxyUrl: vi.fn(() => "/api/spiritflix/jellyfin-image?test=1"),
     getImageObjectUrl: vi.fn().mockRejectedValue(new Error("No image in test")),
+    getAllLibraryItems: vi.fn().mockResolvedValue([]),
+    ...overrides,
   } as unknown as JellyfinClient;
 }
 
@@ -119,14 +124,23 @@ describe("SpiritFlixHome watch history", () => {
     });
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockImplementation(() =>
-        Promise.resolve(Response.json({
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/spiritflix/model-index")) {
+          return Promise.resolve(Response.json({
+            schema: "spiritflix-manual-model-index/v1",
+            updatedAt: "2026-06-20T00:00:00.000Z",
+            models: [],
+            items: [],
+          }));
+        }
+        return Promise.resolve(Response.json({
           schema: "spiritflix-manual-tag-index/v1",
           updatedAt: "2026-06-20T00:00:00.000Z",
           tags: [],
           items: [],
-        })),
-      ),
+        }));
+      }),
     );
   });
 
@@ -182,6 +196,182 @@ describe("SpiritFlixHome watch history", () => {
     });
   });
 
+  it("does not show favorited library videos on the Home page", () => {
+    const favoriteOnlyItem: JellyfinItem = {
+      ...historyItem,
+      Id: "favorite-home-hidden",
+      Name: "Favorite Only Library Clip",
+    };
+
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          selectedLibraryId: null,
+          continueWatching: [],
+          latestAdded: [],
+          favorites: [favoriteOnlyItem],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("heading", { name: "Favorites" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Favorite Only Library Clip")).not.toBeInTheDocument();
+  });
+
+  it("shows actual library favorites even when the favorites page misses a row", () => {
+    const actualFavorite: JellyfinItem = {
+      ...modelItem,
+      Id: "actual-favorite",
+      Name: "Actual Favorite",
+      UserData: { IsFavorite: true },
+    };
+    const favoritePageItemWithoutUserData: JellyfinItem = {
+      ...landscapeItem,
+      Id: "favorite-page-item",
+      Name: "Server Favorite",
+      UserData: undefined,
+    };
+
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraryItems: [actualFavorite],
+          continueWatching: [],
+          watchHistory: [],
+          favorites: [favoritePageItemWithoutUserData],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Favorites" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Favorites" }).closest("section")).toHaveTextContent("2 videos");
+    expect(screen.getAllByText("Actual Favorite").length).toBeGreaterThan(0);
+    expect(screen.getByText("Server Favorite")).toBeInTheDocument();
+  });
+
+  it("opens the Favorites section heading into a full favorites video grid", async () => {
+    const favoriteGridItem: JellyfinItem = {
+      ...modelItem,
+      Id: "favorite-grid",
+      Name: "Favorite Grid Clip",
+      UserData: undefined,
+    };
+
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraryItems: [modelItem],
+          continueWatching: [],
+          watchHistory: [],
+          favorites: [favoriteGridItem],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /open favorites videos/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /open favorites videos/i })).not.toBeInTheDocument();
+    });
+    expect(screen.getByText("1 video")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Favorite Grid Clip" })).toBeInTheDocument();
+  });
+
+  it("shows a live loading state instead of stale empty library copy while library rows refresh", () => {
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraries: [{ Id: "library-1", Name: "Library" }],
+          selectedLibraryId: "library-1",
+          libraryItems: [],
+          continueWatching: [],
+          watchHistory: [],
+          latestAdded: [],
+          favorites: [],
+        })}
+        loading={true}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Loading live Jellyfin rows...")).toBeInTheDocument();
+    expect(screen.queryByText(/Library has no indexed videos yet/i)).not.toBeInTheDocument();
+  });
+
   it("renders Anime as seasons and episodes without library dashboard controls", async () => {
     const onPlay = vi.fn();
     const animeEpisode: JellyfinItem = {
@@ -197,7 +387,7 @@ describe("SpiritFlixHome watch history", () => {
       MediaStreams: [{ Type: "Video", Width: 720, Height: 540 }],
     };
 
-    render(
+    const { container } = render(
       <SpiritFlixHome
         client={createClient()}
         data={createData({
@@ -228,8 +418,8 @@ describe("SpiritFlixHome watch history", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Anime" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Rurouni Kenshin (1996)" })).toBeInTheDocument();
+    expect(screen.getByText("Jellyfin / Anime")).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: "Rurouni Kenshin (1996)" })).toHaveLength(2);
     expect(screen.getByRole("heading", { name: "Season 1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Episode 1 The Handsome Swordsman of Legend/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /History/i })).not.toBeInTheDocument();
@@ -245,6 +435,77 @@ describe("SpiritFlixHome watch history", () => {
       animeEpisode,
       [animeEpisode],
       "Rurouni Kenshin (1996) / Season 1",
+      undefined,
+    );
+  });
+
+  it("groups Anime episodes by folder path when Jellyfin series metadata is stale", async () => {
+    const onPlay = vi.fn();
+    const kenshinEpisode: JellyfinItem = {
+      Id: "kenshin-1",
+      Name: "The Handsome Swordsman of Legend",
+      Type: "Video",
+      MediaType: "Video",
+      SeriesName: "Rurouni Kenshin (1996)",
+      Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E01.mp4",
+      ParentIndexNumber: 1,
+      IndexNumber: 1,
+      RunTimeTicks: 15000000000,
+      MediaStreams: [{ Type: "Video", Width: 720, Height: 540 }],
+    };
+    const gurrenEpisodeWithWrongSeries: JellyfinItem = {
+      Id: "gurren-1",
+      Name: "Bust Through the Heavens with Your Drill!",
+      Type: "Video",
+      MediaType: "Video",
+      SeriesName: "Rurouni Kenshin (1996)",
+      Path: "/mnt/spirit-8tb/media/anime/Gurren Lagann (2007)/Season 01/Gurren Lagann (2007) - S01E01.mp4",
+      ParentIndexNumber: 1,
+      IndexNumber: 1,
+      RunTimeTicks: 15000000000,
+      MediaStreams: [{ Type: "Video", Width: 1280, Height: 720 }],
+    };
+
+    const { container } = render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraries: [{ Id: "anime-library", Name: "Anime" }],
+          selectedLibraryId: "anime-library",
+          libraryItems: [kenshinEpisode, gurrenEpisodeWithWrongSeries],
+          continueWatching: [],
+          watchHistory: [],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={onPlay}
+      />,
+    );
+
+    expect(screen.getAllByRole("heading", { name: "Gurren Lagann (2007)" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: /Rurouni Kenshin \(1996\)/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Episode 1 Bust Through the Heavens/i }));
+
+    expect(onPlay).toHaveBeenCalledWith(
+      gurrenEpisodeWithWrongSeries,
+      [gurrenEpisodeWithWrongSeries],
+      "Gurren Lagann (2007) / Season 1",
       undefined,
     );
   });
@@ -552,6 +813,59 @@ describe("SpiritFlixHome watch history", () => {
     );
   });
 
+  it("loads the full paged library before starting the library shuffle queue", async () => {
+    const onPlay = vi.fn();
+    const fullLibraryItem = {
+      ...modelItem,
+      Id: "full-library-2",
+      Name: "Full Library Two",
+    };
+    const getAllLibraryItems = vi.fn().mockResolvedValue([modelItem, fullLibraryItem]);
+
+    render(
+      <SpiritFlixHome
+        client={createClient(emptyGallery, { getAllLibraryItems } as Partial<JellyfinClient>)}
+        data={createData({
+          libraryItems: [modelItem],
+          libraryPaging: {
+            loaded: 1,
+            total: 2,
+            pageSize: 1,
+            hasMore: true,
+          },
+          continueWatching: [],
+          watchHistory: [],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={onPlay}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /shuffle library all videos/i }));
+
+    await waitFor(() => expect(getAllLibraryItems).toHaveBeenCalledWith("library-1", { searchTerm: "", fields: "full" }));
+    await waitFor(() => expect(onPlay).toHaveBeenCalled());
+
+    const queueItems = onPlay.mock.calls[0]?.[1] as JellyfinItem[];
+    expect(queueItems.map((item) => item.Id).sort()).toEqual(["full-library-2", "model-1"]);
+  });
+
   it("adds the videos-from-x folder as a Twitter source category in the model pane", async () => {
     const { container } = render(
       <SpiritFlixHome
@@ -630,7 +944,115 @@ describe("SpiritFlixHome watch history", () => {
     fireEvent.click(screen.getByRole("button", { name: /^models$/i }));
 
     expect(await screen.findByRole("heading", { name: "Models" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /luna x pearl\s+1 videos/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /luna x pearl\s+1 videos/i })).toBeInTheDocument();
+  });
+
+  it("shows catalog models from the restored model index even without loaded videos", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/spiritflix/model-index")) {
+          return Promise.resolve(Response.json({
+            schema: "spiritflix-manual-model-index/v1",
+            updatedAt: "2026-06-28T00:00:00.000Z",
+            models: [{ modelName: "Alexa Pearl", count: 7, catalogCount: 7, assignedCount: 0, source: "registry" }],
+            items: [],
+          }));
+        }
+        return Promise.resolve(Response.json({
+          schema: "spiritflix-manual-tag-index/v1",
+          updatedAt: "2026-06-28T00:00:00.000Z",
+          tags: [],
+          items: [],
+        }));
+      }),
+    );
+
+    render(
+      <SpiritFlixHome
+        client={createClient()}
+        data={createData({
+          libraryItems: [modelItem],
+          continueWatching: [],
+          watchHistory: [],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^models$/i }));
+
+    expect(await screen.findByRole("button", { name: /alexa pearl\s+7 videos/i })).toBeInTheDocument();
+  });
+
+  it("hydrates model groups from the full library instead of only the first loaded page", async () => {
+    const client = createClient(emptyGallery, {
+      getAllLibraryItems: vi.fn().mockResolvedValue([modelItem, manualModelItem]),
+    } as Partial<JellyfinClient>);
+
+    const { container } = render(
+      <SpiritFlixHome
+        client={client}
+        data={createData({
+          libraryItems: [modelItem],
+          continueWatching: [],
+          watchHistory: [],
+          libraryPaging: {
+            loaded: 1,
+            total: 2,
+            pageSize: 1,
+            hasMore: true,
+          },
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^models$/i }));
+    const lunaButtons = await screen.findAllByRole("button", { name: /luna x pearl\s+1 videos/i });
+    fireEvent.click(lunaButtons[0]);
+    fireEvent.click(screen.getByRole("button", { name: /grid/i }));
+
+    await waitFor(() => {
+      const grid = container.querySelector(".spiritflix-library-grid");
+      expect(grid?.querySelector("[aria-label='Manual Model Scene']")).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Library has no indexed videos yet/i)).not.toBeInTheDocument();
   });
 
   it("keeps model groups ordered by video count even when face status changes", async () => {

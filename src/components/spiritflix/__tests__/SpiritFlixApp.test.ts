@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyManualModelNameToHomeData,
   applyManualModelNameToQueue,
+  buildLiveLibraryLoadingHomeData,
   buildSpiritFlixBrowsePath,
   inferPlaybackQueueForItem,
   removeDeletedItemFromHomeData,
@@ -70,6 +71,32 @@ describe("buildSpiritFlixBrowsePath", () => {
     expect(buildSpiritFlixBrowsePath({ libraryId: "library-1", modelName: "Sava Schultz" })).toBe(
       "/spiritflix?library=library-1&model=Sava+Schultz",
     );
+  });
+});
+
+describe("buildLiveLibraryLoadingHomeData", () => {
+  it("preserves library navigation but removes stale media rows during a live library load", () => {
+    const stale = video("stale", "Stale Cached Clip");
+    const next = buildLiveLibraryLoadingHomeData(
+      homeData({
+        libraries: [{ Id: "library-1", Name: "Library" }],
+        selectedLibraryId: "library-1",
+        libraryItems: [stale],
+        continueWatching: [stale],
+        watchHistory: [stale],
+        latestAdded: [stale],
+        favorites: [stale],
+      }),
+      "library-1",
+    );
+
+    expect(next.libraries).toEqual([{ Id: "library-1", Name: "Library" }]);
+    expect(next.selectedLibraryId).toBe("library-1");
+    expect(next.libraryItems).toEqual([]);
+    expect(next.continueWatching).toEqual([]);
+    expect(next.watchHistory).toEqual([]);
+    expect(next.latestAdded).toEqual([]);
+    expect(next.favorites).toEqual([]);
   });
 });
 

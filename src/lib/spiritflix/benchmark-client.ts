@@ -16,18 +16,27 @@ export function createSpiritFlixBenchmarkClient(item: JellyfinItem, serverUrl: s
 
 export const SPIRITFLIX_BENCHMARK_DEFAULT_ITEM_ID = "phase7-candidate-02";
 
-export function createBenchmarkItem(itemId: string, name = "Benchmark Clip"): JellyfinItem {
+export function createBenchmarkItem(itemId: string, name = "Benchmark Clip", sourcePath?: string): JellyfinItem {
+  const mediaPath = sourcePath || `/media/yes/benchmark/${name}.mp4`;
+  const isAnimeBenchmark = mediaPath.toLowerCase().includes("/anime/");
   return {
     Id: itemId,
     Name: name,
-    Type: "Video",
+    Type: isAnimeBenchmark ? "Episode" : "Video",
     MediaType: "Video",
-    Path: `/media/yes/benchmark/${name}.mp4`,
+    Path: mediaPath,
+    SeriesName: isAnimeBenchmark ? "Rurouni Kenshin (1996)" : undefined,
     RunTimeTicks: 600_000_000,
-    MediaSources: [{ Path: `/media/yes/benchmark/${name}.mp4` }],
-    MediaStreams: [
-      { Type: "Video", Codec: "h264", Width: 1280, Height: 720 },
-      { Type: "Audio", Codec: "aac", Channels: 2 },
-    ],
+    MediaSources: [{ Path: mediaPath }],
+    MediaStreams: isAnimeBenchmark
+      ? [
+          { Type: "Video", Codec: "h264", Width: 720, Height: 540 },
+          { Index: 1, Type: "Audio", Codec: "aac", Language: "jpn", DisplayTitle: "Japanese AAC", Channels: 2 },
+          { Index: 2, Type: "Audio", Codec: "aac", Language: "eng", DisplayTitle: "English AAC", Channels: 2 },
+        ]
+      : [
+          { Type: "Video", Codec: "h264", Width: 1280, Height: 720 },
+          { Type: "Audio", Codec: "aac", Channels: 2 },
+        ],
   };
 }

@@ -19,19 +19,21 @@ export function getResumePositionTicks(item: JellyfinItem): number {
 export function getResumeProgressPercent(item: JellyfinItem): number {
   const positionTicks = getResumePositionTicks(item);
   const runtimeTicks = item.RunTimeTicks ?? 0;
+  if (positionTicks && runtimeTicks) {
+    return Math.max(0, Math.min(100, (positionTicks / runtimeTicks) * 100));
+  }
   if (item.UserData?.PlayedPercentage && item.UserData.PlayedPercentage > 0) {
     return Math.max(0, Math.min(100, item.UserData.PlayedPercentage));
   }
-  if (!positionTicks || !runtimeTicks) return 0;
-  return Math.max(0, Math.min(100, (positionTicks / runtimeTicks) * 100));
+  return 0;
 }
 
 export function hasResumeProgress(item: JellyfinItem): boolean {
   const positionSeconds = ticksToSeconds(getResumePositionTicks(item));
   const durationSeconds = ticksToSeconds(item.RunTimeTicks);
-  if (item.UserData?.Played) return false;
   if (positionSeconds <= 0) return false;
   if (durationSeconds > 0 && positionSeconds >= durationSeconds - 20) return false;
+  if (item.UserData?.Played && durationSeconds <= 0) return false;
   return true;
 }
 

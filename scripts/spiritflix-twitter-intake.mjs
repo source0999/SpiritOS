@@ -130,6 +130,32 @@ export function sanitizeLibraryFilename(filename) {
   return `${safeBase}.mp4`;
 }
 
+export function extractTweetId(filename) {
+  const match = String(filename).match(/\[(\d{15,25})\]/);
+  return match ? match[1] : "";
+}
+
+async function buildExistingLibraryIndex(libraryDir) {
+  const names = new Set();
+  const tweetIds = new Set();
+  const entries = await fs.readdir(libraryDir, { withFileTypes: true }).catch(() => []);
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    names.add(entry.name.toLowerCase());
+    const tweetId = extractTweetId(entry.name);
+    if (tweetId) tweetIds.add(tweetId);
+  }
+  return { names, tweetIds };
+}
+
+function libraryDuplicateReason(plan, libraryIndex) {
+  const finalName = sanitizeLibraryFilename(path.basename(plan.source_path));
+  const tweetId = extractTweetId(finalName);
+  if (tweetId && libraryIndex.tweetIds.has(tweetId)) return `tweet id already exists in library: ${tweetId}`;
+  if (libraryIndex.names.has(finalName.toLowerCase())) return `filename already exists in library: ${finalName}`;
+  return "";
+}
+
 async function conflictSafePath(directory, filename) {
   let candidate = path.join(directory, filename);
   if (!(await exists(candidate))) return candidate;
@@ -359,12 +385,22 @@ async function main() {
   while (consecutiveEmpty < rescanPasses) {
     round += 1;
     const { plans, skipped } = await stableVideoPlans(tempRoot, stableSeconds);
+    const libraryIndex = await buildExistingLibraryIndex(libraryDir);
+    const freshPlans = [];
+    for (const plan of plans) {
+      const duplicateReason = libraryDuplicateReason(plan, libraryIndex);
+      if (duplicateReason) {
+        skipped.push({ ...plan, reason: duplicateReason });
+      } else {
+        freshPlans.push(plan);
+      }
+    }
     const remaining = limit > 0 ? Math.max(0, limit - receipts.filter((receipt) => receipt.status === "ok").length) : 0;
-    const roundPlans = limit > 0 ? plans.slice(0, remaining) : plans;
+    const roundPlans = limit > 0 ? freshPlans.slice(0, remaining) : freshPlans;
     if (!roundPlans.length) {
       consecutiveEmpty += 1;
       if (round === 1) {
-        await writeCsv(path.join(evidenceDir, "temp-twitter-optimization-plan.csv"), plans, [
+        await writeCsv(path.join(evidenceDir, "temp-twitter-optimization-plan.csv"), freshPlans, [
           "source_path",
           "size_bytes",
           "duration",
@@ -384,7 +420,7 @@ async function main() {
     }
     consecutiveEmpty = 0;
     if (round === 1) {
-      await writeCsv(path.join(evidenceDir, "temp-twitter-optimization-plan.csv"), plans, [
+      await writeCsv(path.join(evidenceDir, "temp-twitter-optimization-plan.csv"), freshPlans, [
         "source_path",
         "size_bytes",
         "duration",

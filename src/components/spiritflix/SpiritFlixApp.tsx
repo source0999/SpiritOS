@@ -86,10 +86,12 @@ function uniqueItems(items: JellyfinItem[]): JellyfinItem[] {
 }
 
 function shuffleItems(items: JellyfinItem[]): JellyfinItem[] {
-  return items
-    .map((item) => ({ item, sort: Math.random() }))
-    .sort((left, right) => left.sort - right.sort)
-    .map(({ item }) => item);
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }
 
 function shuffleQueueAfterCurrent(items: JellyfinItem[], currentItemId: string): JellyfinItem[] {
@@ -244,15 +246,23 @@ function isSeriesPlaybackItem(item: JellyfinItem): boolean {
   return item.Type?.toLowerCase() === "episode" || isAnimePath(item.Path) || item.MediaSources?.some((source) => isAnimePath(source.Path)) === true;
 }
 
-function getSeriesPlaybackKey(item: JellyfinItem): string {
-  if (!isSeriesPlaybackItem(item)) return "";
-  if (item.SeriesName?.trim()) return item.SeriesName.trim().toLowerCase();
+function getSeriesNameFromPath(item: JellyfinItem): string {
   const sourcePath = normalizeSpiritFlixPath(item.MediaSources?.[0]?.Path ?? item.Path);
   const parts = sourcePath.split("/").filter(Boolean);
   const seasonIndex = parts.findIndex((part) => /^season\s+\d+/i.test(part));
   if (seasonIndex > 0) return parts[seasonIndex - 1]?.toLowerCase() ?? "";
   const animeIndex = parts.findIndex((part) => part.toLowerCase() === "anime");
   return animeIndex >= 0 ? parts[animeIndex + 1]?.toLowerCase() ?? "" : "";
+}
+
+function getSeriesPlaybackKey(item: JellyfinItem): string {
+  if (!isSeriesPlaybackItem(item)) return "";
+  const pathSeriesName = getSeriesNameFromPath(item);
+  if (isAnimePath(item.Path) || item.MediaSources?.some((source) => isAnimePath(source.Path)) === true) {
+    return pathSeriesName || item.SeriesName?.trim().toLowerCase() || "";
+  }
+  if (item.SeriesName?.trim()) return item.SeriesName.trim().toLowerCase();
+  return pathSeriesName;
 }
 
 function getSeriesPlaybackQueue(item: JellyfinItem, candidates: JellyfinItem[]): JellyfinItem[] {
@@ -342,6 +352,11 @@ const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
 const HOME_CACHE_KEY = "spiritflix_home_cache_v1";
 const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
+const LIVE_LIBRARY_LOAD_MIN_MS = 50;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
 
 function readCachedHomeData(): SpiritFlixHomeData | null {
   if (typeof window === "undefined") return null;
@@ -374,6 +389,15 @@ function hasUsefulHomeContent(data: SpiritFlixHomeData): boolean {
       data.latestAdded.length ||
       data.featuredItems.length,
   );
+}
+
+export function buildLiveLibraryLoadingHomeData(data: SpiritFlixHomeData, selectedLibraryId: string): SpiritFlixHomeData {
+  return {
+    ...emptyHome,
+    libraries: data.libraries,
+    playlists: data.playlists,
+    selectedLibraryId,
+  };
 }
 
 function applyManualModelRecordsToItems(
@@ -518,6 +542,7 @@ export function SpiritFlixApp() {
   const loadHomeAbortRef = useRef<AbortController | null>(null);
   const loadHomeSequenceRef = useRef(0);
   const [loadingMore, setLoadingMore] = useState<Record<string, boolean>>({});
+  const [liveLibraryLoadingId, setLiveLibraryLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     homeDataRef.current = homeData;
@@ -531,8 +556,11 @@ export function SpiritFlixApp() {
     () => applyManualModelRecordsToHomeData(homeData, manualModelRecords),
     [homeData, manualModelRecords],
   );
+  const visibleHomeData = liveLibraryLoadingId
+    ? buildLiveLibraryLoadingHomeData(modelAwareHomeData, liveLibraryLoadingId)
+    : modelAwareHomeData;
 
-  const modelAwareLibraryItems = modelAwareHomeData.libraryItems;
+  const modelAwareLibraryItems = visibleHomeData.libraryItems;
 
   const loadManualModels = useCallback(async () => {
     if (!session) return;
@@ -571,7 +599,11 @@ export function SpiritFlixApp() {
       loadHomeAbortRef.current = controller;
       const pageSizes = getInitialPageSizes();
       const isStale = () => controller.signal.aborted || loadHomeSequenceRef.current !== loadId;
-      const showBlockingLoader = !options.silent && !hasUsefulHomeContent(homeDataRef.current);
+      const requestedLibraryIdBeforeLookup = libraryId === undefined ? homeDataRef.current.selectedLibraryId : libraryId;
+      const shouldGateLiveLibrary = !options.silent && typeof requestedLibraryIdBeforeLookup === "string" && requestedLibraryIdBeforeLookup.length > 0;
+      const startedAt = performance.now();
+      const showBlockingLoader = !options.silent && (shouldGateLiveLibrary || !hasUsefulHomeContent(homeDataRef.current));
+      if (shouldGateLiveLibrary) setLiveLibraryLoadingId(requestedLibraryIdBeforeLookup);
       if (showBlockingLoader) setLoadingHome(true);
       setHomeError("");
       try {
@@ -692,7 +724,14 @@ export function SpiritFlixApp() {
         if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) return;
         setHomeError("Could not load your Jellyfin library. Log out and back in if the token expired.");
       } finally {
-        if (!options.silent && !controller.signal.aborted) setLoadingHome(false);
+        if (!options.silent && !controller.signal.aborted) {
+          const remainingMinLoadMs = shouldGateLiveLibrary ? Math.max(0, LIVE_LIBRARY_LOAD_MIN_MS - (performance.now() - startedAt)) : 0;
+          if (remainingMinLoadMs > 0) await sleep(remainingMinLoadMs);
+          if (!isStale()) {
+            setLoadingHome(false);
+            if (shouldGateLiveLibrary) setLiveLibraryLoadingId(null);
+          }
+        }
       }
     },
     [client, homeData.selectedLibraryId, searchTerm, session],
@@ -953,23 +992,26 @@ export function SpiritFlixApp() {
       currentIndex: Math.max(0, queueItems.findIndex((queueItem) => queueItem.Id === item.Id)),
       sourceTitle,
       startPositionTicks,
-      isShuffled: false,
+      isShuffled: /\bshuffle\b/i.test(sourceTitle),
     };
   };
 
   const handlePlay = (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => {
     if (isPlayableItem(item)) {
       void client.getMobileOptimizedSource(item).catch(() => undefined);
-      const seriesQueue = getSeriesPlaybackQueue(item, [
-        ...(queueItems ?? []),
-        ...homeData.libraryItems,
-        ...homeData.featuredItems,
-        ...homeData.latestAdded,
-        ...homeData.continueWatching,
-        ...homeData.watchHistory,
-      ]);
+      const preserveProvidedQueue = Boolean(queueItems?.length && sourceTitle && /\bshuffle\b/i.test(sourceTitle));
+      const seriesQueue = preserveProvidedQueue
+        ? []
+        : getSeriesPlaybackQueue(item, [
+            ...(queueItems ?? []),
+            ...homeData.libraryItems,
+            ...homeData.featuredItems,
+            ...homeData.latestAdded,
+            ...homeData.continueWatching,
+            ...homeData.watchHistory,
+          ]);
       const resolvedQueueItems = seriesQueue.length ? seriesQueue : queueItems;
-      const resolvedSourceTitle = seriesQueue.length ? item.SeriesName ?? sourceTitle ?? "Series" : sourceTitle;
+      const resolvedSourceTitle = seriesQueue.length ? sourceTitle ?? item.SeriesName ?? "Series" : sourceTitle;
       setPlayingItem(item);
       setPlayingQueue(buildQueue(item, resolvedQueueItems, resolvedSourceTitle, startPositionTicks));
     }
@@ -1206,7 +1248,7 @@ export function SpiritFlixApp() {
       ) : (
         <SpiritFlixHome
           client={client}
-          data={modelAwareHomeData}
+          data={visibleHomeData}
           loading={loadingHome}
           error={homeError}
           session={session}

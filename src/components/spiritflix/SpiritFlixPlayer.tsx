@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
+  Captions,
   ChevronsDown,
   GripVertical,
   Heart,
@@ -64,6 +65,8 @@ import type {
   SpiritFlixManualModelRecord,
   SpiritFlixManualTagIndex,
   SpiritFlixManualTagRecord,
+  SpiritFlixCaptionManifest,
+  SpiritFlixCaptionManifestTrack,
 } from "@/lib/spiritflix-types";
 import type { SpiritFlixPlaybackProgress, SpiritFlixPlaybackQueue } from "./SpiritFlixApp";
 import { SpiritFlixImage } from "./SpiritFlixImage";
@@ -100,9 +103,15 @@ interface SpiritFlixDeletePreview {
   };
 }
 
+type CaptionManifestState =
+  | { status: "idle" | "loading"; tracks: SpiritFlixCaptionManifestTrack[]; error: "" }
+  | { status: "ready"; tracks: SpiritFlixCaptionManifestTrack[]; error: "" }
+  | { status: "error"; tracks: SpiritFlixCaptionManifestTrack[]; error: string };
+
 type FitMode = "fit" | "fill";
 type RepeatMode = "off" | "queue" | "one";
 type SeriesAudioPreference = "sub" | "dub";
+type CaptionPreference = "off" | "on";
 type PlaybackSourceMode = "direct stream" | "proxied stream" | "HLS" | "mobile optimized";
 type PlaybackSourceClass =
   | "mac_optimized_mp4"
@@ -113,6 +122,8 @@ type PlaybackSourceClass =
 
 const FIT_STORAGE_KEY = "spiritflix_player_fit_mode";
 const REPEAT_STORAGE_KEY = "spiritflix_player_repeat_mode";
+const CAPTION_STORAGE_KEY = "spiritflix_player_caption_mode";
+const TIKTOK_MODE_STORAGE_KEY = "spiritflix_player_tiktok_mode";
 const SERIES_AUDIO_PREFS_STORAGE_KEY = "spiritflix_series_audio_preferences";
 const VOLUME_STORAGE_KEY = "spiritflix_player_volume";
 const MUTED_STORAGE_KEY = "spiritflix_player_muted";
@@ -128,6 +139,8 @@ const TOUCH_SEEK_HOLD_MS = 90;
 const TOUCH_SEEK_VERTICAL_RATIO = 1.35;
 const TOUCH_SEEK_MAX_SECONDS = 90;
 const TOUCH_SEEK_PX_PER_SECOND = 7.5;
+const TIKTOK_SWIPE_ACTIVATION_PX = 82;
+const TIKTOK_SWIPE_VERTICAL_RATIO = 1.25;
 const PINCH_TOGGLE_THRESHOLD = 0.08;
 const PINCH_GESTURE_SUPPRESS_MS = 450;
 const HLS_MANIFEST_TIMEOUT_MS = 8000;
@@ -138,12 +151,49 @@ const QUEUE_DND_PREFIX = "spiritflix-queue:";
 const SHOW_PLAYER_DIAGNOSTICS = process.env.NODE_ENV !== "production";
 const MANUAL_TAG_CHANGED_EVENT = "spiritflix:manual-tags-changed";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
+const MANUAL_METADATA_RETRY_MS = 180;
+const CAPTION_APPLY_RETRY_MS = [80, 240, 700, 1500, 3000, 5000];
 
 function getManualMetadataUrl(itemId: string, kind: "model" | "tags", filePath?: string): string {
   const query = new URLSearchParams();
   if (filePath) query.set("filePath", filePath);
   const queryText = query.toString();
   return `/api/spiritflix/videos/${encodeURIComponent(itemId)}/${kind}${queryText ? `?${queryText}` : ""}`;
+}
+
+function getCaptionManifestUrl(item: JellyfinItem, filePath?: string): string {
+  const query = new URLSearchParams();
+  if (filePath) query.set("sourcePath", filePath);
+  query.set("itemId", item.Id);
+  return `/api/spiritflix/captions/manifest?${query.toString()}`;
+}
+
+function waitForManualMetadataRetry(): Promise<void> {
+  return new Promise((resolve) => {
+    globalThis.setTimeout(resolve, MANUAL_METADATA_RETRY_MS);
+  });
+}
+
+async function fetchManualMetadata(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (firstError) {
+    await waitForManualMetadataRetry();
+    try {
+      return await fetch(input, init);
+    } catch {
+      throw firstError;
+    }
+  }
+}
+
+function getCaptionTrackLabel(track: SpiritFlixCaptionManifestTrack): string {
+  const label = track.label || track.language || "Subtitles";
+  if (track.forced && !label.toLowerCase().includes("forced")) {
+    const language = track.language?.toLowerCase();
+    return `${language === "eng" ? "English" : label} Forced`;
+  }
+  return label;
 }
 
 function markSpiritFlixPerf(name: string, detail?: Record<string, unknown>): void {
@@ -402,14 +452,22 @@ function isSeriesPlaybackItem(item: JellyfinItem): boolean {
   return item.Type?.toLowerCase() === "episode" || isAnimePath(getItemSourcePath(item)) || item.MediaSources?.some((source) => isAnimePath(source.Path ?? "")) === true;
 }
 
-function getSeriesPlaybackKey(item: JellyfinItem): string {
-  if (!isSeriesPlaybackItem(item)) return "";
-  if (item.SeriesName?.trim()) return item.SeriesName.trim().toLowerCase();
+function getSeriesNameFromPath(item: JellyfinItem): string {
   const parts = getItemSourcePath(item).replace(/\\/g, "/").split("/").filter(Boolean);
   const seasonIndex = parts.findIndex((part) => /^season\s+\d+/i.test(part));
   if (seasonIndex > 0) return parts[seasonIndex - 1]?.toLowerCase() ?? "";
   const animeIndex = parts.findIndex((part) => part.toLowerCase() === "anime");
   return animeIndex >= 0 ? parts[animeIndex + 1]?.toLowerCase() ?? "" : "";
+}
+
+function getSeriesPlaybackKey(item: JellyfinItem): string {
+  if (!isSeriesPlaybackItem(item)) return "";
+  const pathSeriesName = getSeriesNameFromPath(item);
+  if (isAnimePath(getItemSourcePath(item)) || item.MediaSources?.some((source) => isAnimePath(source.Path ?? "")) === true) {
+    return pathSeriesName || item.SeriesName?.trim().toLowerCase() || "";
+  }
+  if (item.SeriesName?.trim()) return item.SeriesName.trim().toLowerCase();
+  return pathSeriesName;
 }
 
 function getSeriesPlaybackQueue(item: JellyfinItem, candidates: JellyfinItem[]): JellyfinItem[] {
@@ -449,16 +507,44 @@ function storeSeriesAudioPreference(seriesKey: string, preference: SeriesAudioPr
   }
 }
 
-function getAudioMatchText(value: { language?: string; label?: string; DisplayTitle?: string; Title?: string; Codec?: string }): string {
-  return [value.language, value.label, value.DisplayTitle, value.Title, value.Codec].filter(Boolean).join(" ").toLowerCase();
+function getStoredCaptionPreference(): CaptionPreference {
+  if (typeof window === "undefined") return "on";
+  return window.localStorage.getItem(CAPTION_STORAGE_KEY) === "off" ? "off" : "on";
 }
 
-function matchesAudioPreference(value: { language?: string; label?: string; DisplayTitle?: string; Title?: string; Codec?: string }, preference: SeriesAudioPreference): boolean {
+function storeCaptionPreference(preference: CaptionPreference): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CAPTION_STORAGE_KEY, preference);
+}
+
+function getAudioMatchText(value: { language?: string; Language?: string; label?: string; DisplayTitle?: string; Title?: string; Codec?: string }): string {
+  return [value.language, value.Language, value.label, value.DisplayTitle, value.Title, value.Codec].filter(Boolean).join(" ").toLowerCase();
+}
+
+function matchesAudioPreference(
+  value: { language?: string; Language?: string; label?: string; DisplayTitle?: string; Title?: string; Codec?: string },
+  preference: SeriesAudioPreference,
+): boolean {
   const text = getAudioMatchText(value);
   if (preference === "dub") {
     return /\b(en|eng|english)\b/.test(text) || text.includes("dub");
   }
   return /\b(ja|jpn|japanese)\b/.test(text) || text.includes("sub");
+}
+
+function getAudioStreamIndexForPreference(
+  item: JellyfinItem,
+  audioStreams: NonNullable<JellyfinItem["MediaStreams"]>,
+  preference: SeriesAudioPreference,
+): number | undefined {
+  if (audioStreams.length < 2) return undefined;
+  const matched = audioStreams.find((stream) => matchesAudioPreference(stream, preference));
+  const fallback = preference === "dub" ? audioStreams[Math.min(1, audioStreams.length - 1)] : audioStreams[0];
+  const selected = matched ?? fallback;
+  if (!selected) return undefined;
+  if (typeof selected.Index === "number") return selected.Index;
+  const mediaStreamIndex = item.MediaStreams?.findIndex((stream) => stream === selected) ?? -1;
+  return mediaStreamIndex >= 0 ? mediaStreamIndex : audioStreams.indexOf(selected);
 }
 
 function getVideoAudioTracks(video: HTMLVideoElement | null): SpiritFlixAudioTrack[] {
@@ -477,6 +563,74 @@ function applyAudioPreferenceToVideo(video: HTMLVideoElement | null, preference:
     track.enabled = index === selectedIndex;
   });
   return true;
+}
+
+function getPreferredCaptionElement(video: HTMLVideoElement): HTMLTrackElement | null {
+  const spiritFlixTrackElements = Array.from(
+    video.querySelectorAll<HTMLTrackElement>("track[data-spiritflix-caption-track='true']"),
+  );
+  return (
+    spiritFlixTrackElements.find((element) => element.dataset.spiritflixCaptionSource === "generated") ??
+    spiritFlixTrackElements.find((element) => element.track?.mode === "showing") ??
+    spiritFlixTrackElements.find((element) => element.default) ??
+    spiritFlixTrackElements[0] ??
+    null
+  );
+}
+
+function applyCaptionPreferenceToVideo(video: HTMLVideoElement | null, preference: CaptionPreference): boolean {
+  const tracks = video?.textTracks;
+  if (!video || !tracks?.length) return false;
+  const preferredElement = getPreferredCaptionElement(video);
+  const preferredTrack = preferredElement?.track ?? null;
+  const allTracks = Array.from({ length: tracks.length }, (_, index) => tracks[index]);
+
+  allTracks.forEach((track) => {
+    if (!track) return;
+    track.mode = preference === "on" && preferredTrack && track === preferredTrack ? "showing" : "disabled";
+  });
+
+  if (preference === "on" && preferredTrack) {
+    Array.from(video.querySelectorAll<HTMLTrackElement>("track[data-spiritflix-caption-track='true']")).forEach((element) => {
+      element.default = element === preferredElement;
+    });
+    preferredTrack.mode = "showing";
+    return preferredTrack.mode === "showing";
+  }
+
+  if (preference === "on" && !preferredElement) {
+    const preferredIndex = allTracks.findIndex((track) => track?.mode === "showing" || track?.mode === "hidden");
+    allTracks.forEach((track, index) => {
+      if (!track) return;
+      track.mode = index === Math.max(0, preferredIndex) ? "showing" : "disabled";
+    });
+    return allTracks.some((track) => track?.mode === "showing");
+  }
+  return preference === "off" ? allTracks.every((track) => track?.mode === "disabled") : false;
+}
+
+function scheduleCaptionPreferenceApply(video: HTMLVideoElement | null, preference: CaptionPreference): () => void {
+  if (!video) return () => undefined;
+  const timers: number[] = [];
+  const frames: number[] = [];
+  const apply = () => {
+    applyCaptionPreferenceToVideo(video, preference);
+  };
+  apply();
+  if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+    frames.push(window.requestAnimationFrame(apply));
+  }
+  if (typeof window !== "undefined") {
+    CAPTION_APPLY_RETRY_MS.forEach((delay) => {
+      timers.push(window.setTimeout(apply, delay));
+    });
+  }
+  return () => {
+    if (typeof window.cancelAnimationFrame === "function") {
+      frames.forEach((frame) => window.cancelAnimationFrame(frame));
+    }
+    timers.forEach((timer) => window.clearTimeout(timer));
+  };
 }
 
 function renderPlaybackFeedback(feedback: PlaybackFeedback) {
@@ -516,6 +670,11 @@ function getStoredRepeatMode(): RepeatMode {
   if (typeof window === "undefined") return "off";
   const stored = window.localStorage.getItem(REPEAT_STORAGE_KEY);
   return isRepeatMode(stored) ? stored : "off";
+}
+
+function getStoredTikTokMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(TIKTOK_MODE_STORAGE_KEY) === "true";
 }
 
 function getStoredVolume(): number {
@@ -707,10 +866,15 @@ function SortableQueueItem({
           <SpiritFlixImage
             client={client}
             item={item}
-            type="Primary"
-            width={112}
+            type="Thumb"
+            width={160}
             alt=""
-            fallback={<span className="spiritflix-player__queue-thumb-fallback" />}
+            priority
+            fallback={
+              <span className="spiritflix-player__queue-thumb-fallback">
+                <span>{item.Name.slice(0, 1).toUpperCase()}</span>
+              </span>
+            }
           />
         </span>
         <strong title={item.Name}>{item.Name}</strong>
@@ -772,6 +936,8 @@ export function SpiritFlixPlayer({
   const shuffleHoldTimerRef = useRef<number | null>(null);
   const didHoldShuffleRef = useRef(false);
   const autoFaceModelApplyKeyRef = useRef("");
+  const audioSwitchResumeSecondsRef = useRef<number | null>(null);
+  const captionApplyCleanupRef = useRef<Array<() => void>>([]);
   const saveManualModelRef = useRef<(modelNameInput?: string) => Promise<void>>(async () => undefined);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -806,6 +972,7 @@ export function SpiritFlixPlayer({
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isShufflePickerOpen, setIsShufflePickerOpen] = useState(false);
   const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(false);
+  const [isTikTokMode, setIsTikTokMode] = useState(() => getStoredTikTokMode());
   const [playbackFeedback, setPlaybackFeedback] = useState<PlaybackFeedback | null>(null);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
   const [manualTagIndex, setManualTagIndex] = useState<SpiritFlixManualTagIndex | null>(null);
@@ -832,6 +999,22 @@ export function SpiritFlixPlayer({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteExecuting, setDeleteExecuting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [isSeriesAudioSwitching, setIsSeriesAudioSwitching] = useState(false);
+  const [captionManifest, setCaptionManifest] = useState<CaptionManifestState>({ status: "idle", tracks: [], error: "" });
+  const [captionPreference, setCaptionPreference] = useState<CaptionPreference>(() => getStoredCaptionPreference());
+
+  const clearScheduledCaptionApplies = useCallback(() => {
+    captionApplyCleanupRef.current.forEach((cleanup) => cleanup());
+    captionApplyCleanupRef.current = [];
+  }, []);
+
+  const scheduleCurrentCaptionPreferenceApply = useCallback(
+    (preference: CaptionPreference = captionPreference) => {
+      clearScheduledCaptionApplies();
+      captionApplyCleanupRef.current = [scheduleCaptionPreferenceApply(videoRef.current, preference)];
+    },
+    [captionPreference, clearScheduledCaptionApplies],
+  );
 
   const isSeriesPlayback = isSeriesPlaybackItem(item);
   const seriesKey = getSeriesPlaybackKey(item);
@@ -863,6 +1046,18 @@ export function SpiritFlixPlayer({
   const audioStreams = useMemo(() => item.MediaStreams?.filter((stream) => stream.Type?.toLowerCase() === "audio") ?? [], [item.MediaStreams]);
   const hasSeriesAudioChoices =
     isSeriesPlayback && (audioStreams.length >= 2 || (seriesAudioState.seriesKey === seriesKey && audioTrackSwitchAvailable));
+  const selectedAudioStreamIndex = useMemo(
+    () => getAudioStreamIndexForPreference(item, audioStreams, seriesAudioPreference),
+    [audioStreams, item, seriesAudioPreference],
+  );
+  const defaultAudioStreamIndex = useMemo(
+    () => (typeof audioStreams[0]?.Index === "number" ? audioStreams[0].Index : audioStreams.length ? 0 : undefined),
+    [audioStreams],
+  );
+  const needsSelectedAudioStream =
+    isSeriesPlayback &&
+    typeof selectedAudioStreamIndex === "number" &&
+    selectedAudioStreamIndex !== defaultAudioStreamIndex;
   const nextSeriesAudioPreference: SeriesAudioPreference = seriesAudioPreference === "dub" ? "sub" : "dub";
   const previousLabel = isSeriesPlayback ? "Previous episode" : "Previous video";
   const nextLabel = isSeriesPlayback ? "Next episode" : "Next video";
@@ -876,9 +1071,23 @@ export function SpiritFlixPlayer({
   const shuffleLabel = isShuffled
     ? `Shuffle on for ${queue?.sourceTitle ?? "current queue"}`
     : `Shuffle off for ${queue?.sourceTitle ?? "current queue"}`;
+  const tiktokModeLabel = isTikTokMode ? "TikTok swipe mode on" : "TikTok swipe mode off";
   const isMiniPlayerActive = isNativeMiniPlayer || isAppMiniPlayer;
   const miniPlayerLabel = isMiniPlayerActive ? "Exit mini player" : "Mini player";
   const sourcePath = getItemSourcePath(item);
+  const captionManifestUrl = useMemo(() => getCaptionManifestUrl(item, sourcePath), [item, sourcePath]);
+  const captionTracks = useMemo(
+    () => captionManifest.tracks.filter((track) => track.outputFormat === "vtt" && track.publicUrl),
+    [captionManifest.tracks],
+  );
+  const captionTrackSignature = useMemo(
+    () => captionTracks.map((track) => `${track.id}:${track.publicUrl}:${track.sourceType}:${track.default ? "1" : "0"}`).join("|"),
+    [captionTracks],
+  );
+  const itemHasSubtitleStreams = item.MediaStreams?.some((stream) => stream.Type?.toLowerCase() === "subtitle") ?? false;
+  const hasCaptionChoices = captionTracks.length > 0 || captionManifest.status === "loading" || itemHasSubtitleStreams;
+  const captionControlDisabled = captionTracks.length === 0;
+  const captionsEnabled = captionPreference === "on";
   const manualMetadataUrl = useMemo(
     () => ({
       model: getManualMetadataUrl(item.Id, "model", sourcePath),
@@ -986,7 +1195,7 @@ export function SpiritFlixPlayer({
       .filter((candidate) => candidate.Id !== item.Id && getModelOptionKey(candidate.ManualModelName || getInferredModelName(candidate)) === modelName)
       .map((candidate) => ({
         itemId: candidate.Id,
-        filePath: candidate.MediaSources?.[0]?.Path ?? candidate.Path,
+        filePath: getItemSourcePath(candidate),
       }));
   }, [item, libraryItems, manualModelRecord?.modelName, originalQueueItems]);
   const getRelatedItemsForModelName = useCallback(
@@ -998,7 +1207,7 @@ export function SpiritFlixPlayer({
         .filter((candidate) => candidate.Id !== item.Id && getModelOptionKey(candidate.ManualModelName || getInferredModelName(candidate)) === modelName)
         .map((candidate) => ({
           itemId: candidate.Id,
-          filePath: candidate.MediaSources?.[0]?.Path ?? candidate.Path,
+          filePath: getItemSourcePath(candidate),
         }));
     },
     [item.Id, libraryItems, originalQueueItems],
@@ -1057,6 +1266,45 @@ export function SpiritFlixPlayer({
     }, 0);
     return () => window.clearTimeout(resetTimer);
   }, [item]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCaptionManifest({ status: "loading", tracks: [], error: "" });
+    fetch(captionManifestUrl, { headers: { Accept: "application/json" } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Caption manifest request failed: ${response.status}`);
+        return (await response.json()) as SpiritFlixCaptionManifest;
+      })
+      .then((manifest) => {
+        if (cancelled) return;
+        setCaptionManifest({ status: "ready", tracks: Array.isArray(manifest.tracks) ? manifest.tracks : [], error: "" });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setCaptionManifest({
+          status: "error",
+          tracks: [],
+          error: error instanceof Error ? error.message : "Caption manifest request failed.",
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [captionManifestUrl]);
+
+  useEffect(() => {
+    scheduleCurrentCaptionPreferenceApply(captionPreference);
+    return clearScheduledCaptionApplies;
+  }, [
+    captionPreference,
+    captionTrackSignature,
+    clearScheduledCaptionApplies,
+    item.Id,
+    playbackMode,
+    playbackSourceClass,
+    retryCount,
+    scheduleCurrentCaptionPreferenceApply,
+  ]);
 
   const emitPlaybackProgress = useCallback(
     (positionTicks: number, isEnded = false) => {
@@ -1442,15 +1690,37 @@ export function SpiritFlixPlayer({
   };
 
   const toggleSeriesAudioPreference = () => {
+    if (isSeriesAudioSwitching || isLoading) return;
     const nextPreference = nextSeriesAudioPreference;
+    audioSwitchResumeSecondsRef.current = videoRef.current?.currentTime ?? null;
+    setIsSeriesAudioSwitching(true);
+    setIsLoading(true);
     setSeriesAudioState({ seriesKey, preference: nextPreference });
     storeSeriesAudioPreference(seriesKey, nextPreference);
     setAudioTrackSwitchAvailable(applyAudioPreferenceToVideo(videoRef.current, nextPreference));
+    scheduleCurrentCaptionPreferenceApply(captionPreference);
+    revealControls();
+  };
+
+  const toggleCaptions = () => {
+    const nextPreference: CaptionPreference = captionPreference === "on" ? "off" : "on";
+    setCaptionPreference(nextPreference);
+    storeCaptionPreference(nextPreference);
+    scheduleCurrentCaptionPreferenceApply(nextPreference);
     revealControls();
   };
 
   const toggleToolDrawer = () => {
     setIsToolDrawerOpen((open) => !open);
+    revealControls();
+  };
+
+  const toggleTikTokMode = () => {
+    setIsTikTokMode((current) => {
+      const next = !current;
+      window.localStorage.setItem(TIKTOK_MODE_STORAGE_KEY, String(next));
+      return next;
+    });
     revealControls();
   };
 
@@ -1460,14 +1730,16 @@ export function SpiritFlixPlayer({
     setManualTagsLoading(true);
     setManualTagsError("");
     try {
-      const [indexResponse, itemResponse] = await Promise.all([
-        fetch("/api/spiritflix/tags", { cache: "no-store" }),
-        fetch(manualMetadataUrl.tags, { cache: "no-store" }),
+      const [indexResult, itemResult] = await Promise.allSettled([
+        fetchManualMetadata("/api/spiritflix/tags", { cache: "no-store" }),
+        fetchManualMetadata(manualMetadataUrl.tags, { cache: "no-store" }),
       ]);
-      if (!indexResponse.ok || !itemResponse.ok) throw new Error("Manual tags could not be loaded.");
-      const index = (await indexResponse.json()) as SpiritFlixManualTagIndex;
-      const record = (await itemResponse.json()) as SpiritFlixManualTagRecord;
-      setManualTagIndex(index);
+      if (itemResult.status !== "fulfilled" || !itemResult.value.ok) throw new Error("Manual tags could not be loaded.");
+      const index = indexResult.status === "fulfilled" && indexResult.value.ok
+        ? ((await indexResult.value.json()) as SpiritFlixManualTagIndex)
+        : null;
+      const record = (await itemResult.value.json()) as SpiritFlixManualTagRecord;
+      if (index) setManualTagIndex(index);
       const safeRecord = { ...record, manualTags: Array.isArray(record.manualTags) ? record.manualTags : [] };
       setManualTagRecord(safeRecord);
       if (!manualTagDraftDirtyRef.current) {
@@ -1487,6 +1759,7 @@ export function SpiritFlixPlayer({
     setIsTagEditorOpen(true);
     setIsModelEditorOpen(false);
     setIsDeleteEditorOpen(false);
+    setIsToolDrawerOpen(false);
     setNewManualTag("");
     manualTagDraftDirtyRef.current = false;
     revealControls(true);
@@ -1500,11 +1773,11 @@ export function SpiritFlixPlayer({
     setManualTagsSaving(true);
     setManualTagsError("");
     try {
-      const response = await fetch(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/tags`, {
+      const response = await fetchManualMetadata(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/tags`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          filePath: item.MediaSources?.[0]?.Path ?? item.Path,
+          filePath: sourcePath || undefined,
           manualTags: nextManualTags,
         }),
       });
@@ -1530,7 +1803,7 @@ export function SpiritFlixPlayer({
 
   const mergeKnownModelTagsIntoCurrentItem = async (modelName: string, existingManualTags?: string[]) => {
     try {
-      const modelTagResponse = await fetch(`/api/spiritflix/tags?modelName=${encodeURIComponent(modelName)}`, { cache: "no-store" });
+      const modelTagResponse = await fetchManualMetadata(`/api/spiritflix/tags?modelName=${encodeURIComponent(modelName)}`, { cache: "no-store" });
       if (!modelTagResponse.ok) return;
       const modelTagBody = (await modelTagResponse.json().catch(() => null)) as { modelTags?: unknown } | null;
       const modelTags = Array.isArray(modelTagBody?.modelTags)
@@ -1542,7 +1815,7 @@ export function SpiritFlixPlayer({
 
       let currentManualTags = existingManualTags ?? (manualTagRecord?.itemId === item.Id ? manualTagRecord.manualTags : null);
       if (!currentManualTags) {
-        const currentTagResponse = await fetch(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/tags`, { cache: "no-store" });
+        const currentTagResponse = await fetchManualMetadata(manualMetadataUrl.tags, { cache: "no-store" });
         if (!currentTagResponse.ok) return;
         const currentTagRecord = (await currentTagResponse.json().catch(() => null)) as { manualTags?: unknown } | null;
         currentManualTags = Array.isArray(currentTagRecord?.manualTags)
@@ -1583,15 +1856,15 @@ export function SpiritFlixPlayer({
     setManualModelLoading(true);
     setManualModelError("");
     try {
-      const [indexResponse, itemResponse] = await Promise.all([
-        fetch("/api/spiritflix/model-index", { cache: "no-store" }),
-        fetch(manualMetadataUrl.model, { cache: "no-store" }),
+      const [indexResult, itemResult] = await Promise.allSettled([
+        fetchManualMetadata("/api/spiritflix/model-index", { cache: "no-store" }),
+        fetchManualMetadata(manualMetadataUrl.model, { cache: "no-store" }),
       ]);
-      if (!itemResponse.ok) throw new Error("Manual model could not be loaded.");
-      const index = indexResponse.ok
-        ? ((await indexResponse.json()) as SpiritFlixManualModelIndex)
+      if (itemResult.status !== "fulfilled" || !itemResult.value.ok) throw new Error("Manual model could not be loaded.");
+      const index = indexResult.status === "fulfilled" && indexResult.value.ok
+        ? ((await indexResult.value.json()) as SpiritFlixManualModelIndex)
         : { schema: "spiritflix-manual-model-index/v1" as const, updatedAt: new Date(0).toISOString(), models: [] };
-      const record = (await itemResponse.json()) as SpiritFlixManualModelRecord;
+      const record = (await itemResult.value.json()) as SpiritFlixManualModelRecord;
       setManualModelIndex(index);
       setManualModelRecord(record);
       if (!manualModelDraftDirtyRef.current) {
@@ -1626,7 +1899,7 @@ export function SpiritFlixPlayer({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            filePath: item.MediaSources?.[0]?.Path ?? item.Path,
+            filePath: sourcePath || undefined,
             modelName,
             sidecarPath: faceMatch?.sidecarPath,
             faceGuess: faceMatch?.primaryPerformer,
@@ -1640,13 +1913,14 @@ export function SpiritFlixPlayer({
         setFaceLearningError(error instanceof Error ? error.message : "Face learning could not be queued.");
       }
     },
-    [item, relatedModelTagItems],
+    [item.Id, relatedModelTagItems, sourcePath],
   );
 
   const openModelEditor = () => {
     setIsModelEditorOpen(true);
     setIsTagEditorOpen(false);
     setIsDeleteEditorOpen(false);
+    setIsToolDrawerOpen(false);
     manualModelDraftDirtyRef.current = false;
     setDraftModelName(manualModelRecord?.modelName || item.ManualModelName || getInferredModelName(item));
     revealControls(true);
@@ -1659,27 +1933,27 @@ export function SpiritFlixPlayer({
     let cancelled = false;
     const hydrateManualMetadata = async () => {
       try {
-        const [tagIndexResponse, tagItemResponse, modelIndexResponse, modelItemResponse] = await Promise.all([
-          fetch("/api/spiritflix/tags", { cache: "no-store" }),
-          fetch(manualMetadataUrl.tags, { cache: "no-store" }),
-          fetch("/api/spiritflix/model-index", { cache: "no-store" }),
-          fetch(manualMetadataUrl.model, { cache: "no-store" }),
+        const [tagIndexResult, tagItemResult, modelIndexResult, modelItemResult] = await Promise.allSettled([
+          fetchManualMetadata("/api/spiritflix/tags", { cache: "no-store" }),
+          fetchManualMetadata(manualMetadataUrl.tags, { cache: "no-store" }),
+          fetchManualMetadata("/api/spiritflix/model-index", { cache: "no-store" }),
+          fetchManualMetadata(manualMetadataUrl.model, { cache: "no-store" }),
         ]);
         if (cancelled) return;
-        if (tagIndexResponse.ok) {
-          setManualTagIndex((await tagIndexResponse.json()) as SpiritFlixManualTagIndex);
+        if (tagIndexResult.status === "fulfilled" && tagIndexResult.value.ok) {
+          setManualTagIndex((await tagIndexResult.value.json()) as SpiritFlixManualTagIndex);
         }
-        if (tagItemResponse.ok) {
-          const record = (await tagItemResponse.json()) as SpiritFlixManualTagRecord;
+        if (tagItemResult.status === "fulfilled" && tagItemResult.value.ok) {
+          const record = (await tagItemResult.value.json()) as SpiritFlixManualTagRecord;
           const safeRecord = { ...record, manualTags: Array.isArray(record.manualTags) ? record.manualTags : [] };
           setManualTagRecord(safeRecord);
           if (!manualTagDraftDirtyRef.current) setDraftManualTags(safeRecord.manualTags);
         }
-        if (modelIndexResponse.ok) {
-          setManualModelIndex((await modelIndexResponse.json()) as SpiritFlixManualModelIndex);
+        if (modelIndexResult.status === "fulfilled" && modelIndexResult.value.ok) {
+          setManualModelIndex((await modelIndexResult.value.json()) as SpiritFlixManualModelIndex);
         }
-        if (modelItemResponse.ok) {
-          const record = (await modelItemResponse.json()) as SpiritFlixManualModelRecord;
+        if (modelItemResult.status === "fulfilled" && modelItemResult.value.ok) {
+          const record = (await modelItemResult.value.json()) as SpiritFlixManualModelRecord;
           setManualModelRecord(record);
           if (!manualModelDraftDirtyRef.current) {
             setDraftModelName(record.modelName || item.ManualModelName || getInferredModelName(item));
@@ -1706,11 +1980,11 @@ export function SpiritFlixPlayer({
     setManualModelSaving(true);
     setManualModelError("");
     try {
-      const response = await fetch(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/model`, {
+      const response = await fetchManualMetadata(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/model`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          filePath: item.MediaSources?.[0]?.Path ?? item.Path,
+          filePath: sourcePath || undefined,
           modelName,
           knownModelNames: knownModelOptions,
         }),
@@ -1732,11 +2006,11 @@ export function SpiritFlixPlayer({
       if (titleMatchedItems.length) {
         void Promise.allSettled(
           titleMatchedItems.map(async (matchedItem) => {
-            const matchedResponse = await fetch(`/api/spiritflix/videos/${encodeURIComponent(matchedItem.Id)}/model`, {
+            const matchedResponse = await fetchManualMetadata(`/api/spiritflix/videos/${encodeURIComponent(matchedItem.Id)}/model`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                filePath: matchedItem.MediaSources?.[0]?.Path ?? matchedItem.Path,
+                filePath: getItemSourcePath(matchedItem) || undefined,
                 modelName: body.record.modelName,
                 knownModelNames: knownModelOptions,
               }),
@@ -1759,7 +2033,7 @@ export function SpiritFlixPlayer({
           ...getRelatedItemsForModelName(body.record.modelName),
           ...titleMatchedItems.map((matchedItem) => ({
             itemId: matchedItem.Id,
-            filePath: matchedItem.MediaSources?.[0]?.Path ?? matchedItem.Path,
+            filePath: getItemSourcePath(matchedItem),
           })),
         ];
         void requestFaceLearning(body.record.modelName, currentFaceMatch, relatedItems).then(() =>
@@ -1838,6 +2112,7 @@ export function SpiritFlixPlayer({
     setIsDeleteEditorOpen(true);
     setIsTagEditorOpen(false);
     setIsModelEditorOpen(false);
+    setIsToolDrawerOpen(false);
     revealControls(true);
     scheduleAppWidgetClose();
     void previewDeleteVideo();
@@ -1912,6 +2187,20 @@ export function SpiritFlixPlayer({
     }
   };
 
+  const handleTikTokSwipe = (dy: number): boolean => {
+    if (!isTikTokMode) return false;
+    if (dy < 0) {
+      if (!nextItem && repeatModeRef.current !== "queue") return false;
+      selectNextItem();
+      hideControls();
+      return true;
+    }
+    if (!previousItem) return false;
+    selectQueueItem(previousItem);
+    hideControls();
+    return true;
+  };
+
   const updateVolume = useCallback((nextVolume: number) => {
     const video = videoRef.current;
     const clamped = Math.max(0, Math.min(1, nextVolume));
@@ -1971,7 +2260,10 @@ export function SpiritFlixPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return undefined;
-    const hlsUrl = client.getHlsUrl(item.Id);
+    const audioStreamOptions =
+      typeof selectedAudioStreamIndex === "number" ? { audioStreamIndex: selectedAudioStreamIndex } : undefined;
+    const hlsUrl = client.getHlsUrl(item.Id, audioStreamOptions);
+    const shouldForceJellyfinAudioStream = needsSelectedAudioStream;
     let hlsInstance: HlsController | null = null;
     let cancelled = false;
 
@@ -2029,6 +2321,7 @@ export function SpiritFlixPlayer({
         } else {
           setStreamError("This browser could not play the Jellyfin stream.");
           setIsLoading(false);
+          setIsSeriesAudioSwitching(false);
           return false;
         }
         usingHlsRef.current = true;
@@ -2036,7 +2329,11 @@ export function SpiritFlixPlayer({
         playbackModeRef.current = "HLS";
         setPlaybackMode("HLS");
         setPlaybackSourceClass(mediaDiagnostics.transcodeLikely ? "jellyfin_transcode_fallback" : "jellyfin_hls_fallback");
-        setPlaybackSourceReason("direct MP4 path failed; HLS fallback started");
+        setPlaybackSourceReason(
+          shouldForceJellyfinAudioStream
+            ? `Jellyfin selected audio stream ${selectedAudioStreamIndex}`
+            : "direct MP4 path failed; HLS fallback started",
+        );
         setStreamError("");
         return true;
       } catch (error) {
@@ -2044,6 +2341,7 @@ export function SpiritFlixPlayer({
         hlsInstance = null;
         setStreamError(error instanceof Error ? error.message : "Direct playback failed and HLS fallback could not start.");
         setIsLoading(false);
+        setIsSeriesAudioSwitching(false);
         return false;
       }
     };
@@ -2086,7 +2384,7 @@ export function SpiritFlixPlayer({
         })
         .catch(() => undefined);
 
-      const directUrl = client.getStreamUrl(itemRef.current.Id);
+      const directUrl = client.getStreamUrl(itemRef.current.Id, audioStreamOptions);
       const playbackSetters = {
         setMobileOptimizedSource,
         setPlaybackMode,
@@ -2101,31 +2399,17 @@ export function SpiritFlixPlayer({
         playbackModeRef,
       };
 
-      const cachedMobile = client.getCachedMobileOptimizedSource?.(itemRef.current.Id) ?? null;
-      const preferMobilePlayback = shouldPreferAppMiniPlayer();
+      const cachedMobile = shouldForceJellyfinAudioStream ? null : client.getCachedMobileOptimizedSource?.(itemRef.current.Id) ?? null;
+      const preferMobilePlayback = !shouldForceJellyfinAudioStream && shouldPreferAppMiniPlayer();
 
-      if (cachedMobile?.available && cachedMobile.url) {
+      if (shouldForceJellyfinAudioStream) {
+        const hlsReady = await startHls();
+        if (!hlsReady || cancelled) return;
+        markSpiritFlixPerf("source-chosen", { source: "hlsSelectedAudio", audioStreamIndex: selectedAudioStreamIndex });
+      } else if (cachedMobile?.available && cachedMobile.url) {
         applyMobileOptimizedPlayback(video, cachedMobile, playbackSetters);
         markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: true });
       } else if (preferMobilePlayback) {
-        const mobileSource = await client
-          .getMobileOptimizedSource(itemRef.current)
-          .catch((): MobileOptimizedSource => ({ available: false }));
-        if (cancelled) return;
-        if (mobileSource.available && mobileSource.url) {
-          applyMobileOptimizedPlayback(video, mobileSource, playbackSetters);
-          markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false });
-        } else {
-          applyDirectPlayback(
-            video,
-            itemRef.current,
-            directUrl,
-            directSetters,
-            "no optimized MP4 receipt found; using direct MP4",
-          );
-          markSpiritFlixPerf("source-chosen", { source: "directMp4", cached: false });
-        }
-      } else {
         applyDirectPlayback(
           video,
           itemRef.current,
@@ -2151,9 +2435,39 @@ export function SpiritFlixPlayer({
             }
           })
           .catch(() => undefined);
+      } else {
+        applyDirectPlayback(
+          video,
+          itemRef.current,
+          directUrl,
+          directSetters,
+          "direct MP4 assigned immediately while mobile optimized receipt resolves",
+        );
+        markSpiritFlixPerf("source-chosen", { source: "directMp4", cached: false });
+        if (!shouldForceJellyfinAudioStream) {
+          void client
+            .getMobileOptimizedSource(itemRef.current)
+            .then((mobileSource) => {
+              if (cancelled) return;
+              if (mobileSource.available && mobileSource.url && video.src !== mobileSource.url) {
+                if (!video.paused && video.currentTime > 0.25) {
+                  setMobileOptimizedSource(mobileSource);
+                  markSpiritFlixPerf("source-available", { source: "mobileOptimized", deferred: true });
+                  return;
+                }
+                const resumeTime = video.currentTime;
+                applyMobileOptimizedPlayback(video, mobileSource, playbackSetters);
+                markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false, upgraded: true });
+                if (resumeTime > 0) video.currentTime = resumeTime;
+              }
+            })
+            .catch(() => undefined);
+        }
       }
 
-      const resumeAt = ticksToSeconds(startPositionTicks ?? item.UserData?.PlaybackPositionTicks);
+      const audioSwitchResumeAt = audioSwitchResumeSecondsRef.current;
+      audioSwitchResumeSecondsRef.current = null;
+      const resumeAt = audioSwitchResumeAt ?? ticksToSeconds(startPositionTicks ?? item.UserData?.PlaybackPositionTicks);
       if (resumeAt) video.currentTime = resumeAt;
       const startTicks = resumeAt ? secondsToTicks(resumeAt) : 0;
       lastReportedTicksRef.current = startTicks;
@@ -2165,6 +2479,7 @@ export function SpiritFlixPlayer({
 
     setup().catch(() => {
       setIsLoading(false);
+      setIsSeriesAudioSwitching(false);
       setStreamError("Could not prepare this Jellyfin stream.");
     });
 
@@ -2188,7 +2503,19 @@ export function SpiritFlixPlayer({
       emitPlaybackProgress(endedRef.current ? secondsToTicks(video.duration || ticksToSeconds(item.RunTimeTicks)) : stopTicks, endedRef.current);
       hlsInstance?.destroy();
     };
-  }, [client, emitPlaybackProgress, item.Id, item.RunTimeTicks, item.UserData?.PlaybackPositionTicks, mediaDiagnostics.transcodeLikely, retryCount, startPositionTicks]);
+  }, [
+    client,
+    emitPlaybackProgress,
+    isSeriesPlayback,
+    item.Id,
+    item.RunTimeTicks,
+    item.UserData?.PlaybackPositionTicks,
+    mediaDiagnostics.transcodeLikely,
+    needsSelectedAudioStream,
+    retryCount,
+    selectedAudioStreamIndex,
+    startPositionTicks,
+  ]);
 
   useEffect(() => {
     const flushForMobileSuspend = () => {
@@ -2425,6 +2752,10 @@ export function SpiritFlixPlayer({
     const absY = Math.abs(dy);
     const isTap = absX <= TAP_MAX_MOVEMENT && absY <= TAP_MAX_MOVEMENT && elapsed <= TAP_MAX_MS;
 
+    if (absY >= TIKTOK_SWIPE_ACTIVATION_PX && absY > absX * TIKTOK_SWIPE_VERTICAL_RATIO && handleTikTokSwipe(dy)) {
+      return;
+    }
+
     if (absY > 120 && absY > absX * 1.2 && dy > 0) {
       onClose();
       return;
@@ -2570,14 +2901,28 @@ export function SpiritFlixPlayer({
             revealControls();
             return;
           }
+          const dx = start && touch ? touch.clientX - start.x : 0;
+          const dy = start && touch ? touch.clientY - start.y : 0;
+          const absX = Math.abs(dx);
+          const absY = Math.abs(dy);
+          if (
+            start &&
+            touch &&
+            Date.now() >= suppressTouchUntilRef.current &&
+            absY >= TIKTOK_SWIPE_ACTIVATION_PX &&
+            absY > absX * TIKTOK_SWIPE_VERTICAL_RATIO &&
+            handleTikTokSwipe(dy)
+          ) {
+            suppressPointerUntilRef.current = Date.now() + PINCH_GESTURE_SUPPRESS_MS;
+            suppressTouchUntilRef.current = Date.now() + PINCH_GESTURE_SUPPRESS_MS;
+            return;
+          }
           if (
             start &&
             touch &&
             Date.now() >= suppressTouchUntilRef.current &&
             Date.now() - lastPointerTapAtRef.current > PINCH_GESTURE_SUPPRESS_MS
           ) {
-            const dx = touch.clientX - start.x;
-            const dy = touch.clientY - start.y;
             const elapsed = Date.now() - start.time;
             if (Math.abs(dx) <= TAP_MAX_MOVEMENT && Math.abs(dy) <= TAP_MAX_MOVEMENT && elapsed <= TAP_MAX_MS) {
               suppressPointerUntilRef.current = Date.now() + PINCH_GESTURE_SUPPRESS_MS;
@@ -2628,6 +2973,8 @@ export function SpiritFlixPlayer({
           onCanPlay={() => {
             setStreamError("");
             setIsLoading(false);
+            setIsSeriesAudioSwitching(false);
+            scheduleCurrentCaptionPreferenceApply(captionPreference);
             markSpiritFlixPerf("canplay", { source: playbackSourceClass });
             if (waitingSinceRef.current) {
               waitingSinceRef.current = null;
@@ -2636,6 +2983,7 @@ export function SpiritFlixPlayer({
           onPlaying={() => {
             setIsPlaying(true);
             setIsLoading(false);
+            setIsSeriesAudioSwitching(false);
             markSpiritFlixPerf("playing", { source: playbackSourceClass });
             scheduleControlsHide();
             if (waitingSinceRef.current) {
@@ -2676,6 +3024,7 @@ export function SpiritFlixPlayer({
             markSpiritFlixPerf("loadedmetadata", { source: playbackSourceClass });
             setDuration(Number.isFinite(video.duration) ? video.duration : ticksToSeconds(item.RunTimeTicks));
             setAudioTrackSwitchAvailable(applyAudioPreferenceToVideo(video, seriesAudioPreference));
+            scheduleCurrentCaptionPreferenceApply(captionPreference);
             if (video.videoWidth > 0 && video.videoHeight > 0) {
               setVideoAspectRatio(video.videoWidth / video.videoHeight);
             }
@@ -2701,7 +3050,24 @@ export function SpiritFlixPlayer({
               revealControls(true);
             }
           }}
-        />
+        >
+          {captionTracks.map((track) => (
+            <track
+              key={track.id}
+              kind={track.kind === "captions" ? "captions" : "subtitles"}
+              src={track.publicUrl}
+              srcLang={track.language || undefined}
+              label={getCaptionTrackLabel(track)}
+              default={captionsEnabled && Boolean(track.default)}
+              data-spiritflix-caption-track="true"
+              data-spiritflix-caption-source={track.sourceType}
+              ref={(element) => {
+                if (element) scheduleCurrentCaptionPreferenceApply(captionPreference);
+              }}
+              onLoad={() => scheduleCurrentCaptionPreferenceApply(captionPreference)}
+            />
+          ))}
+        </video>
       </div>
 
       {isLoading && !streamError && !isPlaying ? (
@@ -2802,6 +3168,14 @@ export function SpiritFlixPlayer({
               <div>
                 <dt>Live transcode</dt>
                 <dd>{playbackMode === "mobile optimized" ? "unlikely" : mediaDiagnostics.transcodeLikely || usingHls ? "likely" : "unlikely"}</dd>
+              </div>
+              <div>
+                <dt>Captions</dt>
+                <dd>{captionManifest.status === "error" ? `error: ${captionManifest.error}` : `${captionTracks.length} loaded`}</dd>
+              </div>
+              <div>
+                <dt>Caption labels</dt>
+                <dd>{captionTracks.length ? captionTracks.map((track) => `${getCaptionTrackLabel(track)} (${track.sourceType})`).join(", ") : "none"}</dd>
               </div>
             </dl>
           ) : null}
@@ -2945,17 +3319,48 @@ export function SpiritFlixPlayer({
                 <Heart size={20} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
               </button>
             ) : null}
+            {hasCaptionChoices ? (
+              <button
+                className={`spiritflix-player__tool spiritflix-player__tool--captions ${captionsEnabled ? "is-active" : ""}`}
+                type="button"
+                onClick={toggleCaptions}
+                disabled={captionControlDisabled}
+                aria-label={
+                  captionControlDisabled
+                    ? captionManifest.status === "loading"
+                      ? "Loading subtitles"
+                      : "Subtitles unavailable"
+                    : captionsEnabled
+                      ? "Turn subtitles off"
+                      : "Turn subtitles on"
+                }
+                aria-pressed={captionsEnabled}
+                title={
+                  captionControlDisabled
+                    ? captionManifest.status === "loading"
+                      ? "Subtitles loading..."
+                      : "Subtitles unavailable"
+                    : captionsEnabled
+                      ? "Subtitles: on"
+                      : "Subtitles: off"
+                }
+              >
+                <Captions size={20} aria-hidden="true" />
+                <span>{captionControlDisabled ? "..." : captionsEnabled ? "On" : "Off"}</span>
+              </button>
+            ) : null}
             {hasSeriesAudioChoices ? (
               <button
                 className="spiritflix-player__tool spiritflix-player__tool--audio"
                 type="button"
                 onClick={toggleSeriesAudioPreference}
+                disabled={isSeriesAudioSwitching || isLoading}
                 aria-label={`Switch audio to ${nextSeriesAudioPreference === "dub" ? "English dub" : "Japanese sub"}`}
                 aria-pressed={seriesAudioPreference === "dub"}
-                title={`Audio: ${seriesAudioPreference === "dub" ? "Dub" : "Sub"}`}
+                title={isSeriesAudioSwitching || isLoading ? "Switching audio..." : `Audio: ${seriesAudioPreference === "dub" ? "Dub" : "Sub"}`}
               >
                 <Languages size={20} aria-hidden="true" />
-                <span>{seriesAudioPreference === "dub" ? "Dub" : "Sub"}</span>
+                <span>{isSeriesAudioSwitching ? "..." : seriesAudioPreference === "dub" ? "Dub" : "Sub"}</span>
               </button>
             ) : null}
             <div className={`spiritflix-player__volume spiritflix-player__tool spiritflix-player__tool--volume ${isVolumeOpen ? "is-expanded" : ""}`}>
@@ -3010,6 +3415,19 @@ export function SpiritFlixPlayer({
 
             {showToolOverflow ? (
               <div className="spiritflix-player__tools-overflow" aria-label="Secondary player controls">
+                {showLibraryPlayerTools ? (
+                  <button
+                    className={`spiritflix-player__tool spiritflix-player__tool--tiktok ${isTikTokMode ? "is-active" : ""}`}
+                    type="button"
+                    onClick={toggleTikTokMode}
+                    aria-label={tiktokModeLabel}
+                    aria-pressed={isTikTokMode}
+                    title={isTikTokMode ? "Swipe up/down: on" : "Swipe up/down: off"}
+                  >
+                    <ChevronsDown size={20} aria-hidden="true" />
+                    <span>TikTok</span>
+                  </button>
+                ) : null}
                 {showLibraryPlayerTools ? (
                   <button
                     className={`spiritflix-player__tool spiritflix-player__tool--model-mix ${knownCurrentModelName && modelShuffleItems.length ? "is-active" : ""}`}

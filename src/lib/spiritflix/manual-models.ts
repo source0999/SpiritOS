@@ -21,6 +21,9 @@ export interface SpiritFlixManualModelRecord {
 export interface SpiritFlixManualModelSummary {
   modelName: string;
   count: number;
+  catalogCount?: number;
+  assignedCount?: number;
+  source?: "manual" | "registry" | "merged";
 }
 
 export interface SpiritFlixManualModelIndex {
@@ -50,8 +53,11 @@ function getManualModelIndexPath(options: SpiritFlixManualModelStoreOptions = {}
   return path.join(getManualModelRoot(options), "index.json");
 }
 
-function getKnownModelIndexPath(options: SpiritFlixManualModelStoreOptions = {}): string {
-  return options.modelIndexPath ?? process.env.SPIRITFLIX_MODEL_INDEX_PATH ?? path.join(process.cwd(), "scripts", "media", "model_index.json");
+function getKnownModelIndexPath(options: SpiritFlixManualModelStoreOptions = {}): string | null {
+  if (options.modelIndexPath) return options.modelIndexPath;
+  if (process.env.SPIRITFLIX_MODEL_INDEX_PATH) return process.env.SPIRITFLIX_MODEL_INDEX_PATH;
+  if (options.rootDir || process.env.SPIRITFLIX_MANUAL_MODEL_ROOT) return null;
+  return path.join(process.cwd(), "scripts", "media", "model_index.json");
 }
 
 export function canonicalizeSpiritFlixManualModelName(input: unknown): string {
@@ -77,6 +83,7 @@ interface SpiritFlixKnownModelIndex {
     slug?: unknown;
     aliases?: unknown;
     profile_handles?: unknown;
+    video_count?: unknown;
   }>;
 }
 
@@ -90,7 +97,8 @@ function addKnownModelAlias(aliasMap: Map<string, string>, alias: unknown, canon
 
 async function getKnownModelAliasMap(options: SpiritFlixManualModelStoreOptions = {}): Promise<Map<string, string>> {
   const aliasMap = new Map<string, string>();
-  const modelIndex = await readJsonFile<SpiritFlixKnownModelIndex>(getKnownModelIndexPath(options));
+  const modelIndexPath = getKnownModelIndexPath(options);
+  const modelIndex = modelIndexPath ? await readJsonFile<SpiritFlixKnownModelIndex>(modelIndexPath) : null;
   for (const model of modelIndex?.models ?? []) {
     const canonicalName = canonicalizeSpiritFlixManualModelName(model.name);
     if (!canonicalName) continue;
@@ -107,6 +115,28 @@ async function getKnownModelAliasMap(options: SpiritFlixManualModelStoreOptions 
     }
   }
   return aliasMap;
+}
+
+async function getKnownModelSummaries(options: SpiritFlixManualModelStoreOptions = {}): Promise<SpiritFlixManualModelSummary[]> {
+  const modelIndexPath = getKnownModelIndexPath(options);
+  const modelIndex = modelIndexPath ? await readJsonFile<SpiritFlixKnownModelIndex>(modelIndexPath) : null;
+  const summaries = new Map<string, SpiritFlixManualModelSummary>();
+  for (const model of modelIndex?.models ?? []) {
+    const modelName = canonicalizeSpiritFlixManualModelName(model.name);
+    if (!modelName) continue;
+    const key = getModelNameKey(modelName);
+    const catalogCount = typeof model.video_count === "number" && Number.isFinite(model.video_count)
+      ? Math.max(0, Math.round(model.video_count))
+      : 0;
+    summaries.set(key, {
+      modelName,
+      count: catalogCount,
+      catalogCount,
+      assignedCount: 0,
+      source: "registry",
+    });
+  }
+  return Array.from(summaries.values());
 }
 
 function resolveKnownModelName(modelName: string, knownModelNames: string[] = [], aliasMap: Map<string, string> = new Map()): string {
@@ -209,13 +239,20 @@ export async function buildSpiritFlixManualModelIndex(
   options: SpiritFlixManualModelStoreOptions = {},
 ): Promise<SpiritFlixManualModelIndex> {
   const counts = new Map<string, SpiritFlixManualModelSummary>();
+  const knownModels = await getKnownModelSummaries(options);
+  knownModels.forEach((model) => counts.set(getModelNameKey(model.modelName), model));
   const records = await listSpiritFlixManualModelRecords(options);
   records.forEach((record) => {
     const key = getModelNameKey(record.modelName);
     const current = counts.get(key);
+    const assignedCount = (current?.assignedCount ?? 0) + 1;
+    const catalogCount = current?.catalogCount ?? 0;
     counts.set(key, {
       modelName: current?.modelName ?? record.modelName,
-      count: (current?.count ?? 0) + 1,
+      count: Math.max(catalogCount, assignedCount),
+      catalogCount,
+      assignedCount,
+      source: current?.source === "registry" ? "merged" : "manual",
     });
   });
   const index: SpiritFlixManualModelIndex = {

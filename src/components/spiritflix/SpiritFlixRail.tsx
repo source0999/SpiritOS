@@ -8,6 +8,7 @@ import { SpiritFlixCard } from "./SpiritFlixCard";
 
 interface SpiritFlixRailProps {
   title: string;
+  titleMeta?: string;
   variant?: "poster" | "landscape";
   client: JellyfinClient;
   items: JellyfinItem[];
@@ -16,12 +17,15 @@ interface SpiritFlixRailProps {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  onTitleClick?: () => void;
+  titleActionLabel?: string;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => void;
 }
 
 export function SpiritFlixRail({
   title,
+  titleMeta,
   variant = "poster",
   client,
   items,
@@ -30,6 +34,8 @@ export function SpiritFlixRail({
   hasMore = false,
   loadingMore = false,
   onLoadMore,
+  onTitleClick,
+  titleActionLabel,
   onOpenDetails,
   onPlay,
 }: SpiritFlixRailProps) {
@@ -69,7 +75,25 @@ export function SpiritFlixRail({
   return (
     <section className={`spiritflix-rail spiritflix-rail--${variant}`}>
       <div className="spiritflix-rail__header">
-        <h2>{title}</h2>
+        {onTitleClick ? (
+          <button
+            type="button"
+            className="spiritflix-rail__title-button"
+            onClick={onTitleClick}
+            aria-label={titleActionLabel ?? `Open ${title}`}
+          >
+            <span className="spiritflix-rail__title-copy">
+              <h2>{title}</h2>
+              {titleMeta ? <span className="spiritflix-rail__title-meta">{titleMeta}</span> : null}
+            </span>
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
+        ) : (
+          <span className="spiritflix-rail__title-copy">
+            <h2>{title}</h2>
+            {titleMeta ? <span className="spiritflix-rail__title-meta">{titleMeta}</span> : null}
+          </span>
+        )}
         {items.length ? (
           <div className="spiritflix-rail__controls" aria-hidden="true">
             <button type="button" onClick={() => scroll("left")} tabIndex={-1}>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LIBRARY_DIR,
+  extractTweetId,
   isIgnoredTempFile,
   sanitizeLibraryFilename,
 } from "../spiritflix-twitter-intake.mjs";
@@ -23,5 +24,10 @@ describe("spiritflix-twitter-intake guardrails", () => {
   it("sanitizes library filenames and always writes MP4", () => {
     expect(sanitizeLibraryFilename('bad:name?.mkv')).toBe("bad name.mp4");
     expect(sanitizeLibraryFilename("already fine.mp4")).toBe("already fine.mp4");
+  });
+
+  it("extracts tweet ids from downloader filenames", () => {
+    expect(extractTweetId("creator - caption [2067771535859818601].mp4")).toBe("2067771535859818601");
+    expect(extractTweetId("creator - no status id.mp4")).toBe("");
   });
 });

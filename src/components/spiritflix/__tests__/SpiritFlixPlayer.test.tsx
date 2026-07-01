@@ -208,6 +208,9 @@ describe("SpiritFlixPlayer mobile controls", () => {
             source: "manual",
           });
         }
+        if (href.includes("/captions/manifest")) {
+          return Response.json({ mediaPath: item.Path, mediaKey: "caption-test", generatedAt: "2026-06-27T00:00:00.000Z", tracks: [] });
+        }
         return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
       }),
     );
@@ -245,6 +248,187 @@ describe("SpiritFlixPlayer mobile controls", () => {
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     expect(screen.getByText("Selected source")).toBeInTheDocument();
     expect(screen.getByText("canonical_mp4")).toBeInTheDocument();
+  });
+
+  it("renders native WebVTT tracks from the caption manifest", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("/captions/manifest")) {
+          return Response.json({
+            mediaPath: item.Path,
+            mediaKey: "caption-test",
+            generatedAt: "2026-06-27T00:00:00.000Z",
+            tracks: [
+              {
+                id: "caption-default",
+                sourceType: "embedded",
+                sourceFormat: "mov_text",
+                outputFormat: "vtt",
+                language: "eng",
+                label: "English",
+                kind: "subtitles",
+                default: true,
+                publicUrl: "/api/spiritflix/captions/file?key=caption-test&track=caption-default",
+                reviewStatus: "source",
+              },
+              {
+                id: "caption-forced",
+                sourceType: "embedded",
+                sourceFormat: "mov_text",
+                outputFormat: "vtt",
+                language: "eng",
+                label: "SubtitleHandler",
+                kind: "subtitles",
+                forced: true,
+                publicUrl: "/api/spiritflix/captions/file?key=caption-test&track=caption-forced",
+                reviewStatus: "source",
+              },
+            ],
+          });
+        }
+        return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+      }),
+    );
+
+    renderPlayer();
+
+    await waitFor(() => expect(document.querySelectorAll("video track")).toHaveLength(2));
+    const tracks = Array.from(document.querySelectorAll("video track"));
+    expect(tracks[0]).toHaveAttribute("src", "/api/spiritflix/captions/file?key=caption-test&track=caption-default");
+    expect(tracks[0]).toHaveAttribute("srclang", "eng");
+    expect(tracks[0]).toHaveAttribute("label", "English");
+    expect(tracks[0]).toHaveAttribute("default");
+    expect(tracks[1]).toHaveAttribute("label", "English Forced");
+  });
+
+  it("lets the user turn subtitles off and remembers the choice", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("/captions/manifest")) {
+          return Response.json({
+            mediaPath: item.Path,
+            mediaKey: "caption-test",
+            generatedAt: "2026-06-27T00:00:00.000Z",
+            tracks: [
+              {
+                id: "caption-default",
+                sourceType: "embedded",
+                sourceFormat: "mov_text",
+                outputFormat: "vtt",
+                language: "eng",
+                label: "English",
+                kind: "subtitles",
+                default: true,
+                publicUrl: "/api/spiritflix/captions/file?key=caption-test&track=caption-default",
+                reviewStatus: "source",
+              },
+            ],
+          });
+        }
+        return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+      }),
+    );
+
+    renderPlayer();
+
+    const button = await screen.findByRole("button", { name: "Turn subtitles off" });
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(button);
+
+    expect(screen.getByRole("button", { name: "Turn subtitles on" })).toHaveAttribute("aria-pressed", "false");
+    expect(window.localStorage.getItem("spiritflix_player_caption_mode")).toBe("off");
+  });
+
+  it("keeps generated AI captions actually showing through repeated subtitle toggles", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("/captions/manifest")) {
+          return Response.json({
+            mediaPath: item.Path,
+            mediaKey: "caption-test",
+            generatedAt: "2026-06-27T00:00:00.000Z",
+            tracks: [
+              {
+                id: "caption-source",
+                sourceType: "embedded",
+                sourceFormat: "mov_text",
+                outputFormat: "vtt",
+                language: "eng",
+                label: "English Source",
+                kind: "subtitles",
+                default: true,
+                publicUrl: "/api/spiritflix/captions/file?key=caption-test&track=caption-source",
+                reviewStatus: "source",
+              },
+              {
+                id: "ai-en",
+                sourceType: "generated",
+                sourceFormat: "ai",
+                outputFormat: "vtt",
+                language: "en",
+                label: "English AI Captions",
+                kind: "captions",
+                publicUrl: "/api/spiritflix/captions/file?key=caption-test&track=ai-en",
+                reviewStatus: "draft",
+              },
+            ],
+          });
+        }
+        return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+      }),
+    );
+
+    renderPlayer();
+    const video = document.querySelector("video") as HTMLVideoElement;
+    await waitFor(() => expect(document.querySelectorAll("video track")).toHaveLength(2));
+    const trackElements = Array.from(document.querySelectorAll("video track"));
+    const sourceTrack = { label: "English Source", language: "eng", kind: "subtitles", mode: "disabled" };
+    const aiTrack = { label: "English AI Captions", language: "en", kind: "captions", mode: "disabled" };
+    Object.defineProperty(video, "textTracks", {
+      configurable: true,
+      value: { length: 2, 0: sourceTrack, 1: aiTrack },
+    });
+    Object.defineProperty(trackElements[0], "track", { configurable: true, value: sourceTrack });
+    Object.defineProperty(trackElements[1], "track", { configurable: true, value: aiTrack });
+
+    fireEvent.load(trackElements[1]);
+    await waitFor(() => expect(aiTrack.mode).toBe("showing"));
+    expect(sourceTrack.mode).toBe("disabled");
+    expect(trackElements[1]).toHaveAttribute("default");
+
+    fireEvent.click(screen.getByRole("button", { name: "Turn subtitles off" }));
+    expect(sourceTrack.mode).toBe("disabled");
+    expect(aiTrack.mode).toBe("disabled");
+
+    fireEvent.click(screen.getByRole("button", { name: "Turn subtitles on" }));
+    await waitFor(() => expect(aiTrack.mode).toBe("showing"));
+    expect(sourceTrack.mode).toBe("disabled");
+    expect(screen.getByRole("button", { name: "Turn subtitles off" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("keeps playback alive when the caption manifest fetch fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("/captions/manifest")) {
+          return new Response("caption route unavailable", { status: 500 });
+        }
+        return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+      }),
+    );
+
+    renderPlayer();
+
+    const video = document.querySelector("video");
+    await waitFor(() => expect(video?.getAttribute("src")).toBe("https://media.example/video.mp4"));
+    expect(document.querySelectorAll("video track")).toHaveLength(0);
   });
 
   it("uses cached mobile optimized source immediately without waiting on network", async () => {
@@ -372,7 +556,7 @@ describe("SpiritFlixPlayer mobile controls", () => {
 
     const video = document.querySelector("video");
     await waitFor(() => expect(video?.getAttribute("src")).toBe("/api/spiritflix/mobile-optimized?stream=1&key=video-1"));
-    expect(screen.getByLabelText("Playback diagnostics")).toHaveTextContent("mobile optimized");
+    await waitFor(() => expect(screen.getByLabelText("Playback diagnostics")).toHaveTextContent("mobile optimized"));
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     expect(screen.getByText("mac_optimized_mp4")).toBeInTheDocument();
     expect(screen.getByText("valid Mac optimized MP4 receipt and output found")).toBeInTheDocument();
@@ -476,7 +660,42 @@ describe("SpiritFlixPlayer mobile controls", () => {
     expect(screen.queryByRole("button", { name: "Delete video" })).not.toBeInTheDocument();
   });
 
+  it("keeps anime episode controls scoped to the source folder when SeriesName is stale", async () => {
+    const gurrenEpisode: JellyfinItem = {
+      ...item,
+      Id: "gurren-1",
+      Name: "Bust Through the Heavens with Your Drill!",
+      Type: "Video",
+      SeriesName: "Rurouni Kenshin (1996)",
+      Path: "/mnt/spirit-8tb/media/anime/Gurren Lagann (2007)/Season 01/Gurren Lagann (2007) - S01E01.mp4",
+      ParentIndexNumber: 1,
+      IndexNumber: 1,
+      MediaStreams: [{ Type: "Video", Width: 1280, Height: 720 }],
+    };
+    const kenshinEpisode: JellyfinItem = {
+      ...gurrenEpisode,
+      Id: "kenshin-1",
+      Name: "The Handsome Swordsman of Legend",
+      Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E01.mp4",
+    };
+
+    renderPlayer({ itemOverride: gurrenEpisode, queueItems: [gurrenEpisode, kenshinEpisode], libraryItems: [kenshinEpisode] });
+
+    expect(screen.getByRole("button", { name: "Previous episode" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next episode" })).toBeDisabled();
+    expect(screen.queryByText("The Handsome Swordsman of Legend")).not.toBeInTheDocument();
+  });
+
   it("persists and applies the selected series audio preference", async () => {
+    const client = {
+      ...createClient(),
+      getStreamUrl: vi.fn((_itemId: string, options?: { audioStreamIndex?: number }) =>
+        `/api/spiritflix/stream?itemId=kenshin-1${options?.audioStreamIndex !== undefined ? `&audioStreamIndex=${options.audioStreamIndex}` : ""}`,
+      ),
+      getHlsUrl: vi.fn((_itemId: string, options?: { audioStreamIndex?: number }) =>
+        `/api/spiritflix/hls?itemId=kenshin-1${options?.audioStreamIndex !== undefined ? `&audioStreamIndex=${options.audioStreamIndex}` : ""}`,
+      ),
+    } as unknown as JellyfinClient;
     const animeItem: JellyfinItem = {
       ...item,
       Id: "kenshin-1",
@@ -486,8 +705,8 @@ describe("SpiritFlixPlayer mobile controls", () => {
       Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E01.mp4",
       MediaStreams: [
         { Type: "Video", Width: 720, Height: 540 },
-        { Type: "Audio", Language: "jpn", DisplayTitle: "Japanese AAC" },
-        { Type: "Audio", Language: "eng", DisplayTitle: "English AAC" },
+        { Index: 1, Type: "Audio", Language: "jpn", DisplayTitle: "Japanese AAC" },
+        { Index: 2, Type: "Audio", Language: "eng", DisplayTitle: "English AAC" },
       ],
     };
     const tracks = [
@@ -495,22 +714,121 @@ describe("SpiritFlixPlayer mobile controls", () => {
       { language: "eng", label: "English", enabled: false },
     ];
 
-    renderPlayer({ itemOverride: animeItem });
+    renderPlayer({ client, itemOverride: animeItem });
     const video = document.querySelector("video");
     Object.defineProperty(video as HTMLVideoElement, "audioTracks", {
       configurable: true,
       value: tracks,
     });
     fireEvent.loadedMetadata(video as HTMLVideoElement);
+    fireEvent.canPlay(video as HTMLVideoElement);
 
     fireEvent.click(screen.getByRole("button", { name: "Switch audio to English dub" }));
 
     expect(tracks[0].enabled).toBe(false);
     expect(tracks[1].enabled).toBe(true);
+    await waitFor(() => expect(client.getHlsUrl).toHaveBeenCalledWith("kenshin-1", { audioStreamIndex: 2 }));
     expect(screen.getByRole("button", { name: "Switch audio to Japanese sub" })).toHaveAttribute("aria-pressed", "true");
     expect(JSON.parse(window.localStorage.getItem("spiritflix_series_audio_preferences") ?? "{}")).toEqual({
       "rurouni kenshin (1996)": "dub",
     });
+  });
+
+  it("keeps generated captions showing while switching anime audio streams", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("/captions/manifest")) {
+          return Response.json({
+            mediaPath: item.Path,
+            mediaKey: "caption-test",
+            generatedAt: "2026-06-27T00:00:00.000Z",
+            tracks: [
+              {
+                id: "caption-source",
+                sourceType: "embedded",
+                sourceFormat: "mov_text",
+                outputFormat: "vtt",
+                language: "eng",
+                label: "English Source",
+                kind: "subtitles",
+                default: true,
+                publicUrl: "/api/spiritflix/captions/file?key=caption-test&track=caption-source",
+                reviewStatus: "source",
+              },
+              {
+                id: "ai-en",
+                sourceType: "generated",
+                sourceFormat: "ai",
+                outputFormat: "vtt",
+                language: "en",
+                label: "English AI Captions",
+                kind: "captions",
+                publicUrl: "/api/spiritflix/captions/file?key=caption-test&track=ai-en",
+                reviewStatus: "draft",
+              },
+            ],
+          });
+        }
+        return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+      }),
+    );
+    const client = {
+      ...createClient(),
+      getStreamUrl: vi.fn((_itemId: string, options?: { audioStreamIndex?: number }) =>
+        `/api/spiritflix/stream?itemId=kenshin-1${options?.audioStreamIndex !== undefined ? `&audioStreamIndex=${options.audioStreamIndex}` : ""}`,
+      ),
+      getHlsUrl: vi.fn((_itemId: string, options?: { audioStreamIndex?: number }) =>
+        `/api/spiritflix/hls?itemId=kenshin-1${options?.audioStreamIndex !== undefined ? `&audioStreamIndex=${options.audioStreamIndex}` : ""}`,
+      ),
+    } as unknown as JellyfinClient;
+    const animeItem: JellyfinItem = {
+      ...item,
+      Id: "kenshin-1",
+      Name: "The Handsome Swordsman of Legend",
+      Type: "Video",
+      SeriesName: "Rurouni Kenshin (1996)",
+      Path: "/mnt/spirit-8tb/media/anime/Rurouni Kenshin (1996)/Season 01/Rurouni Kenshin (1996) - S01E01.mp4",
+      MediaStreams: [
+        { Type: "Video", Width: 720, Height: 540 },
+        { Index: 1, Type: "Audio", Language: "jpn", DisplayTitle: "Japanese AAC" },
+        { Index: 2, Type: "Audio", Language: "eng", DisplayTitle: "English AAC" },
+      ],
+    };
+    const audioTracks = [
+      { language: "jpn", label: "Japanese", enabled: true },
+      { language: "eng", label: "English", enabled: false },
+    ];
+
+    renderPlayer({ client, itemOverride: animeItem });
+    const video = document.querySelector("video") as HTMLVideoElement;
+    await waitFor(() => expect(document.querySelectorAll("video track")).toHaveLength(2));
+    const trackElements = Array.from(document.querySelectorAll("video track"));
+    const sourceTrack = { label: "English Source", language: "eng", kind: "subtitles", mode: "disabled" };
+    const aiTrack = { label: "English AI Captions", language: "en", kind: "captions", mode: "disabled" };
+    Object.defineProperty(video, "audioTracks", { configurable: true, value: audioTracks });
+    Object.defineProperty(video, "textTracks", {
+      configurable: true,
+      value: { length: 2, 0: sourceTrack, 1: aiTrack },
+    });
+    Object.defineProperty(trackElements[0], "track", { configurable: true, value: sourceTrack });
+    Object.defineProperty(trackElements[1], "track", { configurable: true, value: aiTrack });
+    fireEvent.loadedMetadata(video);
+    fireEvent.canPlay(video);
+    fireEvent.load(trackElements[1]);
+
+    await waitFor(() => expect(aiTrack.mode).toBe("showing"));
+    fireEvent.click(screen.getByRole("button", { name: "Switch audio to English dub" }));
+    await waitFor(() => expect(client.getHlsUrl).toHaveBeenCalledWith("kenshin-1", { audioStreamIndex: 2 }));
+    fireEvent.loadedMetadata(video);
+    fireEvent.canPlay(video);
+
+    await waitFor(() => expect(aiTrack.mode).toBe("showing"));
+    expect(sourceTrack.mode).toBe("disabled");
+    expect(audioTracks[0].enabled).toBe(false);
+    expect(audioTracks[1].enabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Turn subtitles off" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("renders selected manual tags highlighted and auto-saves a toggled tag", async () => {
@@ -876,6 +1194,113 @@ describe("SpiritFlixPlayer mobile controls", () => {
     expect(await screen.findAllByText("Luna x pearl")).toHaveLength(2);
     expect(screen.getAllByText("Saved in system")).toHaveLength(2);
     expect(screen.queryByText("Manual model could not be loaded.")).not.toBeInTheDocument();
+  });
+
+  it("loads a manual model through the source path fallback when the player item id changed", async () => {
+    const shuffledItem = {
+      ...item,
+      Id: "shuffle-video-id",
+      Path: "/mnt/spirit-8tb/media/yes/Aaliyah Yasin/source clip.mp4",
+      ManualModelName: undefined,
+    };
+    const fetchMock = vi.fn(async (url: string) => {
+      const href = String(url);
+      if (href.includes("/videos/shuffle-video-id/model")) {
+        const requestUrl = new URL(href, "http://localhost");
+        if (requestUrl.searchParams.get("filePath") === shuffledItem.Path) {
+          return Response.json({
+            schema: "spiritflix-manual-model/v1",
+            itemId: "old-video-id",
+            filePath: shuffledItem.Path,
+            modelName: "Aaliyah Yasin",
+            updatedAt: "2026-06-21T00:00:00.000Z",
+            source: "manual",
+          });
+        }
+        return Response.json({ error: "missing fallback path" }, { status: 404 });
+      }
+      if (href.includes("/model-index")) {
+        return Response.json({
+          schema: "spiritflix-manual-model-index/v1",
+          updatedAt: "2026-06-21T00:00:00.000Z",
+          models: [{ modelName: "Aaliyah Yasin", count: 1 }],
+        });
+      }
+      if (href.includes("/videos/shuffle-video-id/tags")) {
+        return Response.json({
+          schema: "spiritflix-manual-tags/v1",
+          itemId: "old-video-id",
+          filePath: shuffledItem.Path,
+          manualTags: [],
+          updatedAt: "2026-06-21T00:00:00.000Z",
+          source: "manual",
+        });
+      }
+      if (href.includes("/captions/manifest")) {
+        return Response.json({ mediaPath: shuffledItem.Path, mediaKey: "caption-test", generatedAt: "2026-06-27T00:00:00.000Z", tracks: [] });
+      }
+      return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderPlayer({ itemOverride: shuffledItem, queueItems: [shuffledItem], isShuffled: true });
+    fireEvent.click(screen.getByRole("button", { name: "Edit model name" }));
+
+    expect(await screen.findAllByText("Aaliyah Yasin")).toHaveLength(2);
+    const itemModelCalls = fetchMock.mock.calls
+      .map(([url]) => String(url))
+      .filter((url) => url.includes("/videos/shuffle-video-id/model"));
+    expect(itemModelCalls.some((url) => new URL(url, "http://localhost").searchParams.get("filePath") === shuffledItem.Path)).toBe(true);
+    expect(screen.queryByText("Manual model could not be loaded.")).not.toBeInTheDocument();
+  });
+
+  it("retries a transient manual model network error before showing the editor error state", async () => {
+    let itemModelCalls = 0;
+    const fetchMock = vi.fn(async (url: string) => {
+      const href = String(url);
+      if (href.includes("/videos/video-1/model")) {
+        itemModelCalls += 1;
+        if (itemModelCalls === 1) {
+          throw new TypeError("NetworkError when attempting to fetch resource.");
+        }
+        return Response.json({
+          schema: "spiritflix-manual-model/v1",
+          itemId: "video-1",
+          modelName: "Sava Schultz",
+          updatedAt: "2026-06-21T00:00:00.000Z",
+          source: "manual",
+        });
+      }
+      if (href.includes("/model-index")) {
+        return Response.json({
+          schema: "spiritflix-manual-model-index/v1",
+          updatedAt: "2026-06-21T00:00:00.000Z",
+          models: [{ modelName: "Sava Schultz", count: 1 }],
+        });
+      }
+      if (href.includes("/videos/video-1/tags")) {
+        return Response.json({
+          schema: "spiritflix-manual-tags/v1",
+          itemId: "video-1",
+          manualTags: [],
+          updatedAt: "2026-06-21T00:00:00.000Z",
+          source: "manual",
+        });
+      }
+      if (href.includes("/captions/manifest")) {
+        return Response.json({ mediaPath: item.Path, mediaKey: "caption-test", generatedAt: "2026-06-27T00:00:00.000Z", tracks: [] });
+      }
+      return Response.json({ schema: "spiritflix-manual-tag-index/v1", updatedAt: "2026-06-20T00:00:00.000Z", tags: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderPlayer();
+    fireEvent.click(screen.getByRole("button", { name: "Edit model name" }));
+
+    expect(await screen.findAllByText("Sava Schultz")).toHaveLength(2);
+    expect(itemModelCalls).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Manual model could not be loaded.")).not.toBeInTheDocument();
+    expect(screen.queryByText("NetworkError when attempting to fetch resource.")).not.toBeInTheDocument();
   });
 
   it("starts a shuffled queue for the current known model from the tools drawer", async () => {
@@ -1503,6 +1928,37 @@ describe("SpiritFlixPlayer mobile controls", () => {
     expect(screen.queryByLabelText("Playback queue")).not.toBeInTheDocument();
   });
 
+  it("loads queue drawer thumbnails eagerly from Jellyfin Thumb image tags", async () => {
+    const client = createClient();
+    const currentWithThumb = {
+      ...item,
+      ImageTags: {
+        Primary: "primary-current",
+        Thumb: "thumb-current",
+      },
+    };
+    const nextWithThumb = {
+      ...nextItem,
+      ImageTags: {
+        Thumb: "thumb-next",
+      },
+    };
+
+    renderPlayer({
+      client,
+      itemOverride: currentWithThumb,
+      queueItems: [currentWithThumb, nextWithThumb],
+    });
+
+    await waitFor(() => expect(screen.getByLabelText("Fold Tap Test player")).toHaveClass("is-awake"));
+    fireEvent.click(screen.getByRole("button", { name: "Open queue" }));
+
+    await waitFor(() => {
+      expect(client.getImageProxyUrl).toHaveBeenCalledWith(expect.objectContaining({ Id: "video-1" }), "Thumb", 160);
+      expect(client.getImageProxyUrl).toHaveBeenCalledWith(expect.objectContaining({ Id: "video-2" }), "Thumb", 160);
+    });
+  });
+
   it("enables the mini player button when Picture-in-Picture is supported", async () => {
     const requestPictureInPicture = vi.fn().mockResolvedValue({});
     Object.defineProperty(document, "pictureInPictureEnabled", {
@@ -1695,6 +2151,47 @@ describe("SpiritFlixPlayer mobile controls", () => {
 
     expect(video.currentTime).toBe(50);
     expect(screen.queryByText("10s")).not.toBeInTheDocument();
+  });
+
+  it("selects the next queued video on swipe up when TikTok mode is enabled", async () => {
+    const onSelectItem = vi.fn();
+    renderPlayer({ onSelectItem, queueItems: [item, nextItem] });
+
+    const player = screen.getByLabelText("Fold Tap Test player");
+    fireEvent.click(screen.getByRole("button", { name: "More player controls" }));
+    fireEvent.click(screen.getByRole("button", { name: "TikTok swipe mode off" }));
+
+    expect(window.localStorage.getItem("spiritflix_player_tiktok_mode")).toBe("true");
+
+    fireEvent.touchStart(player, {
+      touches: touchList([{ clientX: 420, clientY: 700 }]),
+    });
+    fireEvent.touchEnd(player, {
+      changedTouches: touchList([{ clientX: 418, clientY: 520 }]),
+      touches: touchList([]),
+    });
+
+    expect(onSelectItem).toHaveBeenCalledWith(nextItem);
+  });
+
+  it("selects the previous queued video on swipe down when TikTok mode is enabled", async () => {
+    const onSelectItem = vi.fn();
+    const previousItem = { ...item, Id: "video-0", Name: "Queue Previous Test" };
+    renderPlayer({ itemOverride: nextItem, onSelectItem, queueItems: [previousItem, nextItem] });
+
+    const player = screen.getByLabelText("Queue Next Test player");
+    fireEvent.click(screen.getByRole("button", { name: "More player controls" }));
+    fireEvent.click(screen.getByRole("button", { name: "TikTok swipe mode off" }));
+
+    fireEvent.touchStart(player, {
+      touches: touchList([{ clientX: 420, clientY: 460 }]),
+    });
+    fireEvent.touchEnd(player, {
+      changedTouches: touchList([{ clientX: 422, clientY: 640 }]),
+      touches: touchList([]),
+    });
+
+    expect(onSelectItem).toHaveBeenCalledWith(previousItem);
   });
 
   it("does not seek on a quick horizontal slip", async () => {
