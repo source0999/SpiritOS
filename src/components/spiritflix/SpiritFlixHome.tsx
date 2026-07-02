@@ -93,6 +93,59 @@ interface SpiritFlixHomeProps {
 type LibraryViewMode = "grid" | "list" | "history" | "favorites" | "gallery" | "models";
 type LibrarySortMode = "model" | "title" | "dateAdded" | "duration";
 type LibrarySortDirection = "asc" | "desc";
+type LibrarySmartRescanState = {
+  status: "idle" | "running" | "completed" | "failed";
+  startedAt?: string;
+  updatedAt?: string;
+  completedAt?: string;
+  error?: string;
+  phase?: string;
+  phaseLabel?: string;
+  progress?: {
+    total?: number;
+    completed?: number;
+    percent?: number;
+  };
+  modelProgress?: {
+    total?: number;
+    completed?: number;
+    accepted?: number;
+    skipped?: number;
+  };
+  currentItem?: {
+    kind?: string;
+    name?: string;
+    path?: string;
+    preview?: string;
+  };
+  summary?: {
+    videos_scanned?: number;
+    smart_accepts?: unknown[];
+    smart_accept_skips?: unknown[];
+  };
+};
+
+function normalizeSmartRescanState(value: unknown): LibrarySmartRescanState {
+  if (!value || typeof value !== "object") return { status: "idle" };
+  const candidate = value as Partial<LibrarySmartRescanState>;
+  const status = candidate.status;
+  if (status !== "idle" && status !== "running" && status !== "completed" && status !== "failed") {
+    return { status: "idle" };
+  }
+  return {
+    status,
+    startedAt: typeof candidate.startedAt === "string" ? candidate.startedAt : undefined,
+    updatedAt: typeof candidate.updatedAt === "string" ? candidate.updatedAt : undefined,
+    completedAt: typeof candidate.completedAt === "string" ? candidate.completedAt : undefined,
+    error: typeof candidate.error === "string" ? candidate.error : undefined,
+    phase: typeof candidate.phase === "string" ? candidate.phase : undefined,
+    phaseLabel: typeof candidate.phaseLabel === "string" ? candidate.phaseLabel : undefined,
+    progress: candidate.progress,
+    modelProgress: candidate.modelProgress,
+    currentItem: candidate.currentItem,
+    summary: candidate.summary,
+  };
+}
 
 interface ModelGroup {
   name: string;
@@ -804,6 +857,8 @@ export function SpiritFlixHome({
   const [galleryError, setGalleryError] = useState("");
   const [galleryLightbox, setGalleryLightbox] = useState<{ items: SpiritFlixGalleryItem[]; index: number } | null>(null);
   const [playPrimaryTapOnMobile, setPlayPrimaryTapOnMobile] = useState(false);
+  const [smartRescan, setSmartRescan] = useState<LibrarySmartRescanState>({ status: "idle" });
+  const [smartRescanError, setSmartRescanError] = useState("");
   const [isLibraryShuffleLoading, setIsLibraryShuffleLoading] = useState(false);
   const [fullLibraryItems, setFullLibraryItems] = useState<JellyfinItem[]>([]);
   const [libraryPageIndex, setLibraryPageIndex] = useState(() => {
@@ -1123,6 +1178,25 @@ export function SpiritFlixHome({
         ? "Latest Added"
         : libraryTitle;
   const canPlayHero = hero ? isPlayableItem(hero) : false;
+  const smartRescanSummary = smartRescan.summary;
+  const hasSmartRescanProgress = typeof smartRescan.progress?.percent === "number";
+  const smartRescanPercent = Math.max(0, Math.min(100, Math.round(smartRescan.progress?.percent ?? 0)));
+  const smartRescanProgressText =
+    typeof smartRescan.progress?.total === "number" && smartRescan.progress.total > 0
+      ? `${smartRescan.progress.completed ?? 0} of ${smartRescan.progress.total}`
+      : "";
+  const smartRescanModelProgressText =
+    smartRescan.modelProgress && typeof smartRescan.modelProgress.total === "number"
+      ? `${smartRescan.modelProgress.completed ?? 0} of ${smartRescan.modelProgress.total} models`
+      : "";
+  const smartRescanStatusLabel =
+    smartRescan.status === "running"
+      ? `${smartRescanPercent ? `${smartRescanPercent}% ` : ""}Smart scan`
+      : smartRescan.status === "completed"
+        ? `Smart scan done${typeof smartRescanSummary?.videos_scanned === "number" ? ` / ${smartRescanSummary.videos_scanned} videos` : ""}`
+        : smartRescan.status === "failed"
+          ? "Smart scan failed"
+          : "Smart scan";
 
   const loadGallery = useCallback(async () => {
     try {
@@ -1163,14 +1237,62 @@ export function SpiritFlixHome({
     }
   }, []);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     onRefresh();
     if (isLibraryDashboardView) {
       void loadGallery();
       void loadManualTags();
       void loadManualModels();
     }
+  }, [isLibraryDashboardView, loadGallery, loadManualModels, loadManualTags, onRefresh]);
+
+  const refreshSmartRescanStatus = useCallback(async () => {
+    try {
+      const response = await fetch("/api/spiritflix/library-smart-rescan", { cache: "no-store" });
+      if (!response.ok) throw new Error("Smart rescan status unavailable.");
+      const body = normalizeSmartRescanState(await response.json());
+      setSmartRescan(body);
+      setSmartRescanError("");
+      if (body.status === "completed") {
+        handleRefresh();
+      }
+    } catch {
+      setSmartRescanError("Smart rescan status is unavailable.");
+    }
+  }, [handleRefresh]);
+
+  const startSmartRescan = async () => {
+    if (smartRescan.status === "running") return;
+    setSmartRescanError("");
+    setSmartRescan((current) => ({ ...current, status: "running" }));
+    try {
+      const response = await fetch("/api/spiritflix/library-smart-rescan", {
+        method: "POST",
+        cache: "no-store",
+      });
+      const rawBody = await response.json();
+      const body = normalizeSmartRescanState(rawBody);
+      if (!response.ok) throw new Error((rawBody as { error?: string })?.error || "Smart rescan could not start.");
+      setSmartRescan(body);
+    } catch (error) {
+      setSmartRescan((current) => ({ ...current, status: "failed", error: error instanceof Error ? error.message : "Smart rescan could not start." }));
+      setSmartRescanError(error instanceof Error ? error.message : "Smart rescan could not start.");
+    }
   };
+
+  useEffect(() => {
+    if (!isLibraryDashboardView) return undefined;
+    void refreshSmartRescanStatus();
+    return undefined;
+  }, [isLibraryDashboardView, refreshSmartRescanStatus]);
+
+  useEffect(() => {
+    if (!isLibraryDashboardView || smartRescan.status !== "running") return undefined;
+    const timer = window.setInterval(() => {
+      void refreshSmartRescanStatus();
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [isLibraryDashboardView, refreshSmartRescanStatus, smartRescan.status]);
 
   const closeFiltersOnCoarsePointer = () => {
     if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 760px), (pointer: coarse)").matches) {
@@ -1688,6 +1810,16 @@ export function SpiritFlixHome({
                   {excludedCategories.length ? ` / ${excludedCategories.length} off` : ""}
                 </span>
               </button>
+              <button
+                type="button"
+                className="spiritflix-smart-rescan-button"
+                onClick={startSmartRescan}
+                disabled={smartRescan.status === "running"}
+                aria-label="Run smart model and video rescan"
+              >
+                <RefreshCw size={18} aria-hidden="true" className={smartRescan.status === "running" ? "is-spinning" : undefined} />
+                <span>{smartRescanStatusLabel}</span>
+              </button>
             </div>
 
             <AnimatePresence>
@@ -1811,6 +1943,43 @@ export function SpiritFlixHome({
                 </div>
               ))}
             </div>
+            {smartRescan.status !== "idle" || smartRescanError ? (
+              <div className={`spiritflix-smart-rescan-note is-${smartRescan.status}`}>
+                <div className="spiritflix-smart-rescan-note__head">
+                  <strong>
+                    {smartRescanError ||
+                      smartRescan.error ||
+                      smartRescan.phaseLabel ||
+                      (smartRescan.status === "completed" ? "Smart scan completed" : "Smart model scan")}
+                  </strong>
+                  {smartRescan.status === "running" && hasSmartRescanProgress ? <span>{smartRescanPercent}%</span> : null}
+                </div>
+                {smartRescan.status === "running" ? (
+                  <>
+                    <div
+                      className={`spiritflix-smart-rescan-progress ${hasSmartRescanProgress ? "" : "is-indeterminate"}`}
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={hasSmartRescanProgress ? smartRescanPercent : undefined}
+                    >
+                      <span style={{ width: hasSmartRescanProgress ? `${smartRescanPercent}%` : undefined }} />
+                    </div>
+                    <div className="spiritflix-smart-rescan-preview">
+                      <span>{smartRescan.currentItem?.kind === "model" ? "Model" : smartRescan.currentItem?.kind === "video" ? "Video" : "Now"}</span>
+                      <strong>{smartRescan.currentItem?.preview || smartRescan.currentItem?.name || "Loading next item..."}</strong>
+                      {smartRescanProgressText || smartRescanModelProgressText ? (
+                        <em>{[smartRescanProgressText, smartRescanModelProgressText].filter(Boolean).join(" / ")}</em>
+                      ) : null}
+                    </div>
+                  </>
+                ) : smartRescan.status === "completed" ? (
+                  <span>
+                    {smartRescanSummary?.smart_accepts?.length ?? 0} model face pick updates; {smartRescanSummary?.smart_accept_skips?.length ?? 0} model checks skipped.
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
             {manualTagIndex?.tags.length ? (
               <section className="spiritflix-manual-tags-bar" aria-label="Manual tag filters">
                 <div>

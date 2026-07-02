@@ -1322,6 +1322,26 @@ def json_dump(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def smart_rescan_status_path() -> Path | None:
+    raw_path = os.environ.get("SPIRITFLIX_SMART_RESCAN_STATUS_PATH", "").strip()
+    return Path(raw_path) if raw_path else None
+
+
+def write_smart_rescan_status(update: dict[str, Any]) -> None:
+    path = smart_rescan_status_path()
+    if not path:
+        return
+    current = load_json(path, {}) if path.exists() else {}
+    payload = {
+        "schema": "spiritflix-library-smart-rescan-status/v1",
+        "status": "running",
+        **current,
+        **update,
+        "updatedAt": utc_now(),
+    }
+    json_dump(path, payload)
+
+
 def np_save_atomic(path: Path, payload: np.ndarray) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path: Path | None = None
@@ -2718,7 +2738,7 @@ def write_scan_sidecar(path: Path, fresh_meta: dict[str, Any]) -> dict[str, Any]
     return merged
 
 
-def scan(config: OrganizerConfig) -> list[dict[str, Any]]:
+def scan(config: OrganizerConfig, *, status_phase: str = "scanning_videos") -> list[dict[str, Any]]:
     if not config.source_dir.exists():
         raise RuntimeError(f"Source directory does not exist: {config.source_dir}")
     require_ffmpeg()
@@ -2732,8 +2752,41 @@ def scan(config: OrganizerConfig) -> list[dict[str, Any]]:
     if config.sample_limit:
         videos = videos[: config.sample_limit]
     logging.info("Scanning %s video(s) from %s", len(videos), config.source_dir)
+    write_smart_rescan_status(
+        {
+            "phase": status_phase,
+            "phaseLabel": "Rescanning videos for high-confidence model matches",
+            "progress": {
+                "total": len(videos),
+                "completed": 0,
+                "percent": 0 if videos else 100,
+            },
+        }
+    )
     results: list[dict[str, Any]] = []
-    for video_path in progress(videos, "face scan"):
+    for index, video_path in enumerate(progress(videos, "face scan"), start=1):
+        relative_preview = str(video_path)
+        try:
+            relative_preview = str(video_path.relative_to(config.source_dir))
+        except ValueError:
+            pass
+        write_smart_rescan_status(
+            {
+                "phase": status_phase,
+                "phaseLabel": "Rescanning videos for high-confidence model matches",
+                "currentItem": {
+                    "kind": "video",
+                    "name": video_path.name,
+                    "path": str(video_path),
+                    "preview": relative_preview,
+                },
+                "progress": {
+                    "total": len(videos),
+                    "completed": index - 1,
+                    "percent": round(((index - 1) / max(1, len(videos))) * 100, 1),
+                },
+            }
+        )
         try:
             meta = scan_video(video_path, config, db, recognizer)
             results.append(meta)
@@ -2747,6 +2800,24 @@ def scan(config: OrganizerConfig) -> list[dict[str, Any]]:
                 logging.info("dry-run: would write %s", meta_path_for(video_path))
         except Exception as exc:
             logging.exception("Failed to scan %s: %s", video_path, exc)
+        finally:
+            write_smart_rescan_status(
+                {
+                    "phase": status_phase,
+                    "phaseLabel": "Rescanning videos for high-confidence model matches",
+                    "currentItem": {
+                        "kind": "video",
+                        "name": video_path.name,
+                        "path": str(video_path),
+                        "preview": relative_preview,
+                    },
+                    "progress": {
+                        "total": len(videos),
+                        "completed": index,
+                        "percent": round((index / max(1, len(videos))) * 100, 1),
+                    },
+                }
+            )
     if not config.apply:
         logging.info("dry-run complete: no sidecars, crops, NFO files, or organization changes were written")
     return results
@@ -3007,6 +3078,9 @@ def backup_state(config: OrganizerConfig, include_videos: bool = False) -> Path:
 
 
 def backup_selected_records(config: OrganizerConfig, records: list[dict[str, Any]], include_videos: bool = True) -> Path:
+    if include_videos and os.environ.get("SPIRITFLIX_SMART_RESCAN_NO_VIDEO_BACKUPS") == "1":
+        logging.info("Smart rescan guard: selected video backups disabled")
+        include_videos = False
     backup_root = timestamped_backup_root(config)
     manifest: dict[str, Any] = {
         "schema": "media-face-organizer-selected-backup/v1",
@@ -3286,7 +3360,7 @@ def organize_videos(config: OrganizerConfig) -> dict[str, Any]:
     return manifest
 
 
-def verify_performers(config: OrganizerConfig, enable_online: bool = False) -> dict[str, Any]:
+def verify_performers(config: OrganizerConfig, enable_online: bool = False, organize: bool = True) -> dict[str, Any]:
     records = collect_metadata(config.source_dir, config.recursive)
     if config.sample_limit:
         records = records[: config.sample_limit]
@@ -3412,8 +3486,11 @@ def verify_performers(config: OrganizerConfig, enable_online: bool = False) -> d
         json_dump(config.verification_registry_path.with_name("model_index.json"), model_index)
         logging.info("Wrote performer verification registry: %s", config.verification_registry_path)
         logging.info("Wrote SpiritFlix model index: %s", config.verification_registry_path.with_name("model_index.json"))
-        manifest = organize_videos(config)
-        remove_empty_model_dirs(config.source_dir)
+        if organize:
+            manifest = organize_videos(config)
+            remove_empty_model_dirs(config.source_dir)
+        else:
+            manifest = {"entries": []}
     else:
         logging.info(
             "dry-run: scanned %s metadata record(s), would update %s record(s), registry %s",
@@ -10604,6 +10681,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     mode.add_argument("--backfill-review-frames", action="store_true", help="extract general review frames for existing sidecars")
     mode.add_argument("--verify-performers", action="store_true", help="build/update canonical performer registry and repair duplicate names")
     mode.add_argument("--audit-known-db", action="store_true", help="read-only audit of registry/model index versus known face embeddings")
+    mode.add_argument("--spiritflix-library-smart-rescan", action="store_true", help="refresh existing model face crops, then force-rescan videos for high-confidence model matches")
     mode.add_argument("--organizer-quick-refresh", action="store_true", help="regenerate organizer HTML pages without heavy enrollment rescans")
     mode.add_argument("--generate-enrollment-candidates", action="store_true", help="generate local review-only face enrollment candidates")
     mode.add_argument("--enrollment-queue", action="store_true", help="generate the static face enrollment queue page")
@@ -10655,6 +10733,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--recursive", action=argparse.BooleanOptionalAction, default=True, help="scan recursively")
     parser.add_argument("--frame-count", type=int, default=6, help="frames to sample per video")
     parser.add_argument("--sample-limit", type=int, help="limit scan to first N videos; use 2 or 3 for test mode")
+    parser.add_argument("--smart-accept-limit", type=int, default=0, help="with --spiritflix-library-smart-rescan, limit existing models to smart-accept before video rescan")
     parser.add_argument("--enrollment-target", metavar="NAME", help="limit --generate-enrollment-candidates to one performer and scan all of their videos")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"InsightFace model name (default: {DEFAULT_MODEL})")
     parser.add_argument("--ctx-id", type=int, default=0, help="InsightFace ctx_id; 0 for first GPU, -1 for CPU")
@@ -10701,6 +10780,149 @@ def make_config(args: argparse.Namespace) -> OrganizerConfig:
         ocr_watermarks=bool(args.ocr_watermarks),
         report_all=bool(args.report_all),
     )
+
+
+def run_spiritflix_library_smart_rescan(config: OrganizerConfig, *, confirmed_by: str = "Britton", smart_accept_limit: int = 0) -> dict[str, Any]:
+    if not config.apply:
+        raise RuntimeError("--spiritflix-library-smart-rescan requires --apply")
+
+    started_at = utc_now()
+    write_smart_rescan_status(
+        {
+            "status": "running",
+            "phase": "backup",
+            "phaseLabel": "Backing up current face metadata",
+            "startedAt": started_at,
+            "progress": {"total": 4, "completed": 0, "percent": 0},
+            "currentItem": {"kind": "system", "name": "Face Organizer backup"},
+        }
+    )
+    backup_root = backup_state(config, include_videos=False)
+    write_smart_rescan_status(
+        {
+            "phase": "verify_models",
+            "phaseLabel": "Verifying existing model registry",
+            "progress": {"total": 4, "completed": 1, "percent": 25},
+            "currentItem": {"kind": "system", "name": "Model registry"},
+        }
+    )
+    verification_summary = verify_performers(config, enable_online=False, organize=False)
+    write_smart_rescan_status(
+        {
+            "phase": "select_face_pictures",
+            "phaseLabel": "Selecting best existing model face pictures",
+            "progress": {"total": 4, "completed": 2, "percent": 50},
+            "currentItem": {"kind": "system", "name": "Enrollment candidates"},
+        }
+    )
+    candidates_payload = generate_enrollment_candidates(config, max_groups=None)
+    known = known_db_summary(config.db_dir)
+    known_keys: set[str] = set()
+    for performer in known.get("performers", []):
+        if not isinstance(performer, dict):
+            continue
+        known_keys.add(normalize_identity_key(str(performer.get("id") or "")))
+        known_keys.add(normalize_identity_key(str(performer.get("name") or "")))
+        known_keys.update(normalize_identity_key(str(alias)) for alias in performer.get("aliases", []) if alias)
+
+    groups = [
+        group
+        for group in candidates_payload.get("groups", [])
+        if isinstance(group, dict) and normalize_identity_key(str(group.get("name") or "")) in known_keys
+    ]
+    if smart_accept_limit > 0:
+        groups = groups[:smart_accept_limit]
+
+    accepted: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    for group in groups:
+        performer_name = str(group.get("name") or "").strip()
+        if not performer_name:
+            continue
+        write_smart_rescan_status(
+            {
+                "phase": "select_face_pictures",
+                "phaseLabel": "Selecting best existing model face pictures",
+                "currentItem": {"kind": "model", "name": performer_name},
+                "modelProgress": {
+                    "total": len(groups),
+                    "completed": len(accepted) + len(skipped),
+                    "accepted": len(accepted),
+                    "skipped": len(skipped),
+                },
+            }
+        )
+        try:
+            result = smart_accept_best_crops(
+                config,
+                {
+                    "performer_name": performer_name,
+                    "confirmation": performer_name,
+                    "confirmed_by": confirmed_by,
+                },
+            )
+            accepted.append(
+                {
+                    "performer_name": performer_name,
+                    "selection_count": int(result.get("selection_count") or 0),
+                }
+            )
+        except Exception as exc:
+            skipped.append({"performer_name": performer_name, "reason": str(exc)})
+
+    rescan_config = dataclasses.replace(
+        config,
+        force=True,
+        skip_existing=False,
+        frame_count=max(config.frame_count, ENROLLMENT_SCAN_FRAMES_PER_VIDEO),
+    )
+    scanned_records = scan(rescan_config, status_phase="rescanning_videos")
+    write_smart_rescan_status(
+        {
+            "phase": "refresh_outputs",
+            "phaseLabel": "Refreshing model previews and reports",
+            "progress": {"total": 4, "completed": 3, "percent": 75},
+            "currentItem": {"kind": "system", "name": "SpiritFlix model previews"},
+        }
+    )
+    generate_report(rescan_config)
+    generate_enrollment_queue_page(rescan_config, refresh_stale=False)
+    enrolled_payload = generate_enrolled_page(rescan_config, refresh_recommendations=False)
+    gallery_payload = generate_gallery_page(rescan_config)
+    generate_known_db_audit_page(rescan_config)
+
+    summary = {
+        "schema": "spiritflix-library-smart-rescan/v1",
+        "started_at": started_at,
+        "completed_at": utc_now(),
+        "source_dir": str(config.source_dir),
+        "backup_root": str(backup_root),
+        "verification_summary": verification_summary,
+        "candidate_groups": len(candidates_payload.get("groups", []) or []),
+        "existing_model_groups_checked": len(groups),
+        "smart_accepts": accepted,
+        "smart_accept_skips": skipped[:100],
+        "videos_scanned": len(scanned_records),
+        "enrolled_summary": enrolled_payload.get("summary", {}),
+        "gallery_summary": gallery_payload.get("summary", {}),
+        "thresholds": {"auto": HIGH_CONFIDENCE, "review": POSSIBLE_CONFIDENCE},
+        "applied": True,
+    }
+    summary_path = config.report_path.with_name("spiritflix_library_smart_rescan_summary.json")
+    json_dump(summary_path, summary)
+    write_smart_rescan_status(
+        {
+            "status": "completed",
+            "phase": "completed",
+            "phaseLabel": "Smart scan completed",
+            "completedAt": summary["completed_at"],
+            "progress": {"total": 4, "completed": 4, "percent": 100},
+            "currentItem": {"kind": "system", "name": "Complete"},
+            "summaryPath": str(summary_path),
+            "summary": summary,
+        }
+    )
+    return {**summary, "summary_path": str(summary_path)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -10782,6 +11004,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.audit_known_db:
         summary = audit_known_db(config)
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+        return 0
+    if args.spiritflix_library_smart_rescan:
+        summary = run_spiritflix_library_smart_rescan(
+            config,
+            confirmed_by=str(args.confirmed_by or "Britton"),
+            smart_accept_limit=max(0, int(args.smart_accept_limit or 0)),
+        )
         print(json.dumps(summary, indent=2, ensure_ascii=False))
         return 0
     if args.record_correction:
