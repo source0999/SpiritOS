@@ -2,11 +2,11 @@
   "plan": 14,
   "title": "A-Grade Acceptance Gauntlet",
   "stage": "Stage 5 - Writeback and Acceptance",
-  "status": "PLAN_WRITTEN_NOT_STARTED",
-  "implementation_performed": false,
+  "status": "COMPLETE_GO_ACCEPTANCE_GAUNTLET",
+  "implementation_performed": true,
   "auto_continue_after_master_approval": true,
   "requires_britton_between_plans": false,
-  "next_plan_auto_continue_if_plan_go": true,
+  "next_plan_auto_continue_if_plan_go": false,
   "hard_stop_required_for_authority_escalation": true,
   "authority_hard_stops_require_human_approval": true
 }

@@ -588,4 +588,26 @@ describe("coding design studio preview route", () => {
       },
     });
   });
+
+  it("does not write approved design memory during preview-only requests", async () => {
+    const response = await POST(
+      new Request("http://localhost/v1/coding/design-studio/preview", {
+        body: JSON.stringify({
+          prompt: "make it modern",
+          target_surface: "/coding/design-studio",
+        }),
+        method: "POST",
+      }),
+    );
+    const payload = await response.json();
+
+    expect(payload.memory_write_authority).toBe(false);
+    expect(payload.approved_design_memory_writeback).toEqual({
+      approved_destination: "data/design-vault/design-memory/<YYYY-MM-DD>/<design_run_id>.md",
+      preview_only_no_write: true,
+      required_gate:
+        "verified_run_with_explicit_approval_desktop_mobile_originality_critic_and_no_fake_go",
+      write_authority: false,
+    });
+  });
 });

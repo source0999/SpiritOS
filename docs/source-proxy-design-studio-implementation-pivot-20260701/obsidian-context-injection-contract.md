@@ -1,10 +1,10 @@
 # Obsidian Context Injection Contract
 
-Status: `PLAN_WRITTEN_NOT_STARTED`. This top-level contract is planning-only and changes no runtime files. Authority hard stop events always require human approval. Fake-GO claims are rejected unless evidence is consumed by the named downstream step.
+Status: `PLAN_13_IMPLEMENTED_GO`. Authority hard stop events always require human approval. Fake-GO claims are rejected unless evidence is consumed by the named downstream step.
 
 Required Obsidian Human Design Brain fields: `vault_root`, `allowed_design_paths`, `include_globs`, `exclude_globs`, `max_notes`, `priority_order`, `staleness_policy`, `conflict_resolution`, `obsidian_context_refs`, `taste_constraints`, `anti_slop_rules`, `project_design_constraints`, and `conflicts_detected`. Manual checks grep for Obsidian, vault, include/exclude, read-only, context refs, and human approval gates.
 
-First real Obsidian writeback is reserved for Plan 13 and requires explicit human approval.
+Obsidian read context remains separate from writeback. Plan 13 does not auto-promote read context, packet existence, screenshots, references, critic packets, or model claims. Writeback requires the approved design memory gate and writes only to `data/design-vault/design-memory/<YYYY-MM-DD>/<design_run_id>.md`.
 
 ## Manual Check
 
@@ -16,9 +16,10 @@ from pathlib import Path
 root = Path('docs/source-proxy-design-studio-implementation-pivot-20260701')
 for p in sorted(root.glob('plan-*/status.json')):
     data = json.loads(p.read_text())
-    assert data['implementation_performed'] is False
     assert data['auto_continue_after_master_approval'] is True
     assert data['authority_hard_stops_require_human_approval'] is True
+    assert isinstance(data.get('implementation_performed'), bool), p
+    print('ok', p, data.get('status'), 'implemented=', data.get('implementation_performed'))
 print('status json ok')
 PY
 git diff --check -- docs/source-proxy-design-studio-implementation-pivot-20260701

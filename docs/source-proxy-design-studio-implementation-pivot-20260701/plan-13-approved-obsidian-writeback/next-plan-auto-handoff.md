@@ -1,3 +1,5 @@
 # Plan 13 Next Plan Auto-Handoff
 
-If this plan reaches GO after master approval, Codex may continue to the next plan without stopping at the normal plan boundary. Stop only for hard blocker, failed check outside safe scope, protected path conflict, ambiguous dirty-tree conflict, need for Britton decision, or an authority hard stop requiring human approval.
+Plan 13 reached `COMPLETE_GO_PLAN_14_READY_AFTER_APPROVED_OBSIDIAN_WRITEBACK`.
+
+Codex may inspect Plan 14 before continuing. Stop if Plan 14 requires website scrape, raw CSS ingest, external install, real app apply, model routing change, Mac worker change, SpiritFlix/media touch, or any other new authority hard stop.

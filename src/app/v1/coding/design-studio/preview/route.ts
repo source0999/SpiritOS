@@ -554,6 +554,13 @@ export async function POST(request?: Request) {
     coder_packet_result: coderPacketOutcome,
     anti_template_originality_result: antiTemplateOriginalityOutcome,
     design_critic_result: designCriticOutcome,
+    approved_design_memory_writeback: {
+      approved_destination: "data/design-vault/design-memory/<YYYY-MM-DD>/<design_run_id>.md",
+      preview_only_no_write: true,
+      required_gate:
+        "verified_run_with_explicit_approval_desktop_mobile_originality_critic_and_no_fake_go",
+      write_authority: false,
+    },
     preview_packet: {
       consumer_event_id: "blocked_until_packet_acceptance",
       design_packet_id: "preview-shell-local",

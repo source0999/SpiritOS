@@ -128,9 +128,10 @@ from pathlib import Path
 root = Path('docs/source-proxy-design-studio-implementation-pivot-20260701')
 for p in sorted(root.glob('plan-*/status.json')):
     data = json.loads(p.read_text())
-    assert data['implementation_performed'] is False
     assert data['auto_continue_after_master_approval'] is True
     assert data['authority_hard_stops_require_human_approval'] is True
+    assert isinstance(data.get('implementation_performed'), bool), p
+    print('ok', p, data.get('status'), 'implemented=', data.get('implementation_performed'))
 print('status json ok')
 PY
 git diff --check -- docs/source-proxy-design-studio-implementation-pivot-20260701
