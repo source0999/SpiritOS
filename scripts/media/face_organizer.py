@@ -5147,8 +5147,24 @@ def generate_enrollment_candidates(
         if not target_key or target_key in {normalize_identity_key(str(group.get("name") or "")), normalize_identity_key(str(group.get("slug") or ""))}
     ]
     limit = max_groups if max_groups is not None else config.sample_limit
-    for group in selected_groups[: limit or None]:
+    limited_groups = selected_groups[: limit or None]
+
+    def write_candidate_progress(name: str, completed: int) -> None:
+        write_smart_rescan_status(
+            {
+                "phase": "select_face_pictures",
+                "phaseLabel": "Refreshing model face candidates",
+                "currentItem": {"kind": "model", "name": name},
+                "modelProgress": {
+                    "total": len(limited_groups),
+                    "completed": completed,
+                },
+            }
+        )
+
+    for group_index, group in enumerate(limited_groups, start=1):
         name = str(group["name"])
+        write_candidate_progress(name, group_index - 1)
         key = normalize_identity_key(name)
         records = records_by_key.get(key, [])
         video_paths: list[Path] = []
@@ -5161,6 +5177,7 @@ def generate_enrollment_candidates(
             group["recommended_stills"] = []
             group["blocked_reason"] = "text-known but no associated videos found"
             generated_groups.append(group)
+            write_candidate_progress(name, group_index)
             continue
         slug = str(group.get("slug") or slugify(name))
         existing_group = existing_by_slug.get(slug, {})
@@ -5176,6 +5193,7 @@ def generate_enrollment_candidates(
                 group["blocked_reason"] = ""
                 group["recommendation_scan_summary"] = list(existing_group.get("recommendation_scan_summary") or [])
                 generated_groups.append(group)
+                write_candidate_progress(name, group_index)
                 continue
         group_dir = out_dir / slugify(name)
         still_dir = group_dir / "stills"
@@ -5323,6 +5341,7 @@ def generate_enrollment_candidates(
             "videos_required_total": len(group["source_video_keys"]),
         }
         generated_groups.append(group)
+        write_candidate_progress(name, group_index)
     merged_by_slug = dict(existing_by_slug)
     for group in generated_groups:
         merged_by_slug[str(group.get("slug"))] = group
@@ -10734,6 +10753,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--frame-count", type=int, default=6, help="frames to sample per video")
     parser.add_argument("--sample-limit", type=int, help="limit scan to first N videos; use 2 or 3 for test mode")
     parser.add_argument("--smart-accept-limit", type=int, default=0, help="with --spiritflix-library-smart-rescan, limit existing models to smart-accept before video rescan")
+    parser.add_argument("--smart-rescan-model-limit", type=int, default=0, help="with --spiritflix-library-smart-rescan, limit the model candidate groups to refresh")
+    parser.add_argument("--smart-rescan-video-limit", type=int, default=0, help="with --spiritflix-library-smart-rescan, limit the model video rescan batch size")
     parser.add_argument("--enrollment-target", metavar="NAME", help="limit --generate-enrollment-candidates to one performer and scan all of their videos")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"InsightFace model name (default: {DEFAULT_MODEL})")
     parser.add_argument("--ctx-id", type=int, default=0, help="InsightFace ctx_id; 0 for first GPU, -1 for CPU")
@@ -10782,7 +10803,14 @@ def make_config(args: argparse.Namespace) -> OrganizerConfig:
     )
 
 
-def run_spiritflix_library_smart_rescan(config: OrganizerConfig, *, confirmed_by: str = "Britton", smart_accept_limit: int = 0) -> dict[str, Any]:
+def run_spiritflix_library_smart_rescan(
+    config: OrganizerConfig,
+    *,
+    confirmed_by: str = "Britton",
+    smart_accept_limit: int = 0,
+    smart_rescan_model_limit: int = 0,
+    smart_rescan_video_limit: int = 0,
+) -> dict[str, Any]:
     if not config.apply:
         raise RuntimeError("--spiritflix-library-smart-rescan requires --apply")
 
@@ -10815,7 +10843,8 @@ def run_spiritflix_library_smart_rescan(config: OrganizerConfig, *, confirmed_by
             "currentItem": {"kind": "system", "name": "Enrollment candidates"},
         }
     )
-    candidates_payload = generate_enrollment_candidates(config, max_groups=None)
+    candidate_group_limit = smart_rescan_model_limit if smart_rescan_model_limit > 0 else None
+    candidates_payload = generate_enrollment_candidates(config, max_groups=candidate_group_limit, missing_only=True)
     known = known_db_summary(config.db_dir)
     known_keys: set[str] = set()
     for performer in known.get("performers", []):
@@ -10870,11 +10899,16 @@ def run_spiritflix_library_smart_rescan(config: OrganizerConfig, *, confirmed_by
         except Exception as exc:
             skipped.append({"performer_name": performer_name, "reason": str(exc)})
 
+    model_source_dir = config.source_dir / "models"
+    rescan_source_dir = model_source_dir if model_source_dir.exists() else config.source_dir
+    video_batch_limit = smart_rescan_video_limit if smart_rescan_video_limit > 0 else config.sample_limit
     rescan_config = dataclasses.replace(
         config,
+        source_dir=rescan_source_dir,
         force=True,
         skip_existing=False,
         frame_count=max(config.frame_count, ENROLLMENT_SCAN_FRAMES_PER_VIDEO),
+        sample_limit=video_batch_limit,
     )
     scanned_records = scan(rescan_config, status_phase="rescanning_videos")
     write_smart_rescan_status(
@@ -10885,20 +10919,24 @@ def run_spiritflix_library_smart_rescan(config: OrganizerConfig, *, confirmed_by
             "currentItem": {"kind": "system", "name": "SpiritFlix model previews"},
         }
     )
-    generate_report(rescan_config)
-    generate_enrollment_queue_page(rescan_config, refresh_stale=False)
-    enrolled_payload = generate_enrolled_page(rescan_config, refresh_recommendations=False)
-    gallery_payload = generate_gallery_page(rescan_config)
-    generate_known_db_audit_page(rescan_config)
+    refresh_config = dataclasses.replace(config, force=True, skip_existing=False)
+    generate_report(refresh_config)
+    generate_enrollment_queue_page(refresh_config, refresh_stale=False)
+    enrolled_payload = generate_enrolled_page(refresh_config, refresh_recommendations=False)
+    gallery_payload = generate_gallery_page(refresh_config)
+    generate_known_db_audit_page(refresh_config)
 
     summary = {
         "schema": "spiritflix-library-smart-rescan/v1",
         "started_at": started_at,
         "completed_at": utc_now(),
         "source_dir": str(config.source_dir),
+        "video_scan_source_dir": str(rescan_source_dir),
+        "video_batch_limit": video_batch_limit,
         "backup_root": str(backup_root),
         "verification_summary": verification_summary,
         "candidate_groups": len(candidates_payload.get("groups", []) or []),
+        "candidate_group_limit": candidate_group_limit,
         "existing_model_groups_checked": len(groups),
         "smart_accepts": accepted,
         "smart_accept_skips": skipped[:100],
@@ -11011,6 +11049,8 @@ def main(argv: list[str] | None = None) -> int:
             config,
             confirmed_by=str(args.confirmed_by or "Britton"),
             smart_accept_limit=max(0, int(args.smart_accept_limit or 0)),
+            smart_rescan_model_limit=max(0, int(args.smart_rescan_model_limit or 0)),
+            smart_rescan_video_limit=max(0, int(args.smart_rescan_video_limit or 0)),
         )
         print(json.dumps(summary, indent=2, ensure_ascii=False))
         return 0

@@ -1,15 +1,40 @@
 {
   "schema": "media-known-db-audit/v1",
-  "generated_at": "2026-06-19T10:12:14+00:00",
+  "generated_at": "2026-07-03T08:18:25+00:00",
   "read_only": true,
-  "registry_count": 59,
-  "model_index_count": 59,
+  "registry_count": 64,
+  "model_index_count": 64,
   "known_performers_count": 42,
   "embedding_shape": [
-    219,
+    703,
     512
   ],
   "performers_missing_known_record": [
+    {
+      "slug": "aaliyah-yasin",
+      "name": "Aaliyah Yasin",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "cute-geekie",
+      "name": "Cute Geekie",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "k-llelal",
+      "name": "K Llelal",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "katievaynes",
+      "name": "Katievaynes",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "kinkykttn",
+      "name": "Kinkykttn",
+      "status": "in registry/model index, not face-enrolled"
+    },
     {
       "slug": "lena-the-plug",
       "name": "Lena The Plug",
@@ -18,6 +43,11 @@
     {
       "slug": "lexi-marvel",
       "name": "Lexi Marvel",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "lexiniarvol",
+      "name": "Lexiniarvol",
       "status": "in registry/model index, not face-enrolled"
     },
     {
@@ -68,6 +98,16 @@
     {
       "slug": "sienna-ababi",
       "name": "Sienna Ababi",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "ur-po-rn",
+      "name": "Ur Po RN",
+      "status": "in registry/model index, not face-enrolled"
+    },
+    {
+      "slug": "urfavbellabby",
+      "name": "Urfavbellabby",
       "status": "in registry/model index, not face-enrolled"
     },
     {
