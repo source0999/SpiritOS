@@ -66,6 +66,7 @@ from source_proxy.verification.diff import (
     sanitize_unified_diff_for_git_apply,
     task_spec_diff_check,
 )
+from source_proxy.verification.anticheat import run_anticheat_detectors
 from source_proxy.tasks.engine.state import (
     append_unique_steps as _append_unique_steps,
     has_approved_execution as _has_approved_execution,
@@ -3854,7 +3855,7 @@ def _dummy_product_site_already_satisfied_payload(*, diagnostics: dict[str, Any]
         "recommended_next_action": "Prompt 1 already satisfied; continue with the next dummy-product-site prompt.",
         "checks_run": ["existing dummy product site starter files present"],
     }
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": "",
         "target": DUMMY_PRODUCT_SITE_ROOT,
         "coder_notes": [
@@ -3880,7 +3881,7 @@ def _dummy_product_site_already_satisfied_payload(*, diagnostics: dict[str, Any]
         "neededContext": "",
         "status": "already_satisfied",
         "message": "Prompt 1 already satisfied: LumaCart starter files already exist.",
-    }
+    })
 
 
 def _dummy_product_site_product_data_already_satisfied_payload(
@@ -3909,7 +3910,7 @@ def _dummy_product_site_product_data_already_satisfied_payload(
         "diff_produced": False,
         "apply_attempted": False,
     }
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": "",
         "target": DUMMY_PRODUCT_SITE_PRODUCTS,
         "coder_notes": [
@@ -3936,7 +3937,7 @@ def _dummy_product_site_product_data_already_satisfied_payload(
         "status": "already_satisfied",
         "message": "Prompt 2 already satisfied: LumaCart product data already has 6 valid products.",
         "simple_reason": "Prompt 2 already satisfied: existing src/products.js has id, name, price, category, and description for 6 products.",
-    }
+    })
 
 
 def _call_dummy_product_site_llm_with_wall_timeout(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
@@ -4056,6 +4057,113 @@ def _dummy_product_site_model_failure_payload(
         ),
         reason_code=reason_code,
     )
+
+
+def _anticheat_payload_from_diagnostics(
+    diagnostics: dict[str, Any],
+    *,
+    payload_reason_code: str = "",
+) -> dict[str, Any]:
+    validation_status = str(diagnostics.get("validation_status") or "")
+    final_reason_code = str(diagnostics.get("final_reason_code") or payload_reason_code or "")
+    trust_status = str(diagnostics.get("trial_result_trust_status") or "")
+    fallback_used = bool(diagnostics.get("fallback_used"))
+    existing_success_path = str(diagnostics.get("reported_success_path") or "")
+    fallback_reported_success_path = existing_success_path
+    if fallback_used and not fallback_reported_success_path:
+        fallback_reported_success_path = (
+            "primary"
+            if validation_status in {"preview_ready", "already_satisfied"}
+            and (
+                str(diagnostics.get("provenance_status") or "") == "invalid"
+                or trust_status.startswith("deterministic_prompt3_recovery")
+                or str(diagnostics.get("trial_mode") or "") == "live_apply"
+            )
+            else "fallback"
+        )
+    return {
+        "canned_output": bool(diagnostics.get("canned_output")),
+        "fallback_used": fallback_used,
+        "reported_success_path": fallback_reported_success_path,
+        "summary_status": "PASS" if validation_status in {"preview_ready", "already_satisfied"} else validation_status,
+        "raw_status": str(diagnostics.get("raw_status") or validation_status or final_reason_code),
+        "final_status": str(diagnostics.get("final_status") or validation_status or final_reason_code),
+        "runtime_code": str(diagnostics.get("runtime_code") or diagnostics.get("code_text") or ""),
+        "provider_available": diagnostics.get("provider_available"),
+        "provider_result": diagnostics.get("provider_result"),
+        "artifact_kind": "preview" if validation_status == "preview_ready" else str(diagnostics.get("artifact_kind") or ""),
+        "executed_claim": bool(diagnostics.get("executed_claim")),
+        "behavior_claim": bool(diagnostics.get("behavior_claim")),
+        "behavior_exercised": bool(diagnostics.get("behavior_exercised")),
+        "status_ping_only": bool(diagnostics.get("status_ping_only")),
+        "implementation_origin": str(diagnostics.get("implementation_origin") or "production"),
+        "runtime_integration": bool(diagnostics.get("runtime_integration")),
+        "substantive_decision_source": str(diagnostics.get("substantive_decision_source") or "model"),
+        "trial_result_trust_status": trust_status,
+    }
+
+
+def _stamp_anticheat_report(
+    diagnostics: dict[str, Any],
+    *,
+    payload_reason_code: str = "",
+) -> dict[str, Any]:
+    report = run_anticheat_detectors(
+        _anticheat_payload_from_diagnostics(
+            diagnostics,
+            payload_reason_code=payload_reason_code,
+        )
+    )
+    report_dict = report.to_dict()
+    hard_fail_ids = [
+        violation.detector_id
+        for violation in report.violations
+        if violation.severity == "error"
+    ]
+    advisory_ids = [
+        violation.detector_id
+        for violation in report.violations
+        if violation.severity != "error"
+    ]
+    diagnostics["anti_cheat_report"] = report_dict
+    diagnostics["anti_cheat_status"] = report.status
+    diagnostics["anti_cheat_hard_fail_ids"] = hard_fail_ids
+    diagnostics["anti_cheat_advisory_ids"] = advisory_ids
+    return report_dict
+
+
+def _finalize_coder_anticheat_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    diagnostics = payload.get("coder_diagnostics")
+    if not isinstance(diagnostics, dict):
+        return payload
+    report = _stamp_anticheat_report(
+        diagnostics,
+        payload_reason_code=str(payload.get("reason_code") or ""),
+    )
+    payload["coder_diagnostics"] = diagnostics
+    payload["coderDiagnostics"] = diagnostics
+    if report.get("status") != "fail":
+        return payload
+
+    hard_fail_ids = diagnostics.get("anti_cheat_hard_fail_ids")
+    payload["reason_code"] = "anti_cheat_registry_fail"
+    payload["reasonCode"] = "anti_cheat_registry_fail"
+    payload["coder_blocked"] = True
+    payload["coderBlocked"] = True
+    payload["blocked_reason"] = "Python anti-cheat registry blocked the finalized coder payload."
+    payload["blockedReason"] = payload["blocked_reason"]
+    payload["needed_context"] = "Inspect coder_diagnostics.anti_cheat_report before retrying."
+    payload["neededContext"] = payload["needed_context"]
+    diagnostics["trial_result_trust_status"] = "anti_cheat_registry_blocked"
+    diagnostics["validation_status"] = "anti_cheat_registry_fail"
+    diagnostics["final_reason_code"] = "anti_cheat_registry_fail"
+    diagnostics["model_output_usable"] = False
+    diagnostics["anti_cheat_decision_bearing"] = True
+    diagnostics["anti_cheat_block_reason"] = ",".join(str(item) for item in hard_fail_ids or [])
+    notes = payload.get("coder_notes")
+    if isinstance(notes, list):
+        notes.append("CODER_BLOCKED reason_code: anti_cheat_registry_fail")
+    return payload
 
 
 def propose_dummy_product_site_create_diff(
@@ -4264,7 +4372,7 @@ def propose_dummy_product_site_create_diff(
     diagnostics["diff_source"] = "model_authored_file_bundle_backend_converted_to_diff"
     diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
     diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": unified,
         "target": DUMMY_PRODUCT_SITE_ROOT,
         "coder_notes": [
@@ -4276,7 +4384,7 @@ def propose_dummy_product_site_create_diff(
         "coder_diagnostics": diagnostics,
         "changed_files": changed_files,
         "checks_run": ["git apply --check"],
-    }
+    })
 
 
 def propose_dummy_product_site_product_data_diff(
@@ -4477,7 +4585,7 @@ def propose_dummy_product_site_product_data_diff(
     diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
     diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
     diagnostics["final_reason_code"] = "dummy_product_site_prompt2_bundle"
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": unified,
         "target": DUMMY_PRODUCT_SITE_PRODUCTS,
         "coder_notes": [
@@ -4489,7 +4597,7 @@ def propose_dummy_product_site_product_data_diff(
         "coder_diagnostics": diagnostics,
         "changed_files": [DUMMY_PRODUCT_SITE_PRODUCTS],
         "checks_run": ["git apply --check", "product data field validation"],
-    }
+    })
 
 
 def propose_dummy_product_site_render_cards_diff(
@@ -4875,7 +4983,7 @@ def _call_and_validate_dummy_product_site_render_cards(
     diagnostics["trial_result_trust_status"] = "model_authored_diff_proven"
     diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
     diagnostics["final_reason_code"] = "dummy_product_site_prompt3_bundle"
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": unified,
         "target": DUMMY_PRODUCT_SITE_ROOT,
         "coder_notes": [
@@ -4887,7 +4995,7 @@ def _call_and_validate_dummy_product_site_render_cards(
         "coder_diagnostics": diagnostics,
         "changed_files": changed_files,
         "checks_run": ["git apply --check", "prompt3 option-a wiring validation"],
-    }
+    })
 
 
 def _dummy_product_site_prompt3_deterministic_recovery_payload(
@@ -5007,7 +5115,7 @@ def _dummy_product_site_prompt3_deterministic_recovery_payload(
     diagnostics["final_reason_code"] = "dummy_product_site_prompt3_deterministic_recovery"
     diagnostics["diff_produced"] = True
     diagnostics["apply_attempted"] = True
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": unified,
         "target": DUMMY_PRODUCT_SITE_ROOT,
         "coder_notes": [
@@ -5023,7 +5131,7 @@ def _dummy_product_site_prompt3_deterministic_recovery_payload(
             "prompt3 option-a wiring validation",
             "deterministic prompt3 recovery validation",
         ],
-    }
+    })
 
 
 def _dummy_product_site_prompt3_minimal_recovery_diff() -> str:
@@ -6056,7 +6164,7 @@ def _coder_already_satisfied_payload(
         "no_changes_needed": True,
     }
     notes.append("CODER_NO_CHANGES_NEEDED: replacement content already matches target.")
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": "",
         "target": target,
         "coder_notes": notes,
@@ -6077,7 +6185,7 @@ def _coder_already_satisfied_payload(
         "neededContext": "",
         "status": "already_satisfied",
         "message": "The target file already matches the requested replacement content.",
-    }
+    })
 
 
 def _coder_subjective_improvement_requires_diff_payload(
@@ -6104,7 +6212,7 @@ def _coder_subjective_improvement_requires_diff_payload(
         "content cannot be treated as already satisfied."
     )
     needed_context = "Produce an actual visual refinement diff or use manual visual review."
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": "",
         "target": target,
         "coder_notes": notes,
@@ -6125,7 +6233,7 @@ def _coder_subjective_improvement_requires_diff_payload(
         "neededContext": needed_context,
         "status": "needs_coder_diff",
         "message": blocked_reason,
-    }
+    })
 
 
 def _coder_visual_improvement_diff_too_shallow_payload(
@@ -6152,7 +6260,7 @@ def _coder_visual_improvement_diff_too_shallow_payload(
         "Generate a concrete visual refinement diff that changes className, styling, "
         "layout, hover, active, glow, spacing, or animation behavior."
     )
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": "",
         "target": target,
         "coder_notes": notes,
@@ -6173,7 +6281,7 @@ def _coder_visual_improvement_diff_too_shallow_payload(
         "neededContext": needed_context,
         "status": "needs_coder_diff",
         "message": blocked_reason,
-    }
+    })
 
 
 def _git_apply_generated_diff_ok(root: Path, unified_diff: str) -> tuple[bool, str]:
@@ -6546,13 +6654,13 @@ def propose_coder_agent_diff_payload_from_plan(
     abs_target = (root / target_path).resolve()
     if not _is_relative_to(abs_target, root):
         notes.append(f"Rejected path outside workspace: {target_path}")
-        return {
+        return _finalize_coder_anticheat_payload({
             "proposed_diff": "",
             "target": "",
             "coder_notes": notes,
             "coder_diagnostics": diagnostics,
             "bundle": bundle_name,
-        }
+        })
     target_exists = abs_target.is_file()
     diagnostics["target_exists"] = target_exists
     diagnostics["target_action"] = "replace file" if target_exists else "create file"
@@ -6915,13 +7023,13 @@ def propose_coder_agent_diff_payload_from_plan(
 
     diagnostics["validation_status"] = "preview_ready"
     notes.append(f"Backend generated validated diff for {replacement_target}.")
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": unified,
         "target": replacement_target,
         "coder_notes": notes,
         "coder_diagnostics": diagnostics,
         "bundle": bundle_name,
-    }
+    })
 
 
 def _max_reviewer_retry_attempts(architect_plan: Any) -> int:
@@ -7681,7 +7789,7 @@ def _coder_blocked_payload(
             classification=classification,
         )
     )
-    return {
+    return _finalize_coder_anticheat_payload({
         "proposed_diff": "",
         "target": target,
         "coder_notes": notes,
@@ -7696,7 +7804,7 @@ def _coder_blocked_payload(
         "neededContext": needed_context,
         "reason_code": reason_code,
         "reasonCode": reason_code,
-    }
+    })
 
 
 def _normalize_repo_rel_path(rel_path: str) -> str:
