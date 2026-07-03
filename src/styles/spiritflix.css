@@ -2836,6 +2836,20 @@
   transform: scale(var(--spiritflix-fill-scale));
 }
 
+.spiritflix-player.is-fit-crop video {
+  width: 100vw;
+  height: 100dvh;
+  object-fit: cover;
+  transform: none;
+}
+
+.spiritflix-player.is-fit-stretch video {
+  width: 100vw;
+  height: 100dvh;
+  object-fit: fill;
+  transform: none;
+}
+
 .spiritflix-player__top,
 .spiritflix-player__controls {
   position: absolute;
@@ -3157,6 +3171,9 @@
 
 .spiritflix-player__scrub {
   min-width: 0;
+  min-height: 2rem;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .spiritflix-player__volume {

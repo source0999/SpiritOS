@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Captions,
   ChevronsDown,
@@ -108,7 +108,7 @@ type CaptionManifestState =
   | { status: "ready"; tracks: SpiritFlixCaptionManifestTrack[]; error: "" }
   | { status: "error"; tracks: SpiritFlixCaptionManifestTrack[]; error: string };
 
-type FitMode = "fit" | "fill";
+type FitMode = "fit" | "fill" | "crop" | "stretch";
 type RepeatMode = "off" | "queue" | "one";
 type SeriesAudioPreference = "sub" | "dub";
 type CaptionPreference = "off" | "on";
@@ -153,6 +153,19 @@ const MANUAL_TAG_CHANGED_EVENT = "spiritflix:manual-tags-changed";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
 const MANUAL_METADATA_RETRY_MS = 180;
 const CAPTION_APPLY_RETRY_MS = [80, 240, 700, 1500, 3000, 5000];
+const FIT_MODE_ORDER: FitMode[] = ["fit", "fill", "crop", "stretch"];
+const FIT_MODE_LABELS: Record<FitMode, string> = {
+  fit: "Aspect fit",
+  fill: "Smart fill",
+  crop: "Crop fill",
+  stretch: "Stretch full screen",
+};
+const FIT_MODE_BUTTON_TEXT: Record<FitMode, string> = {
+  fit: "Fit",
+  fill: "Fill",
+  crop: "Crop",
+  stretch: "Stretch",
+};
 
 function getManualMetadataUrl(itemId: string, kind: "model" | "tags", filePath?: string): string {
   const query = new URLSearchParams();
@@ -659,7 +672,7 @@ function renderPlaybackFeedback(feedback: PlaybackFeedback) {
 function getStoredFitMode(): FitMode {
   if (typeof window === "undefined") return "fit";
   const stored = window.localStorage.getItem(FIT_STORAGE_KEY);
-  return stored === "fill" || stored === "fit" ? stored : "fit";
+  return FIT_MODE_ORDER.includes(stored as FitMode) ? (stored as FitMode) : "fit";
 }
 
 function isRepeatMode(value: string | null): value is RepeatMode {
@@ -921,6 +934,7 @@ export function SpiritFlixPlayer({
   const lastTapRef = useRef<{ time: number; x: number; y: number; zone: SeekTapZone } | null>(null);
   const lastPointerTapAtRef = useRef(0);
   const touchTapStartRef = useRef<{ x: number; y: number; time: number; currentTime: number; isSeeking: boolean } | null>(null);
+  const scrubDragRef = useRef<{ pointerId: number | null } | null>(null);
   const pinchStartRef = useRef<{ startDistance: number; currentDistance: number } | null>(null);
   const suppressPointerUntilRef = useRef(0);
   const suppressTouchUntilRef = useRef(0);
@@ -1072,6 +1086,8 @@ export function SpiritFlixPlayer({
     ? `Shuffle on for ${queue?.sourceTitle ?? "current queue"}`
     : `Shuffle off for ${queue?.sourceTitle ?? "current queue"}`;
   const tiktokModeLabel = isTikTokMode ? "TikTok swipe mode on" : "TikTok swipe mode off";
+  const nextFitMode = FIT_MODE_ORDER[(FIT_MODE_ORDER.indexOf(fitMode) + 1) % FIT_MODE_ORDER.length] ?? "fit";
+  const fitModeLabel = `${FIT_MODE_LABELS[fitMode]} mode; press for ${FIT_MODE_LABELS[nextFitMode]}`;
   const isMiniPlayerActive = isNativeMiniPlayer || isAppMiniPlayer;
   const miniPlayerLabel = isMiniPlayerActive ? "Exit mini player" : "Mini player";
   const sourcePath = getItemSourcePath(item);
@@ -1480,9 +1496,69 @@ export function SpiritFlixPlayer({
   const seekTo = useCallback((seconds: number) => {
     const video = videoRef.current;
     if (!video) return;
-    video.currentTime = Math.max(0, Math.min(video.duration || Number.MAX_SAFE_INTEGER, seconds));
+    if (!Number.isFinite(seconds)) return;
+    const videoDuration = video.duration;
+    const fallbackDuration = duration || ticksToSeconds(item.RunTimeTicks);
+    const maxSeconds = Number.isFinite(videoDuration) && videoDuration > 0
+      ? videoDuration
+      : Number.isFinite(fallbackDuration) && fallbackDuration > 0
+        ? fallbackDuration
+        : Number.MAX_SAFE_INTEGER;
+    video.currentTime = Math.max(0, Math.min(maxSeconds, seconds));
     setCurrentTime(video.currentTime);
-  }, []);
+  }, [duration, item.RunTimeTicks]);
+
+  const getSeekableDuration = useCallback(() => {
+    const videoDuration = videoRef.current?.duration ?? 0;
+    const fallbackDuration = duration || ticksToSeconds(item.RunTimeTicks);
+    const seekableDuration = Number.isFinite(videoDuration) && videoDuration > 0 ? videoDuration : fallbackDuration;
+    return Number.isFinite(seekableDuration) && seekableDuration > 0 ? seekableDuration : 0;
+  }, [duration, item.RunTimeTicks]);
+
+  const seekFromScrubClientX = useCallback(
+    (clientX: number, target: HTMLInputElement) => {
+      if (!Number.isFinite(clientX)) return;
+      const seekableDuration = getSeekableDuration();
+      if (!seekableDuration) return;
+      const rect = target.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / width));
+      seekTo(ratio * seekableDuration);
+    },
+    [getSeekableDuration, seekTo],
+  );
+
+  const handleScrubPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLInputElement>) => {
+      event.stopPropagation();
+      event.preventDefault();
+      scrubDragRef.current = { pointerId: event.pointerId };
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      seekFromScrubClientX(event.clientX, event.currentTarget);
+      revealControls(true);
+    },
+    [revealControls, seekFromScrubClientX],
+  );
+
+  const handleScrubPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLInputElement>) => {
+      if (!scrubDragRef.current) return;
+      event.stopPropagation();
+      event.preventDefault();
+      seekFromScrubClientX(event.clientX, event.currentTarget);
+      revealControls(true);
+    },
+    [revealControls, seekFromScrubClientX],
+  );
+
+  const endScrubPointer = useCallback((event: ReactPointerEvent<HTMLInputElement>) => {
+    if (!scrubDragRef.current) return;
+    event.stopPropagation();
+    event.preventDefault();
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    scrubDragRef.current = null;
+    revealControls();
+  }, [revealControls]);
 
   const seekBy = useCallback(
     (seconds: number, options: { feedback?: boolean } = {}) => {
@@ -1526,6 +1602,16 @@ export function SpiritFlixPlayer({
     setFitMode(mode);
     window.localStorage.setItem(FIT_STORAGE_KEY, mode);
   }, []);
+
+  const cycleFitMode = useCallback(() => {
+    setFitMode((currentMode) => {
+      const currentIndex = Math.max(0, FIT_MODE_ORDER.indexOf(currentMode));
+      const nextMode = FIT_MODE_ORDER[(currentIndex + 1) % FIT_MODE_ORDER.length] ?? "fit";
+      window.localStorage.setItem(FIT_STORAGE_KEY, nextMode);
+      return nextMode;
+    });
+    revealControls();
+  }, [revealControls]);
 
   const toggleFullscreen = useCallback(() => {
     const shell = shellRef.current;
@@ -3220,7 +3306,10 @@ export function SpiritFlixPlayer({
             max={duration || ticksToSeconds(item.RunTimeTicks) || 0}
             step={0.1}
             value={Math.min(currentTime, duration || currentTime)}
-            onPointerDown={() => revealControls(true)}
+            onPointerDown={handleScrubPointerDown}
+            onPointerMove={handleScrubPointerMove}
+            onPointerUp={endScrubPointer}
+            onPointerCancel={endScrubPointer}
             onChange={(event) => seekTo(Number(event.target.value))}
           />
           <span className="spiritflix-player__time">{formatTime(duration || ticksToSeconds(item.RunTimeTicks))}</span>
@@ -3399,6 +3488,16 @@ export function SpiritFlixPlayer({
                 }}
               />
             </div>
+            <button
+              className={`spiritflix-player__tool spiritflix-player__tool--aspect is-${fitMode}`}
+              type="button"
+              onClick={cycleFitMode}
+              aria-label={fitModeLabel}
+              title={fitModeLabel}
+            >
+              <Maximize size={20} aria-hidden="true" />
+              <span>{FIT_MODE_BUTTON_TEXT[fitMode]}</span>
+            </button>
             <button
               className={`spiritflix-player__tool spiritflix-player__tool--mini ${isMiniPlayerActive ? "is-active" : ""}`}
               type="button"

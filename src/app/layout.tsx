@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { LanProtocolGuard } from "@/components/LanProtocolGuard";
 import "@/styles/dashboard-demo-v4.css";
+import "@/styles/spiritflix.css";
 import "./globals.css";
 
 // ── Fonts: Inter is boring on purpose - it’s legible, neutral, survives PM2 glare. ─

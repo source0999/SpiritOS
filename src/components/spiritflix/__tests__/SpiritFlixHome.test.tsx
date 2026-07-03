@@ -190,10 +190,11 @@ describe("SpiritFlixHome watch history", () => {
       expect(onPlay).toHaveBeenCalledWith(
         expect.objectContaining({ Id: "history-1" }),
         expect.arrayContaining([expect.objectContaining({ Id: "history-1" })]),
-        "Watch History",
+        "Library Shuffle",
         1800000000,
       );
     });
+    expect(onPlay.mock.calls[0]?.[1]?.[0]).toEqual(expect.objectContaining({ Id: "history-1" }));
   });
 
   it("does not show favorited library videos on the Home page", () => {

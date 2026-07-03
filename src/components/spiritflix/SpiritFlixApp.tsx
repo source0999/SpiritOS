@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   clearStoredSession,
   getStoredSession,
@@ -24,8 +24,19 @@ import { hasResumeProgress } from "@/lib/spiritflix-resume";
 import { filterItemsByVideoOrientation, getOrientationFilterLabel, type SpiritFlixVideoOrientation } from "@/lib/spiritflix-orientation";
 import { SpiritFlixHome } from "./SpiritFlixHome";
 import { SpiritFlixLogin } from "./SpiritFlixLogin";
-import { SpiritFlixDetailsModal } from "./SpiritFlixDetailsModal";
-import { SpiritFlixPlayer } from "./SpiritFlixPlayer";
+import { SpiritFlixSplash } from "./SpiritFlixSplash";
+
+const SpiritFlixDetailsModal = lazy(() =>
+  import("./SpiritFlixDetailsModal").then((module) => ({
+    default: module.SpiritFlixDetailsModal,
+  })),
+);
+
+const SpiritFlixPlayer = lazy(() =>
+  import("./SpiritFlixPlayer").then((module) => ({
+    default: module.SpiritFlixPlayer,
+  })),
+);
 
 export interface SpiritFlixPlaybackQueue {
   items: JellyfinItem[];
@@ -1230,12 +1241,7 @@ export function SpiritFlixApp() {
   return (
     <main className="spiritflix-shell">
       {isRestoringSession ? (
-        <section className="spiritflix-restore">
-          <div className="spiritflix-brand">
-            <span className="spiritflix-brand__sigil">SF</span>
-            <span>SpiritFlix</span>
-          </div>
-        </section>
+        <SpiritFlixSplash />
       ) : !session ? (
         <SpiritFlixLogin
           serverUrl={serverUrl}
@@ -1273,34 +1279,38 @@ export function SpiritFlixApp() {
       )}
 
       {selectedItem ? (
-        <SpiritFlixDetailsModal
-          client={client}
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onPlay={handleDetailsPlay}
-        />
+        <Suspense fallback={null}>
+          <SpiritFlixDetailsModal
+            client={client}
+            item={selectedItem}
+            onClose={() => setSelectedItem(null)}
+            onPlay={handleDetailsPlay}
+          />
+        </Suspense>
       ) : null}
 
       {playingItem ? (
-        <SpiritFlixPlayer
-          client={client}
-          item={playingItem}
-          queue={playingQueue}
-          libraryItems={modelAwareLibraryItems}
-          startPositionTicks={playingQueue?.startPositionTicks}
-          onPlaybackProgress={handlePlaybackProgress}
-          onToggleFavorite={handleToggleFavorite}
-          onSelectItem={handleQueueSelect}
-          onShuffleQueue={handleShuffleQueue}
-          onPlayModelShuffle={handlePlayModelShuffle}
-          onReorderQueue={handleReorderQueue}
-          onDeleteItem={handlePlayerDelete}
-          onClose={() => {
-            setPlayingItem(null);
-            setPlayingQueue(null);
-            void loadHome(homeData.selectedLibraryId);
-          }}
-        />
+        <Suspense fallback={null}>
+          <SpiritFlixPlayer
+            client={client}
+            item={playingItem}
+            queue={playingQueue}
+            libraryItems={modelAwareLibraryItems}
+            startPositionTicks={playingQueue?.startPositionTicks}
+            onPlaybackProgress={handlePlaybackProgress}
+            onToggleFavorite={handleToggleFavorite}
+            onSelectItem={handleQueueSelect}
+            onShuffleQueue={handleShuffleQueue}
+            onPlayModelShuffle={handlePlayModelShuffle}
+            onReorderQueue={handleReorderQueue}
+            onDeleteItem={handlePlayerDelete}
+            onClose={() => {
+              setPlayingItem(null);
+              setPlayingQueue(null);
+              void loadHome(homeData.selectedLibraryId);
+            }}
+          />
+        </Suspense>
       ) : null}
     </main>
   );

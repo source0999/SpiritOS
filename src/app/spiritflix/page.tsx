@@ -1,5 +1,5 @@
-import { SpiritFlixApp } from "@/components/spiritflix/SpiritFlixApp";
+import { SpiritFlixRouteClient } from "@/components/spiritflix/SpiritFlixRouteClient";
 
 export default function SpiritFlixPage() {
-  return <SpiritFlixApp />;
+  return <SpiritFlixRouteClient />;
 }

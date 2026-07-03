@@ -100,6 +100,16 @@ function touchList(touches: Array<{ clientX: number; clientY: number }>) {
   });
 }
 
+function scrubPointerEvent(type: string, clientX: number) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperties(event, {
+    clientX: { value: clientX },
+    pointerId: { value: 7 },
+    pointerType: { value: "touch" },
+  });
+  return event;
+}
+
 describe("getSmartFillScale", () => {
   it("caps fill zoom for portrait videos on Fold-like screens", () => {
     expect(getSmartFillScale(0.86, 0.5625)).toBeCloseTo(1.12, 2);
@@ -248,6 +258,26 @@ describe("SpiritFlixPlayer mobile controls", () => {
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     expect(screen.getByText("Selected source")).toBeInTheDocument();
     expect(screen.getByText("canonical_mp4")).toBeInTheDocument();
+  });
+
+  it("cycles the aspect mode button through four screen sizing modes", async () => {
+    renderPlayer();
+
+    const player = screen.getByLabelText("Fold Tap Test player");
+    await waitFor(() => expect(player).toHaveClass("is-fit-fit"));
+
+    fireEvent.click(screen.getByRole("button", { name: /aspect fit mode; press for smart fill/i }));
+    expect(player).toHaveClass("is-fit-fill");
+    expect(window.localStorage.getItem("spiritflix_player_fit_mode")).toBe("fill");
+
+    fireEvent.click(screen.getByRole("button", { name: /smart fill mode; press for crop fill/i }));
+    expect(player).toHaveClass("is-fit-crop");
+
+    fireEvent.click(screen.getByRole("button", { name: /crop fill mode; press for stretch full screen/i }));
+    expect(player).toHaveClass("is-fit-stretch");
+
+    fireEvent.click(screen.getByRole("button", { name: /stretch full screen mode; press for aspect fit/i }));
+    expect(player).toHaveClass("is-fit-fit");
   });
 
   it("renders native WebVTT tracks from the caption manifest", async () => {
@@ -2237,5 +2267,35 @@ describe("SpiritFlixPlayer mobile controls", () => {
 
     expect(video.currentTime).toBe(40);
     expect(screen.getByText("10s")).toBeInTheDocument();
+  });
+
+  it("maps scrubber drag position across the full video duration on touch pointers", async () => {
+    renderPlayer();
+
+    const scrub = screen.getByLabelText("Seek") as HTMLInputElement;
+    const video = document.querySelector("video");
+    expect(video).not.toBeNull();
+    if (!video) return;
+    video.currentTime = 0;
+    Object.defineProperty(scrub, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        left: 100,
+        width: 400,
+        right: 500,
+        top: 0,
+        bottom: 32,
+        height: 32,
+        x: 100,
+        y: 0,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent(scrub, scrubPointerEvent("pointerdown", 100));
+    fireEvent(scrub, scrubPointerEvent("pointermove", 400));
+    fireEvent(scrub, scrubPointerEvent("pointerup", 400));
+
+    expect(video.currentTime).toBeCloseTo(90, 1);
   });
 });

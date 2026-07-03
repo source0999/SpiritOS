@@ -1,0 +1,218 @@
+{
+  "schema": "spiritflix-library-smart-rescan/v1",
+  "started_at": "2026-07-03T04:22:00+00:00",
+  "completed_at": "2026-07-03T08:18:25+00:00",
+  "source_dir": "/mnt/spirit-8tb/media/yes",
+  "video_scan_source_dir": "/mnt/spirit-8tb/media/yes/models",
+  "video_batch_limit": 120,
+  "backup_root": "scripts/media/backups/20260703T042200Z",
+  "verification_summary": {
+    "scanned_records": 384,
+    "changed_records": 0,
+    "registry_path": "scripts/media/performer_verification.json",
+    "model_index_path": "scripts/media/model_index.json",
+    "model_count": 64,
+    "organize_entries": 0
+  },
+  "candidate_groups": 67,
+  "candidate_group_limit": 80,
+  "existing_model_groups_checked": 42,
+  "smart_accepts": [
+    {
+      "performer_name": "Aaliyah Yasan",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Alannasworldx",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Alexa Pearl",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Allinika",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Allison Parker",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Angela White",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Azilia Hadid",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Bearuby",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Bonnie Blue",
+      "selection_count": 4
+    },
+    {
+      "performer_name": "Brenda Trindade",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Ce Ce Rose",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Chloe Lamb",
+      "selection_count": 3
+    },
+    {
+      "performer_name": "Comatozze",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Dana De Armond",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Devorah Roloff",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Eve",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "F1nn5ter",
+      "selection_count": 4
+    },
+    {
+      "performer_name": "Gem The Jewels",
+      "selection_count": 1
+    },
+    {
+      "performer_name": "Haylee Love",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Izzy Green",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Jazmen Jafar",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Katiana Kay",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Kylie Island",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Leighbunbun",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Lily Phillips",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Maditay",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Miss LiLu",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Natalie Roush",
+      "selection_count": 4
+    },
+    {
+      "performer_name": "Pinkychu",
+      "selection_count": 2
+    },
+    {
+      "performer_name": "Realtoxxxmaria",
+      "selection_count": 2
+    },
+    {
+      "performer_name": "Ruth Lee",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Strawberrytabby",
+      "selection_count": 5
+    },
+    {
+      "performer_name": "Tru Kait",
+      "selection_count": 3
+    },
+    {
+      "performer_name": "Urfavbella",
+      "selection_count": 4
+    },
+    {
+      "performer_name": "Whoahannahjo",
+      "selection_count": 5
+    }
+  ],
+  "smart_accept_skips": [
+    {
+      "performer_name": "Amburnee",
+      "reason": "smart accept could not find existing enrollable candidate crops; run Scan current videos again first"
+    },
+    {
+      "performer_name": "Emiliaofficial",
+      "reason": "Emiliaofficial already has 20 accepted screen(s), which meets the current optimal cap."
+    },
+    {
+      "performer_name": "Heyimbee",
+      "reason": "smart accept could not find existing enrollable candidate crops; run Scan current videos again first"
+    },
+    {
+      "performer_name": "Isabelle Eleanore",
+      "reason": "smart accept could not find existing enrollable candidate crops; run Scan current videos again first"
+    },
+    {
+      "performer_name": "Jakara Mitchell",
+      "reason": "Jakara Mitchell already has 20 accepted screen(s), which meets the current optimal cap."
+    },
+    {
+      "performer_name": "Puffy Pink",
+      "reason": "smart accept could not find existing enrollable candidate crops; run Scan current videos again first"
+    },
+    {
+      "performer_name": "Sava Schultz",
+      "reason": "Sava Schultz already has 20 accepted screen(s), which meets the current optimal cap."
+    }
+  ],
+  "videos_scanned": 120,
+  "enrolled_summary": {
+    "enrolled_performers": 94,
+    "candidate_workbench_groups": 108,
+    "displayed_groups": 94,
+    "ready_with_target_screens": 72,
+    "ready_with_five_screens": 92,
+    "enrolled_screens": 1524,
+    "live_recommendations": 330,
+    "library_video_matches": 244,
+    "missing_video_match_sources": 5,
+    "auto_video_matches": 13,
+    "pending_video_match_questions": 286,
+    "average_confidence_percent": 93,
+    "recommendation_refreshes": 0
+  },
+  "gallery_summary": {
+    "enrolled_models": 94,
+    "models_with_gallery": 1,
+    "gallery_items": 923
+  },
+  "thresholds": {
+    "auto": 0.8,
+    "review": 0.55
+  },
+  "applied": true
+}

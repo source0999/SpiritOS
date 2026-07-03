@@ -430,6 +430,17 @@ function shuffleItems(items: JellyfinItem[]): JellyfinItem[] {
   return shuffled;
 }
 
+function shuffleQueueAfterItem(items: JellyfinItem[], currentItem: JellyfinItem): JellyfinItem[] {
+  const seen = new Set<string>();
+  const playableItems = [currentItem, ...items].filter((item) => {
+    if (!isPlayableItem(item) || seen.has(item.Id)) return false;
+    seen.add(item.Id);
+    return true;
+  });
+  const remainingItems = playableItems.filter((item) => item.Id !== currentItem.Id);
+  return [currentItem, ...shuffleItems(remainingItems)];
+}
+
 function applyManualModelMapToItems(items: JellyfinItem[], manualModelMap: Map<string, string>): JellyfinItem[] {
   return items.map((item) => {
     const manualModelName = manualModelMap.get(item.Id);
@@ -1567,6 +1578,39 @@ export function SpiritFlixHome({
     }
   };
 
+  const getActiveShuffleSourceTitle = useCallback(() => {
+    const sourceTitle = selectedModelGroup?.name ?? (selectedManualTag ? `${libraryTitle} / ${selectedManualTag}` : libraryTitle);
+    const orientationLabel = orientationFilter === "all" ? "" : ` / ${getOrientationFilterLabel(orientationFilter)}`;
+    return `${sourceTitle}${orientationLabel}`;
+  }, [libraryTitle, orientationFilter, selectedManualTag, selectedModelGroup?.name]);
+
+  const getActiveShuffleItems = useCallback(async () => {
+    if (data.selectedLibraryId && data.libraryPaging?.hasMore) {
+      return filterLibraryShuffleItems(
+        await client.getAllLibraryItems(data.selectedLibraryId, {
+          searchTerm,
+          fields: "full",
+        }),
+      );
+    }
+    return filteredLibraryItems;
+  }, [client, data.libraryPaging?.hasMore, data.selectedLibraryId, filterLibraryShuffleItems, filteredLibraryItems, searchTerm]);
+
+  const playFromActiveShuffle = useCallback(
+    async (item: JellyfinItem, startPositionTicks?: number) => {
+      if (!isPlayableItem(item)) return;
+      setIsLibraryShuffleLoading(true);
+      try {
+        const sourceItems = await getActiveShuffleItems();
+        const queueItems = shuffleQueueAfterItem(sourceItems, item);
+        onPlay(item, queueItems, `${getActiveShuffleSourceTitle()} Shuffle`, startPositionTicks);
+      } finally {
+        setIsLibraryShuffleLoading(false);
+      }
+    },
+    [getActiveShuffleItems, getActiveShuffleSourceTitle, onPlay],
+  );
+
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
       window.clearTimeout(longPressTimerRef.current);
@@ -2050,14 +2094,14 @@ export function SpiritFlixHome({
                         key={item.Id}
                         type="button"
                         className="spiritflix-resume-card"
-                        onClick={() => onPlay(item, continueWatchingItems, "Continue Watching", resumeTicks)}
+                        onClick={() => void playFromActiveShuffle(item, resumeTicks)}
                         whileTap={{ scale: 0.985 }}
                         aria-label={`Resume ${item.Name} at ${getResumeSlotLabel(item)}`}
                       >
                         <span className="spiritflix-resume-card__thumb">
                           <SpiritFlixImage client={client} item={item} type="Thumb" width={420} alt="" />
                         </span>
-                          <span className="spiritflix-resume-card__copy">
+                        <span className="spiritflix-resume-card__copy">
                           <strong>{getDisplayModelName(item, faceMetadata)}</strong>
                           <small>{item.Name}</small>
                           <span>{getResumeSlotLabel(item)}</span>
@@ -2348,10 +2392,8 @@ export function SpiritFlixHome({
                       className="spiritflix-library-row spiritflix-library-row--history"
                       onClick={() => {
                         if (isPlayableItem(item)) {
-                          onPlay(
+                          void playFromActiveShuffle(
                             item,
-                            historyItems,
-                            "Watch History",
                             hasResumeProgress(item) ? getResumePositionTicks(item) : undefined,
                           );
                         } else {
@@ -2377,10 +2419,8 @@ export function SpiritFlixHome({
                           className="spiritflix-library-row__play"
                           onClick={(event) => {
                             event.stopPropagation();
-                            onPlay(
+                            void playFromActiveShuffle(
                               item,
-                              historyItems,
-                              "Watch History",
                               hasResumeProgress(item) ? getResumePositionTicks(item) : undefined,
                             );
                           }}
