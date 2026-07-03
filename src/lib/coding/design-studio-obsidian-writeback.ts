@@ -14,9 +14,20 @@ export type ApprovedDesignMemoryWritebackPayload = {
   repair_count: number;
   reusable_pattern_notes: string[];
   screenshot_hashes: string[];
+  screenshot_proofs?: ApprovedDesignScreenshotProof[];
   style_family_blend: string[];
   target_surface: string;
   trace_id: string;
+};
+
+export type ApprovedDesignScreenshotProof = {
+  captured_at: string;
+  capture_source: "playwright_desktop" | "playwright_mobile";
+  content_hash: string;
+  viewport: {
+    height: number;
+    width: number;
+  };
 };
 
 export type ApprovedDesignMemoryGate = {
@@ -83,8 +94,42 @@ export function approvedDesignMemoryRejectReasons(
   if (payload.screenshot_hashes.length < 2) {
     reasons.push("missing_desktop_or_mobile_screenshot_hash");
   }
+  const screenshotProofReasons = screenshotProofRejectReasons(payload.screenshot_proofs);
+  reasons.push(...screenshotProofReasons);
 
   return reasons;
+}
+
+function screenshotProofRejectReasons(proofs: ApprovedDesignScreenshotProof[] | undefined) {
+  if (!Array.isArray(proofs) || proofs.length < 2) {
+    return ["missing_structured_screenshot_proof"];
+  }
+  const reasons: string[] = [];
+  const seenSources = new Set<string>();
+  for (const proof of proofs) {
+    if (!proof || typeof proof !== "object") {
+      reasons.push("invalid_screenshot_proof_object");
+      continue;
+    }
+    if (proof.capture_source !== "playwright_desktop" && proof.capture_source !== "playwright_mobile") {
+      reasons.push("unknown_screenshot_capture_source");
+    } else {
+      seenSources.add(proof.capture_source);
+    }
+    if (!proof.content_hash?.trim()) {
+      reasons.push("missing_screenshot_content_hash");
+    }
+    if (!proof.captured_at?.trim()) {
+      reasons.push("missing_screenshot_captured_at");
+    }
+    if (!proof.viewport || proof.viewport.width <= 0 || proof.viewport.height <= 0) {
+      reasons.push("invalid_screenshot_viewport");
+    }
+  }
+  if (!seenSources.has("playwright_desktop") || !seenSources.has("playwright_mobile")) {
+    reasons.push("missing_desktop_or_mobile_screenshot_proof_source");
+  }
+  return Array.from(new Set(reasons));
 }
 
 export function approvedDesignMemoryDestination(

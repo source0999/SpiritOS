@@ -29,6 +29,20 @@ const payload: ApprovedDesignMemoryWritebackPayload = {
   repair_count: 1,
   reusable_pattern_notes: ["Use a scope fence before apply proof.", "Pair desktop and mobile proof."],
   screenshot_hashes: ["desktop_hash_001", "mobile_hash_001"],
+  screenshot_proofs: [
+    {
+      captured_at: "2026-07-01T23:12:00.000Z",
+      capture_source: "playwright_desktop",
+      content_hash: "desktop_hash_001",
+      viewport: { height: 900, width: 1440 },
+    },
+    {
+      captured_at: "2026-07-01T23:13:00.000Z",
+      capture_source: "playwright_mobile",
+      content_hash: "mobile_hash_001",
+      viewport: { height: 844, width: 390 },
+    },
+  ],
   style_family_blend: ["SpiritOS glass console", "dense product workbench"],
   target_surface: "/coding/design-demo",
   trace_id: "trace_001",
@@ -87,6 +101,45 @@ describe("Design Studio Obsidian writeback", () => {
       expect.arrayContaining([
         "mobile_proof_not_passing",
         "missing_desktop_or_mobile_screenshot_hash",
+      ]),
+    );
+  });
+
+  it("rejects bare screenshot hashes without attributed capture proof", () => {
+    expect(
+      approvedDesignMemoryRejectReasons(
+        { ...payload, screenshot_proofs: undefined },
+        gate,
+      ),
+    ).toContain("missing_structured_screenshot_proof");
+  });
+
+  it("rejects unknown screenshot capture sources", () => {
+    expect(
+      approvedDesignMemoryRejectReasons(
+        {
+          ...payload,
+          screenshot_proofs: [
+            {
+              captured_at: "2026-07-01T23:12:00.000Z",
+              capture_source: "playwright_desktop",
+              content_hash: "desktop_hash_001",
+              viewport: { height: 900, width: 1440 },
+            },
+            {
+              captured_at: "2026-07-01T23:13:00.000Z",
+              capture_source: "manual_upload" as "playwright_mobile",
+              content_hash: "mobile_hash_001",
+              viewport: { height: 844, width: 390 },
+            },
+          ],
+        },
+        gate,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        "unknown_screenshot_capture_source",
+        "missing_desktop_or_mobile_screenshot_proof_source",
       ]),
     );
   });
