@@ -44,3 +44,4 @@ sleep "${SPIRITOS_LAN_RESTART_WAIT:-35}"
 tmux ls || true
 ss -ltnp | grep -E ':3000|:8787|:22|:11434' || true
 curl -k -I --max-time 25 https://localhost:3000/coding || true
+curl -k -I --max-time 25 https://localhost:3000/spiritflix || true
