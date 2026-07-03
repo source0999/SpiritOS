@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiritos.local/source-proxy/design-studio/increment-receipt.schema.json",
+  "title": "Design Studio Increment Receipt",
+  "type": "object",
+  "required": [
+    "increment_id",
+    "plan_id",
+    "phase_id",
+    "started_at",
+    "completed_at",
+    "head_before",
+    "head_after",
+    "branch",
+    "final_increment_verdict"
+  ],
+  "properties": {
+    "increment_id": { "type": "string", "minLength": 1 },
+    "plan_id": { "type": "string", "pattern": "^[0-9]{2}$" },
+    "phase_id": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string", "minLength": 1 },
+    "completed_at": { "type": "string", "minLength": 1 },
+    "head_before": { "type": "string", "minLength": 7 },
+    "head_after": { "type": "string", "minLength": 7 },
+    "branch": { "type": "string", "minLength": 1 },
+    "final_increment_verdict": {
+      "enum": [
+        "INCREMENT_GO_PROVEN",
+        "INCREMENT_BLOCKED_ENV",
+        "INCREMENT_BLOCKED_PERMISSION",
+        "INCREMENT_BLOCKED_TEST_FAILURE",
+        "INCREMENT_BLOCKED_SCOPE_CONFLICT",
+        "INCREMENT_NO_GO_FAKE_PROOF"
+      ]
+    },
+    "receipt_type": { "type": "string" },
+    "trace_id": { "type": "string" },
+    "diff_hash": { "type": "string" },
+    "sandbox_apply_receipt_id": { "type": "string" },
+    "desktop_screenshot_hash": { "type": "string" },
+    "mobile_screenshot_hash": { "type": "string" },
+    "critic_verdict_id": { "type": "string" },
+    "approval_id_hash": { "type": "string" },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "path", "sha256"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "trace_id": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "chain_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from_role", "to_role", "expected_hash"],
+        "properties": {
+          "from_role": { "type": "string" },
+          "to_role": { "type": "string" },
+          "expected_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

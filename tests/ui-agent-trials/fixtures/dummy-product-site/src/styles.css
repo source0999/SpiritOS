@@ -8,15 +8,19 @@ header {
   text-align: center;
 }
 
+main {
+  margin: 2rem;
+}
+
 #product-list {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin: 2rem;
 }
 
 .product-card {
   border: 1px solid #ddd;
   padding: 1rem;
-  margin: 0.5rem;
-  width: calc(33% - 1rem);
+  border-radius: 0.5rem;
 }

@@ -6463,7 +6463,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                     )
                 elif _fip4_qwen_enabled() and explicit_target:
                     architect_plan = None
-                    fip4_result = await asyncio.get_running_loop().run_in_executor(
+                    fip4_result_raw = await asyncio.get_running_loop().run_in_executor(
                         None,
                         functools.partial(
                             _run_fip4_qwen_coder,
@@ -6478,62 +6478,80 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             fip3_model_packet=fip3_model_packet,
                         ),
                     )
-                    fip5_result = None
-                    if (
-                        _fip4_allow_fip5_chain()
-                        and _fip5_verifier_enabled()
-                        and fip4_result.get("status") == "used"
-                    ):
-                        fip5_result = await asyncio.get_running_loop().run_in_executor(
-                            None,
-                            functools.partial(
-                                _run_fip5_verifier_and_repair,
-                                request=reset_request,
-                                explicit_target=explicit_target,
-                                fip4_result=fip4_result,
-                            ),
+                    if not isinstance(fip4_result_raw, dict):
+                        architect_task = _trial_bounded_create_task(
+                            trial_task,
+                            explicit_target,
+                            reset_request.allowed_files,
+                        ) if allowed_create_target or allowed_live_trial_target else trial_task
+                        architect_plan = _load_or_prepare_architect_plan(
+                            architect_task,
+                            reset_request.active_task_id,
+                            expected_target=explicit_target,
                         )
-                    coder = {
-                        "proposed_diff": fip4_result.get("proposed_diff", ""),
-                        "target": (
-                            fip4_result.get("changed_files", [""])[0]
-                            if fip4_result.get("changed_files")
-                            else explicit_target
-                        ),
-                        "coder_notes": [
-                            f"FIP4_QWEN status={fip4_result.get('status')} reason={fip4_result.get('reason')}",
-                        ],
-                        "bundle": "fip4-final-coder-packet",
-                        "coder_blocked": fip4_result.get("status") != "used",
-                        "blocked_reason": str(fip4_result.get("reason") or ""),
-                        "needed_context": "Inspect fip4_qwen_coder_result on the receipt.",
-                        "reason_code": str(fip4_result.get("reason") or ""),
-                        "changed_files": fip4_result.get("changed_files", []),
-                        "checks_run": fip4_result.get("checks_run", []),
-                        "coder_diagnostics": {
-                            "context_mode": derive_context_mode(explicit_target),
-                            "target_exists": (_workspace_root() / explicit_target).is_file(),
-                            "context_slices": [{"path": explicit_target, "kind": "target"}],
-                            "forbidden_paths": fip4_result.get("forbidden_files", []),
-                            "fip4_enabled": True,
-                            "fip4_final_coder_packet_hash": fip4_result.get(
-                                "final_coder_packet_hash",
-                                "",
+                        coder = await _bounded_coder_diff_or_stub(
+                            trial_task,
+                            architect_plan,
+                            force_live_model=reset_request.trial_mode == "live_apply",
+                        )
+                    else:
+                        fip4_result = fip4_result_raw
+                        fip5_result = None
+                        if (
+                            _fip4_allow_fip5_chain()
+                            and _fip5_verifier_enabled()
+                            and fip4_result.get("status") == "used"
+                        ):
+                            fip5_result = await asyncio.get_running_loop().run_in_executor(
+                                None,
+                                functools.partial(
+                                    _run_fip5_verifier_and_repair,
+                                    request=reset_request,
+                                    explicit_target=explicit_target,
+                                    fip4_result=fip4_result,
+                                ),
+                            )
+                        coder = {
+                            "proposed_diff": fip4_result.get("proposed_diff", ""),
+                            "target": (
+                                fip4_result.get("changed_files", [""])[0]
+                                if fip4_result.get("changed_files")
+                                else explicit_target
                             ),
-                            "fip4_coder_received_packet_hash": fip4_result.get(
-                                "coder_received_packet_hash",
-                                "",
-                            ),
-                            "fip4_qwen_coder_result": fip4_result,
-                            "fip5_verifier_result": fip5_result or {},
-                            "provider_model_truth": fip4_result.get(
-                                "provider_model_truth",
-                                {},
-                            ),
+                            "coder_notes": [
+                                f"FIP4_QWEN status={fip4_result.get('status')} reason={fip4_result.get('reason')}",
+                            ],
+                            "bundle": "fip4-final-coder-packet",
+                            "coder_blocked": fip4_result.get("status") != "used",
+                            "blocked_reason": str(fip4_result.get("reason") or ""),
+                            "needed_context": "Inspect fip4_qwen_coder_result on the receipt.",
+                            "reason_code": str(fip4_result.get("reason") or ""),
                             "changed_files": fip4_result.get("changed_files", []),
                             "checks_run": fip4_result.get("checks_run", []),
-                        },
-                    }
+                            "coder_diagnostics": {
+                                "context_mode": derive_context_mode(explicit_target),
+                                "target_exists": (_workspace_root() / explicit_target).is_file(),
+                                "context_slices": [{"path": explicit_target, "kind": "target"}],
+                                "forbidden_paths": fip4_result.get("forbidden_files", []),
+                                "fip4_enabled": True,
+                                "fip4_final_coder_packet_hash": fip4_result.get(
+                                    "final_coder_packet_hash",
+                                    "",
+                                ),
+                                "fip4_coder_received_packet_hash": fip4_result.get(
+                                    "coder_received_packet_hash",
+                                    "",
+                                ),
+                                "fip4_qwen_coder_result": fip4_result,
+                                "fip5_verifier_result": fip5_result or {},
+                                "provider_model_truth": fip4_result.get(
+                                    "provider_model_truth",
+                                    {},
+                                ),
+                                "changed_files": fip4_result.get("changed_files", []),
+                                "checks_run": fip4_result.get("checks_run", []),
+                            },
+                        }
                 else:
                     architect_task = _trial_bounded_create_task(
                         trial_task,
@@ -6910,6 +6928,12 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "status": status_value,
             "reason_code": reason_code,
             "reasonCode": reason_code,
+            "no_diff_failure_cause": diagnostics.get("no_diff_failure_cause"),
+            "noDiffFailureCause": diagnostics.get("no_diff_failure_cause"),
+            "safe_response_classification": diagnostics.get("safe_response_classification"),
+            "safeResponseClassification": diagnostics.get("safe_response_classification"),
+            "parser_extractor_decision": diagnostics.get("parser_extractor_decision"),
+            "parserExtractorDecision": diagnostics.get("parser_extractor_decision"),
             "diagnostics_summary": safe_diagnostics_summary,
             "diagnosticsSummary": safe_diagnostics_summary,
             "coder_diagnostics": diagnostics,
@@ -7647,7 +7671,14 @@ def _safe_coder_diagnostics_summary(diagnostics: dict[str, Any]) -> dict[str, An
         "generation_source",
         "diff_source",
         "model_output_classification",
+        "no_diff_failure_cause",
+        "safe_response_classification",
+        "parser_extractor_decision",
         "raw_response_length",
+        "raw_response_excerpt_safe",
+        "markdown_code_blocks_present",
+        "unified_diff_markers_present",
+        "full_file_content_likely_present",
         "parser_repair_used",
         "scaffold_used",
         "scaffold_kind",

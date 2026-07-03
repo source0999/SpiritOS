@@ -3801,6 +3801,9 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(out["proposed_diff"], "")
         self.assertNotEqual(out.get("reason_code"), "")
         self.assertEqual(out["coder_diagnostics"]["model_output_classification"], "model_prose_only")
+        self.assertEqual(out["coder_diagnostics"]["no_diff_failure_cause"], "model_prose_only_no_file_change")
+        self.assertEqual(out["coder_diagnostics"]["safe_response_classification"], "model_prose_only_no_file_change")
+        self.assertIn("parser_extractor_decision", out["coder_diagnostics"])
         self.assertFalse(out["coder_diagnostics"]["model_output_usable"])
         self.assertEqual(
             out["coder_diagnostics"]["recommended_next_action"],

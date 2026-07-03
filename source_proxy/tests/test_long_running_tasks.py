@@ -294,6 +294,86 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(retry["task"]["scope_key"], "source_proxy/main.py")
         self.assertNotEqual(retry["task"]["architect_reason"], "write_scope_conflict")
 
+    def test_create_ignores_dummy_selected_prompt_placeholder_lock_on_same_scope(self) -> None:
+        selected_prompt_description = "\n".join(
+            [
+                "make the dummy LumaCart page actually show the products as cards.",
+                "",
+                "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+                "Allowed files: tests/ui-agent-trials/fixtures/dummy-product-site/**",
+                "Fixture root: tests/ui-agent-trials/fixtures/dummy-product-site/",
+                "Pass expectations: Products render from src/products.js.",
+                "Fail conditions: Edits SpiritOS UI files.",
+                "LumaCart is a small isolated fake product storefront fixture used only for coder-agent testing.",
+            ]
+        )
+        first = create_long_running_task(selected_prompt_description)
+
+        retry = create_long_running_task(selected_prompt_description)
+
+        self.assertEqual(first["task"]["status"], "queued")
+        self.assertEqual(
+            first["task"]["scope_key"],
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        )
+        self.assertEqual(retry["task"]["status"], "queued")
+        self.assertEqual(
+            retry["task"]["scope_key"],
+            "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        )
+        self.assertNotEqual(retry["task"]["architect_reason"], "write_scope_conflict")
+
+    def test_create_ignores_dummy_cleanup_delete_verification_lock_on_same_scope(self) -> None:
+        cleanup = create_long_running_task(
+            "Agent-lab cleanup delete tests/ui-agent-trials/fixtures/dummy-product-site/README.md"
+        )
+        update_long_running_task(
+            cleanup["task"]["id"],
+            status="applied_needs_verification",
+            current_agent_role="debugger",
+            architect_status="planned",
+        )
+
+        retry = create_long_running_task(
+            "\n".join(
+                [
+                    "make a tiny fake product website project for testing the coder agent. call it LumaCart.",
+                    "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                    "Allowed files: tests/ui-agent-trials/fixtures/dummy-product-site/**",
+                    "Pass expectations: Creates the LumaCart fixture.",
+                    "Fail conditions: Edits SpiritOS UI files.",
+                ]
+            )
+        )
+
+        self.assertEqual(retry["task"]["status"], "queued")
+        self.assertNotEqual(retry["task"]["architect_reason"], "write_scope_conflict")
+
+    def test_create_ignores_stale_dummy_selected_prompt_verification_lock(self) -> None:
+        selected_prompt_description = "\n".join(
+            [
+                "make a tiny fake product website project for testing the coder agent. call it LumaCart.",
+                "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                "Allowed files: tests/ui-agent-trials/fixtures/dummy-product-site/**",
+                "Pass expectations: Creates the LumaCart fixture.",
+                "Fail conditions: Edits SpiritOS UI files.",
+            ]
+        )
+        stale = create_long_running_task(selected_prompt_description)
+        old = (datetime.now(UTC) - timedelta(minutes=2)).isoformat()
+        update_long_running_task(
+            stale["task"]["id"],
+            status="applied_needs_verification",
+            current_agent_role="debugger",
+            architect_status="planned",
+            updated_at=old,
+        )
+
+        retry = create_long_running_task(selected_prompt_description)
+
+        self.assertEqual(retry["task"]["status"], "queued")
+        self.assertNotEqual(retry["task"]["architect_reason"], "write_scope_conflict")
+
     def test_create_allows_read_only_parallel_review_on_same_scope(self) -> None:
         first = create_long_running_task(
             "Target file: source_proxy/main.py\nUpdate implementation."

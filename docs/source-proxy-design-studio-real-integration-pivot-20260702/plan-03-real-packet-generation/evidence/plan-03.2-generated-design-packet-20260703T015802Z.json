@@ -1,0 +1,172 @@
+{
+  "url": "http://localhost:3018/v1/coding/design-studio/preview",
+  "promptA": "Make the design demo a premium dense operator workbench with precise evidence panels, keyboard-first controls, and no generic AI studio cards.",
+  "promptB": "Make the design demo an editorial spacious mobile-first review surface with calm hierarchy, tappable sections, and strong readability.",
+  "statusA": 200,
+  "statusB": 200,
+  "designPacketHashA": "f638eb656cbdd51da57576e8ceb34c8ab3ab608f7f985e5fabf9323a87f21d76",
+  "designPacketHashB": "97df7cfd1bae7f493d5a862cdd4e0625c41b4919aa50473fbabb83b9a1c851c8",
+  "hashesDifferent": true,
+  "fieldsPresent": true,
+  "packetA": {
+    "accessibility_notes": [
+      "visible focus states",
+      "semantic headings",
+      "no text overlap",
+      "keyboard navigation must be first-class"
+    ],
+    "audience": [
+      "operators reviewing Source Proxy evidence",
+      "keyboard-heavy power users",
+      "design reviewers"
+    ],
+    "constraints": [
+      "preview_only_no_apply",
+      "no_execute_approved",
+      "no_raw_css_ingest",
+      "preserve dense workbench utility",
+      "avoid generic AI Studio layout",
+      "support keyboard and focus proof"
+    ],
+    "intent": [
+      "increase perceived product quality",
+      "tighten operator workflow clarity",
+      "make interaction keyboard-first"
+    ],
+    "page_app_target": "/coding/design-demo",
+    "reference_inputs": [
+      "none_supplied"
+    ],
+    "risk_flags": [
+      "low_preview_only"
+    ],
+    "visual_direction": [
+      "premium restrained product surface",
+      "dense console workbench",
+      "precise technical evidence surface"
+    ],
+    "anti_template_checks": [
+      "reject_generic_ai_studio_layout",
+      "require_project_specific_motif"
+    ],
+    "coder_packet": {
+      "allowed_files": [
+        "src/components/coding/DesignStudioShell.tsx"
+      ],
+      "css_rules": [
+        "derive tokens from project surface",
+        "do not copy raw CSS selectors"
+      ],
+      "forbidden_files": [
+        "docs/evidence/**",
+        ".env*",
+        ".spirit-backups/**"
+      ],
+      "responsive_rules": [
+        "desktop and mobile proof required before GO"
+      ],
+      "target_files": [
+        "src/components/coding/DesignStudioShell.tsx"
+      ],
+      "verification_commands": [
+        "npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot"
+      ]
+    },
+    "derivation_source": "heuristic_prompt_structuring_no_model",
+    "design_packet_hash": "f638eb656cbdd51da57576e8ceb34c8ab3ab608f7f985e5fabf9323a87f21d76",
+    "design_packet_id": "design-packet-f638eb656cbd",
+    "obsidian_context_refs": [],
+    "project_specific_motif": "premium restrained product surface",
+    "style_family_blend": [
+      "premium restrained product surface",
+      "dense console workbench",
+      "precise technical evidence surface"
+    ],
+    "target_surface": "/coding/design-demo",
+    "trace_id": "design-studio-trace-2ab6bbac5728-equest-a",
+    "visual_pass_criteria": [
+      "clear preview/apply boundary",
+      "mobile and desktop layout remain scannable",
+      "no Google AI Studio generic shell"
+    ]
+  },
+  "packetB": {
+    "accessibility_notes": [
+      "visible focus states",
+      "semantic headings",
+      "no text overlap",
+      "mobile controls must remain tappable"
+    ],
+    "audience": [
+      "mobile reviewers",
+      "design reviewers"
+    ],
+    "constraints": [
+      "preview_only_no_apply",
+      "no_execute_approved",
+      "no_raw_css_ingest",
+      "support mobile responsive proof"
+    ],
+    "intent": [
+      "improve mobile usability",
+      "create editorial scanning rhythm"
+    ],
+    "page_app_target": "/coding/design-demo",
+    "reference_inputs": [
+      "none_supplied"
+    ],
+    "risk_flags": [
+      "low_preview_only"
+    ],
+    "visual_direction": [
+      "editorial spacious hierarchy",
+      "mobile-first stacked controls"
+    ],
+    "anti_template_checks": [
+      "reject_generic_ai_studio_layout",
+      "require_project_specific_motif"
+    ],
+    "coder_packet": {
+      "allowed_files": [
+        "src/components/coding/DesignStudioShell.tsx"
+      ],
+      "css_rules": [
+        "derive tokens from project surface",
+        "do not copy raw CSS selectors"
+      ],
+      "forbidden_files": [
+        "docs/evidence/**",
+        ".env*",
+        ".spirit-backups/**"
+      ],
+      "responsive_rules": [
+        "desktop and mobile proof required before GO"
+      ],
+      "target_files": [
+        "src/components/coding/DesignStudioShell.tsx"
+      ],
+      "verification_commands": [
+        "npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot"
+      ]
+    },
+    "derivation_source": "heuristic_prompt_structuring_no_model",
+    "design_packet_hash": "97df7cfd1bae7f493d5a862cdd4e0625c41b4919aa50473fbabb83b9a1c851c8",
+    "design_packet_id": "design-packet-97df7cfd1bae",
+    "obsidian_context_refs": [],
+    "project_specific_motif": "editorial spacious hierarchy",
+    "style_family_blend": [
+      "editorial spacious hierarchy",
+      "mobile-first stacked controls"
+    ],
+    "target_surface": "/coding/design-demo",
+    "trace_id": "design-studio-trace-afa4df2ecc93-equest-b",
+    "visual_pass_criteria": [
+      "clear preview/apply boundary",
+      "mobile and desktop layout remain scannable",
+      "no Google AI Studio generic shell"
+    ]
+  },
+  "packetAIsNotRawPromptOnly": true,
+  "packetBIsNotRawPromptOnly": true,
+  "capturedAt": "2026-07-03T01:59:02.378Z"
+}

@@ -1,0 +1,63 @@
+{
+  "captured_at": "2026-07-02T23:09:00-04:00",
+  "increment_id": "05.2-apply-sandbox-diff",
+  "ok": true,
+  "allowed_files": [
+    "src/app/coding/design-demo/page.tsx"
+  ],
+  "changed_files": [
+    "src/app/coding/design-demo/page.tsx"
+  ],
+  "diff_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.2-sandbox-diff-20260703T030900Z.patch",
+  "diff_hash": "69f25b09d8727a8af3c742ebd86774604943b65fc2bcc44501ed3bd315a2b192",
+  "page_file_hash": "b788901d4fc6bfb8791b7d30247ef72ce3c73b1158104a9eb1fed6bcc0b34225",
+  "actual_classifications": [
+    {
+      "file": "src/app/coding/design-demo/page.tsx",
+      "allowed": true,
+      "protected_path": false,
+      "production_app_file": false,
+      "verdict": "ALLOW_SANDBOX_APPLY"
+    }
+  ],
+  "blocked_classifications": [
+    {
+      "file": ".env.local",
+      "allowed": false,
+      "protected_path": true,
+      "production_app_file": false,
+      "verdict": "BLOCKED_OUTSIDE_DESIGN_DEMO_SANDBOX"
+    },
+    {
+      "file": "src/app/page.tsx",
+      "allowed": false,
+      "protected_path": false,
+      "production_app_file": true,
+      "verdict": "BLOCKED_OUTSIDE_DESIGN_DEMO_SANDBOX"
+    },
+    {
+      "file": "src/app/coding/page.tsx",
+      "allowed": false,
+      "protected_path": false,
+      "production_app_file": true,
+      "verdict": "BLOCKED_OUTSIDE_DESIGN_DEMO_SANDBOX"
+    },
+    {
+      "file": "src/app/globals.css",
+      "allowed": false,
+      "protected_path": false,
+      "production_app_file": true,
+      "verdict": "BLOCKED_OUTSIDE_DESIGN_DEMO_SANDBOX"
+    },
+    {
+      "file": "src/components/coding/DesignStudioShell.tsx",
+      "allowed": false,
+      "protected_path": false,
+      "production_app_file": true,
+      "verdict": "BLOCKED_OUTSIDE_DESIGN_DEMO_SANDBOX"
+    }
+  ],
+  "protected_paths_blocked": true,
+  "production_app_files_blocked": true,
+  "execute_approved_used": false
+}

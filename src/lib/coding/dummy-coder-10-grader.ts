@@ -33,17 +33,40 @@ export type DummyCoder10ProvenanceInput = {
   diff_source?: string | null;
   model_output_classification?: string | null;
   trial_result_trust_status?: string | null;
+  prompt_id?: string | null;
+  selected_prompt_id?: string | null;
+  task_id?: string | null;
   scaffold_used?: boolean | null;
   fallback_used?: boolean | null;
   generated_diff_by_backend?: boolean | null;
   model_output_usable?: boolean | null;
   provider_call_made?: boolean | null;
+  apply_mode?: string | null;
+  stale_patch_recovered?: boolean | null;
+  raw_backend_status?: string | null;
+  summary_status?: string | null;
+  raw_status?: string | null;
+  reported_success_path?: string | null;
+  substantive_decision_source?: string | null;
+  runtime_code?: string | null;
+  canned_output?: boolean | null;
+  raw_model_response_sha256?: string | null;
+  model_file_bundle_sha256?: string | null;
+  backend_converted_diff_sha256?: string | null;
+  approved_diff_sha256?: string | null;
+  applied_diff_sha256?: string | null;
+  post_apply_rediff_sha256?: string | null;
+  provenance_hash_normalization?: string | null;
 };
 
 export type DummyCoder10ProvenanceResult = {
   provenance_status: DummyCoder10ProvenanceStatus;
   pass_compatible: boolean;
   reasons: string[];
+  anti_cheat_status: "passed" | "blocked" | "advisory";
+  anti_cheat_hard_fail_ids: string[];
+  anti_cheat_advisory_ids: string[];
+  anti_cheat_reasons: string[];
 };
 
 export type DummyCoder10GradingInput = {
@@ -92,6 +115,29 @@ export const DUMMY_CODER_10_CRITICAL_FAILURE_RULES = [
   "backend-generated scaffold is counted as PASS",
   "provider call is treated as model proof",
   "verification is claimed without evidence",
+] as const;
+
+export const DUMMY_CODER_HARD_FAIL_DETECTORS = [
+  "fallback_labeled_primary_success",
+  "canned_output",
+  "renderer_created_decision",
+  "summary_raw_contradiction",
+  "manual_pass_json_manipulation",
+  "fixture_mock_labeled_live",
+  "preview_advisory_labeled_executed",
+  "unavailable_provider_labeled_success",
+] as const;
+
+export const DUMMY_CODER_ADVISORY_DETECTORS = [
+  "benchmark_specific_runtime_branch",
+  "benchmark_token_static_branch",
+  "known_benchmark_branch",
+  "thin_research_claim",
+  "route_existence_as_integration",
+  "status_ping_as_behavior",
+  "repo_context_as_internet",
+  "static_research_labeled_live",
+  "test_only_production_branch",
 ] as const;
 
 function normalizePath(path: string) {
@@ -168,11 +214,92 @@ function normalized(value: string | null | undefined) {
   return String(value ?? "").trim().toLowerCase();
 }
 
+type DummyCoder10AntiCheatResult = Pick<
+  DummyCoder10ProvenanceResult,
+  "anti_cheat_status" | "anti_cheat_hard_fail_ids" | "anti_cheat_advisory_ids" | "anti_cheat_reasons"
+>;
+
+function passedAntiCheat(): DummyCoder10AntiCheatResult {
+  return {
+    anti_cheat_status: "passed",
+    anti_cheat_hard_fail_ids: [],
+    anti_cheat_advisory_ids: [],
+    anti_cheat_reasons: [],
+  };
+}
+
+function detectDummyCoderAntiCheatViolations(input: DummyCoder10ProvenanceInput = {}): DummyCoder10AntiCheatResult {
+  const hard = new Set<string>();
+  const advisory = new Set<string>();
+  const reasons: string[] = [];
+  const add = (id: string, reason: string) => {
+    const hardFail =
+      (DUMMY_CODER_HARD_FAIL_DETECTORS as readonly string[]).includes(id) ||
+      /fallback|recovery|manual|fixture|mock|unavailable_provider/i.test(id);
+    if (hardFail) hard.add(id);
+    else advisory.add(id);
+    reasons.push(`${id}:${reason}`);
+  };
+  const diffSource = normalized(input.diff_source);
+  const applyMode = normalized(input.apply_mode);
+
+  if (input.canned_output === true) add("canned_output", "canned output cannot be trusted");
+  if (input.fallback_used === true) add("fallback_labeled_primary_success", "fallback/recovery path cannot produce PASS");
+  if (diffSource.includes("deterministic") || applyMode.includes("recovery") || input.stale_patch_recovered === true) {
+    add("fallback_labeled_primary_success", "backend recovery path cannot be laundered as model-authored");
+  }
+  if (input.substantive_decision_source === "renderer") add("renderer_created_decision", "renderer-created decision");
+  if (input.summary_status === "PASS" && input.raw_status === "FAIL") add("summary_raw_contradiction", "summary PASS contradicts raw FAIL");
+  if (input.reported_success_path === "manual_pass_json_manipulation") add("manual_pass_json_manipulation", "manual PASS manipulation");
+  if (input.generation_source === "mock" || input.diff_source === "fixture_mock") add("fixture_mock_labeled_live", "fixture/mock labeled live");
+  if (input.raw_backend_status === "provider_unavailable_success") add("unavailable_provider_labeled_success", "unavailable provider labeled success");
+  // runtime_code is reserved for apply-route / runner / backend decision code. Do not feed
+  // model-authored fixture source into this broad benchmark-branch detector.
+  if (input.runtime_code && /prompt[_-]?id|coder-003|expected_answer|benchmark/i.test(input.runtime_code)) {
+    add("benchmark_specific_runtime_branch", "benchmark-specific runtime branch");
+  }
+
+  return {
+    anti_cheat_status: hard.size > 0 ? "blocked" : advisory.size > 0 ? "advisory" : "passed",
+    anti_cheat_hard_fail_ids: [...hard],
+    anti_cheat_advisory_ids: [...advisory],
+    anti_cheat_reasons: reasons,
+  };
+}
+
+function modelAuthoredHashBindingFailures(input: DummyCoder10ProvenanceInput = {}) {
+  const diffSource = normalized(input.diff_source);
+  const trustStatus = normalized(input.trial_result_trust_status);
+  const wantsModelAuthoredDiff =
+    diffSource.includes("model_authored_file_bundle") || trustStatus.includes("model_authored_diff_proven");
+  if (!wantsModelAuthoredDiff) return [];
+  const reasons: string[] = [];
+  if (normalized(input.generation_source) !== "model") reasons.push("hash_binding_generation_source_not_model");
+  if (!input.raw_model_response_sha256) reasons.push("missing_raw_model_response_sha256");
+  if (!input.model_file_bundle_sha256) reasons.push("missing_model_file_bundle_sha256");
+  if (!input.backend_converted_diff_sha256) reasons.push("missing_backend_converted_diff_sha256");
+  if (!input.applied_diff_sha256) reasons.push("missing_applied_diff_sha256");
+  if (input.provenance_hash_normalization !== "lf_trailing_newline_v1") reasons.push("invalid_provenance_hash_normalization");
+  if (
+    input.backend_converted_diff_sha256 &&
+    input.applied_diff_sha256 &&
+    input.backend_converted_diff_sha256 !== input.applied_diff_sha256
+  ) {
+    reasons.push("backend_converted_diff_sha256_mismatch");
+  }
+  if (input.fallback_used === true) reasons.push("fallback_used");
+  if (diffSource.includes("deterministic") || normalized(input.apply_mode).includes("recovery")) {
+    reasons.push("backend_recovery_mode");
+  }
+  return reasons;
+}
+
 export function classifyDummyCoder10Provenance(
   input: DummyCoder10ProvenanceInput = {},
   task: Pick<DummyCoder10Prompt, "isProductive" | "allowNoopPass" | "allowBlockedPass">,
 ): DummyCoder10ProvenanceResult {
   const reasons: string[] = [];
+  const antiCheat = detectDummyCoderAntiCheatViolations(input);
   const generationSource = normalized(input.generation_source);
   const diffSource = normalized(input.diff_source);
   const outputClass = normalized(input.model_output_classification);
@@ -196,20 +323,28 @@ export function classifyDummyCoder10Provenance(
   const providerOnly = input.provider_call_made && !modelAuthored;
 
   if (providerOnly && task.isProductive) reasons.push("provider_call_without_model_authored_diff");
+  reasons.push(...modelAuthoredHashBindingFailures(input));
+  if (antiCheat.anti_cheat_status === "blocked") reasons.push(...antiCheat.anti_cheat_hard_fail_ids);
 
   const invalidReasons = ["scaffold_used", "fallback_used"];
-  if (reasons.some((reason) => invalidReasons.includes(reason))) {
-    return { provenance_status: "invalid", pass_compatible: false, reasons };
+  if (reasons.some((reason) => invalidReasons.includes(reason)) || antiCheat.anti_cheat_status === "blocked") {
+    return { provenance_status: "invalid", pass_compatible: false, reasons, ...antiCheat };
   }
   if (task.isProductive && !modelAuthored) {
     return {
       provenance_status: "needs_fix",
       pass_compatible: false,
       reasons: reasons.length > 0 ? reasons : ["missing_model_authored_proof"],
+      ...antiCheat,
     };
   }
-  if (reasons.length > 0) return { provenance_status: "needs_fix", pass_compatible: false, reasons };
-  return { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["model_authored_or_zero_change_allowed"] };
+  if (reasons.length > 0) return { provenance_status: "needs_fix", pass_compatible: false, reasons, ...antiCheat };
+  return {
+    provenance_status: "pass_compatible",
+    pass_compatible: true,
+    reasons: ["model_authored_or_zero_change_allowed"],
+    ...antiCheat,
+  };
 }
 
 function labelForState(state: DummyCoder10ResultState): DummyCoder10UiLabel {
@@ -342,7 +477,7 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
         reason: input.noOpEvidence,
         criticalFailures,
         fileScope,
-        provenance: { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["existing_starter_files_verified"] },
+        provenance: { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["existing_starter_files_verified"], ...passedAntiCheat() },
         // PASS_NOOP / already_satisfied is NOT a fresh apply lifecycle GO. It only proves the
         // starter files already exist on disk. Do not imply a fresh Prompt 1 lifecycle passed.
         recommendedNextAction:
@@ -383,7 +518,7 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
         reason: input.noOpEvidence,
         criticalFailures,
         fileScope,
-        provenance: { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["existing_product_data_verified"] },
+        provenance: { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["existing_product_data_verified"], ...passedAntiCheat() },
         recommendedNextAction:
           "Prompt 2 is already satisfied (existing LumaCart product data verified), not a fresh apply. Continue to Prompt 3, or reverse/clear the dummy-product-site fixture before rerunning Prompt 2 for a fresh lifecycle proof.",
       };
@@ -411,6 +546,52 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
       provenance,
       recommendedNextAction: "Fix product data shape before continuing.",
     };
+  }
+
+  if (input.prompt.id === "coder-003-render-product-cards") {
+    const probe = input.storefrontProbe;
+    const storefrontProofPresent =
+      probe?.preview_behavior_status === "PASS_STOREFRONT_RENDERED" &&
+      probe.preview_asset_status === "present" &&
+      probe.product_count >= 6 &&
+      probe.card_render_path_present &&
+      probe.category_render_path_present &&
+      probe.description_render_path_present &&
+      probe.price_render_path_present &&
+      probe.storefront_runtime_status === "passed";
+    const alreadySatisfiedStatus = /already|satisfied|no[_ -]?changes|coder_no_changes_needed/i.test(
+      `${input.noOpEvidence ?? ""} ${input.rawBackendStatus ?? ""}`,
+    );
+    if (alreadySatisfiedStatus) {
+      if (input.changedFiles.length === 0 && storefrontProofPresent) {
+        return {
+          resultState: "PASS_NOOP",
+          score: 10,
+          label: "PASS_NOOP",
+          reason:
+            input.noOpEvidence ??
+            "Prompt 3 already satisfied: existing LumaCart cards render from product data.",
+          criticalFailures,
+          fileScope,
+          provenance: { provenance_status: "pass_compatible", pass_compatible: true, reasons: ["existing_product_cards_verified"], ...passedAntiCheat() },
+          recommendedNextAction:
+            "Prompt 3 is already satisfied (existing LumaCart product cards verified), not a fresh apply. Continue to Prompt 4, or reverse/clear the dummy-product-site fixture before rerunning Prompt 3 for a fresh lifecycle proof.",
+        };
+      }
+      return {
+        resultState: "NEEDS_FIX",
+        score: 6,
+        label: "NEEDS_FIX",
+        reason: probe
+          ? `Already-satisfied Prompt 3 proof incomplete: ${probe.preview_visible_text_summary}; asset_status=${probe.preview_asset_status}; product_count=${probe.product_count}.`
+          : "Already-satisfied Prompt 3 proof requires storefront render probe evidence.",
+        criticalFailures,
+        fileScope,
+        provenance,
+        recommendedNextAction:
+          "Fix the LumaCart render path or rerun Prompt 3 until cards render name, price, category, and description from src/products.js.",
+      };
+    }
   }
 
   if (!provenance.pass_compatible) {
@@ -472,7 +653,8 @@ export function gradeDummyCoder10Result(input: DummyCoder10GradingInput): DummyC
       !probe.card_render_path_present ||
       !probe.category_render_path_present ||
       !probe.description_render_path_present ||
-      !probe.price_render_path_present;
+      !probe.price_render_path_present ||
+      probe.storefront_runtime_status !== "passed";
     if (missingProof) {
       return {
         resultState: "NEEDS_FIX",

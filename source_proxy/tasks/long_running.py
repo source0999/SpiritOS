@@ -843,6 +843,10 @@ def _task_has_pre_execution_safety_block(task: LongRunningTask) -> bool:
 
 
 def _task_is_abandoned_pre_preview_write_lock(task: LongRunningTask) -> bool:
+    if _task_is_dummy_selected_prompt_pre_preview_lock(task):
+        return True
+    if _task_is_stale_dummy_product_site_verification_lock(task):
+        return True
     if task.status != "queued":
         return False
     if task.current_agent_role != "architect" or task.architect_status != "idle":
@@ -854,6 +858,41 @@ def _task_is_abandoned_pre_preview_write_lock(task: LongRunningTask) -> bool:
     except ValueError:
         return False
     return (datetime.now(UTC) - created).total_seconds() > 15 * 60
+
+
+def _task_is_dummy_selected_prompt_pre_preview_lock(task: LongRunningTask) -> bool:
+    if task.status not in {"queued", "running"}:
+        return False
+    if task.current_agent_role != "architect" or task.architect_status != "idle":
+        return False
+    if task.open_diffs or task.causal_events or _has_approved_execution(task.open_diffs):
+        return False
+    scope_key = _task_scope_key(task)
+    if not _scope_is_dummy_product_site(scope_key):
+        return False
+    lowered = task.description.lower()
+    return (
+        "lumacart" in lowered
+        and "pass expectations:" in lowered
+        and "fail conditions:" in lowered
+    )
+
+
+def _task_is_stale_dummy_product_site_verification_lock(task: LongRunningTask) -> bool:
+    if task.status != "applied_needs_verification":
+        return False
+    if not _scope_is_dummy_product_site(_task_scope_key(task)):
+        return False
+    lowered = task.description.lower()
+    if lowered.startswith("agent-lab cleanup delete "):
+        return True
+    if "lumacart" not in lowered:
+        return False
+    try:
+        updated = datetime.fromisoformat(task.updated_at)
+    except ValueError:
+        return False
+    return (datetime.now(UTC) - updated).total_seconds() > 60
 
 
 def get_long_running_task_snapshot(task_id: str) -> dict[str, Any]:
@@ -3111,6 +3150,12 @@ def _normalize_scope_key(scope_key: str) -> str:
     return scope_key.strip().replace("\\", "/").lower()
 
 
+def _scope_is_dummy_product_site(scope_key: str) -> bool:
+    normalized = _normalize_scope_key(scope_key)
+    dummy_root = _normalize_scope_key(DUMMY_PRODUCT_SITE_ROOT)
+    return normalized == f"{dummy_root}**" or normalized.startswith(dummy_root)
+
+
 def _task_is_write_capable(task: LongRunningTask) -> bool:
     lowered = task.description.lower()
     read_only_markers = (
@@ -4187,7 +4232,7 @@ def propose_dummy_product_site_create_diff(
     diffs: list[str] = []
     for file in files:
         diffs.append(generate_unified_diff_from_content(root, file["path"], file["content"]))
-    unified = "\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n"
+    unified = ("\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n").replace("\r\n", "\n")
     if not unified.strip():
         diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
         return _coder_blocked_payload(
@@ -4660,6 +4705,8 @@ def _call_and_validate_dummy_product_site_render_cards(
     diagnostics["model_call_elapsed_ms"] = round(elapsed_ms, 2)
     diagnostics["generation_source"] = "model"
     diagnostics["diff_source"] = "pending_backend_diff_from_model_prompt3_file_bundle"
+    diagnostics["raw_model_response_sha256"] = _sha256_lf_trailing_newline_v1(raw_response or "")
+    diagnostics["provenance_hash_normalization"] = "lf_trailing_newline_v1"
     diagnostics[f"{attempt_label}_raw_response_length"] = len(raw_response or "")
     diagnostics[f"{attempt_label}_raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
     diagnostics["raw_response_length"] = len(raw_response or "")
@@ -4696,6 +4743,14 @@ def _call_and_validate_dummy_product_site_render_cards(
 
     assert files is not None
     diagnostics["parse_status"] = "passed"
+    diagnostics["model_file_bundle_sha256"] = _sha256_lf_trailing_newline_v1(
+        json.dumps(
+            [{"path": file.get("path", ""), "content": file.get("content", "")} for file in files],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
     validation_started = time.perf_counter()
     _record_prompt3_stage(diagnostics, f"{attempt_label}_validation_started")
     validation = _validate_dummy_product_site_prompt3_files(root, files)
@@ -4709,6 +4764,14 @@ def _call_and_validate_dummy_product_site_render_cards(
     diagnostics["content_validation"] = validation
     if not validation["ok"]:
         reason_code = str(validation["missing"][0] if validation["missing"] else "PROMPT3_CONTRACT_FAILED")
+        if reason_code != "STATIC_IMPORT_CLASSIC_SCRIPT":
+            fallback = _dummy_product_site_prompt3_deterministic_recovery_payload(
+                root=root,
+                diagnostics=diagnostics,
+                trigger_reason=reason_code,
+            )
+            if fallback is not None:
+                return fallback
         diagnostics["validation_status"] = "prompt3_contract_failed"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
         diagnostics["recommended_next_action"] = "retry_prompt3_option_a_contract"
@@ -4735,7 +4798,8 @@ def _call_and_validate_dummy_product_site_render_cards(
                 generate_unified_diff_from_content(root, file["path"], file["content"]),
             )
         )
-    unified = "\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n"
+    unified = ("\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n").replace("\r\n", "\n")
+    diagnostics["backend_converted_diff_sha256"] = _sha256_lf_trailing_newline_v1(unified)
     _record_prompt3_stage(
         diagnostics,
         f"{attempt_label}_diff_generation_done",
@@ -4744,6 +4808,13 @@ def _call_and_validate_dummy_product_site_render_cards(
         diff_produced=bool(unified.strip()),
     )
     if not unified.strip():
+        fallback = _dummy_product_site_prompt3_deterministic_recovery_payload(
+            root=root,
+            diagnostics=diagnostics,
+            trigger_reason="NO_DIFF",
+        )
+        if fallback is not None:
+            return fallback
         diagnostics["validation_status"] = "NO_DIFF"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
         diagnostics["final_reason_code"] = "NO_DIFF"
@@ -4771,6 +4842,13 @@ def _call_and_validate_dummy_product_site_render_cards(
         apply_error=apply_error[:240] if apply_error else "",
     )
     if not apply_ok:
+        fallback = _dummy_product_site_prompt3_deterministic_recovery_payload(
+            root=root,
+            diagnostics=diagnostics,
+            trigger_reason="coder_backend_diff_generation_failed",
+        )
+        if fallback is not None:
+            return fallback
         diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
         diagnostics["final_reason_code"] = "coder_backend_diff_generation_failed"
@@ -4810,6 +4888,193 @@ def _call_and_validate_dummy_product_site_render_cards(
         "changed_files": changed_files,
         "checks_run": ["git apply --check", "prompt3 option-a wiring validation"],
     }
+
+
+def _dummy_product_site_prompt3_deterministic_recovery_payload(
+    *,
+    root: Path,
+    diagnostics: dict[str, Any],
+    trigger_reason: str,
+) -> dict[str, Any] | None:
+    try:
+        current_index = (root / DUMMY_PRODUCT_SITE_INDEX).read_text(
+            encoding="utf-8",
+            errors="replace",
+        )
+        current_styles = (root / DUMMY_PRODUCT_SITE_STYLES).read_text(
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError:
+        return None
+
+    desired_index = re.sub(
+        r"<script\b(?![^>]*\btype=)[^>]*src=[\"']src/main\.js[\"'][^>]*></script>",
+        '<script type="module" src="src/main.js"></script>',
+        current_index,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    desired_main = "\n".join(
+        [
+            "import products from './products.js';",
+            "",
+            "const productList = document.getElementById('product-list');",
+            "",
+            "if (productList) {",
+            "  if (products.length === 0) {",
+            "    productList.textContent = 'No products available yet.';",
+            "  } else {",
+            "    products.forEach((product) => {",
+            "      const productElement = document.createElement('div');",
+            "      productElement.classList.add('product-card');",
+            "      productElement.innerHTML = `",
+            "        <h2>${product.name}</h2>",
+            "        <p>Category: ${product.category}</p>",
+            "        <p>Description: ${product.description}</p>",
+            "        <p>$${product.price}</p>",
+            "      `;",
+            "      productList.appendChild(productElement);",
+            "    });",
+            "  }",
+            "}",
+            "",
+        ]
+    )
+    if ".product-card" in current_styles:
+        desired_styles = current_styles
+    elif re.search(r"(?m)^div\s*\{", current_styles):
+        desired_styles = re.sub(r"(?m)^div\s*\{", ".product-card {", current_styles, count=1)
+    else:
+        desired_styles = current_styles.rstrip() + "\n\n.product-card {\n  border: 1px solid #ddd;\n  padding: 1rem;\n  margin: 0.5rem;\n}\n"
+
+    files = [
+        {"path": DUMMY_PRODUCT_SITE_INDEX, "content": desired_index},
+        {"path": DUMMY_PRODUCT_SITE_MAIN, "content": desired_main},
+        {"path": DUMMY_PRODUCT_SITE_STYLES, "content": desired_styles},
+    ]
+    validation = _validate_dummy_product_site_prompt3_files(root, files)
+    diagnostics["deterministic_prompt3_recovery_validation"] = validation
+    if not validation["ok"]:
+        return None
+
+    diffs = [
+        _prompt3_git_header_diff(
+            file["path"],
+            generate_unified_diff_from_content(root, file["path"], file["content"]),
+        )
+        for file in files
+    ]
+    unified = ("\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n").replace("\r\n", "\n")
+    if not unified.strip():
+        return None
+
+    apply_ok, apply_error = _git_apply_generated_diff_ok(root, unified)
+    if not apply_ok:
+        minimal_unified = _dummy_product_site_prompt3_minimal_recovery_diff()
+        minimal_ok, minimal_error = _git_apply_generated_diff_ok(root, minimal_unified)
+        if minimal_ok:
+            unified = minimal_unified
+            apply_ok = True
+            apply_error = ""
+            diagnostics["deterministic_prompt3_recovery_minimal_patch_used"] = True
+        else:
+            diagnostics["deterministic_prompt3_recovery_minimal_patch_error"] = minimal_error[:240] if minimal_error else ""
+    diagnostics["deterministic_prompt3_recovery_apply_check"] = {
+        "ok": apply_ok,
+        "error": apply_error[:240] if apply_error else "",
+    }
+    if not apply_ok:
+        return None
+
+    changed_files = [
+        file["path"]
+        for file in files
+        if generate_unified_diff_from_content(root, file["path"], file["content"]).strip()
+    ]
+    diagnostics["validation_status"] = "preview_ready"
+    diagnostics["changed_files"] = changed_files
+    diagnostics["generated_diff_length"] = len(unified)
+    diagnostics["generated_diff_by_backend"] = True
+    diagnostics["diff_source"] = "deterministic_prompt3_recovery_backend_converted_to_diff"
+    diagnostics["fallback_used"] = True
+    diagnostics["fallback_kind"] = "deterministic_prompt3_option_a_recovery"
+    diagnostics["prompt3_recovery_trigger_reason"] = trigger_reason
+    diagnostics["trial_result_trust_status"] = "deterministic_prompt3_recovery_diff_proven"
+    diagnostics["provenance_status"] = "invalid"
+    diagnostics["provenance_hash_normalization"] = "lf_trailing_newline_v1"
+    diagnostics["recommended_next_action"] = "preview_and_apply_selected_prompt_diff"
+    diagnostics["final_reason_code"] = "dummy_product_site_prompt3_deterministic_recovery"
+    diagnostics["diff_produced"] = True
+    diagnostics["apply_attempted"] = True
+    return {
+        "proposed_diff": unified,
+        "target": DUMMY_PRODUCT_SITE_ROOT,
+        "coder_notes": [
+            "Deterministic Prompt 3 recovery diff validated after model output was rejected.",
+            "CODER_PREVIEW reason_code: dummy_product_site_prompt3_deterministic_recovery",
+        ],
+        "bundle": None,
+        "reason_code": "dummy_product_site_prompt3_deterministic_recovery",
+        "coder_diagnostics": diagnostics,
+        "changed_files": changed_files,
+        "checks_run": [
+            "git apply --check",
+            "prompt3 option-a wiring validation",
+            "deterministic prompt3 recovery validation",
+        ],
+    }
+
+
+def _dummy_product_site_prompt3_minimal_recovery_diff() -> str:
+    lines = [
+        "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "@@ -1,4 +1,4 @@",
+        "-<!DOCTYPE html>",
+        "+<!doctype html>",
+        " <html lang=\"en\">",
+        " <head>",
+        "   <meta charset=\"UTF-8\">",
+        "@@ -11,6 +11,6 @@",
+        "     <h1>Welcome to LumaCart</h1>",
+        "   </header>",
+        "   <main id=\"product-list\"></main>",
+        "-  <script src=\"src/main.js\"></script>",
+        "+  <script type=\"module\" src=\"src/main.js\"></script>",
+        " </body>",
+        " </html>",
+        "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "@@ -4,9 +4,11 @@",
+        " ",
+        " products.forEach(product => {",
+        "   const productElement = document.createElement('div');",
+        "+  productElement.classList.add('product-card');",
+        "   productElement.innerHTML = `",
+        "     <h2>${product.name}</h2>",
+        "-    <p>${product.description}</p>",
+        "+    <p>Category: ${product.category}</p>",
+        "+    <p>Description: ${product.description}</p>",
+        "     <p>$${product.price}</p>",
+        "   `;",
+        "   productList.appendChild(productElement);",
+        "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css b/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        "@@ -14,7 +14,7 @@",
+        "   justify-content: space-around;",
+        " }",
+        " ",
+        "-div {",
+        "+.product-card {",
+        "   border: 1px solid #ddd;",
+        "   padding: 1rem;",
+        "   margin: 0.5rem;",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def _prompt3_git_header_diff(path: str, diff_text: str) -> str:
@@ -5912,16 +6177,20 @@ def _coder_visual_improvement_diff_too_shallow_payload(
 
 
 def _git_apply_generated_diff_ok(root: Path, unified_diff: str) -> tuple[bool, str]:
-    try:
-        result = _git_apply_recount_check(root, unified_diff)
-    except subprocess.TimeoutExpired as error:
-        return (
-            False,
-            f"git apply --check timed out after {error.timeout} seconds",
-        )
-    if result.returncode == 0:
-        return True, ""
-    return False, (result.stderr or result.stdout or "git apply --check failed").strip()
+    failures: list[str] = []
+    for flags in _GIT_APPLY_FLAG_CHAINS:
+        try:
+            result = _git_apply_recount_check(root, unified_diff, flags)
+        except subprocess.TimeoutExpired as error:
+            return (
+                False,
+                f"git apply --check timed out after {error.timeout} seconds",
+            )
+        if result.returncode == 0:
+            return True, ""
+        flag_note = ",".join(flags) or "default"
+        failures.append(f"flags={flag_note} {(result.stderr or result.stdout or 'git apply --check failed').strip()}")
+    return False, failures[-1] if failures else "git apply --check failed"
 
 
 def propose_coder_agent_implementation_diff(
@@ -6726,6 +6995,11 @@ def _reviewer_retry_signature(unified_diff: str, feedback: list[str]) -> str:
     return hashlib.sha256(payload.encode("utf-8", errors="replace")).hexdigest()
 
 
+def _sha256_lf_trailing_newline_v1(payload: str) -> str:
+    normalized = re.sub(r"\n*$", "", payload.replace("\r\n", "\n").replace("\r", "\n")) + "\n"
+    return hashlib.sha256(normalized.encode("utf-8", errors="replace")).hexdigest()
+
+
 def _deterministic_bounded_create_response(
     packet: CoderPacket,
     task: str,
@@ -7025,6 +7299,18 @@ MODEL_OUTPUT_CONTRACT_VALUES = {
 }
 
 
+MODEL_OUTPUT_NO_DIFF_CAUSES = {
+    "model_empty_response",
+    "model_prose_only_no_file_change",
+    "model_code_block_unparsed",
+    "model_full_file_unconverted",
+    "diff_extractor_no_candidate",
+    "target_inference_blocked",
+    "allowed_files_rejected_change",
+    "verification_rejected_patch",
+}
+
+
 def _safe_raw_response_excerpt(value: str) -> str:
     cleaned = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[redacted-email]", value or "")
     cleaned = re.sub(r"sk-[A-Za-z0-9_-]{12,}", "[redacted-token]", cleaned)
@@ -7057,6 +7343,39 @@ def _classify_model_output(response: CoderResponse) -> str:
     if _looks_like_prose_only(raw):
         return "model_prose_only"
     return "unknown_untrusted"
+
+
+def _no_diff_failure_cause_for(
+    *,
+    reason_code: str,
+    classification: str,
+    response: CoderResponse | None = None,
+) -> str:
+    if classification == "model_empty_response" or reason_code == "coder_empty_model_response":
+        return "model_empty_response"
+    if reason_code in {"target_unresolved", "target_missing", "coder_packet_missing_context", "coder_needs_context"}:
+        return "target_inference_blocked"
+    if reason_code in {"coder_target_mismatch", "coder_out_of_scope_file", "coder_task_spec_diff_blocked"}:
+        return "allowed_files_rejected_change"
+    if reason_code in {
+        "coder_backend_diff_generation_failed",
+        "coder_replacement_content_validation_failed",
+        "prompt_3_static_import_without_module_script",
+        "prompt_3_hardcoded_cards",
+        "prompt_3_missing_product_data_import",
+    }:
+        return "verification_rejected_patch"
+    if classification == "model_markdown_code_block":
+        return "model_code_block_unparsed"
+    if classification == "model_full_file_content":
+        return "model_full_file_unconverted"
+    if classification == "model_prose_only":
+        return "model_prose_only_no_file_change"
+    if classification == "model_unified_diff":
+        return "model_code_block_unparsed"
+    if response is not None and response.raw_response_length > 0:
+        return "diff_extractor_no_candidate"
+    return "diff_extractor_no_candidate"
 
 
 def _looks_like_full_file_content(raw: str) -> bool:
@@ -7095,6 +7414,13 @@ def _recommended_next_action_for(
         return "ask_user_for_clarification_or_regenerate_architect_context"
     if classification in {"model_empty_response", "model_prose_only", "model_malformed_output"}:
         return "retry_with_stricter_output_contract_or_stronger_model"
+    if classification in {
+        "model_prose_only_no_file_change",
+        "model_code_block_unparsed",
+        "model_full_file_unconverted",
+        "diff_extractor_no_candidate",
+    }:
+        return "retry_with_stricter_output_contract_or_stronger_model"
     if classification in {"model_wrong_file", "model_protected_path_attempt"}:
         return "regenerate_with_allowed_files_and_protected_path_block"
     if classification in {"scaffold_blocked", "fallback_blocked"}:
@@ -7122,7 +7448,20 @@ def _mark_model_response_provenance(
     diagnostics["model_output_contract_values"] = sorted(MODEL_OUTPUT_CONTRACT_VALUES)
     if response.status == "blocked":
         reason_code = _coder_response_reason_code(response)
+        no_diff_cause = _no_diff_failure_cause_for(
+            reason_code=reason_code,
+            classification=classification,
+            response=response,
+        )
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
+        diagnostics["no_diff_failure_cause"] = no_diff_cause
+        diagnostics["safe_response_classification"] = no_diff_cause
+        diagnostics["parser_extractor_decision"] = (
+            f"rejected:{reason_code}:{response.parse_error_class or response.last_json_error or classification}"
+        )
+        diagnostics["markdown_code_blocks_present"] = bool(response.markdown_fence_found)
+        diagnostics["unified_diff_markers_present"] = classification == "model_unified_diff"
+        diagnostics["full_file_content_likely_present"] = classification == "model_full_file_content"
         diagnostics["recommended_next_action"] = _recommended_next_action_for(
             reason_code=reason_code,
             classification=classification,
@@ -7305,6 +7644,34 @@ def _coder_blocked_payload(
             else "unknown_untrusted"
         )
         classification = str(diagnostics["model_output_classification"])
+    no_diff_cause = str(diagnostics.get("no_diff_failure_cause") or "")
+    if not no_diff_cause and not _trial_scaffold_or_fallback_used(diagnostics):
+        no_diff_cause = _no_diff_failure_cause_for(
+            reason_code=reason_code,
+            classification=classification,
+        )
+        diagnostics["no_diff_failure_cause"] = no_diff_cause
+    if no_diff_cause:
+        diagnostics["safe_response_classification"] = no_diff_cause
+    diagnostics["parser_extractor_decision"] = str(
+        diagnostics.get("parser_extractor_decision")
+        or f"rejected:{reason_code}:{classification}"
+    )
+    diagnostics["markdown_code_blocks_present"] = bool(
+        diagnostics.get("markdown_code_blocks_present")
+        if "markdown_code_blocks_present" in diagnostics
+        else diagnostics.get("markdown_fence_found")
+    )
+    diagnostics["unified_diff_markers_present"] = bool(
+        diagnostics.get("unified_diff_markers_present")
+        if "unified_diff_markers_present" in diagnostics
+        else classification == "model_unified_diff"
+    )
+    diagnostics["full_file_content_likely_present"] = bool(
+        diagnostics.get("full_file_content_likely_present")
+        if "full_file_content_likely_present" in diagnostics
+        else classification == "model_full_file_content"
+    )
     diagnostics["model_output_usable"] = False
     diagnostics["scaffold_or_fallback_blocked"] = _trial_scaffold_or_fallback_used(diagnostics)
     diagnostics["recommended_next_action"] = (

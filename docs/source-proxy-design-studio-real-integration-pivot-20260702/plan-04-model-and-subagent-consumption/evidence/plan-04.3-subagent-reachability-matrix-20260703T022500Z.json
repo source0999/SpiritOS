@@ -1,0 +1,92 @@
+{
+  "captured_at": "2026-07-02T22:25:00-04:00",
+  "increment_id": "04.3-subagent-reachability-matrix",
+  "source_inventory": "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-04-model-and-subagent-consumption/evidence/plan-04.1-provider-inventory-20260703T021001Z.json",
+  "source_live_invocation": "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-04-model-and-subagent-consumption/evidence/plan-04.2-live-model-invocation-20260703T021915Z.json",
+  "classification_rule": "A lane is counted live only when it has runtime reachability evidence from the Design Studio path. Naming a lane, config expectation, or future integration possibility does not count as live.",
+  "all_target_lanes_classified": true,
+  "no_exists_counted_as_live": true,
+  "missing_or_dormant_lanes_honestly_labeled": true,
+  "live_lane_count": 1,
+  "blocked_or_deferred_lane_count": 5,
+  "matrix": [
+    {
+      "lane": "design-studio-local-ollama",
+      "lane_type": "model",
+      "claimed_role": "optional model generation lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT_UNTIL_PROVEN",
+      "observed_status": "LIVE_RUNTIME_INVOKED",
+      "reachable_from_coding": true,
+      "reachable_from_sandbox_apply": false,
+      "counted_live": true,
+      "evidence": "Plan 04.2 route runtime proof invoked Ollama phi4-mini:latest and recorded model_invocation_event_id ollama-phi4-mini-latest-9f74f41c8397.",
+      "required_for_go": false,
+      "future_decision_needed": "Model use remains explicit per request; no other provider is implied."
+    },
+    {
+      "lane": "design-studio-openai",
+      "lane_type": "model",
+      "claimed_role": "optional model generation lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "counted_live": false,
+      "evidence": "OPENAI_API_KEY absent from process env in Plan 04.1 provider inventory.",
+      "required_for_go": false,
+      "future_decision_needed": "Requires explicit approval, key, model selection, and separate proof before use."
+    },
+    {
+      "lane": "design-studio-anthropic",
+      "lane_type": "model",
+      "claimed_role": "optional model generation lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "counted_live": false,
+      "evidence": "ANTHROPIC_API_KEY absent from process env in Plan 04.1 provider inventory.",
+      "required_for_go": false,
+      "future_decision_needed": "Requires explicit approval, key, model selection, and separate proof before use."
+    },
+    {
+      "lane": "mac-worker-design-studio",
+      "lane_type": "subagent",
+      "claimed_role": "future remote worker/subagent lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "counted_live": false,
+      "evidence": "No Design Studio Mac worker endpoint or config found during Plan 04.1 inventory.",
+      "required_for_go": false,
+      "future_decision_needed": "Requires explicit endpoint/config approval and live route proof."
+    },
+    {
+      "lane": "scout-current-research-design-studio",
+      "lane_type": "subagent",
+      "claimed_role": "future research lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "counted_live": false,
+      "evidence": "No Design Studio Scout/current research lane found during Plan 04.1 inventory.",
+      "required_for_go": false,
+      "future_decision_needed": "Requires explicit lane config approval and live route proof."
+    },
+    {
+      "lane": "cartographer-design-studio",
+      "lane_type": "subagent",
+      "claimed_role": "future graph/cartographer lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "DEFERRED_OUT_OF_SCOPE",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "counted_live": false,
+      "evidence": "Graphify, memory graph, and new external dependency work are deferred by pivot hard rule.",
+      "required_for_go": false,
+      "future_decision_needed": "Deferred unless Britton explicitly approves a future graph lane outside this Design Studio pivot scope."
+    }
+  ]
+}

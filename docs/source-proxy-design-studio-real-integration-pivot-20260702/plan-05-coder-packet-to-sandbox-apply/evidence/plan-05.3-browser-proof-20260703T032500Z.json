@@ -1,0 +1,28 @@
+{
+  "captured_at": "2026-07-02T23:25:00-04:00",
+  "increment_id": "05.3-browser-visible-sandbox-output",
+  "ok": false,
+  "url": "http://127.0.0.1:3021/coding/design-demo",
+  "screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-design-demo-browser-20260703T032500Z.png",
+  "screenshot_hash": "df58f5c18102b054cb9e055fb268b7d288634a3c00b38190cf5c3d386f31b50d",
+  "dom_snapshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-design-demo-dom-20260703T032500Z.txt",
+  "dom_snapshot_hash": "8491ce1946734631508cea04b32407f3eb25a64e3850ea9bd1e6574865a3cada",
+  "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+  "design_packet_hash": "999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2",
+  "coder_packet_hash": "preview_bb110d8d",
+  "diff_hash": "69f25b09d8727a8af3c742ebd86774604943b65fc2bcc44501ed3bd315a2b192",
+  "page_proof": {
+    "h1": "Applied Design Studio sandbox packet",
+    "hasAppliedHeading": true,
+    "hasCoderHash": true,
+    "hasDesignHash": true,
+    "hasPlan05": false,
+    "hasProtectedBlock": false,
+    "hasTrace": true,
+    "textExcerpt": "PLAN 05 SANDBOX APPLY\n\nApplied Design Studio sandbox packet\n\nThe generated coder packet has been applied only to this design-demo route, with visible trace markers for the follow-up browser proof.\n\nSCOPE FENCE\n\nROUTE\n/coding/design-demo sandbox only\nAPPLY\nPlan 05.2 scoped sandbox diff\nPROTECTED\n.env, global CSS, and production routes blocked\n\nINTENT\n\nTurn the Design Studio packet into a real bounded review screen.\n\nSYSTEM\n\nDense evidence panels, crisp scope rails, and restrained cyan-lime accents.\n\nBEHAVIOR\n\nStatic sandbox apply with trace, diff, and downstream handoff cues.\n\nCODER PACKET\n\n1\n\nApply only to src/app/coding/design-demo/page.tsx.\n\n2\n\nRender the design_packet_hash and coder_packet_hash used for the sandbox handoff.\n\n3\n\nKeep production routes, global styles, and protected paths outside the diff.\n\nTRACE LINK\n\nTRACE\n\ndesign-studio-trace-24e3574ecc8f-r-packet\n\nDESIGN\n\n999875b640e",
+    "title": "Spirit OS • Dark Node",
+    "url": "http://127.0.0.1:3021/coding/design-demo"
+  },
+  "visible_content_changed_after_apply": false,
+  "ui_links_result_to_trace": true
+}

@@ -1,0 +1,66 @@
+{
+  "captured_at": "2026-07-03T01:22:00-04:00",
+  "increment_id": "07.4-phase-regression",
+  "ok": true,
+  "plans_01_to_06_validator_basis": "Receipt validator was green through Plan 07 before this receipt and is rerun through Plan 07 after this receipt.",
+  "anti_template_verdict_references_screenshot_dom_artifacts": true,
+  "anti_template_verdict_packet": {
+    "anti_template_verdict_id": "plan-07-phase-verdict-20260703T052200Z",
+    "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+    "rendered_dom_snapshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-design-demo-dom-20260703T032500Z.txt",
+    "rendered_dom_snapshot_hash": "8491ce1946734631508cea04b32407f3eb25a64e3850ea9bd1e6574865a3cada",
+    "desktop_screenshot_hash": "df58f5c18102b054cb9e055fb268b7d288634a3c00b38190cf5c3d386f31b50d",
+    "mobile_screenshot_hash": "ef42762820aaf3f98c0e913ee32645743c26d1d1d89bc46208a1ca346f2469a9",
+    "current_sandbox_verdict": {
+      "anti_template_verdict": "GENERIC_TEMPLATE_PASS",
+      "project_motif_rendered_evidence": [
+        "source proxy",
+        "design studio",
+        "design sandbox",
+        "visual review"
+      ],
+      "reject_or_repair_reason": "rendered_output_has_project_specific_motif_or_low_template_signal_count",
+      "template_signal_count": 0,
+      "template_signal_matches": []
+    },
+    "hostile_rejection_verdict": {
+      "anti_template_verdict": "GENERIC_TEMPLATE_REJECT",
+      "template_signal_count": 8,
+      "template_signal_matches": [
+        {
+          "id": "centered_hero_block",
+          "evidence": "hero-like first viewport language or metadata detected"
+        },
+        {
+          "id": "purple_blue_gradient",
+          "evidence": "purple/blue color family metadata detected"
+        },
+        {
+          "id": "generic_glass_cards",
+          "evidence": "more than half of visible cards are glass cards"
+        },
+        {
+          "id": "three_card_feature_grid",
+          "evidence": "generic feature grid language with at least three cards"
+        },
+        {
+          "id": "pricing_tiers",
+          "evidence": "pricing tier language or card metadata detected"
+        },
+        {
+          "id": "bland_footer",
+          "evidence": "generic footer language detected"
+        },
+        {
+          "id": "decorative_blobs",
+          "evidence": "decorative blob/orb language detected"
+        },
+        {
+          "id": "hero_left_cards_right",
+          "evidence": "default hero-left/cards-right layout metadata detected"
+        }
+      ],
+      "acceptance_blocked_until_repaired": true
+    }
+  }
+}

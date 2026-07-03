@@ -1,0 +1,101 @@
+{
+  "captured_at": "2026-07-03T01:51:00-04:00",
+  "increment_id": "08.2-bounded-repair-loop",
+  "ok": true,
+  "source_execution": "typescript_transpile_to_commonjs_then_execute_helper_and_verifier",
+  "repair_helper_source_sha256": "c2da797dad86d1d91e4869d19279478d0ec33ec509e6113d76dd89e5be400ed9",
+  "anti_template_verifier_source_sha256": "fefd9f0b17ccf645d895961e5d7bade5c0569c3d9778ab20fc0aa2735162e90d",
+  "sandbox_file_sha256_after_repair": "639d5d38280806e3ac318b487b4c91676b37f25b42c961f968c43ae9e8ab680f",
+  "repair_request": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_REJECT",
+    "critic_verdict": "DESIGN_CRITIC_REPAIR_REQUIRED",
+    "critic_verdict_id": "critic-design-studio-trace-24e3574ecc8f-r-packet",
+    "max_repair_attempts": 2,
+    "proposed_changed_paths": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "repair_attempt_index": 1,
+    "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+  },
+  "repair_result": {
+    "allowed_changed_paths": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "apply_ready": true,
+    "blockers": [],
+    "forbidden_paths": [],
+    "max_repair_attempts": 2,
+    "repair_attempt_id": "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1",
+    "repair_attempt_ids": [
+      "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1"
+    ],
+    "repair_output_retest_required": true,
+    "sandbox_diff_required": true,
+    "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+  },
+  "forbidden_path_negative_result": {
+    "allowed_changed_paths": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "apply_ready": false,
+    "blockers": [
+      "forbidden_repair_path_requested"
+    ],
+    "forbidden_paths": [
+      "src/app/coding/page.tsx"
+    ],
+    "max_repair_attempts": 2,
+    "repair_attempt_id": "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1",
+    "repair_attempt_ids": [
+      "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1"
+    ],
+    "repair_output_retest_required": true,
+    "sandbox_diff_required": true,
+    "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+  },
+  "unbounded_attempt_negative_result": {
+    "allowed_changed_paths": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "apply_ready": false,
+    "blockers": [
+      "invalid_or_unbounded_max_repair_attempts"
+    ],
+    "forbidden_paths": [],
+    "max_repair_attempts": 99,
+    "repair_attempt_id": "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1",
+    "repair_attempt_ids": [
+      "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1"
+    ],
+    "repair_output_retest_required": true,
+    "sandbox_diff_required": true,
+    "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+  },
+  "sandbox_diff": {
+    "changed_path": "src/app/coding/design-demo/page.tsx",
+    "diff_hash": "d39869faf96668fa1c1107081f79624c9708658d5357f0b254fe8257c3f1de69",
+    "contains_repair_loop_marker": true,
+    "diff_check_exit_code": 0,
+    "diff_check_stdout": "",
+    "diff_check_stderr": "warning: in the working copy of 'src/app/coding/design-demo/page.tsx', LF will be replaced by CRLF the next time Git touches it\n"
+  },
+  "repair_output_retest": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_PASS",
+    "project_motif_rendered_evidence": [
+      "source proxy",
+      "design studio",
+      "design sandbox",
+      "visual review"
+    ],
+    "reject_or_repair_reason": "rendered_output_has_project_specific_motif_or_low_template_signal_count",
+    "template_signal_count": 0,
+    "template_signal_matches": []
+  },
+  "required_proof": {
+    "max_repair_attempts_defined": true,
+    "repair_attempt_ids_recorded": true,
+    "repair_changes_sandbox_diff": true,
+    "repair_cannot_touch_forbidden_paths": true,
+    "repair_output_retested": true
+  }
+}

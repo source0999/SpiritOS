@@ -40,6 +40,7 @@ import {
 import {
   allUnrevertedSuiteResultsInReversePromptOrder,
   buildDeleteFileReverseDiff,
+  isCoderTrialCleanupPath,
   isAgentLabTrialPath,
   isDummyProductSiteTrialPath,
   pathIsAllowedForTrialReverse,
@@ -134,6 +135,16 @@ const commandMutedClass = "text-[var(--ddv4-fg-muted)]";
 const commandFocusClass =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spirit-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 const commandControlClass = `${commandFocusClass} transition-colors duration-150`;
+const idleDesignStudioComposerState = (): DesignStudioComposerState => ({
+  endpointStatus: null,
+  error: null,
+  isLoading: false,
+  outcome: null,
+  reason: null,
+  requestId: null,
+  status: "idle",
+  traceId: null,
+});
 type PreviewState = {
   approvalAvailable: boolean;
   approvedAt: string | null;
@@ -183,6 +194,19 @@ type PreviewState = {
   consumerSubsystem?: string | null;
   verifierSummary: string;
   technicalDetail?: string | null;
+};
+
+type ComposerMode = "coding" | "design_studio";
+
+type DesignStudioComposerState = {
+  endpointStatus: string | null;
+  error: string | null;
+  isLoading: boolean;
+  outcome: string | null;
+  reason: string | null;
+  requestId: string | null;
+  status: "idle" | "running" | "ready" | "blocked" | "error";
+  traceId: string | null;
 };
 
 type Plan2SubsystemIntegration = {
@@ -281,10 +305,24 @@ type DummyCoder10RunState = {
   generationSource: string | null;
   diffSource: string | null;
   modelOutputClassification: string | null;
+  noDiffFailureCause: string | null;
+  parserExtractorDecision: string | null;
   trialResultTrustStatus: string | null;
   scaffoldUsed: boolean | null;
   fallbackUsed: boolean | null;
   generatedDiffByBackend: boolean | null;
+  // Apply provenance surfaced from /v1/actions/execute-approved so recovery
+  // (backend-authored fixture rewrite after git apply --check failure) is
+  // visible in diagnostics and cannot be hidden behind upstream labels.
+  applyMode: string | null;
+  stalePatchRecovered: boolean | null;
+  rawModelResponseSha256: string | null;
+  modelFileBundleSha256: string | null;
+  backendConvertedDiffSha256: string | null;
+  approvedDiffSha256: string | null;
+  appliedDiffSha256: string | null;
+  postApplyRediffSha256: string | null;
+  provenanceHashNormalization: string | null;
   recommendedNextAction: string | null;
   grader: DummyCoder10GradingResult | null;
   packet: unknown | null;
@@ -296,6 +334,51 @@ type DummyCoder10RunState = {
   // contents could not be read. Surfaces whether the page renders real storefront content.
   storefrontProbe: DummyStorefrontProbeResult | null;
 };
+
+export type SelectedPromptAuditDiagnosticsState = Pick<
+  DummyCoder10RunState,
+  | "appliedDiffSha256"
+  | "applyMode"
+  | "approvedDiffSha256"
+  | "backendConvertedDiffSha256"
+  | "diffSource"
+  | "fallbackUsed"
+  | "modelFileBundleSha256"
+  | "postApplyRediffSha256"
+  | "provenanceHashNormalization"
+  | "rawModelResponseSha256"
+  | "stalePatchRecovered"
+  | "storefrontProbe"
+  | "trialResultTrustStatus"
+>;
+
+export function selectedPromptAuditDiagnosticsLines(input: {
+  grader: DummyCoder10GradingResult | null;
+  state: SelectedPromptAuditDiagnosticsState;
+}) {
+  const { grader, state } = input;
+  return [
+    `anti_cheat_status: ${grader?.provenance?.anti_cheat_status ?? "not graded"}`,
+    `anti_cheat_hard_fail_ids: ${formatList(grader?.provenance?.anti_cheat_hard_fail_ids ?? [], "none")}`,
+    `anti_cheat_advisory_ids: ${formatList(grader?.provenance?.anti_cheat_advisory_ids ?? [], "none")}`,
+    `anti_cheat_reasons: ${formatList(grader?.provenance?.anti_cheat_reasons ?? [], "none")}`,
+    `raw_model_response_sha256: ${state.rawModelResponseSha256 ?? "not recorded"}`,
+    `model_file_bundle_sha256: ${state.modelFileBundleSha256 ?? "not recorded"}`,
+    `backend_converted_diff_sha256: ${state.backendConvertedDiffSha256 ?? "not recorded"}`,
+    `approved_diff_sha256: ${state.approvedDiffSha256 ?? "not recorded"}`,
+    `applied_diff_sha256: ${state.appliedDiffSha256 ?? "not recorded"}`,
+    `post_apply_rediff_sha256: ${state.postApplyRediffSha256 ?? "not recorded"}`,
+    `provenance_hash_normalization: ${state.provenanceHashNormalization ?? "not recorded"}`,
+    `apply_mode: ${state.applyMode ?? "not recorded"}`,
+    `stale_patch_recovered: ${String(state.stalePatchRecovered ?? false)}`,
+    `fallback_used: ${String(state.fallbackUsed ?? false)}`,
+    `diff_source: ${state.diffSource ?? "none"}`,
+    `trial_result_trust_status: ${state.trialResultTrustStatus ?? "none"}`,
+    `storefront_runtime_status: ${state.storefrontProbe?.storefront_runtime_status ?? "not probed"}`,
+    `storefront_runtime_engine: ${state.storefrontProbe?.storefront_runtime_engine ?? "not probed"}`,
+    `storefront_runtime_product_count: ${state.storefrontProbe?.storefront_runtime_product_count ?? "not probed"}`,
+  ];
+}
 
 function buildRouteUnavailableSuitePromptResult(
   prompt: ReversibleTrialPrompt,
@@ -478,7 +561,7 @@ const manualTaskPhaseLabels = {
  * fail faster with an honest timeout instead of a silent black box.
  */
 const MANUAL_PROMPT_PACKET_TIMEOUT_MS = 180_000;
-const TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS = 45_000;
+const TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS = 180_000;
 const TRIAL_PROMPT_PACKET_TIMEOUT_MS = MANUAL_PROMPT_PACKET_TIMEOUT_MS + TRIAL_PROMPT_PACKET_TIMEOUT_BUFFER_MS;
 const TRIAL_PROMPT_PACKET_MAX_ATTEMPTS = 2;
 const TRIAL_POST_MODEL_STAGE_TIMEOUT_MS = 60_000;
@@ -851,13 +934,24 @@ function defaultDummyCoderRunState(
     grader: null,
     message,
     modelOutputClassification: null,
+    noDiffFailureCause: null,
+    parserExtractorDecision: null,
     packet: null,
     rawBackendStatus: null,
+    rawModelResponseSha256: null,
     recommendedNextAction: null,
     scaffoldUsed: null,
     selectedPromptId: null,
     startedAt: null,
     finishedAt: null,
+    applyMode: null,
+    appliedDiffSha256: null,
+    approvedDiffSha256: null,
+    backendConvertedDiffSha256: null,
+    modelFileBundleSha256: null,
+    postApplyRediffSha256: null,
+    provenanceHashNormalization: null,
+    stalePatchRecovered: null,
     storefrontProbe: null,
     taskId: null,
     status,
@@ -871,6 +965,8 @@ export function selectedPromptTaskDescription(prompt: DummyCoder10Prompt) {
   return [
     prompt.submittedPrompt,
     "",
+    `Selected prompt id: ${prompt.id}`,
+    `Selected prompt number: ${prompt.number}`,
     `Target file: ${selectedTarget}`,
     `Allowed files: ${prompt.allowedWriteRoot}`,
     `Fixture root: ${prompt.fixtureRoot}`,
@@ -905,9 +1001,30 @@ export function selectedPromptModelTask(prompt: DummyCoder10Prompt) {
   ].filter(Boolean).join("\n");
 }
 
-export function selectedPrompt3DiffViolations(diff: string, context?: { currentIndexHtml?: string }) {
+function dummyProductDataFieldsPresentFromSource(source: string) {
+  if (!source.trim()) return false;
+  if (
+    !/\bexport\s+default\s+products\b/.test(source) &&
+    !/\bexport\s+const\s+products\s*=/.test(source)
+  ) {
+    return false;
+  }
+  const productBlocks = [...source.matchAll(/\{[^{}]*\}/g)].map((match) => match[0]);
+  const validProducts = productBlocks.filter((block) =>
+    ["id", "name", "price", "category", "description"].every((field) =>
+      new RegExp(`\\b${field}\\s*:`).test(block),
+    ),
+  );
+  return validProducts.length >= 6;
+}
+
+export function selectedPrompt3DiffViolations(
+  diff: string,
+  context?: { currentIndexHtml?: string; currentMainJs?: string },
+) {
   const normalized = diff.replace(/\r\n/g, "\n");
   const currentIndexHtml = context?.currentIndexHtml ?? "";
+  const currentMainJs = context?.currentMainJs ?? "";
   const violations: string[] = [];
   if (
     /Product Name|Description: This is a description|grid grid-cols|<main id=["']product-list["'][\s\S]*<div class=["'](?:card|product-card)/i.test(
@@ -918,21 +1035,27 @@ export function selectedPrompt3DiffViolations(diff: string, context?: { currentI
   }
   const hasDynamicProductsImport = /import\s*\(\s*['"]\.\/products\.js['"]\s*\)/i.test(normalized);
   const hasStaticProductsImport = /import\s+[\s\S]*?\s+from\s*['"]\.\/products\.js['"]/i.test(normalized);
+  const currentMainHasStaticProductsImport = /import\s+[\s\S]*?\s+from\s*['"]\.\/products\.js['"]/i.test(currentMainJs);
+  const diffRemovesProductsImport = /^-\s*import\s+[\s\S]*?\s+from\s*['"]\.\/products\.js['"]/im.test(normalized);
+  const hasProductsImport =
+    hasDynamicProductsImport ||
+    hasStaticProductsImport ||
+    (currentMainHasStaticProductsImport && !diffRemovesProductsImport);
   const diffAddsModuleScript = /^\+\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
   const currentIndexHasModuleScript = /<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/i.test(currentIndexHtml);
   const diffRemovesModuleScript = /^-\s*<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["']/im.test(normalized);
   const hasModuleScriptWiring = diffAddsModuleScript || (currentIndexHasModuleScript && !diffRemovesModuleScript);
   if (
     !/src\/main\.js/i.test(normalized) ||
-    !/\.\/products\.js/i.test(normalized) ||
+    !hasProductsImport ||
     !/product\.category|product-card/i.test(normalized)
   ) {
     violations.push("missing_dynamic_products_render_path");
   }
-  if (hasStaticProductsImport && !hasModuleScriptWiring) {
+  if ((hasStaticProductsImport || currentMainHasStaticProductsImport) && !hasModuleScriptWiring) {
     violations.push("static_products_import_without_module_script_wiring");
   }
-  if (!hasStaticProductsImport && !hasDynamicProductsImport) {
+  if (!hasProductsImport) {
     violations.push("missing_products_import");
   }
   if (/^\+.*\b(?:const|let|var)\s+products\s*=\s*\[/im.test(normalized) || (/Product A/.test(normalized) && /Product F/.test(normalized))) {
@@ -1017,13 +1140,24 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
           : null,
       message: storedStringOrNull(parsed.message) ?? "Selected prompt state restored after browser refresh.",
       modelOutputClassification: storedStringOrNull(parsed.modelOutputClassification),
+      noDiffFailureCause: storedStringOrNull(parsed.noDiffFailureCause),
+      parserExtractorDecision: storedStringOrNull(parsed.parserExtractorDecision),
       packet: parsed.packet ?? null,
       rawBackendStatus: storedStringOrNull(parsed.rawBackendStatus),
+      rawModelResponseSha256: storedStringOrNull(parsed.rawModelResponseSha256),
       recommendedNextAction: storedStringOrNull(parsed.recommendedNextAction),
       scaffoldUsed: storedBooleanOrNull(parsed.scaffoldUsed),
       selectedPromptId,
       startedAt: typeof parsed.startedAt === "number" ? parsed.startedAt : null,
       finishedAt: typeof parsed.finishedAt === "number" ? parsed.finishedAt : null,
+      applyMode: storedStringOrNull(parsed.applyMode),
+      appliedDiffSha256: storedStringOrNull(parsed.appliedDiffSha256),
+      approvedDiffSha256: storedStringOrNull(parsed.approvedDiffSha256),
+      backendConvertedDiffSha256: storedStringOrNull(parsed.backendConvertedDiffSha256),
+      modelFileBundleSha256: storedStringOrNull(parsed.modelFileBundleSha256),
+      postApplyRediffSha256: storedStringOrNull(parsed.postApplyRediffSha256),
+      provenanceHashNormalization: storedStringOrNull(parsed.provenanceHashNormalization),
+      stalePatchRecovered: storedBooleanOrNull(parsed.stalePatchRecovered),
       storefrontProbe:
         parsed.storefrontProbe && typeof parsed.storefrontProbe === "object"
           ? (parsed.storefrontProbe as DummyStorefrontProbeResult)
@@ -3794,6 +3928,10 @@ export function CodingCockpitShell() {
   const [targetFile, setTargetFile] = useState("");
   const [allowedFiles, setAllowedFiles] = useState("");
   const [expectedChecks, setExpectedChecks] = useState("git diff --check");
+  const [composerMode, setComposerMode] = useState<ComposerMode>("coding");
+  const [designStudioComposerState, setDesignStudioComposerState] = useState<DesignStudioComposerState>(
+    () => idleDesignStudioComposerState(),
+  );
   const [draftReady, setDraftReady] = useState(false);
   const [previewState, setPreviewState] = useState<PreviewState>(() => idlePreviewState());
   const [diagnosticCopyStatus, setDiagnosticCopyStatus] = useState("");
@@ -5426,6 +5564,7 @@ export function CodingCockpitShell() {
     setDesignReportCopyStatus("");
     setCombinedCopyStatus("");
     setReversalStatus("");
+    setDesignStudioComposerState(idleDesignStudioComposerState());
     setPreviewState(idlePreviewState());
   }
 
@@ -5444,6 +5583,100 @@ export function CodingCockpitShell() {
     }
     setTask(value);
     resetPreviewForEdit();
+  }
+
+  function handleComposerModeChange(mode: ComposerMode) {
+    setComposerMode(mode);
+    resetPreviewForEdit();
+  }
+
+  async function handleDesignStudioPreview() {
+    const trimmedTask = task.trim();
+    const requestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? `design-studio-${crypto.randomUUID()}`
+        : `design-studio-${Date.now()}`;
+    const runStartedAt = performance.now();
+    setDraftReady(true);
+    rememberPromptSnapshot(task);
+    setComposerTiming({
+      diffPreviewMs: null,
+      promptPacketMs: null,
+      runStartedAt,
+      totalMs: null,
+    });
+    setPreviewState(idlePreviewState());
+    setDesignStudioComposerState({
+      endpointStatus: "started",
+      error: null,
+      isLoading: true,
+      outcome: null,
+      reason: null,
+      requestId,
+      status: "running",
+      traceId: null,
+    });
+    try {
+      const response = await fetchWithTimeout(
+        "/v1/coding/design-studio/preview",
+        {
+          body: JSON.stringify({
+            model_probe: {
+              enabled: true,
+              model: "phi4-mini:latest",
+              provider: "ollama",
+              require_source: false,
+              timeout_ms: 60_000,
+            },
+            prompt: trimmedTask,
+            request_id: requestId,
+            target_surface: "/coding/design-demo",
+          }),
+          headers: {
+            "content-type": "application/json",
+            "x-design-studio-request-id": requestId,
+          },
+          method: "POST",
+        },
+        MANUAL_PROMPT_PACKET_TIMEOUT_MS,
+      );
+      const payload = await readJson(response);
+      if (!response.ok) {
+        throw new Error(messageFromPayload(payload, response.status));
+      }
+      const record = asRecord(payload);
+      const previewPacket = asRecord(record.preview_packet);
+      const messyPromptResult = asRecord(record.messy_prompt_result);
+      const outcome = stringValue(messyPromptResult.outcome) ?? stringValue(record.status) ?? "DESIGN_STUDIO_PREVIEW";
+      const reason = stringValue(messyPromptResult.reason) ?? stringValue(record.reason_code);
+      const traceId = stringValue(previewPacket.trace_id) ?? stringValue(record.trace_id) ?? "not returned";
+      setDesignStudioComposerState({
+        endpointStatus: `/v1/coding/design-studio/preview:${response.status}`,
+        error: null,
+        isLoading: false,
+        outcome,
+        reason: reason ?? null,
+        requestId,
+        status: outcome === "ASK_CLARIFY_TARGET" ? "blocked" : "ready",
+        traceId,
+      });
+    } catch (error) {
+      setDesignStudioComposerState({
+        endpointStatus: "/v1/coding/design-studio/preview:failed",
+        error: error instanceof Error ? error.message : "Design Studio preview failed.",
+        isLoading: false,
+        outcome: null,
+        reason: null,
+        requestId,
+        status: "error",
+        traceId: null,
+      });
+    } finally {
+      setComposerTiming((current) => ({
+        ...current,
+        totalMs: elapsedMs(runStartedAt),
+      }));
+    }
   }
 
   function handleRewindPrompt() {
@@ -6090,14 +6323,17 @@ export function CodingCockpitShell() {
     () => dummyCoder10Prompts.find((prompt) => prompt.id === selectedDummyCoderPromptId) ?? dummyCoder10Prompts[0],
     [selectedDummyCoderPromptId],
   );
-  const existingDummyProjectSummary = useMemo(
-    () => {
+  const existingDummyProjectSummaryForBaseline = useCallback(
+    (baseline: AgentLabBaselineSnapshot | null | undefined) => {
       // Baseline truth must come from the same Source Proxy sweep that the UI shows
       // for "baseline dirty/clean", not from a hardcoded empty file list. A hardcoded
       // empty list produced the contradictory report: "already_satisfied / files present"
       // alongside "LumaCart is not present". Filter the baseline probe to the
       // dummy-product-site fixture root so the summary reflects disk truth.
-      const probeFiles = (agentLabBaselineSnapshot?.baseline_agent_lab_files ?? []).filter(
+      const probeFiles = [
+        ...(baseline?.baseline_agent_lab_files ?? []),
+        ...(baseline?.baseline_dirty_agent_lab_files ?? []),
+      ].filter(
         (path) => isDummyProductSiteTrialPath(path),
       );
       // The baseline probe is captured before a run; immediately after a successful apply the
@@ -6110,15 +6346,21 @@ export function CodingCockpitShell() {
         files: [...probeFiles, ...appliedDummyFiles],
       });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [agentLabBaselineSnapshot?.baseline_agent_lab_files, dummyCoderRunState.changedFiles],
+    [dummyCoderRunState.changedFiles],
+  );
+  const existingDummyProjectSummary = useMemo(
+    () => existingDummyProjectSummaryForBaseline(agentLabBaselineSnapshot),
+    [agentLabBaselineSnapshot, existingDummyProjectSummaryForBaseline],
   );
   const selectedDummyCoderPacket = useMemo(
     () => buildDummyCoder10RunnerPacket(selectedDummyCoderPrompt, existingDummyProjectSummary),
     [existingDummyProjectSummary, selectedDummyCoderPrompt],
   );
 
-  function dummyCoder10DiagnosticsText(state = dummyCoderRunState) {
+  function dummyCoder10DiagnosticsText(
+    state = dummyCoderRunState,
+    dummyProjectSummary = existingDummyProjectSummary,
+  ) {
     const grader = state.grader;
     const productionTime =
       state.startedAt != null && state.finishedAt != null
@@ -6132,6 +6374,7 @@ export function CodingCockpitShell() {
         "selected_prompt_task_id: none",
         "selected_prompt_status: cleared",
         "message: no active selected-prompt result",
+        `existing_dummy_project_summary: ${dummyProjectSummary}`,
       ].join("\n");
     }
     return [
@@ -6154,9 +6397,23 @@ export function CodingCockpitShell() {
       `diff_source: ${state.diffSource ?? "none"}`,
       `model_output_classification: ${state.modelOutputClassification ?? "none"}`,
       `trial_result_trust_status: ${state.trialResultTrustStatus ?? "none"}`,
+      ...selectedPromptAuditDiagnosticsLines({ grader, state }),
+      `anti_cheat_status: ${grader?.provenance?.anti_cheat_status ?? "not graded"}`,
+      `anti_cheat_hard_fail_ids: ${formatList(grader?.provenance?.anti_cheat_hard_fail_ids ?? [], "none")}`,
+      `anti_cheat_advisory_ids: ${formatList(grader?.provenance?.anti_cheat_advisory_ids ?? [], "none")}`,
+      `anti_cheat_reasons: ${formatList(grader?.provenance?.anti_cheat_reasons ?? [], "none")}`,
+      `raw_model_response_sha256: ${state.rawModelResponseSha256 ?? "not recorded"}`,
+      `model_file_bundle_sha256: ${state.modelFileBundleSha256 ?? "not recorded"}`,
+      `backend_converted_diff_sha256: ${state.backendConvertedDiffSha256 ?? "not recorded"}`,
+      `approved_diff_sha256: ${state.approvedDiffSha256 ?? "not recorded"}`,
+      `applied_diff_sha256: ${state.appliedDiffSha256 ?? "not recorded"}`,
+      `post_apply_rediff_sha256: ${state.postApplyRediffSha256 ?? "not recorded"}`,
+      `provenance_hash_normalization: ${state.provenanceHashNormalization ?? "not recorded"}`,
       `scaffold_used: ${String(state.scaffoldUsed ?? false)}`,
       `fallback_used: ${String(state.fallbackUsed ?? false)}`,
       `generated_diff_by_backend: ${String(state.generatedDiffByBackend ?? false)}`,
+      `apply_mode: ${state.applyMode ?? "not recorded"}`,
+      `stale_patch_recovered: ${String(state.stalePatchRecovered ?? false)}`,
       `grader_result_state: ${grader?.resultState ?? "not graded"}`,
       `grader_label: ${grader?.label ?? "not graded"}`,
       `grader_score: ${grader?.score ?? "not graded"}`,
@@ -6170,16 +6427,33 @@ export function CodingCockpitShell() {
       `preview_visible_text_summary: ${state.storefrontProbe?.preview_visible_text_summary ?? "not probed"}`,
       `preview_asset_status: ${state.storefrontProbe?.preview_asset_status ?? "not probed"}`,
       `preview_product_count: ${state.storefrontProbe?.product_count ?? "not probed"}`,
-      `existing_dummy_project_summary: ${existingDummyProjectSummary}`,
+      `storefront_runtime_status: ${state.storefrontProbe?.storefront_runtime_status ?? "not probed"}`,
+      `storefront_runtime_engine: ${state.storefrontProbe?.storefront_runtime_engine ?? "not probed"}`,
+      `storefront_runtime_product_count: ${state.storefrontProbe?.storefront_runtime_product_count ?? "not probed"}`,
+      `existing_dummy_project_summary: ${dummyProjectSummary}`,
     ].join("\n");
   }
 
   async function copyDummyCoder10Diagnostics() {
-    const copied = await copyTextToClipboard(dummyCoder10DiagnosticsText());
+    const freshBaseline = agentLabBaselineSnapshot ?? await refreshAgentLabBaseline();
+    const copied = await copyTextToClipboard(
+      dummyCoder10DiagnosticsText(
+        dummyCoderRunState,
+        existingDummyProjectSummaryForBaseline(freshBaseline),
+      ),
+    );
     setDummyCoderRunCopyStatus(copied.ok ? "Selected prompt diagnostics copied." : "Diagnostics ready; clipboard unavailable.");
   }
 
+  function cancelSelectedPromptBackendTask(taskId: string | null | undefined) {
+    if (!taskId) return;
+    void fetch(`/v1/tasks/long-running/${encodeURIComponent(taskId)}/cancel`, {
+      method: "POST",
+    }).catch(() => undefined);
+  }
+
   function clearDummyCoder10RunState(message = "No applied selected-prompt edits to reverse. Results cleared.") {
+    cancelSelectedPromptBackendTask(dummyCoderRunState.taskId);
     setDummyCoderRunCopyStatus("");
     clearStoredDummyCoderRunState();
     updateDummyCoderRunState(defaultDummyCoderRunState(message, "cleared"));
@@ -6241,6 +6515,7 @@ export function CodingCockpitShell() {
     // full packet timeout or treating it as an error.
     selectedPromptAbortRef.current?.abort();
     selectedPromptAbortRef.current = null;
+    cancelSelectedPromptBackendTask(dummyCoderRunState.taskId);
     updateDummyCoderRunState((current) => {
       if (
         current.status !== "starting" &&
@@ -6281,6 +6556,8 @@ export function CodingCockpitShell() {
       grader: null,
       message: SELECTED_PROMPT_WAITING_FOR_TASK_ID,
       modelOutputClassification: null,
+      noDiffFailureCause: null,
+      parserExtractorDecision: null,
       packet,
       rawBackendStatus: "/v1/tasks/long-running:creating_task",
       recommendedNextAction: null,
@@ -6288,6 +6565,15 @@ export function CodingCockpitShell() {
       selectedPromptId: prompt.id,
       startedAt: Date.now(),
       finishedAt: null,
+      applyMode: null,
+      appliedDiffSha256: null,
+      approvedDiffSha256: null,
+      backendConvertedDiffSha256: null,
+      modelFileBundleSha256: null,
+      postApplyRediffSha256: null,
+      provenanceHashNormalization: null,
+      rawModelResponseSha256: null,
+      stalePatchRecovered: null,
       storefrontProbe: null,
       taskId: null,
       status: "starting",
@@ -6375,16 +6661,50 @@ export function CodingCockpitShell() {
       const rawBackendStatus = stringValue(record.status) ?? `http_${response.status}`;
       const reasonCode = stringValue(record.reason_code) ?? stringValue(record.reasonCode);
       const scaffoldUsed = booleanValue(record.scaffold_used) ?? booleanValue(coderDiagnostics.scaffold_used);
-      const fallbackUsed = booleanValue(record.fallback_used) ?? booleanValue(coderDiagnostics.fallback_used);
+      let fallbackUsed = booleanValue(record.fallback_used) ?? booleanValue(coderDiagnostics.fallback_used);
       const generatedDiffByBackend =
         booleanValue(record.generated_diff_by_backend) ?? booleanValue(coderDiagnostics.generated_diff_by_backend);
       const generationSource =
         stringValue(record.generation_source) ?? stringValue(coderDiagnostics.generation_source) ?? null;
-      const diffSource = stringValue(record.diff_source) ?? stringValue(coderDiagnostics.diff_source) ?? null;
+      let diffSource = stringValue(record.diff_source) ?? stringValue(coderDiagnostics.diff_source) ?? null;
       const modelOutputClassification =
         stringValue(record.model_output_classification) ?? stringValue(coderDiagnostics.model_output_classification) ?? null;
-      const trialResultTrustStatus =
+      const noDiffFailureCause =
+        stringValue(record.no_diff_failure_cause) ??
+        stringValue(record.noDiffFailureCause) ??
+        stringValue(record.safe_response_classification) ??
+        stringValue(record.safeResponseClassification) ??
+        stringValue(coderDiagnostics.no_diff_failure_cause) ??
+        stringValue(coderDiagnostics.noDiffFailureCause) ??
+        stringValue(coderDiagnostics.safe_response_classification) ??
+        stringValue(coderDiagnostics.safeResponseClassification) ??
+        null;
+      const parserExtractorDecision =
+        stringValue(record.parser_extractor_decision) ??
+        stringValue(record.parserExtractorDecision) ??
+        stringValue(coderDiagnostics.parser_extractor_decision) ??
+        stringValue(coderDiagnostics.parserExtractorDecision) ??
+        null;
+      let trialResultTrustStatus =
         stringValue(record.trial_result_trust_status) ?? stringValue(coderDiagnostics.trial_result_trust_status) ?? null;
+      const rawModelResponseSha256 =
+        stringValue(record.raw_model_response_sha256) ?? stringValue(coderDiagnostics.raw_model_response_sha256) ?? null;
+      const modelFileBundleSha256 =
+        stringValue(record.model_file_bundle_sha256) ?? stringValue(coderDiagnostics.model_file_bundle_sha256) ?? null;
+      const backendConvertedDiffSha256 =
+        stringValue(record.backend_converted_diff_sha256) ?? stringValue(coderDiagnostics.backend_converted_diff_sha256) ?? null;
+      let approvedDiffSha256 =
+        stringValue(record.approved_diff_sha256) ?? stringValue(coderDiagnostics.approved_diff_sha256) ?? null;
+      let appliedDiffSha256 =
+        stringValue(record.applied_diff_sha256) ?? stringValue(coderDiagnostics.applied_diff_sha256) ?? null;
+      let postApplyRediffSha256 =
+        stringValue(record.post_apply_rediff_sha256) ?? stringValue(coderDiagnostics.post_apply_rediff_sha256) ?? null;
+      let provenanceHashNormalization =
+        stringValue(record.provenance_hash_normalization) ?? stringValue(coderDiagnostics.provenance_hash_normalization) ?? null;
+      let applyModeForGrader =
+        stringValue(record.apply_mode) ?? stringValue(coderDiagnostics.apply_mode) ?? null;
+      let stalePatchRecoveredForGrader =
+        booleanValue(record.stale_patch_recovered) ?? booleanValue(coderDiagnostics.stale_patch_recovered) ?? null;
       const alreadySatisfied = record.already_satisfied === true || record.alreadySatisfied === true;
       const existingStarterFilesPresent =
         coderDiagnostics.existing_starter_files_present === true ||
@@ -6392,22 +6712,35 @@ export function CodingCockpitShell() {
       const existingProductDataValidation = asRecord(
         coderDiagnostics.existing_product_data_validation ?? coderDiagnostics.existingProductDataValidation,
       );
-      const productDataFieldsPresent =
+      let productDataFieldsPresent =
         coderDiagnostics.existing_product_data_present === true ||
         coderDiagnostics.existingProductDataPresent === true ||
         existingProductDataValidation.ok === true;
+      const existingProductCardsValidation = asRecord(
+        coderDiagnostics.existing_product_cards_validation ?? coderDiagnostics.existingProductCardsValidation,
+      );
+      const productCardsRenderPresent =
+        coderDiagnostics.existing_product_cards_present === true ||
+        coderDiagnostics.existingProductCardsPresent === true ||
+        existingProductCardsValidation.ok === true;
       const prompt2AlreadySatisfied =
         prompt.id === "coder-002-add-product-data" &&
         alreadySatisfied &&
         productDataFieldsPresent &&
         /already|satisfied|no[_ -]?changes|coder_no_changes_needed/i.test(`${reasonCode} ${rawBackendStatus}`);
+      const prompt3AlreadySatisfied =
+        prompt.id === "coder-003-render-product-cards" &&
+        alreadySatisfied &&
+        productCardsRenderPresent &&
+        /already|satisfied|no[_ -]?changes|coder_no_changes_needed/i.test(`${reasonCode} ${rawBackendStatus}`);
       const blockedReason =
         prompt.allowBlockedPass && /protect|secret|env|source_proxy|blocked/i.test(`${reasonCode} ${rawBackendStatus}`)
           ? reasonCode ?? rawBackendStatus
           : null;
-      const noOpEvidence =
+      let noOpEvidence =
         (prompt.allowNoopPass ||
           prompt2AlreadySatisfied ||
+          prompt3AlreadySatisfied ||
           (prompt.id === "coder-001-init-dummy-product-site" && existingStarterFilesPresent)) &&
         /category|already|no[_ -]?changes|satisfied/i.test(`${reasonCode} ${rawBackendStatus}`)
           ? stringValue(record.simple_reason) ?? stringValue(record.reason) ?? stringValue(record.message) ?? rawBackendStatus
@@ -6415,9 +6748,32 @@ export function CodingCockpitShell() {
       let appliedChangedFiles = changedFiles;
       let verificationStatus = stringValue(record.verification_status) ?? stringValue(record.checks_result) ?? null;
       let applyMessage: string | null = null;
+      let prompt3Context: { currentIndexHtml?: string; currentMainJs?: string } | undefined;
+      if (prompt.id === "coder-003-render-product-cards" && proposedDiff.trim()) {
+        try {
+          const [indexResponse, mainResponse] = await Promise.all([
+            fetchWithTimeout(
+              "/v1/coding/dummy-product-site-preview/index.html",
+              { cache: "no-store" },
+              TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+            ),
+            fetchWithTimeout(
+              "/v1/coding/dummy-product-site-preview/src/main.js",
+              { cache: "no-store" },
+              TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+            ),
+          ]);
+          prompt3Context = {
+            currentIndexHtml: indexResponse.ok ? await indexResponse.text() : "",
+            currentMainJs: mainResponse.ok ? await mainResponse.text() : "",
+          };
+        } catch {
+          prompt3Context = undefined;
+        }
+      }
       const prompt3Violations =
         prompt.id === "coder-003-render-product-cards" && proposedDiff.trim()
-          ? selectedPrompt3DiffViolations(proposedDiff)
+          ? selectedPrompt3DiffViolations(proposedDiff, prompt3Context)
           : [];
       if (prompt3Violations.length > 0) {
         updateDummyCoderRunState((current) => ({
@@ -6497,6 +6853,54 @@ export function CodingCockpitShell() {
         appliedChangedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
         applyMessage = messageFromPayload(applyPayload, applyResponse.status);
         verificationStatus = applyMessage;
+        const applyRecord =
+          applyPayload && typeof applyPayload === "object"
+            ? (applyPayload as Record<string, unknown>)
+            : null;
+        const applyModeFromPayload =
+          typeof applyRecord?.apply_mode === "string" ? applyRecord.apply_mode : null;
+        const stalePatchRecoveredFromPayload = Boolean(applyRecord?.stale_patch_recovered);
+        approvedDiffSha256 =
+          typeof applyRecord?.approved_diff_sha256 === "string" ? applyRecord.approved_diff_sha256 : approvedDiffSha256;
+        appliedDiffSha256 =
+          typeof applyRecord?.applied_diff_sha256 === "string" ? applyRecord.applied_diff_sha256 : appliedDiffSha256;
+        postApplyRediffSha256 =
+          typeof applyRecord?.post_apply_rediff_sha256 === "string" ? applyRecord.post_apply_rediff_sha256 : postApplyRediffSha256;
+        provenanceHashNormalization =
+          typeof applyRecord?.provenance_hash_normalization === "string"
+            ? applyRecord.provenance_hash_normalization
+            : provenanceHashNormalization;
+        applyModeForGrader = applyModeFromPayload ?? applyModeForGrader;
+        stalePatchRecoveredForGrader = stalePatchRecoveredFromPayload;
+        // Recovery provenance override: if execute-approved reports that git
+        // apply --check failed and the backend wrote a deterministic fixture
+        // solution itself, the on-disk bytes are NOT model-authored. Override
+        // the upstream model-authored labels so the grader and diagnostics
+        // cannot launder the recovery as a model-authored PASS.
+        const recoveryFallbackUsed = Boolean(applyRecord?.recovery_fallback_used);
+        const recoveryDiffSource =
+          typeof applyRecord?.recovery_diff_source === "string" ? applyRecord.recovery_diff_source : null;
+        const recoveryTrustStatus =
+          typeof applyRecord?.recovery_trust_status === "string" ? applyRecord.recovery_trust_status : null;
+        if (recoveryFallbackUsed) {
+          fallbackUsed = true;
+          diffSource = recoveryDiffSource ?? diffSource;
+          trialResultTrustStatus = recoveryTrustStatus ?? trialResultTrustStatus;
+        }
+        updateDummyCoderRunState((current) => ({
+          ...current,
+          applyMode: applyModeFromPayload,
+          appliedDiffSha256,
+          approvedDiffSha256,
+          backendConvertedDiffSha256,
+          stalePatchRecovered: stalePatchRecoveredFromPayload,
+          postApplyRediffSha256,
+          provenanceHashNormalization,
+          diffSource: recoveryFallbackUsed && recoveryDiffSource ? recoveryDiffSource : current.diffSource,
+          fallbackUsed: recoveryFallbackUsed || current.fallbackUsed,
+          trialResultTrustStatus:
+            recoveryFallbackUsed && recoveryTrustStatus ? recoveryTrustStatus : current.trialResultTrustStatus,
+        }));
         const appliedAt = new Date().toISOString();
         const receipt: AppliedRunReceipt = {
           allowedFiles: [prompt.allowedWriteRoot],
@@ -6552,6 +6956,41 @@ export function CodingCockpitShell() {
           storefrontProbe = null;
         }
       }
+      if (prompt.id === "coder-002-add-product-data" && applyMessage) {
+        try {
+          const fileResponse = await fetchWithTimeout(
+            "/v1/coding/dummy-product-site-preview/src/products.js",
+            { cache: "no-store" },
+            TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+          );
+          const productsSource = fileResponse.ok ? await fileResponse.text() : "";
+          productDataFieldsPresent = dummyProductDataFieldsPresentFromSource(productsSource);
+        } catch {
+          productDataFieldsPresent = false;
+        }
+      }
+      const storefrontProofPresent =
+        storefrontProbe?.preview_behavior_status === "PASS_STOREFRONT_RENDERED" &&
+        storefrontProbe.preview_asset_status === "present" &&
+        storefrontProbe.product_count >= 6 &&
+        storefrontProbe.card_render_path_present &&
+        storefrontProbe.category_render_path_present &&
+        storefrontProbe.description_render_path_present &&
+        storefrontProbe.price_render_path_present &&
+        storefrontProbe.storefront_runtime_status === "passed";
+      if (
+        !noOpEvidence &&
+        prompt.id === "coder-003-render-product-cards" &&
+        alreadySatisfied &&
+        storefrontProofPresent &&
+        /already|satisfied|no[_ -]?changes|coder_no_changes_needed/i.test(`${reasonCode} ${rawBackendStatus}`)
+      ) {
+        noOpEvidence =
+          stringValue(record.simple_reason) ??
+          stringValue(record.reason) ??
+          stringValue(record.message) ??
+          "Prompt 3 already satisfied: existing LumaCart cards render from product data.";
+      }
 
       const grader = gradeDummyCoder10Result({
         blockedReason,
@@ -6574,14 +7013,24 @@ export function CodingCockpitShell() {
           ? alreadySatisfied && existingStarterFilesPresent
           : undefined,
         provenance: {
+          applied_diff_sha256: appliedDiffSha256,
+          apply_mode: applyModeForGrader,
+          approved_diff_sha256: approvedDiffSha256,
+          backend_converted_diff_sha256: backendConvertedDiffSha256,
           diff_source: diffSource,
           fallback_used: fallbackUsed,
           generated_diff_by_backend: generatedDiffByBackend,
           generation_source: generationSource,
+          model_file_bundle_sha256: modelFileBundleSha256,
           model_output_classification: modelOutputClassification,
           model_output_usable: booleanValue(record.model_output_usable),
+          post_apply_rediff_sha256: postApplyRediffSha256,
+          provenance_hash_normalization: provenanceHashNormalization,
           provider_call_made: booleanValue(record.provider_call_made),
+          raw_backend_status: rawBackendStatus,
+          raw_model_response_sha256: rawModelResponseSha256,
           scaffold_used: scaffoldUsed,
+          stale_patch_recovered: stalePatchRecoveredForGrader,
           trial_result_trust_status: trialResultTrustStatus,
         },
         storefrontProbe,
@@ -6601,17 +7050,33 @@ export function CodingCockpitShell() {
         ...current,
         changedFiles: appliedChangedFiles,
         checksRun,
+        appliedDiffSha256,
+        approvedDiffSha256,
+        backendConvertedDiffSha256,
         diffSource,
-        errorText: null,
+        errorText:
+          selectedPromptStatus === "blocked" && noDiffFailureCause && !proposedDiff.trim()
+            ? `No diff produced: ${noDiffFailureCause}${parserExtractorDecision ? `; ${parserExtractorDecision}` : ""}.`
+            : null,
         fallbackUsed,
         finishedAt: Date.now(),
         generatedDiffByBackend,
         generationSource,
         grader,
-        message: applyMessage ?? grader.reason,
+        message:
+          applyMessage ??
+          (selectedPromptStatus === "blocked" && noDiffFailureCause && !proposedDiff.trim()
+            ? `NEEDS FIX: ${noDiffFailureCause}. ${grader.reason}`
+            : grader.reason),
         modelOutputClassification,
+        noDiffFailureCause,
+        parserExtractorDecision,
         packet,
+        postApplyRediffSha256,
+        provenanceHashNormalization,
         rawBackendStatus,
+        rawModelResponseSha256,
+        modelFileBundleSha256,
         recommendedNextAction:
           stringValue(record.recommended_next_action) ??
           stringValue(record.next_recommended_action) ??
@@ -6637,7 +7102,7 @@ export function CodingCockpitShell() {
         abortController.signal.aborted ||
         (error instanceof DOMException && error.name === "AbortError") ||
         (error instanceof Error && /abort/i.test(error.message));
-      if (aborted) {
+      if (aborted && selectedPromptAbortRef.current !== abortController) {
         return;
       }
       failSelectedPromptStart(error);
@@ -6652,7 +7117,7 @@ export function CodingCockpitShell() {
     const unrevertedTargets = appliedRunReceiptsRef.current
       .filter((receipt) => receipt.id.startsWith("trial-suite:") && !receipt.revertedAt && !receipt.staleResolvedAt)
       .flatMap((receipt) => [receipt.target, ...receipt.changedFiles])
-      .filter((path) => isAgentLabTrialPath(path));
+      .filter((path) => isCoderTrialCleanupPath(path));
     try {
       const query = unrevertedTargets.length > 0 ? `?unreverted_targets=${encodeURIComponent(unrevertedTargets.join(","))}` : "";
       const response = await fetch(`/v1/coding/agent-lab-baseline${query}`, { cache: "no-store" });
@@ -6687,7 +7152,7 @@ export function CodingCockpitShell() {
     const unrevertedTargets = appliedRunReceiptsRef.current
       .filter((receipt) => receipt.id.startsWith("trial-suite:") && !receipt.revertedAt && !receipt.staleResolvedAt)
       .flatMap((receipt) => [receipt.target, ...receipt.changedFiles])
-      .filter((path) => isAgentLabTrialPath(path));
+      .filter((path) => isCoderTrialCleanupPath(path));
     // #region agent log
     fetch("http://localhost:7784/ingest/da155463-47fd-4bed-94cb-233903115f13", {
       method: "POST",
@@ -9903,7 +10368,10 @@ export function CodingCockpitShell() {
             invocationEventId: applyFailureTrace.invocationEventId,
             ...providerTruthPatch(proposalProviderTruth),
             outputHash: outputHashFromPayload(applyPayload),
-            plan2SubsystemIntegrations: proposalPlan2SubsystemIntegrations,
+            plan2SubsystemIntegrations:
+              plan2SubsystemIntegrationsFromPayload(applyPayload).length > 0
+                ? plan2SubsystemIntegrationsFromPayload(applyPayload)
+                : proposalPlan2SubsystemIntegrations,
             previewStatus: "execute-approved failed closed",
             requirementSummary: gate.requirementSummary,
             reasonCode: applyFailureReasonCode,
@@ -10213,6 +10681,10 @@ export function CodingCockpitShell() {
           invocationEventId: applyFailureTrace.invocationEventId,
           isApplying: false,
           outputHash: outputHashFromPayload(applyPayload),
+          plan2SubsystemIntegrations:
+            plan2SubsystemIntegrationsFromPayload(applyPayload).length > 0
+              ? plan2SubsystemIntegrationsFromPayload(applyPayload)
+              : current.plan2SubsystemIntegrations,
           reasonCode: applyFailureReasonCode,
           routeCalled: "/v1/actions/execute-approved",
           status: "error",
@@ -11344,9 +11816,13 @@ export function CodingCockpitShell() {
                         <p className={`mt-1 ${commandMutedClass}`}>
                           {dummyCoderRunState.taskId ? `Task ${dummyCoderRunState.taskId}` : "Task pending"} | Backend {dummyCoderRunState.rawBackendStatus ?? "not started"}
                         </p>
-                        <p className={`mt-1 ${commandTextClass}`}>
-                          {dummyCoderRunState.message || "Ready"}
-                        </p>
+                        {dummyCoderRunState.status === "running" ||
+                        dummyCoderRunState.status === "starting" ||
+                        dummyCoderRunState.status === "request_sent" ? null : (
+                          <p className={`mt-1 ${commandTextClass}`}>
+                            {dummyCoderRunState.message || "Ready"}
+                          </p>
+                        )}
                         {dummyCoderRunState.grader ? (
                           <p className={`mt-1 ${commandMutedClass}`}>
                             Grader: {dummyCoderRunState.grader.resultState} / score {dummyCoderRunState.grader.score}
@@ -11654,6 +12130,33 @@ export function CodingCockpitShell() {
                   Task Composer
                 </h2>
               </div>
+              <div
+                aria-label="Composer mode"
+                className="mb-4 grid gap-2 rounded-md border border-[var(--ddv4-pill-border)] bg-[var(--ddv4-surface-fill)] p-1 sm:grid-cols-2"
+                role="group"
+              >
+                {[
+                  ["coding", "Coding"],
+                  ["design_studio", "Design Studio"],
+                ].map(([mode, label]) => {
+                  const selected = composerMode === mode;
+                  return (
+                    <button
+                      aria-pressed={selected}
+                      className={`min-h-10 rounded px-3 text-sm font-semibold transition-colors ${
+                        selected
+                          ? "bg-emerald-300 text-slate-950"
+                          : "text-[var(--ddv4-fg-muted)] hover:bg-[var(--ddv4-pill-bg)] hover:text-[var(--ddv4-fg)]"
+                      } ${commandFocusClass}`}
+                      key={mode}
+                      onClick={() => handleComposerModeChange(mode as ComposerMode)}
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
               <label className="block">
                 <span className="sr-only">Coding prompt</span>
                 <textarea
@@ -11668,12 +12171,22 @@ export function CodingCockpitShell() {
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <button
                   className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
-                  disabled={!canStartTask || previewState.isLoading || previewState.isApplying || isReverting}
-                  onClick={handleDraftPreview}
+                  disabled={
+                    !canStartTask ||
+                    previewState.isLoading ||
+                    previewState.isApplying ||
+                    designStudioComposerState.isLoading ||
+                    isReverting
+                  }
+                  onClick={composerMode === "design_studio" ? handleDesignStudioPreview : handleDraftPreview}
                   type="button"
                 >
                   <ShieldCheck aria-hidden="true" size={18} />
-                  {previewState.isLoading || previewState.isApplying ? "Working..." : "Start coding"}
+                  {previewState.isLoading || previewState.isApplying || designStudioComposerState.isLoading
+                    ? "Working..."
+                    : composerMode === "design_studio"
+                      ? "Start Design Studio"
+                      : "Start coding"}
                 </button>
                 {previewState.isLoading || previewState.isApplying || isReverting ? (
                   <button
@@ -11727,6 +12240,36 @@ export function CodingCockpitShell() {
                 <p className={`mt-2 text-xs ${commandMutedClass}`}>
                   Undo is available after Start coding applies a reversible change.
                 </p>
+              ) : null}
+              {composerMode === "design_studio" && designStudioComposerState.status !== "idle" ? (
+                <div className={`${commandInsetClass} mt-4 p-3`} aria-live="polite">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className={`text-sm font-semibold ${commandTextClass}`}>Design Studio run</p>
+                    <span className="rounded border border-[var(--ddv4-pill-border)] px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ddv4-fg)]">
+                      {designStudioComposerState.status}
+                    </span>
+                  </div>
+                  <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                    {[
+                      ["request_id", designStudioComposerState.requestId ?? "none"],
+                      ["trace_id", designStudioComposerState.traceId ?? "pending"],
+                      ["endpoint", designStudioComposerState.endpointStatus ?? "pending"],
+                      ["outcome", designStudioComposerState.outcome ?? designStudioComposerState.error ?? "pending"],
+                    ].map(([label, value]) => (
+                      <div className="min-w-0" key={label}>
+                        <dt className={commandLabelClass}>{label}</dt>
+                        <dd className={`mt-1 truncate font-mono ${commandTextClass}`} title={value}>
+                          {value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {designStudioComposerState.reason ? (
+                    <p className={`mt-2 text-xs ${commandMutedClass}`}>
+                      Reason: {designStudioComposerState.reason}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
             </section>
 
@@ -13662,6 +14205,7 @@ async function fetchPromptPacketWithRetry(
 
 function timeoutLayerFromError(error: unknown): "browser_abort_timeout" | "source_proxy_timeout" | "long_running_task_timeout" | "ollama_provider_timeout" | "network_fetch_error" | "unknown_timeout" {
   if (error instanceof BrowserAbortTimeoutError) return error.timeoutLayer;
+  if (error instanceof DOMException && error.name === "AbortError") return "browser_abort_timeout";
   const message = error instanceof Error ? error.message.toLowerCase() : String(error ?? "").toLowerCase();
   if (message.includes("browser_abort_timeout") || message.includes("aborterror")) return "browser_abort_timeout";
   if (message.includes("coder_sync_timeout") || message.includes("source_proxy_timeout")) return "source_proxy_timeout";
@@ -13692,8 +14236,37 @@ function safePayloadSummary(payload: unknown): string {
   if (!payload || typeof payload !== "object") {
     return String(payload ?? "").slice(0, 400);
   }
+  const record = asRecord(payload);
+  const diagnostics = asRecord(record.coder_diagnostics ?? record.coderDiagnostics);
+  const diagnosticsSummary = asRecord(record.diagnostics_summary ?? record.diagnosticsSummary);
+  const compact = {
+    status: stringValue(record.status),
+    reason_code: stringValue(record.reason_code) ?? stringValue(record.reasonCode),
+    no_diff_failure_cause:
+      stringValue(record.no_diff_failure_cause) ??
+      stringValue(record.noDiffFailureCause) ??
+      stringValue(diagnostics.no_diff_failure_cause) ??
+      stringValue(diagnosticsSummary.no_diff_failure_cause),
+    safe_response_classification:
+      stringValue(record.safe_response_classification) ??
+      stringValue(record.safeResponseClassification) ??
+      stringValue(diagnostics.safe_response_classification) ??
+      stringValue(diagnosticsSummary.safe_response_classification),
+    parser_extractor_decision:
+      stringValue(record.parser_extractor_decision) ??
+      stringValue(record.parserExtractorDecision) ??
+      stringValue(diagnostics.parser_extractor_decision) ??
+      stringValue(diagnosticsSummary.parser_extractor_decision),
+    raw_response_length:
+      diagnostics.raw_response_length ?? diagnosticsSummary.raw_response_length,
+    raw_response_excerpt_safe:
+      stringValue(diagnostics.raw_response_excerpt_safe) ?? stringValue(diagnosticsSummary.raw_response_excerpt_safe),
+    selected_target: stringValue(record.target) ?? stringValue(record.selected_target),
+    allowed_files: arrayOfStrings(record.allowed_files),
+    changed_files: changedFilesFromPayload(payload),
+  };
   try {
-    return JSON.stringify(payload).slice(0, 800);
+    return JSON.stringify(compact).slice(0, 800);
   } catch {
     return "Response body could not be serialized.";
   }

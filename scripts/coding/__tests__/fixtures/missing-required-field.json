@@ -1,0 +1,10 @@
+{
+  "increment_id": "fixture-missing-required-field",
+  "plan_id": "00",
+  "phase_id": "0",
+  "started_at": "2026-07-02T20:10:00-04:00",
+  "completed_at": "2026-07-02T20:10:01-04:00",
+  "head_before": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "head_after": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "final_increment_verdict": "INCREMENT_GO_PROVEN"
+}

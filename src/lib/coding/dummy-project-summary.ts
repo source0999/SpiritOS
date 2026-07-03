@@ -114,6 +114,16 @@ export type DummyStorefrontProbeResult = {
   /** True when a stylesheet is linked and non-empty. */
   stylesheet_linked: boolean;
   visible_product_names?: string[];
+  storefront_runtime_status: "passed" | "failed" | "unavailable";
+  storefront_runtime_engine: "playwright_chromium" | "module_loader_fallback";
+  storefront_runtime_product_count: number;
+  storefront_runtime_visible_fields: {
+    name: boolean;
+    price: boolean;
+    category: boolean;
+    description: boolean;
+  };
+  storefront_runtime_reasons: string[];
 };
 
 const HEADING_RE = /<h1[^>]*>\s*([^<]+?)\s*<\/h1>/i;
@@ -181,9 +191,13 @@ export function probeDummyStorefront(input: DummyStorefrontProbeInput): DummySto
 
   const hasVisibleStorefront =
     product_count >= 1 && card_render_path_present && preview_asset_status === "present";
+  const moduleRuntime = moduleLoaderStorefrontProof({ html, products, script });
 
   return {
-    preview_behavior_status: hasVisibleStorefront ? "PASS_STOREFRONT_RENDERED" : "FAIL_BARE_PAGE",
+    preview_behavior_status:
+      hasVisibleStorefront && moduleRuntime.storefront_runtime_status === "passed"
+        ? "PASS_STOREFRONT_RENDERED"
+        : "FAIL_BARE_PAGE",
     preview_visible_text_summary,
     preview_asset_status,
     product_count,
@@ -192,6 +206,137 @@ export function probeDummyStorefront(input: DummyStorefrontProbeInput): DummySto
     description_render_path_present,
     price_render_path_present,
     stylesheet_linked,
+    ...moduleRuntime,
     visible_product_names,
   };
+}
+
+function moduleLoaderStorefrontProof(input: { html: string; products: string; script: string }) {
+  const reasons: string[] = [];
+  const htmlHasModuleScript = /<script\b[^>]*\btype=["']module["'][^>]*src=["']src\/main\.js["']/i.test(input.html);
+  const importsProducts = /import\s+products\s+from\s+['"]\.\/products\.js['"]\s*;?/i.test(input.script);
+  const productParse = parseProductsModuleForRuntime(input.products);
+  const productCount = productParse.products.length;
+  const execution = executeStorefrontModule(input.script, productParse.products);
+
+  if (!htmlHasModuleScript) reasons.push("module_script_missing");
+  if (!importsProducts) reasons.push("static_products_import_missing");
+  if (!productParse.ok) reasons.push(productParse.reason);
+  if (!execution.ok) reasons.push(execution.reason);
+  if (execution.productCount < productCount) reasons.push("runtime_product_count_incomplete");
+  for (const [field, visible] of Object.entries(execution.visibleFields)) {
+    if (!visible) reasons.push(`runtime_field_missing:${field}`);
+  }
+  if (productCount < 1) reasons.push("products_module_empty_or_unreadable");
+  if (/<noscript[\s\S]*product-card/i.test(input.html)) reasons.push("noscript_static_card_cheat");
+  if (/class=["'][^"']*product-card/i.test(input.html)) reasons.push("static_html_card_cheat");
+
+  return {
+    storefront_runtime_status: reasons.length === 0 ? "passed" as const : "failed" as const,
+    storefront_runtime_engine: "module_loader_fallback" as const,
+    storefront_runtime_product_count: execution.productCount,
+    storefront_runtime_visible_fields: execution.visibleFields,
+    storefront_runtime_reasons: reasons,
+  };
+}
+
+function parseProductsModuleForRuntime(source: string): { ok: true; products: Array<Record<string, unknown>> } | { ok: false; products: []; reason: string } {
+  const transformed = source
+    .replace(/export\s+default\s+products\s*;?/m, "")
+    .replace(/export\s+default\s+(\[[\s\S]*?\])\s*;?\s*$/m, "const products = $1;");
+  try {
+    const products = Function(`${transformed}\nreturn typeof products !== "undefined" ? products : [];`)();
+    return Array.isArray(products)
+      ? { ok: true, products: products.filter((item): item is Record<string, unknown> => item && typeof item === "object") }
+      : { ok: false, products: [], reason: "products_module_export_not_array" };
+  } catch {
+    return { ok: false, products: [], reason: "products_module_execution_failed" };
+  }
+}
+
+function executeStorefrontModule(script: string, products: Array<Record<string, unknown>>) {
+  const mount = fakeElement("main");
+  const document = {
+    createElement: (tagName: string) => fakeElement(tagName),
+    getElementById: (id: string) => (id === "product-list" ? mount : null),
+    querySelector: (selector: string) => (selector === "#product-list" ? mount : null),
+  };
+  const transformed = script.replace(/import\s+products\s+from\s+['"]\.\/products\.js['"]\s*;?/i, "const products = __products;");
+  try {
+    Function("__products", "document", "console", transformed)(products, document, { log: () => undefined });
+  } catch {
+    return {
+      ok: false,
+      productCount: 0,
+      reason: "runtime_module_execution_failed",
+      visibleFields: { category: false, description: false, name: false, price: false },
+    };
+  }
+  const renderedText = mount.renderedText();
+  const visibleFields = {
+    name: products.every((product) => fieldVisible(renderedText, product.name)),
+    price: products.every((product) => fieldVisible(renderedText, product.price)),
+    category: products.every((product) => fieldVisible(renderedText, product.category)),
+    description: products.every((product) => fieldVisible(renderedText, product.description)),
+  };
+  const productCount = products.filter((product) => fieldVisible(renderedText, product.name)).length;
+  return {
+    ok: mount.children.length > 0 || renderedText.trim().length > 0,
+    productCount,
+    reason: mount.children.length > 0 || renderedText.trim().length > 0 ? "" : "runtime_card_creation_missing",
+    visibleFields,
+  };
+}
+
+type RuntimeFakeElement = {
+  tagName: string;
+  children: RuntimeFakeElement[];
+  className: string;
+  classList: { add: (...names: string[]) => void };
+  appendChild: (child: RuntimeFakeElement) => RuntimeFakeElement;
+  insertAdjacentHTML: (_position: string, value: string) => void;
+  innerHTML: string;
+  textContent: string;
+  renderedText: () => string;
+};
+
+function fakeElement(tagName: string): RuntimeFakeElement {
+  let html = "";
+  let text = "";
+  const element: RuntimeFakeElement = {
+    tagName,
+    children: [],
+    className: "",
+    classList: {
+      add: (...names: string[]) => {
+        element.className = [element.className, ...names].filter(Boolean).join(" ");
+      },
+    },
+    appendChild: (child: RuntimeFakeElement) => {
+      element.children.push(child);
+      return child;
+    },
+    insertAdjacentHTML: (_position: string, value: string) => {
+      html += String(value);
+    },
+    set innerHTML(value: string) {
+      html = String(value);
+    },
+    get innerHTML() {
+      return html;
+    },
+    set textContent(value: string) {
+      text = String(value);
+    },
+    get textContent() {
+      return text;
+    },
+    renderedText: (): string => [html, text, ...element.children.map((child: RuntimeFakeElement) => child.renderedText())].join(" "),
+  };
+  return element;
+}
+
+function fieldVisible(renderedText: string, value: unknown) {
+  const text = String(value ?? "").trim();
+  return text.length > 0 && renderedText.includes(text);
 }

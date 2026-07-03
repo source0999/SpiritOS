@@ -1,4 +1,8 @@
-import { isAgentLabTrialPath } from "@/lib/coding/agent-lab-cleanup";
+import {
+  DUMMY_PRODUCT_SITE_TRIAL_FILES,
+  DUMMY_PRODUCT_SITE_TRIAL_ROOT,
+  isCoderTrialCleanupPath,
+} from "@/lib/coding/agent-lab-cleanup";
 import type { DurableCodingRun, DurableCodingRunRow } from "@/lib/coding/durable-run-types";
 
 export const AGENT_LAB_BASELINE_ROOTS = [
@@ -7,6 +11,7 @@ export const AGENT_LAB_BASELINE_ROOTS = [
   "src/lib/agent-lab",
   "src/app/api/agent-lab",
   "tests/agent-lab",
+  DUMMY_PRODUCT_SITE_TRIAL_ROOT.replace(/\/$/, ""),
 ] as const;
 
 /** Known Coder ×10 page targets probed when workspace list is shallow. */
@@ -20,6 +25,7 @@ export const AGENT_LAB_CODER_PROBE_PATHS = [
   "src/app/agent-lab/theme/page.tsx",
   "src/app/agent-lab/notes/page.tsx",
   "src/app/agent-lab/proxy-health/page.tsx",
+  ...DUMMY_PRODUCT_SITE_TRIAL_FILES,
 ] as const;
 
 export type TrialApplyStepInstrumentation = {
@@ -317,7 +323,7 @@ export function evaluateAgentLabBaseline(input: {
   ).sort();
   const dirtyFromReceipts = input.unrevertedReceiptTargets
     .map(normalizeRepoPathForTrial)
-    .filter((path) => isAgentLabTrialPath(path));
+    .filter((path) => isCoderTrialCleanupPath(path));
   const baseline_unreverted_receipts = Array.from(new Set(dirtyFromReceipts)).sort();
   const baseline_dirty_agent_lab_files = Array.from(
     new Set([...baseline_agent_lab_files, ...baseline_unreverted_receipts]),
@@ -337,15 +343,15 @@ export function classifyCurrentSuiteAgentLabFiles(input: {
   dirtyAgentLabFiles: string[];
 }): CurrentSuiteAgentLabFileClassification {
   const expected = new Set(
-    input.completedPromptChangedFiles
+      input.completedPromptChangedFiles
       .map(normalizeRepoPathForTrial)
-      .filter((path) => path && isAgentLabTrialPath(path)),
+      .filter((path) => path && isCoderTrialCleanupPath(path)),
   );
   const dirty = Array.from(
     new Set(
       input.dirtyAgentLabFiles
         .map(normalizeRepoPathForTrial)
-        .filter((path) => path && isAgentLabTrialPath(path)),
+        .filter((path) => path && isCoderTrialCleanupPath(path)),
     ),
   ).sort();
   return {
@@ -404,7 +410,9 @@ export function classifyNoDiffModelResponse(input: {
     ...asTrialRecord(record.coderDiagnostics),
   };
   const rawResponseLength = Number(diagnostics.raw_response_length ?? 0) || 0;
-  const safeExcerpt = safeModelExcerpt(diagnostics.raw_response_excerpt);
+  const safeExcerpt = safeModelExcerpt(
+    diagnostics.raw_response_excerpt_safe ?? diagnostics.raw_response_excerpt,
+  );
   const reasonFromPayload = trialString(record.reason_code) || trialString(record.reasonCode);
   const parseErrorClass = trialString(diagnostics.parse_error_class);
   const parseErrorMessage = trialString(diagnostics.parse_error_message);

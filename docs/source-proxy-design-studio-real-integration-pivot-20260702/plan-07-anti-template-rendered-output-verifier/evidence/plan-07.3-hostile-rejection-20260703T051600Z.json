@@ -1,0 +1,46 @@
+{
+  "captured_at": "2026-07-03T01:16:00-04:00",
+  "increment_id": "07.3-hostile-rejection-test",
+  "ok": true,
+  "anti_template_verdict_id": "hostile-purple-blue-saas-20260703T051600Z",
+  "runtime_harness": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-07-anti-template-rendered-output-verifier/evidence/plan-07.3-verifier-runtime-20260703T051600Z.cjs",
+  "hostile_fixture": "generic purple/blue glass SaaS prompt rendered as hero/cards/pricing/footer/orb",
+  "anti_template_verdict": "GENERIC_TEMPLATE_REJECT",
+  "template_signal_count": 8,
+  "template_signal_matches": [
+    {
+      "id": "centered_hero_block",
+      "evidence": "hero-like first viewport language or metadata detected"
+    },
+    {
+      "id": "purple_blue_gradient",
+      "evidence": "purple/blue color family metadata detected"
+    },
+    {
+      "id": "generic_glass_cards",
+      "evidence": "more than half of visible cards are glass cards"
+    },
+    {
+      "id": "three_card_feature_grid",
+      "evidence": "generic feature grid language with at least three cards"
+    },
+    {
+      "id": "pricing_tiers",
+      "evidence": "pricing tier language or card metadata detected"
+    },
+    {
+      "id": "bland_footer",
+      "evidence": "generic footer language detected"
+    },
+    {
+      "id": "decorative_blobs",
+      "evidence": "decorative blob/orb language detected"
+    },
+    {
+      "id": "hero_left_cards_right",
+      "evidence": "default hero-left/cards-right layout metadata detected"
+    }
+  ],
+  "reject_or_repair_reason": "rendered_output_missing_project_specific_motif",
+  "acceptance_blocked_until_repaired": true
+}

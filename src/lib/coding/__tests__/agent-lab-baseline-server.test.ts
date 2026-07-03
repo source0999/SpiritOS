@@ -59,6 +59,60 @@ describe("agent-lab-baseline-server", () => {
     );
   });
 
+  it("reports dummy product-site fixture files as dirty baseline leftovers", async () => {
+    const fixtureFiles = [
+      "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+    ];
+    mockedSourceProxyFetch.mockImplementation(async (path, init) => {
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) as { path?: string } : {};
+      if (path === "/v1/workspace/list") {
+        return proxyResponse(JSON.stringify({ entries: [] }), { status: 200 });
+      }
+      if (path === "/v1/workspace/read") {
+        if (fixtureFiles.includes(body.path ?? "")) {
+          return proxyResponse(JSON.stringify({ content: "fixture" }), { status: 200 });
+        }
+        return proxyResponse(JSON.stringify({ error: "path not found in workspace" }), { status: 404 });
+      }
+      return proxyResponse(JSON.stringify({ error: "unexpected" }), { status: 500 });
+    });
+    const sortedFixtureFiles = [...fixtureFiles].sort();
+
+    await expect(buildAgentLabBaselineSnapshot()).resolves.toMatchObject({
+      baseline_agent_lab_files: sortedFixtureFiles,
+      baseline_clean_for_fresh_suite: false,
+      baseline_dirty_agent_lab_files: sortedFixtureFiles,
+    });
+  });
+
+  it("deletes dummy product-site files with the cleanup allowlist", async () => {
+    const target = "tests/ui-agent-trials/fixtures/dummy-product-site/README.md";
+    mockedSourceProxyFetch
+      .mockResolvedValueOnce(proxyResponse(JSON.stringify({ content: "# LumaCart\n" }), { status: 200 }))
+      .mockResolvedValueOnce(proxyResponse(JSON.stringify({ content: "# LumaCart\n" }), { status: 200 }))
+      .mockResolvedValueOnce(proxyResponse("", { status: 404 }));
+
+    mockedSourceProxyLongJsonFetch
+      .mockResolvedValueOnce(proxyResponse(JSON.stringify({ task: { id: "task-cleanup-dummy" } }), { status: 200 }))
+      .mockResolvedValueOnce(proxyResponse(JSON.stringify({ ok: true }), { status: 200 }));
+
+    const result = await sweepAgentLabLeftoverFilesServer([target]);
+
+    expect(result).toMatchObject({ failures: [], removed: 1, targets: [target] });
+    const executeCall = mockedSourceProxyLongJsonFetch.mock.calls.find(([path]) =>
+      String(path).includes("task-cleanup-dummy/execute-approved"),
+    );
+    expect(JSON.parse(String(executeCall?.[1]?.body ?? "{}"))).toMatchObject({
+      allowed_files: expect.arrayContaining(["tests/ui-agent-trials/fixtures/dummy-product-site/**"]),
+      target,
+    });
+  });
+
   it("does not keep a deleted unreverted receipt target dirty in the sweep response", async () => {
     let fileExists = true;
     const fileContent = "export default function AgentLabPage() { return null; }\n";

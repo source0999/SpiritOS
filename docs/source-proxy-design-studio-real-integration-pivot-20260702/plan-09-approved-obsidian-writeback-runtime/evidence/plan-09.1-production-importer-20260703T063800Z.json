@@ -1,0 +1,44 @@
+{
+  "captured_at": "2026-07-03T02:38:00-04:00",
+  "increment_id": "09.1-production-importer",
+  "ok": true,
+  "production_importer_call_site": {
+    "route_path": "Z:/src/app/v1/coding/design-studio/approved-writeback/route.ts",
+    "route_sha256": "6f1111a5cf2463ce7051dbc0c3a93b95778912b3559acfddaf13af14b2df909d",
+    "runtime_path": "Z:/src/lib/coding/design-studio-approved-writeback-runtime.ts",
+    "runtime_sha256": "716c2afe7d147054f677eb040b1170543d7fa75e90b95e84f3df2bce82d16c7f",
+    "writeback_helper_path": "Z:/src/lib/coding/design-studio-obsidian-writeback.ts",
+    "writeback_helper_sha256": "10d55861501fcd6118864cb462c95c3cee0927f0d518bba8c83a759394b5e6ad",
+    "route_imports_runtime": true,
+    "runtime_imports_writer": true
+  },
+  "preview_cannot_write_memory_probe": {
+    "route_status": 403,
+    "result": {
+      "reasons": [
+        "accepted_run_required"
+      ],
+      "status": "rejected",
+      "write_invoked": false
+    },
+    "files_created": []
+  },
+  "accepted_run_reaches_call_site_but_unverified_gate_blocks_write": {
+    "route_status": 403,
+    "result": {
+      "reasons": [
+        "run_not_verified"
+      ],
+      "status": "rejected",
+      "acceptance_id": "accept-plan-09-1",
+      "acceptance_trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+      "write_invoked": true
+    },
+    "files_created": []
+  },
+  "required_proof": {
+    "writeback_helper_has_production_importer_call_site": true,
+    "call_site_reachable_only_after_accepted_run": true,
+    "preview_cannot_write_memory": true
+  }
+}

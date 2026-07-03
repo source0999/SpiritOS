@@ -1,0 +1,260 @@
+Receipt
+Trace
+Coding
+
+WORKSPACE
+
+Coding sessions
+
+SpiritOS
+
+New chat
+Current request
+Needs input
+Active task
+Make the Design Studio preview workbench more premium for /coding/design-demo while keeping Source Proxy evidence visible.
+
+ACTIVE TASK
+
+Make the Design Studio preview workbench more premium for /coding/design-demo while keeping Source Proxy evidence visible.
+
+Discovering after start
+
+RUNNER TOOLS
+
+Runner Tools
+
+Run one dummy Coder prompt or a later benchmark. Coder 001 creates LumaCart first.
+
+Run cleared from coding cloud
+
+Run ID: none
+
+Last synced: 2026-07-03T03:56:19.910Z
+
+CATEGORY
+Coder
+Designer
+Combined
+COUNT
+Messy Coder 10
+Messy Coder 25
+Messy Coder 50
+Messy Coder 100
+MODE
+Individual prompt
+Benchmark count
+SELECTED PROMPT
+Coder 001 - Init Dummy Product Site
+Coder 002 - Add Product Data
+Coder 003 - Render Product Cards
+Coder 004 - Add Search Filter
+Coder 005 - Add Category Chips
+Coder 006 - Add Fake Cart Count
+Coder 007 - Mobile Styling Pass
+Coder 008 - Add Tiny Tests / Smoke Checks
+Coder 009 - No-Op / Already Satisfied Proof
+Coder 010 - Protected Path Pressure Trap
+PASS_DUMMY_PROJECT_INIT
+dummy-product-site
+View prompt + boundaries
+Run selected promptRun all trials
+
+No LumaCart prompt has been run in this panel.
+
+Prompt: coder-001-init-dummy-product-site
+
+READY
+Copy diagnostics
+DONE
+0/10
+EDITS APPLIED
+0
+ALREADY SATISFIED
+0
+SAFETY BLOCKS
+0
+TIMEOUTS
+0
+NEEDS FIX
+0
+REVERTED
+0
+Copy prompts
+Copy trial diagnosticsReverse trial edits and clear results
+
+Agent Lab baseline clean — ready for a fresh Coder benchmark.
+
+9 dummy fixture baseline(s) can be reset, then results will clear.
+
+ACTIVE RUN
+
+Active run preview
+
+Draft is ready. Start coding will build a prompt packet and preview a diff before any apply.
+
+Ready to start
+TASK
+not created
+ROUTE
+waiting for prompt packet
+TRACE
+not recorded
+Runner sync
+
+PROMPT COMPOSER
+
+Task Composer
+Coding
+Design Studio
+Coding prompt
+Start Design Studio
+Undo last change
+
+Timer — total: 2s · finished: 1.7s
+
+Undo is available after Start coding applies a reversible change.
+
+Design Studio run
+
+ERROR
+REQUEST_ID
+design-studio-420ac561-5798-417f-9c42-ee267be9185f
+TRACE_ID
+pending
+ENDPOINT
+/v1/coding/design-studio/preview:failed
+OUTCOME
+MODEL_PROBE_BLOCKED_ENV
+
+ACTIVITY
+
+Run activity
+Build prompt packet
+PENDING
+
+Waiting for a task.
+
+Preview diff
+PENDING
+
+No preview diff yet.
+
+Check approval boundary
+PENDING
+
+Waiting for preview.
+
+Apply only if approved
+PENDING
+
+No apply has run.
+
+Verify result
+PENDING
+
+Waiting for preview.
+
+Receipt / trace
+PENDING
+
+No receipt or trace field recorded yet.
+
+Diagnostics
+
+PLAN / STEPS
+
+Single-lane pipeline
+
+Draft is ready. Start coding will build a prompt packet and preview a diff before any apply.
+
+1
+
+Build prompt packet
+
+PENDING
+
+Waiting for a task.
+
+2
+
+Preview diff
+
+PENDING
+
+No preview diff yet.
+
+3
+
+Check approval boundary
+
+PENDING
+
+Waiting for preview.
+
+4
+
+Apply only if approved
+
+PENDING
+
+No apply has run.
+
+5
+
+Verify result
+
+PENDING
+
+Waiting for preview.
+
+6
+
+Receipt / trace
+
+PENDING
+
+No receipt or trace field recorded yet.
+
+MODEL
+Unknown local model
+TASK ID
+not created
+TRACE ID
+none
+OUTPUT HASH
+none
+
+REVIEW PANE
+
+Review pane
+PREVIEW ONLY: PREVIEW-ONLY DIAGNOSTIC RUN. NOT LIVE PROOF.
+WARNING: NO LIVE MODEL CALL
+0/100 LIVE APPLY PROOF
+
+Describe a change and start a live coding run.
+
+Copy current task diagnostics
+Copy trial diagnostics
+CHANGED FILES
+None
+CHECKS
+git diff --check
+Reverse trial edits and clear results
+
+Agent Lab baseline clean — ready for a fresh Coder benchmark.
+
+9 dummy fixture baseline(s) can be reset, then results will clear.
+
+S
+SPIRITOS
+COLLAPSE
+DASHBOARD
+CHAT
+SOURCE
+MAP
+SCOUT
+ORACLE
+MEDIA
+IMPORTER
+CONSOLE

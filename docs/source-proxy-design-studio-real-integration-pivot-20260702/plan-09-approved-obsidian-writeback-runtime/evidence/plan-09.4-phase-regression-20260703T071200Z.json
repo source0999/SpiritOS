@@ -1,0 +1,43 @@
+{
+  "captured_at": "2026-07-03T03:12:00-04:00",
+  "increment_id": "09.4-phase-regression",
+  "ok": true,
+  "plans_01_to_08_still_pass": true,
+  "validator_through_plan_09": {
+    "ok": true,
+    "filesChecked": 39,
+    "errors": []
+  },
+  "preview_write_blocked": {
+    "route_status": 403,
+    "result": {
+      "reasons": [
+        "accepted_run_required"
+      ],
+      "status": "rejected",
+      "write_invoked": false
+    },
+    "files_created": []
+  },
+  "approved_path_only_works_with_real_approval": {
+    "model_approval_route_status": 403,
+    "model_approval_result": {
+      "reasons": [
+        "model_cannot_self_promote_approval"
+      ],
+      "status": "rejected",
+      "write_invoked": false
+    },
+    "files_after_model_approval": [],
+    "human_approval_route_status": 200,
+    "human_approval_result_status": "written",
+    "human_approval_written_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-09-approved-obsidian-writeback-runtime/evidence/plan-09.4-temp-vault/design-memory/2026-07-03/plan09_4_phase_regression.md",
+    "human_approval_written_sha256": "7922c6d4ad9687d7eda46b500c82348b3d076f25b2750650748b411a39804846"
+  },
+  "required_proof": {
+    "plans_01_to_08_still_pass": true,
+    "preview_write_blocked": true,
+    "approved_path_only_works_with_real_approval": true,
+    "validator_passes_through_plan_09": true
+  }
+}

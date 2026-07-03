@@ -1,0 +1,32 @@
+{
+  "url": "http://localhost:3016/coding/design-studio",
+  "requestId1": "design-studio-shell-6c829c66-ad73-4ba2-9dd4-05a7a409720e",
+  "requestId2": "design-studio-shell-77945cd6-c506-4382-ae6b-0d17f5c47d34",
+  "requestIdsDifferent": true,
+  "blockedStatus": 200,
+  "blockedUiVisible": true,
+  "routeFailureStatus": 503,
+  "routeFailureUiVisible": true,
+  "noHardcodedSuccessAccepted": true,
+  "networkProofPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.2-no-hardcoded-success-20260703T014236Z-network.json",
+  "domSnapshotPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.2-no-hardcoded-success-20260703T014236Z-dom.html",
+  "desktopScreenshotPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.2-no-hardcoded-success-20260703T014236Z.png",
+  "desktopScreenshotSha256": "7bdde10335e0212e30573417d6dff7356af30ff3f948aa0e22e25b6fa08a4325",
+  "pageInfoPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.2-no-hardcoded-success-20260703T014236Z-page-info.json",
+  "consoleMessages": [
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "[HMR] connected"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ],
+  "visibleTextExcerpt": "DESIGN STUDIO\n\nPreview Workbench\nNo model call\nNo apply authority\nNo memory write\nNo raw CSS ingest\nIntake\nPrompt\nRoute\nMode\nTarget\nPreview packet\nSurface Preview\nDraft only\n\nPREVIEW PACKET\n\nPreview route failed. Apply remains locked.\n\nPlan 02.2 forced route failure\n\nnot returned\nDesignDNA pending\nCoder packet pending\nCritic pending\nPacket State\nREQUEST_ID\ndesign-studio-shell-958a9356-278b-44ee-8463-0b05bc393c34\nDESIGN_PACKET_ID\nnot returned\nTRACE_ID\nnot returned\nTARGET_SURFACE\n/coding/design-demo\nCONSUMER_EVENT_ID\nnot returned\nOUTCOME\nnot returned\n\nDESIGN PACKET\n\nPreview-only design_packet is visible.\n\nCODER PACKET\n\nBounded coder_packet waits for sandbox apply approval.\n\nGuard\n\nPreview opening is not GO. Downstream consumption is required.\n\nApply locked\n\nApply, commit, push, and memory write remain unavailable here.",
+  "capturedAt": "2026-07-03T01:42:50.885Z"
+}

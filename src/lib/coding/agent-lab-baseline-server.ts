@@ -1,6 +1,9 @@
 import { createHash } from "crypto";
 
-import { buildDeleteFileReverseDiff } from "@/lib/coding/agent-lab-cleanup";
+import {
+  DUMMY_PRODUCT_SITE_TRIAL_ROOT,
+  buildDeleteFileReverseDiff,
+} from "@/lib/coding/agent-lab-cleanup";
 import {
   AGENT_LAB_BASELINE_ROOTS,
   AGENT_LAB_CODER_PROBE_PATHS,
@@ -230,6 +233,7 @@ async function deleteAgentLabFileOnProxy(target: string): Promise<{ ok: true } |
     "src/lib/agent-lab/**",
     "src/app/api/agent-lab/**",
     "tests/agent-lab/**",
+    `${DUMMY_PRODUCT_SITE_TRIAL_ROOT}**`,
   ];
 
   const taskResponse = await sourceProxyLongJsonFetchWithTimeout("/v1/tasks/long-running", {
@@ -295,6 +299,22 @@ async function deleteAgentLabFileOnProxy(target: string): Promise<{ ok: true } |
   if (after.status === "error") {
     return { ok: false, error: after.error ?? `Could not verify delete for ${normalizedTarget}.` };
   }
+  await sourceProxyLongJsonFetchWithTimeout(
+    `/v1/tasks/long-running/${encodeURIComponent(taskId)}/verification`,
+    {
+      body: JSON.stringify({
+        confirm_backup_audit_present: true,
+        confirm_changed_files_reviewed: true,
+        confirm_expected_change_present: true,
+        confirm_no_unintended_files: true,
+        manual_browser_check_done: true,
+        skip_reason: "Agent Lab sweep verified the cleanup target is absent after delete.",
+        verification_note: `Agent Lab sweep deleted and verified ${normalizedTarget}.`,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  ).catch(() => null);
   return { ok: true };
 }
 

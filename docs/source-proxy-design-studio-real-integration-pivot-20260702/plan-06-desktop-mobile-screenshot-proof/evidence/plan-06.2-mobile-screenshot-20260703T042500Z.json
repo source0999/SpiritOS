@@ -1,0 +1,39 @@
+{
+  "captured_at": "2026-07-03T00:25:00-04:00",
+  "increment_id": "06.2-mobile-screenshot",
+  "ok": true,
+  "supersedes_non_go_artifact": "plan-06.2-mobile-screenshot-20260703T042100Z.json",
+  "sandbox_apply_receipt_id": "sandbox-apply-69f25b09d872",
+  "diff_hash": "69f25b09d8727a8af3c742ebd86774604943b65fc2bcc44501ed3bd315a2b192",
+  "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+  "rendered_route": "/coding/design-demo",
+  "browser_url": "http://127.0.0.1:3023/coding/design-demo",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "label": "mobile-viewport"
+  },
+  "screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-06-desktop-mobile-screenshot-proof/evidence/plan-06.2-mobile-viewport-390x844-20260703T042500Z.png",
+  "screenshot_hash": "ef42762820aaf3f98c0e913ee32645743c26d1d1d89bc46208a1ca346f2469a9",
+  "screenshot_size_bytes": 36788,
+  "captured_after_apply": true,
+  "no_horizontal_overflow": true,
+  "overflow_measurement": {
+    "scroll_width": 390,
+    "client_width": 390,
+    "overflow_x": 0
+  },
+  "page_proof": {
+    "clientWidth": 390,
+    "h1": "Applied Design Studio sandbox packet",
+    "hasApplied": true,
+    "hasCoderHash": true,
+    "hasDesignHash": true,
+    "hasTrace": true,
+    "innerHeight": 844,
+    "innerWidth": 390,
+    "overflowX": 0,
+    "scrollWidth": 390,
+    "url": "http://127.0.0.1:3023/coding/design-demo"
+  }
+}

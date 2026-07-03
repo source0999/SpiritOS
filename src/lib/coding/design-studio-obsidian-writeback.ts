@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 export type ApprovedDesignMemoryWritebackPayload = {
   approval_id: string;
@@ -104,7 +104,15 @@ export function approvedDesignMemoryDestination(
   const root = resolve(vaultRoot);
   const path = resolve(root, "design-memory", date, `${designRunId}.md`);
   const allowedRoot = resolve(root, "design-memory");
-  if (path !== resolve(path) || !path.startsWith(`${allowedRoot}/`)) {
+  const relativeDestination = relative(allowedRoot, path);
+  if (
+    path !== resolve(path) ||
+    relativeDestination === "" ||
+    relativeDestination === ".." ||
+    relativeDestination.startsWith(`..\\`) ||
+    relativeDestination.startsWith("../") ||
+    isAbsolute(relativeDestination)
+  ) {
     return { reason: "destination_escape", status: "rejected" as const };
   }
 

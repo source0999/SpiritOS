@@ -1,0 +1,982 @@
+{
+  "runtime": "direct_transpiled_route_POST",
+  "sourcePath": "Z:\\src\\app\\v1\\coding\\design-studio\\preview\\route.ts",
+  "cjsPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-04-model-and-subagent-consumption\\evidence\\plan-04.2-route-runtime-20260703T021915Z.cjs",
+  "prompt": "Plan 04.2 live model material change: premium dense operator workbench with keyboard-first evidence panels.",
+  "fallbackStatus": 200,
+  "modelStatus": 200,
+  "noModelFallbackDesignPacketHash": "9c2d7b87e5db3cebba67800f16444bb5eb2c8bea9e30537b5dee81f4fd7ba521",
+  "modelDesignPacketHash": "368d458498009ffba23485e6cdc2fa3c2a5d382883f3d4bff03c2be6e0b06f1d",
+  "materiallyChanged": true,
+  "model_invocation_event_id": "ollama-phi4-mini-latest-9f74f41c8397",
+  "provider_model_name": "phi4-mini:latest",
+  "input_hash": "8d1de6e235634307071d0933fc047dfeb7a0412ccd7aa8a4539735b45150d41a",
+  "output_hash": "9f74f41c8397c725c793971934c1a4be4c5347fb7610f349a023b052c7759b3a",
+  "byte_count": 143,
+  "output_excerpt": "Incorporate tactile feedback elements into the high-quality materials to enhance user engagement and reinforce a seamless, intuitive interface.",
+  "model_call_made": true,
+  "provider_call_made": true,
+  "trace_id": "design-studio-trace-5c4b6d484172--2-model",
+  "modelPacketGuidance": {
+    "event_id": "ollama-phi4-mini-latest-9f74f41c8397",
+    "output_hash": "9f74f41c8397c725c793971934c1a4be4c5347fb7610f349a023b052c7759b3a",
+    "provider_model_name": "phi4-mini:latest",
+    "text": "Incorporate tactile feedback elements into the high-quality materials to enhance user engagement and reinforce a seamless, intuitive interface."
+  },
+  "fallback": {
+    "status": 200,
+    "body": {
+      "prompt": "Plan 04.2 live model material change: premium dense operator workbench with keyboard-first evidence panels.",
+      "request_id": "plan-04-2-fallback",
+      "target_surface": "/coding/design-demo"
+    },
+    "response": {
+      "advisory_only": true,
+      "apply_authority": false,
+      "approval_authority": false,
+      "commit_authority": false,
+      "design_studio_route": "/coding/design-studio",
+      "endpoint": "/v1/coding/design-studio/preview",
+      "fake_go_guard": {
+        "design_packet_exists_is_go": false,
+        "preview_opens_is_go": false,
+        "required_downstream_consumption": "accepted_design_packet_to_named_coder_packet_consumer",
+        "unconsumed_packet_blocks_go": true
+      },
+      "hidden_execution_started": false,
+      "memory_write_authority": false,
+      "model_call_made": false,
+      "model_invocation_result": null,
+      "no_model_design_packet_hash": "9c2d7b87e5db3cebba67800f16444bb5eb2c8bea9e30537b5dee81f4fd7ba521",
+      "original_user_prompt_hash": "5c4b6d4841728d54a3bbbed871f4b22c34ffeffda234a77bd9ff193f16948187",
+      "provider_call_made": false,
+      "push_authority": false,
+      "request_id": "plan-04-2-fallback",
+      "raw_css_ingest_authority": false,
+      "sandbox_apply_authority": false,
+      "shell": {
+        "component": "src/components/coding/DesignStudioShell.tsx",
+        "page": "src/app/coding/design-studio/page.tsx",
+        "status": "preview_shell_ready"
+      },
+      "trace_id": "design-studio-trace-5c4b6d484172-fallback",
+      "messy_prompt_result": {
+        "design_packet": {
+          "accessibility_notes": [
+            "visible focus states",
+            "semantic headings",
+            "no text overlap",
+            "keyboard navigation must be first-class"
+          ],
+          "audience": [
+            "operators reviewing Source Proxy evidence",
+            "keyboard-heavy power users",
+            "design reviewers"
+          ],
+          "constraints": [
+            "preview_only_no_apply",
+            "no_execute_approved",
+            "no_raw_css_ingest",
+            "preserve dense workbench utility",
+            "support keyboard and focus proof"
+          ],
+          "intent": [
+            "increase perceived product quality",
+            "tighten operator workflow clarity",
+            "make interaction keyboard-first"
+          ],
+          "page_app_target": "/coding/design-demo",
+          "reference_inputs": [
+            "none_supplied"
+          ],
+          "risk_flags": [
+            "low_preview_only"
+          ],
+          "visual_direction": [
+            "premium restrained product surface",
+            "dense console workbench",
+            "precise technical evidence surface"
+          ],
+          "anti_template_checks": [
+            "reject_generic_ai_studio_layout",
+            "require_project_specific_motif"
+          ],
+          "coder_packet": {
+            "allowed_files": [
+              "src/components/coding/DesignStudioShell.tsx"
+            ],
+            "css_rules": [
+              "derive tokens from project surface",
+              "do not copy raw CSS selectors"
+            ],
+            "forbidden_files": [
+              "docs/evidence/**",
+              ".env*",
+              ".spirit-backups/**"
+            ],
+            "responsive_rules": [
+              "desktop and mobile proof required before GO"
+            ],
+            "target_files": [
+              "src/components/coding/DesignStudioShell.tsx"
+            ],
+            "verification_commands": [
+              "npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot"
+            ]
+          },
+          "derivation_source": "heuristic_prompt_structuring_no_model",
+          "design_packet_hash": "9c2d7b87e5db3cebba67800f16444bb5eb2c8bea9e30537b5dee81f4fd7ba521",
+          "design_packet_id": "design-packet-9c2d7b87e5db",
+          "obsidian_context_refs": [],
+          "project_specific_motif": "premium restrained product surface",
+          "style_family_blend": [
+            "premium restrained product surface",
+            "dense console workbench",
+            "precise technical evidence surface"
+          ],
+          "target_surface": "/coding/design-demo",
+          "trace_id": "design-studio-trace-5c4b6d484172-fallback",
+          "visual_pass_criteria": [
+            "clear preview/apply boundary",
+            "mobile and desktop layout remain scannable",
+            "no Google AI Studio generic shell"
+          ]
+        },
+        "outcome": "DESIGN_PACKET_PREVIEW",
+        "reason": "targeted_prompt_preview"
+      },
+      "reference_upload_result": {
+        "outcome": "NO_REFERENCE_UPLOAD",
+        "reference_metadata": null,
+        "staged_for_generation": false
+      },
+      "website_css_reference_result": {
+        "outcome": "NO_WEBSITE_CSS_REFERENCE",
+        "raw_css_quarantine": null
+      },
+      "design_dna_result": {
+        "consumption_state": {
+          "consumer_event_id": "blocked_until_coder_packet_or_design_library_consumer",
+          "consumed_by_downstream": false,
+          "unconsumed_designdna_blocks_go": true
+        },
+        "conflict_resolution": [
+          "user_explicit_request",
+          "project_obsidian_brief",
+          "spiritos_dna",
+          "reference_dna",
+          "generic_defaults"
+        ],
+        "design_dna": {
+          "anti_copy_constraints": [
+            "no raw CSS selectors",
+            "no direct class name copy",
+            "no exact brand color copy",
+            "no 1:1 layout identity copy"
+          ],
+          "color_tokens": [
+            "spirit_accent",
+            "chalk",
+            "surface_glass"
+          ],
+          "component_density": "workbench_dense",
+          "design_packet_hash": "9c2d7b87e5db3cebba67800f16444bb5eb2c8bea9e30537b5dee81f4fd7ba521",
+          "designdna_hash": "3e4e4d5ef3e1a5eac1d741c0ffb9a5400b925d52bf635614a3e7dcff40f820be",
+          "dna_id": "designdna-3e4e4d5ef3e1",
+          "generic_fallback_passes": false,
+          "interaction_model": "keyboard_first_preview_controls",
+          "layout_rhythm": "three_panel_preview_workbench",
+          "motion_policy": "quiet_state_transitions_only",
+          "normalization_strength": "prompt_derived",
+          "product_domain_motif": "premium restrained product surface",
+          "radius_scale": [
+            "sm",
+            "md",
+            "lg"
+          ],
+          "responsive_behavior": "desktop_mobile_required_before_go",
+          "rhythm": "dense_evidence_panel_rhythm",
+          "shadow_policy": "subtle_depth_only",
+          "source_refs": [
+            "messy_prompt"
+          ],
+          "spacing_scale": [
+            "2",
+            "3",
+            "4",
+            "6"
+          ],
+          "spatial_system": "three_column_dense_workbench",
+          "surface_policy": "glass_panel_on_spirit_background",
+          "type_scale": [
+            "xs",
+            "sm",
+            "base",
+            "lg",
+            "2xl"
+          ],
+          "typography": "technical_workbench_hierarchy",
+          "visual_hierarchy": "premium_primary_action_with_evidence_support"
+        },
+        "memory_bridge": {
+          "obsidian_read_refs_consumed": true,
+          "obsidian_writeback_authority": false,
+          "visual_refs_consumed": false,
+          "visual_index_write_authority": false
+        },
+        "outcome": "DESIGN_DNA_NORMALIZED_PREVIEW"
+      },
+      "design_library_result": {
+        "dedupe": {
+          "duplicate_strategy": "same_source_hash_creates_new_version_preview",
+          "source_hash": "preview_1c59d333",
+          "version": 1
+        },
+        "library_record": {
+          "design_dna_id": "designdna-3e4e4d5ef3e1",
+          "library_record_id": "design-library-preview-local",
+          "source_hash": "preview_1c59d333",
+          "source_refs": [
+            "messy_prompt"
+          ],
+          "status": "preview_only_not_persisted"
+        },
+        "outcome": "DESIGN_LIBRARY_PREVIEW_RECORD",
+        "read_contract": {
+          "queryable_by": [
+            "source_hash",
+            "design_dna_id",
+            "target_surface"
+          ],
+          "read_authority": true,
+          "returns_preview_records_only": true
+        },
+        "write_guard": {
+          "durable_store_write_authority": false,
+          "memory_promotion_authority": false,
+          "obsidian_writeback_authority": false,
+          "requires_human_approval_for_persistence": true
+        }
+      },
+      "coder_packet_result": {
+        "coder_packet": {
+          "accessibility_rules": [
+            "visible focus states",
+            "semantic headings",
+            "no text overlap"
+          ],
+          "allowed_files": [
+            "src/app/coding/design-studio/page.tsx",
+            "src/components/coding/DesignStudioShell.tsx",
+            "src/app/v1/coding/design-studio/preview/route.ts"
+          ],
+          "coder_packet_hash": "preview_e2a5b8a2",
+          "component_rules": [
+            "preserve preview-only guardrails",
+            "show design and coder packet panels"
+          ],
+          "consumer_event_id": "blocked_until_sandbox_apply_approval",
+          "consumer_subsystem": "design_studio_preview_ui",
+          "css_rules": [
+            "use project tokens",
+            "do not copy raw CSS selectors"
+          ],
+          "forbidden_files": [
+            "docs/evidence/**",
+            ".env*",
+            ".spirit-backups/**"
+          ],
+          "responsive_rules": [
+            "desktop and mobile verification required before GO"
+          ],
+          "target_files": [
+            "src/components/coding/DesignStudioShell.tsx"
+          ],
+          "verification_commands": [
+            "timeout 120s npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot --pool=threads --environment=node",
+            "timeout 120s npx vitest run src/components/coding/__tests__/design-studio-shell.test.tsx --reporter=dot --pool=threads --environment=node"
+          ],
+          "visual_pass_criteria": [
+            "design packet visible",
+            "coder packet visible",
+            "apply remains locked"
+          ]
+        },
+        "fake_go_guard": {
+          "coder_packet_exists_is_go": false,
+          "design_packet_exists_is_go": false,
+          "requires_named_consumer": true
+        },
+        "outcome": "CODER_PACKET_PREVIEW_READY"
+      },
+      "anti_template_originality_result": {
+        "blockers": [],
+        "checks": {
+          "class_names_checked_as_metadata_only": true,
+          "copied_brand_identity_rejected": true,
+          "direct_clone_rejected": true,
+          "generic_slop_patterns_rejected": true,
+          "inspired_not_copied_allowed": true,
+          "raw_css_ingestion_performed": false
+        },
+        "consumer_event_id": "blocked_until_design_critic_or_sandbox_verifier_consumes_originality_result",
+        "outcome": "ANTI_TEMPLATE_ORIGINALITY_APPROVED_PREVIEW",
+        "trace_id": "anti-template-originality-preview-trace"
+      },
+      "design_critic_result": {
+        "blockers": [
+          "missing_screenshot_refs"
+        ],
+        "critic_packet": {
+          "anti_template_status": "unknown",
+          "contrast_status": "unknown",
+          "critic_packet_id": "design-critic-preview-local",
+          "design_packet_id": "messy-prompt-preview-local",
+          "failed_probe": "missing_screenshot_refs",
+          "hierarchy_score": 0,
+          "mobile_status": "unknown",
+          "originality_status": "unknown",
+          "repair_count": 0,
+          "repair_instructions": [
+            "tighten visual hierarchy before approval",
+            "repair spacing rhythm and mobile stack density",
+            "verify text/background contrast before approval",
+            "rerun mobile screenshot proof before approval",
+            "resolve originality and anti-template blockers before approval"
+          ],
+          "screenshot_refs": [],
+          "spacing_score": 0
+        },
+        "fake_go_guard": {
+          "critic_packet_exists_is_go": false,
+          "missing_screenshot_proof_blocks_approval": true,
+          "model_says_fixed_is_go": false,
+          "repair_requires_reverification": true
+        },
+        "outcome": "DESIGN_CRITIC_BLOCKED",
+        "repair_loop": {
+          "max_repairs": 2,
+          "repair_count": 0,
+          "repair_write_authority": false,
+          "requires_reverification_after_repair": true
+        },
+        "trace_id": "design-critic-preview-trace"
+      },
+      "approved_design_memory_writeback": {
+        "approved_destination": "data/design-vault/design-memory/<YYYY-MM-DD>/<design_run_id>.md",
+        "preview_only_no_write": true,
+        "required_gate": "verified_run_with_explicit_approval_desktop_mobile_originality_critic_and_no_fake_go",
+        "write_authority": false
+      },
+      "preview_packet": {
+        "consumer_event_id": "blocked_until_packet_acceptance",
+        "design_packet_id": "preview-shell-local",
+        "obsidian_context_refs": [],
+        "original_user_prompt_hash": "5c4b6d4841728d54a3bbbed871f4b22c34ffeffda234a77bd9ff193f16948187",
+        "request_id": "plan-04-2-fallback",
+        "schema_version": "design_studio_preview_shell_v1",
+        "target_surface": "/coding/design-studio",
+        "trace_id": "design-studio-trace-5c4b6d484172-fallback"
+      },
+      "bounded_coder_packet": {
+        "allowed_files": [
+          "src/app/coding/design-studio/page.tsx",
+          "src/components/coding/DesignStudioShell.tsx",
+          "src/app/v1/coding/design-studio/preview/route.ts"
+        ],
+        "blocked_until_human_accepts_design_packet": true,
+        "forbidden_files": [
+          "docs/evidence/**",
+          ".env*",
+          ".spirit-backups/**"
+        ],
+        "target_files": [
+          "src/components/coding/DesignStudioShell.tsx"
+        ],
+        "verification_commands": [
+          "npm test -- src/app/v1/coding/design-studio/preview/__tests__/route.test.ts"
+        ]
+      }
+    },
+    "packet": {
+      "accessibility_notes": [
+        "visible focus states",
+        "semantic headings",
+        "no text overlap",
+        "keyboard navigation must be first-class"
+      ],
+      "audience": [
+        "operators reviewing Source Proxy evidence",
+        "keyboard-heavy power users",
+        "design reviewers"
+      ],
+      "constraints": [
+        "preview_only_no_apply",
+        "no_execute_approved",
+        "no_raw_css_ingest",
+        "preserve dense workbench utility",
+        "support keyboard and focus proof"
+      ],
+      "intent": [
+        "increase perceived product quality",
+        "tighten operator workflow clarity",
+        "make interaction keyboard-first"
+      ],
+      "page_app_target": "/coding/design-demo",
+      "reference_inputs": [
+        "none_supplied"
+      ],
+      "risk_flags": [
+        "low_preview_only"
+      ],
+      "visual_direction": [
+        "premium restrained product surface",
+        "dense console workbench",
+        "precise technical evidence surface"
+      ],
+      "anti_template_checks": [
+        "reject_generic_ai_studio_layout",
+        "require_project_specific_motif"
+      ],
+      "coder_packet": {
+        "allowed_files": [
+          "src/components/coding/DesignStudioShell.tsx"
+        ],
+        "css_rules": [
+          "derive tokens from project surface",
+          "do not copy raw CSS selectors"
+        ],
+        "forbidden_files": [
+          "docs/evidence/**",
+          ".env*",
+          ".spirit-backups/**"
+        ],
+        "responsive_rules": [
+          "desktop and mobile proof required before GO"
+        ],
+        "target_files": [
+          "src/components/coding/DesignStudioShell.tsx"
+        ],
+        "verification_commands": [
+          "npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot"
+        ]
+      },
+      "derivation_source": "heuristic_prompt_structuring_no_model",
+      "design_packet_hash": "9c2d7b87e5db3cebba67800f16444bb5eb2c8bea9e30537b5dee81f4fd7ba521",
+      "design_packet_id": "design-packet-9c2d7b87e5db",
+      "obsidian_context_refs": [],
+      "project_specific_motif": "premium restrained product surface",
+      "style_family_blend": [
+        "premium restrained product surface",
+        "dense console workbench",
+        "precise technical evidence surface"
+      ],
+      "target_surface": "/coding/design-demo",
+      "trace_id": "design-studio-trace-5c4b6d484172-fallback",
+      "visual_pass_criteria": [
+        "clear preview/apply boundary",
+        "mobile and desktop layout remain scannable",
+        "no Google AI Studio generic shell"
+      ]
+    },
+    "modelInvocation": null
+  },
+  "model": {
+    "status": 200,
+    "body": {
+      "prompt": "Plan 04.2 live model material change: premium dense operator workbench with keyboard-first evidence panels.",
+      "request_id": "plan-04-2-model",
+      "target_surface": "/coding/design-demo",
+      "model_probe": {
+        "enabled": true,
+        "provider": "ollama",
+        "model": "phi4-mini:latest"
+      }
+    },
+    "response": {
+      "advisory_only": true,
+      "apply_authority": false,
+      "approval_authority": false,
+      "commit_authority": false,
+      "design_studio_route": "/coding/design-studio",
+      "endpoint": "/v1/coding/design-studio/preview",
+      "fake_go_guard": {
+        "design_packet_exists_is_go": false,
+        "preview_opens_is_go": false,
+        "required_downstream_consumption": "accepted_design_packet_to_named_coder_packet_consumer",
+        "unconsumed_packet_blocks_go": true
+      },
+      "hidden_execution_started": false,
+      "memory_write_authority": false,
+      "model_call_made": true,
+      "model_invocation_result": {
+        "byte_count": 143,
+        "event_id": "ollama-phi4-mini-latest-9f74f41c8397",
+        "input_hash": "8d1de6e235634307071d0933fc047dfeb7a0412ccd7aa8a4539735b45150d41a",
+        "model": "phi4-mini:latest",
+        "ok": true,
+        "output_excerpt": "Incorporate tactile feedback elements into the high-quality materials to enhance user engagement and reinforce a seamless, intuitive interface.",
+        "output_hash": "9f74f41c8397c725c793971934c1a4be4c5347fb7610f349a023b052c7759b3a",
+        "provider": "ollama",
+        "response_status": 200,
+        "trace_id": "design-studio-trace-5c4b6d484172--2-model"
+      },
+      "no_model_design_packet_hash": "9c2d7b87e5db3cebba67800f16444bb5eb2c8bea9e30537b5dee81f4fd7ba521",
+      "original_user_prompt_hash": "5c4b6d4841728d54a3bbbed871f4b22c34ffeffda234a77bd9ff193f16948187",
+      "provider_call_made": true,
+      "push_authority": false,
+      "request_id": "plan-04-2-model",
+      "raw_css_ingest_authority": false,
+      "sandbox_apply_authority": false,
+      "shell": {
+        "component": "src/components/coding/DesignStudioShell.tsx",
+        "page": "src/app/coding/design-studio/page.tsx",
+        "status": "preview_shell_ready"
+      },
+      "trace_id": "design-studio-trace-5c4b6d484172--2-model",
+      "messy_prompt_result": {
+        "design_packet": {
+          "accessibility_notes": [
+            "visible focus states",
+            "semantic headings",
+            "no text overlap",
+            "keyboard navigation must be first-class"
+          ],
+          "audience": [
+            "operators reviewing Source Proxy evidence",
+            "keyboard-heavy power users",
+            "design reviewers"
+          ],
+          "constraints": [
+            "preview_only_no_apply",
+            "no_execute_approved",
+            "no_raw_css_ingest",
+            "preserve dense workbench utility",
+            "support keyboard and focus proof"
+          ],
+          "intent": [
+            "increase perceived product quality",
+            "tighten operator workflow clarity",
+            "make interaction keyboard-first"
+          ],
+          "page_app_target": "/coding/design-demo",
+          "reference_inputs": [
+            "none_supplied"
+          ],
+          "risk_flags": [
+            "low_preview_only"
+          ],
+          "visual_direction": [
+            "premium restrained product surface",
+            "dense console workbench",
+            "precise technical evidence surface"
+          ],
+          "anti_template_checks": [
+            "reject_generic_ai_studio_layout",
+            "require_project_specific_motif"
+          ],
+          "coder_packet": {
+            "allowed_files": [
+              "src/components/coding/DesignStudioShell.tsx"
+            ],
+            "css_rules": [
+              "derive tokens from project surface",
+              "do not copy raw CSS selectors"
+            ],
+            "forbidden_files": [
+              "docs/evidence/**",
+              ".env*",
+              ".spirit-backups/**"
+            ],
+            "responsive_rules": [
+              "desktop and mobile proof required before GO"
+            ],
+            "target_files": [
+              "src/components/coding/DesignStudioShell.tsx"
+            ],
+            "verification_commands": [
+              "npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot"
+            ]
+          },
+          "derivation_source": "heuristic_prompt_structuring_no_model",
+          "design_packet_hash": "368d458498009ffba23485e6cdc2fa3c2a5d382883f3d4bff03c2be6e0b06f1d",
+          "design_packet_id": "design-packet-368d45849800",
+          "obsidian_context_refs": [],
+          "project_specific_motif": "premium restrained product surface",
+          "style_family_blend": [
+            "premium restrained product surface",
+            "dense console workbench",
+            "precise technical evidence surface"
+          ],
+          "target_surface": "/coding/design-demo",
+          "trace_id": "design-studio-trace-5c4b6d484172--2-model",
+          "visual_pass_criteria": [
+            "clear preview/apply boundary",
+            "mobile and desktop layout remain scannable",
+            "no Google AI Studio generic shell"
+          ],
+          "model_guidance": {
+            "event_id": "ollama-phi4-mini-latest-9f74f41c8397",
+            "output_hash": "9f74f41c8397c725c793971934c1a4be4c5347fb7610f349a023b052c7759b3a",
+            "provider_model_name": "phi4-mini:latest",
+            "text": "Incorporate tactile feedback elements into the high-quality materials to enhance user engagement and reinforce a seamless, intuitive interface."
+          }
+        },
+        "outcome": "DESIGN_PACKET_PREVIEW",
+        "reason": "targeted_prompt_preview"
+      },
+      "reference_upload_result": {
+        "outcome": "NO_REFERENCE_UPLOAD",
+        "reference_metadata": null,
+        "staged_for_generation": false
+      },
+      "website_css_reference_result": {
+        "outcome": "NO_WEBSITE_CSS_REFERENCE",
+        "raw_css_quarantine": null
+      },
+      "design_dna_result": {
+        "consumption_state": {
+          "consumer_event_id": "blocked_until_coder_packet_or_design_library_consumer",
+          "consumed_by_downstream": false,
+          "unconsumed_designdna_blocks_go": true
+        },
+        "conflict_resolution": [
+          "user_explicit_request",
+          "project_obsidian_brief",
+          "spiritos_dna",
+          "reference_dna",
+          "generic_defaults"
+        ],
+        "design_dna": {
+          "anti_copy_constraints": [
+            "no raw CSS selectors",
+            "no direct class name copy",
+            "no exact brand color copy",
+            "no 1:1 layout identity copy"
+          ],
+          "color_tokens": [
+            "spirit_accent",
+            "chalk",
+            "surface_glass"
+          ],
+          "component_density": "workbench_dense",
+          "design_packet_hash": "368d458498009ffba23485e6cdc2fa3c2a5d382883f3d4bff03c2be6e0b06f1d",
+          "designdna_hash": "0745689dbc4c2d95cb0c0d0ca98e467f0f6d2b68e2da9d391ddd0b4135e58a5a",
+          "dna_id": "designdna-0745689dbc4c",
+          "generic_fallback_passes": false,
+          "interaction_model": "keyboard_first_preview_controls",
+          "layout_rhythm": "three_panel_preview_workbench",
+          "motion_policy": "quiet_state_transitions_only",
+          "normalization_strength": "prompt_derived",
+          "product_domain_motif": "premium restrained product surface",
+          "radius_scale": [
+            "sm",
+            "md",
+            "lg"
+          ],
+          "responsive_behavior": "desktop_mobile_required_before_go",
+          "rhythm": "dense_evidence_panel_rhythm",
+          "shadow_policy": "subtle_depth_only",
+          "source_refs": [
+            "messy_prompt"
+          ],
+          "spacing_scale": [
+            "2",
+            "3",
+            "4",
+            "6"
+          ],
+          "spatial_system": "three_column_dense_workbench",
+          "surface_policy": "glass_panel_on_spirit_background",
+          "type_scale": [
+            "xs",
+            "sm",
+            "base",
+            "lg",
+            "2xl"
+          ],
+          "typography": "technical_workbench_hierarchy",
+          "visual_hierarchy": "premium_primary_action_with_evidence_support"
+        },
+        "memory_bridge": {
+          "obsidian_read_refs_consumed": true,
+          "obsidian_writeback_authority": false,
+          "visual_refs_consumed": false,
+          "visual_index_write_authority": false
+        },
+        "outcome": "DESIGN_DNA_NORMALIZED_PREVIEW"
+      },
+      "design_library_result": {
+        "dedupe": {
+          "duplicate_strategy": "same_source_hash_creates_new_version_preview",
+          "source_hash": "preview_1c59d333",
+          "version": 1
+        },
+        "library_record": {
+          "design_dna_id": "designdna-0745689dbc4c",
+          "library_record_id": "design-library-preview-local",
+          "source_hash": "preview_1c59d333",
+          "source_refs": [
+            "messy_prompt"
+          ],
+          "status": "preview_only_not_persisted"
+        },
+        "outcome": "DESIGN_LIBRARY_PREVIEW_RECORD",
+        "read_contract": {
+          "queryable_by": [
+            "source_hash",
+            "design_dna_id",
+            "target_surface"
+          ],
+          "read_authority": true,
+          "returns_preview_records_only": true
+        },
+        "write_guard": {
+          "durable_store_write_authority": false,
+          "memory_promotion_authority": false,
+          "obsidian_writeback_authority": false,
+          "requires_human_approval_for_persistence": true
+        }
+      },
+      "coder_packet_result": {
+        "coder_packet": {
+          "accessibility_rules": [
+            "visible focus states",
+            "semantic headings",
+            "no text overlap"
+          ],
+          "allowed_files": [
+            "src/app/coding/design-studio/page.tsx",
+            "src/components/coding/DesignStudioShell.tsx",
+            "src/app/v1/coding/design-studio/preview/route.ts"
+          ],
+          "coder_packet_hash": "preview_8117299a",
+          "component_rules": [
+            "preserve preview-only guardrails",
+            "show design and coder packet panels"
+          ],
+          "consumer_event_id": "blocked_until_sandbox_apply_approval",
+          "consumer_subsystem": "design_studio_preview_ui",
+          "css_rules": [
+            "use project tokens",
+            "do not copy raw CSS selectors"
+          ],
+          "forbidden_files": [
+            "docs/evidence/**",
+            ".env*",
+            ".spirit-backups/**"
+          ],
+          "responsive_rules": [
+            "desktop and mobile verification required before GO"
+          ],
+          "target_files": [
+            "src/components/coding/DesignStudioShell.tsx"
+          ],
+          "verification_commands": [
+            "timeout 120s npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot --pool=threads --environment=node",
+            "timeout 120s npx vitest run src/components/coding/__tests__/design-studio-shell.test.tsx --reporter=dot --pool=threads --environment=node"
+          ],
+          "visual_pass_criteria": [
+            "design packet visible",
+            "coder packet visible",
+            "apply remains locked"
+          ]
+        },
+        "fake_go_guard": {
+          "coder_packet_exists_is_go": false,
+          "design_packet_exists_is_go": false,
+          "requires_named_consumer": true
+        },
+        "outcome": "CODER_PACKET_PREVIEW_READY"
+      },
+      "anti_template_originality_result": {
+        "blockers": [],
+        "checks": {
+          "class_names_checked_as_metadata_only": true,
+          "copied_brand_identity_rejected": true,
+          "direct_clone_rejected": true,
+          "generic_slop_patterns_rejected": true,
+          "inspired_not_copied_allowed": true,
+          "raw_css_ingestion_performed": false
+        },
+        "consumer_event_id": "blocked_until_design_critic_or_sandbox_verifier_consumes_originality_result",
+        "outcome": "ANTI_TEMPLATE_ORIGINALITY_APPROVED_PREVIEW",
+        "trace_id": "anti-template-originality-preview-trace"
+      },
+      "design_critic_result": {
+        "blockers": [
+          "missing_screenshot_refs"
+        ],
+        "critic_packet": {
+          "anti_template_status": "unknown",
+          "contrast_status": "unknown",
+          "critic_packet_id": "design-critic-preview-local",
+          "design_packet_id": "messy-prompt-preview-local",
+          "failed_probe": "missing_screenshot_refs",
+          "hierarchy_score": 0,
+          "mobile_status": "unknown",
+          "originality_status": "unknown",
+          "repair_count": 0,
+          "repair_instructions": [
+            "tighten visual hierarchy before approval",
+            "repair spacing rhythm and mobile stack density",
+            "verify text/background contrast before approval",
+            "rerun mobile screenshot proof before approval",
+            "resolve originality and anti-template blockers before approval"
+          ],
+          "screenshot_refs": [],
+          "spacing_score": 0
+        },
+        "fake_go_guard": {
+          "critic_packet_exists_is_go": false,
+          "missing_screenshot_proof_blocks_approval": true,
+          "model_says_fixed_is_go": false,
+          "repair_requires_reverification": true
+        },
+        "outcome": "DESIGN_CRITIC_BLOCKED",
+        "repair_loop": {
+          "max_repairs": 2,
+          "repair_count": 0,
+          "repair_write_authority": false,
+          "requires_reverification_after_repair": true
+        },
+        "trace_id": "design-critic-preview-trace"
+      },
+      "approved_design_memory_writeback": {
+        "approved_destination": "data/design-vault/design-memory/<YYYY-MM-DD>/<design_run_id>.md",
+        "preview_only_no_write": true,
+        "required_gate": "verified_run_with_explicit_approval_desktop_mobile_originality_critic_and_no_fake_go",
+        "write_authority": false
+      },
+      "preview_packet": {
+        "consumer_event_id": "blocked_until_packet_acceptance",
+        "design_packet_id": "preview-shell-local",
+        "obsidian_context_refs": [],
+        "original_user_prompt_hash": "5c4b6d4841728d54a3bbbed871f4b22c34ffeffda234a77bd9ff193f16948187",
+        "request_id": "plan-04-2-model",
+        "schema_version": "design_studio_preview_shell_v1",
+        "target_surface": "/coding/design-studio",
+        "trace_id": "design-studio-trace-5c4b6d484172--2-model"
+      },
+      "bounded_coder_packet": {
+        "allowed_files": [
+          "src/app/coding/design-studio/page.tsx",
+          "src/components/coding/DesignStudioShell.tsx",
+          "src/app/v1/coding/design-studio/preview/route.ts"
+        ],
+        "blocked_until_human_accepts_design_packet": true,
+        "forbidden_files": [
+          "docs/evidence/**",
+          ".env*",
+          ".spirit-backups/**"
+        ],
+        "target_files": [
+          "src/components/coding/DesignStudioShell.tsx"
+        ],
+        "verification_commands": [
+          "npm test -- src/app/v1/coding/design-studio/preview/__tests__/route.test.ts"
+        ]
+      }
+    },
+    "packet": {
+      "accessibility_notes": [
+        "visible focus states",
+        "semantic headings",
+        "no text overlap",
+        "keyboard navigation must be first-class"
+      ],
+      "audience": [
+        "operators reviewing Source Proxy evidence",
+        "keyboard-heavy power users",
+        "design reviewers"
+      ],
+      "constraints": [
+        "preview_only_no_apply",
+        "no_execute_approved",
+        "no_raw_css_ingest",
+        "preserve dense workbench utility",
+        "support keyboard and focus proof"
+      ],
+      "intent": [
+        "increase perceived product quality",
+        "tighten operator workflow clarity",
+        "make interaction keyboard-first"
+      ],
+      "page_app_target": "/coding/design-demo",
+      "reference_inputs": [
+        "none_supplied"
+      ],
+      "risk_flags": [
+        "low_preview_only"
+      ],
+      "visual_direction": [
+        "premium restrained product surface",
+        "dense console workbench",
+        "precise technical evidence surface"
+      ],
+      "anti_template_checks": [
+        "reject_generic_ai_studio_layout",
+        "require_project_specific_motif"
+      ],
+      "coder_packet": {
+        "allowed_files": [
+          "src/components/coding/DesignStudioShell.tsx"
+        ],
+        "css_rules": [
+          "derive tokens from project surface",
+          "do not copy raw CSS selectors"
+        ],
+        "forbidden_files": [
+          "docs/evidence/**",
+          ".env*",
+          ".spirit-backups/**"
+        ],
+        "responsive_rules": [
+          "desktop and mobile proof required before GO"
+        ],
+        "target_files": [
+          "src/components/coding/DesignStudioShell.tsx"
+        ],
+        "verification_commands": [
+          "npx vitest run src/app/v1/coding/design-studio/preview/__tests__/route.test.ts --reporter=dot"
+        ]
+      },
+      "derivation_source": "heuristic_prompt_structuring_no_model",
+      "design_packet_hash": "368d458498009ffba23485e6cdc2fa3c2a5d382883f3d4bff03c2be6e0b06f1d",
+      "design_packet_id": "design-packet-368d45849800",
+      "obsidian_context_refs": [],
+      "project_specific_motif": "premium restrained product surface",
+      "style_family_blend": [
+        "premium restrained product surface",
+        "dense console workbench",
+        "precise technical evidence surface"
+      ],
+      "target_surface": "/coding/design-demo",
+      "trace_id": "design-studio-trace-5c4b6d484172--2-model",
+      "visual_pass_criteria": [
+        "clear preview/apply boundary",
+        "mobile and desktop layout remain scannable",
+        "no Google AI Studio generic shell"
+      ],
+      "model_guidance": {
+        "event_id": "ollama-phi4-mini-latest-9f74f41c8397",
+        "output_hash": "9f74f41c8397c725c793971934c1a4be4c5347fb7610f349a023b052c7759b3a",
+        "provider_model_name": "phi4-mini:latest",
+        "text": "Incorporate tactile feedback elements into the high-quality materials to enhance user engagement and reinforce a seamless, intuitive interface."
+      }
+    },
+    "modelInvocation": {
+      "byte_count": 143,
+      "event_id": "ollama-phi4-mini-latest-9f74f41c8397",
+      "input_hash": "8d1de6e235634307071d0933fc047dfeb7a0412ccd7aa8a4539735b45150d41a",
+      "model": "phi4-mini:latest",
+      "ok": true,
+      "output_excerpt": "Incorporate tactile feedback elements into the high-quality materials to enhance user engagement and reinforce a seamless, intuitive interface.",
+      "output_hash": "9f74f41c8397c725c793971934c1a4be4c5347fb7610f349a023b052c7759b3a",
+      "provider": "ollama",
+      "response_status": 200,
+      "trace_id": "design-studio-trace-5c4b6d484172--2-model"
+    }
+  },
+  "capturedAt": "2026-07-03T02:19:23.814Z"
+}

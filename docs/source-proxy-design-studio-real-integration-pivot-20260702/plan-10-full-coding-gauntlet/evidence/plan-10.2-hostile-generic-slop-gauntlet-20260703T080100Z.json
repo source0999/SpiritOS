@@ -1,0 +1,88 @@
+{
+  "captured_at": "2026-07-03T04:01:00-04:00",
+  "increment_id": "10.2-hostile-generic-slop-gauntlet",
+  "ok": true,
+  "generic_ai_studio_v0_prompt_submitted_through_coding": true,
+  "network_proof_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.2-hostile-network-proof-20260703T080100Z.json",
+  "network_proof_sha256": "ee35eac9cd213ecf5621c0246771e75101e54c6879ee7af9b77d2315adbd43b6",
+  "endpoint_status": 200,
+  "request_id": "design-studio-e8b369cd-afbf-49a1-8497-a87fa6209e60",
+  "trace_id": "design-studio-trace-0442905861fe-a6209e60",
+  "route_anti_template_originality_outcome": "ANTI_TEMPLATE_ORIGINALITY_BLOCKED",
+  "route_anti_template_blockers": [
+    "generic_purple_blue_gradient",
+    "same_three_cards_pattern",
+    "hero_left_cards_right_pattern",
+    "decorative_blob_without_reason"
+  ],
+  "rendered_hostile_artifact_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.2-hostile-rendered-artifact-20260703T080100Z.txt",
+  "rendered_hostile_artifact_hash": "e220bce1fdc031dc315b04f9a74e3343a458c16e8959bf4c5f88787cef7a9502",
+  "rendered_hostile_verdict_id": "plan-10-hostile-rendered-verdict-20260703T080100Z",
+  "rendered_hostile_verdict": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_REJECT",
+    "project_motif_rendered_evidence": [],
+    "reject_or_repair_reason": "rendered_output_missing_project_specific_motif",
+    "template_signal_count": 8,
+    "template_signal_matches": [
+      {
+        "id": "centered_hero_block",
+        "evidence": "hero-like first viewport language or metadata detected"
+      },
+      {
+        "id": "purple_blue_gradient",
+        "evidence": "purple/blue color family metadata detected"
+      },
+      {
+        "id": "generic_glass_cards",
+        "evidence": "more than half of visible cards are glass cards"
+      },
+      {
+        "id": "three_card_feature_grid",
+        "evidence": "generic feature grid language with at least three cards"
+      },
+      {
+        "id": "pricing_tiers",
+        "evidence": "pricing tier language or card metadata detected"
+      },
+      {
+        "id": "bland_footer",
+        "evidence": "generic footer language detected"
+      },
+      {
+        "id": "decorative_blobs",
+        "evidence": "decorative blob/orb language detected"
+      },
+      {
+        "id": "hero_left_cards_right",
+        "evidence": "default hero-left/cards-right layout metadata detected"
+      }
+    ]
+  },
+  "clean_generic_artifact_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.2-clean-generic-rendered-artifact-20260703T080100Z.txt",
+  "clean_generic_artifact_hash": "2b3dcbaf8d54a5e83ad2e512cebc28b2c054f98313013b96e2b0f10e6b011493",
+  "clean_generic_verdict_id": "plan-10-clean-generic-verdict-20260703T080100Z",
+  "clean_generic_verdict": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_REPAIR_REQUIRED",
+    "project_motif_rendered_evidence": [],
+    "reject_or_repair_reason": "rendered_output_missing_project_specific_motif",
+    "template_signal_count": 2,
+    "template_signal_matches": [
+      {
+        "id": "centered_hero_block",
+        "evidence": "hero-like first viewport language or metadata detected"
+      },
+      {
+        "id": "three_card_feature_grid",
+        "evidence": "generic feature grid language with at least three cards"
+      }
+    ]
+  },
+  "ui_screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.2-hostile-coding-ui-final-20260703T080100Z.png",
+  "ui_screenshot_hash": "5ad2187385e4628a5496bbcddf7d14694e79a3c45cc0b66a0864af943da5b9d5",
+  "required_proof": {
+    "generic_ai_studio_v0_prompt_submitted_through_coding": true,
+    "rendered_output_rejected_or_repaired_heavily": true,
+    "cannot_accept_clean_generic_output": true,
+    "verdict_references_rendered_artifacts": true
+  }
+}

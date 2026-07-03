@@ -17,6 +17,25 @@ export function isAgentLabTrialPath(path: string): boolean {
   );
 }
 
+export const DUMMY_PRODUCT_SITE_TRIAL_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
+
+export const DUMMY_PRODUCT_SITE_TRIAL_FILES = [
+  `${DUMMY_PRODUCT_SITE_TRIAL_ROOT}README.md`,
+  `${DUMMY_PRODUCT_SITE_TRIAL_ROOT}package.json`,
+  `${DUMMY_PRODUCT_SITE_TRIAL_ROOT}index.html`,
+  `${DUMMY_PRODUCT_SITE_TRIAL_ROOT}src/main.js`,
+  `${DUMMY_PRODUCT_SITE_TRIAL_ROOT}src/products.js`,
+  `${DUMMY_PRODUCT_SITE_TRIAL_ROOT}src/styles.css`,
+] as const;
+
+export function isDummyProductSiteTrialPath(path: string): boolean {
+  return normalizeRepoPath(path).startsWith(DUMMY_PRODUCT_SITE_TRIAL_ROOT);
+}
+
+export function isCoderTrialCleanupPath(path: string): boolean {
+  return isAgentLabTrialPath(path) || isDummyProductSiteTrialPath(path);
+}
+
 export function pathIsAllowedForTrialReverse(filePath: string, allowedFiles: string[]): boolean {
   const normalized = normalizeRepoPath(filePath);
   return allowedFiles.some((allowed) => {
@@ -75,7 +94,7 @@ export function uniqueAgentLabTargetsFromResults<
       ...result.disk_changed_files,
       ...result.preview_changed_files,
     ]) {
-      if (isAgentLabTrialPath(file)) {
+      if (isCoderTrialCleanupPath(file)) {
         targets.add(normalizeRepoPath(file));
       }
     }

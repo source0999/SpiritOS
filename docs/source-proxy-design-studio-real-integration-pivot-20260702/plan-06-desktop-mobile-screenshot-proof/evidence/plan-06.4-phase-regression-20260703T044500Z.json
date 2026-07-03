@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-07-03T00:45:00-04:00",
+  "increment_id": "06.4-phase-regression",
+  "ok": true,
+  "plans_01_to_05_validator_basis": "Receipt validator was green through Plan 06 before this receipt and is rerun through Plan 06 after this receipt.",
+  "screenshot_consumption_packet": "plan-06.3-screenshot-consumption-packet-20260703T043400Z.json",
+  "looked_good_rejection": {
+    "accepted": false,
+    "blockers": [
+      "looked_good_is_not_acceptance_proof",
+      "missing_desktop_screenshot_hash",
+      "missing_mobile_screenshot_hash",
+      "missing_sandbox_apply_receipt_id",
+      "missing_diff_hash"
+    ]
+  },
+  "screenshot_linked_candidate": {
+    "accepted": true,
+    "blockers": []
+  },
+  "no_looked_good_proof_accepted": true,
+  "looked_good_grep_matches": []
+}

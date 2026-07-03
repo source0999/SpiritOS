@@ -1,0 +1,80 @@
+{
+  "increment_id": "11.3-final-all-phases-closeout",
+  "plan_id": "11",
+  "phase_id": "6",
+  "created_at": "2026-07-03T00:15:27-04:00",
+  "head": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "branch": "bench/glm4-9b-model-lanes",
+  "verdict": "INCREMENT_GO_PROVEN",
+  "final_closeout": {
+    "all_plans_00_through_11_accounted_for": true,
+    "implementation_performed": true,
+    "runtime_code_modified": true,
+    "execute_approved_scope_for_design_studio": "OUT_OF_SCOPE",
+    "canonical_design_studio_apply_path": "/coding Design Studio task -> design/coder packet -> Design Studio sandbox apply -> /coding/design-demo only",
+    "blocked_env_policy_preserved": true,
+    "go_claimed_before_plan_11_3": false
+  },
+  "required_checks": {
+    "git_diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "notes": "Only Git LF-to-CRLF working-copy warnings were emitted; no whitespace errors."
+    },
+    "typescript": {
+      "command": "npx tsc --noEmit --pretty false --incremental false",
+      "exit_code": 0
+    },
+    "writeback_vitest": {
+      "command": "CI=1 npx vitest run src/lib/coding/__tests__/design-studio-obsidian-writeback.test.ts --reporter=verbose --testTimeout=15000 --hookTimeout=15000 --no-file-parallelism",
+      "exit_code": 0,
+      "test_files_passed": 1,
+      "tests_passed": 10,
+      "tests_failed": 0
+    },
+    "receipt_validator_pre_receipt": {
+      "command": "node scripts/coding/validate-design-studio-receipts.mjs --pivot docs/source-proxy-design-studio-real-integration-pivot-20260702 --through-plan 11",
+      "exit_code": 0,
+      "ok": true,
+      "files_checked": 46,
+      "errors": []
+    }
+  },
+  "real_coding_browser_proof": {
+    "happy_path": {
+      "evidence_path": "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.1-happy-path-gauntlet-20260703T074700Z.json",
+      "sha256": "dd693005f8df0cb14cd8b4cfb039586b2cddd813a72aafef57f0a496eb175b8f",
+      "route": "/coding",
+      "ui_screenshot_sha256": "fb0becb0eb62bda3df04d26a86d9f14e5ba2edc0feed327e50e662b14865ac22",
+      "dom_sha256": "f2e565d2f4719fee9efb4129e9e4663f309cb907b407e87bac639c783fba5bf0",
+      "trace_id": "design-studio-trace-fd3920ff1c60-943f12a2",
+      "request_id": "design-studio-756f8090-5c9c-482d-b209-029f943f12a2"
+    },
+    "hostile_generic_slop": {
+      "evidence_path": "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.2-hostile-generic-slop-gauntlet-20260703T080100Z.json",
+      "sha256": "c5b96fd88044fa20dc1d7b4f530815c7254c1b9b2adfd588fba5849122a66752",
+      "route": "/coding",
+      "verdict": "GENERIC_TEMPLATE_REJECT"
+    },
+    "blocked_env_failure_path": {
+      "evidence_path": "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.3-failure-path-gauntlet-20260703T081500Z.json",
+      "sha256": "4a16f6d1a68f71f02e00083df8562dc6d7fd3d434046d3cdda5f8eab4024d35e",
+      "route": "/coding",
+      "outcome": "MODEL_PROBE_BLOCKED_ENV",
+      "failure_mode": "PROVIDER_UNREACHABLE_BLOCKED_ENV"
+    },
+    "phase_regression": {
+      "evidence_path": "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.4-phase-regression-20260703T083600Z.json",
+      "sha256": "7ab05699274cd60731f6d8092a245d797b36a9a3aab1eafce525e7665121f43d",
+      "route": "/coding",
+      "ui_screenshot_sha256": "c23585489ff5ea21f453d12c49f6e6d596daa175941d4678d26884db7e892188",
+      "dom_sha256": "a02a475171e831a977c29a041386d2cc06d2b2438da39baf8256868220d909b9"
+    }
+  },
+  "proof_boundary": {
+    "source_text_tests_are_not_runtime_proof": true,
+    "route_unit_tests_are_not_frontend_proof": true,
+    "backend_curl_is_not_browser_proof": true,
+    "plan_10_real_coding_browser_gauntlet_reused_as_final_browser_proof": true
+  }
+}

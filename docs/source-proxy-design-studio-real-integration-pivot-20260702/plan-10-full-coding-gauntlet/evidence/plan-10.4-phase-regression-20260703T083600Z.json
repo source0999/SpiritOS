@@ -1,0 +1,100 @@
+{
+  "captured_at": "2026-07-03T04:36:00-04:00",
+  "increment_id": "10.4-all-prior-phase-regression",
+  "ok": true,
+  "all_prior_checks_rerun": {
+    "receipt_validator_through_plan_10": {
+      "ok": true,
+      "filesChecked": 43,
+      "errors": []
+    },
+    "git_diff_check": {
+      "ok": true,
+      "status": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'scripts/restart-spiritos-lan.sh', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'scripts/spiritos-lan-watchdog.sh', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'source_proxy/api/decision.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'source_proxy/benchmarks/model_lane_benchmark.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'source_proxy/tasks/long_running.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'source_proxy/tests/test_coding_regression_pack.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'source_proxy/tests/test_long_running_tasks.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'source_proxy/tests/test_model_lane_benchmark.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/coding/design-demo/page.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/layout.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/spiritflix/layout.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/v1/actions/execute-approved/__tests__/route.test.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/v1/actions/execute-approved/route.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/v1/coding/agent-lab-sweep/route.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/v1/coding/design-studio/preview/route.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/app/v1/decisions/prompt-packet/route.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/components/coding/CodingCockpitShell.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/components/coding/DesignStudioShell.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/components/coding/__tests__/coding-cockpit-shell.test.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/__tests__/agent-lab-baseline-server.test.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/__tests__/dummy-coder-10-grader.test.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/__tests__/dummy-project-summary.test.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/__tests__/reversible-trial-runner.test.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/agent-lab-baseline-server.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/agent-lab-cleanup.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/design-studio-obsidian-writeback.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/dummy-coder-10-grader.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/dummy-project-summary.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/durable-run-types.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/lib/coding/reversible-trial-runner.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/ui-agent-trials/fixtures/dummy-product-site/index.html', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/ui-agent-trials/fixtures/dummy-product-site/package.json', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css', LF will be replaced by CRLF the next time Git touches it\n"
+    }
+  },
+  "no_previous_green_proof_broken": true,
+  "no_unrelated_coding_regression": {
+    "ok": true,
+    "route": "http://127.0.0.1:3029/coding",
+    "screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.4-coding-regression-20260703T083200Z.png",
+    "screenshot_hash": "c23585489ff5ea21f453d12c49f6e6d596daa175941d4678d26884db7e892188",
+    "dom_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.4-coding-regression-dom-20260703T083200Z.txt",
+    "dom_hash": "a02a475171e831a977c29a041386d2cc06d2b2438da39baf8256868220d909b9"
+  },
+  "forbidden_file_audit": {
+    "plan10_touched_files": [
+      "src/components/coding/CodingCockpitShell.tsx",
+      "src/app/v1/coding/design-studio/preview/route.ts",
+      "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/**"
+    ],
+    "forbidden_plan10_touches": [],
+    "pre_existing_dirty_forbidden_or_out_of_scope_files": [
+      "src/app/v1/actions/execute-approved/__tests__/route.test.ts",
+      "src/app/v1/actions/execute-approved/route.ts"
+    ],
+    "note": "Out-of-scope dirty files were present before this Plan 10 closeout and were not reverted or used as Plan 10 proof."
+  },
+  "git_status_short_excerpt": [
+    " M scripts/restart-spiritos-lan.sh",
+    " M scripts/spiritos-lan-watchdog.sh",
+    " M source_proxy/api/decision.py",
+    " M source_proxy/benchmarks/model_lane_benchmark.py",
+    " M source_proxy/tasks/long_running.py",
+    " M source_proxy/tests/test_coding_regression_pack.py",
+    " M source_proxy/tests/test_long_running_tasks.py",
+    " M source_proxy/tests/test_model_lane_benchmark.py",
+    " M src/app/coding/design-demo/page.tsx",
+    " M src/app/layout.tsx",
+    " M src/app/spiritflix/layout.tsx",
+    " M src/app/v1/actions/execute-approved/__tests__/route.test.ts",
+    " M src/app/v1/actions/execute-approved/route.ts",
+    " M src/app/v1/coding/agent-lab-sweep/route.ts",
+    " M src/app/v1/coding/design-studio/preview/route.ts",
+    " M src/app/v1/decisions/prompt-packet/route.ts",
+    " M src/components/coding/CodingCockpitShell.tsx",
+    " M src/components/coding/DesignStudioShell.tsx",
+    " M src/components/coding/__tests__/coding-cockpit-shell.test.tsx",
+    " M src/lib/coding/__tests__/agent-lab-baseline-server.test.ts",
+    " M src/lib/coding/__tests__/dummy-coder-10-grader.test.ts",
+    " M src/lib/coding/__tests__/dummy-project-summary.test.ts",
+    " M src/lib/coding/__tests__/reversible-trial-runner.test.ts",
+    " M src/lib/coding/agent-lab-baseline-server.ts",
+    " M src/lib/coding/agent-lab-cleanup.ts",
+    " M src/lib/coding/design-studio-obsidian-writeback.ts",
+    " M src/lib/coding/dummy-coder-10-grader.ts",
+    " M src/lib/coding/dummy-project-summary.ts",
+    " M src/lib/coding/durable-run-types.ts",
+    " M src/lib/coding/reversible-trial-runner.ts",
+    " M tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+    " M tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+    " M tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+    " M tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+    "?? docs/evidence/glm4-9b-model-lanes-20260702-195946/",
+    "?? docs/evidence/glm4-9b-model-lanes-20260702-202200/",
+    "?? docs/evidence/prompt3-anti-cheat-scoped-review.patch",
+    "?? docs/local-models/glm-4-9b-benchmark.md",
+    "?? docs/local-models/glm-4-9b-install.md",
+    "?? docs/source-proxy-design-studio-implementation-pivot-20260701/DEPRECATED.md",
+    "?? docs/source-proxy-design-studio-real-integration-pivot-20260702/",
+    "?? scripts/coding/",
+    "?? scripts/media/spiritflix_library_smart_rescan_status.json",
+    "?? scripts/media/spiritflix_smart_rescan_rollback_20260702T0240.json",
+    "?? src/app/api/spiritflix/library-smart-rescan/",
+    "?? src/app/v1/coding/design-studio/approved-writeback/",
+    "?? src/components/coding/__tests__/selected-prompt-audit-diagnostics.test.ts",
+    "?? src/lib/coding/design-studio-anti-template-verifier.ts",
+    "?? src/lib/coding/design-studio-approved-writeback-runtime.ts",
+    "?? src/lib/coding/design-studio-bounded-repair.ts",
+    "?? src/lib/coding/design-studio-critic.ts"
+  ],
+  "required_proof": {
+    "all_prior_checks_rerun": true,
+    "no_previous_green_proof_broken": true,
+    "no_unrelated_coding_regression": true,
+    "no_forbidden_files_touched": true,
+    "validator_passes_through_plan_10": true
+  }
+}

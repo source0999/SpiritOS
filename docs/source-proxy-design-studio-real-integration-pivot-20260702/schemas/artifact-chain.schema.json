@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiritos.local/source-proxy/design-studio/artifact-chain.schema.json",
+  "title": "Design Studio Artifact Chain",
+  "type": "object",
+  "required": ["trace_id", "links"],
+  "properties": {
+    "trace_id": { "type": "string", "minLength": 1 },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "hash"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1 },
+          "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "artifact_path": { "type": "string" },
+          "producer_receipt_id": { "type": "string" },
+          "consumer_receipt_id": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

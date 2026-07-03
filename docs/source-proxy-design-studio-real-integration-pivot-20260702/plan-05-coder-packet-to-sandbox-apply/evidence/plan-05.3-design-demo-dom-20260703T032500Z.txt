@@ -1,0 +1,41 @@
+- main:
+  - paragraph: Plan 05 Sandbox Apply
+  - heading "Applied Design Studio sandbox packet" [level=1]
+  - paragraph: The generated coder packet has been applied only to this design-demo route, with visible trace markers for the follow-up browser proof.
+  - complementary:
+    - paragraph: Scope Fence
+    - generic: Route
+    - generic: /coding/design-demo sandbox only
+    - generic: Apply
+    - generic: Plan 05.2 scoped sandbox diff
+    - generic: Protected
+    - generic: .env, global CSS, and production routes blocked
+  - article:
+    - paragraph: Intent
+    - paragraph: Turn the Design Studio packet into a real bounded review screen.
+  - article:
+    - paragraph: System
+    - paragraph: Dense evidence panels, crisp scope rails, and restrained cyan-lime accents.
+  - article:
+    - paragraph: Behavior
+    - paragraph: Static sandbox apply with trace, diff, and downstream handoff cues.
+  - paragraph: Coder Packet
+  - generic: "1"
+  - paragraph: Apply only to src/app/coding/design-demo/page.tsx.
+  - generic: "2"
+  - paragraph: Render the design_packet_hash and coder_packet_hash used for the sandbox handoff.
+  - generic: "3"
+  - paragraph: Keep production routes, global styles, and protected paths outside the diff.
+  - paragraph: Trace Link
+  - paragraph: Trace
+  - paragraph: design-studio-trace-24e3574ecc8f-r-packet
+  - paragraph: Design
+  - paragraph: 999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2
+  - paragraph: Coder
+  - paragraph: preview_bb110d8d
+  - paragraph: Apply Proof
+  - generic: bounded diff
+  - generic: allowed file only
+  - generic: protected paths blocked
+  - generic: no production route
+  - paragraph: The next verifier must consume this sandbox output before any real app screen apply can be considered.

@@ -1,0 +1,36 @@
+{
+  "captured_at": "2026-07-03T04:15:00-04:00",
+  "increment_id": "10.3-failure-path-gauntlet",
+  "ok": true,
+  "unavailable_provider_induction": "dev server on port 3028 started with SOURCE_PROXY_OLLAMA_BASE_URL=http://127.0.0.1:9",
+  "network_proof_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.3-blocked-env-network-proof-20260703T081500Z.json",
+  "network_proof_sha256": "e78799db702a489ca865464d1a9f232800af116bbde01f7f8c65d0bee0ca7491",
+  "endpoint_status": 424,
+  "request_id": "design-studio-420ac561-5798-417f-9c42-ee267be9185f",
+  "trace_id": "design-studio-trace-c06527121a7b-7be9185f",
+  "outcome": "MODEL_PROBE_BLOCKED_ENV",
+  "reason_code": "PROVIDER_UNREACHABLE_BLOCKED_ENV",
+  "model_invocation_result": {
+    "blocked_env": true,
+    "event_id": "ollama-phi4-mini-latest-blocked-env",
+    "failure_mode": "PROVIDER_UNREACHABLE_BLOCKED_ENV",
+    "model": "phi4-mini:latest",
+    "ok": false,
+    "output_excerpt": "",
+    "output_hash": "",
+    "provider": "ollama",
+    "trace_id": "design-studio-trace-c06527121a7b-7be9185f"
+  },
+  "ui_shows_blocked_env": true,
+  "no_fake_go": true,
+  "ui_screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.3-blocked-env-ui-final-20260703T081500Z.png",
+  "ui_screenshot_hash": "b8d176fc60001af88f59a901fbef423c35e9206fb02b1d2eb5571ee497abaee3",
+  "ui_dom_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.3-blocked-env-ui-final-dom-20260703T081500Z.txt",
+  "ui_dom_hash": "309abe30dc6788a9eb4f86bd1845e53f7d6338476237280f828d6969b8cd95fb",
+  "required_proof": {
+    "unavailable_provider_safely_triggered_or_simulated_environmentally": true,
+    "ui_shows_blocked_env": true,
+    "no_fake_go": true,
+    "trace_records_failure_reason": true
+  }
+}

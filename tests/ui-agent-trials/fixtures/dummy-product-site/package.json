@@ -6,7 +6,11 @@
   "scripts": {
     "start": "echo 'Server started'"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "dummy",
+    "fixture",
+    "coder-agent"
+  ],
+  "author": "Coder 001",
   "license": "MIT"
 }

@@ -1,0 +1,96 @@
+{
+  "captured_at": "2026-07-03T02:48:00-04:00",
+  "increment_id": "09.2-approval-gate",
+  "ok": true,
+  "route_path": "Z:/src/app/v1/coding/design-studio/approved-writeback/route.ts",
+  "route_sha256": "6f1111a5cf2463ce7051dbc0c3a93b95778912b3559acfddaf13af14b2df909d",
+  "runtime_path": "Z:/src/lib/coding/design-studio-approved-writeback-runtime.ts",
+  "runtime_sha256": "cd0ac4f82af7b631c8d81be94875956dacb1e933d04f671bb97cdb883c701483",
+  "negative_matrix_results": {
+    "missing_approval_id": {
+      "status": 403,
+      "body": {
+        "endpoint": "/v1/coding/design-studio/approved-writeback",
+        "preview_write_authority": false,
+        "result": {
+          "reasons": [
+            "missing_approval_id"
+          ],
+          "status": "rejected",
+          "write_invoked": false
+        },
+        "write_authority": false
+      }
+    },
+    "invalid_approval_id": {
+      "status": 403,
+      "body": {
+        "endpoint": "/v1/coding/design-studio/approved-writeback",
+        "preview_write_authority": false,
+        "result": {
+          "reasons": [
+            "invalid_approval_id"
+          ],
+          "status": "rejected",
+          "write_invoked": false
+        },
+        "write_authority": false
+      }
+    },
+    "trace_mismatch": {
+      "status": 403,
+      "body": {
+        "endpoint": "/v1/coding/design-studio/approved-writeback",
+        "preview_write_authority": false,
+        "result": {
+          "reasons": [
+            "accepted_run_trace_mismatch"
+          ],
+          "status": "rejected",
+          "write_invoked": false
+        },
+        "write_authority": false
+      }
+    },
+    "missing_acceptance": {
+      "status": 403,
+      "body": {
+        "endpoint": "/v1/coding/design-studio/approved-writeback",
+        "preview_write_authority": false,
+        "result": {
+          "reasons": [
+            "acceptance_id_required"
+          ],
+          "status": "rejected",
+          "write_invoked": false
+        },
+        "write_authority": false
+      }
+    },
+    "model_self_promote": {
+      "status": 403,
+      "body": {
+        "endpoint": "/v1/coding/design-studio/approved-writeback",
+        "preview_write_authority": false,
+        "result": {
+          "reasons": [
+            "model_cannot_self_promote_approval"
+          ],
+          "status": "rejected",
+          "write_invoked": false
+        },
+        "write_authority": false
+      }
+    }
+  },
+  "files_created_by_negative_matrix": [],
+  "required_proof": {
+    "missing_approval_id_fails_closed": true,
+    "invalid_approval_id_fails_closed": true,
+    "trace_mismatch_fails_closed": true,
+    "missing_acceptance_fails_closed": true,
+    "model_cannot_self_promote_approval": true,
+    "writer_not_invoked_by_any_negative_case": true,
+    "no_memory_files_created": true
+  }
+}

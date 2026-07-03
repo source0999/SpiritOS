@@ -1,0 +1,33 @@
+{
+  "url": "http://localhost:3015/coding",
+  "promptPacketResponseStatus": 503,
+  "ordinaryCodingModeSelected": true,
+  "ordinaryPromptPacketSubmitted": true,
+  "designStudioPreviewNotCalled": true,
+  "executeApprovedNotCalled": true,
+  "failureStateVisible": true,
+  "forcedFailureDetailCapturedInDom": true,
+  "selectedPromptClearActionClicked": true,
+  "selectedPromptClearEvidenceVisible": true,
+  "networkProofPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-01-real-coding-composer-entrypoint\\evidence\\plan-01.3-coding-regression-20260703T011409Z-network.json",
+  "domSnapshotPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-01-real-coding-composer-entrypoint\\evidence\\plan-01.3-coding-regression-20260703T011409Z-dom.html",
+  "desktopScreenshotPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-01-real-coding-composer-entrypoint\\evidence\\plan-01.3-coding-regression-20260703T011409Z-failure.png",
+  "desktopScreenshotSha256": "2f98c8a325329637f968148638a96201483efedc4cacc50c5a4843db7d3217fb",
+  "pageInfoPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-01-real-coding-composer-entrypoint\\evidence\\plan-01.3-coding-regression-20260703T011409Z-page-info.json",
+  "consoleMessages": [
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "[HMR] connected"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ],
+  "visibleTextExcerpt": "Receipt\nTrace\nCoding\n\nWORKSPACE\n\nCoding sessions\n\nSpiritOS\n\nNew chat\nCurrent request\nFailed\nActive task\nPlan 01.3 ordinary coding regression: preview-only failure proof for src/components/coding/CodingCockpitShell.tsx. Do not apply any edit.\nLive run status\nFailed\n\nACTIVE TASK\n\nPlan 01.3 ordinary coding regression: preview-only failure proof for src/components/coding/CodingCockpitShell.tsx. Do not apply any edit.\n\nDiscovering after start\n\nRUNNER TOOLS\n\nRunner Tools\n\nRun one dummy Coder prompt or a later benchmark. Coder 001 creates LumaCart first.\n\nNo active run\n\nRun ID: none\n\nLast synced: 2026-07-03T01:14:15.567Z\n\nCATEGORY\nCoder\nDesigner\nCombined\nCOUNT\nMessy Coder 10\nMessy Coder 25\nMessy Coder 50\nMessy Coder 100\nMODE\nIndividual prompt\nBenchmark count\n\nCleared trial suite results. Run again when ready.\n\nSELECTED PROMPT\nCoder 001 - Init Dummy Product Site\nCoder 002 - Add Product Data\nCoder 003 - Render Product Cards\nCoder 004 - Add Search Filter\nCoder 005 - Add Category Chips\nCoder 006 - Add Fake Cart Count\nCoder 007 - Mobile Styling Pass\nCoder 008 - Add Tiny Tests / Smoke Checks\nCoder 009 - No-Op / Already Satisfied Proof\nCoder 010 - Protected Path Pressure Trap\nPASS_DUMMY_PROJECT_INIT\ndummy-product-site\nView prompt + boundaries\nRun selected promptRun all trials\n\nNo applied selected-prompt edits to reverse. Results cleared.\n\nPrompt: coder-001-init-dummy-product-site\n\nCLEARED\nCopy diagnostics\nDONE\n0/10\nEDITS APPLIED\n0\nALREADY SATISFIED\n0\nSAFETY BLOCKS\n0\nTIMEOUTS\n0\nNEEDS FIX\n0\nREVERTED\n0\nCopy prompts\nCopy trial diagnosticsReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n9 dummy fixture baseline(s) can be reset, then results will clear.\n\nCleared trial suite results. Run again when ready.\n\nACTIVE RUN\n\nActive run preview\n\nTask could not start. Copy diagnostics for details.\n\nRun failed\nTASK\nnot created\nROUTE\n/v1/decisions/prompt-packet\nTRACE\nnot recorded\nRunner sync\n\nPROMPT COMPOSER\n\nTask Composer\nCoding\nDesign Studio\nCoding prompt\nStart coding\nUndo last change\n\nTimer — total: 677ms · prompt-packet: 0.5s · finished: 0.6s\n\nUndo is available after Start coding applies a reversible change.\n\nACTIVITY\n\nRun activity\nBuild prompt packet\nCOMPLETE\n\nRoute observed: /v1/decisions/prompt-packet\n\nPreview diff\nFAILED\n\nTask could not start. Copy diagnostics for details.\n\nCheck approval boundary\nFAILED\n\nmanual_preview_failed\n\nApply only if approved\nFAILED\n\nNo apply has run.\n\nVerify result\nFAILED\n\nPreview failed before verifier evidence.\n\nReceipt / trace\nFAILED\n\nNo receipt or trace field recorded yet.\n\nDiagnostics\n\nPLAN / STEPS\n\nSingle-lane pipeline\n\nTask could not start. Copy diagnostics for details.\n\n1\n\nBuild prompt packet\n\nCOMPLETE\n\nRoute observed: /v1/decisions/prompt-packet\n\n2\n\nPreview diff\n\nFAILED\n\nTask could not start. Copy diagnostics for details.\n\n3\n\nCheck approval boundary\n\nFAILED\n\nmanual_preview_failed\n\n4\n\nApply only if approved\n\nFAILED\n\nNo apply has run.\n\n5\n\nVerify result\n\nFAILED\n\nPreview failed before verifier evidence.\n\n6\n\nReceipt / trace\n\nFAILED\n\nNo receipt or trace field recorded yet.\n\nMODEL\nUnknown local model\nTASK ID\nnot created\nTRACE ID\nnone\nOUTPUT HASH\nnone\n\nREVIEW PANE\n\nReview pane\nFAIL: THE RUN FAILED BEFORE A USEFUL RESULT.\nWARNING: NO LIVE MODEL CALL\n0/100 LIVE APPLY PROOF\n\nTask could not start. Copy diagnostics for details.\n\nCopy current task diagnostics\nCopy trial diagnostics\n\nFAILURE DIAGNOSTICS\n\nREASON_CODE\nmanual_preview_failed\nROUTE\n/v1/decisions/prompt-packet\nTASK_ID\nnone\nTECHNICAL_DETAIL\nPlan 01.3 controlled prompt-packet failure for ordinary coding regression proof.\nCHANGED FILES\nNone\nCHECKS\ngit diff --check\nReverse trial edits and clear results\n\nAgent Lab baseline clean — ready for a fresh Coder benchmark.\n\n9 dummy fixture baseline(s) can be reset, then results will clear.\n\nS\nSPIRITOS\nCOLLAPSE\nDASHBOARD\nCHAT\nSOURCE\nMAP\nSCOUT\nORACLE\nMEDIA\nIMPORTER\nCONSOLE",
+  "capturedAt": "2026-07-03T01:14:17.490Z"
+}

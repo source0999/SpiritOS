@@ -664,6 +664,147 @@ describe("CodingCockpitShell", () => {
     });
   });
 
+  it("accepts selected Prompt 3 already-satisfied when the preview probe proves cards render", async () => {
+    const calls = installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          already_satisfied: true,
+          alreadySatisfied: true,
+          changed_files: [],
+          checks_run: ["existing Prompt 3 storefront render validation"],
+          coder_diagnostics: {
+            generated_diff_by_backend: false,
+            generation_source: "disk_inspection",
+            model_output_classification: "already_satisfied_noop",
+            trial_result_trust_status: "existing_product_cards_verified_no_diff_needed",
+          },
+          diff_source: "already_satisfied_existing_dummy_product_cards",
+          fallback_used: false,
+          generated_diff_by_backend: false,
+          generation_source: "disk_inspection",
+          message: "already_satisfied",
+          model_output_classification: "already_satisfied_noop",
+          proposed_diff: "",
+          reason_code: "coder_no_changes_needed",
+          scaffold_used: false,
+          status: "already_satisfied",
+          verification_status: "existing storefront render validation passed",
+        });
+      }
+      if (url.endsWith("/v1/coding/dummy-product-site-preview/index.html")) {
+        return new Response(
+          '<!doctype html><main id="product-list"></main><script type="module" src="src/main.js"></script>',
+          { status: 200 },
+        );
+      }
+      if (url.endsWith("/v1/coding/dummy-product-site-preview/src/products.js")) {
+        return new Response(
+          [
+            "export default [",
+            "  { id: 'one', name: 'One', price: 1, category: 'A', description: 'First' },",
+            "  { id: 'two', name: 'Two', price: 2, category: 'B', description: 'Second' },",
+            "  { id: 'three', name: 'Three', price: 3, category: 'C', description: 'Third' },",
+            "  { id: 'four', name: 'Four', price: 4, category: 'D', description: 'Fourth' },",
+            "  { id: 'five', name: 'Five', price: 5, category: 'E', description: 'Fifth' },",
+            "  { id: 'six', name: 'Six', price: 6, category: 'F', description: 'Sixth' },",
+            "];",
+          ].join("\n"),
+          { status: 200 },
+        );
+      }
+      if (url.endsWith("/v1/coding/dummy-product-site-preview/src/main.js")) {
+        return new Response(
+          [
+            "import products from './products.js';",
+            "const list = document.querySelector('#product-list');",
+            "products.forEach((product) => {",
+            "  const card = document.createElement('article');",
+            "  card.className = 'product-card';",
+            "  card.innerHTML = `<h2>${product.name}</h2><p>${product.price}</p><p>${product.category}</p><p>${product.description}</p>`;",
+            "  list.appendChild(card);",
+            "});",
+          ].join("\n"),
+          { status: 200 },
+        );
+      }
+      if (url.endsWith("/v1/coding/dummy-product-site-preview/src/styles.css")) {
+        return new Response(".product-card { display: grid; }\n", { status: 200 });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    const promptSelect = within(runner).getByRole("combobox", { name: "Dummy Coder prompt" });
+    fireEvent.change(promptSelect, {
+      target: { value: "coder-003-render-product-cards" },
+    });
+    expect(promptSelect).toHaveValue("coder-003-render-product-cards");
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(calls.some((call) => call.url.includes("/v1/decisions/prompt-packet"))).toBe(true));
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+        grader: { resultState: "PASS_NOOP" },
+        rawBackendStatus: "already_satisfied",
+        selectedPromptId: "coder-003-render-product-cards",
+        status: "complete",
+      }),
+    );
+    expect(within(runner).queryByText(/missing_model_authored_proof/)).not.toBeInTheDocument();
+    expect(calls.some((call) => call.url.includes("/v1/actions/execute-approved"))).toBe(false);
+  });
+
+  it("surfaces selected prompt provider-200 no-diff classification as blocked", async () => {
+    const calls = installCommonFetchMock((url) => {
+      if (url.includes("/v1/decisions/prompt-packet")) {
+        return jsonResponse({
+          changed_files: [],
+          coder_diagnostics: {
+            full_file_content_likely_present: false,
+            markdown_code_blocks_present: false,
+            model_output_classification: "model_prose_only",
+            no_diff_failure_cause: "model_prose_only_no_file_change",
+            parser_extractor_decision: "rejected:coder_response_repair_exhausted:JSONDecodeError",
+            provider_call_made: true,
+            raw_response_excerpt_safe: "I would update the file.",
+            raw_response_length: 24,
+            safe_response_classification: "model_prose_only_no_file_change",
+            unified_diff_markers_present: false,
+          },
+          diagnostics_summary: {
+            no_diff_failure_cause: "model_prose_only_no_file_change",
+            raw_response_excerpt_safe: "I would update the file.",
+          },
+          no_diff_failure_cause: "model_prose_only_no_file_change",
+          parser_extractor_decision: "rejected:coder_response_repair_exhausted:JSONDecodeError",
+          proposed_diff: "",
+          reason_code: "coder_response_repair_exhausted",
+          safe_response_classification: "model_prose_only_no_file_change",
+          status: "blocked",
+          target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        });
+      }
+      return null;
+    });
+
+    render(<CodingCockpitShell />);
+    const runner = screen.getByRole("region", { name: "Trial Runner" });
+    fireEvent.click(within(runner).getByRole("button", { name: "Run selected prompt" }));
+
+    await waitFor(() => expect(calls.some((call) => call.url.includes("/v1/decisions/prompt-packet"))).toBe(true));
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(dummyCoderRunStorageKey) ?? "{}")).toMatchObject({
+        errorText: expect.stringContaining("model_prose_only_no_file_change"),
+        noDiffFailureCause: "model_prose_only_no_file_change",
+        parserExtractorDecision: "rejected:coder_response_repair_exhausted:JSONDecodeError",
+        status: "blocked",
+      }),
+    );
+    expect(calls.some((call) => call.url.includes("/v1/verification/diff-preview"))).toBe(false);
+    expect(calls.some((call) => call.url.includes("/v1/actions/execute-approved"))).toBe(false);
+  });
+
   it("names the dummy product-site fixture (not Agent Lab) when only LumaCart leftovers are dirty", async () => {
     installCommonFetchMock((url) => {
       if (url.includes("/v1/coding/agent-lab-baseline")) {
@@ -1045,6 +1186,7 @@ describe("CodingCockpitShell", () => {
         rawBackendStatus: "request_sent",
         selectedPromptId: "coder-001-init-dummy-product-site",
         status: "request_sent",
+        storedAt: Date.now() - 10 * 60 * 1000,
         taskId: "task_stale_001",
       }),
     );

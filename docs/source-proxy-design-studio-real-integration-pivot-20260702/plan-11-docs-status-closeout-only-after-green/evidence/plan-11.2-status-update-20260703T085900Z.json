@@ -1,0 +1,23 @@
+{
+  "captured_at": "2026-07-03T04:59:00-04:00",
+  "increment_id": "11.2-status-update",
+  "ok": true,
+  "status_json_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/status.json",
+  "status_json_sha256": "dff2272aa016e311aa84ebdb223c879355be75d687406a88cdee5225b6bc8bce",
+  "status_summary": {
+    "status": "PLAN_10_GREEN_DOCS_CLOSEOUT_IN_PROGRESS",
+    "implementation_performed": true,
+    "runtime_code_modified": true,
+    "go_claimed": false,
+    "latest_green_plan": "10",
+    "plan_10_acceptance_id": "accept-plan-09-3-human",
+    "final_go_requires_plan_11_3": true
+  },
+  "required_proof": {
+    "status_json_validates": true,
+    "no_go_without_plan_10_acceptance_id": true,
+    "no_contradiction_with_master_plan": true,
+    "old_pivot_has_deprecation_marker": true,
+    "new_pivot_is_canonical": true
+  }
+}

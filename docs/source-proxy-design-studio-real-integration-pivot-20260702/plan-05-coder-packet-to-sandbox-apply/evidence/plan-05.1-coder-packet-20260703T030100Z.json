@@ -1,0 +1,106 @@
+{
+  "captured_at": "2026-07-02T23:01:00-04:00",
+  "increment_id": "05.1-generate-coder-packet",
+  "route_source": "Z:/src/app/v1/coding/design-studio/preview/route.ts",
+  "runtime_harness": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.1-route-runtime-20260703T030100Z.cjs",
+  "ok": true,
+  "http_status": 200,
+  "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+  "model_invocation_event_id": "ollama-phi4-mini-latest-67f088ad3d99",
+  "design_packet_hash": "999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2",
+  "coder_packet_hash": "preview_bb110d8d",
+  "coder_packet": {
+    "accessibility_rules": [
+      "visible focus states",
+      "semantic headings",
+      "no text overlap"
+    ],
+    "allowed_files": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "coder_packet_hash": "preview_bb110d8d",
+    "design_packet_hash": "999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2",
+    "component_rules": [
+      "preserve preview-only guardrails",
+      "show design and coder packet panels"
+    ],
+    "consumer_event_id": "blocked_until_sandbox_apply_approval",
+    "consumer_subsystem": "design_demo_sandbox_apply",
+    "css_rules": [
+      "use project tokens",
+      "do not copy raw CSS selectors"
+    ],
+    "forbidden_files": [
+      "docs/evidence/**",
+      ".env*",
+      ".spirit-backups/**"
+    ],
+    "production_apply_authority": false,
+    "responsive_rules": [
+      "desktop and mobile verification required before GO"
+    ],
+    "sandbox_apply_target": "/coding/design-demo",
+    "target_files": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "verification_commands": [
+      "timeout 120s npx vitest run src/components/design-demo/SpiritDesignDemo.test.tsx --reporter=dot --pool=threads --environment=node"
+    ],
+    "visual_pass_criteria": [
+      "sandbox page visible at /coding/design-demo",
+      "applied design packet is visible",
+      "production routes remain untouched"
+    ]
+  },
+  "bounded_coder_packet": {
+    "accessibility_rules": [
+      "visible focus states",
+      "semantic headings",
+      "no text overlap"
+    ],
+    "allowed_files": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "coder_packet_hash": "preview_bb110d8d",
+    "design_packet_hash": "999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2",
+    "component_rules": [
+      "preserve preview-only guardrails",
+      "show design and coder packet panels"
+    ],
+    "consumer_event_id": "blocked_until_sandbox_apply_approval",
+    "consumer_subsystem": "design_demo_sandbox_apply",
+    "css_rules": [
+      "use project tokens",
+      "do not copy raw CSS selectors"
+    ],
+    "forbidden_files": [
+      "docs/evidence/**",
+      ".env*",
+      ".spirit-backups/**"
+    ],
+    "production_apply_authority": false,
+    "responsive_rules": [
+      "desktop and mobile verification required before GO"
+    ],
+    "sandbox_apply_target": "/coding/design-demo",
+    "target_files": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "verification_commands": [
+      "timeout 120s npx vitest run src/components/design-demo/SpiritDesignDemo.test.tsx --reporter=dot --pool=threads --environment=node"
+    ],
+    "visual_pass_criteria": [
+      "sandbox page visible at /coding/design-demo",
+      "applied design packet is visible",
+      "production routes remain untouched"
+    ],
+    "blocked_until_human_accepts_design_packet": true
+  },
+  "proof": {
+    "references_design_packet_hash": true,
+    "target_limited_to_design_demo_sandbox": true,
+    "no_production_route_apply": true,
+    "top_level_bounded_packet_matches": true,
+    "execute_approved_used": false
+  }
+}

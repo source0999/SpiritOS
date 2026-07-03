@@ -1,0 +1,36 @@
+{
+  "captured_at": "2026-07-03T00:14:00-04:00",
+  "increment_id": "06.1-desktop-screenshot",
+  "ok": true,
+  "supersedes_non_go_artifact": "plan-06.1-desktop-screenshot-20260703T040800Z.json",
+  "sandbox_apply_receipt_id": "sandbox-apply-69f25b09d872",
+  "diff_hash": "69f25b09d8727a8af3c742ebd86774604943b65fc2bcc44501ed3bd315a2b192",
+  "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+  "rendered_route": "/coding/design-demo",
+  "browser_url": "http://127.0.0.1:3023/coding/design-demo",
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "label": "desktop-default"
+  },
+  "screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-06-desktop-mobile-screenshot-proof/evidence/plan-06.1-desktop-default-20260703T041400Z.png",
+  "screenshot_hash": "df58f5c18102b054cb9e055fb268b7d288634a3c00b38190cf5c3d386f31b50d",
+  "screenshot_size_bytes": 104475,
+  "captured_after_apply": true,
+  "page_proof": {
+    "h1": "Applied Design Studio sandbox packet",
+    "h1Rect": {
+      "height": 225,
+      "width": 566,
+      "x": 97,
+      "y": 73
+    },
+    "hasApplied": true,
+    "hasCoderHash": true,
+    "hasDesignHash": true,
+    "hasTrace": true,
+    "innerHeight": 720,
+    "innerWidth": 1280,
+    "url": "http://127.0.0.1:3023/coding/design-demo"
+  }
+}

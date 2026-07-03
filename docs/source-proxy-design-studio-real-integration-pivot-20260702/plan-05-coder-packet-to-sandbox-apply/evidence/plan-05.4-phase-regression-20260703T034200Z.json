@@ -1,0 +1,76 @@
+{
+  "captured_at": "2026-07-02T23:42:00-04:00",
+  "increment_id": "05.4-phase-regression",
+  "ok": false,
+  "plans_01_to_04_validator_basis": "Receipt validator run through Plan 05 after receipt; previous validator run through Plan 05 succeeded before this receipt.",
+  "http_probes": [
+    {
+      "url": "http://127.0.0.1:3022/coding",
+      "status": 200,
+      "has_design_studio_text": true
+    },
+    {
+      "url": "http://127.0.0.1:3022/coding/design-demo",
+      "status": 200,
+      "has_applied_design_studio_sandbox_packet": true
+    }
+  ],
+  "browser_coding_regression": {
+    "url": "http://127.0.0.1:3022/coding",
+    "ok": true,
+    "has_coding_surface": true,
+    "has_design_studio": true,
+    "has_next_error": false,
+    "screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.4-coding-browser-20260703T034000Z.png",
+    "screenshot_hash": "1fc9e52fcaf3439a9fc344e23cb145bd79c942091b1e655d1ec2cf787a3f6512"
+  },
+  "changed_files": [
+    "source_proxy/api/decision.py",
+    "source_proxy/benchmarks/model_lane_benchmark.py",
+    "source_proxy/tasks/long_running.py",
+    "source_proxy/tests/test_coding_regression_pack.py",
+    "source_proxy/tests/test_long_running_tasks.py",
+    "source_proxy/tests/test_model_lane_benchmark.py",
+    "src/app/coding/design-demo/page.tsx",
+    "src/app/v1/actions/execute-approved/__tests__/route.test.ts",
+    "src/app/v1/actions/execute-approved/route.ts",
+    "src/app/v1/coding/agent-lab-sweep/route.ts",
+    "src/app/v1/coding/design-studio/preview/route.ts",
+    "src/app/v1/decisions/prompt-packet/route.ts",
+    "src/components/coding/CodingCockpitShell.tsx",
+    "src/components/coding/DesignStudioShell.tsx",
+    "src/components/coding/__tests__/coding-cockpit-shell.test.tsx",
+    "src/lib/coding/__tests__/agent-lab-baseline-server.test.ts",
+    "src/lib/coding/__tests__/dummy-coder-10-grader.test.ts",
+    "src/lib/coding/__tests__/dummy-project-summary.test.ts",
+    "src/lib/coding/__tests__/reversible-trial-runner.test.ts",
+    "src/lib/coding/agent-lab-baseline-server.ts",
+    "src/lib/coding/agent-lab-cleanup.ts",
+    "src/lib/coding/design-studio-obsidian-writeback.ts",
+    "src/lib/coding/dummy-coder-10-grader.ts",
+    "src/lib/coding/dummy-project-summary.ts",
+    "src/lib/coding/durable-run-types.ts",
+    "src/lib/coding/reversible-trial-runner.ts",
+    "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+    "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+    "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+    "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+  ],
+  "forbidden_files_touched": [
+    {
+      "file": "src/app/v1/actions/execute-approved/__tests__/route.test.ts",
+      "reason": "execute_approved_out_of_scope"
+    },
+    {
+      "file": "src/app/v1/actions/execute-approved/route.ts",
+      "reason": "execute_approved_out_of_scope"
+    }
+  ],
+  "no_forbidden_files_touched": false,
+  "execute_approved_touched": true,
+  "dev_server": {
+    "port": 3022,
+    "out_log": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-regression-devserver-3022.out.log",
+    "err_log": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-regression-devserver-3022.err.log"
+  }
+}

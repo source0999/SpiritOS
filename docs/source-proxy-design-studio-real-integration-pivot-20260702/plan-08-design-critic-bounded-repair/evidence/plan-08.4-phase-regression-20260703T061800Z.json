@@ -1,0 +1,58 @@
+{
+  "captured_at": "2026-07-03T02:18:00-04:00",
+  "increment_id": "08.4-phase-regression",
+  "ok": true,
+  "plans_01_to_07_still_pass": true,
+  "validator_through_plan_08": {
+    "ok": true,
+    "filesChecked": 35,
+    "errors": []
+  },
+  "repaired_retest_receipt_basis": {
+    "path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-retest-after-repair-20260703T061100Z.json",
+    "sha256": "60263745b03e6dff5a42860df59b62273f9dca0d391848c977f970e934f89a80",
+    "ok": true,
+    "desktop_screenshot_hash": "46127c072b2a517aeda8569b5ee391aca303b92d5d60b68c41946b20d5492647",
+    "mobile_screenshot_hash": "3047bff06eda22828c1f2e6a1e6dda56c9c84a772632c27c184aa37b9b24bb65"
+  },
+  "no_advisory_only_critic_accepted": true,
+  "advisory_only_critic_negative_result": {
+    "blockers": [
+      "missing_desktop_screenshot_hash",
+      "missing_mobile_screenshot_hash"
+    ],
+    "critic_verdict": "DESIGN_CRITIC_BLOCKED",
+    "critic_verdict_id": "critic-design-studio-trace-24e3574ecc8f-r-packet",
+    "references": {
+      "anti_template_verdict_id": "advisory-only-no-screenshot",
+      "desktop_screenshot_hash": null,
+      "mobile_screenshot_hash": null,
+      "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+    }
+  },
+  "no_unbounded_repair_accepted": true,
+  "unbounded_repair_negative_result": {
+    "allowed_changed_paths": [
+      "src/app/coding/design-demo/page.tsx"
+    ],
+    "apply_ready": false,
+    "blockers": [
+      "invalid_or_unbounded_max_repair_attempts"
+    ],
+    "forbidden_paths": [],
+    "max_repair_attempts": 99,
+    "repair_attempt_id": "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1",
+    "repair_attempt_ids": [
+      "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1"
+    ],
+    "repair_output_retest_required": true,
+    "sandbox_diff_required": true,
+    "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+  },
+  "required_proof": {
+    "plans_01_to_07_still_pass": true,
+    "no_advisory_only_critic_accepted": true,
+    "no_unbounded_repair_accepted": true,
+    "validator_passes_through_plan_08": true
+  }
+}

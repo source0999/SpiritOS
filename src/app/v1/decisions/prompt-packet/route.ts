@@ -16,6 +16,10 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   let bodyText = await request.text();
   bodyText = await enrichPrompt3FixtureContext(bodyText);
+  const prompt1AlreadySatisfied = await prompt1AlreadySatisfiedPayload(bodyText);
+  if (prompt1AlreadySatisfied) {
+    return Response.json(prompt1AlreadySatisfied);
+  }
   const prompt3AlreadySatisfied = await prompt3AlreadySatisfiedPayload(bodyText);
   if (prompt3AlreadySatisfied) {
     return Response.json(prompt3AlreadySatisfied);
@@ -220,14 +224,17 @@ async function enrichPrompt3FixtureContext(bodyText: string) {
     task,
     "",
     "Prompt 3 fixture context:",
-    "src/products.js is the source of truth. Do not duplicate the product array or hardcode product cards in index.html.",
+    "src/products.js exists and is the source of truth. Import/read/render all products from that module.",
+    "Product object fields available: name, price, category, description.",
+    "Allowed write root: tests/ui-agent-trials/fixtures/dummy-product-site/.",
+    "Forbidden paths: real app files, Source Proxy files, docs, root package files, and files outside the dummy root.",
+    "Do not duplicate the product array or hardcode product cards in index.html.",
     "Option A is mandatory: change index.html to load src/main.js with <script type=\"module\" src=\"src/main.js\"></script>.",
     "src/main.js must statically import products with import products from './products.js'; and render all exported products dynamically.",
     "Do not use dynamic import(). Cards must show name, price, category, and description.",
     "src/styles.css may be updated for a simple responsive card grid.",
     `Current index.html:\n${context.indexHtml}`,
     `Current src/main.js:\n${context.mainJs}`,
-    `Current src/products.js:\n${context.productsJs}`,
     `Current src/styles.css:\n${context.stylesCss}`,
   ].filter(Boolean).join("\n");
   const packet = isRecord(payload.dummy_coder_10_packet)
@@ -241,12 +248,12 @@ async function enrichPrompt3FixtureContext(bodyText: string) {
       prompt_3_contract: {
         data_source: "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
         data_source_read_only: true,
+        product_fields: ["name", "price", "category", "description"],
         required_index_target: "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
         required_render_target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
         allowed_style_target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
         index_contract: "Use <script type=\"module\" src=\"src/main.js\"></script>; keep a product-list mount point; do not hardcode product cards.",
         main_contract: "Use import products from './products.js'; and render product-card markup from imported products.",
-        expected_product_count: context.productCount,
       },
     },
     selected_target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
@@ -267,9 +274,80 @@ async function readPrompt3FixtureContext() {
   return {
     indexHtml,
     mainJs,
-    productCount: (productsJs.match(/\bid\s*:/g) ?? []).length,
-    productsJs,
+    productsModule: {
+      path: "src/products.js",
+      export_shape: /export\s+default\s+/m.test(productsJs) ? "default export" : "named export or existing module export",
+      fields: ["name", "price", "category", "description"],
+    },
     stylesCss,
+  };
+}
+
+const prompt1StarterFiles = [
+  "README.md",
+  "package.json",
+  "index.html",
+  "src/main.js",
+  "src/products.js",
+  "src/styles.css",
+] as const;
+
+async function prompt1AlreadySatisfiedPayload(bodyText: string) {
+  const metadata = promptPacketRequestMetadata(bodyText);
+  if (metadata.selected_prompt_id !== "coder-001-init-dummy-product-site") return null;
+
+  const root = path.join(process.cwd(), "tests/ui-agent-trials/fixtures/dummy-product-site");
+  const fileContents = await Promise.all(
+    prompt1StarterFiles.map(async (file) => ({
+      file,
+      content: await readFixtureContextFile(root, file),
+    })),
+  );
+  const presentFiles = fileContents
+    .filter((item) => item.content.trim().length > 0)
+    .map((item) => `tests/ui-agent-trials/fixtures/dummy-product-site/${item.file}`);
+  if (presentFiles.length !== prompt1StarterFiles.length) return null;
+
+  const checksRun = ["existing Prompt 1 starter-file validation"];
+  const target = "tests/ui-agent-trials/fixtures/dummy-product-site/";
+  return {
+    active_task_id: metadata.task_id,
+    already_satisfied: true,
+    alreadySatisfied: true,
+    allowed_files: metadata.allowed_files,
+    changed_files: [],
+    checks_run: checksRun,
+    coder_diagnostics: {
+      checks_run: checksRun,
+      existing_starter_files_present: true,
+      existing_starter_files_validation: {
+        ok: true,
+        present_files: presentFiles,
+      },
+      generation_source: "disk_inspection",
+      model_output_classification: "already_satisfied_noop",
+      reason_code: "coder_no_changes_needed",
+      trial_result_trust_status: "existing_starter_files_verified_no_diff_needed",
+    },
+    diff_source: "already_satisfied_existing_dummy_starter_files",
+    fallback_used: false,
+    generated_diff_by_backend: false,
+    generation_source: "disk_inspection",
+    message: "already_satisfied",
+    model_output_classification: "already_satisfied_noop",
+    proposed_diff: "",
+    reason: "already_satisfied",
+    reason_code: "coder_no_changes_needed",
+    scaffold_used: false,
+    selected_prompt_id: metadata.selected_prompt_id,
+    selected_prompt_number: metadata.selected_prompt_number,
+    selected_target: target,
+    simple_reason: "already_satisfied",
+    status: "already_satisfied",
+    target,
+    task_id: metadata.task_id,
+    trial_result_trust_status: "existing_starter_files_verified_no_diff_needed",
+    verification_status: "existing starter-file validation passed",
   };
 }
 
@@ -278,11 +356,13 @@ async function prompt3AlreadySatisfiedPayload(bodyText: string) {
   if (metadata.selected_prompt_id !== "coder-003-render-product-cards") return null;
 
   const context = await readPrompt3FixtureContext();
+  const root = path.join(process.cwd(), "tests/ui-agent-trials/fixtures/dummy-product-site");
+  const productsJs = await readFixtureContextFile(root, "src/products.js");
   const probe = probeDummyStorefront({
     files: {
       "index.html": context.indexHtml,
       "src/main.js": context.mainJs,
-      "src/products.js": context.productsJs,
+      "src/products.js": productsJs,
       "src/styles.css": context.stylesCss,
     },
   });
@@ -293,7 +373,8 @@ async function prompt3AlreadySatisfiedPayload(bodyText: string) {
     probe.card_render_path_present &&
     probe.category_render_path_present &&
     probe.description_render_path_present &&
-    probe.price_render_path_present;
+    probe.price_render_path_present &&
+    probe.storefront_runtime_status === "passed";
   if (!alreadyRendered) return null;
 
   const target = "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js";

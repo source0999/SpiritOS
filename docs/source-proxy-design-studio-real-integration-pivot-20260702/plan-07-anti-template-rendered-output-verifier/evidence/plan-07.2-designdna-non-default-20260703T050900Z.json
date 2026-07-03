@@ -1,0 +1,36 @@
+{
+  "captured_at": "2026-07-03T01:09:00-04:00",
+  "increment_id": "07.2-designdna-non-default-check",
+  "ok": true,
+  "route_runtime_harness": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-07-anti-template-rendered-output-verifier/evidence/plan-07.2-route-runtime-20260703T050900Z.cjs",
+  "verifier_runtime_harness": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-07-anti-template-rendered-output-verifier/evidence/plan-07.2-verifier-runtime-20260703T050900Z.cjs",
+  "accepted_designdna": {
+    "designdna_hash": "b3ad0ec9b754454f2c64a364402b45884e4c8c5945ae4b22acf8f13bc75d5aca",
+    "domain_motif_anchors": [
+      "Source Proxy",
+      "Design Studio",
+      "design sandbox",
+      "visual review"
+    ],
+    "product_domain_motif": "premium restrained product surface",
+    "rhythm": "dense_evidence_panel_rhythm",
+    "spatial_system": "three_column_dense_workbench",
+    "layout_rhythm": "three_panel_preview_workbench",
+    "generic_fallback_passes": false
+  },
+  "accepted_designdna_has_product_specific_motif": true,
+  "accepted_output_has_non_default_spatial_rhythm": true,
+  "generic_clean_ui_cannot_pass": true,
+  "generic_clean_ui_verdict": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_REPAIR_REQUIRED",
+    "project_motif_rendered_evidence": [],
+    "reject_or_repair_reason": "rendered_output_missing_project_specific_motif",
+    "template_signal_count": 1,
+    "template_signal_matches": [
+      {
+        "id": "centered_hero_block",
+        "evidence": "hero-like first viewport language or metadata detected"
+      }
+    ]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "captured_at": "2026-07-03T00:59:00-04:00",
+  "increment_id": "07.1-rendered-output-detector",
+  "ok": true,
+  "verifier_source": "Z:/src/lib/coding/design-studio-anti-template-verifier.ts",
+  "runtime_harness": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-07-anti-template-rendered-output-verifier/evidence/plan-07.1-verifier-runtime-20260703T045900Z.cjs",
+  "detector_inspects": [
+    "rendered_text",
+    "dom_snapshot",
+    "screenshot_metadata"
+  ],
+  "text_only_prompt_detector_rejected": {
+    "anti_template_verdict": "REJECT_TEXT_ONLY_INPUT",
+    "project_motif_rendered_evidence": [],
+    "reject_or_repair_reason": "rendered_dom_or_screenshot_metadata_required",
+    "template_signal_count": 0,
+    "template_signal_matches": []
+  },
+  "generic_ai_studio_one_look_flagged": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_REJECT",
+    "project_motif_rendered_evidence": [],
+    "reject_or_repair_reason": "rendered_output_matches_generic_template_signals",
+    "template_signal_count": 7,
+    "template_signal_matches": [
+      {
+        "id": "centered_hero_block",
+        "evidence": "hero-like first viewport language or metadata detected"
+      },
+      {
+        "id": "purple_blue_gradient",
+        "evidence": "purple/blue color family metadata detected"
+      },
+      {
+        "id": "generic_glass_cards",
+        "evidence": "more than half of visible cards are glass cards"
+      },
+      {
+        "id": "three_card_feature_grid",
+        "evidence": "generic feature grid language with at least three cards"
+      },
+      {
+        "id": "pricing_tiers",
+        "evidence": "pricing tier language or card metadata detected"
+      },
+      {
+        "id": "bland_footer",
+        "evidence": "generic footer language detected"
+      },
+      {
+        "id": "decorative_blobs",
+        "evidence": "decorative blob/orb language detected"
+      }
+    ]
+  },
+  "current_sandbox_rendered_output": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_PASS",
+    "project_motif_rendered_evidence": [
+      "source proxy",
+      "design studio",
+      "design sandbox",
+      "visual review"
+    ],
+    "reject_or_repair_reason": "rendered_output_has_project_specific_motif_or_low_template_signal_count",
+    "template_signal_count": 0,
+    "template_signal_matches": []
+  },
+  "screenshot_artifacts_consumed": {
+    "desktop_screenshot_hash": "df58f5c18102b054cb9e055fb268b7d288634a3c00b38190cf5c3d386f31b50d",
+    "mobile_screenshot_hash": "ef42762820aaf3f98c0e913ee32645743c26d1d1d89bc46208a1ca346f2469a9",
+    "dom_snapshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-design-demo-dom-20260703T032500Z.txt",
+    "dom_snapshot_hash": "8491ce1946734631508cea04b32407f3eb25a64e3850ea9bd1e6574865a3cada"
+  }
+}

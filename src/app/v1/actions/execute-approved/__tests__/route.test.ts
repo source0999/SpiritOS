@@ -145,10 +145,41 @@ describe("execute-approved route", () => {
       approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
       changed_files: ["src/demo.ts"],
       commit_authority: false,
+      approved_diff_sha256: "fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe",
+      applied_diff_sha256: "fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe",
       diff_hash: "fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe",
+      provenance_hash_normalization: "lf_trailing_newline_v1",
       push_authority: false,
       target: "src/demo.ts",
     });
+  });
+
+  it("hashes approved diffs with lf trailing newline canonicalization", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify(executeApprovedContractPayload()),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    await POST(
+      jsonRequest({
+        action: "modify file",
+        allowed_files: ["src/demo.ts"],
+        approved: true,
+        approved_diff: "--- a/src/demo.ts\r\n+++ b/src/demo.ts\r\n@@ -1 +1 @@\r\n-old\r\n+new",
+        target: "src/demo.ts",
+        task_id: "task-123",
+      }),
+    );
+
+    const [, init] = mockedSourceProxyFetch.mock.calls[0];
+    const body = JSON.parse(String(init?.body));
+    expect(body.approved_diff_sha256).toBe("fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe");
+    expect(body.applied_diff_sha256).toBe(body.approved_diff_sha256);
+    expect(body.provenance_hash_normalization).toBe("lf_trailing_newline_v1");
   });
 
   it("forwards selected prompt bundle diffs under a wildcard allowed root", async () => {
@@ -532,6 +563,59 @@ describe("execute-approved route", () => {
         disk_changed_files: ["src/app/agent-lab/page.tsx"],
         final_summary: "Apply proof recorded by execute-approved route; browser runner can resume.",
         status: "running",
+      }),
+    );
+  });
+
+  it("records backend recovery proof as NEEDS_FIX instead of durable PASS", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 200,
+        statusText: "OK",
+        text: async () =>
+          JSON.stringify(executeApprovedContractPayload({
+            applied_changed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js"],
+            recovery_fallback_used: true,
+            recovery_diff_source: "deterministic_prompt3_recovery_backend_converted_to_diff",
+            recovery_trust_status: "deterministic_prompt3_recovery_diff_proven",
+          })),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    const response = await POST(
+      jsonRequest({
+        action: "Live trial coder-003",
+        allowed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        approved: true,
+        approved_diff:
+          "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js\n+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js\n@@ -1 +1 @@\n-old\n+new\n",
+        target: "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        task_id: "task-recovery-proof",
+        trial_prompt_id: "coder-003-render-product-cards",
+        trial_prompt_text: "render product cards",
+        trial_suite_id: "suite-recovery-proof",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockedUpsertCodingRunRow).toHaveBeenCalledWith(
+      "suite-recovery-proof",
+      "coder-003-render-product-cards",
+      expect.objectContaining({
+        provenance: expect.objectContaining({
+          fallback_used: true,
+          diff_source: "deterministic_prompt3_recovery_backend_converted_to_diff",
+          trial_result_trust_status: "deterministic_prompt3_recovery_diff_proven",
+          provenance_hash_normalization: "lf_trailing_newline_v1",
+        }),
+        result_label: "NEEDS_FIX",
+      }),
+    );
+    expect(mockedPatchCodingRun).toHaveBeenCalledWith(
+      "suite-recovery-proof",
+      expect.objectContaining({
+        reason_code: "backend_recovery_not_pass_compatible",
       }),
     );
   });

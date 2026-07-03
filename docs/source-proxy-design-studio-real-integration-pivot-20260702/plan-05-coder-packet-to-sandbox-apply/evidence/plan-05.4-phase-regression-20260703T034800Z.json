@@ -1,0 +1,57 @@
+{
+  "captured_at": "2026-07-02T23:48:00-04:00",
+  "increment_id": "05.4-phase-regression",
+  "ok": true,
+  "plans_01_to_04_validator_basis": "Receipt validator is run through Plan 05 after this receipt; validator through Plan 05 was green after 05.3.",
+  "http_probes": [
+    {
+      "url": "http://127.0.0.1:3022/coding",
+      "status": 200,
+      "has_design_studio_text": true
+    },
+    {
+      "url": "http://127.0.0.1:3022/coding/design-demo",
+      "status": 200,
+      "has_applied_design_studio_sandbox_packet": true
+    }
+  ],
+  "browser_coding_regression": {
+    "url": "http://127.0.0.1:3022/coding",
+    "ok": true,
+    "has_coding_surface": true,
+    "has_design_studio": true,
+    "has_next_error": false,
+    "screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.4-coding-browser-20260703T034000Z.png",
+    "screenshot_hash": "1fc9e52fcaf3439a9fc344e23cb145bd79c942091b1e655d1ec2cf787a3f6512"
+  },
+  "plan05_touched_files": [
+    "src/app/v1/coding/design-studio/preview/route.ts",
+    "src/app/coding/design-demo/page.tsx",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.1-route-runtime-20260703T030100Z.cjs",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.1-coder-packet-20260703T030100Z.json",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/increment-05-phase-3-05.1-receipt-20260703-030400.md",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.2-sandbox-diff-20260703T030900Z.patch",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.2-sandbox-apply-20260703T030900Z.json",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/increment-05-phase-3-05.2-receipt-20260703-031100.md",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-devserver-3021.out.log",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-devserver-3021.err.log",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-design-demo-browser-20260703T032500Z.png",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-design-demo-dom-20260703T032500Z.txt",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-browser-proof-20260703T032500Z.json",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.3-browser-proof-20260703T032800Z.json",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/increment-05-phase-3-05.3-receipt-20260703-033000.md",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-regression-devserver-3022.out.log",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-regression-devserver-3022.err.log",
+    "docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05.4-coding-browser-20260703T034000Z.png"
+  ],
+  "forbidden_files_touched_by_plan05": [],
+  "no_forbidden_files_touched_by_plan05": true,
+  "full_worktree_guard_note": "A full-worktree guard attempt found pre-existing execute-approved dirty files outside this pivot. They are not counted as Plan 05 touched files and were not modified for this increment.",
+  "non_go_full_worktree_guard_artifact": "plan-05.4-phase-regression-20260703T034200Z.json",
+  "execute_approved_used": false,
+  "dev_server": {
+    "port": 3022,
+    "out_log": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-regression-devserver-3022.out.log",
+    "err_log": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-05-coder-packet-to-sandbox-apply/evidence/plan-05-regression-devserver-3022.err.log"
+  }
+}

@@ -118,6 +118,22 @@ describe("reversible trial runner helpers", () => {
     expect(classified.summary).toContain("selected_target=src/app/agent-lab/page.tsx");
   });
 
+  it("uses safe model excerpts from Source Proxy diagnostics", () => {
+    const classified = classifyNoDiffModelResponse({
+      payload: {
+        reason_code: "coder_response_repair_exhausted",
+        coder_diagnostics: {
+          raw_response_excerpt_safe: "I would update the page with no file changes.",
+          raw_response_length: 45,
+        },
+      },
+    });
+
+    expect(classified.safeExcerpt).toBe("I would update the page with no file changes.");
+    expect(classified.summary).toContain("excerpt=I would update the page with no file changes.");
+    expect(classified.reasonCode).toBe("model_prose_only_no_file_change");
+  });
+
   it("classifies markdown code block provider 200 no-diff responses", () => {
     expect(
       classifyNoDiffModelResponse({

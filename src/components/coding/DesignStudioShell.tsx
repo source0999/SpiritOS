@@ -1,13 +1,7 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Eye, FileJson, LockKeyhole, PanelRight, ShieldCheck } from "lucide-react";
-
-const intakeFields = [
-  ["Target", "Route or component"],
-  ["Intent", "Visual direction"],
-  ["Context", "Design refs"],
-  ["Output", "Preview packet"],
-];
 
 const guardrails = [
   "No model call",
@@ -16,14 +10,104 @@ const guardrails = [
   "No raw CSS ingest",
 ];
 
-const packetRows = [
-  ["design_packet_id", "preview-shell-local"],
-  ["trace_id", "preview-shell-trace"],
-  ["target_surface", "/coding/design-studio"],
-  ["consumer_event_id", "blocked_until_packet_acceptance"],
-];
+const initialPrompt = "Make the Design Studio preview workbench feel product-specific and premium for /coding/design-demo.";
+const initialTargetSurface = "/coding/design-demo";
+
+type PreviewState = {
+  error: string | null;
+  isLoading: boolean;
+  payload: Record<string, any> | null;
+  requestId: string | null;
+  status: "idle" | "loading" | "ready" | "blocked" | "error";
+};
+
+function requestId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `design-studio-shell-${crypto.randomUUID()}`;
+  }
+  return `design-studio-shell-${Date.now()}`;
+}
+
+function stringValue(value: unknown, fallback = "not returned") {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
 
 export default function DesignStudioShell() {
+  const [prompt, setPrompt] = useState(initialPrompt);
+  const [targetSurface, setTargetSurface] = useState(initialTargetSurface);
+  const [preview, setPreview] = useState<PreviewState>({
+    error: null,
+    isLoading: false,
+    payload: null,
+    requestId: null,
+    status: "idle",
+  });
+
+  const promptResult = preview.payload?.messy_prompt_result;
+  const previewPacket = preview.payload?.preview_packet;
+  const coderPacket = preview.payload?.coder_packet_result?.coder_packet;
+  const outcome = stringValue(promptResult?.outcome, preview.status === "idle" ? "waiting_for_preview" : "not returned");
+  const traceId = stringValue(previewPacket?.trace_id);
+  const designPacketId = stringValue(previewPacket?.design_packet_id);
+  const consumerEventId = stringValue(previewPacket?.consumer_event_id);
+  const reason = stringValue(promptResult?.reason, preview.error ?? "not returned");
+  const packetRows = useMemo(
+    () => [
+      ["request_id", preview.requestId ?? "not sent"],
+      ["design_packet_id", designPacketId],
+      ["trace_id", traceId],
+      ["target_surface", targetSurface],
+      ["consumer_event_id", consumerEventId],
+      ["outcome", outcome],
+    ],
+    [consumerEventId, designPacketId, outcome, preview.requestId, traceId],
+  );
+
+  async function handlePreview() {
+    const nextRequestId = requestId();
+    setPreview({
+      error: null,
+      isLoading: true,
+      payload: null,
+      requestId: nextRequestId,
+      status: "loading",
+    });
+    try {
+      const response = await fetch("/v1/coding/design-studio/preview", {
+        body: JSON.stringify({
+          prompt,
+          request_id: nextRequestId,
+          target_surface: targetSurface.trim() || undefined,
+        }),
+        headers: {
+          "content-type": "application/json",
+          "x-design-studio-request-id": nextRequestId,
+        },
+        method: "POST",
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.message || payload?.error || `Preview failed with ${response.status}`);
+      }
+      const result = payload?.messy_prompt_result;
+      setPreview({
+        error: null,
+        isLoading: false,
+        payload,
+        requestId: nextRequestId,
+        status: result?.outcome === "ASK_CLARIFY_TARGET" ? "blocked" : "ready",
+      });
+    } catch (error) {
+      setPreview({
+        error: error instanceof Error ? error.message : "Preview failed.",
+        isLoading: false,
+        payload: null,
+        requestId: nextRequestId,
+        status: "error",
+      });
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[color:var(--spirit-bg)] text-chalk">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
@@ -55,8 +139,21 @@ export default function DesignStudioShell() {
               Intake
             </div>
             <div className="mt-4 space-y-3">
-              {intakeFields.map(([label, value]) => (
-                <label className="block" key={label}>
+              <label className="block">
+                <span className="text-xs font-medium text-[color:var(--spirit-secondary-mix)]">
+                  Prompt
+                </span>
+                <textarea
+                  className="mt-1 min-h-36 w-full resize-y rounded-md border border-[color:var(--spirit-border)] bg-black/20 px-3 py-3 text-sm leading-6 text-chalk outline-none"
+                  onChange={(event) => setPrompt(event.target.value)}
+                  value={prompt}
+                />
+              </label>
+              {[
+                ["Route", "/v1/coding/design-studio/preview"],
+                ["Mode", "Preview packet"],
+              ].map(([label, value]) => (
+                <div className="block" key={label}>
                   <span className="text-xs font-medium text-[color:var(--spirit-secondary-mix)]">
                     {label}
                   </span>
@@ -65,8 +162,26 @@ export default function DesignStudioShell() {
                     value={value}
                     readOnly
                   />
-                </label>
+                </div>
               ))}
+              <label className="block">
+                <span className="text-xs font-medium text-[color:var(--spirit-secondary-mix)]">
+                  Target
+                </span>
+                <input
+                  className="mt-1 h-10 w-full rounded-md border border-[color:var(--spirit-border)] bg-black/20 px-3 text-sm text-chalk outline-none"
+                  onChange={(event) => setTargetSurface(event.target.value)}
+                  value={targetSurface}
+                />
+              </label>
+              <button
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-emerald-300/40 bg-emerald-400/15 px-3 text-sm font-semibold text-emerald-50 transition-colors hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={preview.isLoading || !prompt.trim()}
+                onClick={handlePreview}
+                type="button"
+              >
+                {preview.isLoading ? "Previewing..." : "Preview packet"}
+              </button>
             </div>
           </aside>
 
@@ -88,10 +203,26 @@ export default function DesignStudioShell() {
                     Preview packet
                   </p>
                   <p className="mt-3 text-lg font-medium text-chalk">
-                    Waiting for an accepted design packet before any apply path appears.
+                    {preview.status === "idle"
+                      ? "Waiting for a live preview response before any apply path appears."
+                      : preview.status === "loading"
+                        ? "Calling the Design Studio preview route."
+                        : preview.status === "error"
+                          ? "Preview route failed. Apply remains locked."
+                          : preview.status === "blocked"
+                            ? "Preview route asked for a clearer target."
+                            : "Live preview response received. Apply remains locked."}
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-[color:var(--spirit-secondary-mix)]">
+                    {reason}
                   </p>
                   <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                    {["Desktop proof pending", "Mobile proof pending", "Critic pending", "Repair pending"].map(
+                    {[
+                      outcome,
+                      preview.payload?.design_dna_result?.outcome ?? "DesignDNA pending",
+                      preview.payload?.coder_packet_result?.outcome ?? "Coder packet pending",
+                      preview.payload?.design_critic_result?.outcome ?? "Critic pending",
+                    ].map(
                       (item) => (
                         <span
                           className="rounded-md border border-[color:var(--spirit-border)] bg-black/25 px-3 py-2 text-xs text-[color:var(--spirit-secondary-mix)]"
@@ -137,7 +268,9 @@ export default function DesignStudioShell() {
                   Coder Packet
                 </p>
                 <p className="mt-1 text-sm text-chalk">
-                  Bounded coder_packet waits for sandbox apply approval.
+                  {coderPacket?.target_files?.length
+                    ? `Bounded coder_packet targets ${coderPacket.target_files.join(", ")}.`
+                    : "Bounded coder_packet waits for sandbox apply approval."}
                 </p>
               </div>
             </div>

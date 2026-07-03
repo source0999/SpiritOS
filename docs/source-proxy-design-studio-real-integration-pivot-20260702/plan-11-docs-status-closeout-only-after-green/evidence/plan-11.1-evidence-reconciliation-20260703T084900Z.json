@@ -1,0 +1,108 @@
+{
+  "captured_at": "2026-07-03T04:49:00-04:00",
+  "increment_id": "11.1-evidence-reconciliation",
+  "ok": true,
+  "source_artifacts": {
+    "plan10_happy_path": {
+      "path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.1-happy-path-gauntlet-20260703T074700Z.json",
+      "sha256": "dd693005f8df0cb14cd8b4cfb039586b2cddd813a72aafef57f0a496eb175b8f"
+    },
+    "plan08_retest": {
+      "path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-retest-after-repair-20260703T061100Z.json",
+      "sha256": "60263745b03e6dff5a42860df59b62273f9dca0d391848c977f970e934f89a80"
+    },
+    "plan09_writeback": {
+      "path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-09-approved-obsidian-writeback-runtime/evidence/plan-09.3-writeback-receipt-20260703T070300Z.json",
+      "sha256": "0f3311b62ad5f89f32bbb2a39e7f0377b14551851cac49d94e258c69bf0bfd95"
+    }
+  },
+  "go_claims": [
+    {
+      "claim": "Plan 10 happy path gauntlet",
+      "trace_id": "design-studio-trace-fd3920ff1c60-943f12a2",
+      "artifact_paths": [
+        "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.1-network-proof-20260703T074700Z.json",
+        "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.1-coding-ui-final-20260703T074700Z.png",
+        "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.1-coding-ui-final-dom-20260703T074700Z.txt"
+      ]
+    },
+    {
+      "claim": "Plan 08 repair/retest",
+      "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+      "artifact_paths": [
+        "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-desktop-1440x900-20260703T061100Z.png",
+        "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-mobile-390x844-20260703T061100Z.png",
+        "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-dom-20260703T061100Z.txt"
+      ]
+    },
+    {
+      "claim": "Plan 09 approved writeback",
+      "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+      "artifact_paths": [
+        "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-09-approved-obsidian-writeback-runtime/evidence/plan-09.3-temp-vault/design-memory/2026-07-03/plan09_3_writeback_receipt.md"
+      ]
+    }
+  ],
+  "screenshot_claims": [
+    {
+      "claim": "Plan 10 UI screenshot",
+      "path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-10-full-coding-gauntlet/evidence/plan-10.1-coding-ui-final-20260703T074700Z.png",
+      "hash": "fb0becb0eb62bda3df04d26a86d9f14e5ba2edc0feed327e50e662b14865ac22"
+    },
+    {
+      "claim": "Plan 08 desktop screenshot",
+      "path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-desktop-1440x900-20260703T061100Z.png",
+      "hash": "46127c072b2a517aeda8569b5ee391aca303b92d5d60b68c41946b20d5492647"
+    },
+    {
+      "claim": "Plan 08 mobile screenshot",
+      "path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-mobile-390x844-20260703T061100Z.png",
+      "hash": "3047bff06eda22828c1f2e6a1e6dda56c9c84a772632c27c184aa37b9b24bb65"
+    }
+  ],
+  "model_claims": [
+    {
+      "claim": "Plan 10 model invocation",
+      "event_id": "ollama-phi4-mini-latest-e810c8f6f72c",
+      "trace_id": "design-studio-trace-fd3920ff1c60-943f12a2",
+      "output_hash": "e810c8f6f72c93b627ced46f0e0a80245572fecc28334e233dd112dd3c45caf3"
+    }
+  ],
+  "critic_claims": [
+    {
+      "claim": "Plan 08 critic rerun",
+      "critic_verdict_id": "critic-design-studio-trace-24e3574ecc8f-r-packet",
+      "desktop_hash": "46127c072b2a517aeda8569b5ee391aca303b92d5d60b68c41946b20d5492647",
+      "mobile_hash": "3047bff06eda22828c1f2e6a1e6dda56c9c84a772632c27c184aa37b9b24bb65"
+    },
+    {
+      "claim": "Plan 10 critic chain reference",
+      "critic_verdict_id": "critic-design-studio-trace-24e3574ecc8f-r-packet",
+      "desktop_hash": "46127c072b2a517aeda8569b5ee391aca303b92d5d60b68c41946b20d5492647",
+      "mobile_hash": "3047bff06eda22828c1f2e6a1e6dda56c9c84a772632c27c184aa37b9b24bb65"
+    }
+  ],
+  "writeback_claims": [
+    {
+      "claim": "Plan 09 approved writeback",
+      "approval_id_hash": "2fd0627e34fed29675509233bacb4db272ee5630fb317baacdfb303121001205",
+      "acceptance_id": "accept-plan-09-3-human",
+      "trace_id": "design-studio-trace-24e3574ecc8f-r-packet",
+      "acceptance_trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+    },
+    {
+      "claim": "Plan 10 acceptance chain reference",
+      "acceptance_id": "accept-plan-09-3-human",
+      "trace_id": "design-studio-trace-fd3920ff1c60-943f12a2"
+    }
+  ],
+  "old_plan14_not_current_truth": true,
+  "required_proof": {
+    "every_go_claim_links_to_trace_id_and_artifact_paths": true,
+    "every_screenshot_claim_links_to_hash": true,
+    "every_model_claim_links_to_invocation_event": true,
+    "every_critic_claim_links_to_screenshot_hash": true,
+    "every_writeback_claim_links_to_approval_and_trace": true,
+    "old_plan14_not_treated_as_current_truth": true
+  }
+}

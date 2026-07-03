@@ -1,0 +1,23 @@
+{
+  "url": "http://localhost:3016/coding/design-studio",
+  "responseStatus": 200,
+  "backendReceivedOriginalPrompt": true,
+  "uiChangedFromLiveResponse": true,
+  "screenshotSha256": "4433d04d72d9284349322fe0e6c43ffb5bc1dbf53b952deb4977bc0440f08173",
+  "domSnapshotPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.1-helper-20260703T013810Z-dom.html",
+  "screenshotPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.1-helper-20260703T013810Z.png",
+  "networkProofPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.1-helper-20260703T013810Z-network.json",
+  "pageInfoPath": "Z:\\docs\\source-proxy-design-studio-real-integration-pivot-20260702\\plan-02-real-design-studio-network-path\\evidence\\plan-02.1-helper-20260703T013810Z-page-info.json",
+  "consoleMessages": [
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "[HMR] connected"
+    }
+  ],
+  "visibleTextExcerpt": "DESIGN STUDIO\n\nPreview Workbench\nNo model call\nNo apply authority\nNo memory write\nNo raw CSS ingest\nIntake\nPrompt\nTarget\nRoute\nMode\nPreview packet\nSurface Preview\nDraft only\n\nPREVIEW PACKET\n\nLive preview response received. Apply remains locked.\n\ntargeted_prompt_preview\n\nDESIGN_PACKET_PREVIEW\nDESIGN_DNA_NORMALIZED_PREVIEW\nCODER_PACKET_PREVIEW_READY\nDESIGN_CRITIC_BLOCKED\nPacket State\nREQUEST_ID\ndesign-studio-shell-fae696c2-d3d0-477a-a694-57355397bcb3\nDESIGN_PACKET_ID\npreview-shell-local\nTRACE_ID\npreview-shell-trace\nTARGET_SURFACE\n/coding/design-demo\nCONSUMER_EVENT_ID\nblocked_until_packet_acceptance\nOUTCOME\nDESIGN_PACKET_PREVIEW\n\nDESIGN PACKET\n\nPreview-only design_packet is visible.\n\nCODER PACKET\n\nBounded coder_packet targets src/components/coding/DesignStudioShell.tsx.\n\nGuard\n\nPreview opening is not GO. Downstream consumption is required.\n\nApply locked\n\nApply, commit, push, and memory write remain unavailable here.",
+  "capturedAt": "2026-07-03T01:38:25.989Z"
+}

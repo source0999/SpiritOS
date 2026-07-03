@@ -1,0 +1,27 @@
+{
+  "increment_id": "fixture-broken-trace-link-chain",
+  "plan_id": "06",
+  "phase_id": "4",
+  "started_at": "2026-07-02T20:10:00-04:00",
+  "completed_at": "2026-07-02T20:10:01-04:00",
+  "head_before": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "head_after": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "branch": "bench/glm4-9b-model-lanes",
+  "final_increment_verdict": "INCREMENT_GO_PROVEN",
+  "trace_id": "trace-a",
+  "artifacts": [
+    {
+      "role": "screenshot",
+      "path": "artifact-chain/screenshot.txt",
+      "sha256": "2cb47caec7603937fae91734316369ce53d1dfab644f8f7c0ce7c9d38a09b754",
+      "trace_id": "trace-a"
+    }
+  ],
+  "chain_links": [
+    {
+      "from_role": "sandbox_apply",
+      "to_role": "screenshot",
+      "expected_hash": "9b2c67146feb0e8ef6649cebfa3668a655d5eb43ce9316cc57106204852ad23e"
+    }
+  ]
+}

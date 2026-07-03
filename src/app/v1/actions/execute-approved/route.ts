@@ -1,5 +1,6 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-store";
+import type { DurableCodingRunProvenance } from "@/lib/coding/durable-run-types";
 import { execFile } from "node:child_process";
 import { createHash } from "crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -9,6 +10,11 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const DUMMY_CODER_10_FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
+const SELECTED_DUMMY_GIT_APPLY_FLAG_CHAINS: string[][] = [
+  [],
+  ["--ignore-whitespace"],
+  ["--ignore-space-change"],
+];
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -190,6 +196,7 @@ export async function POST(request: Request) {
       const applyResult = await applySelectedDummyCoderDiff({
         action,
         approvedDiff,
+        approvedDiffSha256: normalizedDiffSha256(approvedDiff),
         changedFiles,
         target,
         taskId,
@@ -228,6 +235,9 @@ export async function POST(request: Request) {
         approved_diff: approvedDiff,
         allowed_files: allowedFiles,
         changed_files: changedFiles,
+        approved_diff_sha256: normalizedDiffSha256(approvedDiff),
+        applied_diff_sha256: normalizedDiffSha256(approvedDiff),
+        provenance_hash_normalization: "lf_trailing_newline_v1",
         diff_hash: diffHashForApprovedDiff(approvedDiff),
         commit_authority: false,
         push_authority: false,
@@ -374,6 +384,7 @@ export function selectedPrompt3DiffViolations(diff: string, currentIndexHtml = "
 async function applySelectedDummyCoderDiff(input: {
   action: string;
   approvedDiff: string;
+  approvedDiffSha256: string;
   changedFiles: string[];
   target: string;
   taskId: string;
@@ -384,24 +395,41 @@ async function applySelectedDummyCoderDiff(input: {
   let checksRun = ["git apply --recount --check"];
   let applyMode = "git_apply_recount";
   let stalePatchRecovered = false;
+  // Recovery provenance: when git apply --check fails and the backend writes a
+  // deterministic fixture solution itself, the resulting disk truth is NOT
+  // model-authored. These fields mirror the Python-side recovery payload
+  // (source_proxy/tasks/long_running.py) so the grader cannot grade a
+  // backend-authored recovery as a model-authored PASS.
+  let recoveryFallbackUsed = false;
+  let recoveryDiffSource = "";
+  let recoveryTrustStatus = "";
   try {
     await writeFile(patchPath, input.approvedDiff, "utf8");
     try {
-      await runSelectedDummyGitApply(["apply", "--recount", "--check", patchPath], "git apply --recount --check");
-      await runSelectedDummyGitApply(["apply", "--recount", patchPath], "git apply --recount");
+      const applyFlags = await runSelectedDummyGitApplyCheckWithFallback(patchPath);
+      await runSelectedDummyGitApply(["apply", "--recount", ...applyFlags, patchPath], "git apply --recount");
+      if (applyFlags.length > 0) {
+        const flagLabel = applyFlags.join(" ");
+        checksResult = `git apply --recount --check ${flagLabel} passed; selected dummy fixture diff applied`;
+        checksRun = [`git apply --recount ${flagLabel} --check`];
+        applyMode = `git_apply_recount_${applyFlags.map((flag) => flag.replace(/^--/, "")).join("_")}`;
+      }
     } catch (error) {
-      const recovered = await tryRecoverSelectedDummyProductsApply(input);
+      const recovered = await tryRecoverSelectedDummyApply(input);
       if (!recovered) {
         throw error;
       }
-      checksResult =
-        "git apply --recount --check failed; validated and wrote model-authored products.js replacement content";
-      checksRun = [
-        "git apply --recount --check",
-        "model-authored products.js replacement validation",
-      ];
-      applyMode = "model_authored_products_replacement_after_stale_context";
+      checksResult = recovered.checksResult;
+      checksRun = recovered.checksRun;
+      applyMode = recovered.applyMode;
       stalePatchRecovered = true;
+      // A recovery means the on-disk solution was backend-authored, not
+      // model-authored. Surface that as fallback provenance so the grader's
+      // anti-cheat path (which treats fallback_used as invalid provenance)
+      // fires instead of laundering the recovery as a model-authored PASS.
+      recoveryFallbackUsed = Boolean(recovered.fallbackUsed);
+      recoveryDiffSource = recovered.diffSource ?? "";
+      recoveryTrustStatus = recovered.trustStatus ?? "";
     }
   } finally {
     await rm(tempDir, { force: true, recursive: true });
@@ -412,6 +440,8 @@ async function applySelectedDummyCoderDiff(input: {
     action: input.action,
     applied_changed_files: input.changedFiles,
     apply_mode: applyMode,
+    approved_diff_sha256: input.approvedDiffSha256,
+    applied_diff_sha256: input.approvedDiffSha256,
     changed_files: input.changedFiles,
     checks_result: checksResult,
     checks_run: checksRun,
@@ -439,8 +469,60 @@ async function applySelectedDummyCoderDiff(input: {
       id: input.taskId,
     },
     stale_patch_recovered: stalePatchRecovered,
+    fallback_used: recoveryFallbackUsed,
+    diff_source: recoveryDiffSource || "model_authored_diff",
+    trial_result_trust_status: recoveryTrustStatus || "model_authored_diff_proven",
+    provenance_hash_normalization: "lf_trailing_newline_v1",
+    // Recovery provenance override. When stalePatchRecovered is true the
+    // on-disk solution was written by the backend, so downstream consumers
+    // (recordTrialApplyProof / grader) must not treat it as model-authored.
+    recovery_fallback_used: recoveryFallbackUsed,
+    recovery_diff_source: recoveryDiffSource || null,
+    recovery_trust_status: recoveryTrustStatus || null,
     updated_at: now,
   };
+}
+
+async function tryRecoverSelectedDummyApply(input: {
+  action: string;
+  approvedDiff: string;
+  changedFiles: string[];
+}) {
+  const prompt2Recovery = await tryRecoverSelectedDummyProductsApply(input);
+  if (prompt2Recovery) {
+    return {
+      applyMode: "model_authored_products_replacement_after_stale_context",
+      checksResult:
+        "git apply --recount --check failed; validated and wrote model-authored products.js replacement content",
+      checksRun: [
+        "git apply --recount --check",
+        "model-authored products.js replacement validation",
+      ],
+      // Prompt 2 recovery rewrites only products.js from the model-authored
+      // diff content, so it stays model-authored (no fallback flag).
+      fallbackUsed: false,
+      diffSource: "model_authored_products_replacement_after_stale_context",
+      trustStatus: "model_authored_diff_proven",
+    };
+  }
+  const prompt3Recovery = await tryRecoverSelectedDummyPrompt3Apply(input);
+  if (prompt3Recovery) {
+    return {
+      applyMode: "deterministic_prompt3_recovery_after_stale_context",
+      checksResult:
+        "git apply --recount --check failed; validated and wrote deterministic Prompt 3 product-card rendering files",
+      checksRun: [
+        "git apply --recount --check",
+        "deterministic Prompt 3 stale-context recovery validation",
+      ],
+      // Prompt 3 recovery writes a fully backend-authored main.js render loop;
+      // it must NOT be graded as model-authored.
+      fallbackUsed: true,
+      diffSource: "deterministic_prompt3_recovery_backend_converted_to_diff",
+      trustStatus: "deterministic_prompt3_recovery_diff_proven",
+    };
+  }
+  return null;
 }
 
 async function tryRecoverSelectedDummyProductsApply(input: {
@@ -461,6 +543,123 @@ async function tryRecoverSelectedDummyProductsApply(input: {
     return false;
   }
   await writeFile(path.join(process.cwd(), productsPath), replacement.content, "utf8");
+  return true;
+}
+
+async function tryRecoverSelectedDummyPrompt3Apply(input: {
+  action: string;
+  changedFiles: string[];
+}) {
+  if (!/coder-003-render-product-cards/.test(input.action)) {
+    return false;
+  }
+  const expectedFiles = [
+    `${DUMMY_CODER_10_FIXTURE_ROOT}index.html`,
+    `${DUMMY_CODER_10_FIXTURE_ROOT}src/main.js`,
+    `${DUMMY_CODER_10_FIXTURE_ROOT}src/styles.css`,
+  ];
+  const changedFiles = input.changedFiles.map(normalizeRepoPath).sort();
+  if (changedFiles.join("\n") !== [...expectedFiles].sort().join("\n")) {
+    return false;
+  }
+
+  const indexPath = path.join(process.cwd(), expectedFiles[0]);
+  const mainPath = path.join(process.cwd(), expectedFiles[1]);
+  const stylesPath = path.join(process.cwd(), expectedFiles[2]);
+  const [currentIndex, currentStyles] = await Promise.all([
+    readFile(indexPath, "utf8").catch(() => ""),
+    readFile(stylesPath, "utf8").catch(() => ""),
+  ]);
+
+  let nextIndex = currentIndex.replace(
+    /<script\b(?![^>]*\btype=)[^>]*src=["']src\/main\.js["'][^>]*><\/script>/i,
+    '<script type="module" src="src/main.js"></script>',
+  );
+  if (!/<script\b[^>]*type=["']module["'][^>]*src=["']src\/main\.js["'][^>]*><\/script>/i.test(nextIndex)) {
+    nextIndex = nextIndex.replace(
+      /<\/body>/i,
+      '  <script type="module" src="src/main.js"></script>\n</body>',
+    );
+  }
+
+  const nextMain = [
+    "import products from './products.js';",
+    "",
+    "const productList = document.getElementById('product-list');",
+    "",
+    "if (productList) {",
+    "  if (products.length === 0) {",
+    "    productList.textContent = 'No products available yet.';",
+    "  } else {",
+    "    products.forEach((product) => {",
+    "      const productElement = document.createElement('div');",
+    "      productElement.classList.add('product-card');",
+    "      productElement.innerHTML = `",
+    "        <h2>${product.name}</h2>",
+    "        <p>Category: ${product.category}</p>",
+    "        <p>Description: ${product.description}</p>",
+    "        <p>$${product.price}</p>",
+    "      `;",
+    "      productList.appendChild(productElement);",
+    "    });",
+    "  }",
+    "}",
+    "",
+  ].join("\n");
+
+  let nextStyles = currentStyles.trimEnd();
+  if (!/#product-list\s*\{/.test(nextStyles)) {
+    nextStyles += [
+      "",
+      "",
+      "#product-list {",
+      "  display: grid;",
+      "  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));",
+      "  gap: 1rem;",
+      "  margin: 2rem;",
+      "}",
+    ].join("\n");
+  }
+  if (!/\.product-card\s*\{/.test(nextStyles)) {
+    nextStyles += [
+      "",
+      "",
+      ".product-card {",
+      "  border: 1px solid #ddd;",
+      "  padding: 1rem;",
+      "  border-radius: 0.5rem;",
+      "}",
+    ].join("\n");
+  }
+  nextStyles += "\n";
+
+  const recoveryDiff = [
+    `diff --git a/${expectedFiles[0]} b/${expectedFiles[0]}`,
+    `--- a/${expectedFiles[0]}`,
+    `+++ b/${expectedFiles[0]}`,
+    "+<script type=\"module\" src=\"src/main.js\"></script>",
+    `diff --git a/${expectedFiles[1]} b/${expectedFiles[1]}`,
+    `--- a/${expectedFiles[1]}`,
+    `+++ b/${expectedFiles[1]}`,
+    "+import products from './products.js';",
+    "+productElement.classList.add('product-card');",
+    "+<p>Category: ${product.category}</p>",
+    "+<p>Description: ${product.description}</p>",
+    `diff --git a/${expectedFiles[2]} b/${expectedFiles[2]}`,
+    `--- a/${expectedFiles[2]}`,
+    `+++ b/${expectedFiles[2]}`,
+    "+.product-card {",
+  ].join("\n");
+  const violations = selectedPrompt3DiffViolations(recoveryDiff, nextIndex, nextMain);
+  if (violations.length > 0) {
+    return false;
+  }
+
+  await Promise.all([
+    writeFile(indexPath, nextIndex, "utf8"),
+    writeFile(mainPath, nextMain, "utf8"),
+    writeFile(stylesPath, nextStyles, "utf8"),
+  ]);
   return true;
 }
 
@@ -486,6 +685,22 @@ class SelectedDummyApplyError extends Error {
     this.status = input.status ?? 409;
     this.details = execErrorDetails(input.cause);
   }
+}
+
+async function runSelectedDummyGitApplyCheckWithFallback(patchPath: string) {
+  let lastError: unknown = null;
+  for (const flags of SELECTED_DUMMY_GIT_APPLY_FLAG_CHAINS) {
+    try {
+      await runSelectedDummyGitApply(
+        ["apply", "--recount", ...flags, "--check", patchPath],
+        "git apply --recount --check",
+      );
+      return flags;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
 }
 
 async function runSelectedDummyGitApply(
@@ -610,6 +825,37 @@ async function recordTrialApplyProof(input: {
     "/v1/actions/execute-approved:200",
     "/v1/actions/execute-approved:server_apply_proof_recorded",
   ];
+  // If the execute-approved response reports a backend-authored recovery
+  // (git apply --check failed and the backend wrote the fixture solution
+  // itself), stamp fallback provenance onto the durable row so the grader's
+  // anti-cheat path treats it as invalid rather than laundering the recovery
+  // as a model-authored PASS. Without this override, the row keeps the
+  // model-authored labels set earlier in the pipeline even though the bytes
+  // actually written to disk were backend-authored.
+  const recoveryFallbackUsed = Boolean(payload.recovery_fallback_used);
+  const recoveryDiffSource = typeof payload.recovery_diff_source === "string" ? payload.recovery_diff_source : "";
+  const recoveryTrustStatus = typeof payload.recovery_trust_status === "string" ? payload.recovery_trust_status : "";
+  const approvedDiffSha256 = normalizedDiffSha256(input.approvedDiff);
+  const appliedDiffSha256 = stringValue(payload.applied_diff_sha256) ?? approvedDiffSha256;
+  const backendConvertedDiffSha256 =
+    stringValue(payload.backend_converted_diff_sha256) ??
+    stringValue(payload.task && typeof payload.task === "object" ? (payload.task as Record<string, unknown>).backend_converted_diff_sha256 : null);
+  const recoveryProvenance: Partial<DurableCodingRunProvenance> | undefined =
+    recoveryFallbackUsed || recoveryDiffSource || recoveryTrustStatus
+      ? {
+          fallback_used: recoveryFallbackUsed,
+          diff_source: recoveryDiffSource,
+          trial_result_trust_status: recoveryTrustStatus,
+          approved_diff_sha256: approvedDiffSha256,
+          applied_diff_sha256: appliedDiffSha256,
+          backend_converted_diff_sha256: backendConvertedDiffSha256,
+          provenance_hash_normalization: "lf_trailing_newline_v1",
+        }
+      : undefined;
+  // The durable row's provenance field is typed as the full shape, but
+  // normalizeTrialProvenance (the only consumer) merges any partial against
+  // the empty defaults, so a partial override is the intended input shape.
+  const recoveryProvenanceRow = recoveryProvenance as DurableCodingRunProvenance | undefined;
   const runAfterRow = await upsertCodingRunRow(input.trialSuiteId, input.trialPromptId, {
     applied_changed_files: appliedChangedFiles,
     checks_result: "server apply proof recorded",
@@ -621,9 +867,10 @@ async function recordTrialApplyProof(input: {
     preview_changed_files: appliedChangedFiles,
     prompt_excerpt: input.trialPromptText.slice(0, 220),
     prompt_text: input.trialPromptText,
+    provenance: recoveryProvenanceRow,
     provider_call_made: true,
     reason_code: "",
-    result_label: "PASS",
+    result_label: recoveryFallbackUsed ? "NEEDS_FIX" : "PASS",
     reversal_available: true,
     reversal_status: "available",
     run_id: input.taskId,
@@ -649,9 +896,9 @@ async function recordTrialApplyProof(input: {
         (row) =>
           row.status === "completed" &&
           row.result_label === "PASS" &&
-          !row.reason_code &&
-          row.applied_changed_files.length > 0 &&
-          row.disk_changed_files.length > 0,
+            !row.reason_code &&
+            row.applied_changed_files.length > 0 &&
+            row.disk_changed_files.length > 0,
       ),
   );
   await patchCodingRun(input.trialSuiteId, {
@@ -666,7 +913,7 @@ async function recordTrialApplyProof(input: {
     generated_diff_present: true,
     preview_changed_files: appliedChangedFiles,
     provider_call_made: true,
-    reason_code: null,
+    reason_code: recoveryFallbackUsed ? "backend_recovery_not_pass_compatible" : null,
     reversal_available: true,
     reversal_status: "available",
     status: serverProofCompletesSuite ? "completed" : "running",
@@ -934,8 +1181,16 @@ function isProtectedApplyPath(path: string) {
   );
 }
 
+function normalizeDiffForProvenance(diff: string) {
+  return `${diff.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n*$/, "")}\n`;
+}
+
+function normalizedDiffSha256(approvedDiff: string) {
+  return createHash("sha256").update(normalizeDiffForProvenance(approvedDiff), "utf8").digest("hex");
+}
+
 function diffHashForApprovedDiff(approvedDiff: string) {
-  return createHash("sha256").update(approvedDiff).digest("hex");
+  return normalizedDiffSha256(approvedDiff);
 }
 
 function approvalIdForApprovedDiff({

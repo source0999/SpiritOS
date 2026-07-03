@@ -1,0 +1,51 @@
+{
+  "captured_at": "2026-07-02T22:32:00-04:00",
+  "increment_id": "04.4-failure-behavior",
+  "route_source": "Z:/src/app/v1/coding/design-studio/preview/route.ts",
+  "runtime_harness": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-04-model-and-subagent-consumption/evidence/plan-04.4-route-runtime-20260703T023200Z.cjs",
+  "all_negative_cases_blocked": true,
+  "expected_failure_modes": {
+    "unavailable_model": "UNAVAILABLE_MODEL_BLOCKED_ENV",
+    "timeout": "TIMEOUT_RETRY_LIMITED_BLOCKED_ENV",
+    "missing_source": "MISSING_SOURCE_BLOCKED_ENV"
+  },
+  "cases": [
+    {
+      "name": "unavailable_model",
+      "http_status": 424,
+      "outcome": "MODEL_PROBE_BLOCKED_ENV",
+      "model_call_made": false,
+      "provider_call_made": false,
+      "failure_mode": "UNAVAILABLE_MODEL_BLOCKED_ENV",
+      "blocked_env": true,
+      "fake_fallback_success": false,
+      "event_id": "ollama-design-studio-missing-model-04-4-latest-blocked-env",
+      "trace_id": "design-studio-trace-24e3574ecc8f-le-model"
+    },
+    {
+      "name": "timeout",
+      "http_status": 424,
+      "outcome": "MODEL_PROBE_BLOCKED_ENV",
+      "model_call_made": false,
+      "provider_call_made": false,
+      "failure_mode": "TIMEOUT_RETRY_LIMITED_BLOCKED_ENV",
+      "blocked_env": true,
+      "fake_fallback_success": false,
+      "event_id": "ollama-phi4-mini-latest-blocked-env",
+      "trace_id": "design-studio-trace-24e3574ecc8f--timeout"
+    },
+    {
+      "name": "missing_source",
+      "http_status": 424,
+      "outcome": "MODEL_PROBE_BLOCKED_ENV",
+      "model_call_made": false,
+      "provider_call_made": false,
+      "failure_mode": "MISSING_SOURCE_BLOCKED_ENV",
+      "blocked_env": true,
+      "fake_fallback_success": false,
+      "event_id": "ollama-phi4-mini-latest-blocked-env",
+      "trace_id": "design-studio-trace-24e3574ecc8f-g-source"
+    }
+  ],
+  "no_fake_fallback_success": true
+}

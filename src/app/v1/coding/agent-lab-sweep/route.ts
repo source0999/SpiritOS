@@ -31,10 +31,10 @@ export async function POST(request: Request) {
       clean,
       failures: result.failures,
       message: clean
-        ? `Removed ${result.removed} agent-lab leftover file(s). Workspace is clean for a fresh Coder benchmark.`
+        ? `Removed ${result.removed} trial leftover file(s). Workspace is clean for a fresh Coder benchmark.`
         : result.failures.length > 0
-          ? `Removed ${result.removed}/${result.targets.length} agent-lab file(s). Still dirty: ${result.failures.slice(0, 3).join("; ")}`
-          : `Agent Lab still has ${result.snapshot.baseline_dirty_agent_lab_files.length} leftover file(s).`,
+          ? `Removed ${result.removed}/${result.targets.length} trial file(s). Still dirty: ${result.failures.slice(0, 3).join("; ")}`
+          : `Trial baseline still has ${result.snapshot.baseline_dirty_agent_lab_files.length} leftover file(s).`,
       removed: result.removed,
       skipped: result.skipped,
       snapshot: {

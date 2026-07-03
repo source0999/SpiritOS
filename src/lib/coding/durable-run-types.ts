@@ -52,6 +52,15 @@ export type DurableCodingRunProvenance = {
   model_raw_diff_used: boolean;
   generated_diff_by_backend: boolean;
   trial_result_trust_status: string;
+  raw_model_response_sha256?: string | null;
+  model_file_bundle_sha256?: string | null;
+  backend_converted_diff_sha256?: string | null;
+  approved_diff_sha256?: string | null;
+  applied_diff_sha256?: string | null;
+  post_apply_rediff_sha256?: string | null;
+  provenance_hash_normalization?: string | null;
+  apply_mode?: string | null;
+  stale_patch_recovered?: boolean | null;
 };
 
 export type DurableCodingRunOwnerKind =

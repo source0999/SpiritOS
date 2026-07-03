@@ -1,0 +1,15 @@
+{
+  "increment_id": "fixture-writeback-trace-mismatch",
+  "plan_id": "09",
+  "phase_id": "5",
+  "started_at": "2026-07-02T20:10:00-04:00",
+  "completed_at": "2026-07-02T20:10:01-04:00",
+  "head_before": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "head_after": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "branch": "bench/glm4-9b-model-lanes",
+  "final_increment_verdict": "INCREMENT_GO_PROVEN",
+  "receipt_type": "writeback",
+  "trace_id": "trace-a",
+  "acceptance_trace_id": "trace-b",
+  "approval_id_hash": "9b2c67146feb0e8ef6649cebfa3668a655d5eb43ce9316cc57106204852ad23e"
+}

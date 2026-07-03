@@ -1,0 +1,30 @@
+[
+  {
+    "event": "request",
+    "method": "POST",
+    "url": "http://localhost:3015/v1/decisions/prompt-packet",
+    "headers": {
+      "accept": "*/*",
+      "origin": "http://localhost:3015",
+      "referer": "http://localhost:3015/coding",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36",
+      "content-type": "application/json",
+      "sec-ch-ua": "\"Chromium\";v=\"148\", \"HeadlessChrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "postData": "{\"allowed_files\":[\"src/components/coding/CodingCockpitShell.tsx\"],\"expected_outcome\":\"edit_reversible\",\"needs_codebase_context\":true,\"prefer_free\":true,\"quick_find_hints\":[\"src/components/coding/CodingCockpitShell.tsx\",\"src/components/coding/__tests__/coding-cockpit-shell.test.tsx\",\"tests/ui-agent-trials/fixtures/dummy-coding-targets/readme-trial.md\"],\"selected_target\":\"src/components/coding/CodingCockpitShell.tsx\",\"target_files\":[\"src/components/coding/CodingCockpitShell.tsx\"],\"targeted_files\":[\"src/components/coding/CodingCockpitShell.tsx\"],\"task\":\"Target file: src/components/coding/CodingCockpitShell.tsx\\n\\nPlan 01.3 ordinary coding regression: preview-only failure proof for src/components/coding/CodingCockpitShell.tsx. Do not apply any edit.\",\"trial_mode\":\"live_apply\",\"wants_implementation\":true}",
+    "at": "2026-07-03T01:14:16.416Z"
+  },
+  {
+    "event": "response",
+    "status": 503,
+    "url": "http://localhost:3015/v1/decisions/prompt-packet",
+    "headers": {
+      "content-type": "application/json",
+      "content-length": "166"
+    },
+    "body": "{\"status\":\"error\",\"reason_code\":\"plan_01_3_forced_prompt_packet_failure\",\"message\":\"Plan 01.3 controlled prompt-packet failure for ordinary coding regression proof.\"}",
+    "at": "2026-07-03T01:14:16.899Z"
+  }
+]

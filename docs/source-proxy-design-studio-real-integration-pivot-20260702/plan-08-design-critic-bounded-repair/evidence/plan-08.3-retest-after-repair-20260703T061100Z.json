@@ -1,0 +1,51 @@
+{
+  "captured_at": "2026-07-03T02:11:00-04:00",
+  "increment_id": "08.3-retest-after-repair",
+  "ok": true,
+  "browser_route": "http://127.0.0.1:3025/coding/design-demo",
+  "repair_attempt_ids": [
+    "repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1"
+  ],
+  "desktop_screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-desktop-1440x900-20260703T061100Z.png",
+  "desktop_screenshot_hash": "46127c072b2a517aeda8569b5ee391aca303b92d5d60b68c41946b20d5492647",
+  "mobile_screenshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-mobile-390x844-20260703T061100Z.png",
+  "mobile_screenshot_hash": "3047bff06eda22828c1f2e6a1e6dda56c9c84a772632c27c184aa37b9b24bb65",
+  "mobile_overflow_x": 0,
+  "dom_snapshot_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-08-design-critic-bounded-repair/evidence/plan-08.3-repaired-dom-20260703T061100Z.txt",
+  "dom_snapshot_hash": "7b5f8a13476163c9010be73bf0a1bd9a5dae47f901ed2805024b487318920cb3",
+  "anti_template_verdict_id": "plan-08-repaired-verdict-20260703T061100Z",
+  "anti_template_rerun": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_PASS",
+    "project_motif_rendered_evidence": [
+      "design studio"
+    ],
+    "reject_or_repair_reason": "rendered_output_has_project_specific_motif_or_low_template_signal_count",
+    "template_signal_count": 0,
+    "template_signal_matches": []
+  },
+  "critic_rerun": {
+    "blockers": [],
+    "critic_verdict": "DESIGN_CRITIC_APPROVED_PREVIEW",
+    "critic_verdict_id": "critic-design-studio-trace-24e3574ecc8f-r-packet",
+    "references": {
+      "anti_template_verdict_id": "plan-08-repaired-verdict-20260703T061100Z",
+      "desktop_screenshot_hash": "46127c072b2a517aeda8569b5ee391aca303b92d5d60b68c41946b20d5492647",
+      "mobile_screenshot_hash": "3047bff06eda22828c1f2e6a1e6dda56c9c84a772632c27c184aa37b9b24bb65",
+      "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+    },
+    "repair_required": false
+  },
+  "acceptance": {
+    "repaired_artifacts_present": true,
+    "screenshot_hashes_present": true,
+    "anti_template_passed": true,
+    "critic_approved_repaired_artifacts": true
+  },
+  "prior_non_go_attempt": "plan-08.3-retest-after-repair-20260703T060600Z.json failed only case-sensitive acceptance marker check; retained as non-GO evidence",
+  "required_proof": {
+    "new_screenshot_hashes_after_repair": true,
+    "anti_template_reruns": true,
+    "critic_reruns": true,
+    "acceptance_sees_repaired_artifacts": true
+  }
+}

@@ -1,0 +1,60 @@
+[
+  {
+    "phase": "request",
+    "method": "POST",
+    "url": "http://127.0.0.1:3028/v1/coding/design-studio/preview",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "http://127.0.0.1:3028/coding",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36",
+      "x-design-studio-request-id": "design-studio-420ac561-5798-417f-9c42-ee267be9185f",
+      "sec-ch-ua": "\"Chromium\";v=\"148\", \"HeadlessChrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+      "content-type": "application/json",
+      "sec-ch-ua-mobile": "?0"
+    },
+    "postData": "{\"model_probe\":{\"enabled\":true,\"model\":\"phi4-mini:latest\",\"provider\":\"ollama\",\"require_source\":false,\"timeout_ms\":60000},\"prompt\":\"Make the Design Studio preview workbench more premium for /coding/design-demo while keeping Source Proxy evidence visible.\",\"request_id\":\"design-studio-420ac561-5798-417f-9c42-ee267be9185f\",\"target_surface\":\"/coding/design-demo\"}"
+  },
+  {
+    "phase": "response",
+    "status": 424,
+    "url": "http://127.0.0.1:3028/v1/coding/design-studio/preview",
+    "body": {
+      "advisory_only": true,
+      "apply_authority": false,
+      "approval_authority": false,
+      "commit_authority": false,
+      "design_studio_route": "/coding/design-studio",
+      "endpoint": "/v1/coding/design-studio/preview",
+      "fake_go_guard": {
+        "design_packet_exists_is_go": false,
+        "fallback_success_for_model_failure": false,
+        "preview_opens_is_go": false,
+        "required_downstream_consumption": "accepted_design_packet_to_named_coder_packet_consumer",
+        "unconsumed_packet_blocks_go": true
+      },
+      "hidden_execution_started": false,
+      "memory_write_authority": false,
+      "model_call_made": false,
+      "model_invocation_result": {
+        "blocked_env": true,
+        "event_id": "ollama-phi4-mini-latest-blocked-env",
+        "failure_mode": "PROVIDER_UNREACHABLE_BLOCKED_ENV",
+        "model": "phi4-mini:latest",
+        "ok": false,
+        "output_excerpt": "",
+        "output_hash": "",
+        "provider": "ollama",
+        "trace_id": "design-studio-trace-c06527121a7b-7be9185f"
+      },
+      "message": "MODEL_PROBE_BLOCKED_ENV",
+      "outcome": "MODEL_PROBE_BLOCKED_ENV",
+      "original_user_prompt_hash": "c06527121a7b6c61c7e754e20121ecfe13f48ee8dbbd40948c23464271a013d3",
+      "provider_call_made": false,
+      "reason_code": "PROVIDER_UNREACHABLE_BLOCKED_ENV",
+      "push_authority": false,
+      "request_id": "design-studio-420ac561-5798-417f-9c42-ee267be9185f",
+      "sandbox_apply_authority": false,
+      "trace_id": "design-studio-trace-c06527121a7b-7be9185f"
+    }
+  }
+]

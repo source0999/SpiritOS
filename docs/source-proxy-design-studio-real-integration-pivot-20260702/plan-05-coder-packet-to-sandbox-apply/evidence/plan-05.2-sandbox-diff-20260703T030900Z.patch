@@ -1,0 +1,106 @@
+diff --git a/src/app/coding/design-demo/page.tsx b/src/app/coding/design-demo/page.tsx
+index ffe23f0c..6e7493d6 100644
+--- a/src/app/coding/design-demo/page.tsx
++++ b/src/app/coding/design-demo/page.tsx
+@@ -2,23 +2,29 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
+ 
+ const scopeGuards = [
+   ["Route", "/coding/design-demo sandbox only"],
+-  ["Apply", "component-local page diff"],
+-  ["Protected", "no production route, global CSS, or raw CSS ingest"],
++  ["Apply", "Plan 05.2 scoped sandbox diff"],
++  ["Protected", ".env, global CSS, and production routes blocked"],
+ ];
+ 
+ const designPacket = [
+-  ["Intent", "A focused studio surface that proves the DesignDNA can become a real screen."],
+-  ["System", "Muted glass, crisp dividers, readable density, and restrained cyan-lime accents."],
+-  ["Behavior", "Static sandbox apply with explicit proof, rollback, and downstream handoff cues."],
++  ["Intent", "Turn the Design Studio packet into a real bounded review screen."],
++  ["System", "Dense evidence panels, crisp scope rails, and restrained cyan-lime accents."],
++  ["Behavior", "Static sandbox apply with trace, diff, and downstream handoff cues."],
+ ];
+ 
+ const coderPacket = [
+-  "Replace the placeholder vibe canvas with a real applied design review surface.",
+-  "Keep all styling inside the sandbox page and existing shared UI primitives.",
+-  "Expose authority boundaries in the UI so a screenshot cannot masquerade as production apply.",
++  "Apply only to src/app/coding/design-demo/page.tsx.",
++  "Render the design_packet_hash and coder_packet_hash used for the sandbox handoff.",
++  "Keep production routes, global styles, and protected paths outside the diff.",
+ ];
+ 
+-const proofRail = ["git apply --check", "bounded diff", "no global styles", "no real app route"];
++const proofRail = ["bounded diff", "allowed file only", "protected paths blocked", "no production route"];
++
++const traceFacts = [
++  ["Trace", "design-studio-trace-24e3574ecc8f-r-packet"],
++  ["Design", "999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2"],
++  ["Coder", "preview_bb110d8d"],
++];
+ 
+ export default function Page() {
+   return (
+@@ -27,13 +33,13 @@ export default function Page() {
+         <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
+           <div>
+             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--spirit-accent)]">
+-              Plan 09 Sandbox Apply
++              Plan 05 Sandbox Apply
+             </p>
+             <h1 className="mt-4 max-w-3xl text-4xl font-light leading-tight text-[color:var(--spirit-accent-strong)] sm:text-5xl lg:text-6xl">
+-              Design Studio apply proof for the demo sandbox
++              Applied Design Studio sandbox packet
+             </h1>
+             <p className="mt-5 max-w-2xl text-base leading-7 text-[color:var(--spirit-secondary-mix)]">
+-              A model-authored screen diff is applied only to the design-demo route, turning the preview packet into a bounded runtime surface with visible authority guards.
++              The generated coder packet has been applied only to this design-demo route, with visible trace markers for the follow-up browser proof.
+             </p>
+           </div>
+ 
+@@ -86,20 +92,36 @@ export default function Page() {
+ 
+           <GlassPanel as="section" className="rounded-lg p-5">
+             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--spirit-accent)]">
+-              Apply Proof
++              Trace Link
+             </p>
+-            <div className="mt-5 flex flex-wrap gap-2">
+-              {proofRail.map((item) => (
+-                <span className="rounded-md border border-[color:var(--spirit-border)] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[color:var(--spirit-secondary-mix)]" key={item}>
+-                  {item}
+-                </span>
++            <div className="mt-5 space-y-3">
++              {traceFacts.map(([label, value]) => (
++                <div className="border-t border-[color:var(--spirit-border)] pt-3 first:border-t-0 first:pt-0" key={label}>
++                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--spirit-secondary-mix)]">
++                    {label}
++                  </p>
++                  <p className="mt-1 break-all font-mono text-xs leading-5 text-chalk">{value}</p>
++                </div>
+               ))}
+             </div>
+-            <p className="mt-5 text-sm leading-6 text-[color:var(--spirit-secondary-mix)]">
+-              The next verifier must consume this sandbox output before any real app screen apply can be considered.
+-            </p>
+           </GlassPanel>
+         </div>
++
++        <GlassPanel as="section" className="rounded-lg p-5">
++          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--spirit-accent)]">
++            Apply Proof
++          </p>
++          <div className="mt-5 flex flex-wrap gap-2">
++            {proofRail.map((item) => (
++              <span className="rounded-md border border-[color:var(--spirit-border)] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[color:var(--spirit-secondary-mix)]" key={item}>
++                {item}
++              </span>
++            ))}
++          </div>
++          <p className="mt-5 text-sm leading-6 text-[color:var(--spirit-secondary-mix)]">
++            The next verifier must consume this sandbox output before any real app screen apply can be considered.
++          </p>
++        </GlassPanel>
+       </section>
+     </main>
+   );

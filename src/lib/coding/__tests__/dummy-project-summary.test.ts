@@ -77,7 +77,7 @@ describe("dummy storefront probe", () => {
     "src/main.js":
       "import products from './products.js';\nconst productList = document.getElementById('product-list');\nproducts.forEach(product => { const e = document.createElement('div'); e.className = 'product-card'; e.innerHTML = `<h2>${product.name}</h2><p>${product.description}</p><p>${product.category}</p><p>$${product.price}</p>`; productList.appendChild(e); });",
     "src/products.js":
-      "const products = [\n  { name: 'Product A', description: 'This is product A.', price: 19.99 },\n  { name: 'Product B', description: 'This is product B.', price: 29.99 }\n];\nexport default products;",
+      "const products = [\n  { name: 'Product A', category: 'Lighting', description: 'This is product A.', price: 19.99 },\n  { name: 'Product B', category: 'Storage', description: 'This is product B.', price: 29.99 }\n];\nexport default products;",
     "src/styles.css": "body { font-family: Arial; } #product-list { display: flex; } div { border: 1px solid #ddd; }",
   };
 
@@ -90,6 +90,15 @@ describe("dummy storefront probe", () => {
     expect(probe.description_render_path_present).toBe(true);
     expect(probe.price_render_path_present).toBe(true);
     expect(probe.stylesheet_linked).toBe(true);
+    expect(probe.storefront_runtime_status).toBe("passed");
+    expect(probe.storefront_runtime_engine).toBe("module_loader_fallback");
+    expect(probe.storefront_runtime_product_count).toBe(2);
+    expect(probe.storefront_runtime_visible_fields).toEqual({
+      category: true,
+      description: true,
+      name: true,
+      price: true,
+    });
     expect(probe.visible_product_names).toEqual(["Product A", "Product B"]);
     expect(probe.preview_visible_text_summary).toContain("2 catalog item(s)");
   });
@@ -105,6 +114,7 @@ describe("dummy storefront probe", () => {
     });
     expect(probe.preview_behavior_status).toBe("FAIL_BARE_PAGE");
     expect(probe.product_count).toBe(0);
+    expect(probe.storefront_runtime_status).toBe("failed");
     expect(probe.preview_visible_text_summary).toBe("Welcome to LumaCart");
   });
 
@@ -118,5 +128,36 @@ describe("dummy storefront probe", () => {
     });
     expect(probe.preview_asset_status).toBe("present_module_unloaded_classic_script");
     expect(probe.preview_behavior_status).toBe("FAIL_BARE_PAGE");
+    expect(probe.storefront_runtime_status).toBe("failed");
+  });
+
+  it("fails broken JS that only contains right-looking product tokens", () => {
+    const probe = probeDummyStorefront({
+      files: {
+        ...realFixture,
+        "src/main.js": "import products from './products.js'; products.forEach(product => product.price); appendChild;",
+      },
+    });
+
+    expect(probe.preview_behavior_status).toBe("FAIL_BARE_PAGE");
+    expect(probe.storefront_runtime_status).toBe("failed");
+    expect(probe.storefront_runtime_reasons).toContain("runtime_module_execution_failed");
+  });
+
+  it("fails static HTML or noscript card cheats", () => {
+    const probe = probeDummyStorefront({
+      files: {
+        ...realFixture,
+        "index.html":
+          '<html><body><main id="product-list"><article class="product-card">Product A</article></main><noscript><article class="product-card">Product B</article></noscript><script type="module" src="src/main.js"></script></body></html>',
+        "src/main.js": "import products from './products.js'; console.log(products.length);",
+      },
+    });
+
+    expect(probe.preview_behavior_status).toBe("FAIL_BARE_PAGE");
+    expect(probe.storefront_runtime_status).toBe("failed");
+    expect(probe.storefront_runtime_reasons).toEqual(
+      expect.arrayContaining(["noscript_static_card_cheat", "runtime_card_creation_missing"]),
+    );
   });
 });

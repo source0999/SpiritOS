@@ -1,0 +1,66 @@
+[
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/coding",
+    "resourceType": "document",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/css/app/layout.css?v=1783039320825",
+    "resourceType": "stylesheet",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/css/app/coding/page.css?v=1783039320825",
+    "resourceType": "stylesheet",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/chunks/webpack.js?v=1783039320825",
+    "resourceType": "script",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/chunks/main-app.js?v=1783039320825",
+    "resourceType": "script"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/chunks/app-pages-internals.js",
+    "resourceType": "script",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/chunks/app/layout.js",
+    "resourceType": "script",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/chunks/app/not-found.js",
+    "resourceType": "script",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/chunks/app/coding/page.js",
+    "resourceType": "script"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+    "resourceType": "font",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:3015/_next/static/media/bb3ef058b751a6ad-s.p.woff2",
+    "resourceType": "font",
+    "status": 200
+  }
+]

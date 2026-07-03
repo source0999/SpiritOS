@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 
 import { dummyCoder10Prompts } from "@/lib/coding/dummy-coder-10-prompts";
+import { probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
 import {
   classifyDummyCoder10FileScope,
   classifyDummyCoder10Provenance,
@@ -22,6 +24,11 @@ const modelProvenance = {
   trial_result_trust_status: "model_authored",
   provider_call_made: true,
 };
+
+function provenanceHash(value: string) {
+  const normalized = `${value.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n*$/, "")}\n`;
+  return createHash("sha256").update(normalized, "utf8").digest("hex");
+}
 
 describe("dummy Coder 10 file scope classifier", () => {
   it("accepts valid dummy-root changes", () => {
@@ -67,8 +74,13 @@ describe("dummy Coder 10 provenance classifier", () => {
       classifyDummyCoder10Provenance(
         {
           ...modelProvenance,
+          applied_diff_sha256: "abc",
+          backend_converted_diff_sha256: "abc",
           diff_source: "model_authored_file_bundle_backend_converted_to_diff",
           generated_diff_by_backend: true,
+          model_file_bundle_sha256: "bundle",
+          provenance_hash_normalization: "lf_trailing_newline_v1",
+          raw_model_response_sha256: "raw",
           trial_result_trust_status: "model_authored_diff_proven",
         },
         prompt001,
@@ -87,6 +99,67 @@ describe("dummy Coder 10 provenance classifier", () => {
       provenance_status: "needs_fix",
       pass_compatible: false,
     });
+  });
+
+  it("hard-fails fallback and backend recovery before PASS", () => {
+    const result = classifyDummyCoder10Provenance(
+      {
+        ...modelProvenance,
+        diff_source: "deterministic_prompt3_recovery_backend_converted_to_diff",
+        fallback_used: true,
+        trial_result_trust_status: "deterministic_prompt3_recovery_diff_proven",
+      },
+      prompt003,
+    );
+
+    expect(result.provenance_status).toBe("invalid");
+    expect(result.anti_cheat_status).toBe("blocked");
+    expect(result.anti_cheat_hard_fail_ids).toContain("fallback_labeled_primary_success");
+  });
+
+  it("blocks model-authored diff provenance without matching canonical hashes", () => {
+    const missing = classifyDummyCoder10Provenance(
+      {
+        ...modelProvenance,
+        diff_source: "model_authored_prompt3_file_bundle_backend_converted_to_diff",
+        generated_diff_by_backend: true,
+        trial_result_trust_status: "model_authored_diff_proven",
+      },
+      prompt003,
+    );
+    const mismatch = classifyDummyCoder10Provenance(
+      {
+        ...modelProvenance,
+        applied_diff_sha256: "applied",
+        backend_converted_diff_sha256: "backend",
+        diff_source: "model_authored_prompt3_file_bundle_backend_converted_to_diff",
+        generated_diff_by_backend: true,
+        model_file_bundle_sha256: "bundle",
+        provenance_hash_normalization: "lf_trailing_newline_v1",
+        raw_model_response_sha256: "raw",
+        trial_result_trust_status: "model_authored_diff_proven",
+      },
+      prompt003,
+    );
+
+    expect(missing.pass_compatible).toBe(false);
+    expect(missing.reasons).toContain("missing_raw_model_response_sha256");
+    expect(mismatch.pass_compatible).toBe(false);
+    expect(mismatch.reasons).toContain("backend_converted_diff_sha256_mismatch");
+  });
+
+  it("keeps benchmark runtime branch detectors advisory only", () => {
+    const result = classifyDummyCoder10Provenance(
+      {
+        ...modelProvenance,
+        runtime_code: "if prompt_id == 'coder-003-render-product-cards': log()",
+      },
+      prompt003,
+    );
+
+    expect(result.anti_cheat_status).toBe("advisory");
+    expect(result.pass_compatible).toBe(true);
+    expect(result.anti_cheat_advisory_ids).toContain("benchmark_specific_runtime_branch");
   });
 });
 
@@ -251,6 +324,11 @@ describe("dummy Coder 10 grading mapper", () => {
         preview_asset_status: "empty",
         product_count: 0,
         card_render_path_present: false,
+        storefront_runtime_engine: "module_loader_fallback",
+        storefront_runtime_product_count: 0,
+        storefront_runtime_reasons: ["static_products_import_missing"],
+        storefront_runtime_status: "failed",
+        storefront_runtime_visible_fields: { category: false, description: false, name: false, price: false },
         stylesheet_linked: false,
       },
     });
@@ -278,6 +356,11 @@ describe("dummy Coder 10 grading mapper", () => {
         preview_asset_status: "present",
         product_count: 2,
         card_render_path_present: true,
+        storefront_runtime_engine: "module_loader_fallback",
+        storefront_runtime_product_count: 2,
+        storefront_runtime_reasons: [],
+        storefront_runtime_status: "passed",
+        storefront_runtime_visible_fields: { category: true, description: true, name: true, price: true },
         stylesheet_linked: true,
       },
     });
@@ -302,6 +385,11 @@ describe("dummy Coder 10 grading mapper", () => {
         category_render_path_present: false,
         description_render_path_present: false,
         price_render_path_present: true,
+        storefront_runtime_engine: "module_loader_fallback",
+        storefront_runtime_product_count: 3,
+        storefront_runtime_reasons: ["module_script_missing"],
+        storefront_runtime_status: "failed",
+        storefront_runtime_visible_fields: { category: false, description: false, name: true, price: true },
         stylesheet_linked: true,
       },
     });
@@ -330,6 +418,11 @@ describe("dummy Coder 10 grading mapper", () => {
         category_render_path_present: true,
         description_render_path_present: true,
         price_render_path_present: true,
+        storefront_runtime_engine: "module_loader_fallback",
+        storefront_runtime_product_count: 6,
+        storefront_runtime_reasons: [],
+        storefront_runtime_status: "passed",
+        storefront_runtime_visible_fields: { category: true, description: true, name: true, price: true },
         stylesheet_linked: true,
         visible_product_names: ["Product A", "Product B", "Product C", "Product D", "Product E", "Product F"],
       },
@@ -338,5 +431,119 @@ describe("dummy Coder 10 grading mapper", () => {
     expect(result.resultState).toBe("PASS_DUMMY_UI_CHANGE");
     expect(result.label).toBe("PASS");
     expect(result.score).toBe(10);
+  });
+
+  it("test_prompt3_full_stack_model_authored_hash_bound_runtime_pass", () => {
+    const rawModelResponse = [
+      '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/index.html">',
+      '<main id="product-list"></main><script type="module" src="src/main.js"></script>',
+      "</file>",
+      '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js">',
+      "import products from './products.js';",
+      "const productList = document.getElementById('product-list');",
+      "products.forEach((product) => {",
+      "  const card = document.createElement('article');",
+      "  card.className = 'product-card';",
+      "  card.innerHTML = `<h2>${product.name}</h2><p>${product.category}</p><p>${product.description}</p><strong>${product.price}</strong>`;",
+      "  productList.appendChild(card);",
+      "});",
+      "</file>",
+    ].join("\n");
+    const approvedDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "@@ -1 +1,8 @@",
+      "-console.log('LumaCart');",
+      "+import products from './products.js';",
+      "+const productList = document.getElementById('product-list');",
+      "+products.forEach((product) => {",
+      "+  const card = document.createElement('article');",
+      "+  card.className = 'product-card';",
+      "+  card.innerHTML = `<h2>${product.name}</h2><p>${product.category}</p><p>${product.description}</p><strong>${product.price}</strong>`;",
+      "+  productList.appendChild(card);",
+      "+});",
+      "",
+    ].join("\n");
+    const boundHash = provenanceHash(approvedDiff);
+    const storefrontProbe = probeDummyStorefront({
+      files: {
+        "index.html":
+          '<!doctype html><main id="product-list"></main><script type="module" src="src/main.js"></script>',
+        "src/main.js":
+          "import products from './products.js';\nconst productList = document.getElementById('product-list');\nproducts.forEach((product) => { const card = document.createElement('article'); card.className = 'product-card'; card.innerHTML = `<h2>${product.name}</h2><p>${product.category}</p><p>${product.description}</p><strong>${product.price}</strong>`; productList.appendChild(card); });",
+        "src/products.js": [
+          "const products = [",
+          "  { name: 'Desk Lamp', price: '$24.99', category: 'Home', description: 'Small lamp.' },",
+          "  { name: 'Coffee Maker', price: '$149.99', category: 'Appliances', description: 'Morning coffee.' },",
+          "  { name: 'Water Bottle', price: '$7.99', category: 'Outdoors', description: 'Cold water.' },",
+          "  { name: 'Wireless Mouse', price: '$29.99', category: 'Electronics', description: 'Desk pointer.' },",
+          "  { name: 'Canvas Tote', price: '$18.00', category: 'Bags', description: 'Daily carry.' },",
+          "  { name: 'Notebook Set', price: '$12.50', category: 'Stationery', description: 'Paper notes.' },",
+          "];",
+          "export default products;",
+        ].join("\n"),
+        "src/styles.css": ".product-card { display: block; }",
+      },
+    });
+    const result = gradeDummyCoder10Result({
+      prompt: prompt003,
+      changedFiles: [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      ],
+      checksRun: ["git apply --check", "prompt3 runtime storefront proof"],
+      provenance: {
+        ...modelProvenance,
+        applied_diff_sha256: boundHash,
+        approved_diff_sha256: boundHash,
+        backend_converted_diff_sha256: boundHash,
+        diff_source: "model_authored_prompt3_file_bundle_backend_converted_to_diff",
+        generated_diff_by_backend: true,
+        model_file_bundle_sha256: provenanceHash("index.html\nsrc/main.js\n"),
+        post_apply_rediff_sha256: "different-supporting-rediff-hash",
+        provenance_hash_normalization: "lf_trailing_newline_v1",
+        raw_model_response_sha256: provenanceHash(rawModelResponse),
+        runtime_code: "if genericRunnerMode { executeApply(); }",
+        trial_result_trust_status: "model_authored_diff_proven",
+      },
+      storefrontProbe,
+    });
+
+    expect(storefrontProbe.storefront_runtime_status).toBe("passed");
+    expect(result.resultState).toBe("PASS_DUMMY_UI_CHANGE");
+    expect(result.label).toBe("PASS");
+    expect(result.provenance.provenance_status).toBe("pass_compatible");
+    expect(result.provenance.anti_cheat_hard_fail_ids).toEqual([]);
+  });
+
+  it("classifies Prompt 3 already-satisfied storefront proof as PASS_NOOP", () => {
+    const result = gradeDummyCoder10Result({
+      prompt: prompt003,
+      changedFiles: [],
+      rawBackendStatus: "already_satisfied",
+      storefrontProbe: {
+        preview_behavior_status: "PASS_STOREFRONT_RENDERED",
+        preview_visible_text_summary: "Welcome to LumaCart, 6 catalog item(s), prices, categories",
+        preview_asset_status: "present",
+        product_count: 6,
+        card_render_path_present: true,
+        category_render_path_present: true,
+        description_render_path_present: true,
+        price_render_path_present: true,
+        storefront_runtime_engine: "module_loader_fallback",
+        storefront_runtime_product_count: 6,
+        storefront_runtime_reasons: [],
+        storefront_runtime_status: "passed",
+        storefront_runtime_visible_fields: { category: true, description: true, name: true, price: true },
+        stylesheet_linked: true,
+        visible_product_names: ["Product A", "Product B", "Product C", "Product D", "Product E", "Product F"],
+      },
+    });
+
+    expect(result.resultState).toBe("PASS_NOOP");
+    expect(result.label).toBe("PASS_NOOP");
+    expect(result.provenance.reasons).toContain("existing_product_cards_verified");
+    expect(result.recommendedNextAction.toLowerCase()).toContain("prompt 4");
   });
 });

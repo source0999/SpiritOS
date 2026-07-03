@@ -1,0 +1,33 @@
+{
+  "captured_at": "2026-07-02T22:42:00-04:00",
+  "increment_id": "04.5-phase-regression",
+  "route_source": "Z:/src/app/v1/coding/design-studio/preview/route.ts",
+  "runtime_harness": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-04-model-and-subagent-consumption/evidence/plan-04.5-route-runtime-20260703T024200Z.cjs",
+  "route_regression_ok": false,
+  "route_proof": {
+    "fallback_status": 200,
+    "model_status": 200,
+    "fallback_outcome": "DESIGN_PACKET_PREVIEW",
+    "model_outcome": "DESIGN_PACKET_PREVIEW",
+    "fallback_design_packet_hash": "616f2f53ec75bd72f461ecc01a1caf53f39548186acdc690d6e541f1882ac734",
+    "model_design_packet_hash": "999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2",
+    "response_trace_id": "design-studio-trace-24e3574ecc8f--5-model",
+    "model_invocation_trace_id": "design-studio-trace-24e3574ecc8f--5-model",
+    "model_invocation_event_id": "ollama-phi4-mini-latest-67f088ad3d99",
+    "model_call_made": true,
+    "provider_call_made": true,
+    "material_hash_changed": true,
+    "trace_linked": false
+  },
+  "vitest_attempts": [
+    {
+      "command": "npx vitest run src/lib/coding/__tests__/design-studio-obsidian-writeback.test.ts src/app/v1/coding/design-studio/preview/__tests__/route.test.ts src/components/coding/__tests__/design-studio-shell.test.tsx src/components/coding/__tests__/coding-cockpit-shell.test.tsx --reporter=dot",
+      "result": "TIMED_OUT_124S_NO_PASS_CLAIMED"
+    },
+    {
+      "command": "npx vitest run src/lib/coding/__tests__/design-studio-obsidian-writeback.test.ts --reporter=dot",
+      "result": "TIMED_OUT_64S_NO_PASS_CLAIMED"
+    }
+  ],
+  "receipt_validator_required_after_receipt": true
+}

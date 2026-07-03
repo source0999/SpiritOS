@@ -1,0 +1,11 @@
+{
+  "url": "http://localhost:3015/coding",
+  "title": "Spirit OS • Dark Node",
+  "shellId": "coding-cockpit-shell",
+  "hasCodingHeading": true,
+  "hasTaskComposerHeading": true,
+  "textareaPlaceholder": "Describe what you want SpiritOS to change.",
+  "startButtonText": "Start coding",
+  "hasReviewPane": true,
+  "hasPromptComposer": true
+}

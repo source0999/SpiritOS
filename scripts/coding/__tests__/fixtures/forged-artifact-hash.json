@@ -1,0 +1,18 @@
+{
+  "increment_id": "fixture-forged-artifact-hash",
+  "plan_id": "06",
+  "phase_id": "4",
+  "started_at": "2026-07-02T20:10:00-04:00",
+  "completed_at": "2026-07-02T20:10:01-04:00",
+  "head_before": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "head_after": "ec422564a3131ad4ecbd9f9626d1af421741019e",
+  "branch": "bench/glm4-9b-model-lanes",
+  "final_increment_verdict": "INCREMENT_GO_PROVEN",
+  "artifacts": [
+    {
+      "role": "design_packet",
+      "path": "artifact-chain/design-packet.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

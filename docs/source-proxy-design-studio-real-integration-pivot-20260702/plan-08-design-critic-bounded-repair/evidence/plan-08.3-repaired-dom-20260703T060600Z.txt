@@ -1,0 +1,165 @@
+desktop:
+PLAN 08 BOUNDED REPAIR
+
+Critic-repaired Design Studio sandbox packet
+
+The generated coder packet has been repaired only inside this design-demo route, with visible trace markers for screenshot, anti-template, and critic reruns.
+
+SCOPE FENCE
+
+ROUTE
+/coding/design-demo sandbox only
+APPLY
+Plan 05.2 scoped sandbox diff
+PROTECTED
+.env, global CSS, and production routes blocked
+
+INTENT
+
+Turn the Design Studio packet into a real bounded review screen.
+
+SYSTEM
+
+Dense evidence panels, crisp scope rails, and restrained cyan-lime accents.
+
+BEHAVIOR
+
+Static sandbox apply with trace, diff, and downstream handoff cues.
+
+CODER PACKET
+
+1
+
+Apply only to src/app/coding/design-demo/page.tsx.
+
+2
+
+Render the design_packet_hash and coder_packet_hash used for the sandbox handoff.
+
+3
+
+Keep production routes, global styles, and protected paths outside the diff.
+
+TRACE LINK
+
+TRACE
+
+design-studio-trace-24e3574ecc8f-r-packet
+
+DESIGN
+
+999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2
+
+CODER
+
+preview_bb110d8d
+
+APPLY PROOF
+
+BOUNDED DIFF
+ALLOWED FILE ONLY
+PROTECTED PATHS BLOCKED
+NO PRODUCTION ROUTE
+
+The next verifier must consume this sandbox output before any real app screen apply can be considered.
+
+CRITIC REPAIR LOOP
+
+CRITIC
+
+critic-design-studio-trace-24e3574ecc8f-r-packet
+
+REPAIR
+
+repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1
+
+ATTEMPTS
+
+1 of 2 bounded repair attempts
+
+RETEST
+
+screenshot, anti-template, and critic rerun required
+
+mobile:
+PLAN 08 BOUNDED REPAIR
+
+Critic-repaired Design Studio sandbox packet
+
+The generated coder packet has been repaired only inside this design-demo route, with visible trace markers for screenshot, anti-template, and critic reruns.
+
+SCOPE FENCE
+
+ROUTE
+/coding/design-demo sandbox only
+APPLY
+Plan 05.2 scoped sandbox diff
+PROTECTED
+.env, global CSS, and production routes blocked
+
+INTENT
+
+Turn the Design Studio packet into a real bounded review screen.
+
+SYSTEM
+
+Dense evidence panels, crisp scope rails, and restrained cyan-lime accents.
+
+BEHAVIOR
+
+Static sandbox apply with trace, diff, and downstream handoff cues.
+
+CODER PACKET
+
+1
+
+Apply only to src/app/coding/design-demo/page.tsx.
+
+2
+
+Render the design_packet_hash and coder_packet_hash used for the sandbox handoff.
+
+3
+
+Keep production routes, global styles, and protected paths outside the diff.
+
+TRACE LINK
+
+TRACE
+
+design-studio-trace-24e3574ecc8f-r-packet
+
+DESIGN
+
+999875b640e1270e38555d435c85a150573515c24d6e0a25d8f0022c039f6cf2
+
+CODER
+
+preview_bb110d8d
+
+APPLY PROOF
+
+BOUNDED DIFF
+ALLOWED FILE ONLY
+PROTECTED PATHS BLOCKED
+NO PRODUCTION ROUTE
+
+The next verifier must consume this sandbox output before any real app screen apply can be considered.
+
+CRITIC REPAIR LOOP
+
+CRITIC
+
+critic-design-studio-trace-24e3574ecc8f-r-packet
+
+REPAIR
+
+repair-critic-design-studio-trace-24e3574ecc8f-r-packet-1
+
+ATTEMPTS
+
+1 of 2 bounded repair attempts
+
+RETEST
+
+screenshot, anti-template, and critic rerun required

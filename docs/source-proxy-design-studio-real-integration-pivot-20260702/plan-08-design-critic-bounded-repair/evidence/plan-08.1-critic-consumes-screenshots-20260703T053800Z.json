@@ -1,0 +1,39 @@
+{
+  "captured_at": "2026-07-03T01:38:00-04:00",
+  "increment_id": "08.1-critic-consumes-screenshots",
+  "ok": true,
+  "source_execution": "typescript_transpile_to_commonjs_then_execute_helper",
+  "critic_source_path": "Z:/src/lib/coding/design-studio-critic.ts",
+  "critic_source_sha256": "0a01a541321685a7c709bde931d276ce67f2bddcf07937dc084748f4f7e1c7d2",
+  "upstream_anti_template_phase_receipt_path": "Z:/docs/source-proxy-design-studio-real-integration-pivot-20260702/plan-07-anti-template-rendered-output-verifier/evidence/plan-07.4-phase-regression-20260703T052200Z.json",
+  "upstream_anti_template_phase_receipt_sha256": "3a29808f867c32734ff84a898d0dec0ea42db3c659ac6577f5172c9dded39f92",
+  "critic_input": {
+    "anti_template_verdict": "GENERIC_TEMPLATE_PASS",
+    "anti_template_verdict_id": "plan-07-phase-verdict-20260703T052200Z",
+    "desktop_screenshot_hash": "df58f5c18102b054cb9e055fb268b7d288634a3c00b38190cf5c3d386f31b50d",
+    "mobile_screenshot_hash": "ef42762820aaf3f98c0e913ee32645743c26d1d1d89bc46208a1ca346f2469a9",
+    "template_signal_count": 0,
+    "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+  },
+  "critic_result": {
+    "blockers": [],
+    "critic_verdict": "DESIGN_CRITIC_APPROVED_PREVIEW",
+    "critic_verdict_id": "critic-design-studio-trace-24e3574ecc8f-r-packet",
+    "references": {
+      "anti_template_verdict_id": "plan-07-phase-verdict-20260703T052200Z",
+      "desktop_screenshot_hash": "df58f5c18102b054cb9e055fb268b7d288634a3c00b38190cf5c3d386f31b50d",
+      "mobile_screenshot_hash": "ef42762820aaf3f98c0e913ee32645743c26d1d1d89bc46208a1ca346f2469a9",
+      "trace_id": "design-studio-trace-24e3574ecc8f-r-packet"
+    },
+    "repair_required": false
+  },
+  "required_proof": {
+    "critic_verdict_id_present": true,
+    "input_includes_desktop_screenshot_hash": true,
+    "input_includes_mobile_screenshot_hash": true,
+    "input_includes_anti_template_verdict_id": true,
+    "verdict_references_desktop_hash": true,
+    "verdict_references_mobile_hash": true,
+    "verdict_references_anti_template_id": true
+  }
+}

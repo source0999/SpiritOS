@@ -1,0 +1,305 @@
+{
+  "capturedAt": "2026-07-03T02:10:16.302Z",
+  "envNamesPresent": [],
+  "ollamaCli": {
+    "ok": false,
+    "error": "spawnSync ollama ETIMEDOUT",
+    "stdout": "",
+    "stderr": "time=2026-07-02T22:10:01.914-04:00 level=INFO source=app_windows.go:282 msg=\"starting Ollama\" app=C:\\Users\\smith\\AppData\\Local\\Programs\\Ollama version=0.30.6 OS=Windows/10.0.26200\ntime=2026-07-02T22:10:01.916-04:00 level=INFO source=app.go:235 msg=\"initialized tools registry\" tool_count=0\ntime=2026-07-02T22:10:01.943-04:00 level=INFO source=app.go:250 msg=\"starting ollama server\"\ntime=2026-07-02T22:10:01.943-04:00 level=INFO source=app.go:281 msg=\"starting ui server\" port=53320\ntime=2026-07-02T22:10:02.011-04:00 level=INFO source=app.go:365 msg=\"deferring pending update for fast startup\"\ntime=2026-07-02T22:10:04.944-04:00 level=INFO source=updater.go:355 msg=\"beginning update checker\" interval=1h0m0s\ntime=2026-07-02T22:10:05.201-04:00 level=INFO source=updater.go:133 msg=\"New update available at https://github.com/ollama/ollama/releases/download/v0.31.1/OllamaSetup.exe\"\ntime=2026-07-02T22:10:05.569-04:00 level=INFO source=updater.go:192 msg=\"update already downloaded\" bundle=C:\\Users\\smith\\AppData\\Local\\Ollama\\updates_v2\\1c32a6b76d41c0e5216ed5f455a92a3b189207eb9edf3b3dddebe37320c89763\\OllamaSetup.exe\n"
+  },
+  "ollamaApi": {
+    "ok": true,
+    "status": 200,
+    "text": "{\"models\":[{\"name\":\"phi4-mini:latest\",\"model\":\"phi4-mini:latest\",\"modified_at\":\"2026-06-08T19:51:30.186642-04:00\",\"size\":2491876774,\"digest\":\"78fad5d182a7c33065e153a5f8ba210754207ba9d91973f57dffa7f487363753\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"phi3\",\"families\":[\"phi3\"],\"parameter_size\":\"3.8B\",\"quantization_level\":\"Q4_K_M\",\"context_length\":131072,\"embedding_length\":3072},\"capabilities\":[\"completion\",\"tools\"]},{\"name\":\"qwen2.5-coder:14b\",\"model\":\"qwen2.5-coder:14b\",\"modified_at\":\"2026-06-08T19:42:44.7856558-04:00\",\"size\":8988124298,\"digest\":\"9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"qwen2\",\"families\":[\"qwen2\"],\"parameter_size\":\"14.8B\",\"quantization_level\":\"Q4_K_M\",\"context_length\":32768,\"embedding_length\":5120},\"capabilities\":[\"completion\",\"tools\",\"insert\"]},{\"name\":\"qwen2.5-coder:7b\",\"model\":\"qwen2.5-coder:7b\",\"modified_at\":\"2026-06-05T23:09:22.7655275-04:00\",\"size\":4683087561,\"digest\":\"dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"qwen2\",\"families\":[\"qwen2\"],\"parameter_size\":\"7.6B\",\"quantization_level\":\"Q4_K_M\",\"context_length\":32768,\"embedding_length\":3584},\"capabilities\":[\"completion\",\"tools\",\"insert\"]},{\"name\":\"dolphin-mistral:latest\",\"model\":\"dolphin-mistral:latest\",\"modified_at\":\"2026-04-14T20:47:11.679327-04:00\",\"size\":4108940323,\"digest\":\"5dc8c5a2be6510dcb2afbcffdedc73acbd5868d2c25d9402f6044beade3d5f70\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"llama\",\"families\":[\"llama\"],\"parameter_size\":\"7B\",\"quantization_level\":\"Q4_0\",\"context_length\":32768,\"embedding_length\":4096},\"capabilities\":[\"completion\"]},{\"name\":\"Spirit:latest\",\"model\":\"Spirit:latest\",\"modified_at\":\"2026-04-12T03:21:44.5327488-04:00\",\"size\":4661235994,\"digest\":\"613f068e29f863bb900e568f920401b42678efca873d7a7c87b0d6ef4945fadd\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"llama\",\"families\":[\"llama\"],\"parameter_size\":\"8B\",\"quantization_level\":\"Q4_0\",\"context_length\":8192,\"embedding_length\":4096},\"capabilities\":[\"completion\"]},{\"name\":\"dolphin-llama3:latest\",\"model\":\"dolphin-llama3:latest\",\"modified_at\":\"2026-04-12T02:57:40.4778272-04:00\",\"size\":4661235994,\"digest\":\"613f068e29f863bb900e568f920401b42678efca873d7a7c87b0d6ef4945fadd\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"llama\",\"families\":[\"llama\"],\"parameter_size\":\"8B\",\"quantization_level\":\"Q4_0\",\"context_length\":8192,\"embedding_length\":4096},\"capabilities\":[\"completion\"]},{\"name\":\"gpt-4o-mini:latest\",\"model\":\"gpt-4o-mini:latest\",\"modified_at\":\"2026-04-10T22:20:37.4787566-04:00\",\"size\":4920753328,\"digest\":\"46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"llama\",\"families\":[\"llama\"],\"parameter_size\":\"8.0B\",\"quantization_level\":\"Q4_K_M\",\"context_length\":131072,\"embedding_length\":4096},\"capabilities\":[\"completion\",\"tools\"]},{\"name\":\"gpt-4o:latest\",\"model\":\"gpt-4o:latest\",\"modified_at\":\"2026-04-10T22:19:27.2354387-04:00\",\"size\":4920753328,\"digest\":\"46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"llama\",\"families\":[\"llama\"],\"parameter_size\":\"8.0B\",\"quantization_level\":\"Q4_K_M\",\"context_length\":131072,\"embedding_length\":4096},\"capabilities\":[\"completion\",\"tools\"]},{\"name\":\"llama3.1:latest\",\"model\":\"llama3.1:latest\",\"modified_at\":\"2026-04-10T22:08:23.6191161-04:00\",\"size\":4920753328,\"digest\":\"46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e\",\"details\":{\"parent_model\":\"\",\"format\":\"gguf\",\"family\":\"llama\",\"families\":[\"llama\"],\"parameter_size\":\"8.0B\",\"quantization_level\":\"Q4_K_M\",\"context_length\":131072,\"embedding_length\":4096},\"capabilities\":[\"completion\",\"tools\"]}]}",
+    "json": {
+      "models": [
+        {
+          "name": "phi4-mini:latest",
+          "model": "phi4-mini:latest",
+          "modified_at": "2026-06-08T19:51:30.186642-04:00",
+          "size": 2491876774,
+          "digest": "78fad5d182a7c33065e153a5f8ba210754207ba9d91973f57dffa7f487363753",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "phi3",
+            "families": [
+              "phi3"
+            ],
+            "parameter_size": "3.8B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 3072
+          },
+          "capabilities": [
+            "completion",
+            "tools"
+          ]
+        },
+        {
+          "name": "qwen2.5-coder:14b",
+          "model": "qwen2.5-coder:14b",
+          "modified_at": "2026-06-08T19:42:44.7856558-04:00",
+          "size": 8988124298,
+          "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 32768,
+            "embedding_length": 5120
+          },
+          "capabilities": [
+            "completion",
+            "tools",
+            "insert"
+          ]
+        },
+        {
+          "name": "qwen2.5-coder:7b",
+          "model": "qwen2.5-coder:7b",
+          "modified_at": "2026-06-05T23:09:22.7655275-04:00",
+          "size": 4683087561,
+          "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "7.6B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 32768,
+            "embedding_length": 3584
+          },
+          "capabilities": [
+            "completion",
+            "tools",
+            "insert"
+          ]
+        },
+        {
+          "name": "dolphin-mistral:latest",
+          "model": "dolphin-mistral:latest",
+          "modified_at": "2026-04-14T20:47:11.679327-04:00",
+          "size": 4108940323,
+          "digest": "5dc8c5a2be6510dcb2afbcffdedc73acbd5868d2c25d9402f6044beade3d5f70",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "llama",
+            "families": [
+              "llama"
+            ],
+            "parameter_size": "7B",
+            "quantization_level": "Q4_0",
+            "context_length": 32768,
+            "embedding_length": 4096
+          },
+          "capabilities": [
+            "completion"
+          ]
+        },
+        {
+          "name": "Spirit:latest",
+          "model": "Spirit:latest",
+          "modified_at": "2026-04-12T03:21:44.5327488-04:00",
+          "size": 4661235994,
+          "digest": "613f068e29f863bb900e568f920401b42678efca873d7a7c87b0d6ef4945fadd",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "llama",
+            "families": [
+              "llama"
+            ],
+            "parameter_size": "8B",
+            "quantization_level": "Q4_0",
+            "context_length": 8192,
+            "embedding_length": 4096
+          },
+          "capabilities": [
+            "completion"
+          ]
+        },
+        {
+          "name": "dolphin-llama3:latest",
+          "model": "dolphin-llama3:latest",
+          "modified_at": "2026-04-12T02:57:40.4778272-04:00",
+          "size": 4661235994,
+          "digest": "613f068e29f863bb900e568f920401b42678efca873d7a7c87b0d6ef4945fadd",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "llama",
+            "families": [
+              "llama"
+            ],
+            "parameter_size": "8B",
+            "quantization_level": "Q4_0",
+            "context_length": 8192,
+            "embedding_length": 4096
+          },
+          "capabilities": [
+            "completion"
+          ]
+        },
+        {
+          "name": "gpt-4o-mini:latest",
+          "model": "gpt-4o-mini:latest",
+          "modified_at": "2026-04-10T22:20:37.4787566-04:00",
+          "size": 4920753328,
+          "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "llama",
+            "families": [
+              "llama"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 4096
+          },
+          "capabilities": [
+            "completion",
+            "tools"
+          ]
+        },
+        {
+          "name": "gpt-4o:latest",
+          "model": "gpt-4o:latest",
+          "modified_at": "2026-04-10T22:19:27.2354387-04:00",
+          "size": 4920753328,
+          "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "llama",
+            "families": [
+              "llama"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 4096
+          },
+          "capabilities": [
+            "completion",
+            "tools"
+          ]
+        },
+        {
+          "name": "llama3.1:latest",
+          "model": "llama3.1:latest",
+          "modified_at": "2026-04-10T22:08:23.6191161-04:00",
+          "size": 4920753328,
+          "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "llama",
+            "families": [
+              "llama"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 4096
+          },
+          "capabilities": [
+            "completion",
+            "tools"
+          ]
+        }
+      ]
+    }
+  },
+  "models": [
+    "phi4-mini:latest",
+    "qwen2.5-coder:14b",
+    "qwen2.5-coder:7b",
+    "dolphin-mistral:latest",
+    "Spirit:latest",
+    "dolphin-llama3:latest",
+    "gpt-4o-mini:latest",
+    "gpt-4o:latest",
+    "llama3.1:latest"
+  ],
+  "matrix": [
+    {
+      "lane": "design-studio-local-ollama",
+      "claimed_role": "optional model generation lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "REACHABLE_MODELS_LISTED",
+      "reachable_from_coding": true,
+      "reachable_from_sandbox_apply": false,
+      "evidence": "ollama models: phi4-mini:latest, qwen2.5-coder:14b, qwen2.5-coder:7b, dolphin-mistral:latest, Spirit:latest, dolphin-llama3:latest, gpt-4o-mini:latest, gpt-4o:latest, llama3.1:latest",
+      "required_for_go": false,
+      "future_decision_needed": "approve exact model invocation in Plan 04.2"
+    },
+    {
+      "lane": "design-studio-openai",
+      "claimed_role": "optional model generation lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "evidence": "OPENAI_API_KEY absent from process env",
+      "required_for_go": false,
+      "future_decision_needed": "approve model use and selected model before invocation"
+    },
+    {
+      "lane": "design-studio-anthropic",
+      "claimed_role": "optional model generation lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "evidence": "ANTHROPIC_API_KEY absent from process env",
+      "required_for_go": false,
+      "future_decision_needed": "approve model use and selected model before invocation"
+    },
+    {
+      "lane": "mac-worker-design-studio",
+      "claimed_role": "future remote worker/subagent lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "evidence": "no Design Studio Mac worker endpoint/config found during inventory",
+      "required_for_go": false,
+      "future_decision_needed": "explicit approval and endpoint/config required"
+    },
+    {
+      "lane": "scout-current-research-design-studio",
+      "claimed_role": "future research lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "evidence": "no Design Studio Scout/current research lane found during inventory",
+      "required_for_go": false,
+      "future_decision_needed": "explicit approval and lane config required"
+    },
+    {
+      "lane": "cartographer-design-studio",
+      "claimed_role": "future graph/cartographer lane",
+      "expected_status": "EXPECTED_BLOCKED_ENV_OR_DORMANT",
+      "observed_status": "BLOCKED_ENV",
+      "reachable_from_coding": false,
+      "reachable_from_sandbox_apply": false,
+      "evidence": "Graphify/memory graph/cartographer dependency remains deferred and out of scope",
+      "required_for_go": false,
+      "future_decision_needed": "deferred by pivot hard rule"
+    }
+  ],
+  "noProviderInvented": true
+}
