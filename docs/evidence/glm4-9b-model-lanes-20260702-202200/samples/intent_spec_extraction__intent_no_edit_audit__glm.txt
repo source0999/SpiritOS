@@ -1,0 +1,28 @@
+{
+  "target": "Source Proxy evidence folder",
+  "role": " auditor",
+  "request_type": "audit",
+  "constraints": [
+    "local-only reasoning",
+    "no cloud fallback",
+    "no hidden tools",
+    "no file mutation",
+    "no model promotion",
+    "never touch SpiritFlix, Jellyfin, media files, transcodes, or model storage"
+  ],
+  "success_criteria": "tell if the PASS was real based on evidence in the folder",
+  "forbidden_paths": [
+    "SpiritFlix",
+    "Jellyfin",
+    "media files",
+    "transcodes",
+    "model storage"
+  ],
+  "verifier_requirements": [
+    "analyze existing evidence without modification or external tools",
+    "do not create new prompt batches",
+    "do not rerun automatically",
+    "do not patch code"
+  ],
+  "current_info_needed": "contents of the Source Proxy evidence folder to determine if the PASS was real"
+}

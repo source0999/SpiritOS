@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "content": "export function benchmarkWidgetLabel(product: { name: string; price: number; rating: number }): string {\n  if (product.rating >= 4.5) {\n    return `Best Seller: ${product.name} - $${product.price.toFixed(2)}`;\n  } else if (product.rating >= 3.5) {\n    return `Popular: ${product.name} - $${product.price.toFixed(2)}`;\\n  } else {\n    return `New Arrival: ${product.name} - $${product.price.toFixed(2)}`;\n  }\n}",
+      "path": "source_proxy/benchmarks/fixtures/tiny_product/generated_widget.ts"
+    }
+  ]
+}

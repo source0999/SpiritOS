@@ -1,0 +1,17 @@
+{
+  "fallback_claim_risk": "high",
+  "provenance_requirements": {
+    "local_sources": true,
+    "no_cloud_fallback": true
+  },
+  "queries": [
+    "latest Ollama API JSON mode support check"
+  ],
+  "recommended_providers": [
+    "SearXNG",
+    "Scout"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": true,
+  "source_need": "local"
+}

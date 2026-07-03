@@ -18,6 +18,36 @@ from typing import Any
 
 
 BENCHMARK_VERSION = "ornith-model-lane-benchmark-v0.1"
+DEFAULT_SUITE = "ornith"
+SUITE_CONFIG: dict[str, dict[str, str]] = {
+    "ornith": {
+        "version": "ornith-model-lane-benchmark-v0.1",
+        "evidence_prefix": "ornith-model-lane-benchmark",
+        "challenger_key": "ornith",
+        "challenger_label": "Ornith",
+        "title": "Ornith 1.0 9B Source Proxy Model-Lane Benchmark",
+        "scope": (
+            "This evidence folder compares Ornith 1.0 9B Q4 against current local Source Proxy model lanes. "
+            "It does not promote Ornith, change default routing, touch SpiritFlix/Jellyfin/media paths, or use cloud models for scoring."
+        ),
+        "visual_media_status": "NOT_APPLICABLE_FOR_ORNITH",
+        "visual_media_reason": "No live multimodal Ornith route is configured. Gemma visual/VLM replacement was not attempted.",
+    },
+    "glm": {
+        "version": "glm4-9b-model-lane-benchmark-v0.1",
+        "evidence_prefix": "glm4-9b-model-lanes",
+        "challenger_key": "glm",
+        "challenger_label": "GLM-4-9B",
+        "title": "GLM-4-9B Source Proxy Model-Lane Benchmark",
+        "scope": (
+            "This evidence folder compares GLM-4-9B Q5_K_M against current local Source Proxy model lanes "
+            "(Qwen 7B/14B, Hermes, Gemma, Ornith). It does not promote GLM, change default routing, "
+            "touch SpiritFlix/Jellyfin/media paths, or use cloud models for scoring."
+        ),
+        "visual_media_status": "NOT_APPLICABLE_FOR_GLM",
+        "visual_media_reason": "GLM-4-9B inventory proves a text-only local model; no live multimodal GLM route was found.",
+    },
+}
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_NUM_CTX = 8192
 DEFAULT_NUM_PREDICT = 640
@@ -88,8 +118,8 @@ def load_env_files(root: Path) -> dict[str, str]:
     return loaded
 
 
-def configured_models() -> dict[str, ModelCandidate]:
-    return {
+def configured_models(*, suite: str = DEFAULT_SUITE) -> dict[str, ModelCandidate]:
+    models = {
         "qwen": ModelCandidate(
             key="qwen",
             display_name="Qwen 2.5 Coder 7B",
@@ -98,11 +128,23 @@ def configured_models() -> dict[str, ModelCandidate]:
             or "qwen2.5-coder:7b",
             current_roles=("coder_patch_author",),
         ),
+        "qwen14b": ModelCandidate(
+            key="qwen14b",
+            display_name="Qwen 2.5 Coder 14B",
+            model_id=os.environ.get("SOURCE_PROXY_QWEN14B_CHALLENGER_OLLAMA_MODEL", "").strip()
+            or "qwen2.5-coder:14b",
+        ),
         "ornith": ModelCandidate(
             key="ornith",
             display_name="Ornith 1.0 9B Q4",
             model_id=os.environ.get("SOURCE_PROXY_ORNITH_CHALLENGER_OLLAMA_MODEL", "").strip()
             or "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M",
+        ),
+        "glm": ModelCandidate(
+            key="glm",
+            display_name="GLM-4-9B Q5",
+            model_id=os.environ.get("SOURCE_PROXY_GLM_CHALLENGER_OLLAMA_MODEL", "").strip()
+            or "hf.co/bartowski/THUDM_GLM-4-9B-0414-GGUF:Q5_K_M",
         ),
         "hermes": ModelCandidate(
             key="hermes",
@@ -114,6 +156,12 @@ def configured_models() -> dict[str, ModelCandidate]:
             or "hermes4:latest",
             current_roles=("critique_risk_verifier", "operator_closeout"),
         ),
+        "hermes14b": ModelCandidate(
+            key="hermes14b",
+            display_name="Hermes 4 14B Q4",
+            model_id=os.environ.get("SOURCE_PROXY_HERMES14B_CHALLENGER_OLLAMA_MODEL", "").strip()
+            or "hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M",
+        ),
         "gemma": ModelCandidate(
             key="gemma",
             display_name="Gemma 3n E4B",
@@ -123,6 +171,21 @@ def configured_models() -> dict[str, ModelCandidate]:
             current_roles=("intent_spec_extraction",),
         ),
     }
+    if suite == "ornith":
+        return {key: models[key] for key in ("qwen", "ornith", "hermes", "gemma")}
+    return models
+
+
+def suite_model_keys(base_keys: tuple[str, ...], *, suite: str) -> tuple[str, ...]:
+    if suite == "ornith":
+        return base_keys
+    ordered: list[str] = []
+    for key in ("glm", *base_keys):
+        if key not in ordered:
+            ordered.append(key)
+    if "qwen" in ordered and "qwen14b" not in ordered:
+        ordered.insert(ordered.index("qwen") + 1, "qwen14b")
+    return tuple(ordered)
 
 
 def common_preamble() -> str:
@@ -141,7 +204,7 @@ def json_contract(fields: tuple[str, ...]) -> str:
     return "Return one strict JSON object with these top-level keys: " + ", ".join(fields) + "."
 
 
-def build_tasks() -> list[BenchmarkTask]:
+def build_tasks(*, suite: str = DEFAULT_SUITE) -> list[BenchmarkTask]:
     preamble = common_preamble()
     coder_json_fields = (
         "decision",
@@ -199,7 +262,7 @@ def build_tasks() -> list[BenchmarkTask]:
         "evidence_folder",
         "next_prompt",
     )
-    return [
+    tasks = [
         BenchmarkTask(
             role="coder_patch_author",
             task_id="coder_file_block_create",
@@ -556,6 +619,12 @@ def build_tasks() -> list[BenchmarkTask]:
                 """
             ).strip(),
         ),
+    ]
+    if suite == "ornith":
+        return tasks
+    return [
+        dataclasses.replace(task, model_keys=suite_model_keys(task.model_keys, suite=suite))
+        for task in tasks
     ]
 
 
@@ -1145,21 +1214,25 @@ CURRENT_MODEL_BY_ROLE = {
 }
 
 
-def build_recommendation_matrix(aggregate: dict[str, Any]) -> dict[str, Any]:
+def build_recommendation_matrix(aggregate: dict[str, Any], *, suite: str = DEFAULT_SUITE) -> dict[str, Any]:
+    config = SUITE_CONFIG[suite]
+    challenger_key = config["challenger_key"]
+    challenger_label = config["challenger_label"]
+    action_field = f"{challenger_key}_action"
     matrix: dict[str, Any] = {}
     roles = sorted(set(aggregate) | {"visual_media_roles"})
     for role in roles:
         if role == "visual_media_roles":
             matrix[role] = {
                 "current_model": "gemma_visual_if_configured",
-                "ornith_action": "DO_NOT_USE_FOR_ROLE",
-                "winner": "NOT_APPLICABLE_FOR_ORNITH",
-                "reason": "Ornith inventory/model registry proves a text-only local model; no live multimodal Ornith route was found.",
+                action_field: "DO_NOT_USE_FOR_ROLE",
+                "winner": config["visual_media_status"],
+                "reason": config["visual_media_reason"],
                 "human_approval_required": True,
             }
             continue
         models = aggregate.get(role, {})
-        ornith = models.get("ornith")
+        challenger = models.get(challenger_key)
         current_key = CURRENT_MODEL_BY_ROLE.get(role, "")
         current = models.get(current_key) if current_key else None
         ranked = sorted(
@@ -1169,31 +1242,37 @@ def build_recommendation_matrix(aggregate: dict[str, Any]) -> dict[str, Any]:
         )
         winner = ranked[0][0] if ranked else "none"
         action = "NEEDS_MORE_TESTS"
-        reason = "No Ornith result was collected for this role."
-        if ornith:
-            ornith_score = float(ornith.get("average_score") or 0)
+        reason = f"No {challenger_label} result was collected for this role."
+        if challenger:
+            challenger_score = float(challenger.get("average_score") or 0)
             current_score = float(current.get("average_score") or 0) if current else 0.0
-            ornith_blockers = int(ornith.get("hard_blocker_count") or 0)
-            ornith_parse = float(ornith.get("parse_success_rate") or 0)
+            challenger_blockers = int(challenger.get("hard_blocker_count") or 0)
+            challenger_parse = float(challenger.get("parse_success_rate") or 0)
             current_parse = float(current.get("parse_success_rate") or 0) if current else 0.0
-            if ornith_blockers > 0:
+            if challenger_blockers > 0:
                 action = "NEEDS_MORE_TESTS"
-                reason = f"Ornith collected {ornith_blockers} hard blocker(s); do not promote from this run."
-            elif current and ornith_score >= current_score + 0.75 and ornith_parse >= current_parse:
+                reason = f"{challenger_label} collected {challenger_blockers} hard blocker(s); do not promote from this run."
+            elif current and challenger_score >= current_score + 0.75 and challenger_parse >= current_parse:
                 action = "PROMOTE_TO_PRIMARY_CANDIDATE"
-                reason = "Ornith beat the current role baseline by the configured margin with equal or better parser success, pending human approval."
-            elif current and ornith_score >= current_score and ornith_parse >= current_parse:
+                reason = (
+                    f"{challenger_label} beat the current role baseline by the configured margin with equal or better "
+                    "parser success, pending human approval."
+                )
+            elif current and challenger_score >= current_score and challenger_parse >= current_parse:
                 action = "ADD_AS_SECONDARY"
-                reason = "Ornith matched or narrowly beat the current role baseline without hard blockers; secondary-only approval is the safer recommendation."
+                reason = (
+                    f"{challenger_label} matched or narrowly beat the current role baseline without hard blockers; "
+                    "secondary-only approval is the safer recommendation."
+                )
             elif current:
                 action = "KEEP_CURRENT"
                 reason = "The current role baseline scored higher or had better parser reliability."
             else:
-                action = "ADD_AS_SECONDARY" if ornith_score >= 3.8 and ornith_parse >= 0.8 else "NEEDS_MORE_TESTS"
+                action = "ADD_AS_SECONDARY" if challenger_score >= 3.8 and challenger_parse >= 0.8 else "NEEDS_MORE_TESTS"
                 reason = "No dedicated current model baseline exists; use secondary-only if Britton approves."
         matrix[role] = {
             "current_model": current_key,
-            "ornith_action": action,
+            action_field: action,
             "winner": winner,
             "reason": reason,
             "human_approval_required": True,
@@ -1201,9 +1280,10 @@ def build_recommendation_matrix(aggregate: dict[str, Any]) -> dict[str, Any]:
     return matrix
 
 
-def markdown_scorecard(aggregate: dict[str, Any], models: dict[str, ModelCandidate]) -> str:
+def markdown_scorecard(aggregate: dict[str, Any], models: dict[str, ModelCandidate], *, suite: str = DEFAULT_SUITE) -> str:
+    title = SUITE_CONFIG[suite]["title"].replace(" Source Proxy Model-Lane Benchmark", " Model Lane Benchmark Scorecard")
     lines = [
-        "# Ornith Model Lane Benchmark Scorecard",
+        f"# {title}",
         "",
         "| Role | Model | Runs | Parse rate | Avg score | Avg latency ms | Hard blockers |",
         "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
@@ -1219,35 +1299,46 @@ def markdown_scorecard(aggregate: dict[str, Any], models: dict[str, ModelCandida
     return "\n".join(lines)
 
 
-def markdown_recommendation_matrix(matrix: dict[str, Any]) -> str:
+def markdown_recommendation_matrix(matrix: dict[str, Any], *, suite: str = DEFAULT_SUITE) -> str:
+    config = SUITE_CONFIG[suite]
+    action_field = f"{config['challenger_key']}_action"
     lines = [
         "# Recommendation Matrix",
         "",
         "No routing change is authorized by this benchmark. Any primary or secondary routing change requires Britton approval.",
         "",
-        "| Role | Winner | Ornith action | Current model | Reason |",
+        f"| Role | Winner | {config['challenger_label']} action | Current model | Reason |",
         "| --- | --- | --- | --- | --- |",
     ]
     for role, item in sorted(matrix.items()):
         reason = str(item.get("reason", "")).replace("|", "/")
         lines.append(
-            f"| {role} | {item.get('winner')} | {item.get('ornith_action')} | {item.get('current_model')} | {reason} |"
+            f"| {role} | {item.get('winner')} | {item.get(action_field)} | {item.get('current_model')} | {reason} |"
         )
     lines.append("")
     return "\n".join(lines)
 
 
-def markdown_readme(summary: dict[str, Any], matrix: dict[str, Any], evidence_dir: Path, models: dict[str, ModelCandidate]) -> str:
+def markdown_readme(
+    summary: dict[str, Any],
+    matrix: dict[str, Any],
+    evidence_dir: Path,
+    models: dict[str, ModelCandidate],
+    *,
+    suite: str = DEFAULT_SUITE,
+) -> str:
+    config = SUITE_CONFIG[suite]
+    action_field = f"{config['challenger_key']}_action"
     tested_models = summary.get("models_tested", [])
     lines = [
-        "# Ornith 1.0 9B Source Proxy Model-Lane Benchmark",
+        f"# {config['title']}",
         "",
         f"Generated: {summary['generated_at']}",
-        f"Benchmark version: `{BENCHMARK_VERSION}`",
+        f"Benchmark version: `{summary.get('benchmark_version', config['version'])}`",
         "",
         "## Scope",
         "",
-        "This evidence folder compares Ornith 1.0 9B Q4 against current local Source Proxy model lanes. It does not promote Ornith, change default routing, touch SpiritFlix/Jellyfin/media paths, or use cloud models for scoring.",
+        config["scope"],
         "",
         "## Models Tested",
         "",
@@ -1278,7 +1369,7 @@ def markdown_readme(summary: dict[str, Any], matrix: dict[str, Any], evidence_di
         ]
     )
     for role, item in sorted(matrix.items()):
-        lines.append(f"- {role}: {item.get('ornith_action')} ({item.get('reason')})")
+        lines.append(f"- {role}: {item.get(action_field)} ({item.get('reason')})")
     lines.append("")
     return "\n".join(lines)
 
@@ -1316,10 +1407,14 @@ def research_lane_env_snapshot() -> dict[str, Any]:
 
 def run_benchmark(args: argparse.Namespace) -> int:
     root = project_root()
+    suite = args.suite or DEFAULT_SUITE
+    if suite not in SUITE_CONFIG:
+        raise SystemExit(f"Unknown benchmark suite: {suite}")
+    config = SUITE_CONFIG[suite]
     loaded_env = load_env_files(root)
     base_url = args.ollama_base_url or os.environ.get("SOURCE_PROXY_OLLAMA_BASE_URL") or os.environ.get("OLLAMA_BASE_URL") or DEFAULT_OLLAMA_BASE_URL
     timestamp = args.timestamp or dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    evidence_dir = root / "docs" / "evidence" / f"ornith-model-lane-benchmark-{timestamp}"
+    evidence_dir = root / "docs" / "evidence" / f"{config['evidence_prefix']}-{timestamp}"
     samples_dir = evidence_dir / "samples"
     evidence_dir.mkdir(parents=True, exist_ok=False)
     samples_dir.mkdir(parents=True, exist_ok=True)
@@ -1328,6 +1423,8 @@ def run_benchmark(args: argparse.Namespace) -> int:
         f"# Command Log",
         "",
         f"- generated_at: {utc_stamp()}",
+        f"- suite: {suite}",
+        f"- benchmark_version: {config['version']}",
         f"- cwd: {root}",
         f"- ollama_base_url: {base_url}",
         f"- timeout_seconds: {args.timeout_seconds}",
@@ -1337,8 +1434,8 @@ def run_benchmark(args: argparse.Namespace) -> int:
         "",
     ]
 
-    models = configured_models()
-    tasks = build_tasks()
+    models = configured_models(suite=suite)
+    tasks = build_tasks(suite=suite)
     requested_roles = set(args.roles or [])
     if requested_roles:
         tasks = [task for task in tasks if task.role in requested_roles]
@@ -1375,7 +1472,8 @@ def run_benchmark(args: argparse.Namespace) -> int:
         for model_key in task.model_keys:
             model = models[model_key]
             result_base: dict[str, Any] = {
-                "benchmark_version": BENCHMARK_VERSION,
+                "benchmark_version": config["version"],
+                "suite": suite,
                 "generated_at": utc_stamp(),
                 "role": task.role,
                 "task_id": task.task_id,
@@ -1472,14 +1570,15 @@ def run_benchmark(args: argparse.Namespace) -> int:
             )
 
     aggregate = aggregate_results(results)
-    matrix = build_recommendation_matrix(aggregate)
+    matrix = build_recommendation_matrix(aggregate, suite=suite)
     visual_media = {
-        "status": "NOT_APPLICABLE_FOR_ORNITH",
-        "reason": "No live multimodal Ornith route is configured. Gemma visual/VLM replacement was not attempted.",
-        "ornith_text_only": True,
+        "status": config["visual_media_status"],
+        "reason": config["visual_media_reason"],
+        f"{config['challenger_key']}_text_only": True,
     }
     summary = {
-        "benchmark_version": BENCHMARK_VERSION,
+        "benchmark_version": config["version"],
+        "suite": suite,
         "status": "PASS" if all(result.get("status") in {"used", "skipped"} for result in results) else "PARTIAL",
         "generated_at": utc_stamp(),
         "evidence_dir": str(evidence_dir),
@@ -1500,9 +1599,9 @@ def run_benchmark(args: argparse.Namespace) -> int:
         "human_approval_required_before_routing_change": True,
     }
     write_json(evidence_dir / "summary.json", summary)
-    write_text(evidence_dir / "scorecard.md", markdown_scorecard(aggregate, models))
-    write_text(evidence_dir / "recommendation-matrix.md", markdown_recommendation_matrix(matrix))
-    write_text(evidence_dir / "README.md", markdown_readme(summary, matrix, evidence_dir, models))
+    write_text(evidence_dir / "scorecard.md", markdown_scorecard(aggregate, models, suite=suite))
+    write_text(evidence_dir / "recommendation-matrix.md", markdown_recommendation_matrix(matrix, suite=suite))
+    write_text(evidence_dir / "README.md", markdown_readme(summary, matrix, evidence_dir, models, suite=suite))
     command_log.append("")
     command_log.append("## Generated Files")
     for path in [
@@ -1532,8 +1631,13 @@ def rescore_existing(args: argparse.Namespace) -> int:
     if not results_path.is_file():
         raise SystemExit(f"Missing results.jsonl: {results_path}")
 
-    models = configured_models()
-    tasks = {(task.role, task.task_id): task for task in build_tasks()}
+    summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else {}
+    suite = str(summary.get("suite") or args.suite or DEFAULT_SUITE)
+    if suite not in SUITE_CONFIG:
+        suite = DEFAULT_SUITE
+    config = SUITE_CONFIG[suite]
+    models = configured_models(suite=suite)
+    tasks = {(task.role, task.task_id): task for task in build_tasks(suite=suite)}
     rescored: list[dict[str, Any]] = []
     for line in results_path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -1586,7 +1690,7 @@ def rescore_existing(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     aggregate = aggregate_results(rescored)
-    matrix = build_recommendation_matrix(aggregate)
+    matrix = build_recommendation_matrix(aggregate, suite=suite)
     summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.is_file() else {}
     summary.update(
         {
@@ -1598,9 +1702,9 @@ def rescore_existing(args: argparse.Namespace) -> int:
         }
     )
     write_json(summary_path, summary)
-    write_text(evidence_dir / "scorecard.md", markdown_scorecard(aggregate, models))
-    write_text(evidence_dir / "recommendation-matrix.md", markdown_recommendation_matrix(matrix))
-    write_text(evidence_dir / "README.md", markdown_readme(summary, matrix, evidence_dir, models))
+    write_text(evidence_dir / "scorecard.md", markdown_scorecard(aggregate, models, suite=suite))
+    write_text(evidence_dir / "recommendation-matrix.md", markdown_recommendation_matrix(matrix, suite=suite))
+    write_text(evidence_dir / "README.md", markdown_readme(summary, matrix, evidence_dir, models, suite=suite))
     command_log = evidence_dir / "command-log.md"
     with command_log.open("a", encoding="utf-8") as handle:
         handle.write(f"\n- rescored_at: {summary['rescored_at']}\n")
@@ -1610,7 +1714,13 @@ def rescore_existing(args: argparse.Namespace) -> int:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the Ornith local model-lane benchmark.")
+    parser = argparse.ArgumentParser(description="Run a Source Proxy local model-lane benchmark.")
+    parser.add_argument(
+        "--suite",
+        choices=sorted(SUITE_CONFIG),
+        default=DEFAULT_SUITE,
+        help="Benchmark suite: ornith (default) or glm.",
+    )
     parser.add_argument("--ollama-base-url", default="", help="Ollama base URL. Defaults to env or localhost.")
     parser.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--num-ctx", type=int, default=DEFAULT_NUM_CTX)

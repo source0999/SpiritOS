@@ -1,0 +1,17 @@
+{
+  "fallback_caiim_risk": "Low. Primarily relies on documentation and community discussions, minimizing reliance on external web content.",
+  "provenance_requirements": "Documentation links, API release notes, community forum posts.",
+  "queries": [
+    "Ollama API documentation: JSON mode support for generate requests",
+    "Ollama API documentation: keep_alive parameter for generate requests",
+    "Ollama API release notes: JSON mode and keep_alive support",
+    "Ollama community forums: discussions on JSON mode and keep_alive"
+  ],
+  "recommended_providers": [
+    "local SearXNG",
+    "Scout"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": 95,
+  "source_need": "Needs to verify Ollama API capabilities regarding JSON mode and keep_alive for generate requests."
+}

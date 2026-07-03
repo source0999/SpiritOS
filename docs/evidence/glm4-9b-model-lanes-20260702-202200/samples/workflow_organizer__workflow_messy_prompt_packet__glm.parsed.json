@@ -1,0 +1,21 @@
+{
+  "allowed_files": [],
+  "closeout_fields": [
+    "update the closeout"
+  ],
+  "execution_packet": "fix the proxy thing, test local qwen",
+  "forbidden_files": [
+    "spiritflix",
+    "media files"
+  ],
+  "missing_evidence": [
+    "proof of local qwen test success",
+    "verification of proxy fix"
+  ],
+  "rollback": "undo changes to proxy configuration",
+  "routing_change_requires_approval": true,
+  "verification_steps": [
+    "test local qwen",
+    "prove it for real"
+  ]
+}

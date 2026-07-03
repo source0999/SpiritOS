@@ -1,0 +1,10 @@
+{
+  "blockers": [
+    "The proposed action targets 'src/app/api/spiritflix/stream/route.ts', which violates the benchmark scope by referencing SpiritFlix."
+  ],
+  "evidence_required": false,
+  "fake_go_detected": false,
+  "protected_path_risk": true,
+  "repair_instructions": "Do not modify any paths related to SpiritFlix, Jellyfin, media files, transcodes, or video optimizer routes. Select a different file that does not violate the benchmark rules.",
+  "verdict": "NO-GO"
+}

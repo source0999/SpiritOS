@@ -1,0 +1,27 @@
+{
+  "source_need": "current upstream release notes",
+  "requires_current_research": true,
+  "recommended_providers": ["Google", "Bing"],
+  "queries": [
+    {
+      "query_text": "latest release notes for [specific software or product]",
+      "provider": "Google"
+    },
+    {
+      "query_text": "release notes for [specific software or product] latest version",
+      "provider": "Bing"
+    }
+  ],
+  "provenance_requirements": [
+    {
+      "requirement": "official website or official repository link",
+      "description": "Ensure the source is from an authoritative and official channel."
+    },
+    {
+      "requirement": "date of release notes",
+      "description": "Verify that the release notes are current by checking the publication date."
+    }
+  ],
+  "fallback_claim_risk": "NO-GO",
+  "score_only_query_quality": false
+}

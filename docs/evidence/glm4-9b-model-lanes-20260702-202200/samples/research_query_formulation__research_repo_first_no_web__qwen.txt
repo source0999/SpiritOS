@@ -1,0 +1,14 @@
+{
+  "source_need": "local_repo",
+  "requires_current_research": false,
+  "recommended_providers": [],
+  "queries": [
+    {
+      "type": "repo_search",
+      "query": "current_research state in this repo"
+    }
+  ],
+  "provenance_requirements": [],
+  "fallback_claim_risk": "low",
+  "score_only_query_quality": true
+}

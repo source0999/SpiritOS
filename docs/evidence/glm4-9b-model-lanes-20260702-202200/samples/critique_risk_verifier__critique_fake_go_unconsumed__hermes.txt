@@ -1,0 +1,18 @@
+{
+  "verdict": "PARTIAL",
+  "fake_go_detected": false,
+  "blockers": [
+    "Output consumption by diff preview was not verified",
+    "Lack of evidence on whether the output was actually used as intended"
+  ],
+  "protected_path_risk": "LOW",
+  "evidence_required": [
+    "Confirmation that the output was consumed by diff preview",
+    "Verification of the diff preview functionality"
+  ],
+  "repair_instructions": [
+    "Implement a mechanism to verify output consumption by diff preview",
+    "Add logging or monitoring to track the usage of the output",
+    "Ensure that the diff preview functionality is tested and validated"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "fallback_claim_risk": "high",
+  "provenance_requirements": [
+    "API documentation"
+  ],
+  "queries": [
+    {
+      "description": "Check the latest Ollama API documentation for support of JSON mode and keep_alive in generate requests.",
+      "provider": "local",
+      "query_type": "API documentation check"
+    }
+  ],
+  "recommended_providers": [
+    "SearXNG",
+    "Scout"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": true,
+  "source_need": "local"
+}

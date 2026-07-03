@@ -1,0 +1,15 @@
+{
+  "status": "NO-GO",
+  "measured_result": {
+    "ornith_timeout": 2,
+    "qwen_parseable_patch": 1,
+    "routing_change_approved": 0
+  },
+  "interpretation": "Ornith failed to complete two coding tasks due to timeouts, while Qwen completed one parseable patch. No routing changes were approved, indicating a lack of consensus or necessary updates.",
+  "recommendation": "Investigate the causes of Ornith's timeouts and either resolve them or replace the model if it consistently fails. Review the parseable patch from Qwen for quality and completeness before proceeding. Re-evaluate routing changes with stakeholders to determine why they were not approved.",
+  "human_approval_required": true,
+  "changed_files": [],
+  "tests_run": ["model_lane_audit"],
+  "evidence_folder": "/audit/evidence/model_lane",
+  "next_prompt": "Review the evidence folder for details on Ornith's timeouts and Qwen's patch, then provide updated instructions for routing change approval."
+}

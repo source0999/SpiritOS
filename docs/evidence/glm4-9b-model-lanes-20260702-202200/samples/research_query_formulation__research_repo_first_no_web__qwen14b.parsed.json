@@ -1,0 +1,40 @@
+{
+  "fallback_claim_risk": "HIGH",
+  "provenance_requirements": [
+    {
+      "requirement": "Ensure all queries are performed within the local Dell SpiritOS Source Proxy repository."
+    },
+    {
+      "requirement": "Verify that no external sources or cloud services are accessed during the search process."
+    }
+  ],
+  "queries": [
+    {
+      "description": "Search for files that might contain records of current research downstream state.",
+      "keywords": [
+        "current_research",
+        "downstream",
+        "state",
+        "records"
+      ],
+      "query_type": "file_search"
+    },
+    {
+      "description": "Search for code that handles or logs the current research downstream state.",
+      "keywords": [
+        "current_research",
+        "downstream",
+        "state",
+        "log",
+        "record"
+      ],
+      "query_type": "code_search"
+    }
+  ],
+  "recommended_providers": [
+    "Dell SpiritOS Source Proxy"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": false,
+  "source_need": "local"
+}

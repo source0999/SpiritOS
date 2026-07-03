@@ -1,0 +1,76 @@
+{
+  "allowed_files": [],
+  "closeout_fields": [
+    "model_id",
+    "prompt",
+    "local_context",
+    "allowed_files",
+    "forbidden_files",
+    "verification_steps",
+    "rollback",
+    "missing_evidence"
+  ],
+  "execution_packet": {
+    "local_context": "benchmarking within Dell SpiritOS Source Proxy local model lane audit",
+    "model_id": "Dell_SpiritOS_local_model",
+    "prompt": "Identify gates required before Ornith may move beyond challenger-only status."
+  },
+  "forbidden_files": [
+    "SpiritFlix",
+    "Jellyfin",
+    "media files",
+    "transcodes",
+    "model storage"
+  ],
+  "gates_required_before_Ornith_may_move_beyond_challenger_only_status": [
+    {
+      "description": "Proof of successful parser operation within the local environment.",
+      "gate": "required local evidence"
+    },
+    {
+      "description": "Confirmation that the model's parsing mechanism functions correctly without cloud fallback or hidden tools.",
+      "gate": "parser success"
+    },
+    {
+      "description": "Verification that no forbidden paths (SpiritFlix, Jellyfin, media files, transcodes, model storage) were accessed or modified.",
+      "gate": "protected-path checks"
+    },
+    {
+      "description": "Demonstration of acceptable performance metrics within the local environment.",
+      "gate": "latency/VRAM"
+    },
+    {
+      "description": "Absence of premature 'PASS/GO' declarations without sufficient evidence.",
+      "gate": "no fake GO"
+    },
+    {
+      "description": "Formal confirmation from Britton that all conditions are met for advancement.",
+      "gate": "Britton approval"
+    }
+  ],
+  "missing_evidence": [
+    "parser success evidence",
+    "protected-path check results",
+    "latency/VRAM measurements",
+    "Britton approval confirmation"
+  ],
+  "rollback": null,
+  "routing_change_requires_approval": true,
+  "verification_steps": [
+    {
+      "reason": "No parser output provided in the prompt context.",
+      "status": "NEEDS_MORE_EVIDENCE",
+      "step": "parser success"
+    },
+    {
+      "reason": "Access to protected paths (SpiritFlix, Jellyfin, media files) is forbidden by rules.",
+      "status": "NO-GO",
+      "step": "protected-path checks"
+    },
+    {
+      "reason": "No latency or VRAM metrics provided in the prompt context.",
+      "status": "NEEDS_MORE_EVIDENCE",
+      "step": "latency/VRAM"
+    }
+  ]
+}

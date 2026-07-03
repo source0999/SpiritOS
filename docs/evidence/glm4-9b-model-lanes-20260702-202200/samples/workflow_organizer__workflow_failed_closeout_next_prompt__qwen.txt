@@ -1,0 +1,19 @@
+{
+  "execution_packet": "NO-GO",
+  "allowed_files": [],
+  "forbidden_files": ["SpiritFlix", "Jellyfin", "media files", "transcodes"],
+  "verification_steps": [
+    {
+      "step": "Check if the model output was consumed by the downstream diff preview.",
+      "evidence_required": true
+    },
+    {
+      "step": "Verify browser behavior proof exists for HTTP 200 responses.",
+      "evidence_required": true
+    }
+  ],
+  "rollback": false,
+  "missing_evidence": ["model output consumption", "browser behavior proof"],
+  "closeout_fields": {},
+  "routing_change_requires_approval": false
+}

@@ -1,0 +1,21 @@
+{
+  "fallback_claim_risk": "High",
+  "provenance_requirements": {
+    "source_citation": true,
+    "url_verification": true
+  },
+  "queries": [
+    {
+      "avoid_fallback_pretending": "Use the 'no_redirect' parameter to prevent fallback search engines from being used if these primary sources return no results.",
+      "label_for_zero_sources": "Local SearXNG and Scout unavailable; checked DuckDuckGo and Naver for release notes with 'no_redirect'",
+      "query": "site:example.com/release-notes current-version"
+    }
+  ],
+  "recommended_providers": [
+    "DuckDuckGo",
+    "Naver"
+  ],
+  "requires_current_research": true,
+  "score_only_query_quality": false,
+  "source_need": "current upstream release notes"
+}

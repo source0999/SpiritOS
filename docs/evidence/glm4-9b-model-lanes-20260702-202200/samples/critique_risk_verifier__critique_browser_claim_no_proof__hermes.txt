@@ -1,0 +1,17 @@
+{
+  "verdict": "NEEDS_MORE_EVIDENCE",
+  "fake_go_detected": false,
+  "blockers": [
+    "No user-visible behavior evidence captured",
+    "No click path or DOM assertions",
+    "No screenshot or page content verification"
+  ],
+  "protected_path_risk": "Low",
+  "evidence_required": [
+    "Screenshot of the loaded page",
+    "DOM assertions to verify content",
+    "Click path simulation if applicable",
+    "User-visible behavior evidence"
+  ],
+  "repair_instructions": "Re-run the verification with enhanced evidence collection: capture a screenshot, perform DOM assertions to verify page content, and simulate any necessary click paths to ensure full user-visible behavior is captured."
+}

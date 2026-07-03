@@ -1,0 +1,20 @@
+{
+  "blockers": [
+    "No click path, no screenshot, no DOM assertion, no user-visible behavior evidence was captured."
+  ],
+  "evidence_required": [
+    "Click path evidence",
+    "Screenshot of the page",
+    "DOM assertion",
+    "User-visible behavior evidence"
+  ],
+  "fake_go_detected": true,
+  "protected_path_risk": "HIGH",
+  "repair_instructions": [
+    "Capture a screenshot of the page to verify its content.",
+    "Perform a click path test to ensure all interactive elements work as expected.",
+    "Conduct a DOM assertion to check for specific elements on the page.",
+    "Document any user-visible behavior to confirm the page's functionality."
+  ],
+  "verdict": "NO-GO"
+}

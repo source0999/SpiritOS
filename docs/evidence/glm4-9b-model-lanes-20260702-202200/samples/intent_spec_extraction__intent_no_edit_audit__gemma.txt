@@ -1,0 +1,16 @@
+{
+  "target": "Source Proxy evidence folder",
+  "role": "Auditor",
+  "request_type": "Evidence Verification",
+  "constraints": "local-only reasoning, no cloud fallback, no hidden tools, no file mutation, no model promotion, no code patching, no new prompt batches, no automatic rerun",
+  "success_criteria": "Confirmation of the PASS status based on evidence within the Source Proxy evidence folder.",
+  "forbidden_paths": [
+    "SpiritFlix",
+    "Jellyfin",
+    "media files",
+    "transcodes",
+    "model storage"
+  ],
+  "verifier_requirements": "Review of the evidence folder contents to determine the validity of the PASS.",
+  "current_info_needed": "Access to the Source Proxy evidence folder and the PASS declaration associated with it."
+}

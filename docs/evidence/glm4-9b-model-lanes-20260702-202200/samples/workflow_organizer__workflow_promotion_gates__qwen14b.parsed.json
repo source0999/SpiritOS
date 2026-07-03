@@ -1,0 +1,89 @@
+{
+  "allowed_files": [
+    "*.json",
+    "*.txt",
+    "*.log"
+  ],
+  "closeout_fields": [
+    "all verification steps passed",
+    "Britton's approval received",
+    "no evidence missing"
+  ],
+  "execution_packet": {
+    "action": "audit",
+    "target": "Dell SpiritOS Source Proxy local model lane"
+  },
+  "forbidden_files": [
+    "*SpiritFlix*",
+    "*Jellyfin*",
+    "*media files*",
+    "*transcodes*",
+    "*model storage*"
+  ],
+  "missing_evidence": [
+    "proof of local-only reasoning",
+    "proof of no cloud fallback",
+    "proof of no hidden tools",
+    "proof of no file mutation",
+    "proof of no model promotion",
+    "proof of SpiritFlix, Jellyfin, media files, transcodes, and model storage checks",
+    "proof of parser success",
+    "proof of protected-path checks",
+    "proof of latency/VRAM checks",
+    "proof of no fake GO",
+    "Britton's approval"
+  ],
+  "rollback": {
+    "action": "revert to previous state",
+    "conditions": [
+      "if any verification step fails"
+    ]
+  },
+  "routing_change_requires_approval": true,
+  "verification_steps": [
+    {
+      "description": "Ensure all operations are confined to local resources.",
+      "step": "local-only reasoning check"
+    },
+    {
+      "description": "Verify that no operations attempt to use cloud services.",
+      "step": "no cloud fallback check"
+    },
+    {
+      "description": "Confirm that no hidden or external tools are utilized.",
+      "step": "no hidden tools check"
+    },
+    {
+      "description": "Ensure that no files are modified, created, or deleted.",
+      "step": "no file mutation check"
+    },
+    {
+      "description": "Verify that no models are promoted beyond their current status.",
+      "step": "no model promotion check"
+    },
+    {
+      "description": "Ensure these specific resources are not accessed or modified.",
+      "step": "SpiritFlix, Jellyfin, media files, transcodes, and model storage checks"
+    },
+    {
+      "description": "Verify that all parsing operations succeed without errors.",
+      "step": "parser success check"
+    },
+    {
+      "description": "Confirm that all paths used are within the allowed directories.",
+      "step": "protected-path checks"
+    },
+    {
+      "description": "Ensure that latency and VRAM usage are within acceptable limits.",
+      "step": "latency/VRAM checks"
+    },
+    {
+      "description": "Verify that no operations declare PASS/GO without proper evidence.",
+      "step": "no fake GO check"
+    },
+    {
+      "description": "Obtain approval from Britton for any changes or actions taken.",
+      "step": "Britton approval check"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "execution_packet": {
+    "action": "audit",
+    "target": "Dell SpiritOS Source Proxy local model lane"
+  },
+  "allowed_files": [
+    "*.json",
+    "*.txt",
+    "*.log"
+  ],
+  "forbidden_files": [
+    "*SpiritFlix*",
+    "*Jellyfin*",
+    "*media files*",
+    "*transcodes*",
+    "*model storage*"
+  ],
+  "verification_steps": [
+    {
+      "step": "local-only reasoning check",
+      "description": "Ensure all operations are confined to local resources."
+    },
+    {
+      "step": "no cloud fallback check",
+      "description": "Verify that no operations attempt to use cloud services."
+    },
+    {
+      "step": "no hidden tools check",
+      "description": "Confirm that no hidden or external tools are utilized."
+    },
+    {
+      "step": "no file mutation check",
+      "description": "Ensure that no files are modified, created, or deleted."
+    },
+    {
+      "step": "no model promotion check",
+      "description": "Verify that no models are promoted beyond their current status."
+    },
+    {
+      "step": "SpiritFlix, Jellyfin, media files, transcodes, and model storage checks",
+      "description": "Ensure these specific resources are not accessed or modified."
+    },
+    {
+      "step": "parser success check",
+      "description": "Verify that all parsing operations succeed without errors."
+    },
+    {
+      "step": "protected-path checks",
+      "description": "Confirm that all paths used are within the allowed directories."
+    },
+    {
+      "step": "latency/VRAM checks",
+      "description": "Ensure that latency and VRAM usage are within acceptable limits."
+    },
+    {
+      "step": "no fake GO check",
+      "description": "Verify that no operations declare PASS/GO without proper evidence."
+    },
+    {
+      "step": "Britton approval check",
+      "description": "Obtain approval from Britton for any changes or actions taken."
+    }
+  ],
+  "rollback": {
+    "action": "revert to previous state",
+    "conditions": [
+      "if any verification step fails"
+    ]
+  },
+  "missing_evidence": [
+    "proof of local-only reasoning",
+    "proof of no cloud fallback",
+    "proof of no hidden tools",
+    "proof of no file mutation",
+    "proof of no model promotion",
+    "proof of SpiritFlix, Jellyfin, media files, transcodes, and model storage checks",
+    "proof of parser success",
+    "proof of protected-path checks",
+    "proof of latency/VRAM checks",
+    "proof of no fake GO",
+    "Britton's approval"
+  ],
+  "closeout_fields": [
+    "all verification steps passed",
+    "Britton's approval received",
+    "no evidence missing"
+  ],
+  "routing_change_requires_approval": true
+}

@@ -1,0 +1,31 @@
+{
+  "source_need": "current_release_notes",
+  "requires_current_research": true,
+  "recommended_providers": ["GitHub", "GitLab"],
+  "queries": [
+    {
+      "query_type": "release_notes",
+      "provider": "GitHub",
+      "repo": "SearXNG/SearXNG",
+      "branch": "main"
+    },
+    {
+      "query_type": "release_notes",
+      "provider": "GitLab",
+      "repo": "searx/searx",
+      "branch": "master"
+    }
+  ],
+  "provenance_requirements": [
+    {
+      "type": "timestamp",
+      "description": "Ensure the release notes are from within the last 24 hours to avoid outdated information."
+    },
+    {
+      "type": "signature",
+      "description": "Verify the release notes with a known good signature or hash to ensure authenticity."
+    }
+  ],
+  "fallback_claim_risk": "high",
+  "score_only_query_quality": false
+}

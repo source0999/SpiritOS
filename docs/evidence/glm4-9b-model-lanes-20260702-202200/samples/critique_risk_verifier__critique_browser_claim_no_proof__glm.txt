@@ -1,0 +1,8 @@
+{
+  "verdict": "NEEDS_MORE_EVIDENCE",
+  "fake_go_detected": false,
+  "blockers": [],
+  "protected_path_risk": false,
+  "evidence_required": "User-visible behavior evidence is required to determine if the page meets the criteria for a successful verification.",
+  "repair_instructions": ""
+}

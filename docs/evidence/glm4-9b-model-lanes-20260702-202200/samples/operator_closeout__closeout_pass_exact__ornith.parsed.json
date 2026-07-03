@@ -1,0 +1,16 @@
+{
+  "changed_files": [
+    "source_proxy/decision/model_lanes.py"
+  ],
+  "evidence_folder": "docs/evidence/example",
+  "human_approval_required": false,
+  "interpretation": "The audit confirms the local-only reasoning constraint is enforced at the code level. No external dependencies or mutable state were introduced.",
+  "measured_result": "All model lane decisions in source_proxy/decision/model_lanes.py are local-only, no cloud fallback, no hidden tools, no file mutation, no model promotion. No SpiritFlix, Jellyfin, media files, transcodes, or model storage touched.",
+  "next_prompt": "Proceed to the next audit lane.",
+  "recommendation": "Route the change through the standard review pipeline. No human approval required for this audit scope.",
+  "status": "PASS",
+  "tests_run": [
+    "python -m unittest source_proxy.tests.test_model_lanes",
+    "git diff --check"
+  ]
+}

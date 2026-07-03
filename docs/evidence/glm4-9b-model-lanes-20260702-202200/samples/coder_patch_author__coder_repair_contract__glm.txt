@@ -1,0 +1,12 @@
+{
+  "repaired": true,
+  "decision": "NO-GO",
+  "file_blocks": [
+    {
+      "path": "source_proxy/benchmarks/fixtures/tiny_product/generated_widget.ts",
+      "content": "benchmarkWidgetLabel"
+    }
+  ],
+  "forbidden_paths_touched": [],
+  "repair_notes": "Repaired by replacing the forbidden file reference with an allowed benchmark file."
+}

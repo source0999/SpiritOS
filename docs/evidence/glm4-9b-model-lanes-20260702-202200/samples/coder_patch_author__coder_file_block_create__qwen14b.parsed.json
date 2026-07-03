@@ -1,0 +1,8 @@
+{
+  "file_blocks": [
+    {
+      "content": "```typescript\nexport function benchmarkWidgetLabel(): string {\n    return \"Ornith lane benchmark\";\n}\n```",
+      "path": "source_proxy/benchmarks/fixtures/tiny_product/generated_widget.ts"
+    }
+  ]
+}

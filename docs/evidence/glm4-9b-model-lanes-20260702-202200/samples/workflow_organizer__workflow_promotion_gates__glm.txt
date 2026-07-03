@@ -1,0 +1,76 @@
+{
+  "execution_packet": {
+    "model_id": "Dell_SpiritOS_local_model",
+    "prompt": "Identify gates required before Ornith may move beyond challenger-only status.",
+    "local_context": "benchmarking within Dell SpiritOS Source Proxy local model lane audit"
+  },
+  "allowed_files": [],
+  "forbidden_files": [
+    "SpiritFlix",
+    "Jellyfin",
+    "media files",
+    "transcodes",
+    "model storage"
+  ],
+  "verification_steps": [
+    {
+      "step": "parser success",
+      "status": "NEEDS_MORE_EVIDENCE",
+      "reason": "No parser output provided in the prompt context."
+    },
+    {
+      "step": "protected-path checks",
+      "status": "NO-GO",
+      "reason": "Access to protected paths (SpiritFlix, Jellyfin, media files) is forbidden by rules."
+    },
+    {
+      "step": "latency/VRAM",
+      "status": "NEEDS_MORE_EVIDENCE",
+      "reason": "No latency or VRAM metrics provided in the prompt context."
+    }
+  ],
+  "rollback": null,
+  "missing_evidence": [
+    "parser success evidence",
+    "protected-path check results",
+    "latency/VRAM measurements",
+    "Britton approval confirmation"
+  ],
+  "closeout_fields": [
+    "model_id",
+    "prompt",
+    "local_context",
+    "allowed_files",
+    "forbidden_files",
+    "verification_steps",
+    "rollback",
+    "missing_evidence"
+  ],
+  "routing_change_requires_approval": true,
+  "gates_required_before_Ornith_may_move_beyond_challenger_only_status": [
+    {
+      "gate": "required local evidence",
+      "description": "Proof of successful parser operation within the local environment."
+    },
+    {
+      "gate": "parser success",
+      "description": "Confirmation that the model's parsing mechanism functions correctly without cloud fallback or hidden tools."
+    },
+    {
+      "gate": "protected-path checks",
+      "description": "Verification that no forbidden paths (SpiritFlix, Jellyfin, media files, transcodes, model storage) were accessed or modified."
+    },
+    {
+      "gate": "latency/VRAM",
+      "description": "Demonstration of acceptable performance metrics within the local environment."
+    },
+    {
+      "gate": "no fake GO",
+      "description": "Absence of premature 'PASS/GO' declarations without sufficient evidence."
+    },
+    {
+      "gate": "Britton approval",
+      "description": "Formal confirmation from Britton that all conditions are met for advancement."
+    }
+  ]
+}

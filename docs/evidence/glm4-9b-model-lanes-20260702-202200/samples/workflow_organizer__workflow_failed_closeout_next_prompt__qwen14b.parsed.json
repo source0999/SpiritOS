@@ -1,0 +1,41 @@
+{
+  "allowed_files": [],
+  "closeout_fields": {
+    "reason": "Closeout claimed PASS because a route returned HTTP 200, but the model output was never consumed by the downstream diff preview and no browser behavior proof exists.",
+    "result": "NO-GO"
+  },
+  "execution_packet": {
+    "action": "audit",
+    "target": "Dell SpiritOS Source Proxy local model lane"
+  },
+  "forbidden_files": [
+    "SpiritFlix",
+    "Jellyfin",
+    "media files",
+    "transcodes",
+    "model storage"
+  ],
+  "missing_evidence": [
+    "Downstream diff preview consumption of model output",
+    "Browser behavior proof"
+  ],
+  "rollback": {
+    "action": "none",
+    "reason": "No changes made that require rollback"
+  },
+  "routing_change_requires_approval": true,
+  "verification_steps": [
+    {
+      "evidence_required": true,
+      "step": "Check if the route returned HTTP 200"
+    },
+    {
+      "evidence_required": true,
+      "step": "Verify if the model output was consumed by the downstream diff preview"
+    },
+    {
+      "evidence_required": true,
+      "step": "Confirm browser behavior proof exists"
+    }
+  ]
+}

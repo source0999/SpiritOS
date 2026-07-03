@@ -1,0 +1,14 @@
+{
+  "blockers": [
+    "The receipt states 'PASS' without providing evidence that the output was consumed by a diff preview as required."
+  ],
+  "evidence_required": [
+    "Evidence that the local model's output was indeed consumed by a diff preview."
+  ],
+  "fake_go_detected": true,
+  "protected_path_risk": "UNKNOWN",
+  "repair_instructions": [
+    "Ensure that any future receipts include explicit evidence showing the consumption of the local model's output by a diff preview before declaring 'PASS'."
+  ],
+  "verdict": "NO-GO"
+}

@@ -1,0 +1,23 @@
+{
+  "source_need": "Information about the latest upstream release notes for software components.",
+  "requires_current_research": true,
+  "recommended_providers": [
+    "DuckDuckGo",
+    "Google",
+    "Yandex",
+    "SearxNG (if available)",
+    "Scout (if available)"
+  ],
+  "queries": [
+    "site:github.com/dell-spiritos/spiritos-source-proxy release notes",
+    "site:github.com/dell-spiritos/spiritos-source-proxy/releases",
+    "site:gitlab.com/dell/spiritos-source-proxy release notes",
+    "spiritos-source-proxy latest release notes",
+    "spiritos-source-proxy upstream changes",
+    "spiritos-source-proxy release notes [date]",
+    "spiritos-source-proxy release notes [version number]"
+  ],
+  "provenance_requirements": "Document the specific search engines and queries used to retrieve the release notes. Include timestamps for each search attempt and the results obtained.",
+  "fallback_caiim_risk": "Avoid any phrasing that implies a cloud fallback. Explicitly state that the search is being conducted using local resources only. If providers return zero sources, label the run as 'NO_SOURCES_FOUND_LOCAL' and document this in the provenance.",
+  "score_oonly_query_quality": 9
+}

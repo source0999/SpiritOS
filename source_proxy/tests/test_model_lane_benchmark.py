@@ -93,7 +93,7 @@ class ModelLaneBenchmarkScoringTests(unittest.TestCase):
                 },
             ]
         )
-        matrix = build_recommendation_matrix(aggregate)
+        matrix = build_recommendation_matrix(aggregate, suite="ornith")
 
         self.assertEqual(matrix["coder_patch_author"]["ornith_action"], "NEEDS_MORE_TESTS")
         self.assertIn("hard blocker", matrix["coder_patch_author"]["reason"])

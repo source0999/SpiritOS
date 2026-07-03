@@ -1,0 +1,17 @@
+{
+  "constraints": "local-only reasoning, no cloud fallback, no hidden tools, no file mutation, no model promotion, no SpiritFlix, no Jellyfin, no media files, no transcodes, no model storage",
+  "current_info_needed": "confirmation of downstream consumer reading model output",
+  "forbidden_paths": [
+    "SpiritFlix",
+    "Jellyfin",
+    "media files",
+    "transcodes",
+    "model storage",
+    "cloud"
+  ],
+  "request_type": "implementation",
+  "role": "auditor",
+  "success_criteria": "downstream consumer reads the model output",
+  "target": "source proxy",
+  "verifier_requirements": "evidence of downstream consumer reading model output"
+}

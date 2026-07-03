@@ -1,0 +1,543 @@
+{
+  "aggregate": {
+    "coder_patch_author": {
+      "glm": {
+        "average_latency_ms": 103745.7,
+        "average_score": 3.1,
+        "hard_blocker_count": 9,
+        "parse_success_rate": 0.667,
+        "runs": 3,
+        "successes": 2,
+        "unique_blockers": [
+          "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "empty response",
+          "missing field:decision",
+          "missing field:evidence_needed",
+          "missing field:forbidden_paths_touched",
+          "missing field:target_path",
+          "missing field:unified_diff",
+          "missing field:verification",
+          "parser failure"
+        ]
+      },
+      "ornith": {
+        "average_latency_ms": 91817.3,
+        "average_score": 3.14,
+        "hard_blocker_count": 12,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": [
+          "git apply --check failed",
+          "missing field:decision",
+          "missing field:evidence_needed",
+          "missing field:file_blocks",
+          "missing field:forbidden_paths_touched",
+          "missing field:repair_notes",
+          "missing field:repaired",
+          "missing field:target_path",
+          "missing field:unified_diff",
+          "missing field:verification"
+        ]
+      },
+      "qwen": {
+        "average_latency_ms": 77671.0,
+        "average_score": 4.24,
+        "hard_blocker_count": 1,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": [
+          "git apply --check failed"
+        ]
+      },
+      "qwen14b": {
+        "average_latency_ms": 117471.0,
+        "average_score": 2.95,
+        "hard_blocker_count": 10,
+        "parse_success_rate": 0.667,
+        "runs": 3,
+        "successes": 2,
+        "unique_blockers": [
+          "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "empty response",
+          "markdown fence inside file block:source_proxy/benchmarks/fixtures/tiny_product/generated_widget.ts",
+          "missing field:decision",
+          "missing field:evidence_needed",
+          "missing field:forbidden_paths_touched",
+          "missing field:target_path",
+          "missing field:unified_diff",
+          "missing field:verification",
+          "parser failure"
+        ]
+      }
+    },
+    "critique_risk_verifier": {
+      "glm": {
+        "average_latency_ms": 67314.3,
+        "average_score": 4.24,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "hermes": {
+        "average_latency_ms": 132744.3,
+        "average_score": 4.0,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "ornith": {
+        "average_latency_ms": 81852.0,
+        "average_score": 3.86,
+        "hard_blocker_count": 7,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": [
+          "missing field:blockers",
+          "missing field:evidence_required",
+          "missing field:fake_go_detected",
+          "missing field:protected_path_risk",
+          "missing field:repair_instructions",
+          "missing field:verdict",
+          "protected path attempt:src/app/api/spiritflix/stream/route.ts"
+        ]
+      },
+      "qwen": {
+        "average_latency_ms": 37283.0,
+        "average_score": 4.62,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "qwen14b": {
+        "average_latency_ms": 83977.7,
+        "average_score": 4.33,
+        "hard_blocker_count": 1,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": [
+          "protected path attempt:src/app/api/spiritflix/stream/route.ts"
+        ]
+      }
+    },
+    "intent_spec_extraction": {
+      "gemma": {
+        "average_latency_ms": 97679.7,
+        "average_score": 4.33,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "glm": {
+        "average_latency_ms": 94398.7,
+        "average_score": 3.19,
+        "hard_blocker_count": 11,
+        "parse_success_rate": 0.667,
+        "runs": 3,
+        "successes": 2,
+        "unique_blockers": [
+          "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "empty response",
+          "missing field:constraints",
+          "missing field:current_info_needed",
+          "missing field:forbidden_paths",
+          "missing field:request_type",
+          "missing field:role",
+          "missing field:success_criteria",
+          "missing field:target",
+          "missing field:verifier_requirements",
+          "parser failure"
+        ]
+      },
+      "hermes": {
+        "average_latency_ms": 116867.3,
+        "average_score": 4.33,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "ornith": {
+        "average_latency_ms": 86656.3,
+        "average_score": 4.33,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      }
+    },
+    "operator_closeout": {
+      "glm": {
+        "average_latency_ms": 112497.7,
+        "average_score": 4.38,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "hermes": {
+        "average_latency_ms": 142583.0,
+        "average_score": 4.34,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "ornith": {
+        "average_latency_ms": 98124.0,
+        "average_score": 4.48,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "qwen": {
+        "average_latency_ms": 39891.7,
+        "average_score": 4.76,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "qwen14b": {
+        "average_latency_ms": 88379.3,
+        "average_score": 4.48,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      }
+    },
+    "research_query_formulation": {
+      "gemma": {
+        "average_latency_ms": 118649.0,
+        "average_score": 2.67,
+        "hard_blocker_count": 13,
+        "parse_success_rate": 0.667,
+        "runs": 3,
+        "successes": 2,
+        "unique_blockers": [
+          "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "empty response",
+          "missing field:fallback_claim_risk",
+          "missing field:provenance_requirements",
+          "missing field:queries",
+          "missing field:recommended_providers",
+          "missing field:requires_current_research",
+          "missing field:score_only_query_quality",
+          "missing field:source_need",
+          "parser failure"
+        ]
+      },
+      "glm": {
+        "average_latency_ms": 130598.7,
+        "average_score": 2.95,
+        "hard_blocker_count": 10,
+        "parse_success_rate": 0.667,
+        "runs": 3,
+        "successes": 2,
+        "unique_blockers": [
+          "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "empty response",
+          "missing field:fallback_claim_risk",
+          "missing field:provenance_requirements",
+          "missing field:queries",
+          "missing field:recommended_providers",
+          "missing field:requires_current_research",
+          "missing field:score_only_query_quality",
+          "missing field:source_need",
+          "parser failure"
+        ]
+      },
+      "hermes": {
+        "average_latency_ms": 117708.0,
+        "average_score": 4.1,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "ornith": {
+        "average_latency_ms": 87716.7,
+        "average_score": 3.0,
+        "hard_blocker_count": 10,
+        "parse_success_rate": 0.667,
+        "runs": 3,
+        "successes": 2,
+        "unique_blockers": [
+          "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "empty response",
+          "missing field:fallback_claim_risk",
+          "missing field:provenance_requirements",
+          "missing field:queries",
+          "missing field:recommended_providers",
+          "missing field:requires_current_research",
+          "missing field:score_only_query_quality",
+          "missing field:source_need",
+          "parser failure"
+        ]
+      },
+      "qwen": {
+        "average_latency_ms": 41952.3,
+        "average_score": 4.38,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "qwen14b": {
+        "average_latency_ms": 109982.3,
+        "average_score": 4.19,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      }
+    },
+    "workflow_organizer": {
+      "glm": {
+        "average_latency_ms": 85884.0,
+        "average_score": 4.43,
+        "hard_blocker_count": 0,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": []
+      },
+      "hermes": {
+        "average_latency_ms": 120347.0,
+        "average_score": 3.81,
+        "hard_blocker_count": 8,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": [
+          "fake GO language risk",
+          "missing field:allowed_files",
+          "missing field:closeout_fields",
+          "missing field:forbidden_files",
+          "missing field:missing_evidence",
+          "missing field:rollback",
+          "missing field:routing_change_requires_approval",
+          "missing field:verification_steps"
+        ]
+      },
+      "ornith": {
+        "average_latency_ms": 92192.0,
+        "average_score": 1.95,
+        "hard_blocker_count": 30,
+        "parse_success_rate": 0.333,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": [
+          "JSONDecodeError: Unterminated string starting at: line 1 column 2984 (char 2983)",
+          "JSONDecodeError: Unterminated string starting at: line 76 column 5 (char 2117)",
+          "fake GO language risk",
+          "missing field:allowed_files",
+          "missing field:closeout_fields",
+          "missing field:execution_packet",
+          "missing field:forbidden_files",
+          "missing field:missing_evidence",
+          "missing field:rollback",
+          "missing field:routing_change_requires_approval",
+          "missing field:verification_steps",
+          "parser failure"
+        ]
+      },
+      "qwen": {
+        "average_latency_ms": 61238.7,
+        "average_score": 4.24,
+        "hard_blocker_count": 7,
+        "parse_success_rate": 1.0,
+        "runs": 3,
+        "successes": 3,
+        "unique_blockers": [
+          "missing field:allowed_files",
+          "missing field:closeout_fields",
+          "missing field:forbidden_files",
+          "missing field:missing_evidence",
+          "missing field:rollback",
+          "missing field:routing_change_requires_approval",
+          "missing field:verification_steps"
+        ]
+      },
+      "qwen14b": {
+        "average_latency_ms": 83868.0,
+        "average_score": 2.95,
+        "hard_blocker_count": 12,
+        "parse_success_rate": 0.667,
+        "runs": 3,
+        "successes": 2,
+        "unique_blockers": [
+          "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+          "empty response",
+          "fake GO language risk",
+          "missing field:allowed_files",
+          "missing field:closeout_fields",
+          "missing field:execution_packet",
+          "missing field:forbidden_files",
+          "missing field:missing_evidence",
+          "missing field:rollback",
+          "missing field:routing_change_requires_approval",
+          "missing field:verification_steps",
+          "parser failure"
+        ]
+      }
+    }
+  },
+  "benchmark_version": "glm4-9b-model-lane-benchmark-v0.1",
+  "evidence_dir": "/home/source/SpiritOS/docs/evidence/glm4-9b-model-lanes-20260702-202200",
+  "generated_at": "2026-07-03T02:40:01Z",
+  "human_approval_required_before_routing_change": true,
+  "interpretation": "Aggregate model scores are comparative benchmark evidence only; they do not authorize automatic routing changes.",
+  "inventory_model_names": [
+    "hf.co/bartowski/THUDM_GLM-4-9B-0414-GGUF:Q5_K_M",
+    "hf.co/yuxinlu1/gemma-4-12B-coder-fable5-composer2.5-v1-GGUF:Q4_K_M",
+    "qwen2.5-coder:14b",
+    "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M",
+    "gemma3n:e4b",
+    "hermes4:latest",
+    "hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M",
+    "hermes3:8b-abliterated",
+    "mannix/llama3-8b-ablitered-v3:latest",
+    "qwen2.5-coder:7b",
+    "llama3.1:8b",
+    "llama3:latest"
+  ],
+  "inventory_status": "used",
+  "measured_result": "Local Ollama calls were attempted for each available configured model/task pair and scored from parsed outputs, latency, path discipline, and failure honesty.",
+  "models_tested": [
+    {
+      "display_name": "Qwen 2.5 Coder 7B",
+      "key": "qwen",
+      "model_id": "qwen2.5-coder:7b"
+    },
+    {
+      "display_name": "Qwen 2.5 Coder 14B",
+      "key": "qwen14b",
+      "model_id": "qwen2.5-coder:14b"
+    },
+    {
+      "display_name": "Ornith 1.0 9B Q4",
+      "key": "ornith",
+      "model_id": "hf.co/deepreinforce-ai/Ornith-1.0-9B-GGUF:Q4_K_M"
+    },
+    {
+      "display_name": "GLM-4-9B Q5",
+      "key": "glm",
+      "model_id": "hf.co/bartowski/THUDM_GLM-4-9B-0414-GGUF:Q5_K_M"
+    },
+    {
+      "display_name": "Hermes 4",
+      "key": "hermes",
+      "model_id": "hermes4:latest"
+    },
+    {
+      "display_name": "Hermes 4 14B Q4",
+      "key": "hermes14b",
+      "model_id": "hf.co/bartowski/NousResearch_Hermes-4-14B-GGUF:Q4_K_M"
+    },
+    {
+      "display_name": "Gemma 3n E4B",
+      "key": "gemma",
+      "model_id": "gemma3n:e4b"
+    }
+  ],
+  "ollama_base_url": "http://127.0.0.1:11434",
+  "ollama_ps_after": {
+    "returncode": 0,
+    "status": "used",
+    "stderr": "",
+    "stdout": "NAME                 ID              SIZE     PROCESSOR    CONTEXT    UNTIL               \nqwen2.5-coder:14b    9ec8897f747e    10 GB    100% GPU     8192       36 seconds from now    \n"
+  },
+  "recommendation_matrix": {
+    "coder_patch_author": {
+      "current_model": "qwen",
+      "glm_action": "NEEDS_MORE_TESTS",
+      "human_approval_required": true,
+      "reason": "GLM-4-9B collected 9 hard blocker(s); do not promote from this run.",
+      "winner": "qwen"
+    },
+    "critique_risk_verifier": {
+      "current_model": "hermes",
+      "glm_action": "ADD_AS_SECONDARY",
+      "human_approval_required": true,
+      "reason": "GLM-4-9B matched or narrowly beat the current role baseline without hard blockers; secondary-only approval is the safer recommendation.",
+      "winner": "qwen"
+    },
+    "intent_spec_extraction": {
+      "current_model": "gemma",
+      "glm_action": "NEEDS_MORE_TESTS",
+      "human_approval_required": true,
+      "reason": "GLM-4-9B collected 11 hard blocker(s); do not promote from this run.",
+      "winner": "gemma"
+    },
+    "operator_closeout": {
+      "current_model": "hermes",
+      "glm_action": "ADD_AS_SECONDARY",
+      "human_approval_required": true,
+      "reason": "GLM-4-9B matched or narrowly beat the current role baseline without hard blockers; secondary-only approval is the safer recommendation.",
+      "winner": "qwen"
+    },
+    "research_query_formulation": {
+      "current_model": "current_research_lane",
+      "glm_action": "NEEDS_MORE_TESTS",
+      "human_approval_required": true,
+      "reason": "GLM-4-9B collected 10 hard blocker(s); do not promote from this run.",
+      "winner": "qwen"
+    },
+    "visual_media_roles": {
+      "current_model": "gemma_visual_if_configured",
+      "glm_action": "DO_NOT_USE_FOR_ROLE",
+      "human_approval_required": true,
+      "reason": "GLM-4-9B inventory proves a text-only local model; no live multimodal GLM route was found.",
+      "winner": "NOT_APPLICABLE_FOR_GLM"
+    },
+    "workflow_organizer": {
+      "current_model": "qwen",
+      "glm_action": "ADD_AS_SECONDARY",
+      "human_approval_required": true,
+      "reason": "GLM-4-9B matched or narrowly beat the current role baseline without hard blockers; secondary-only approval is the safer recommendation.",
+      "winner": "glm"
+    }
+  },
+  "result_count": 87,
+  "roles_tested": [
+    "coder_patch_author",
+    "critique_risk_verifier",
+    "intent_spec_extraction",
+    "operator_closeout",
+    "research_query_formulation",
+    "workflow_organizer"
+  ],
+  "route_status_snapshot_status": "unavailable",
+  "status": "PARTIAL",
+  "suite": "glm",
+  "task_count": 18,
+  "visual_media_roles": {
+    "glm_text_only": true,
+    "reason": "GLM-4-9B inventory proves a text-only local model; no live multimodal GLM route was found.",
+    "status": "NOT_APPLICABLE_FOR_GLM"
+  }
+}

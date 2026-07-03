@@ -1,0 +1,34 @@
+{
+  "execution_packet": {
+    "allowed_files": [],
+    "closeout_fields": {
+      "reason": "Prior result claimed PASS due to HTTP 200, but no downstream consumption or browser behavior proof exists",
+      "status": "NEEDS_MORE_EVIDENCE"
+    },
+    "forbidden_files": [
+      "SpiritFlix",
+      "Jellyfin",
+      "media files",
+      "transcodes",
+      "model storage"
+    ],
+    "local_only": true,
+    "missing_evidence": [
+      "Downstream diff preview consumption proof",
+      "Browser behavior proof for model output"
+    ],
+    "model": "Hermes 4",
+    "no_cloud_fallback": true,
+    "no_file_mutation": true,
+    "no_hidden_tools": true,
+    "no_model_promotion": true,
+    "prompt": "Build the next Codex prompt packet. It must preserve raw evidence, label the prior result honestly, forbid product mutation until proof exists, and request exact checks.",
+    "rollback": "If product mutation is detected without proof, revert to the previous state",
+    "routing_change_requires_approval": true,
+    "verification_steps": [
+      "Check if the prior result's HTTP 200 response was consumed by downstream diff preview",
+      "Verify if there is browser behavior proof for the model output",
+      "Ensure no product mutation occurs without proof"
+    ]
+  }
+}
