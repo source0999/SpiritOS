@@ -4579,23 +4579,22 @@ async def _bounded_coder_diff_or_stub(
     """Run blocking coder work off the event loop; never exceed gateway patience."""
     if force_live_model:
         explicit_target = _parse_explicit_target_file_line(task)
-        if _trial_harness_only_enabled() and explicit_target.startswith("src/"):
+        if explicit_target.startswith("src/"):
             product_satisfied = _product_trial_feature_already_satisfied_payload(
                 task,
                 explicit_target,
             )
             if product_satisfied is not None:
                 return product_satisfied
-        if _trial_harness_only_enabled():
-            dummy_live = _dummy_reversible_live_trial_coder_diff_payload(task)
-            if dummy_live is not None:
-                return dummy_live
-            expected_no_edit = _expected_no_edit_trial_payload(task)
-            if expected_no_edit is not None:
-                return expected_no_edit
-            realistic_trial = _realistic_reversible_trial_coder_diff_payload(task)
-            if realistic_trial is not None:
-                return realistic_trial
+        dummy_live = _dummy_reversible_live_trial_coder_diff_payload(task)
+        if dummy_live is not None:
+            return dummy_live
+        expected_no_edit = _expected_no_edit_trial_payload(task)
+        if expected_no_edit is not None:
+            return expected_no_edit
+        realistic_trial = _realistic_reversible_trial_coder_diff_payload(task)
+        if realistic_trial is not None:
+            return realistic_trial
     dummy_preview = (
         None
         if force_live_model or not _trial_harness_only_enabled()
@@ -6324,6 +6323,12 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         "manual_step_expected",
         "noop_expected",
     }
+    selected_live_trial_requested = (
+        reset_request.trial_mode == "live_apply"
+        and bool(explicit_target)
+        and reset_request.wants_implementation
+        and reset_request.needs_codebase_context
+    )
     if (
         _route_payload_requests_coder_agent_diff(route_payload)
         and (reset_request.wants_implementation or bool(explicit_target))
@@ -6331,7 +6336,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         reset_request.trial_mode == "live_apply"
         and expected_live_trial_outcome
         and bool(explicit_target)
-    ):
+    ) or selected_live_trial_requested:
         if target_gate_blocked:
             missing = "target_missing" in route_reasons
             rc = hard_target_reason or ("target_missing" if missing else "target_unresolved")

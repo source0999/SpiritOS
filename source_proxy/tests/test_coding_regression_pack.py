@@ -3651,6 +3651,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         )
 
         with (
+            mock.patch.dict(os.environ, {"SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA": "0"}),
             mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
             mock.patch(
                 "source_proxy.tasks.long_running._call_coder_llm",
