@@ -145,6 +145,7 @@ def brain_switch_advisory_from_model_lane_attempts(
 
 def build_model_lanes_preview(*, task_type: str = "disposable_artifact") -> dict[str, Any]:
     registry = model_lane_registry()
+    activation_status = lane_activation_status()
     return {
         "preview_version": "source-proxy-model-lanes-preview-v0.1",
         "preview_only": True,
@@ -152,6 +153,7 @@ def build_model_lanes_preview(*, task_type: str = "disposable_artifact") -> dict
         "would_start_workers": False,
         "would_mutate_state": False,
         "available_lanes": registry["lanes"],
+        "lane_activation_status": activation_status,
         "active_primary_lane": registry["primary_coder_lane"],
         "future_sidecar_lanes": [
             lane["lane_id"]
@@ -179,6 +181,54 @@ def build_model_lanes_preview(*, task_type: str = "disposable_artifact") -> dict
             "operator_approval_required_for_external_routes",
         ],
     }
+
+
+def lane_activation_status() -> dict[str, dict[str, Any]]:
+    fip3_enabled = _env_enabled("SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED", default=True)
+    fip4_enabled = _env_enabled("SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED", default=False)
+    fip5_enabled = _env_enabled("SOURCE_PROXY_FIP5_VERIFIER_ENABLED", default=False)
+    fip5_chain_enabled = _env_enabled("SOURCE_PROXY_FIP4_ALLOW_FIP5_CHAIN", default=False)
+    return {
+        "fip4_qwen_coder": {
+            "classification": "ACTIVE_DECISION_BEARING" if fip4_enabled else "DORMANT_BY_DESIGN",
+            "env": "SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED",
+            "enabled": fip4_enabled,
+            "default": "0",
+            "reason": "production coder branch consumes this lane only when explicitly enabled",
+        },
+        "fip5_verifier_repair": {
+            "classification": (
+                "ACTIVE_DECISION_BEARING"
+                if fip4_enabled and fip5_enabled and fip5_chain_enabled
+                else "DORMANT_BY_DESIGN"
+            ),
+            "env": "SOURCE_PROXY_FIP5_VERIFIER_ENABLED + SOURCE_PROXY_FIP4_ALLOW_FIP5_CHAIN",
+            "enabled": fip4_enabled and fip5_enabled and fip5_chain_enabled,
+            "default": "0 + 0",
+            "reason": "verifier/repair consumes FIP4 output only when both verifier and chain gates are enabled",
+        },
+        "hermes_critic": {
+            "classification": "ACTIVE_ADVISORY_ONLY" if fip3_enabled else "DORMANT_BY_DESIGN",
+            "env": "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED",
+            "enabled": fip3_enabled,
+            "default": "1",
+            "reason": "FIP3 Hermes critic may annotate packets but cannot decide product PASS",
+        },
+        "gemma_context": {
+            "classification": "ACTIVE_ADVISORY_ONLY" if fip3_enabled else "DORMANT_BY_DESIGN",
+            "env": "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED",
+            "enabled": fip3_enabled,
+            "default": "1",
+            "reason": "FIP3 Gemma may shape context/spec packets but cannot edit files or decide PASS",
+        },
+    }
+
+
+def _env_enabled(name: str, *, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def fip3_model_lanes_enabled() -> bool:

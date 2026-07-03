@@ -1324,6 +1324,7 @@ def _structured_verdict_fields(receipt: dict[str, Any]) -> dict[str, Any]:
 
 
 def _fip4_qwen_enabled() -> bool:
+    """FIP4 Qwen coder is dormant by default; set SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED=1 to make it decision-bearing."""
     return os.environ.get("SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED", "0").strip().lower() in {
         "1",
         "true",
@@ -1371,6 +1372,7 @@ def _fip4_qwen_max_attempts() -> int:
 
 
 def _fip5_verifier_enabled() -> bool:
+    """FIP5 verifier/repair is dormant by default; set SOURCE_PROXY_FIP5_VERIFIER_ENABLED=1 and allow the FIP4 chain to activate it."""
     return os.environ.get("SOURCE_PROXY_FIP5_VERIFIER_ENABLED", "0").strip().lower() in {
         "1",
         "true",
@@ -1380,6 +1382,7 @@ def _fip5_verifier_enabled() -> bool:
 
 
 def _fip4_allow_fip5_chain() -> bool:
+    """The FIP4->FIP5 chain is dormant by default; set SOURCE_PROXY_FIP4_ALLOW_FIP5_CHAIN=1 to permit verifier consumption."""
     return os.environ.get("SOURCE_PROXY_FIP4_ALLOW_FIP5_CHAIN", "0").strip().lower() in {
         "1",
         "true",

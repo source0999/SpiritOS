@@ -8,6 +8,7 @@ from source_proxy.decision.model_lanes import (
     active_primary_coder_lane,
     build_model_lanes_preview,
     get_model_lane,
+    lane_activation_status,
     lane_selection_observability,
     model_lane_registry,
 )
@@ -86,6 +87,27 @@ def test_model_lanes_preview_is_inspectable_without_execution() -> None:
     assert "ornith_coder_challenger" in {lane["lane_id"] for lane in preview["available_lanes"]}
     assert "hermes_sidecar_verifier_preview" in preview["future_sidecar_lanes"]
     assert preview["verifier_requirement"] is True
+    assert preview["lane_activation_status"]["fip4_qwen_coder"]["classification"] in {
+        "ACTIVE_DECISION_BEARING",
+        "DORMANT_BY_DESIGN",
+    }
+
+
+def test_lane_activation_status_reports_default_dormant_and_advisory_lanes(monkeypatch) -> None:
+    for key in (
+        "SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED",
+        "SOURCE_PROXY_FIP5_VERIFIER_ENABLED",
+        "SOURCE_PROXY_FIP4_ALLOW_FIP5_CHAIN",
+        "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+    status = lane_activation_status()
+
+    assert status["fip4_qwen_coder"]["classification"] == "DORMANT_BY_DESIGN"
+    assert status["fip5_verifier_repair"]["classification"] == "DORMANT_BY_DESIGN"
+    assert status["hermes_critic"]["classification"] == "ACTIVE_ADVISORY_ONLY"
+    assert status["gemma_context"]["classification"] == "ACTIVE_ADVISORY_ONLY"
 
 
 def test_json_lane_accepts_ollama_thinking_when_response_is_empty(monkeypatch) -> None:
