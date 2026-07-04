@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { listSpiritFlixJobs, readSpiritFlixDeadLetters } from "@/lib/spiritflix/admin/jobs";
+import { resolveSpiritFlixAdminPath } from "@/lib/spiritflix/admin/paths";
 import { GET } from "../jobs/route";
 
 vi.mock("@/lib/spiritflix/admin/jobs", () => ({
   listSpiritFlixJobs: vi.fn(),
   readSpiritFlixDeadLetters: vi.fn(),
+}));
+vi.mock("@/lib/spiritflix/admin/paths", () => ({
+  resolveSpiritFlixAdminPath: vi.fn(),
 }));
 
 describe("SpiritFlix admin jobs API", () => {
@@ -39,8 +43,9 @@ describe("SpiritFlix admin jobs API", () => {
       ],
     });
     vi.mocked(readSpiritFlixDeadLetters).mockResolvedValue([]);
+    vi.mocked(resolveSpiritFlixAdminPath).mockResolvedValue({ allowedRoot: "/fixture/media", targetPath: "/fixture/media", realPath: "/fixture/media" });
 
-    const response = await GET(new Request("http://localhost/api/spiritflix/admin/jobs?activeOnly=1&videoId=video%3Aabc") as never);
+    const response = await GET(new Request("http://localhost/api/spiritflix/admin/jobs?activeOnly=1&videoId=video%3Aabc&mediaRoot=%2Ffixture%2Fmedia") as never);
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -48,6 +53,7 @@ describe("SpiritFlix admin jobs API", () => {
     expect(body.jobs[0]).toEqual(expect.objectContaining({ state: "queued", videoId: "video:abc" }));
     expect(body.jobs[0]).toEqual(expect.objectContaining({ eventCount: 2, lastEventId: expect.stringMatching(/^sf-job-event-/) }));
     expect(body.deadLetters).toEqual([]);
-    expect(listSpiritFlixJobs).toHaveBeenCalledWith({ activeOnly: true, videoId: "video:abc" });
+    expect(listSpiritFlixJobs).toHaveBeenCalledWith({ mediaRoot: "/fixture/media", activeOnly: true, videoId: "video:abc" });
+    expect(readSpiritFlixDeadLetters).toHaveBeenCalledWith({ mediaRoot: "/fixture/media" });
   });
 });

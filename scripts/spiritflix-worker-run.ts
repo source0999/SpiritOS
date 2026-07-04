@@ -10,6 +10,7 @@ const pidfile = process.env.SPIRITFLIX_WORKER_PIDFILE ?? ".spiritflix-worker.pid
 async function tick() {
   return runSpiritFlixJobWorkerOnce({
     workerId,
+    mediaRoot: process.env.SPIRITFLIX_WORKER_MEDIA_ROOT,
     conversionMode: process.env.SPIRITFLIX_CONVERSION_MODE === "execute" ? "execute" : "enqueue",
     autoMove: process.env.SPIRITFLIX_AUTO_MOVE === "1",
     autoEnroll: process.env.SPIRITFLIX_AUTO_ENROLL === "1",
