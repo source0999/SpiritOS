@@ -13,6 +13,7 @@ import {
   type AppendSpiritFlixJobStateInput,
   type FailSpiritFlixJobInput,
   type RequeueSpiritFlixJobInput,
+  type SpiritFlixDeadLetterRecord,
   type SpiritFlixJobControlResult,
   type SpiritFlixJobEvent,
   type SpiritFlixJobHistoryResponse,
@@ -26,6 +27,7 @@ import {
 
 const SPIRITFLIX_JOBS_DIR = "jobs";
 const SPIRITFLIX_JOBS_FILE = "events.jsonl";
+const SPIRITFLIX_DEAD_LETTER_FILE = "dead_letter.jsonl";
 const ACTIVE_STATES = new Set<SpiritFlixJobState>(["discovered", "queued", "scanning", "matching", "converting", "moving"]);
 
 const ALLOWED_TRANSITIONS: Record<SpiritFlixJobState, SpiritFlixJobState[]> = {
@@ -50,6 +52,10 @@ export function getSpiritFlixJobStoreRoot(options?: SpiritFlixJobStoreOptions): 
 
 export function getSpiritFlixJobEventsPath(options?: SpiritFlixJobStoreOptions): string {
   return path.join(getSpiritFlixJobStoreRoot(options), SPIRITFLIX_JOBS_FILE);
+}
+
+export function getSpiritFlixDeadLetterPath(options?: SpiritFlixJobStoreOptions): string {
+  return path.join(getSpiritFlixJobStoreRoot(options), SPIRITFLIX_DEAD_LETTER_FILE);
 }
 
 export function isActiveSpiritFlixJobState(state: SpiritFlixJobState): boolean {
@@ -190,12 +196,31 @@ export async function listSpiritFlixJobs(options?: SpiritFlixJobListOptions): Pr
   if (options?.videoId) jobs = jobs.filter((job) => job.videoId === options.videoId);
   if (options?.activeOnly) jobs = jobs.filter((job) => isActiveSpiritFlixJobState(job.state));
 
+  const stateMap = Object.fromEntries(jobs.flatMap((job) => {
+    const entry = {
+      jobId: job.jobId,
+      videoId: job.videoId,
+      videoPath: job.videoPath,
+      fileName: job.fileName,
+      state: job.state,
+      attempt: job.attempt,
+      updatedAt: job.updatedAt,
+      worker: job.worker,
+      matchedModel: typeof job.details?.matchedModel === "string" ? job.details.matchedModel : undefined,
+      matchConfidence: typeof job.details?.matchConfidence === "number" ? job.details.matchConfidence : undefined,
+      conversionStatus: typeof job.details?.conversionStatus === "string" ? job.details.conversionStatus : undefined,
+      playable: job.state === "ready",
+    };
+    return [[job.videoId, entry], [job.videoPath, entry], [job.fileName, entry]];
+  }));
+
   return {
     schema: "spiritflix-admin-jobs/v1",
     generatedAt: new Date().toISOString(),
     jobs,
     totalRecordCount: jobs.length,
     totalEventCount: events.length,
+    stateMap,
     query: {
       activeOnly: Boolean(options?.activeOnly),
       videoId: options?.videoId ?? "",
@@ -260,6 +285,36 @@ export async function getSpiritFlixJobHistory(jobId: string, options?: SpiritFli
     events,
     totalEventCount: events.length,
   };
+}
+
+export async function appendSpiritFlixDeadLetter(job: SpiritFlixJobRecord, options?: SpiritFlixJobStoreOptions): Promise<SpiritFlixDeadLetterRecord> {
+  const record: SpiritFlixDeadLetterRecord = {
+    schema: "spiritflix-admin-job-dead-letter/v1",
+    recordedAt: new Date().toISOString(),
+    jobId: job.jobId,
+    videoId: job.videoId,
+    videoPath: job.videoPath,
+    fileName: job.fileName,
+    attempt: job.attempt,
+    state: job.state,
+    errorReason: job.errorReason,
+    errorReasonCode: job.errorReasonCode,
+    worker: job.worker,
+    details: job.details,
+  };
+  await fs.mkdir(getSpiritFlixJobStoreRoot(options), { recursive: true });
+  await fs.appendFile(getSpiritFlixDeadLetterPath(options), `${JSON.stringify(record)}\n`, "utf8");
+  return record;
+}
+
+export async function readSpiritFlixDeadLetters(options?: SpiritFlixJobStoreOptions): Promise<SpiritFlixDeadLetterRecord[]> {
+  try {
+    const raw = await fs.readFile(getSpiritFlixDeadLetterPath(options), "utf8");
+    return raw.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => JSON.parse(line) as SpiritFlixDeadLetterRecord);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
 }
 
 export async function failSpiritFlixJob(

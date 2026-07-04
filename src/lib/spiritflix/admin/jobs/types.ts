@@ -73,10 +73,26 @@ export interface SpiritFlixJobListResponse {
   jobs: SpiritFlixJobRecord[];
   totalRecordCount: number;
   totalEventCount: number;
+  stateMap: Record<string, SpiritFlixJobStateMapEntry>;
   query: {
     activeOnly: boolean;
     videoId: string;
   };
+}
+
+export interface SpiritFlixJobStateMapEntry {
+  jobId: string;
+  videoId: string;
+  videoPath: string;
+  fileName: string;
+  state: SpiritFlixJobState;
+  attempt: number;
+  updatedAt: string;
+  worker?: string;
+  matchedModel?: string;
+  matchConfidence?: number;
+  conversionStatus?: string;
+  playable: boolean;
 }
 
 export interface SpiritFlixJobHistoryResponse {
@@ -102,9 +118,24 @@ export interface RequeueSpiritFlixJobInput {
 
 export interface SpiritFlixJobControlResult {
   schema: "spiritflix-admin-job-control/v1";
-  action: "fail" | "requeue";
+  action: "fail" | "requeue" | "reverse_move";
   job: SpiritFlixJobRecord;
   event: SpiritFlixJobEvent;
+}
+
+export interface SpiritFlixDeadLetterRecord {
+  schema: "spiritflix-admin-job-dead-letter/v1";
+  recordedAt: string;
+  jobId: string;
+  videoId: string;
+  videoPath: string;
+  fileName: string;
+  attempt: number;
+  state: SpiritFlixJobState;
+  errorReason?: string;
+  errorReasonCode?: string;
+  worker?: string;
+  details?: Record<string, unknown>;
 }
 
 export type SpiritFlixJobWorkerMode = "no_media_mutation";
@@ -165,7 +196,14 @@ export interface SpiritFlixJobWorkerRunOptions extends SpiritFlixJobStoreOptions
   conversionMode?: SpiritFlixConversionMode;
   conversionOutputRoot?: string;
   conversionTimeoutMs?: number;
+  autoMove?: boolean;
+  autoEnroll?: boolean;
+  maxAttempts?: number;
+  leaseMs?: number;
+  enrollmentBridge?: SpiritFlixJobWorkerEnrollmentBridge;
 }
+
+export type SpiritFlixJobWorkerEnrollmentBridge = (input: { matchedModel: string; confidence: number; sourceVideo: string; sidecarPath?: string; minFaceScore?: number }) => Promise<Record<string, unknown>>;
 
 export interface SpiritFlixJobWorkerRunResult {
   schema: "spiritflix-admin-job-worker-run/v1";

@@ -16,7 +16,8 @@ LOG_PATH="${SPIRITFLIX_UPLOAD_WATCHDOG_LOG:-$REPO_ROOT/.codex-spiritflix-upload-
 STATE_PATH="${SPIRITFLIX_UPLOAD_WATCHDOG_STATE:-$REPO_ROOT/.codex-spiritflix-upload-watchdog.state}"
 SMART_RESCAN_API_URL="${SPIRITFLIX_UPLOAD_SMART_RESCAN_API_URL:-http://127.0.0.1:3000/api/spiritflix/library-smart-rescan}"
 DRY_RUN=0
-ENQUEUE_ONLY=0
+ENQUEUE_ONLY="${SPIRITFLIX_UPLOAD_ENQUEUE_ONLY:-1}"
+LEGACY_FACE_SCAN="${SPIRITFLIX_UPLOAD_LEGACY_FACE_SCAN:-0}"
 RUN_MODE="daemon"
 
 VIDEO_FIND_EXPR=(
@@ -35,7 +36,7 @@ Usage: scripts/spiritflix-upload-watchdog.sh [--once] [--dry-run] [--enqueue-onl
   --enqueue-only  Opt into enqueue-safe smart-rescan API calls instead of face scanning.
   --once          Run one cycle, then exit.
 
-Default daemon mode is unchanged, but --enqueue-only must be explicit for API enqueue calls.
+Default daemon mode now enqueues worker jobs. Set SPIRITFLIX_UPLOAD_LEGACY_FACE_SCAN=1 to run the old direct face scan path.
 USAGE
 }
 
@@ -44,6 +45,7 @@ while [ "$#" -gt 0 ]; do
     --once) RUN_MODE="once" ;;
     --dry-run) DRY_RUN=1 ;;
     --enqueue-only) ENQUEUE_ONLY=1 ;;
+    --legacy-face-scan) LEGACY_FACE_SCAN=1; ENQUEUE_ONLY=0 ;;
     --help|-h) usage; exit 0 ;;
     *) printf 'unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -168,6 +170,9 @@ enqueue_recent_uploads() {
   while IFS= read -r video_path; do
     [ -n "$video_path" ] || continue
     planned=$((planned + 1))
+    if [ -f "${video_path}.face-meta.json" ]; then
+      continue
+    fi
     local payload
     payload=$(python3 - "$video_path" <<'PY'
 import json
@@ -210,9 +215,10 @@ run_once() {
     log "idle no recent upload changes"
     return 0
   fi
-  if [ "$DRY_RUN" = "1" ] || [ "$ENQUEUE_ONLY" = "1" ]; then
+  if [ "$DRY_RUN" = "1" ] || [ "$ENQUEUE_ONLY" = "1" ] || [ "$LEGACY_FACE_SCAN" != "1" ]; then
     enqueue_recent_uploads "$library_real"
-    log "cycle complete enqueue_only recent_before=$(printf '%s\n' "$snapshot" | sed '/^$/d' | wc -l) dry_run=$DRY_RUN"
+    recent_snapshot "$library_real" > "$STATE_PATH"
+    log "cycle complete enqueue_only recent_before=$(printf '%s\n' "$snapshot" | sed '/^$/d' | wc -l) dry_run=$DRY_RUN legacy_face_scan=$LEGACY_FACE_SCAN"
     return 0
   fi
   local before_count after_count
@@ -240,7 +246,7 @@ if [ "$RUN_MODE" = "once" ]; then
   exit 0
 fi
 
-log "starting SpiritFlix upload watchdog drop=$DROP_DIR library=$LIBRARY_DIR poll=${POLL_SECONDS}s dry_run=$DRY_RUN enqueue_only=$ENQUEUE_ONLY"
+log "starting SpiritFlix upload watchdog drop=$DROP_DIR library=$LIBRARY_DIR poll=${POLL_SECONDS}s dry_run=$DRY_RUN enqueue_only=$ENQUEUE_ONLY legacy_face_scan=$LEGACY_FACE_SCAN"
 while true; do
   run_once || log "cycle failed"
   sleep "$POLL_SECONDS"

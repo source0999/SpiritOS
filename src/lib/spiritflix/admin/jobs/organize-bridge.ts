@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { moveSpiritFlixAdminPath } from "../actions";
+import { writeSpiritFlixAdminReceipt } from "../receipts";
 
 export type SpiritFlixOrganizeMode = "preview" | "execute";
 
@@ -22,6 +24,8 @@ export interface SpiritFlixOrganizeReceipt {
     fileSizeBytes: number;
     mtimeMs: number;
   };
+  beforeReceiptId?: string;
+  afterReceiptId?: string;
   after?: {
     sourceExists: boolean;
     targetExists: boolean;
@@ -86,7 +90,29 @@ export async function createSpiritFlixOrganizeReceipt(options: SpiritFlixOrganiz
   };
   if (mode === "execute" && receipt.allowed) {
     await fs.mkdir(path.dirname(target.targetPath), { recursive: true });
-    await fs.rename(sourcePath, target.targetPath);
+    const beforeReceipt = await writeSpiritFlixAdminReceipt({
+      action: "workerAutoMoveBefore",
+      status: "planned",
+      sourcePath,
+      targetPath: target.targetPath,
+      affectedPaths: [sourcePath, target.targetPath],
+      reversible: true,
+      rollbackHint: `Move ${target.targetPath} back to ${sourcePath}`,
+      reason: `High-confidence SpiritFlix worker match for ${options.matchedModel}.`,
+    });
+    await moveSpiritFlixAdminPath(sourcePath, target.targetPath);
+    const afterReceipt = await writeSpiritFlixAdminReceipt({
+      action: "workerAutoMoveAfter",
+      status: "executed",
+      sourcePath,
+      targetPath: target.targetPath,
+      affectedPaths: [sourcePath, target.targetPath],
+      reversible: true,
+      rollbackHint: `Move ${target.targetPath} back to ${sourcePath}`,
+      reason: `Worker moved high-confidence SpiritFlix match for ${options.matchedModel}.`,
+    });
+    receipt.beforeReceiptId = beforeReceipt.id;
+    receipt.afterReceiptId = afterReceipt.id;
     receipt.after = {
       sourceExists: await exists(sourcePath),
       targetExists: await exists(target.targetPath),

@@ -17,6 +17,7 @@ describe("SpiritFlix admin jobs API", () => {
       generatedAt: "2026-07-04T00:00:00.000Z",
       totalRecordCount: 1,
       totalEventCount: 2,
+      stateMap: {},
       query: { activeOnly: true, videoId: "video:abc" },
       jobs: [
         {

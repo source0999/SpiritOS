@@ -3,9 +3,9 @@ import fs from "node:fs/promises";
 import { scanOneSpiritFlixVideoEvidence } from "../smart/scanner";
 import { runSpiritFlixFaceOrganizerDryRun } from "./face-organizer-bridge";
 import { runSpiritFlixConversionBridge } from "./conversion-bridge";
-import { createSpiritFlixPendingEnrollmentRecord } from "./enrollment-bridge";
+import { createSpiritFlixPendingEnrollmentRecord, runSpiritFlixEnrollmentBridge } from "./enrollment-bridge";
 import { createSpiritFlixOrganizeReceipt } from "./organize-bridge";
-import { appendSpiritFlixJobState, getSpiritFlixJobHistory, isActiveSpiritFlixJobState, listSpiritFlixJobs } from "./store";
+import { appendSpiritFlixDeadLetter, appendSpiritFlixJobState, getSpiritFlixJobHistory, isActiveSpiritFlixJobState, listSpiritFlixJobs } from "./store";
 import type {
   SpiritFlixJobClaimResult,
   SpiritFlixJobRecord,
@@ -25,6 +25,8 @@ import type { SpiritFlixPendingEnrollmentRecord } from "./enrollment-bridge";
 
 const DEFAULT_WORKER_ID = "spiritflix-safe-worker";
 const DEFAULT_MODE: SpiritFlixJobWorkerMode = "no_media_mutation";
+const HIGH_CONFIDENCE_THRESHOLD = 0.86;
+const DEFAULT_MAX_ATTEMPTS = 3;
 const SAFE_MOBILE_CODECS = new Set(["h264", "avc1"]);
 const SAFE_MOBILE_CONTAINERS = ["mp4", "mov", "m4v", "quicktime"];
 
@@ -183,12 +185,15 @@ function conversionReceiptDetails(receipt: SpiritFlixConversionReceipt | null): 
 function organizeAndEnrollmentDetails(
   organizeReceipt: SpiritFlixOrganizeReceipt | null,
   enrollmentRecord: SpiritFlixPendingEnrollmentRecord | null,
+  extra: Record<string, unknown> = {},
 ): Record<string, unknown> {
   return {
     organizeReceipt: organizeReceipt ?? undefined,
     pendingEnrollment: enrollmentRecord ?? undefined,
-    autoMove: false,
-    autoDbEnrollment: false,
+    autoMove: Boolean(extra.autoMove),
+    autoDbEnrollment: Boolean(extra.autoDbEnrollment),
+    moveReceiptIds: extra.moveReceiptIds,
+    enrollmentReceipt: extra.enrollmentReceipt,
   };
 }
 
@@ -243,6 +248,7 @@ function finalDetails(
   conversionReceipt: SpiritFlixConversionReceipt | null,
   organizeReceipt: SpiritFlixOrganizeReceipt | null,
   enrollmentRecord: SpiritFlixPendingEnrollmentRecord | null,
+  automationDetails: Record<string, unknown> = {},
 ): Record<string, unknown> {
   return controlDetails("complete", mode, {
     claimId: claimIdValue,
@@ -253,7 +259,7 @@ function finalDetails(
     ...scanEvidenceDetails(analysis, decision),
     ...faceOrganizerDetails(faceResult),
     ...conversionReceiptDetails(conversionReceipt),
-    ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord),
+    ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord, automationDetails),
   });
 }
 
@@ -263,6 +269,9 @@ function scanFailureMessage(error: unknown): string {
 
 export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRunOptions = {}): Promise<SpiritFlixJobWorkerRunResult> {
   const mode = options.mode ?? DEFAULT_MODE;
+  const autoMove = options.autoMove ?? process.env.SPIRITFLIX_AUTO_MOVE === "1";
+  const autoEnroll = options.autoEnroll ?? process.env.SPIRITFLIX_AUTO_ENROLL === "1";
+  const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   if (mode !== "no_media_mutation") throw new Error("Only no_media_mutation worker mode is available in this lane.");
 
   const workerId = options.workerId?.trim() || DEFAULT_WORKER_ID;
@@ -283,6 +292,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
   }
 
   const claimedJob = claim.job;
+  const shouldDeadLetter = claimedJob.attempt >= maxAttempts;
   if (!(await sourceExists(claimedJob))) {
     const failed = await appendSpiritFlixJobState(
       {
@@ -300,6 +310,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
       options,
     );
     events.push(failed);
+    if (shouldDeadLetter) await appendSpiritFlixDeadLetter(failed, options);
     return { schema: "spiritflix-admin-job-worker-run/v1", mode, workerId, claimId: claim.claimId, claimed: true, completed: true, finalState: "failed", reasonCode: "source_missing", job: failed, events };
   }
 
@@ -337,6 +348,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
       options,
     );
     events.push(failed);
+    if (shouldDeadLetter) await appendSpiritFlixDeadLetter(failed, options);
     return { schema: "spiritflix-admin-job-worker-run/v1", mode, workerId, claimId: claim.claimId, claimed: true, completed: true, finalState: "failed", reasonCode: failed.errorReasonCode, job: failed, events };
   }
 
@@ -369,6 +381,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
       options,
     );
     events.push(failed);
+    if (shouldDeadLetter) await appendSpiritFlixDeadLetter(failed, options);
     return { schema: "spiritflix-admin-job-worker-run/v1", mode, workerId, claimId: claim.claimId, claimed: true, completed: true, finalState: "failed", reasonCode: failed.errorReasonCode, job: failed, events };
   }
 
@@ -400,6 +413,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
           worker: workerId,
           details: controlDetails("fail", mode, {
             claimId: claim.claimId,
+            deadLetter: shouldDeadLetter,
             workerConsumed: true,
             ...scanEvidenceDetails(analysis, decision),
             ...faceOrganizerDetails(faceResult),
@@ -409,29 +423,47 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
         options,
       );
       events.push(failed);
+      if (shouldDeadLetter) await appendSpiritFlixDeadLetter(failed, options);
       return { schema: "spiritflix-admin-job-worker-run/v1", mode, workerId, claimId: claim.claimId, claimed: true, completed: true, finalState: "failed", reasonCode: failed.errorReasonCode, job: failed, events };
     }
   }
   const placeholderState = options.placeholderState ?? decision.placeholderState;
+  const highConfidence = faceResult.match.status === "high_confidence_match" && Boolean(faceResult.match.matchedModel) && typeof faceResult.match.confidence === "number" && faceResult.match.confidence >= HIGH_CONFIDENCE_THRESHOLD;
   const requestedFinalState = options.finalState ?? derivedFinalState(faceResult, decision, conversionReceipt);
   const organizeReceipt =
-    faceResult.match.status === "high_confidence_match" && faceResult.match.matchedModel && typeof faceResult.match.confidence === "number"
+    highConfidence && faceResult.match.matchedModel && typeof faceResult.match.confidence === "number"
       ? await createSpiritFlixOrganizeReceipt({
           mediaRoot: options.mediaRoot,
           videoPath: claimedJob.videoPath,
           matchedModel: faceResult.match.matchedModel,
           confidence: faceResult.match.confidence,
-          mode: "preview",
+          mode: autoMove ? "execute" : "preview",
         })
       : null;
+  const movedSourceVideo = organizeReceipt?.after?.targetExists ? organizeReceipt.targetPath : claimedJob.videoPath;
   const enrollmentRecord =
-    faceResult.match.status === "high_confidence_match" && faceResult.match.matchedModel && typeof faceResult.match.confidence === "number"
+    highConfidence && faceResult.match.matchedModel && typeof faceResult.match.confidence === "number"
       ? createSpiritFlixPendingEnrollmentRecord({
           matchedModel: faceResult.match.matchedModel,
           confidence: faceResult.match.confidence,
-          sourceVideo: claimedJob.videoPath,
+          sourceVideo: movedSourceVideo,
         })
       : null;
+  const enrollmentReceipt = autoEnroll && enrollmentRecord && faceResult.match.matchedModel && typeof faceResult.match.confidence === "number"
+    ? await (options.enrollmentBridge ?? runSpiritFlixEnrollmentBridge)({
+        matchedModel: faceResult.match.matchedModel,
+        confidence: faceResult.match.confidence,
+        sourceVideo: movedSourceVideo,
+        sidecarPath: `${claimedJob.videoPath}.face-meta.json`,
+        minFaceScore: HIGH_CONFIDENCE_THRESHOLD,
+      })
+    : undefined;
+  const automationDetails = {
+    autoMove: Boolean(autoMove && organizeReceipt?.after?.targetExists),
+    autoDbEnrollment: Boolean(autoEnroll && enrollmentReceipt),
+    moveReceiptIds: organizeReceipt ? { before: organizeReceipt.beforeReceiptId, after: organizeReceipt.afterReceiptId } : undefined,
+    enrollmentReceipt,
+  };
   const placeholder = await appendSpiritFlixJobState(
     {
       videoPath: claimedJob.videoPath,
@@ -448,7 +480,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
         ...scanEvidenceDetails(analysis, decision),
         ...faceOrganizerDetails(faceResult),
         ...conversionReceiptDetails(conversionReceipt),
-        ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord),
+        ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord, automationDetails),
       }),
     },
     options,
@@ -474,12 +506,13 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
           ...scanEvidenceDetails(analysis, decision),
           ...faceOrganizerDetails(faceResult),
           ...conversionReceiptDetails(conversionReceipt),
-          ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord),
+          ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord, automationDetails),
         }),
       },
       options,
     );
     events.push(failed);
+    if (shouldDeadLetter) await appendSpiritFlixDeadLetter(failed, options);
     return { schema: "spiritflix-admin-job-worker-run/v1", mode, workerId, claimId: claim.claimId, claimed: true, completed: true, finalState: "failed", reasonCode: failed.errorReasonCode, job: failed, events };
   }
 
@@ -492,7 +525,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
       fileName: claimedJob.fileName,
       state: requestedFinalState,
       worker: workerId,
-      details: finalDetails(requestedFinalState, mode, placeholderState, claim.claimId, analysis, decision, faceResult, conversionReceipt, organizeReceipt, enrollmentRecord),
+      details: finalDetails(requestedFinalState, mode, placeholderState, claim.claimId, analysis, decision, faceResult, conversionReceipt, organizeReceipt, enrollmentRecord, automationDetails),
     },
     options,
   );

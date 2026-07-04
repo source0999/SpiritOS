@@ -41,3 +41,117 @@ export function createSpiritFlixPendingEnrollmentRecord(input: {
     },
   };
 }
+
+
+import { spawn } from "node:child_process";
+
+const DEFAULT_ENROLL_TIMEOUT_MS = 120_000;
+
+export interface SpiritFlixEnrollmentBridgeInput {
+  matchedModel: string;
+  confidence: number;
+  sourceVideo: string;
+  sidecarPath?: string;
+  minFaceScore?: number;
+  command?: string;
+  scriptPath?: string;
+  timeoutMs?: number;
+  cwd?: string;
+}
+
+export interface SpiritFlixEnrollmentReceipt {
+  schema: "spiritflix-enrollment-receipt/v1";
+  status: "completed" | "failed" | "skipped";
+  matchedModel: string;
+  confidence: number;
+  sourceVideo: string;
+  sidecarPath: string;
+  minFaceScore: number;
+  command: string;
+  args: string[];
+  code: number | null;
+  timedOut: boolean;
+  stdout: string;
+  stderr: string;
+  enabled: true;
+}
+
+function runCommand(command: string, args: string[], timeoutMs: number, cwd?: string): Promise<{ code: number | null; timedOut: boolean; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    const proc = spawn(command, args, { cwd, shell: false });
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    let timedOut = false;
+    const finish = (code: number | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ code, timedOut, stdout, stderr });
+    };
+    const timer = setTimeout(() => {
+      timedOut = true;
+      proc.kill("SIGKILL");
+      finish(null);
+    }, timeoutMs);
+    proc.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString("utf8"); });
+    proc.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString("utf8"); });
+    proc.on("error", (error) => { stderr += error.message; finish(null); });
+    proc.on("close", finish);
+  });
+}
+
+export async function runSpiritFlixEnrollmentBridge(input: SpiritFlixEnrollmentBridgeInput): Promise<SpiritFlixEnrollmentReceipt> {
+  const minFaceScore = input.minFaceScore ?? 0.86;
+  const sidecarPath = input.sidecarPath ?? `${input.sourceVideo}.face-meta.json`;
+  const command = input.command ?? process.env.SPIRITFLIX_FACE_ORGANIZER_PYTHON ?? "/home/source/SpiritOS/.venv-face-organizer/bin/python";
+  const scriptPath = input.scriptPath ?? "scripts/media/face_organizer.py";
+  const args = [
+    scriptPath,
+    "--enroll-selected-crops",
+    "--performer",
+    input.matchedModel,
+    "--sidecar",
+    sidecarPath,
+    "--source-video",
+    input.sourceVideo,
+    "--min-face-score",
+    String(minFaceScore),
+    "--apply",
+  ];
+  if (input.confidence < minFaceScore) {
+    return {
+      schema: "spiritflix-enrollment-receipt/v1",
+      status: "skipped",
+      matchedModel: input.matchedModel,
+      confidence: input.confidence,
+      sourceVideo: input.sourceVideo,
+      sidecarPath,
+      minFaceScore,
+      command,
+      args,
+      code: null,
+      timedOut: false,
+      stdout: "",
+      stderr: "confidence below min_face_score",
+      enabled: true,
+    };
+  }
+  const result = await runCommand(command, args, input.timeoutMs ?? DEFAULT_ENROLL_TIMEOUT_MS, input.cwd ?? process.cwd());
+  return {
+    schema: "spiritflix-enrollment-receipt/v1",
+    status: result.code === 0 && !result.timedOut ? "completed" : "failed",
+    matchedModel: input.matchedModel,
+    confidence: input.confidence,
+    sourceVideo: input.sourceVideo,
+    sidecarPath,
+    minFaceScore,
+    command,
+    args,
+    code: result.code,
+    timedOut: result.timedOut,
+    stdout: result.stdout,
+    stderr: result.stderr,
+    enabled: true,
+  };
+}
