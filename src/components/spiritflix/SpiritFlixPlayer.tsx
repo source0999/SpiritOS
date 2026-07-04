@@ -359,6 +359,12 @@ function getCompactModelOptionKey(value: string): string {
   return getModelOptionKey(value).replace(/[^a-z0-9]+/g, "");
 }
 
+const NON_MODEL_FOLDER_NAMES = new Set(["yes", "other", "media"]);
+
+function isNonModelFolderName(value: string): boolean {
+  return NON_MODEL_FOLDER_NAMES.has(getModelOptionKey(value));
+}
+
 function getTitleMatchText(item: JellyfinItem): string {
   return [item.Name, item.SeriesName, item.Path, ...(item.MediaSources?.map((source) => source.Path) ?? [])]
     .filter(Boolean)
@@ -429,16 +435,17 @@ function getFaceConfidenceValue(match?: FaceOrganizerVideoMatch): number | undef
   return match?.confidence ?? match?.primaryPerformer?.confidence ?? match?.primaryPerformer?.similarity;
 }
 
-function getInferredModelName(item: JellyfinItem): string {
+export function getInferredModelName(item: JellyfinItem): string {
   if (item.ManualModelName) return item.ManualModelName;
   const person = item.People?.find((entry) =>
     ["actor", "actress", "performer", "artist"].includes(entry.Type?.toLowerCase() ?? ""),
   );
   if (person?.Name) return person.Name;
-  if (item.SeriesName) return item.SeriesName;
+  if (item.SeriesName && !isNonModelFolderName(item.SeriesName)) return item.SeriesName;
   if (item.Path) {
     const parts = item.Path.split(/[\\/]+/).filter(Boolean);
-    return parts.at(-2) ?? "";
+    const folderName = parts.at(-2) ?? "";
+    return folderName && !isNonModelFolderName(folderName) ? folderName : "";
   }
   return "";
 }

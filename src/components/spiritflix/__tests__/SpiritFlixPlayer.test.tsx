@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getSmartFillScale, getTitleMatchedModelItems, SpiritFlixPlayer } from "../SpiritFlixPlayer";
+import { getInferredModelName, getSmartFillScale, getTitleMatchedModelItems, SpiritFlixPlayer } from "../SpiritFlixPlayer";
 import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import type { JellyfinItem } from "@/lib/spiritflix-types";
 
@@ -159,6 +159,28 @@ describe("getTitleMatchedModelItems", () => {
       titleMatch,
       compactMatch,
     ]);
+  });
+});
+
+describe("getInferredModelName", () => {
+  it("does not treat library bucket folders as models", () => {
+    expect(
+      getInferredModelName({
+        ...item,
+        SeriesName: undefined,
+        Path: "/media/yes/0hxbz4qbt45rmy79kc1ij_source.mp4",
+      }),
+    ).toBe("");
+  });
+
+  it("still infers real model folders from nested paths", () => {
+    expect(
+      getInferredModelName({
+        ...item,
+        SeriesName: undefined,
+        Path: "/media/yes/Lexi Marvel/example.mp4",
+      }),
+    ).toBe("Lexi Marvel");
   });
 });
 
