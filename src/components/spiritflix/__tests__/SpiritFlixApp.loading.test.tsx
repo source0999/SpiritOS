@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SpiritFlixApp } from "../SpiritFlixApp";
 import type { JellyfinClient, JellyfinItemPage } from "@/lib/spiritflix-jellyfin-client";
@@ -105,6 +105,7 @@ describe("SpiritFlixApp live library loading", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
@@ -130,5 +131,25 @@ describe("SpiritFlixApp live library loading", () => {
     expect(await screen.findByText("Scene One")).toBeInTheDocument();
     expect(mocks.client.getLibraryLatestAddedPage).toHaveBeenCalled();
     expect(shelvesResolved).toBe(false);
+  });
+
+  it("fails the blocking loader when the first Jellyfin library request never settles", async () => {
+    vi.useFakeTimers();
+    mocks.client = createClient({
+      getLibraries: vi.fn(() => new Promise(() => {})),
+    });
+
+    render(<SpiritFlixApp />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByRole("progressbar", { name: "Connecting to Jellyfin" })).toHaveAttribute("aria-valuenow", "5");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(12000);
+    });
+
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.getByText("Jellyfin request timed out while loading library data.")).toBeInTheDocument();
   });
 });
