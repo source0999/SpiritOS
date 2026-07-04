@@ -135,11 +135,12 @@ def clear_playlist(api: JellyfinApi, playlist_id: str) -> None:
         for item in data.get("Items", [])
         if item.get("PlaylistItemId") or item.get("Id")
     ]
-    if entry_ids:
+    for start in range(0, len(entry_ids), 100):
+        chunk = entry_ids[start : start + 100]
         status, text = api.request(
             "DELETE",
             f"/Playlists/{playlist_id}/Items",
-            {"EntryIds": ",".join(entry_ids)},
+            {"EntryIds": ",".join(chunk)},
         )
         if status < 200 or status >= 300:
             raise RuntimeError(f"Clearing playlist failed with HTTP {status}: {text[:500]}")
