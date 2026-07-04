@@ -167,6 +167,58 @@ describe("SpiritFlix admin job worker", () => {
     expect(history.job?.details).toHaveProperty("pendingEnrollment.sourceVideo", videoPath);
     expect(history.job?.details).toHaveProperty("pendingEnrollment.enabled", false);
     expect(history.job?.details).toEqual(expect.objectContaining({ autoMove: false, autoDbEnrollment: false, conversionStarted: false, mediaMutation: false }));
+    const sidecar = JSON.parse(await fs.readFile(`${videoPath}.face-meta.json`, "utf8"));
+    expect(sidecar).toEqual(expect.objectContaining({
+      schema: "spiritflix-face-match-sidecar/v1",
+      jobId: queued.jobId,
+      matchStatus: "high_confidence_match",
+      matchedModel: "Sava Schultz",
+      confidence: 0.93,
+    }));
+  });
+
+  it("auto-moves and auto-enrolls high-confidence matches only when env gates are enabled", async () => {
+    const enrollmentBridge = vi.fn(async () => ({
+      schema: "spiritflix-enrollment-receipt/v1" as const,
+      status: "completed" as const,
+      matchedModel: "Sava Schultz",
+      confidence: 0.93,
+      sourceVideo: path.join(mediaRoot, "yes", "Sava Schultz", "clip.mp4"),
+      sidecarPath: `${videoPath}.face-meta.json`,
+      minFaceScore: 0.86,
+      command: "python3",
+      args: [],
+      code: 0,
+      stdout: "enrolled",
+      stderr: "",
+      reasonCode: "enrolled",
+    }));
+    const queued = await appendSpiritFlixJobState({ ...jobInput(), state: "queued" }, { mediaRoot });
+
+    const result = await runSpiritFlixJobWorkerOnce({
+      mediaRoot,
+      scanVideo: scannerReturning(),
+      faceOrganizer: faceOrganizerReturning(),
+      autoMove: true,
+      autoEnroll: true,
+      enrollmentBridge,
+    });
+
+    expect(result.finalState).toBe("ready");
+    const history = await getSpiritFlixJobHistory(queued.jobId, { mediaRoot });
+    const targetPath = path.join(mediaRoot, "yes", "Sava Schultz", "clip.mp4");
+    expect(await fs.readFile(targetPath, "utf8")).toBe("fake-video");
+    await expect(fs.stat(videoPath)).rejects.toThrow();
+    expect(enrollmentBridge).toHaveBeenCalledWith(expect.objectContaining({
+      matchedModel: "Sava Schultz",
+      sourceVideo: targetPath,
+      sidecarPath: `${videoPath}.face-meta.json`,
+      minFaceScore: 0.86,
+    }));
+    expect(history.job?.details).toEqual(expect.objectContaining({ autoMove: true, autoDbEnrollment: true }));
+    expect(history.job?.details).toHaveProperty("moveReceiptIds.before");
+    expect(history.job?.details).toHaveProperty("moveReceiptIds.after");
+    expect(history.job?.details).toHaveProperty("enrollmentReceipt.status", "completed");
   });
 
   it("keeps low-confidence face matches in needs_review", async () => {

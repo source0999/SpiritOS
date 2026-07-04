@@ -70,6 +70,7 @@ export function SpiritFlixAdminApp() {
   const [smartBatchOpen, setSmartBatchOpen] = useState(false);
   const [jobStatusSummary, setJobStatusSummary] = useState("Jobs unavailable");
   const [recentJobs, setRecentJobs] = useState<SpiritFlixJobRecord[]>([]);
+  const [failedJobs, setFailedJobs] = useState<SpiritFlixJobRecord[]>([]);
 
   useEffect(() => {
     setSession(getStoredSession());
@@ -153,14 +154,32 @@ export function SpiritFlixAdminApp() {
       const jobs = Array.isArray(payload.jobs) ? payload.jobs : [];
       setJobStatusSummary(jobs.length ? summarizeJobStates(jobs) : "No smart jobs");
       setRecentJobs(jobs.slice(0, 5));
+      setFailedJobs(jobs.filter((job) => job.state === "failed").slice(0, 5));
     } catch {
       setJobStatusSummary("Jobs unavailable");
       setRecentJobs([]);
+      setFailedJobs([]);
     }
   }, []);
 
   useEffect(() => {
     void loadJobStatus();
+  }, [loadJobStatus]);
+
+  const retryJob = useCallback(async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/spiritflix/admin/jobs/${encodeURIComponent(jobId)}`, {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ action: "requeue" }),
+      });
+      if (!response.ok) throw new Error("retry failed");
+      setActionToast("Smart job queued for retry.");
+      await loadJobStatus();
+    } catch {
+      setActionToast("Smart job retry failed.");
+    }
   }, [loadJobStatus]);
 
   const loadFilesystem = useCallback(
@@ -462,6 +481,17 @@ export function SpiritFlixAdminApp() {
                 <span>{job.fileName}</span>
                 <strong>{job.state.replace("_", " ")}</strong>
                 <small>{job.worker ?? "worker pending"}</small>
+              </div>
+            ))}
+          </section>
+        ) : null}
+        {failedJobs.length ? (
+          <section className="spiritflix-admin-job-strip" aria-label="Failed smart jobs">
+            {failedJobs.map((job) => (
+              <div className="spiritflix-admin-job-strip__row" key={job.jobId}>
+                <span>{job.fileName}</span>
+                <strong>{job.errorReasonCode ?? "failed"}</strong>
+                <button type="button" onClick={() => void retryJob(job.jobId)}>Retry</button>
               </div>
             ))}
           </section>

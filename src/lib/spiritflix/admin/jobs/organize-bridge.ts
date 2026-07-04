@@ -129,3 +129,51 @@ async function exists(filePath: string): Promise<boolean> {
     return false;
   }
 }
+
+
+export interface SpiritFlixOrganizeReverseReceipt {
+  schema: "spiritflix-organize-reverse-receipt/v1";
+  sourcePath: string;
+  restoredPath: string;
+  sourceExistsBefore: boolean;
+  restoredExistsAfter: boolean;
+  receiptId?: string;
+  reasonCode: "reversed" | "target_missing";
+}
+
+export async function reverseSpiritFlixOrganizeReceipt(receipt: SpiritFlixOrganizeReceipt): Promise<SpiritFlixOrganizeReverseReceipt> {
+  const sourcePath = path.resolve(receipt.targetPath);
+  const restoredPath = path.resolve(receipt.rollback.moveBackTo || receipt.sourcePath);
+  const sourceExistsBefore = await exists(sourcePath);
+  if (!sourceExistsBefore) {
+    return {
+      schema: "spiritflix-organize-reverse-receipt/v1",
+      sourcePath,
+      restoredPath,
+      sourceExistsBefore,
+      restoredExistsAfter: await exists(restoredPath),
+      reasonCode: "target_missing",
+    };
+  }
+  await fs.mkdir(path.dirname(restoredPath), { recursive: true });
+  const reverseReceipt = await writeSpiritFlixAdminReceipt({
+    action: "workerAutoMoveReverse",
+    status: "executed",
+    sourcePath,
+    targetPath: restoredPath,
+    affectedPaths: [sourcePath, restoredPath],
+    reversible: true,
+    rollbackHint: `Move ${restoredPath} back to ${sourcePath}`,
+    reason: "Reverse latest SpiritFlix worker auto-move from its receipt.",
+  });
+  await moveSpiritFlixAdminPath(sourcePath, restoredPath);
+  return {
+    schema: "spiritflix-organize-reverse-receipt/v1",
+    sourcePath,
+    restoredPath,
+    sourceExistsBefore,
+    restoredExistsAfter: await exists(restoredPath),
+    receiptId: reverseReceipt.id,
+    reasonCode: "reversed",
+  };
+}

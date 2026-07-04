@@ -6,6 +6,12 @@ import { getResumeProgressPercent, getResumeSlotLabel, hasResumeProgress } from 
 import type { FaceOrganizerVideoMatch, JellyfinItem } from "@/lib/spiritflix-types";
 import { SpiritFlixImage } from "./SpiritFlixImage";
 
+export interface SpiritFlixReadinessState {
+  state: "queued" | "scanning" | "matching" | "converting" | "moving" | "ready" | "needs_review" | "failed";
+  jobId: string;
+  playable: boolean;
+}
+
 interface SpiritFlixCardProps {
   client: JellyfinClient;
   item: JellyfinItem;
@@ -15,6 +21,7 @@ interface SpiritFlixCardProps {
   modelName?: string;
   playOnPrimaryTap?: boolean;
   imagePriority?: boolean;
+  readiness?: SpiritFlixReadinessState;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, startPositionTicks?: number) => void;
 }
@@ -28,12 +35,15 @@ export function SpiritFlixCard({
   modelName,
   playOnPrimaryTap = false,
   imagePriority = false,
+  readiness,
   onOpenDetails,
   onPlay,
 }: SpiritFlixCardProps) {
   const progress = getResumeProgressPercent(item);
   const hasProgress = showResume && hasResumeProgress(item);
-  const canPlay = isPlayableItem(item);
+  const canPlay = isPlayableItem(item) && (!readiness || readiness.playable);
+  const readinessLabel = readiness?.state.replace("_", " ");
+  const blocksPlayback = Boolean(readiness && !readiness.playable);
   const imageType = variant === "landscape" ? "Thumb" : "Primary";
   const resumeTicks = item.UserData?.PlaybackPositionTicks;
 
@@ -71,6 +81,10 @@ export function SpiritFlixCard({
               : faceMatch.label}
           </span>
         ) : null}
+        {readiness ? (
+          <span className={`spiritflix-card__readiness-badge is-${readiness.state}`}>{readinessLabel}</span>
+        ) : null}
+        {blocksPlayback ? <span className="spiritflix-card__processing-overlay">Still processing</span> : null}
         {hasProgress ? <span className="spiritflix-card__resume-badge">Resume</span> : null}
       </button>
       <div className="spiritflix-card__meta">

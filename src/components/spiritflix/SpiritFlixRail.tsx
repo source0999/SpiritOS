@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import type { JellyfinItem } from "@/lib/spiritflix-types";
-import { SpiritFlixCard } from "./SpiritFlixCard";
+import { SpiritFlixCard, type SpiritFlixReadinessState } from "./SpiritFlixCard";
 
 interface SpiritFlixRailProps {
   title: string;
@@ -21,6 +21,12 @@ interface SpiritFlixRailProps {
   titleActionLabel?: string;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => void;
+}
+
+type SpiritFlixJobsPayload = { stateMap?: Record<string, SpiritFlixReadinessState> };
+
+function readinessForItem(item: JellyfinItem, stateMap: Record<string, SpiritFlixReadinessState>): SpiritFlixReadinessState | undefined {
+  return stateMap[item.Id] ?? (item.Path ? stateMap[item.Path] : undefined) ?? stateMap[item.Name] ?? (item.MediaSources ?? []).map((source) => source.Path ? stateMap[source.Path] : undefined).find(Boolean);
 }
 
 export function SpiritFlixRail({
@@ -43,11 +49,21 @@ export function SpiritFlixRail({
   const initialWindow = variant === "landscape" ? 6 : 8;
   const windowStep = variant === "landscape" ? 4 : 6;
   const [renderCount, setRenderCount] = useState(initialWindow);
+  const [jobStateMap, setJobStateMap] = useState<Record<string, SpiritFlixReadinessState>>({});
   const visibleItems = useMemo(() => items.slice(0, renderCount), [items, renderCount]);
 
   useEffect(() => {
     setRenderCount(initialWindow);
   }, [initialWindow, items.length, title]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/spiritflix/admin/jobs", { cache: "no-store", headers: { Accept: "application/json" } })
+      .then((response) => response.ok ? response.json() as Promise<SpiritFlixJobsPayload> : { stateMap: {} })
+      .then((payload) => { if (!cancelled) setJobStateMap(payload.stateMap ?? {}); })
+      .catch(() => { if (!cancelled) setJobStateMap({}); });
+    return () => { cancelled = true; };
+  }, []);
 
   const requestMore = () => {
     setRenderCount((current) => Math.min(items.length, current + windowStep));
@@ -115,6 +131,7 @@ export function SpiritFlixRail({
               item={item}
               playOnPrimaryTap={playOnPrimaryTap}
               imagePriority={index < (variant === "landscape" ? 2 : 4)}
+              readiness={readinessForItem(item, jobStateMap)}
               onOpenDetails={onOpenDetails}
               onPlay={(selectedItem, startPositionTicks) => onPlay(selectedItem, items, title, startPositionTicks)}
             />

@@ -3,20 +3,23 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const FORBIDDEN_PLAYBACK_IMPORTS = [
-  "admin/jobs",
   "admin/smart/scanner",
   "face-organizer",
-  "converter",
+  "conversion-bridge",
+  "converterServerQueue",
   "library-smart-rescan",
   "mobile-optimized",
 ];
 
 describe("SpiritFlix playback route isolation", () => {
-  it("keeps stream and HLS routes free of scan, face, and conversion work", async () => {
+  it("keeps stream, HLS, gallery, and jobs list routes free of scan, face, move, and conversion work", async () => {
     const repoRoot = process.cwd();
     const routes = [
       path.join(repoRoot, "src/app/api/spiritflix/stream/route.ts"),
       path.join(repoRoot, "src/app/api/spiritflix/hls/route.ts"),
+      path.join(repoRoot, "src/app/api/spiritflix/gallery/route.ts"),
+      path.join(repoRoot, "src/app/api/spiritflix/gallery/image/route.ts"),
+      path.join(repoRoot, "src/app/api/spiritflix/admin/jobs/route.ts"),
     ];
 
     for (const routePath of routes) {

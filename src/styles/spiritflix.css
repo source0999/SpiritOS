@@ -6490,3 +6490,32 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.spiritflix-card__readiness-badge {
+  position: absolute;
+  left: 0.55rem;
+  top: 0.55rem;
+  z-index: 3;
+  border-radius: 999px;
+  padding: 0.22rem 0.48rem;
+  background: rgba(16, 22, 31, 0.82);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.spiritflix-card__readiness-badge.is-ready { background: rgba(16, 120, 86, 0.9); }
+.spiritflix-card__readiness-badge.is-failed { background: rgba(170, 45, 45, 0.92); }
+.spiritflix-card__readiness-badge.is-needs_review { background: rgba(172, 116, 30, 0.92); }
+.spiritflix-card__processing-overlay {
+  position: absolute;
+  inset: auto 0.65rem 0.75rem 0.65rem;
+  z-index: 3;
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(5, 8, 13, 0.78);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}

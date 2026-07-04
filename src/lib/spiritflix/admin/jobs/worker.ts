@@ -197,7 +197,37 @@ function organizeAndEnrollmentDetails(
   };
 }
 
-function faceOrganizerDetails(result: SpiritFlixFaceOrganizerDryRunResult): Record<string, unknown> {
+async function writeSpiritFlixFaceMatchSidecar(
+  job: SpiritFlixJobRecord,
+  analysis: SpiritFlixSmartAnalysis,
+  result: SpiritFlixFaceOrganizerDryRunResult,
+): Promise<string> {
+  const sidecarPath = `${job.videoPath}.face-meta.json`;
+  await fs.writeFile(sidecarPath, `${JSON.stringify({
+    schema: "spiritflix-face-match-sidecar/v1",
+    generatedAt: new Date().toISOString(),
+    source: "spiritflix-job-worker",
+    sourceVideo: job.videoPath,
+    jobId: job.jobId,
+    analysisPathKey: analysis.pathKey,
+    matchStatus: result.match.status,
+    matchedModel: result.match.matchedModel,
+    confidence: result.match.confidence,
+    faceCount: result.match.faceCount,
+    reasonCode: result.match.reasonCode,
+    faceOrganizer: {
+      command: result.command,
+      args: result.args,
+      code: result.code,
+      ok: result.ok,
+      timedOut: result.timedOut,
+    },
+  }, null, 2)}
+`, "utf8");
+  return sidecarPath;
+}
+
+function faceOrganizerDetails(result: SpiritFlixFaceOrganizerDryRunResult, sidecarPath?: string): Record<string, unknown> {
   return {
     faceOrganizer: {
       schema: result.schema,
@@ -222,6 +252,8 @@ function faceOrganizerDetails(result: SpiritFlixFaceOrganizerDryRunResult): Reco
     matchedModel: result.match.matchedModel,
     matchConfidence: result.match.confidence,
     faceOrganizerDryRun: true,
+    faceMatchSidecarPath: sidecarPath,
+    faceMatchSidecarUpdated: Boolean(sidecarPath),
     autoDbEnrollment: false,
   };
 }
@@ -245,6 +277,7 @@ function finalDetails(
   analysis: SpiritFlixSmartAnalysis,
   decision: ConversionDecision,
   faceResult: SpiritFlixFaceOrganizerDryRunResult,
+  faceMatchSidecarPath: string | undefined,
   conversionReceipt: SpiritFlixConversionReceipt | null,
   organizeReceipt: SpiritFlixOrganizeReceipt | null,
   enrollmentRecord: SpiritFlixPendingEnrollmentRecord | null,
@@ -257,7 +290,7 @@ function finalDetails(
     workerConsumed: true,
     requiresReview: state === "needs_review",
     ...scanEvidenceDetails(analysis, decision),
-    ...faceOrganizerDetails(faceResult),
+    ...faceOrganizerDetails(faceResult, faceMatchSidecarPath),
     ...conversionReceiptDetails(conversionReceipt),
     ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord, automationDetails),
   });
@@ -385,6 +418,8 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
     return { schema: "spiritflix-admin-job-worker-run/v1", mode, workerId, claimId: claim.claimId, claimed: true, completed: true, finalState: "failed", reasonCode: failed.errorReasonCode, job: failed, events };
   }
 
+  const faceMatchSidecarPath = await writeSpiritFlixFaceMatchSidecar(claimedJob, analysis, faceResult);
+
   const decision = decideConversionBridge(analysis);
   const conversionBridge = options.conversionBridge ?? runSpiritFlixConversionBridge;
   let conversionReceipt: SpiritFlixConversionReceipt | null = null;
@@ -416,7 +451,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
             deadLetter: shouldDeadLetter,
             workerConsumed: true,
             ...scanEvidenceDetails(analysis, decision),
-            ...faceOrganizerDetails(faceResult),
+            ...faceOrganizerDetails(faceResult, faceMatchSidecarPath),
             ...conversionReceiptDetails(conversionReceipt),
           }),
         },
@@ -454,7 +489,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
         matchedModel: faceResult.match.matchedModel,
         confidence: faceResult.match.confidence,
         sourceVideo: movedSourceVideo,
-        sidecarPath: `${claimedJob.videoPath}.face-meta.json`,
+        sidecarPath: faceMatchSidecarPath,
         minFaceScore: HIGH_CONFIDENCE_THRESHOLD,
       })
     : undefined;
@@ -478,7 +513,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
         placeholderState,
         workerConsumed: true,
         ...scanEvidenceDetails(analysis, decision),
-        ...faceOrganizerDetails(faceResult),
+        ...faceOrganizerDetails(faceResult, faceMatchSidecarPath),
         ...conversionReceiptDetails(conversionReceipt),
         ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord, automationDetails),
       }),
@@ -504,7 +539,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
           placeholderState,
           workerConsumed: true,
           ...scanEvidenceDetails(analysis, decision),
-          ...faceOrganizerDetails(faceResult),
+          ...faceOrganizerDetails(faceResult, faceMatchSidecarPath),
           ...conversionReceiptDetails(conversionReceipt),
           ...organizeAndEnrollmentDetails(organizeReceipt, enrollmentRecord, automationDetails),
         }),
@@ -525,7 +560,7 @@ export async function runSpiritFlixJobWorkerOnce(options: SpiritFlixJobWorkerRun
       fileName: claimedJob.fileName,
       state: requestedFinalState,
       worker: workerId,
-      details: finalDetails(requestedFinalState, mode, placeholderState, claim.claimId, analysis, decision, faceResult, conversionReceipt, organizeReceipt, enrollmentRecord, automationDetails),
+      details: finalDetails(requestedFinalState, mode, placeholderState, claim.claimId, analysis, decision, faceResult, faceMatchSidecarPath, conversionReceipt, organizeReceipt, enrollmentRecord, automationDetails),
     },
     options,
   );

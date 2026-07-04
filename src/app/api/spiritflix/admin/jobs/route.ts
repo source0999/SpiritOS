@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listSpiritFlixJobs } from "@/lib/spiritflix/admin/jobs";
+import { listSpiritFlixJobs, readSpiritFlixDeadLetters } from "@/lib/spiritflix/admin/jobs";
 
 export const runtime = "nodejs";
 
@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
       activeOnly: parseBoolean(searchParams.get("activeOnly")),
       videoId: searchParams.get("videoId") ?? undefined,
     });
-    return NextResponse.json(response, {
+    const deadLetters = await readSpiritFlixDeadLetters();
+    return NextResponse.json({ ...response, deadLetters }, {
       headers: {
         "Cache-Control": "no-store",
       },

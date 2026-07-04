@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createSpiritFlixOrganizeReceipt } from "../organize-bridge";
+import { createSpiritFlixOrganizeReceipt, reverseSpiritFlixOrganizeReceipt } from "../organize-bridge";
 
 describe("SpiritFlix organize bridge", () => {
   let mediaRoot = "";
@@ -55,7 +55,14 @@ describe("SpiritFlix organize bridge", () => {
 
     expect(receipt.after).toEqual({ sourceExists: false, targetExists: true });
     expect(await fs.readFile(receipt.targetPath, "utf8")).toBe("video");
-    await fs.rename(receipt.targetPath, receipt.rollback.moveBackTo);
+    const reverse = await reverseSpiritFlixOrganizeReceipt(receipt);
+    expect(reverse).toEqual(expect.objectContaining({
+      schema: "spiritflix-organize-reverse-receipt/v1",
+      sourcePath: receipt.targetPath,
+      restoredPath: videoPath,
+      reasonCode: "reversed",
+      restoredExistsAfter: true,
+    }));
     expect(await fs.readFile(videoPath, "utf8")).toBe("video");
   });
 

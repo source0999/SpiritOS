@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { listSpiritFlixJobs } from "@/lib/spiritflix/admin/jobs";
+import { listSpiritFlixJobs, readSpiritFlixDeadLetters } from "@/lib/spiritflix/admin/jobs";
 import { GET } from "../jobs/route";
 
 vi.mock("@/lib/spiritflix/admin/jobs", () => ({
   listSpiritFlixJobs: vi.fn(),
+  readSpiritFlixDeadLetters: vi.fn(),
 }));
 
 describe("SpiritFlix admin jobs API", () => {
@@ -37,6 +38,7 @@ describe("SpiritFlix admin jobs API", () => {
         },
       ],
     });
+    vi.mocked(readSpiritFlixDeadLetters).mockResolvedValue([]);
 
     const response = await GET(new Request("http://localhost/api/spiritflix/admin/jobs?activeOnly=1&videoId=video%3Aabc") as never);
     const body = await response.json();
@@ -45,6 +47,7 @@ describe("SpiritFlix admin jobs API", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(body.jobs[0]).toEqual(expect.objectContaining({ state: "queued", videoId: "video:abc" }));
     expect(body.jobs[0]).toEqual(expect.objectContaining({ eventCount: 2, lastEventId: expect.stringMatching(/^sf-job-event-/) }));
+    expect(body.deadLetters).toEqual([]);
     expect(listSpiritFlixJobs).toHaveBeenCalledWith({ activeOnly: true, videoId: "video:abc" });
   });
 });

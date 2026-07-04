@@ -37,7 +37,7 @@ const ALLOWED_TRANSITIONS: Record<SpiritFlixJobState, SpiritFlixJobState[]> = {
   matching: ["converting", "moving", "ready", "needs_review", "failed"],
   converting: ["moving", "ready", "needs_review", "failed"],
   moving: ["ready", "needs_review", "failed"],
-  ready: ["queued"],
+  ready: ["queued", "needs_review"],
   needs_review: ["queued", "failed"],
   failed: ["queued"],
 };
