@@ -160,6 +160,26 @@ describe("JellyfinClient paged card queries", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("times out stalled proxied Jellyfin requests instead of leaving the loader pending", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+        }),
+      ),
+    );
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const request = client.getLibraries();
+    const expectation = expect(request).rejects.toThrow("Jellyfin request timed out while loading library data.");
+    await vi.advanceTimersByTimeAsync(10000);
+
+    await expectation;
   });
 
   it("requests a compact bounded page for the mobile library load", async () => {

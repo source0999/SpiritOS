@@ -364,7 +364,11 @@ const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
 const HOME_CACHE_KEY = "spiritflix_home_cache_v1";
 const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
 const LIVE_LIBRARY_LOAD_MIN_MS = 50;
+const LIVE_LIBRARY_LOAD_TIMEOUT_MS = 12000;
+const LIVE_LIBRARY_LOAD_DEDUPE_MS = 10 * 1000;
 const PLAYBACK_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const PLAYBACK_FOCUS_REFRESH_THROTTLE_MS = 30 * 1000;
+const BLOCKING_LOAD_STARTED_AT_KEY = "spiritflix_blocking_load_started_at";
 
 const initialLoadProgress: SpiritFlixLoadProgress = { percent: 0, label: "Connecting to Jellyfin" };
 
@@ -393,6 +397,22 @@ function writeCachedHomeData(data: SpiritFlixHomeData): void {
   } catch {
     // sessionStorage can fail in private mode — non-fatal.
   }
+}
+
+function readBlockingLoadStartedAt(): number | null {
+  if (typeof window === "undefined") return null;
+  const startedAt = Number(window.sessionStorage.getItem(BLOCKING_LOAD_STARTED_AT_KEY));
+  return Number.isFinite(startedAt) && startedAt > 0 ? startedAt : null;
+}
+
+function writeBlockingLoadStartedAt(startedAt: number): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(BLOCKING_LOAD_STARTED_AT_KEY, String(startedAt));
+}
+
+function clearBlockingLoadStartedAt(): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(BLOCKING_LOAD_STARTED_AT_KEY);
 }
 
 function hasUsefulHomeContent(data: SpiritFlixHomeData): boolean {
@@ -556,6 +576,10 @@ export function SpiritFlixApp() {
   const loadHomeAbortRef = useRef<AbortController | null>(null);
   const loadHomeSequenceRef = useRef(0);
   const loadCompletionPendingRef = useRef(false);
+  const loadingHomeRef = useRef(false);
+  const lastPlaybackRefreshAtRef = useRef(0);
+  const activeHomeLoadKeyRef = useRef<string | null>(null);
+  const lastVisibleHomeLoadRef = useRef<{ key: string; completedAt: number } | null>(null);
   const [loadProgress, setLoadProgress] = useState<SpiritFlixLoadProgress>(initialLoadProgress);
   const [loadingMore, setLoadingMore] = useState<Record<string, boolean>>({});
   const [liveLibraryLoadingId, setLiveLibraryLoadingId] = useState<string | null>(null);
@@ -563,6 +587,10 @@ export function SpiritFlixApp() {
   useEffect(() => {
     homeDataRef.current = homeData;
   }, [homeData]);
+
+  useEffect(() => {
+    loadingHomeRef.current = loadingHome;
+  }, [loadingHome]);
 
   const client = useMemo(
     () => new JellyfinClient(session?.serverUrl ?? serverUrl, session?.accessToken, session?.userId),
@@ -611,6 +639,7 @@ export function SpiritFlixApp() {
 
   const finishBlockingLoad = useCallback(() => {
     loadCompletionPendingRef.current = false;
+    clearBlockingLoadStartedAt();
     setLoadProgress({ percent: 100, label: "Ready" });
     setLoadingHome(false);
     setLiveLibraryLoadingId(null);
@@ -622,9 +651,32 @@ export function SpiritFlixApp() {
     finishBlockingLoad();
   }, [finishBlockingLoad, updateLoadProgress]);
 
+  useEffect(() => {
+    if (!loadingHome) return undefined;
+    const now = Date.now();
+    const startedAt = readBlockingLoadStartedAt() ?? now;
+    writeBlockingLoadStartedAt(startedAt);
+    const remainingMs = Math.max(0, LIVE_LIBRARY_LOAD_TIMEOUT_MS - (now - startedAt));
+    const timeout = window.setTimeout(() => {
+      loadHomeAbortRef.current?.abort();
+      loadCompletionPendingRef.current = false;
+      clearBlockingLoadStartedAt();
+      setLoadProgress({ percent: 100, label: "Load failed" });
+      setHomeError("Jellyfin request timed out while loading library data.");
+      setLoadingHome(false);
+      setLiveLibraryLoadingId(null);
+    }, remainingMs);
+    return () => window.clearTimeout(timeout);
+  }, [loadingHome]);
+
   const loadHome = useCallback(
     async (libraryId?: string | null, term = searchTerm, options: { silent?: boolean; reuseLibraries?: boolean } = {}) => {
       if (!session) return;
+      const requestedLibraryIdBeforeLookup = libraryId === undefined ? homeDataRef.current.selectedLibraryId : libraryId;
+      const loadKey = `${requestedLibraryIdBeforeLookup ?? "home"}:${term}`;
+      const previousVisibleLoad = lastVisibleHomeLoadRef.current;
+      if (activeHomeLoadKeyRef.current === loadKey) return;
+      if (!options.silent && previousVisibleLoad?.key === loadKey && Date.now() - previousVisibleLoad.completedAt < LIVE_LIBRARY_LOAD_DEDUPE_MS) return;
       const loadId = loadHomeSequenceRef.current + 1;
       loadHomeSequenceRef.current = loadId;
       loadHomeAbortRef.current?.abort();
@@ -632,18 +684,45 @@ export function SpiritFlixApp() {
       loadHomeAbortRef.current = controller;
       const pageSizes = getInitialPageSizes();
       const isStale = () => controller.signal.aborted || loadHomeSequenceRef.current !== loadId;
-      const requestedLibraryIdBeforeLookup = libraryId === undefined ? homeDataRef.current.selectedLibraryId : libraryId;
+      activeHomeLoadKeyRef.current = loadKey;
       const shouldGateLiveLibrary = !options.silent && typeof requestedLibraryIdBeforeLookup === "string" && requestedLibraryIdBeforeLookup.length > 0;
       const startedAt = performance.now();
       const showBlockingLoader = !options.silent && (shouldGateLiveLibrary || !hasUsefulHomeContent(homeDataRef.current));
       loadCompletionPendingRef.current = false;
       if (shouldGateLiveLibrary) setLiveLibraryLoadingId(requestedLibraryIdBeforeLookup);
       if (showBlockingLoader) {
+        const now = Date.now();
+        const blockingStartedAt = readBlockingLoadStartedAt() ?? now;
+        if (now - blockingStartedAt >= LIVE_LIBRARY_LOAD_TIMEOUT_MS) {
+          clearBlockingLoadStartedAt();
+          loadCompletionPendingRef.current = false;
+          setLoadProgress({ percent: 100, label: "Load failed" });
+          setHomeError("Jellyfin request timed out while loading library data.");
+          setLoadingHome(false);
+          setLiveLibraryLoadingId(null);
+          controller.abort();
+          if (activeHomeLoadKeyRef.current === loadKey) activeHomeLoadKeyRef.current = null;
+          return;
+        }
+        writeBlockingLoadStartedAt(blockingStartedAt);
         setLoadProgress({ percent: 5, label: "Connecting to Jellyfin" });
         setLoadingHome(true);
       }
       setHomeError("");
       let loadFailed = false;
+      let blockingLoadTimeout: number | null = null;
+      if (showBlockingLoader) {
+        blockingLoadTimeout = window.setTimeout(() => {
+          if (loadHomeSequenceRef.current !== loadId) return;
+          loadFailed = true;
+          loadCompletionPendingRef.current = false;
+          setLoadProgress({ percent: 100, label: "Load failed" });
+          setHomeError("Jellyfin request timed out while loading library data.");
+          setLoadingHome(false);
+          setLiveLibraryLoadingId(null);
+          controller.abort();
+        }, LIVE_LIBRARY_LOAD_TIMEOUT_MS);
+      }
       try {
         const reusableLibraries = options.reuseLibraries ? homeDataRef.current.libraries.filter(isMediaLibrary) : [];
         const libraries = reusableLibraries.length ? reusableLibraries : (await client.getLibraries()).filter(isMediaLibrary);
@@ -768,16 +847,27 @@ export function SpiritFlixApp() {
         if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) return;
         loadFailed = true;
         loadCompletionPendingRef.current = false;
+        clearBlockingLoadStartedAt();
         setLoadProgress({ percent: 100, label: "Load failed" });
-        setHomeError("Could not load your Jellyfin library. Log out and back in if the token expired.");
+        const errorMessage = error instanceof Error ? error.message : "";
+        setHomeError(
+          /timed out|proxy|server returned/i.test(errorMessage)
+            ? errorMessage
+            : "Could not load your Jellyfin library. Log out and back in if the token expired.",
+        );
       } finally {
+        if (blockingLoadTimeout !== null) window.clearTimeout(blockingLoadTimeout);
         if (!options.silent && !controller.signal.aborted) {
           const remainingMinLoadMs = shouldGateLiveLibrary ? Math.max(0, LIVE_LIBRARY_LOAD_MIN_MS - (performance.now() - startedAt)) : 0;
           if (remainingMinLoadMs > 0) await sleep(remainingMinLoadMs);
           if (!loadFailed && !isStale() && !loadCompletionPendingRef.current) {
             finishBlockingLoad();
           }
+          if (!loadFailed && !isStale()) {
+            lastVisibleHomeLoadRef.current = { key: loadKey, completedAt: Date.now() };
+          }
         }
+        if (activeHomeLoadKeyRef.current === loadKey) activeHomeLoadKeyRef.current = null;
       }
     },
     [client, finishBlockingLoad, homeData.selectedLibraryId, searchTerm, session, updateLoadProgress],
@@ -981,18 +1071,25 @@ export function SpiritFlixApp() {
 
   useEffect(() => {
     if (!session) return undefined;
-    const refreshPlaybackState = () => {
+    const refreshPlaybackState = (source: "interval" | "visibility" | "focus") => {
+      if (loadingHomeRef.current || !hasUsefulHomeContent(homeDataRef.current)) return;
+      if (source !== "interval") {
+        const now = Date.now();
+        if (now - lastPlaybackRefreshAtRef.current < PLAYBACK_FOCUS_REFRESH_THROTTLE_MS) return;
+        lastPlaybackRefreshAtRef.current = now;
+      }
       void loadHome(homeData.selectedLibraryId, searchTerm, { silent: true, reuseLibraries: true });
     };
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") refreshPlaybackState();
+      if (document.visibilityState === "visible") refreshPlaybackState("visibility");
     };
-    const timer = window.setInterval(refreshPlaybackState, PLAYBACK_REFRESH_INTERVAL_MS);
-    window.addEventListener("focus", refreshPlaybackState);
+    const timer = window.setInterval(() => refreshPlaybackState("interval"), PLAYBACK_REFRESH_INTERVAL_MS);
+    const handleFocus = () => refreshPlaybackState("focus");
+    window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       window.clearInterval(timer);
-      window.removeEventListener("focus", refreshPlaybackState);
+      window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [homeData.selectedLibraryId, loadHome, searchTerm, session]);

@@ -17,6 +17,7 @@ const CLIENT_VERSION = "0.1.0";
 const DEVICE_NAME = "SpiritFlix Web";
 const DEVICE_ID_KEY = "spiritflix_device_id";
 const SESSION_KEY = "spiritflix_private_gooner_session";
+const JELLYFIN_CLIENT_REQUEST_TIMEOUT_MS = 10000;
 const GOONER_ITEM_FIELDS =
   "Path,SeriesName,DateCreated,IndexNumber,ParentIndexNumber,Overview,ProductionYear,RunTimeTicks,Genres,People,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount";
 const CARD_ITEM_FIELDS =
@@ -275,22 +276,40 @@ export class JellyfinClient {
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const method = init.method ?? "GET";
-    const response = await fetch("/api/spiritflix/jellyfin", {
-      method: "POST",
-      keepalive: init.keepalive,
-      signal: init.signal,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        serverUrl: this.serverUrl,
-        path,
-        method,
-        authorization: authHeader(this.token),
-        body: init.body ? JSON.parse(String(init.body)) : undefined,
-      }),
-    });
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeout = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, JELLYFIN_CLIENT_REQUEST_TIMEOUT_MS);
+    const abortRequest = () => controller.abort();
+    init.signal?.addEventListener("abort", abortRequest, { once: true });
+
+    let response: Response;
+    try {
+      response = await fetch("/api/spiritflix/jellyfin", {
+        method: "POST",
+        keepalive: init.keepalive,
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serverUrl: this.serverUrl,
+          path,
+          method,
+          authorization: authHeader(this.token),
+          body: init.body ? JSON.parse(String(init.body)) : undefined,
+        }),
+      });
+    } catch (error) {
+      if (timedOut) throw new Error("Jellyfin request timed out while loading library data.");
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+      init.signal?.removeEventListener("abort", abortRequest);
+    }
 
     if (!response.ok) {
       if (response.status === 401) {
