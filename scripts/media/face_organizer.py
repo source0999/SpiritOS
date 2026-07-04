@@ -2823,7 +2823,13 @@ def scan(config: OrganizerConfig, *, status_phase: str = "scanning_videos") -> l
     return results
 
 
-def scan_recent_unscanned_videos(config: OrganizerConfig, *, limit: int = 12, max_age_hours: int = 72) -> list[str]:
+def scan_recent_unscanned_videos(
+    config: OrganizerConfig,
+    *,
+    limit: int = 12,
+    max_age_hours: int = 72,
+    refresh_pages: bool = True,
+) -> list[str]:
     """Face-scan freshly uploaded library files that never received a sidecar."""
     if limit <= 0:
         return []
@@ -2848,9 +2854,11 @@ def scan_recent_unscanned_videos(config: OrganizerConfig, *, limit: int = 12, ma
             logging.warning("Failed auto-scan for recent upload %s: %s", video_path, exc)
         if len(scanned) >= limit:
             break
-    if scanned:
+    if scanned and refresh_pages:
         logging.info("Auto-scanned %s recent upload(s) without face sidecars", len(scanned))
         refresh_organizer_pages(config, refresh_stale_enrollment=True, include_verification_report=True, scan_recent_uploads=False)
+    elif scanned:
+        logging.info("Auto-scanned %s recent upload(s) without refreshing organizer pages", len(scanned))
     return scanned
 
 

@@ -16,6 +16,9 @@ const PYTHON_PATH = process.env.SPIRITFLIX_FACE_ORGANIZER_PYTHON ||
 const SMART_RESCAN_MODEL_LIMIT = Math.max(1, Number.parseInt(process.env.SPIRITFLIX_SMART_RESCAN_MODEL_LIMIT ?? "80", 10) || 80);
 const SMART_RESCAN_VIDEO_LIMIT = Math.max(1, Number.parseInt(process.env.SPIRITFLIX_SMART_RESCAN_VIDEO_LIMIT ?? "120", 10) || 120);
 const FACE_ORGANIZER_CTX_ID = process.env.SPIRITFLIX_FACE_ORGANIZER_CTX_ID ?? "-1";
+const FACE_ORGANIZER_NICE = Number.parseInt(process.env.SPIRITFLIX_FACE_ORGANIZER_NICE ?? "15", 10);
+const FACE_ORGANIZER_CPUSET = process.env.SPIRITFLIX_FACE_ORGANIZER_CPUSET ?? (process.platform === "linux" ? "6,7" : "");
+const FACE_ORGANIZER_THREADS = Math.max(1, Number.parseInt(process.env.SPIRITFLIX_FACE_ORGANIZER_THREADS ?? "2", 10) || 2);
 
 interface SmartRescanStatus {
   schema: "spiritflix-library-smart-rescan-status/v1";
@@ -131,6 +134,26 @@ function isProbablyRunning(pid?: number): boolean {
   }
 }
 
+function buildFaceOrganizerLaunch(baseCommand: string, args: string[]) {
+  let command = baseCommand;
+  let spawnArgs = args;
+  let display = [baseCommand, ...args];
+
+  if (FACE_ORGANIZER_CPUSET && process.platform === "linux") {
+    command = "taskset";
+    spawnArgs = ["-c", FACE_ORGANIZER_CPUSET, baseCommand, ...spawnArgs];
+    display = ["taskset", "-c", FACE_ORGANIZER_CPUSET, ...display];
+  }
+
+  if (Number.isFinite(FACE_ORGANIZER_NICE) && FACE_ORGANIZER_NICE !== 0 && process.platform !== "win32") {
+    spawnArgs = ["-n", String(FACE_ORGANIZER_NICE), command, ...spawnArgs];
+    display = ["nice", "-n", String(FACE_ORGANIZER_NICE), ...display];
+    command = "nice";
+  }
+
+  return { command, spawnArgs, display };
+}
+
 async function startSmartRescan(): Promise<SmartRescanStatus> {
   const current = await readStatus();
   if (current.status === "running" && isProbablyRunning(current.pid)) return current;
@@ -146,9 +169,7 @@ async function startSmartRescan(): Promise<SmartRescanStatus> {
   };
   await writeStatus(status);
 
-  await fs.appendFile(LOG_PATH, `\n[launcher] starting smart rescan at ${startedAt}\n`, "utf8");
-  const logFd = openSync(LOG_PATH, "a");
-  const child = spawn(
+  const launch = buildFaceOrganizerLaunch(
     PYTHON_PATH,
     [
       SCRIPT_PATH,
@@ -165,11 +186,21 @@ async function startSmartRescan(): Promise<SmartRescanStatus> {
       "--report-path",
       path.join(process.cwd(), "scripts", "media", "face_verification_report.html"),
     ],
+  );
+  await fs.appendFile(LOG_PATH, `\n[launcher] starting smart rescan at ${startedAt}\n[launcher] command ${launch.display.join(" ")}\n`, "utf8");
+  const logFd = openSync(LOG_PATH, "a");
+  const child = spawn(
+    launch.command,
+    launch.spawnArgs,
     {
       cwd: process.cwd(),
       detached: true,
       env: {
         ...process.env,
+        OMP_NUM_THREADS: String(FACE_ORGANIZER_THREADS),
+        OPENBLAS_NUM_THREADS: String(FACE_ORGANIZER_THREADS),
+        MKL_NUM_THREADS: String(FACE_ORGANIZER_THREADS),
+        NUMEXPR_NUM_THREADS: String(FACE_ORGANIZER_THREADS),
         SPIRITFLIX_SMART_RESCAN_STATUS_PATH: STATUS_PATH,
         SPIRITFLIX_SMART_RESCAN_NO_VIDEO_BACKUPS: "1",
       },
