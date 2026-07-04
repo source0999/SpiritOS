@@ -146,3 +146,9 @@ scripts/media/known_performers/
 scripts/media/face_verification_report.html
 scripts/media/*manifest*.json
 scripts/media/rename_plan.json
+
+# SpiritFlix face-organizer generated reports - never commit, they regenerate on every scan
+scripts/media/face_enrolled_performers.html
+scripts/media/face_enrollment_queue.html
+scripts/media/face_verification_full_audit.html
+docs/evidence/spiritflix-smart-tagging-s8-real-content-tags-clean-names-*/
