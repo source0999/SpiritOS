@@ -725,7 +725,10 @@ export function SpiritFlixApp() {
           libraryPaging: pagingFromPage(libraryPage),
         };
         setHomeData(partialHome);
-        if (showBlockingLoader) updateLoadProgress({ percent: 48, label: "Painting visible grid" });
+        if (showBlockingLoader) {
+          updateLoadProgress({ percent: 48, label: "Painting visible grid" });
+          finishBlockingLoad();
+        }
 
         const [featuredPage, continuePage, watchHistoryPage, latestPage, favoritesPage] = await Promise.all([
           featuredPagePromise,
@@ -762,9 +765,6 @@ export function SpiritFlixApp() {
         writeCachedHomeData(nextHome);
         if (showBlockingLoader) {
           updateLoadProgress({ percent: 76, label: "Loading shelves" });
-          const needsVisibleMetadata = Boolean(selectedLibraryId && libraryItemsUnique.length);
-          loadCompletionPendingRef.current = needsVisibleMetadata;
-          if (!needsVisibleMetadata) finishBlockingLoad();
         }
       } catch (error) {
         if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) return;
