@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getInferredModelName, getSmartFillScale, getTitleMatchedModelItems, SpiritFlixPlayer } from "../SpiritFlixPlayer";
+import { getBoundedPlayerFaceMetadataItems, getInferredModelName, getSmartFillScale, getTitleMatchedModelItems, SpiritFlixPlayer } from "../SpiritFlixPlayer";
 import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import type { JellyfinItem } from "@/lib/spiritflix-types";
 
@@ -121,6 +121,28 @@ describe("getSmartFillScale", () => {
 
   it("does not zoom when the screen and video already nearly match", () => {
     expect(getSmartFillScale(1.02, 1)).toBe(1);
+  });
+});
+
+describe("getBoundedPlayerFaceMetadataItems", () => {
+  it("keeps playback face metadata lookup current-first, unique, and bounded", () => {
+    const queueItems = Array.from({ length: 100 }, (_, index) => ({
+      ...nextItem,
+      Id: index === 0 ? item.Id : `queue-${index}`,
+      Name: `Queue ${index}`,
+    }));
+    const libraryItems = Array.from({ length: 120 }, (_, index) => ({
+      ...nextItem,
+      Id: index === 0 ? "queue-1" : `library-${index}`,
+      Name: `Library ${index}`,
+    }));
+
+    const bounded = getBoundedPlayerFaceMetadataItems(item, queueItems, libraryItems);
+
+    expect(bounded).toHaveLength(80);
+    expect(bounded[0]).toEqual(expect.objectContaining({ Id: item.Id }));
+    expect(new Set(bounded.map((candidate) => candidate.Id)).size).toBe(80);
+    expect(bounded.some((candidate) => candidate.Id === "library-90")).toBe(false);
   });
 });
 

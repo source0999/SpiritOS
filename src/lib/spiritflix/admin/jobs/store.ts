@@ -11,7 +11,11 @@ import {
   SPIRITFLIX_JOB_SCHEMA,
   SPIRITFLIX_JOB_STATES,
   type AppendSpiritFlixJobStateInput,
+  type FailSpiritFlixJobInput,
+  type RequeueSpiritFlixJobInput,
+  type SpiritFlixJobControlResult,
   type SpiritFlixJobEvent,
+  type SpiritFlixJobHistoryResponse,
   type SpiritFlixJobListOptions,
   type SpiritFlixJobListResponse,
   type SpiritFlixJobRecord,
@@ -136,7 +140,7 @@ function parseJobEvent(line: string, lineNumber: number): SpiritFlixJobEvent {
   };
 }
 
-async function readSpiritFlixJobEvents(options?: SpiritFlixJobStoreOptions): Promise<SpiritFlixJobEvent[]> {
+export async function readSpiritFlixJobEvents(options?: SpiritFlixJobStoreOptions): Promise<SpiritFlixJobEvent[]> {
   try {
     const raw = await fs.readFile(getSpiritFlixJobEventsPath(options), "utf8");
     return raw
@@ -222,6 +226,89 @@ function normalizeJobInput(input: AppendSpiritFlixJobStateInput, options?: Spiri
     jobId,
     fileName: input.fileName?.trim() || path.basename(videoPath),
   };
+}
+
+
+function jobControlDetails(action: "fail" | "requeue", previous: SpiritFlixJobRecord): Record<string, unknown> {
+  return {
+    source: "admin-job-control",
+    action,
+    previousState: previous.state,
+    enqueueOnly: true,
+    autoMove: false,
+    autoDbEnrollment: false,
+    workerConsumed: false,
+  };
+}
+
+async function latestJobById(jobId: string, options?: SpiritFlixJobStoreOptions): Promise<SpiritFlixJobRecord> {
+  if (!jobId.trim()) throw new Error("jobId is required.");
+  const history = await getSpiritFlixJobHistory(jobId, options);
+  if (!history.job) throw new Error(`SpiritFlix job ${jobId} was not found.`);
+  return history.job;
+}
+
+export async function getSpiritFlixJobHistory(jobId: string, options?: SpiritFlixJobStoreOptions): Promise<SpiritFlixJobHistoryResponse> {
+  if (!jobId.trim()) throw new Error("jobId is required.");
+  const events = (await readSpiritFlixJobEvents(options)).filter((event) => event.jobId === jobId);
+  const [job = null] = latestRecordsFromEvents(events);
+  return {
+    schema: "spiritflix-admin-job-history/v1",
+    generatedAt: new Date().toISOString(),
+    jobId,
+    job,
+    events,
+    totalEventCount: events.length,
+  };
+}
+
+export async function failSpiritFlixJob(
+  input: FailSpiritFlixJobInput,
+  options?: SpiritFlixJobStoreOptions,
+): Promise<SpiritFlixJobControlResult> {
+  if (!input.reasonCode.trim()) throw new Error("reasonCode is required.");
+  if (!input.reason.trim()) throw new Error("reason is required.");
+  const previous = await latestJobById(input.jobId, options);
+  const event = await appendSpiritFlixJobState(
+    {
+      videoPath: previous.videoPath,
+      fileSizeBytes: previous.fileSizeBytes,
+      mtimeMs: previous.mtimeMs,
+      jobId: previous.jobId,
+      fileName: previous.fileName,
+      state: "failed",
+      errorReasonCode: input.reasonCode,
+      errorReason: input.reason,
+      worker: input.worker?.trim() || "admin-job-control",
+      details: jobControlDetails("fail", previous),
+    },
+    options,
+  );
+  return { schema: "spiritflix-admin-job-control/v1", action: "fail", job: event, event };
+}
+
+export async function requeueSpiritFlixJob(
+  input: RequeueSpiritFlixJobInput,
+  options?: SpiritFlixJobStoreOptions,
+): Promise<SpiritFlixJobControlResult> {
+  const previous = await latestJobById(input.jobId, options);
+  if (isActiveSpiritFlixJobState(previous.state)) {
+    throw new Error(`Active SpiritFlix job ${previous.jobId} cannot be requeued from ${previous.state}.`);
+  }
+  const event = await appendSpiritFlixJobState(
+    {
+      videoPath: previous.videoPath,
+      fileSizeBytes: previous.fileSizeBytes,
+      mtimeMs: previous.mtimeMs,
+      jobId: previous.jobId,
+      fileName: previous.fileName,
+      state: "queued",
+      worker: input.worker?.trim() || "admin-job-control",
+      details: jobControlDetails("requeue", previous),
+    },
+    options,
+  );
+  return { schema: "spiritflix-admin-job-control/v1", action: "requeue", job: event, event };
 }
 
 export async function appendSpiritFlixJobState(

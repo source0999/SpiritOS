@@ -5,8 +5,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   appendSpiritFlixJobState,
   createSpiritFlixJobVideoId,
+  failSpiritFlixJob,
   getSpiritFlixJobEventsPath,
+  getSpiritFlixJobHistory,
   listSpiritFlixJobs,
+  requeueSpiritFlixJob,
 } from "../store";
 
 describe("SpiritFlix admin job store", () => {
@@ -103,5 +106,43 @@ describe("SpiritFlix admin job store", () => {
     const response = await listSpiritFlixJobs({ mediaRoot });
     expect(response.totalEventCount).toBe(4);
     expect(response.jobs[0]).toEqual(expect.objectContaining({ state: "queued", attempt: 2, eventCount: 4, worker: "operator-retry" }));
+  });
+
+  it("returns read-only event history for a job", async () => {
+    const queued = await appendSpiritFlixJobState({ ...jobInput(), state: "queued" }, { mediaRoot });
+    await appendSpiritFlixJobState({ ...jobInput(), state: "scanning" }, { mediaRoot });
+
+    const history = await getSpiritFlixJobHistory(queued.jobId, { mediaRoot });
+    expect(history.schema).toBe("spiritflix-admin-job-history/v1");
+    expect(history.totalEventCount).toBe(2);
+    expect(history.events.map((event) => event.state)).toEqual(["queued", "scanning"]);
+    expect(history.job).toEqual(expect.objectContaining({ state: "scanning", eventCount: 2 }));
+  });
+
+  it("appends control-plane fail and requeue events without media work", async () => {
+    const queued = await appendSpiritFlixJobState({ ...jobInput(), state: "queued" }, { mediaRoot });
+    const failed = await failSpiritFlixJob({ jobId: queued.jobId, reasonCode: "operator_hold", reason: "manual test failure" }, { mediaRoot });
+    expect(failed.event).toEqual(expect.objectContaining({
+      state: "failed",
+      errorReasonCode: "operator_hold",
+      errorReason: "manual test failure",
+      worker: "admin-job-control",
+      details: expect.objectContaining({ autoMove: false, autoDbEnrollment: false, enqueueOnly: true, workerConsumed: false }),
+    }));
+
+    const requeued = await requeueSpiritFlixJob({ jobId: queued.jobId }, { mediaRoot });
+    expect(requeued.event).toEqual(expect.objectContaining({
+      state: "queued",
+      attempt: 2,
+      details: expect.objectContaining({ action: "requeue", previousState: "failed" }),
+    }));
+
+    const history = await getSpiritFlixJobHistory(queued.jobId, { mediaRoot });
+    expect(history.events.map((event) => event.state)).toEqual(["queued", "failed", "queued"]);
+  });
+
+  it("does not requeue active jobs", async () => {
+    const queued = await appendSpiritFlixJobState({ ...jobInput(), state: "queued" }, { mediaRoot });
+    await expect(requeueSpiritFlixJob({ jobId: queued.jobId }, { mediaRoot })).rejects.toThrow(/cannot be requeued/i);
   });
 });

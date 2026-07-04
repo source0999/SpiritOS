@@ -16,6 +16,7 @@ import type {
   SpiritFlixAdminSortBy,
   SpiritFlixAdminSortOrder,
 } from "@/lib/spiritflix/admin/types";
+import type { SpiritFlixJobRecord, SpiritFlixJobState } from "@/lib/spiritflix/admin/jobs/types";
 import { SpiritFlixAdminToolbar, type SpiritFlixAdminViewMode } from "./SpiritFlixAdminToolbar";
 import { SpiritFlixAdminExplorer } from "./SpiritFlixAdminExplorer";
 import { SpiritFlixAdminDetailsPanel } from "./SpiritFlixAdminDetailsPanel";
@@ -27,6 +28,19 @@ import { menuActionToDialogAction, type SpiritFlixAdminMenuActionId } from "./it
 import { useAdminScrollRestore } from "./useAdminScrollRestore";
 
 const VIDEO_EXTENSIONS = new Set([".avi", ".m4v", ".mkv", ".mov", ".mp4", ".mpeg", ".mpg", ".webm", ".wmv"]);
+const JOB_STATUS_STATES: SpiritFlixJobState[] = ["queued", "scanning", "matching", "converting", "ready", "needs_review", "failed"];
+
+function summarizeJobStates(jobs: SpiritFlixJobRecord[]): string {
+  const counts = new Map<SpiritFlixJobState, number>();
+  jobs.forEach((job) => counts.set(job.state, (counts.get(job.state) ?? 0) + 1));
+  return JOB_STATUS_STATES
+    .map((state) => {
+      const count = counts.get(state) ?? 0;
+      return count ? `${state.replace("_", " ")} ${count}` : "";
+    })
+    .filter(Boolean)
+    .join(" / ");
+}
 
 export function SpiritFlixAdminApp() {
   const [session, setSession] = useState<SpiritFlixSession | null>(null);
@@ -54,6 +68,8 @@ export function SpiritFlixAdminApp() {
   const [actionToast, setActionToast] = useState<string | null>(null);
   const [smartReviewItem, setSmartReviewItem] = useState<SpiritFlixAdminItem | null>(null);
   const [smartBatchOpen, setSmartBatchOpen] = useState(false);
+  const [jobStatusSummary, setJobStatusSummary] = useState("Jobs unavailable");
+  const [recentJobs, setRecentJobs] = useState<SpiritFlixJobRecord[]>([]);
 
   useEffect(() => {
     setSession(getStoredSession());
@@ -124,6 +140,28 @@ export function SpiritFlixAdminApp() {
   useEffect(() => {
     void loadJellyfinIndex();
   }, [loadJellyfinIndex]);
+
+  const loadJobStatus = useCallback(async () => {
+    try {
+      const response = await fetch("/api/spiritflix/admin/jobs", {
+        method: "GET",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) throw new Error("jobs unavailable");
+      const payload = (await response.json()) as { jobs?: SpiritFlixJobRecord[] };
+      const jobs = Array.isArray(payload.jobs) ? payload.jobs : [];
+      setJobStatusSummary(jobs.length ? summarizeJobStates(jobs) : "No smart jobs");
+      setRecentJobs(jobs.slice(0, 5));
+    } catch {
+      setJobStatusSummary("Jobs unavailable");
+      setRecentJobs([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadJobStatus();
+  }, [loadJobStatus]);
 
   const loadFilesystem = useCallback(
     async (path: string) => {
@@ -417,6 +455,17 @@ export function SpiritFlixAdminApp() {
             {actionToast}
           </p>
         ) : null}
+        {recentJobs.length ? (
+          <section className="spiritflix-admin-job-strip" aria-label="Recent smart jobs">
+            {recentJobs.map((job) => (
+              <div className="spiritflix-admin-job-strip__row" key={job.jobId}>
+                <span>{job.fileName}</span>
+                <strong>{job.state.replace("_", " ")}</strong>
+                <small>{job.worker ?? "worker pending"}</small>
+              </div>
+            ))}
+          </section>
+        ) : null}
         <SpiritFlixAdminExplorer
           currentPath={currentPath}
           items={displayedItems}
@@ -434,6 +483,7 @@ export function SpiritFlixAdminApp() {
           <span>{displayedItems.length} shown · {status}</span>
           <span>{selectedCount} selected</span>
           <span>{breadcrumbTail}</span>
+          <span aria-label="Smart job status">{jobStatusSummary}</span>
           <span>{thumbnailStatus}</span>
           <button type="button" onClick={refresh} aria-label="Refresh file listing">
             <RefreshCw size={16} aria-hidden="true" />

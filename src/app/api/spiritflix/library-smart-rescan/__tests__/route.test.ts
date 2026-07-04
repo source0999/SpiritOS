@@ -2,7 +2,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { listSpiritFlixJobs } from "@/lib/spiritflix/admin/jobs";
+import { getSpiritFlixJobHistory, listSpiritFlixJobs, runSpiritFlixJobWorkerOnce } from "@/lib/spiritflix/admin/jobs";
+import type { SpiritFlixFaceOrganizerDryRunResult } from "@/lib/spiritflix/admin/jobs";
+import type { SpiritFlixSmartAnalysis } from "@/lib/spiritflix/admin/smart/types";
 import { POST } from "../route";
 
 describe("SpiritFlix library smart-rescan enqueue API", () => {
@@ -40,6 +42,48 @@ describe("SpiritFlix library smart-rescan enqueue API", () => {
         body: JSON.stringify(body),
       }) as never,
     );
+  }
+
+  function fakeAnalysis(): SpiritFlixSmartAnalysis {
+    return {
+      version: 1,
+      videoPath,
+      pathKey: "smart-rescan-analysis-key",
+      fileName: "clip.mp4",
+      fileSizeBytes: 10,
+      mtimeMs: 123,
+      analyzedAt: "2026-07-04T12:00:00.000Z",
+      analyzerVersion: "spiritflix-smart/s2",
+      status: "needs_review",
+      safety: { safeToSuggest: false, reasons: ["test review"], requiresHumanReview: true },
+      media: { codec: "h264", container: "mp4", durationSeconds: 90, width: 1280, height: 720 },
+      samples: [{ timestampSeconds: 5, timestampLabel: "5s", cacheKey: "frame-a", observations: ["sampled frame"], tags: [], confidence: 0 }],
+      suggestedTags: [],
+      confidence: 0,
+      notes: "technical metadata collected",
+    };
+  }
+
+  function fakeFaceResult(): SpiritFlixFaceOrganizerDryRunResult {
+    return {
+      schema: "spiritflix-face-organizer-dry-run/v1",
+      ok: true,
+      command: "python3",
+      args: ["scripts/media/face_organizer.py", "--scan-video", videoPath, "--dry-run"],
+      code: 0,
+      timedOut: false,
+      stdout: JSON.stringify({ matchedModel: "Sava Schultz", confidence: 0.91, faceCount: 1 }),
+      stderr: "",
+      safety: { dryRun: true, apply: false, mediaMutation: false },
+      match: {
+        status: "high_confidence_match",
+        matchedModel: "Sava Schultz",
+        confidence: 0.91,
+        faceCount: 1,
+        parsed: true,
+        reasonCode: "high_confidence_known_match",
+      },
+    };
   }
 
   it("returns 202 and creates a queued durable job for a video target", async () => {
@@ -81,6 +125,18 @@ describe("SpiritFlix library smart-rescan enqueue API", () => {
     const durable = await listSpiritFlixJobs({ mediaRoot, activeOnly: true });
     expect(durable.jobs).toHaveLength(1);
     expect(durable.jobs[0]).toEqual(expect.objectContaining({ jobId: body.jobId, state: "queued" }));
+  });
+
+  it("enqueues work that the safe worker can claim and process", async () => {
+    const response = await post({ path: videoPath });
+    const body = await response.json();
+
+    const result = await runSpiritFlixJobWorkerOnce({ mediaRoot, jobId: body.jobId, scanVideo: async () => fakeAnalysis(), faceOrganizer: async () => fakeFaceResult() });
+
+    expect(result).toEqual(expect.objectContaining({ claimed: true, completed: true, finalState: "ready" }));
+    const history = await getSpiritFlixJobHistory(body.jobId, { mediaRoot });
+    expect(history.events.map((event) => event.state)).toEqual(["queued", "scanning", "matching", "ready"]);
+    expect(history.job?.details).toEqual(expect.objectContaining({ matchStatus: "high_confidence_match", matchedModel: "Sava Schultz" }));
   });
 
   it("returns the existing active job for duplicate enqueue requests", async () => {

@@ -164,7 +164,8 @@ const LIBRARY_SORT_MODE_KEY = "spiritflix_library_sort_mode";
 const LIBRARY_SORT_DIRECTION_KEY = "spiritflix_library_sort_direction";
 const LIBRARY_ORIENTATION_FILTER_KEY = "spiritflix_library_orientation_filter";
 const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
-const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v5";
+const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v6";
+const FACE_METADATA_PAGELOAD_ITEM_LIMIT = 240;
 const GALLERY_INTERVAL_KEY = "spiritflix_gallery_interval_seconds";
 const LIBRARY_PAGE_SIZE = 20;
 const TEMP_LIBRARY_NAME = "Home Videos and Photos";
@@ -203,6 +204,13 @@ const MODEL_NAME_ALIASES: Record<string, string> = {
   sendnudesxx: "Sendnudesx",
   whoahannahjo: "Whoahannahjo",
 };
+
+export function getBoundedHomeFaceMetadataItems(
+  items: JellyfinItem[],
+  limit = FACE_METADATA_PAGELOAD_ITEM_LIMIT,
+): JellyfinItem[] {
+  return items.slice(0, Math.max(0, limit));
+}
 
 interface StoredLibraryUiState {
   selectedLibraryId: string | null;
@@ -1505,18 +1513,21 @@ export function SpiritFlixHome({
     }
 
     let isCancelled = false;
-    const cacheKey = `${FACE_METADATA_CACHE_KEY}:${data.selectedLibraryId}:${playableLibraryItems.map((item) => item.Id).join(",")}`;
+    const metadataItems = getBoundedHomeFaceMetadataItems(playableLibraryItems);
+    const cacheKey = `${FACE_METADATA_CACHE_KEY}:${data.selectedLibraryId}:${metadataItems.map((item) => item.Id).join(",")}`;
     const cached = window.localStorage.getItem(cacheKey);
     if (cached) {
       try {
         setFaceMetadata(JSON.parse(cached) as FaceOrganizerMetadataResponse);
+        setFaceMetadataError("");
+        return undefined;
       } catch {
         window.localStorage.removeItem(cacheKey);
       }
     }
 
     void client
-      .getFaceOrganizerMetadata(playableLibraryItems)
+      .getFaceOrganizerMetadata(metadataItems)
       .then((metadata) => {
         if (isCancelled) return;
         setFaceMetadata(metadata);

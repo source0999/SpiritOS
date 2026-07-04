@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SpiritFlixHome } from "../SpiritFlixHome";
+import { getBoundedHomeFaceMetadataItems, SpiritFlixHome } from "../SpiritFlixHome";
 import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import type { JellyfinItem, SpiritFlixGalleryResponse, SpiritFlixHomeData } from "@/lib/spiritflix-types";
 
@@ -147,6 +147,20 @@ describe("SpiritFlixHome watch history", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it("caps cold Home face metadata requests to a deterministic page-load batch", () => {
+    const playableItems = Array.from({ length: 300 }, (_, index) => ({
+      ...modelItem,
+      Id: `face-meta-${index}`,
+      Name: `Face Metadata ${index}`,
+    }));
+
+    const bounded = getBoundedHomeFaceMetadataItems(playableItems);
+
+    expect(bounded).toHaveLength(240);
+    expect(bounded[0]).toEqual(expect.objectContaining({ Id: "face-meta-0" }));
+    expect(bounded.at(-1)).toEqual(expect.objectContaining({ Id: "face-meta-239" }));
   });
 
   it("shows private watch history in the library and plays from the synced resume point", async () => {

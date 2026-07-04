@@ -120,6 +120,22 @@ type PlaybackSourceClass =
   | "jellyfin_hls_fallback"
   | "jellyfin_transcode_fallback";
 
+const PLAYER_FACE_METADATA_ITEM_LIMIT = 80;
+
+export function getBoundedPlayerFaceMetadataItems(
+  currentItem: JellyfinItem,
+  originalQueueItems: JellyfinItem[],
+  libraryItems: JellyfinItem[],
+  limit = PLAYER_FACE_METADATA_ITEM_LIMIT,
+): JellyfinItem[] {
+  const byId = new Map<string, JellyfinItem>();
+  [currentItem, ...originalQueueItems, ...libraryItems].forEach((candidate) => {
+    if (byId.size >= limit) return;
+    if (candidate?.Id && !byId.has(candidate.Id)) byId.set(candidate.Id, candidate);
+  });
+  return Array.from(byId.values());
+}
+
 const FIT_STORAGE_KEY = "spiritflix_player_fit_mode";
 const REPEAT_STORAGE_KEY = "spiritflix_player_repeat_mode";
 const CAPTION_STORAGE_KEY = "spiritflix_player_caption_mode";
@@ -1971,12 +1987,10 @@ export function SpiritFlixPlayer({
   }, [item, manualMetadataUrl.model]);
 
   const loadPlayerFaceMetadata = useCallback(async () => {
-    const byId = new Map<string, JellyfinItem>();
-    [item, ...originalQueueItems, ...libraryItems].forEach((candidate) => {
-      if (candidate?.Id && !byId.has(candidate.Id)) byId.set(candidate.Id, candidate);
-    });
     try {
-      const metadata = await client.getFaceOrganizerMetadata(Array.from(byId.values()));
+      const metadata = await client.getFaceOrganizerMetadata(
+        getBoundedPlayerFaceMetadataItems(item, originalQueueItems, libraryItems),
+      );
       setFaceMetadata(metadata);
       setFaceLearningError("");
     } catch {

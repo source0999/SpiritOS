@@ -87,6 +87,20 @@ function mockAdminFetch(mode: "media" | "yes" = "media") {
     if (url.startsWith("/api/spiritflix/admin/jellyfin-index")) {
       return Response.json({ items: [], source: "unconfigured" });
     }
+    if (url.startsWith("/api/spiritflix/admin/jobs")) {
+      return Response.json({
+        schema: "spiritflix-admin-jobs/v1",
+        generatedAt: "2026-07-04T00:00:00.000Z",
+        jobs: [
+          { schema: "spiritflix-admin-job/v1", jobId: "sf-job-queued", videoId: "v1", videoPath: "/media/a.mp4", fileName: "a.mp4", fileSizeBytes: 1, mtimeMs: 1, state: "queued", attempt: 1, createdAt: "2026-07-04T00:00:00.000Z", updatedAt: "2026-07-04T00:00:00.000Z", eventCount: 1, lastEventId: "e1" },
+          { schema: "spiritflix-admin-job/v1", jobId: "sf-job-ready", videoId: "v2", videoPath: "/media/b.mp4", fileName: "b.mp4", fileSizeBytes: 1, mtimeMs: 1, state: "ready", attempt: 1, createdAt: "2026-07-04T00:00:00.000Z", updatedAt: "2026-07-04T00:00:00.000Z", eventCount: 3, lastEventId: "e2" },
+          { schema: "spiritflix-admin-job/v1", jobId: "sf-job-failed", videoId: "v3", videoPath: "/media/c.mp4", fileName: "c.mp4", fileSizeBytes: 1, mtimeMs: 1, state: "failed", attempt: 1, createdAt: "2026-07-04T00:00:00.000Z", updatedAt: "2026-07-04T00:00:00.000Z", eventCount: 2, lastEventId: "e3" },
+        ],
+        totalRecordCount: 3,
+        totalEventCount: 6,
+        query: { activeOnly: false, videoId: "" },
+      });
+    }
     if (url.startsWith("/api/spiritflix/admin/thumbnail")) {
       return new Response(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])]), { status: 200, headers: { "Content-Type": "image/jpeg" } });
     }
@@ -169,6 +183,21 @@ describe("SpiritFlixAdminApp", () => {
       expect.objectContaining({ method: "GET" }),
     );
     expect(screen.queryByLabelText("Admin details")).not.toBeInTheDocument();
+  });
+
+  it("shows passive smart job readiness state without starting worker work", async () => {
+    const fetchMock = mockAdminFetch();
+    render(<SpiritFlixAdminApp />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Smart job status")).toHaveTextContent("queued 1 / ready 1 / failed 1");
+    });
+    expect(screen.getByLabelText("Recent smart jobs")).toHaveTextContent("a.mp4");
+    expect(screen.getByLabelText("Recent smart jobs")).toHaveTextContent("ready");
+    expect(screen.getByLabelText("Recent smart jobs")).toHaveTextContent("failed");
+    expect(fetchMock).toHaveBeenCalledWith("/api/spiritflix/admin/jobs", expect.objectContaining({ method: "GET", cache: "no-store" }));
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("/api/spiritflix/admin/jobs/worker"), expect.anything());
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("/api/spiritflix/library-smart-rescan"), expect.anything());
   });
 
   it("enables Level 2 manage actions after activation", async () => {
