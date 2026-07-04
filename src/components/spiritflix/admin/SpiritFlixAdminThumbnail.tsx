@@ -165,6 +165,7 @@ export function SpiritFlixAdminThumbnail({ client, item, compact = false, server
         type={item.imageType}
         width={compact ? 96 : 360}
         alt={item.name}
+        onFallback={advanceFromJellyfin}
         fallback={
           canUseLocalThumbnail ? (
             <LocalVideoThumbnail alt={item.name} compact={compact} item={item} onFailed={() => setStage("fallback")} />

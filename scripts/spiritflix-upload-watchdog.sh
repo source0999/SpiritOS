@@ -14,6 +14,10 @@ FACE_SCAN_CPUSET="${SPIRITFLIX_UPLOAD_FACE_SCAN_CPUSET:-6,7}"
 FACE_SCAN_THREADS="${SPIRITFLIX_UPLOAD_FACE_SCAN_THREADS:-2}"
 LOG_PATH="${SPIRITFLIX_UPLOAD_WATCHDOG_LOG:-$REPO_ROOT/.codex-spiritflix-upload-watchdog.log}"
 STATE_PATH="${SPIRITFLIX_UPLOAD_WATCHDOG_STATE:-$REPO_ROOT/.codex-spiritflix-upload-watchdog.state}"
+SMART_RESCAN_API_URL="${SPIRITFLIX_UPLOAD_SMART_RESCAN_API_URL:-http://127.0.0.1:3000/api/spiritflix/library-smart-rescan}"
+DRY_RUN=0
+ENQUEUE_ONLY=0
+RUN_MODE="daemon"
 
 VIDEO_FIND_EXPR=(
   -iname '*.mp4' -o
@@ -23,11 +27,38 @@ VIDEO_FIND_EXPR=(
   -iname '*.webm'
 )
 
+usage() {
+  cat <<'USAGE'
+Usage: scripts/spiritflix-upload-watchdog.sh [--once] [--dry-run] [--enqueue-only]
+
+  --dry-run       Print planned upload watchdog/enqueue actions; never mutate media or call APIs.
+  --enqueue-only  Opt into enqueue-safe smart-rescan API calls instead of face scanning.
+  --once          Run one cycle, then exit.
+
+Default daemon mode is unchanged, but --enqueue-only must be explicit for API enqueue calls.
+USAGE
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --once) RUN_MODE="once" ;;
+    --dry-run) DRY_RUN=1 ;;
+    --enqueue-only) ENQUEUE_ONLY=1 ;;
+    --help|-h) usage; exit 0 ;;
+    *) printf 'unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
 log() {
   printf '%s %s\n' "$(date --iso-8601=seconds)" "$*" | tee -a "$LOG_PATH"
 }
 
 ensure_drop_points_to_library() {
+  if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would ensure upload drop points to library drop=$DROP_DIR library=$LIBRARY_DIR target=$DROP_TARGET"
+    return 0
+  fi
   if [ -L "$DROP_DIR" ]; then
     return 0
   fi
@@ -52,6 +83,10 @@ ensure_drop_points_to_library() {
 }
 
 refresh_jellyfin() {
+  if [ "$DRY_RUN" = "1" ] || [ "$ENQUEUE_ONLY" = "1" ]; then
+    log "planned skip Jellyfin refresh dry_run=$DRY_RUN enqueue_only=$ENQUEUE_ONLY"
+    return 0
+  fi
   cd "$REPO_ROOT"
   python3 - <<'PY'
 import importlib.util
@@ -71,6 +106,10 @@ PY
 }
 
 sync_playlists() {
+  if [ "$DRY_RUN" = "1" ] || [ "$ENQUEUE_ONLY" = "1" ]; then
+    log "planned skip playlist sync dry_run=$DRY_RUN enqueue_only=$ENQUEUE_ONLY"
+    return 0
+  fi
   cd "$REPO_ROOT"
   python3 services/jellyfin/sync_folder_playlists.py
 }
@@ -118,6 +157,37 @@ recent_snapshot() {
   find "$library_real" -maxdepth 1 -type f \( "${VIDEO_FIND_EXPR[@]}" \) -mmin "-$((MAX_AGE_HOURS * 60))" ! -name '*.tmp' -printf '%T@ %s %p\n' | sort
 }
 
+recent_upload_paths() {
+  local library_real="$1"
+  find "$library_real" -maxdepth 1 -type f \( "${VIDEO_FIND_EXPR[@]}" \) -mmin "-$((MAX_AGE_HOURS * 60))" ! -name '*.tmp' -print | sort
+}
+
+enqueue_recent_uploads() {
+  local library_real="$1"
+  local planned=0
+  while IFS= read -r video_path; do
+    [ -n "$video_path" ] || continue
+    planned=$((planned + 1))
+    local payload
+    payload=$(python3 - "$video_path" <<'PY'
+import json
+import sys
+print(json.dumps({"path": sys.argv[1]}))
+PY
+)
+    if [ "$DRY_RUN" = "1" ]; then
+      log "dry-run planned enqueue POST $SMART_RESCAN_API_URL payload=$payload"
+      continue
+    fi
+    curl --fail --silent --show-error \
+      -H 'Content-Type: application/json' \
+      --data "$payload" \
+      "$SMART_RESCAN_API_URL" | tee -a "$LOG_PATH"
+    printf '\n' | tee -a "$LOG_PATH" >/dev/null
+  done < <(recent_upload_paths "$library_real")
+  log "planned enqueue count=$planned dry_run=$DRY_RUN enqueue_only=$ENQUEUE_ONLY"
+}
+
 missing_recent_sidecar_count() {
   local library_real="$1"
   local count=0
@@ -140,6 +210,11 @@ run_once() {
     log "idle no recent upload changes"
     return 0
   fi
+  if [ "$DRY_RUN" = "1" ] || [ "$ENQUEUE_ONLY" = "1" ]; then
+    enqueue_recent_uploads "$library_real"
+    log "cycle complete enqueue_only recent_before=$(printf '%s\n' "$snapshot" | sed '/^$/d' | wc -l) dry_run=$DRY_RUN"
+    return 0
+  fi
   local before_count after_count
   before_count="$(printf '%s\n' "$snapshot" | sed '/^$/d' | wc -l)"
   refresh_jellyfin
@@ -160,12 +235,12 @@ run_once() {
   log "cycle complete recent_before=$before_count recent_after=$after_count"
 }
 
-if [ "${1:-}" = "--once" ]; then
+if [ "$RUN_MODE" = "once" ]; then
   run_once
   exit 0
 fi
 
-log "starting SpiritFlix upload watchdog drop=$DROP_DIR library=$LIBRARY_DIR poll=${POLL_SECONDS}s"
+log "starting SpiritFlix upload watchdog drop=$DROP_DIR library=$LIBRARY_DIR poll=${POLL_SECONDS}s dry_run=$DRY_RUN enqueue_only=$ENQUEUE_ONLY"
 while true; do
   run_once || log "cycle failed"
   sleep "$POLL_SECONDS"

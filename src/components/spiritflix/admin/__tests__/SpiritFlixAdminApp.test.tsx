@@ -250,7 +250,6 @@ describe("SpiritFlixAdminApp", () => {
 
   it("falls back gracefully when a matched Jellyfin image fails to load", async () => {
     const client = new JellyfinClient("http://127.0.0.1:8096", "token", "user-1");
-    vi.spyOn(client, "getImageObjectUrl").mockRejectedValue(new Error("missing image"));
     const jellyfinItem: JellyfinItem = {
       Id: "item-1",
       Name: "Image Fail",
@@ -274,6 +273,8 @@ describe("SpiritFlixAdminApp", () => {
         }}
       />,
     );
+
+    fireEvent.error(await screen.findByAltText("Image Fail.mp4"));
 
     await waitFor(() => {
       expect(document.querySelector('[data-thumbnail-source="local"], .spiritflix-admin-thumbnail__fallback')).toBeTruthy();

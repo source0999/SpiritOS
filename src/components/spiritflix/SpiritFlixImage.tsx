@@ -14,6 +14,7 @@ interface SpiritFlixImageProps {
   alt?: string;
   className?: string;
   fallback?: ReactNode;
+  onFallback?: () => void;
   onLoad?: () => void;
   priority?: boolean;
   rootMargin?: string;
@@ -33,6 +34,7 @@ export function SpiritFlixImage({
   alt = "",
   className,
   fallback,
+  onFallback,
   onLoad,
   priority = false,
   rootMargin = "640px 320px",
@@ -92,12 +94,13 @@ export function SpiritFlixImage({
     if (!imageType) {
       setSrc("");
       setFailed(true);
+      onFallback?.();
       return;
     }
 
     setFailed(false);
     setSrc(client.getImageProxyUrl(item, imageType, width));
-  }, [availableTypes, client, imageTypeIndex, item, shouldLoad, width]);
+  }, [availableTypes, client, imageTypeIndex, item, onFallback, shouldLoad, width]);
 
   const fallbackNode = fallback ?? (
     <span className="spiritflix-image-fallback" aria-label={alt || item.Name}>
@@ -126,6 +129,7 @@ export function SpiritFlixImage({
               setImageTypeIndex((current) => Math.min(current + 1, availableTypes.length - 1));
             } else {
               setFailed(true);
+              onFallback?.();
             }
           }}
           onLoad={onLoad}
