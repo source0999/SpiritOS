@@ -64,11 +64,13 @@ import type {
 } from "@/lib/spiritflix-types";
 import { SpiritFlixRail } from "./SpiritFlixRail";
 import { SpiritFlixImage } from "./SpiritFlixImage";
+import { SpiritFlixSplash, type SpiritFlixLoadProgress } from "./SpiritFlixSplash";
 
 interface SpiritFlixHomeProps {
   client: JellyfinClient;
   data: SpiritFlixHomeData;
   loading: boolean;
+  loadProgress?: SpiritFlixLoadProgress;
   error: string;
   session: SpiritFlixSession;
   searchTerm: string;
@@ -88,6 +90,7 @@ interface SpiritFlixHomeProps {
   onSelectModel: (modelName: string | null) => void;
   onOpenDetails: (item: JellyfinItem) => void;
   onPlay: (item: JellyfinItem, queueItems?: JellyfinItem[], sourceTitle?: string, startPositionTicks?: number) => void;
+  onVisibleMetadataReady?: () => void;
 }
 
 type LibraryViewMode = "grid" | "list" | "history" | "favorites" | "gallery" | "models";
@@ -165,9 +168,11 @@ const LIBRARY_SORT_DIRECTION_KEY = "spiritflix_library_sort_direction";
 const LIBRARY_ORIENTATION_FILTER_KEY = "spiritflix_library_orientation_filter";
 const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
 const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v6";
-const FACE_METADATA_PAGELOAD_ITEM_LIMIT = 240;
 const GALLERY_INTERVAL_KEY = "spiritflix_gallery_interval_seconds";
 const LIBRARY_PAGE_SIZE = 20;
+const FACE_METADATA_PAGELOAD_ITEM_LIMIT = LIBRARY_PAGE_SIZE;
+const BACKGROUND_MODEL_GROUP_ITEM_LIMIT = 1000;
+const BACKGROUND_MODEL_GROUP_PAGE_SIZE = 100;
 const TEMP_LIBRARY_NAME = "Home Videos and Photos";
 const TWITTER_SOURCE_MODEL_NAME = "Twitter";
 const MODEL_NAME_ALIASES: Record<string, string> = {
@@ -855,6 +860,8 @@ export function SpiritFlixHome({
   onSelectModel,
   onOpenDetails,
   onPlay,
+  loadProgress,
+  onVisibleMetadataReady,
 }: SpiritFlixHomeProps) {
   const [storedLibraryUiState] = useState(() => getStoredLibraryUiState());
   const [viewMode, setViewMode] = useState<LibraryViewMode>(() => isLibraryViewMode(storedLibraryUiState.viewMode) ? storedLibraryUiState.viewMode : "grid");
@@ -901,7 +908,8 @@ export function SpiritFlixHome({
       ),
     [data.continueWatching.length, data.featuredItems.length, data.latestAdded.length, data.libraries.length, data.libraryItems.length, isHomeView],
   );
-  const isPendingInitialContent = loading && !hasUsefulHomeContent;
+  const visibleLoadProgress = loadProgress ?? { percent: 0, label: "Loading library" };
+  const isBlockingLoad = loading && visibleLoadProgress.percent < 100;
   const selectedLibrary = data.libraries.find((library) => library.Id === data.selectedLibraryId);
   const libraryTitle = isHomeView ? "Home" : displayLibraryName(selectedLibrary?.Name);
   const isAnimeView = !isHomeView && selectedLibrary?.Name.toLowerCase() === "anime";
@@ -1352,23 +1360,29 @@ export function SpiritFlixHome({
       setFullLibraryItems([]);
       return undefined;
     }
+    const libraryId = data.selectedLibraryId;
     const controller = new AbortController();
     let cancelled = false;
     setFullLibraryItems([]);
-    void client
-      .getAllLibraryItems(data.selectedLibraryId, {
-        searchTerm,
-        fields: "full",
-        signal: controller.signal,
-      })
-      .then((items) => {
-        if (!cancelled) setFullLibraryItems(items);
-      })
-      .catch(() => {
-        if (!cancelled) setFullLibraryItems([]);
-      });
+    const cancelDeferredFullLibraryLoad = scheduleDeferredHomeTask(() => {
+      void client
+        .getAllLibraryItems(libraryId, {
+          searchTerm,
+          fields: "card",
+          pageSize: BACKGROUND_MODEL_GROUP_PAGE_SIZE,
+          maxItems: BACKGROUND_MODEL_GROUP_ITEM_LIMIT,
+          signal: controller.signal,
+        })
+        .then((items) => {
+          if (!cancelled) setFullLibraryItems(items);
+        })
+        .catch(() => {
+          if (!cancelled) setFullLibraryItems([]);
+        });
+    });
     return () => {
       cancelled = true;
+      cancelDeferredFullLibraryLoad();
       controller.abort();
     };
   }, [client, data.selectedLibraryId, isLibraryDashboardView, searchTerm]);
@@ -1505,21 +1519,31 @@ export function SpiritFlixHome({
     );
   };
 
+  const visibleFaceMetadataItems = useMemo(
+    () => getBoundedHomeFaceMetadataItems(visibleLibraryItems.filter(isPlayableItem)),
+    [visibleLibraryItems],
+  );
+  const visibleFaceMetadataSignature = useMemo(
+    () => visibleFaceMetadataItems.map((item) => item.Id).join(","),
+    [visibleFaceMetadataItems],
+  );
+
   useEffect(() => {
-    if (isHomeView || isAnimeView || !playableLibraryItems.length) {
+    if (isHomeView || isAnimeView || !visibleFaceMetadataItems.length) {
       setFaceMetadata(null);
       setFaceMetadataError("");
+      onVisibleMetadataReady?.();
       return undefined;
     }
 
     let isCancelled = false;
-    const metadataItems = getBoundedHomeFaceMetadataItems(playableLibraryItems);
-    const cacheKey = `${FACE_METADATA_CACHE_KEY}:${data.selectedLibraryId}:${metadataItems.map((item) => item.Id).join(",")}`;
+    const cacheKey = `${FACE_METADATA_CACHE_KEY}:${data.selectedLibraryId}:${clampedLibraryPageIndex}:${visibleFaceMetadataSignature}`;
     const cached = window.localStorage.getItem(cacheKey);
     if (cached) {
       try {
         setFaceMetadata(JSON.parse(cached) as FaceOrganizerMetadataResponse);
         setFaceMetadataError("");
+        onVisibleMetadataReady?.();
         return undefined;
       } catch {
         window.localStorage.removeItem(cacheKey);
@@ -1527,21 +1551,32 @@ export function SpiritFlixHome({
     }
 
     void client
-      .getFaceOrganizerMetadata(metadataItems)
+      .getFaceOrganizerMetadata(visibleFaceMetadataItems)
       .then((metadata) => {
         if (isCancelled) return;
         setFaceMetadata(metadata);
         setFaceMetadataError("");
         window.localStorage.setItem(cacheKey, JSON.stringify(metadata));
+        onVisibleMetadataReady?.();
       })
       .catch(() => {
-        if (!isCancelled) setFaceMetadataError("Face Organizer metadata is unavailable; using Jellyfin model hints.");
+        if (isCancelled) return;
+        setFaceMetadataError("Face Organizer metadata is unavailable; using Jellyfin model hints.");
+        onVisibleMetadataReady?.();
       });
 
     return () => {
       isCancelled = true;
     };
-  }, [client, data.selectedLibraryId, isAnimeView, isHomeView, playableLibraryItems]);
+  }, [
+    client,
+    clampedLibraryPageIndex,
+    data.selectedLibraryId,
+    isAnimeView,
+    isHomeView,
+    onVisibleMetadataReady,
+    visibleFaceMetadataSignature,
+  ]);
 
   const filterLibraryShuffleItems = useCallback(
     (items: JellyfinItem[]) => {
@@ -1749,10 +1784,10 @@ export function SpiritFlixHome({
       ) : null}
 
       {error ? <p className="spiritflix-error spiritflix-error--home">{error}</p> : null}
-      {isPendingInitialContent ? <div className="spiritflix-loading" data-spiritflix-useful-content="pending">Loading live Jellyfin rows...</div> : null}
+      {isBlockingLoad ? <SpiritFlixSplash progress={visibleLoadProgress} skeleton /> : null}
 
-      <div className={`spiritflix-rows ${isAnimeView ? "spiritflix-rows--anime" : ""}`} data-spiritflix-useful-content={hasUsefulHomeContent ? "ready" : "pending"}>
-        {!isPendingInitialContent && isLibraryDashboardView ? (
+      <div className={`spiritflix-rows ${isAnimeView ? "spiritflix-rows--anime" : ""} ${isBlockingLoad ? "spiritflix-rows--behind-loader" : ""}`} data-spiritflix-useful-content={hasUsefulHomeContent ? "ready" : "pending"}>
+        {isLibraryDashboardView ? (
           <section className="spiritflix-library-v2" aria-label={`${libraryTitle} model library`}>
             <div className="spiritflix-library-v2__header">
               <div>
@@ -2521,7 +2556,7 @@ export function SpiritFlixHome({
               <p className="spiritflix-empty">No private watch history has synced for {selectedModelGroup?.name ?? libraryTitle} yet.</p>
             ) : viewMode === "favorites" && !favoriteItems.length ? (
               <p className="spiritflix-empty">No favorites in {selectedModelGroup?.name ?? libraryTitle} yet.</p>
-            ) : (viewMode === "grid" || viewMode === "list") && !visibleLibraryItems.length ? (
+            ) : (viewMode === "grid" || viewMode === "list") && !visibleLibraryItems.length && !isBlockingLoad ? (
               <p className="spiritflix-empty">{libraryTitle} has no indexed videos yet.</p>
             ) : null}
 

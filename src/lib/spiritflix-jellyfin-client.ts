@@ -393,17 +393,19 @@ export class JellyfinClient {
 
   async getAllLibraryItems(
     parentId: string,
-    options: Pick<JellyfinItemPageOptions, "searchTerm" | "fields" | "signal"> & { pageSize?: number } = {},
+    options: Pick<JellyfinItemPageOptions, "searchTerm" | "fields" | "signal"> & { pageSize?: number; maxItems?: number } = {},
   ): Promise<JellyfinItem[]> {
-    const { searchTerm = "", fields = "full", signal, pageSize = 500 } = options;
+    const { searchTerm = "", fields = "full", signal, pageSize = 500, maxItems } = options;
     const items: JellyfinItem[] = [];
     let startIndex = 0;
 
     for (;;) {
+      const remaining = typeof maxItems === "number" ? maxItems - items.length : pageSize;
+      if (remaining <= 0) return uniqueItemsById(items);
       const page = await this.getLibraryItemsPage(parentId, {
         searchTerm,
         startIndex,
-        limit: pageSize,
+        limit: Math.min(pageSize, remaining),
         fields,
         signal,
       });

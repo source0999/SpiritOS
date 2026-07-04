@@ -12,7 +12,7 @@ export default defineConfig({
     exclude: ["**/node_modules/**", "**/.git/**", "**/.spirit-backups/**", "**/docs/handoff/**"],
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    maxWorkers: 4,
+    maxWorkers: 1,
     include: ["**/*.{test,spec}.{ts,tsx}"],
     alias: {
       "@": path.resolve(__dirname, "./src"),

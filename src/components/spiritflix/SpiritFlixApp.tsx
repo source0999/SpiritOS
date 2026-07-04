@@ -24,7 +24,7 @@ import { hasResumeProgress } from "@/lib/spiritflix-resume";
 import { filterItemsByVideoOrientation, getOrientationFilterLabel, type SpiritFlixVideoOrientation } from "@/lib/spiritflix-orientation";
 import { SpiritFlixHome } from "./SpiritFlixHome";
 import { SpiritFlixLogin } from "./SpiritFlixLogin";
-import { SpiritFlixSplash } from "./SpiritFlixSplash";
+import { SpiritFlixSplash, type SpiritFlixLoadProgress } from "./SpiritFlixSplash";
 
 const SpiritFlixDetailsModal = lazy(() =>
   import("./SpiritFlixDetailsModal").then((module) => ({
@@ -364,6 +364,9 @@ const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
 const HOME_CACHE_KEY = "spiritflix_home_cache_v1";
 const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
 const LIVE_LIBRARY_LOAD_MIN_MS = 50;
+const PLAYBACK_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
+const initialLoadProgress: SpiritFlixLoadProgress = { percent: 0, label: "Connecting to Jellyfin" };
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -552,6 +555,8 @@ export function SpiritFlixApp() {
   const homeDataRef = useRef(homeData);
   const loadHomeAbortRef = useRef<AbortController | null>(null);
   const loadHomeSequenceRef = useRef(0);
+  const loadCompletionPendingRef = useRef(false);
+  const [loadProgress, setLoadProgress] = useState<SpiritFlixLoadProgress>(initialLoadProgress);
   const [loadingMore, setLoadingMore] = useState<Record<string, boolean>>({});
   const [liveLibraryLoadingId, setLiveLibraryLoadingId] = useState<string | null>(null);
 
@@ -600,8 +605,25 @@ export function SpiritFlixApp() {
     [serverUrl],
   );
 
+  const updateLoadProgress = useCallback((next: SpiritFlixLoadProgress) => {
+    setLoadProgress((current) => (next.percent >= current.percent ? next : current));
+  }, []);
+
+  const finishBlockingLoad = useCallback(() => {
+    loadCompletionPendingRef.current = false;
+    setLoadProgress({ percent: 100, label: "Ready" });
+    setLoadingHome(false);
+    setLiveLibraryLoadingId(null);
+  }, []);
+
+  const handleVisibleMetadataReady = useCallback(() => {
+    if (!loadCompletionPendingRef.current) return;
+    updateLoadProgress({ percent: 90, label: "Reading visible face metadata" });
+    finishBlockingLoad();
+  }, [finishBlockingLoad, updateLoadProgress]);
+
   const loadHome = useCallback(
-    async (libraryId?: string | null, term = searchTerm, options: { silent?: boolean } = {}) => {
+    async (libraryId?: string | null, term = searchTerm, options: { silent?: boolean; reuseLibraries?: boolean } = {}) => {
       if (!session) return;
       const loadId = loadHomeSequenceRef.current + 1;
       loadHomeSequenceRef.current = loadId;
@@ -614,12 +636,19 @@ export function SpiritFlixApp() {
       const shouldGateLiveLibrary = !options.silent && typeof requestedLibraryIdBeforeLookup === "string" && requestedLibraryIdBeforeLookup.length > 0;
       const startedAt = performance.now();
       const showBlockingLoader = !options.silent && (shouldGateLiveLibrary || !hasUsefulHomeContent(homeDataRef.current));
+      loadCompletionPendingRef.current = false;
       if (shouldGateLiveLibrary) setLiveLibraryLoadingId(requestedLibraryIdBeforeLookup);
-      if (showBlockingLoader) setLoadingHome(true);
+      if (showBlockingLoader) {
+        setLoadProgress({ percent: 5, label: "Connecting to Jellyfin" });
+        setLoadingHome(true);
+      }
       setHomeError("");
+      let loadFailed = false;
       try {
-        const libraries = (await client.getLibraries()).filter(isMediaLibrary);
+        const reusableLibraries = options.reuseLibraries ? homeDataRef.current.libraries.filter(isMediaLibrary) : [];
+        const libraries = reusableLibraries.length ? reusableLibraries : (await client.getLibraries()).filter(isMediaLibrary);
         if (isStale()) return;
+        if (showBlockingLoader) updateLoadProgress({ percent: 18, label: "Finding libraries" });
         const otherLibrary = libraries.find((library) => library.Name.toLowerCase() === OTHER_LIBRARY_NAME.toLowerCase());
         const requestedLibraryId = libraryId === undefined ? homeData.selectedLibraryId : libraryId;
         const selectedLibraryId = requestedLibraryId && libraries.some((library) => library.Id === requestedLibraryId)
@@ -696,7 +725,7 @@ export function SpiritFlixApp() {
           libraryPaging: pagingFromPage(libraryPage),
         };
         setHomeData(partialHome);
-        if (showBlockingLoader) setLoadingHome(false);
+        if (showBlockingLoader) updateLoadProgress({ percent: 48, label: "Painting visible grid" });
 
         const [featuredPage, continuePage, watchHistoryPage, latestPage, favoritesPage] = await Promise.all([
           featuredPagePromise,
@@ -731,21 +760,29 @@ export function SpiritFlixApp() {
         };
         setHomeData(nextHome);
         writeCachedHomeData(nextHome);
+        if (showBlockingLoader) {
+          updateLoadProgress({ percent: 76, label: "Loading shelves" });
+          const needsVisibleMetadata = Boolean(selectedLibraryId && libraryItemsUnique.length);
+          loadCompletionPendingRef.current = needsVisibleMetadata;
+          if (!needsVisibleMetadata) finishBlockingLoad();
+        }
       } catch (error) {
         if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) return;
+        loadFailed = true;
+        loadCompletionPendingRef.current = false;
+        setLoadProgress({ percent: 100, label: "Load failed" });
         setHomeError("Could not load your Jellyfin library. Log out and back in if the token expired.");
       } finally {
         if (!options.silent && !controller.signal.aborted) {
           const remainingMinLoadMs = shouldGateLiveLibrary ? Math.max(0, LIVE_LIBRARY_LOAD_MIN_MS - (performance.now() - startedAt)) : 0;
           if (remainingMinLoadMs > 0) await sleep(remainingMinLoadMs);
-          if (!isStale()) {
-            setLoadingHome(false);
-            if (shouldGateLiveLibrary) setLiveLibraryLoadingId(null);
+          if (!loadFailed && !isStale() && !loadCompletionPendingRef.current) {
+            finishBlockingLoad();
           }
         }
       }
     },
-    [client, homeData.selectedLibraryId, searchTerm, session],
+    [client, finishBlockingLoad, homeData.selectedLibraryId, searchTerm, session, updateLoadProgress],
   );
 
   const setLoadingMoreKey = useCallback((key: string, value: boolean) => {
@@ -882,30 +919,25 @@ export function SpiritFlixApp() {
   }, [client, loadingMore.continueWatching, session, setLoadingMoreKey]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const initialRoute = getSpiritFlixBrowseRoute();
-      initialBrowseRouteRef.current = initialRoute;
-      setInitialModelName(initialRoute.modelName);
-      setInitialManualTag(initialRoute.tag ?? null);
-      if (window.location.pathname.startsWith("/spiritflix/watch/")) {
-        setSpiritFlixBrowseRoute(initialRoute, "replace");
-      }
-      const stored = getStoredSession();
-      if (stored) {
-        setSession(stored);
-        setServerUrl(stored.serverUrl);
-      }
-      setIsRestoringSession(false);
-    }, 0);
-    return () => window.clearTimeout(timer);
+    const initialRoute = getSpiritFlixBrowseRoute();
+    initialBrowseRouteRef.current = initialRoute;
+    setInitialModelName(initialRoute.modelName);
+    setInitialManualTag(initialRoute.tag ?? null);
+    if (window.location.pathname.startsWith("/spiritflix/watch/")) {
+      setSpiritFlixBrowseRoute(initialRoute, "replace");
+    }
+    const stored = getStoredSession();
+    if (stored) {
+      setSession(stored);
+      setServerUrl(stored.serverUrl);
+    }
+    setIsRestoringSession(false);
   }, []);
 
   useEffect(() => {
     if (isRestoringSession) return undefined;
-    const timer = window.setTimeout(() => {
-      void checkServer(serverUrl);
-    }, 0);
-    return () => window.clearTimeout(timer);
+    void checkServer(serverUrl);
+    return undefined;
   }, [checkServer, isRestoringSession, serverUrl]);
 
   useEffect(() => {
@@ -916,11 +948,9 @@ export function SpiritFlixApp() {
     const sessionKey = `${session.serverUrl}:${session.userId}:${session.accessToken}`;
     if (loadedSessionKeyRef.current === sessionKey) return undefined;
     loadedSessionKeyRef.current = sessionKey;
-    const timer = window.setTimeout(() => {
-      void loadHome(initialBrowseRouteRef.current?.libraryId ?? null);
-      void loadManualModels();
-    }, 0);
-    return () => window.clearTimeout(timer);
+    void loadHome(initialBrowseRouteRef.current?.libraryId ?? null);
+    void loadManualModels();
+    return undefined;
   }, [loadHome, loadManualModels, session]);
 
   useEffect(() => {
@@ -954,12 +984,12 @@ export function SpiritFlixApp() {
   useEffect(() => {
     if (!session) return undefined;
     const refreshPlaybackState = () => {
-      void loadHome(homeData.selectedLibraryId, searchTerm, { silent: true });
+      void loadHome(homeData.selectedLibraryId, searchTerm, { silent: true, reuseLibraries: true });
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") refreshPlaybackState();
     };
-    const timer = window.setInterval(refreshPlaybackState, 30000);
+    const timer = window.setInterval(refreshPlaybackState, PLAYBACK_REFRESH_INTERVAL_MS);
     window.addEventListener("focus", refreshPlaybackState);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
@@ -1109,7 +1139,7 @@ export function SpiritFlixApp() {
       const nextItem = nextQueueState.nextItem;
       setPlayingItem(nextItem);
       setPlayingQueue(nextQueueState.queue);
-      void loadHome(homeData.selectedLibraryId, searchTerm, { silent: true });
+      void loadHome(homeData.selectedLibraryId, searchTerm, { silent: true, reuseLibraries: true });
     },
     [homeData.selectedLibraryId, loadHome, playingQueue, searchTerm],
   );
@@ -1241,7 +1271,7 @@ export function SpiritFlixApp() {
   return (
     <main className="spiritflix-shell">
       {isRestoringSession ? (
-        <SpiritFlixSplash />
+        <SpiritFlixSplash progress={initialLoadProgress} skeleton />
       ) : !session ? (
         <SpiritFlixLogin
           serverUrl={serverUrl}
@@ -1256,6 +1286,7 @@ export function SpiritFlixApp() {
           client={client}
           data={visibleHomeData}
           loading={loadingHome}
+          loadProgress={loadProgress}
           error={homeError}
           session={session}
           searchTerm={searchTerm}
@@ -1275,6 +1306,7 @@ export function SpiritFlixApp() {
           onSelectModel={handleSelectModel}
           onOpenDetails={handleOpenDetails}
           onPlay={handlePlay}
+          onVisibleMetadataReady={handleVisibleMetadataReady}
         />
       )}
 

@@ -158,9 +158,56 @@ describe("SpiritFlixHome watch history", () => {
 
     const bounded = getBoundedHomeFaceMetadataItems(playableItems);
 
-    expect(bounded).toHaveLength(240);
+    expect(bounded).toHaveLength(20);
     expect(bounded[0]).toEqual(expect.objectContaining({ Id: "face-meta-0" }));
-    expect(bounded.at(-1)).toEqual(expect.objectContaining({ Id: "face-meta-239" }));
+    expect(bounded.at(-1)).toEqual(expect.objectContaining({ Id: "face-meta-19" }));
+  });
+
+  it("keeps the load overlay visible until visible face metadata is ready", async () => {
+    const onVisibleMetadataReady = vi.fn();
+    const faceItems = Array.from({ length: 25 }, (_, index) => ({
+      ...modelItem,
+      Id: `visible-face-${index}`,
+      Name: `Visible Face ${index}`,
+    }));
+    const client = createClient();
+
+    render(
+      <SpiritFlixHome
+        client={client}
+        data={createData({
+          libraryItems: faceItems,
+          continueWatching: [],
+          watchHistory: [],
+        })}
+        loading={true}
+        loadProgress={{ percent: 76, label: "Loading shelves" }}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+        onVisibleMetadataReady={onVisibleMetadataReady}
+      />,
+    );
+
+    expect(screen.getByRole("progressbar", { name: /loading shelves/i })).toHaveAttribute("aria-valuenow", "76");
+    await waitFor(() => expect(client.getFaceOrganizerMetadata).toHaveBeenCalled());
+    const metadataItems = vi.mocked(client.getFaceOrganizerMetadata).mock.calls[0]?.[0] ?? [];
+    expect(metadataItems).toHaveLength(20);
+    await waitFor(() => expect(onVisibleMetadataReady).toHaveBeenCalled());
   });
 
   it("shows private watch history in the library and plays from the synced resume point", async () => {
@@ -383,7 +430,7 @@ describe("SpiritFlixHome watch history", () => {
       />,
     );
 
-    expect(screen.getByText("Loading live Jellyfin rows...")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: /loading library/i })).toHaveAttribute("aria-valuenow", "0");
     expect(screen.queryByText(/Library has no indexed videos yet/i)).not.toBeInTheDocument();
   });
 
@@ -716,7 +763,7 @@ describe("SpiritFlixHome watch history", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /list/i }));
-    const bustyFilter = await screen.findByRole("button", { name: /^busty\s+1$/i });
+    const bustyFilter = await screen.findByRole("button", { name: /^busty\s+1$/i }, { timeout: 5000 });
     fireEvent.click(bustyFilter);
 
     await waitFor(() => {
@@ -1057,6 +1104,8 @@ describe("SpiritFlixHome watch history", () => {
         onPlay={vi.fn()}
       />,
     );
+
+    await waitFor(() => expect(client.getAllLibraryItems).toHaveBeenCalledWith("library-1", expect.objectContaining({ fields: "card", pageSize: 100, maxItems: 1000 })));
 
     fireEvent.click(screen.getByRole("button", { name: /^models$/i }));
     const lunaButtons = await screen.findAllByRole("button", { name: /luna x pearl\s+1 videos/i });
