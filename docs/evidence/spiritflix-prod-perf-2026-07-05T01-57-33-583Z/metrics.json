@@ -1,0 +1,408 @@
+{
+  "generatedAt": "2026-07-05T02:00:44.860Z",
+  "baseUrl": "https://127.0.0.1:3000",
+  "runs": 15,
+  "budgets": {
+    "coldFirstPaintP75Ms": 400,
+    "warmFirstPaintP75Ms": 250,
+    "coldTtiP75Ms": 1200,
+    "warmTtiP75Ms": 1200,
+    "warmVideoStartP75Ms": 250,
+    "coldVideoStartP75Ms": 600,
+    "scrollFpsP75": 35,
+    "loadMoreP75Ms": 800
+  },
+  "ok": true,
+  "failures": [],
+  "metrics": {
+    "coldFirstPaintMs": {
+      "p50": 180.6,
+      "p75": 208.7,
+      "p99": 389,
+      "samples": 15
+    },
+    "warmFirstPaintMs": {
+      "p50": 198.7,
+      "p75": 210,
+      "p99": 318.2,
+      "samples": 15
+    },
+    "coldTtiMs": {
+      "p50": 833.3,
+      "p75": 991.2,
+      "p99": 1843.4,
+      "samples": 15
+    },
+    "warmTtiMs": {
+      "p50": 858.2,
+      "p75": 1020.6,
+      "p99": 1288.8,
+      "samples": 15
+    },
+    "coldVideoStartMs": {
+      "p50": 66.6,
+      "p75": 154.9,
+      "p99": 332.1,
+      "samples": 15
+    },
+    "warmVideoStartMs": {
+      "p50": 60.1,
+      "p75": 70.3,
+      "p99": 93.1,
+      "samples": 15
+    },
+    "scrollFps": {
+      "p50": 29.5,
+      "p75": 40.5,
+      "p99": 50.5,
+      "samples": 30
+    },
+    "loadMoreMs": {
+      "p50": 123.5,
+      "p75": 706.3,
+      "p99": 4044.3,
+      "samples": 30
+    }
+  },
+  "raw": {
+    "coldLoads": [
+      {
+        "mode": "cold",
+        "firstPaintMs": 388.9787919999999,
+        "ttiMs": 719.101905,
+        "scrollFps": 43.28399888587536,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 179.92803800000002,
+        "ttiMs": 836.8583300000009,
+        "scrollFps": 45.59270517618414,
+        "loadMoreMs": 1247.6931980000008
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 243.42203900000095,
+        "ttiMs": 917.7831609999994,
+        "scrollFps": 16.07319485847287,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 192.26210999999967,
+        "ttiMs": 1843.4432119999983,
+        "scrollFps": 34.14762280224362,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 193.36983399999735,
+        "ttiMs": 991.1992329999994,
+        "scrollFps": 16.273393001388694,
+        "loadMoreMs": 208.54790700000012
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 159.00139599999966,
+        "ttiMs": 530.4993480000048,
+        "scrollFps": 38.17873302395149,
+        "loadMoreMs": 490.5962940000027
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 209.79558700000052,
+        "ttiMs": 1054.2383679999984,
+        "scrollFps": 36.62487674074319,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 166.9156709999952,
+        "ttiMs": 833.2625509999998,
+        "scrollFps": 12.713660120629699,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 177.65693199999805,
+        "ttiMs": 1276.97045600001,
+        "scrollFps": 23.171987647296223,
+        "loadMoreMs": 257.95866699999897
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 145.90927699999884,
+        "ttiMs": 719.5734329999977,
+        "scrollFps": 19.307681700345697,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 154.00310000000172,
+        "ttiMs": 732.6521990000037,
+        "scrollFps": 34.96503497436231,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 187.9705430000031,
+        "ttiMs": 715.4342640000104,
+        "scrollFps": 48.88950970805978,
+        "loadMoreMs": 1240.6618919999892
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 208.72694600000978,
+        "ttiMs": 537.7884210000047,
+        "scrollFps": 47.95486600846262,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 136.79009799999767,
+        "ttiMs": 601.1204339999967,
+        "scrollFps": 35.44088460447972,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "cold",
+        "firstPaintMs": 180.61839599999075,
+        "ttiMs": 864.8040929999988,
+        "scrollFps": 36.450301415954016,
+        "loadMoreMs": 4044.3497970000026
+      }
+    ],
+    "warmLoads": [
+      {
+        "mode": "warm",
+        "firstPaintMs": 187.58461299999908,
+        "ttiMs": 696.9939410000079,
+        "scrollFps": 10.937927263496803,
+        "loadMoreMs": 796.6102480000118
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 198.74887399999716,
+        "ttiMs": 930.9628039999952,
+        "scrollFps": 29.544175574832902,
+        "loadMoreMs": 706.2963179999933
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 184.3913659999962,
+        "ttiMs": 686.7374569999956,
+        "scrollFps": 43.9841089730344,
+        "loadMoreMs": 438.51542999999947
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 172.03845599999477,
+        "ttiMs": 1020.5706439999922,
+        "scrollFps": 24.337133341872683,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 210.0014230000088,
+        "ttiMs": 688.6302330000035,
+        "scrollFps": 35.12716031565269,
+        "loadMoreMs": 2565.3090650000086
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 170.67486300002201,
+        "ttiMs": 665.5496800000255,
+        "scrollFps": 15.506061456219982,
+        "loadMoreMs": 887.7011779999884
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 185.78257499999017,
+        "ttiMs": 805.748907000001,
+        "scrollFps": 41.29289478272389,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 318.21990299999015,
+        "ttiMs": 1288.7778640000033,
+        "scrollFps": 26.904559616656623,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 257.62253500000224,
+        "ttiMs": 1106.7669809999934,
+        "scrollFps": 25.131942699170644,
+        "loadMoreMs": 145.64999800000805
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 268.429827999993,
+        "ttiMs": 1040.9286859999993,
+        "scrollFps": 21.01723413198823,
+        "loadMoreMs": 161.2059279999812
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 207.90158499998506,
+        "ttiMs": 980.325084000011,
+        "scrollFps": 12.414649286157667,
+        "loadMoreMs": 87.54408299998613
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 205.05959299998358,
+        "ttiMs": 858.1881500000018,
+        "scrollFps": 8.539709651031043,
+        "loadMoreMs": 123.46967800002312
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 207.68871799999033,
+        "ttiMs": 1014.08309499998,
+        "scrollFps": 21.75982592280374,
+        "loadMoreMs": 0
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 191.27319700000226,
+        "ttiMs": 739.6671889999998,
+        "scrollFps": 40.50279328799724,
+        "loadMoreMs": 2014.8286910000024
+      },
+      {
+        "mode": "warm",
+        "firstPaintMs": 190.79593900000327,
+        "ttiMs": 730.5251189999981,
+        "scrollFps": 50.497966044012074,
+        "loadMoreMs": 482.5537409999815
+      }
+    ],
+    "coldVideos": [
+      {
+        "mode": "cold",
+        "videoStartMs": 66.6056779999999
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 64.81658500000049
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 154.91076799999792
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 61.69090199999482
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 137.17968900000415
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 69.12174499999674
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 55.31751899999654
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 63.56177000000025
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 283.7743130000017
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 158.2662330000021
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 64.10099900000205
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 48.511979999995674
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 332.148371999996
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 80.08833300000697
+      },
+      {
+        "mode": "cold",
+        "videoStartMs": 55.4743979999912
+      }
+    ],
+    "warmVideos": [
+      {
+        "mode": "warm",
+        "videoStartMs": 58.828934000004665
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 47.050405000001774
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 53.09332600000198
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 53.60486900000251
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 47.10827299999073
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 56.50260599999456
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 65.2984019999858
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 93.12052500000573
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 78.62080299999798
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 60.120584999996936
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 70.29959999999846
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 63.79946999999811
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 62.94003199998406
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 75.45860000001267
+      },
+      {
+        "mode": "warm",
+        "videoStartMs": 56.22423799999524
+      }
+    ]
+  },
+  "fixtureNote": "Representative mocked Jellyfin library against prod :3000. Synthetic 50ms budget is covered separately by npm run spiritflix:perf:synthetic."
+}

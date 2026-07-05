@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "before": {
+    "marker": 1,
+    "timeOrigin": 1783217162099.5
+  },
+  "after": {
+    "marker": 1,
+    "timeOrigin": 1783217162099.5
+  },
+  "navigations": [
+    "https://127.0.0.1:3000/spiritflix",
+    "https://127.0.0.1:3000/spiritflix"
+  ],
+  "checkedAt": "2026-07-05T02:06:04.694Z"
+}

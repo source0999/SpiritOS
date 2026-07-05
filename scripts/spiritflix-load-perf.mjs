@@ -3,8 +3,8 @@ import { performance } from "node:perf_hooks";
 
 const budgets = {
   loaderPaintMs: 50,
-  firstGridMs: 900,
-  metadataReadyMs: 1300,
+  firstGridMs: 50,
+  metadataReadyMs: 50,
   libraryRequestsBeforeGrid: 1,
   faceMetadataItems: 20,
 };
@@ -21,19 +21,19 @@ const loader = (percent, label) => stages.push({ percent, label, atMs: performan
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const start = performance.now();
-loader(5, "Connecting to Jellyfin");
+loader(5, "Stage 1 of 4: Connecting to Jellyfin");
 const loaderPaint = performance.now() - start;
 
 await timed("libraries", async () => {
   requests.push({ kind: "libraries" });
   await delay(8);
-  loader(18, "Finding libraries");
+  loader(30, "Stage 1 of 4: Connected");
 });
 
 const grid = await timed("visible-grid", async () => {
   requests.push({ kind: "library-page", limit: 48, fields: "card" });
   await delay(14);
-  loader(48, "Painting visible grid");
+  loader(55, "Stage 2 of 4: Visible videos loaded");
 });
 const firstGrid = performance.now() - start;
 
@@ -43,12 +43,12 @@ const shelves = await Promise.all([
   timed("latest", async () => delay(6)),
   timed("favorites", async () => delay(6)),
 ]);
-loader(76, "Loading shelves");
+loader(80, "Stage 4 of 4: Reading visible face metadata");
 
 await timed("visible-face-metadata", async () => {
   requests.push({ kind: "face-metadata", items: budgets.faceMetadataItems });
   await delay(10);
-  loader(90, "Reading visible face metadata");
+  loader(90, "Stage 4 of 4: Visible metadata ready");
 });
 loader(100, "Ready");
 const metadataReady = performance.now() - start;
