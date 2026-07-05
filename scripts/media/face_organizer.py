@@ -436,7 +436,7 @@ def dedupe_rank_candidates(candidates: Iterable[dict[str, Any]]) -> list[dict[st
 def extract_filename_candidates(video_path: Path) -> list[dict[str, Any]]:
     stem = video_path.stem
     raw_candidates = [stem]
-    raw_candidates.extend(re.split(r"[-_\[\](){}]+", stem))
+    raw_candidates.extend(re.split(r"[-_\s\[\](){}#]+", stem))
     raw_candidates.append(video_path.parent.name)
     candidates: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -1794,6 +1794,7 @@ SEED_PERFORMER_ALIASES: dict[str, str] = {
     "cutegeekie": "Cute Geekie",
     "cutegeeky": "Cute Geekie",
     "cutegeek": "Cute Geekie",
+    "sutegeekle": "Cute Geekie",
     "jazmenjafar": "Jazmen Jafar",
     "jazmenjarfar": "Jazmen Jafar",
     "jazmanjafar": "Jazmen Jafar",
@@ -1815,6 +1816,35 @@ SEED_PERFORMER_ALIASES: dict[str, str] = {
     "savash": "Sava Schultz",
     "ruthlce": "Ruth Lee",
     "ruthlee": "Ruth Lee",
+    "leximarvel": "Lexi Marvel",
+    "leximarvell": "Lexi Marvel",
+    "leximavel": "Lexi Marvel",
+    "leximarve": "Lexi Marvel",
+    "leximarva": "Lexi Marvel",
+    "leximarvol": "Lexi Marvel",
+    "leximarye": "Lexi Marvel",
+    "lexiniarvol": "Lexi Marvel",
+    "leximanvel": "Lexi Marvel",
+    "lexim": "Lexi Marvel",
+    "lexima": "Lexi Marvel",
+    "leximar": "Lexi Marvel",
+    "leximarv": "Lexi Marvel",
+    "eximarvel": "Lexi Marvel",
+    "ieximarvei": "Lexi Marvel",
+    "iexirmarvel": "Lexi Marvel",
+    "leimarve": "Lexi Marvel",
+    "leimarvel": "Lexi Marvel",
+    "lekimarvel": "Lexi Marvel",
+    "lexmael": "Lexi Marvel",
+    "lexmarvel": "Lexi Marvel",
+    "lexmav": "Lexi Marvel",
+    "lximare": "Lexi Marvel",
+    "lximarvel": "Lexi Marvel",
+    "teximarvel": "Lexi Marvel",
+    "vibewithmommy": "Vibe With Mommy",
+    "vibewithmom": "Vibe With Mommy",
+    "vibewthmommy": "Vibe With Mommy",
+    "vibewithmom": "Vibe With Mommy",
     "pinkychu": "Pinkychu",
     "pinkychi": "Pinkychu",
     "mackzjones": "Mackzjones",
@@ -1846,6 +1876,7 @@ TRUSTED_PROFILE_HANDLES = {
     "jakarababy",
     "jazmenjafar",
     "kinkykttn",
+    "leximarvel",
     "mackzjones",
     "misslilu",
     "pinkychu",
@@ -1856,6 +1887,7 @@ TRUSTED_PROFILE_HANDLES = {
     "sendnudesx",
     "sienna",
     "siennaababi",
+    "vibewithmommy",
     "whoahannahjo",
 }
 
@@ -2242,59 +2274,162 @@ def best_watermark_hint(metadata_hints: dict[str, Any]) -> dict[str, Any] | None
     return max(candidates, key=priority)
 
 
-def apply_combined_identity(meta: dict[str, Any], source_dir: Path) -> dict[str, Any]:
+def enrolled_performer_identity_lookup(db_dir: Path | None) -> dict[str, str]:
+    if not db_dir:
+        return {}
+    index = load_json(db_dir / "index.json", {"performers": []})
+    performer_map = load_json(db_dir / "performer_map.json", {})
+    mapped_ids = {str(value) for value in performer_map.values()} if isinstance(performer_map, dict) else set()
+    performers = index.get("performers") if isinstance(index, dict) else []
+    lookup: dict[str, str] = {}
+    for performer in performers if isinstance(performers, list) else []:
+        if not isinstance(performer, dict):
+            continue
+        performer_id = str(performer.get("id") or "")
+        name = str(performer.get("name") or "").strip()
+        if not performer_id or not name:
+            continue
+        enrolled_samples = performer.get("enrolled_face_samples") or []
+        enrolled_records = performer.get("enrolled_face_sample_records") or []
+        if not (enrolled_samples or enrolled_records or performer_id in mapped_ids):
+            continue
+        keys = {performer_id, name, slugify(name)}
+        keys.update(str(alias) for alias in performer.get("aliases", []) if alias)
+        for key in keys:
+            normalized = normalize_identity_key(str(key))
+            if normalized:
+                lookup[normalized] = name
+    return lookup
+
+
+def exact_filename_identity_lookup(db_dir: Path | None = None) -> dict[str, str]:
+    lookup = {normalize_identity_key(key): value for key, value in SEED_PERFORMER_ALIASES.items()}
+    lookup.update(enrolled_performer_identity_lookup(db_dir))
+    return {key: value for key, value in lookup.items() if key and value}
+
+
+def best_filename_identity_hint(metadata_hints: dict[str, Any], db_dir: Path | None = None) -> dict[str, Any] | None:
+    lookup = exact_filename_identity_lookup(db_dir)
+    if not lookup:
+        return None
+    for item in metadata_hints.get("candidate_names", []):
+        if not isinstance(item, dict) or str(item.get("source") or "") != "filename":
+            continue
+        raw_name = str(item.get("name") or "")
+        keys = [
+            normalize_identity_key(split_handle_words(raw_name) or raw_name),
+            normalize_identity_key(str(item.get("raw") or "")),
+        ]
+        match_key = next((key for key in keys if key in lookup), "")
+        if not match_key:
+            continue
+        hint = dict(item)
+        hint["name"] = lookup[match_key]
+        hint["confidence"] = max(0.6, float(item.get("confidence") or 0))
+        hint["matched_key"] = match_key
+        return hint
+    return None
+
+
+def apply_combined_identity(meta: dict[str, Any], source_dir: Path, db_dir: Path | None = None) -> dict[str, Any]:
     hints = meta.get("metadata_hints") or {}
     watermark = best_watermark_hint(hints)
-    if not watermark:
-        return meta
-    watermark_name = str(watermark.get("name") or "").strip()
-    watermark_conf = float(watermark.get("confidence", 0))
-    key = normalize_identity_key(watermark_name)
-    performers = meta.get("performers") or []
+    filename_hint = best_filename_identity_hint(hints, db_dir)
+    signals_to_try = [("watermark_ocr", watermark), ("filename_hint", filename_hint)]
+    resolved_signal: dict[str, Any] | None = None
+    signal_source = ""
+    identity_name = ""
+    signal_conf = 0.0
     face_agreement = None
-    for performer in performers:
-        if normalize_identity_key(str(performer.get("name", ""))) == key:
-            face_agreement = performer
-            break
-    face_similarity = float(face_agreement.get("similarity", 0)) if face_agreement else 0.0
-    full_profile_watermark = bool(re.search(r"(?:onlyfans|lyfans|fansly|fans|of|fanvue)\.com/", str(watermark.get("raw", "")), re.I))
-    if not watermark_name or (not full_profile_watermark and not face_agreement):
+    face_similarity = 0.0
+    auto_approve = False
+    combined_confidence = 0.0
+    for candidate_source, signal in signals_to_try:
+        if not signal:
+            continue
+        raw_name = str(signal.get("name") or "").strip()
+        candidate_name = canonical_performer_name(raw_name)
+        candidate_key = normalize_identity_key(candidate_name)
+        performers = meta.get("performers") or []
+        candidate_face = None
+        for performer in performers:
+            performer_name = canonical_performer_name(str(performer.get("name", "")))
+            if normalize_identity_key(performer_name) == candidate_key:
+                candidate_face = performer
+                break
+        candidate_face_similarity = float(candidate_face.get("similarity", 0)) if candidate_face else 0.0
+        candidate_conf = float(signal.get("confidence", 0))
+        is_filename_agreement = candidate_source == "filename_hint"
+        full_profile = bool(re.search(r"(?:onlyfans|lyfans|fansly|fans|of|fanvue)\.com/", str(signal.get("raw", "")), re.I))
+        if not candidate_name:
+            continue
+        if candidate_source == "watermark_ocr":
+            if not full_profile and not candidate_face:
+                continue
+            if candidate_conf < HIGH_CONFIDENCE and not (full_profile and candidate_conf >= 0.75):
+                continue
+        candidate_auto = (
+            bool(candidate_face and candidate_face_similarity >= POSSIBLE_CONFIDENCE)
+            or bool(full_profile and candidate_conf >= 0.75)
+            or is_filename_agreement
+        )
+        if candidate_source == "filename_hint":
+            candidate_combined = min(0.99, max(candidate_conf, (candidate_conf * 0.6) + (candidate_face_similarity * 0.45)))
+        else:
+            candidate_combined = min(0.99, max(candidate_conf, (candidate_conf * 0.72) + (candidate_face_similarity * 0.38)))
+        resolved_signal = signal
+        signal_source = candidate_source
+        identity_name = candidate_name
+        signal_conf = candidate_conf
+        face_agreement = candidate_face
+        face_similarity = candidate_face_similarity
+        auto_approve = candidate_auto
+        combined_confidence = candidate_combined
+        break
+    if not resolved_signal:
         return meta
-    if watermark_conf < HIGH_CONFIDENCE and not (full_profile_watermark and watermark_conf >= 0.75):
-        return meta
-    auto_approve = bool(face_agreement and face_similarity >= POSSIBLE_CONFIDENCE) or (full_profile_watermark and watermark_conf >= 0.75)
-    combined_confidence = min(0.99, max(watermark_conf, (watermark_conf * 0.72) + (face_similarity * 0.38)))
+    key = normalize_identity_key(identity_name)
     meta["identity_resolution"] = {
-        "name": watermark_name,
+        "name": identity_name,
         "status": "auto" if auto_approve else "probable",
         "combined_confidence": round(combined_confidence, 3),
         "verification_needed": not auto_approve,
         "signals": {
-            "watermark_ocr": {
-                "confidence": round(watermark_conf, 3),
-                "raw": watermark.get("raw"),
-                "frame_path": watermark.get("frame_path"),
-            },
             "face_match": {
                 "similarity": round(face_similarity, 3),
                 "status": face_agreement.get("status") if face_agreement else "none",
             },
         },
     }
+    if signal_source == "watermark_ocr":
+        meta["identity_resolution"]["signals"]["watermark_ocr"] = {
+            "confidence": round(signal_conf, 3),
+            "raw": resolved_signal.get("raw"),
+            "frame_path": resolved_signal.get("frame_path"),
+        }
+    else:
+        meta["identity_resolution"]["signals"]["filename_hint"] = {
+            "confidence": round(signal_conf, 3),
+            "raw": resolved_signal.get("raw"),
+            "matched_key": resolved_signal.get("matched_key"),
+        }
     if auto_approve:
+        source_signals = [signal_source]
+        if face_agreement:
+            source_signals.append("face_match")
         resolved = {
-            "id": slugify(watermark_name),
-            "name": watermark_name,
+            "id": slugify(identity_name),
+            "name": identity_name,
             "confidence": round(combined_confidence, 4),
             "similarity": round(face_similarity, 4),
             "status": "auto",
             "verification_needed": False,
-            "label": f"{watermark_name} ({round(combined_confidence * 100)}% combined confidence)",
+            "label": f"{identity_name} ({round(combined_confidence * 100)}% combined confidence)",
             "face_crop_path": face_agreement.get("face_crop_path") if face_agreement else None,
             "original_frame_path": face_agreement.get("original_frame_path") if face_agreement else None,
             "model_version": meta.get("model_version"),
             "supporting_faces": face_agreement.get("supporting_faces", 0) if face_agreement else 0,
-            "source_signals": ["watermark_ocr", "face_match"] if face_agreement else ["watermark_ocr"],
+            "source_signals": source_signals,
         }
         meta["performers"] = [resolved] + [
             item
@@ -2683,7 +2818,7 @@ def scan_video(video_path: Path, config: OrganizerConfig, db: KnownPerformersDB,
             "possible": POSSIBLE_CONFIDENCE,
         },
     }
-    return apply_combined_identity(meta, config.source_dir)
+    return apply_combined_identity(meta, config.source_dir, config.db_dir)
 
 
 PRESERVED_SCAN_SIDECAR_FIELDS = (
@@ -5533,10 +5668,14 @@ def resolve_enrollment_crop_path(value: str | Path, config: OrganizerConfig) -> 
     if not crop_path.exists() or not crop_path.is_file():
         raise RuntimeError(f"crop does not exist: {value}")
     review_dir = enrollment_review_dir(config)
+    face_review_root = config.source_dir / config.review_dir_name
     try:
         crop_path.relative_to(review_dir)
     except ValueError as exc:
-        raise RuntimeError(f"crop is outside the enrollment review folder: {value}") from exc
+        try:
+            crop_path.relative_to(face_review_root)
+        except ValueError:
+            raise RuntimeError(f"crop is outside the face review folders: {value}") from exc
     return crop_path
 
 
@@ -5833,15 +5972,25 @@ def phase3_reset_sava_stale_samples(config: OrganizerConfig, *, backup_root: str
     return receipt
 
 
-def phase3_sava_auto_add_candidates(config: OrganizerConfig, *, backup_root: str | Path, confirmed_by: str = "Phase 3.4 auto-add") -> dict[str, Any]:
-    sava_only_guard(SAVA_GOLDEN_PERFORMER_NAME, SAVA_GOLDEN_PERFORMER_ID)
+def phase3_sava_auto_add_candidates(
+    config: OrganizerConfig,
+    *,
+    backup_root: str | Path,
+    confirmed_by: str = "Phase 3.4 auto-add",
+    performer_name: str | None = None,
+    performer_id: str | None = None,
+    allowed_performer_ids: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    performer_name = performer_name or SAVA_GOLDEN_PERFORMER_NAME
+    performer_id = performer_id or slugify(performer_name)
+    require_auto_enroll_allowed(performer_name, performer_id, allowed_performer_ids=allowed_performer_ids)
     backup_path = Path(backup_root)
     rescan_receipt_path = backup_path / "phase3_sava_bounded_rescan_receipt.json"
     if not backup_path.exists() or not rescan_receipt_path.exists():
         raise RuntimeError("Phase 3.4 requires the Phase 3.1 backup and Phase 3.3 bounded rescan receipt")
     receipt = load_json(rescan_receipt_path, {})
     known_before = known_db_summary(config.db_dir)
-    known_record = (known_before.get("by_id") or {}).get(SAVA_GOLDEN_PERFORMER_ID) or {}
+    known_record = (known_before.get("by_id") or {}).get(performer_id) or {}
     accepted_crops = {path_key(resolve_artifact_path(path, config)) for path in accepted_source_crop_paths(known_record)}
     qualified: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
@@ -5853,7 +6002,7 @@ def phase3_sava_auto_add_candidates(config: OrganizerConfig, *, backup_root: str
             (
                 item
                 for item in performers
-                if str(item.get("id") or "") == SAVA_GOLDEN_PERFORMER_ID
+                if str(item.get("id") or "") == performer_id
                 and float(item.get("similarity") or item.get("confidence") or 0) >= HIGH_CONFIDENCE
                 and str(item.get("status") or "") == "auto"
                 and not item.get("verification_needed")
@@ -5862,7 +6011,7 @@ def phase3_sava_auto_add_candidates(config: OrganizerConfig, *, backup_root: str
             None,
         )
         if not match:
-            skipped.append({"video_path": result.get("video_path"), "reason": "no thresholded Sava face-rec match"})
+            skipped.append({"video_path": result.get("video_path"), "reason": f"no thresholded {performer_name} face-rec match"})
             continue
         crop_path = resolve_artifact_path(str(match.get("face_crop_path") or ""), config)
         frame_path = resolve_artifact_path(str(match.get("original_frame_path") or ""), config)
@@ -5894,7 +6043,7 @@ def phase3_sava_auto_add_candidates(config: OrganizerConfig, *, backup_root: str
 
     db_backup = backup_known_performers_files(config)
     db = KnownPerformersDB(config.db_dir)
-    performer_id = db.add_performer(SAVA_GOLDEN_PERFORMER_NAME)
+    performer_id = db.add_performer(performer_name)
     recognizer = InsightFaceRecognizer(config.model_name, config.ctx_id, config.det_size)
     added: list[dict[str, Any]] = []
     for item in qualified:
@@ -5924,13 +6073,13 @@ def phase3_sava_auto_add_candidates(config: OrganizerConfig, *, backup_root: str
         added.append({**item, "sample_path": str(target), "embedding_row": row})
 
     known_after = known_db_summary(config.db_dir)
-    after_record = (known_after.get("by_id") or {}).get(SAVA_GOLDEN_PERFORMER_ID) or {}
+    after_record = (known_after.get("by_id") or {}).get(performer_id) or {}
     out = {
         "schema": "media-face-organizer-phase3-sava-auto-add/v1",
         "event": "phase3_sava_auto_add_thresholded_samples",
         "created_at": utc_now(),
-        "performer_name": SAVA_GOLDEN_PERFORMER_NAME,
-        "performer_id": SAVA_GOLDEN_PERFORMER_ID,
+        "performer_name": performer_name,
+        "performer_id": performer_id,
         "phase3_backup_root": str(backup_path),
         "known_db_backup_root": str(db_backup),
         "phase3_rescan_receipt": str(rescan_receipt_path),
@@ -5942,13 +6091,13 @@ def phase3_sava_auto_add_candidates(config: OrganizerConfig, *, backup_root: str
         "before": {
             "accepted_sample_record_count": len(known_record.get("enrolled_face_sample_records") or []),
             "accepted_sample_path_count": len(known_record.get("enrolled_face_samples") or []),
-            "sava_embedding_rows": known_embedding_rows_for_id(known_before, SAVA_GOLDEN_PERFORMER_ID),
+            "sava_embedding_rows": known_embedding_rows_for_id(known_before, performer_id),
             "embedding_rows": int(known_before.get("embedding_rows") or 0),
         },
         "after": {
             "accepted_sample_record_count": len(after_record.get("enrolled_face_sample_records") or []),
             "accepted_sample_path_count": len(after_record.get("enrolled_face_samples") or []),
-            "sava_embedding_rows": known_embedding_rows_for_id(known_after, SAVA_GOLDEN_PERFORMER_ID),
+            "sava_embedding_rows": known_embedding_rows_for_id(known_after, performer_id),
             "embedding_rows": int(known_after.get("embedding_rows") or 0),
         },
         "generated_ui_surfaces_stale": True,
@@ -6748,16 +6897,50 @@ SAVA_GOLDEN_PERFORMER_ID = "sava-schultz"
 SAVA_GOLDEN_PERFORMER_NAME = "Sava Schultz"
 
 
-def sava_only_guard(performer_name: str, performer_id: str = "") -> dict[str, Any]:
+def auto_enroll_allowed_keys(allowed_performer_ids: Iterable[str] | None = None) -> set[str]:
+    values = [SAVA_GOLDEN_PERFORMER_ID, SAVA_GOLDEN_PERFORMER_NAME]
+    values.extend(str(item) for item in allowed_performer_ids or [] if item)
+    values.extend(
+        item.strip()
+        for item in str(os.environ.get("SPIRITFLIX_AUTO_ENROLL_PERFORMERS") or "").split(",")
+        if item.strip()
+    )
+    keys: set[str] = set()
+    for value in values:
+        keys.update(performer_match_keys(value, slugify(value)))
+    return {key for key in keys if key}
+
+
+def sava_only_guard(
+    performer_name: str,
+    performer_id: str = "",
+    *,
+    allowed_performer_ids: Iterable[str] | None = None,
+) -> dict[str, Any]:
     keys = performer_match_keys(performer_name, performer_id or slugify(performer_name))
-    allowed = performer_match_keys(SAVA_GOLDEN_PERFORMER_NAME, SAVA_GOLDEN_PERFORMER_ID)
+    allowed = auto_enroll_allowed_keys(allowed_performer_ids)
+    default_allowed = performer_match_keys(SAVA_GOLDEN_PERFORMER_NAME, SAVA_GOLDEN_PERFORMER_ID)
+    extra_allowed = bool(allowed - default_allowed)
     return {
         "allowed": bool(keys & allowed),
-        "scope": "sava-only",
+        "scope": "auto-enroll-allowlist" if extra_allowed else "sava-only",
         "allowed_performer_name": SAVA_GOLDEN_PERFORMER_NAME,
         "allowed_performer_id": SAVA_GOLDEN_PERFORMER_ID,
-        "reject_reason": "" if keys & allowed else "Phase 2 is approved only for the Sava Schultz golden case.",
+        "allowed_keys": sorted(allowed),
+        "reject_reason": "" if keys & allowed else "Auto-enroll is approved only for Sava Schultz or SPIRITFLIX_AUTO_ENROLL_PERFORMERS allowlisted ids.",
     }
+
+
+def require_auto_enroll_allowed(
+    performer_name: str,
+    performer_id: str = "",
+    *,
+    allowed_performer_ids: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    guard = sava_only_guard(performer_name, performer_id, allowed_performer_ids=allowed_performer_ids)
+    if not guard["allowed"]:
+        raise RuntimeError(str(guard["reject_reason"]))
+    return guard
 
 
 def phase2_sava_crud_sync_contract() -> dict[str, Any]:
@@ -10719,6 +10902,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     mode.add_argument("--scan-video", type=Path, metavar="VIDEO", help="scan exactly one video and write its face sidecar when --apply is passed")
     mode.add_argument("--record-correction", metavar="NAME", help="store a pending manual correction on a sidecar; requires --sidecar and --apply to write")
     mode.add_argument("--confirm-correction", action="store_true", help="confirm a pending manual correction into registry/model index; requires --sidecar and --apply to write")
+    mode.add_argument("--enroll-crop", metavar="NAME", help="enroll --face-image as a confirmed face crop for NAME; requires --apply to write")
     parser.add_argument("--face-image", type=Path, help="face crop/image to use with --add-performer")
     parser.add_argument("--sidecar", type=Path, help="sidecar JSON path, or video path whose .face-meta.json should be used")
     parser.add_argument("--alias", action="append", default=[], help="alias/public handle to record with --add-performer; repeatable")
@@ -11078,6 +11262,35 @@ def main(argv: list[str] | None = None) -> int:
         if not args.sidecar:
             raise SystemExit("--confirm-correction requires --sidecar")
         confirm_manual_correction(config, sidecar_record_path(args.sidecar), confirmed_by=str(args.confirmed_by or ""))
+        return 0
+    if args.enroll_crop:
+        if not args.face_image:
+            raise SystemExit("--enroll-crop requires --face-image")
+        known = known_db_summary(config.db_dir)
+        key = normalize_identity_key(str(args.enroll_crop or ""))
+        existing = any(
+            key
+            in {
+                normalize_identity_key(str(performer.get("id") or "")),
+                normalize_identity_key(str(performer.get("name") or "")),
+                *(normalize_identity_key(str(alias)) for alias in performer.get("aliases", []) if alias),
+            }
+            for performer in known.get("performers", [])
+            if isinstance(performer, dict)
+        )
+        result = enroll_selected_crops(
+            config,
+            {
+                "performer_name": str(args.enroll_crop),
+                "confirmation": str(args.enroll_crop),
+                "crop_paths": [str(args.face_image)],
+                "add_to_existing": existing,
+                "create_new": not existing,
+                "confirmed_by": str(args.confirmed_by or "Britton"),
+                "defer_unidentified_rescan": True,
+            },
+        )
+        print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
     if args.organize:
         if not config.apply:

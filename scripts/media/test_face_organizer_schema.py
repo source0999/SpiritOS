@@ -188,6 +188,83 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertEqual(fo.split_handle_words("Angetawhite"), "Angela White")
         self.assertEqual(fo.canonical_performer_name("Angetawhite", fo.blank_performer_registry()), "Angela White")
 
+    def test_lexi_alias_seed_canonicalizes_ocr_variants(self) -> None:
+        registry = fo.blank_performer_registry()
+
+        self.assertEqual(fo.normalize_identity_key("leximavel"), "leximavel")
+        self.assertEqual(fo.canonical_performer_name("leximavel", registry), "Lexi Marvel")
+        self.assertEqual(fo.canonical_performer_name("Leximarve", registry), "Lexi Marvel")
+        self.assertEqual(fo.canonical_performer_name("Le Imarve", registry), "Lexi Marvel")
+
+    def test_verify_performers_merges_lexi_fragments_into_one_model_row(self) -> None:
+        counts = {
+            "Lexi Marvel": 8,
+            "Leximarve": 5,
+            "Leximavel": 2,
+            "Leximarva": 2,
+            "Lexim": 2,
+            "Leximarvell": 1,
+            "Leximarvol": 1,
+            "Leximarye": 1,
+            "Lexiniarvol": 1,
+            "Leximanvel": 1,
+            "Leximar": 1,
+            "Leximarv": 1,
+            "Lexima": 1,
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            for name, count in counts.items():
+                for index in range(count):
+                    video = root / f"{name}-{index}.mp4"
+                    sidecar = root / f"{name}-{index}.mp4.face-meta.json"
+                    sidecar.write_text(
+                        json.dumps(
+                            {
+                                "schema": "media-face-organizer/v1",
+                                "video_path": str(video),
+                                "verification_needed": False,
+                                "performers": [
+                                    {
+                                        "name": name,
+                                        "status": "auto",
+                                        "similarity": 0.91,
+                                        "verification_needed": False,
+                                    }
+                                ],
+                                "metadata_hints": {"candidate_names": []},
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+            registry_path = root / "performer_verification.json"
+            config = dataclasses.replace(make_test_config(root, registry_path), apply=True)
+
+            fo.verify_performers(config, organize=False)
+            model_index = json.loads((root / "model_index.json").read_text(encoding="utf-8"))
+
+        lexi_rows = [row for row in model_index["models"] if fo.normalize_identity_key(str(row.get("slug") or "")).startswith("lexi")]
+        self.assertEqual(len(lexi_rows), 1)
+        self.assertEqual(lexi_rows[0]["name"], "Lexi Marvel")
+        self.assertEqual(lexi_rows[0]["slug"], "lexi-marvel")
+        self.assertEqual(lexi_rows[0]["video_count"], 27)
+
+    def test_filename_exact_alias_can_support_combined_identity(self) -> None:
+        hints = fo.build_metadata_hints(Path("/DATA/yes/Leximarvel Test Probe #999.mp4"), False, [], False)
+        meta = {
+            "schema": "media-face-organizer/v1",
+            "video_path": "/DATA/yes/Leximarvel Test Probe #999.mp4",
+            "performers": [],
+            "metadata_hints": hints,
+            "model_version": "insightface:test",
+        }
+
+        resolved = fo.apply_combined_identity(meta, Path("/DATA/yes"))
+
+        self.assertEqual(resolved["performers"][0]["name"], "Lexi Marvel")
+        self.assertEqual(resolved["performers"][0]["source_signals"], ["filename_hint"])
+        self.assertFalse(resolved["performers"][0]["verification_needed"])
+
     def test_407017_ocr_hints_keep_visible_text_variants_without_web_calls(self) -> None:
         candidates = fo.watermark_candidates(
             [
@@ -1451,6 +1528,41 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertFalse(blocked["allowed"])
         self.assertEqual(blocked["scope"], "sava-only")
         self.assertIn("Sava Schultz", blocked["reject_reason"])
+
+    def test_phase3_auto_add_accepts_non_sava_only_when_allowlisted(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            backup_root = root / "phase3"
+            backup_root.mkdir()
+            (backup_root / "phase3_sava_bounded_rescan_receipt.json").write_text(
+                json.dumps({"results": []}),
+                encoding="utf-8",
+            )
+            db_dir = root / "known_performers"
+            db_dir.mkdir()
+            (db_dir / "index.json").write_text(json.dumps({"performers": []}), encoding="utf-8")
+            (db_dir / "performer_map.json").write_text(json.dumps({}), encoding="utf-8")
+            fo.np.save(db_dir / "embeddings.npy", fo.np.empty((0, 512), dtype=fo.np.float32))
+            config = dataclasses.replace(make_test_config(root, root / "performer_verification.json"), db_dir=db_dir)
+
+            with patch.dict(fo.os.environ, {"SPIRITFLIX_AUTO_ENROLL_PERFORMERS": ""}):
+                with self.assertRaises(RuntimeError):
+                    fo.phase3_sava_auto_add_candidates(
+                        config,
+                        backup_root=backup_root,
+                        performer_name="Aaliyah Yasan",
+                        performer_id="aaliyah-yasan",
+                    )
+            with patch.dict(fo.os.environ, {"SPIRITFLIX_AUTO_ENROLL_PERFORMERS": "aaliyah-yasan"}):
+                result = fo.phase3_sava_auto_add_candidates(
+                    config,
+                    backup_root=backup_root,
+                    performer_name="Aaliyah Yasan",
+                    performer_id="aaliyah-yasan",
+                )
+
+        self.assertTrue(result["dry_run"])
+        self.assertEqual(result["qualified"], [])
 
     def test_phase3_sava_backup_manifest_captures_state_before_reset(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
