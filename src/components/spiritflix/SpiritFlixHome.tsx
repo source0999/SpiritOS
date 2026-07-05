@@ -258,14 +258,23 @@ function isOrientationFilter(value: unknown): value is SpiritFlixOrientationFilt
 }
 
 function scheduleDeferredHomeTask(task: () => void): () => void {
+  return scheduleDeferredHomeTaskAfter(task, 16);
+}
+
+function scheduleDeferredHomeTaskAfter(task: () => void, delayMs: number): () => void {
   let canceled = false;
   const timer = window.setTimeout(() => {
     if (!canceled) task();
-  }, 16);
+  }, delayMs);
   return () => {
     canceled = true;
     window.clearTimeout(timer);
   };
+}
+
+function isMobileLibraryViewport(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(max-width: 980px), (pointer: coarse)").matches;
 }
 
 function getStoredExcludedCategories(state: Partial<StoredLibraryUiState>): string[] {
@@ -865,14 +874,22 @@ export function SpiritFlixHome({
   onVisibleMetadataReady,
 }: SpiritFlixHomeProps) {
   const [storedLibraryUiState] = useState(() => getStoredLibraryUiState());
-  const [viewMode, setViewMode] = useState<LibraryViewMode>(() => isLibraryViewMode(storedLibraryUiState.viewMode) ? storedLibraryUiState.viewMode : "grid");
+  const [viewMode, setViewMode] = useState<LibraryViewMode>(() =>
+    isMobileLibraryViewport()
+      ? "grid"
+      : isLibraryViewMode(storedLibraryUiState.viewMode) ? storedLibraryUiState.viewMode : "grid",
+  );
   const [sortMode, setSortMode] = useState<LibrarySortMode>(() => isLibrarySortMode(storedLibraryUiState.sortMode) ? storedLibraryUiState.sortMode : "model");
   const [sortDirection, setSortDirection] = useState<LibrarySortDirection>(() => isLibrarySortDirection(storedLibraryUiState.sortDirection) ? storedLibraryUiState.sortDirection : "desc");
-  const [orientationFilter, setOrientationFilter] = useState<SpiritFlixOrientationFilter>(() => isOrientationFilter(storedLibraryUiState.orientationFilter) ? storedLibraryUiState.orientationFilter : "all");
-  const [filtersOpen, setFiltersOpen] = useState(() => storedLibraryUiState.filtersOpen === true);
-  const [selectedModel, setSelectedModel] = useState<string | null>(() => initialModelName ?? storedLibraryUiState.selectedModel ?? null);
-  const [selectedManualTag, setSelectedManualTag] = useState<string | null>(() => initialManualTag ?? storedLibraryUiState.selectedManualTag ?? null);
-  const [excludedCategories, setExcludedCategories] = useState<string[]>(() => getStoredExcludedCategories(storedLibraryUiState));
+  const [orientationFilter, setOrientationFilter] = useState<SpiritFlixOrientationFilter>(() =>
+    isMobileLibraryViewport()
+      ? "all"
+      : isOrientationFilter(storedLibraryUiState.orientationFilter) ? storedLibraryUiState.orientationFilter : "all",
+  );
+  const [filtersOpen, setFiltersOpen] = useState(() => !isMobileLibraryViewport() && storedLibraryUiState.filtersOpen === true);
+  const [selectedModel, setSelectedModel] = useState<string | null>(() => initialModelName ?? (isMobileLibraryViewport() ? null : storedLibraryUiState.selectedModel ?? null));
+  const [selectedManualTag, setSelectedManualTag] = useState<string | null>(() => initialManualTag ?? (isMobileLibraryViewport() ? null : storedLibraryUiState.selectedManualTag ?? null));
+  const [excludedCategories, setExcludedCategories] = useState<string[]>(() => isMobileLibraryViewport() ? [] : getStoredExcludedCategories(storedLibraryUiState));
   const [faceMetadata, setFaceMetadata] = useState<FaceOrganizerMetadataResponse | null>(null);
   const [manualTagIndex, setManualTagIndex] = useState<SpiritFlixManualTagIndex | null>(null);
   const [manualTagRecords, setManualTagRecords] = useState<SpiritFlixManualTagRecord[]>([]);
@@ -883,7 +900,7 @@ export function SpiritFlixHome({
   const [galleryData, setGalleryData] = useState<SpiritFlixGalleryResponse | null>(null);
   const [galleryError, setGalleryError] = useState("");
   const [galleryLightbox, setGalleryLightbox] = useState<{ items: SpiritFlixGalleryItem[]; index: number } | null>(null);
-  const [playPrimaryTapOnMobile, setPlayPrimaryTapOnMobile] = useState(false);
+  const [playPrimaryTapOnMobile, setPlayPrimaryTapOnMobile] = useState(() => isMobileLibraryViewport());
   const [smartRescan, setSmartRescan] = useState<LibrarySmartRescanState>({ status: "idle" });
   const [smartRescanError, setSmartRescanError] = useState("");
   const [isLibraryShuffleLoading, setIsLibraryShuffleLoading] = useState(false);
@@ -1189,6 +1206,9 @@ export function SpiritFlixHome({
     { label: "Unscanned", value: playableLibraryItems.filter((item) => getFaceMatch(item, faceMetadata)?.status === "unscanned").length },
     { label: "New", value: getNewThisWeekCount(playableLibraryItems) },
   ];
+  const visibleLibraryStats = playPrimaryTapOnMobile
+    ? libraryStats.filter((stat) => ["Videos", "Selected", "Portrait", "Landscape"].includes(stat.label))
+    : libraryStats;
   const heroMeta = hero
     ? [hero.ProductionYear, hero.Type, hero.Genres?.slice(0, 2).join(" / ")].filter(Boolean).join(" / ")
     : "";
@@ -1226,8 +1246,47 @@ export function SpiritFlixHome({
       : smartRescan.status === "completed"
         ? `Smart scan done${typeof smartRescanSummary?.videos_scanned === "number" ? ` / ${smartRescanSummary.videos_scanned} videos` : ""}`
         : smartRescan.status === "failed"
-          ? "Smart scan failed"
-          : "Smart scan";
+        ? "Smart scan failed"
+        : "Smart scan";
+  const mobileSmartRescanStatusLabel =
+    smartRescan.status === "running"
+      ? smartRescanPercent
+        ? `${smartRescanPercent}% Refreshing`
+        : "Refreshing"
+      : smartRescan.status === "failed"
+        ? "Refresh failed"
+        : "Refresh";
+  const visibleSmartRescanStatusLabel = playPrimaryTapOnMobile
+    ? mobileSmartRescanStatusLabel
+    : smartRescanStatusLabel;
+  const libraryFilterControlLabel = playPrimaryTapOnMobile
+    ? `${getOrientationFilterLabel(orientationFilter)}${excludedCategories.length ? ` / ${excludedCategories.length} off` : ""}`
+    : `${getOrientationFilterLabel(orientationFilter)} / ${getSortModeLabel(sortMode)}${excludedCategories.length ? ` / ${excludedCategories.length} off` : ""}`;
+  const smartRescanNoteTitle =
+    smartRescanError || smartRescan.error || smartRescan.phaseLabel
+      ? smartRescanError || smartRescan.error || smartRescan.phaseLabel
+      : playPrimaryTapOnMobile
+        ? smartRescan.status === "completed"
+          ? "Library refreshed"
+          : "Refreshing library"
+        : smartRescan.status === "completed"
+          ? "Smart scan completed"
+          : "Smart model scan";
+  const smartRescanPreviewKindLabel = playPrimaryTapOnMobile
+    ? smartRescan.currentItem?.kind === "video"
+      ? "Video"
+      : "Item"
+    : smartRescan.currentItem?.kind === "model"
+      ? "Model"
+      : smartRescan.currentItem?.kind === "video"
+        ? "Video"
+        : "Now";
+  const shouldShowSmartRescanNote = Boolean(
+    smartRescanError ||
+      smartRescan.error ||
+      smartRescan.status === "running" ||
+      smartRescan.status === "failed",
+  );
 
   const formatModelCountLabel = (videoCount: number, galleryCount = 0): string => {
     const videoText = modelCountsAreCounting ? "counting..." : getVideoCountLabel(videoCount);
@@ -1293,13 +1352,13 @@ export function SpiritFlixHome({
       const body = normalizeSmartRescanState(await response.json());
       setSmartRescan(body);
       setSmartRescanError("");
-      if (body.status === "completed") {
+      if (body.status === "completed" && !playPrimaryTapOnMobile) {
         handleRefresh();
       }
     } catch {
       setSmartRescanError("Smart rescan status is unavailable.");
     }
-  }, [handleRefresh]);
+  }, [handleRefresh, playPrimaryTapOnMobile]);
 
   const startSmartRescan = async () => {
     if (smartRescan.status === "running") return;
@@ -1342,17 +1401,17 @@ export function SpiritFlixHome({
 
   useEffect(() => {
     if (!isLibraryDashboardView) return undefined;
-    return scheduleDeferredHomeTask(() => {
+    return scheduleDeferredHomeTaskAfter(() => {
       void loadGallery();
-    });
-  }, [isLibraryDashboardView, loadGallery]);
+    }, playPrimaryTapOnMobile ? 1800 : 16);
+  }, [isLibraryDashboardView, loadGallery, playPrimaryTapOnMobile]);
 
   useEffect(() => {
     if (!isLibraryDashboardView) return undefined;
-    const cancelDeferredLoad = scheduleDeferredHomeTask(() => {
+    const cancelDeferredLoad = scheduleDeferredHomeTaskAfter(() => {
       void loadManualTags();
       void loadManualModels();
-    });
+    }, playPrimaryTapOnMobile ? 1800 : 16);
     const handleManualTagsChanged = () => {
       void loadManualTags();
     };
@@ -1366,10 +1425,17 @@ export function SpiritFlixHome({
       window.removeEventListener("spiritflix:manual-tags-changed", handleManualTagsChanged);
       window.removeEventListener("spiritflix:manual-models-changed", handleManualModelsChanged);
     };
-  }, [isLibraryDashboardView, loadManualModels, loadManualTags]);
+  }, [isLibraryDashboardView, loadManualModels, loadManualTags, playPrimaryTapOnMobile]);
 
   useEffect(() => {
     if (!isLibraryDashboardView || !data.selectedLibraryId) {
+      setFullLibraryItems([]);
+      setIsFullLibraryCounting(false);
+      return undefined;
+    }
+    const shouldRunFullLibraryModelScan =
+      !playPrimaryTapOnMobile || viewMode === "models" || Boolean(selectedModel);
+    if (!shouldRunFullLibraryModelScan) {
       setFullLibraryItems([]);
       setIsFullLibraryCounting(false);
       return undefined;
@@ -1379,7 +1445,7 @@ export function SpiritFlixHome({
     let cancelled = false;
     setFullLibraryItems([]);
     setIsFullLibraryCounting(true);
-    const cancelDeferredFullLibraryLoad = scheduleDeferredHomeTask(() => {
+    const cancelDeferredFullLibraryLoad = scheduleDeferredHomeTaskAfter(() => {
       void client
         .getAllLibraryItems(libraryId, {
           searchTerm,
@@ -1400,14 +1466,14 @@ export function SpiritFlixHome({
             setIsFullLibraryCounting(false);
           }
         });
-    });
+    }, playPrimaryTapOnMobile ? 1200 : 16);
     return () => {
       cancelled = true;
       cancelDeferredFullLibraryLoad();
       controller.abort();
       setIsFullLibraryCounting(false);
     };
-  }, [client, data.selectedLibraryId, isLibraryDashboardView, searchTerm]);
+  }, [client, data.selectedLibraryId, isLibraryDashboardView, playPrimaryTapOnMobile, searchTerm, selectedModel, viewMode]);
 
   useEffect(() => {
     const queries = [
@@ -1420,6 +1486,16 @@ export function SpiritFlixHome({
     queries.forEach((query) => query.addEventListener("change", updateMode));
     return () => queries.forEach((query) => query.removeEventListener("change", updateMode));
   }, []);
+
+  useEffect(() => {
+    if (!isLibraryDashboardView || !playPrimaryTapOnMobile) return;
+    setViewMode("grid");
+    setFiltersOpen(false);
+    setExcludedCategories([]);
+    setOrientationFilter("all");
+    if (!initialModelName) setSelectedModel(null);
+    if (!initialManualTag) setSelectedManualTag(null);
+  }, [data.selectedLibraryId, initialManualTag, initialModelName, isLibraryDashboardView, playPrimaryTapOnMobile]);
 
   useEffect(() => {
     window.localStorage.setItem(LIBRARY_VIEW_MODE_KEY, viewMode);
@@ -1475,6 +1551,10 @@ export function SpiritFlixHome({
         setSelectedModel(initialModelName);
         return;
       }
+      if (playPrimaryTapOnMobile) {
+        setSelectedModel(null);
+        return;
+      }
       if (storedLibraryUiState.selectedLibraryId === data.selectedLibraryId) {
         setSelectedModel(storedLibraryUiState.selectedModel ?? null);
         return;
@@ -1482,12 +1562,16 @@ export function SpiritFlixHome({
       setSelectedModel(null);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [data.selectedLibraryId, initialModelName, storedLibraryUiState]);
+  }, [data.selectedLibraryId, initialModelName, playPrimaryTapOnMobile, storedLibraryUiState]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (initialManualTag) {
         setSelectedManualTag(initialManualTag);
+        return;
+      }
+      if (playPrimaryTapOnMobile) {
+        setSelectedManualTag(null);
         return;
       }
       if (storedLibraryUiState.selectedLibraryId === data.selectedLibraryId) {
@@ -1497,7 +1581,7 @@ export function SpiritFlixHome({
       setSelectedManualTag(null);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [data.selectedLibraryId, initialManualTag, storedLibraryUiState.selectedLibraryId, storedLibraryUiState.selectedManualTag]);
+  }, [data.selectedLibraryId, initialManualTag, playPrimaryTapOnMobile, storedLibraryUiState.selectedLibraryId, storedLibraryUiState.selectedManualTag]);
 
   useEffect(() => {
     if (!didRunPageResetRef.current) {
@@ -1926,20 +2010,17 @@ export function SpiritFlixHome({
                 onClick={() => setFiltersOpen((current) => !current)}
               >
                 <SlidersHorizontal size={18} aria-hidden="true" />
-                <span>
-                  {getOrientationFilterLabel(orientationFilter)} / {getSortModeLabel(sortMode)}
-                  {excludedCategories.length ? ` / ${excludedCategories.length} off` : ""}
-                </span>
+                <span>{libraryFilterControlLabel}</span>
               </button>
               <button
                 type="button"
                 className="spiritflix-smart-rescan-button"
                 onClick={startSmartRescan}
                 disabled={smartRescan.status === "running"}
-                aria-label="Run smart model and video rescan"
+                aria-label={playPrimaryTapOnMobile ? "Refresh library" : "Run smart model and video rescan"}
               >
                 <RefreshCw size={18} aria-hidden="true" className={smartRescan.status === "running" ? "is-spinning" : undefined} />
-                <span>{smartRescanStatusLabel}</span>
+                <span>{visibleSmartRescanStatusLabel}</span>
               </button>
             </div>
 
@@ -2056,7 +2137,7 @@ export function SpiritFlixHome({
             </AnimatePresence>
 
             <div className="spiritflix-library-stats" aria-label="Library stats">
-              {libraryStats.map((stat) => (
+              {visibleLibraryStats.map((stat) => (
                 <div key={stat.label} className="spiritflix-library-stat">
                   <strong>{stat.value}</strong>
                   <span>{stat.label}</span>
@@ -2064,15 +2145,10 @@ export function SpiritFlixHome({
                 </div>
               ))}
             </div>
-            {smartRescan.status !== "idle" || smartRescanError ? (
+            {shouldShowSmartRescanNote ? (
               <div className={`spiritflix-smart-rescan-note is-${smartRescan.status}`}>
                 <div className="spiritflix-smart-rescan-note__head">
-                  <strong>
-                    {smartRescanError ||
-                      smartRescan.error ||
-                      smartRescan.phaseLabel ||
-                      (smartRescan.status === "completed" ? "Smart scan completed" : "Smart model scan")}
-                  </strong>
+                  <strong>{smartRescanNoteTitle}</strong>
                   {smartRescan.status === "running" && hasSmartRescanProgress ? <span>{smartRescanPercent}%</span> : null}
                 </div>
                 {smartRescan.status === "running" ? (
@@ -2087,7 +2163,7 @@ export function SpiritFlixHome({
                       <span style={{ width: hasSmartRescanProgress ? `${smartRescanPercent}%` : undefined }} />
                     </div>
                     <div className="spiritflix-smart-rescan-preview">
-                      <span>{smartRescan.currentItem?.kind === "model" ? "Model" : smartRescan.currentItem?.kind === "video" ? "Video" : "Now"}</span>
+                      <span>{smartRescanPreviewKindLabel}</span>
                       <strong>{smartRescan.currentItem?.preview || smartRescan.currentItem?.name || "Loading next item..."}</strong>
                       {smartRescanProgressText || smartRescanModelProgressText ? (
                         <em>{[smartRescanProgressText, smartRescanModelProgressText].filter(Boolean).join(" / ")}</em>
@@ -2194,7 +2270,7 @@ export function SpiritFlixHome({
               </section>
             ) : null}
 
-            {viewMode !== "gallery" && viewMode !== "history" && viewMode !== "favorites" && viewMode !== "models" ? (
+            {viewMode !== "gallery" && viewMode !== "history" && viewMode !== "favorites" && viewMode !== "models" && (!playPrimaryTapOnMobile || favoriteItems.length) ? (
               <SpiritFlixRail
                 title="Favorites"
                 titleMeta={favoriteCountLabel}
@@ -2213,7 +2289,7 @@ export function SpiritFlixHome({
               />
             ) : null}
 
-            {viewMode !== "history" && viewMode !== "favorites" && viewMode !== "models" ? (
+            {viewMode !== "history" && viewMode !== "favorites" && viewMode !== "models" && !playPrimaryTapOnMobile ? (
             <section className="spiritflix-model-section" aria-label="Model filters">
               <div className="spiritflix-model-section__header">
                 <button
