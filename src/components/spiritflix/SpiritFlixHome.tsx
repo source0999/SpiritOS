@@ -1815,7 +1815,7 @@ export function SpiritFlixHome({
           ) : null}
         </div>
       ) : null}
-      {isBlockingLoad ? <SpiritFlixSplash progress={visibleLoadProgress} skeleton /> : null}
+      {isBlockingLoad ? <SpiritFlixSplash progress={visibleLoadProgress} overlay /> : null}
 
       <div className={`spiritflix-rows ${isAnimeView ? "spiritflix-rows--anime" : ""} ${isBlockingLoad ? "spiritflix-rows--behind-loader" : ""}`} data-spiritflix-useful-content={hasUsefulHomeContent ? "ready" : "pending"}>
         {isLibraryDashboardView ? (

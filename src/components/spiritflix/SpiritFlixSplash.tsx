@@ -10,11 +10,13 @@ export function SpiritFlixSplash({
   message,
   action,
   progress,
+  overlay = false,
   skeleton = false,
 }: {
   message?: string;
   action?: ReactNode;
   progress?: SpiritFlixLoadProgress;
+  overlay?: boolean;
   skeleton?: boolean;
 }) {
   const progressValue = Math.max(0, Math.min(100, Math.round(progress?.percent ?? 0)));
@@ -22,7 +24,7 @@ export function SpiritFlixSplash({
   const isIndeterminate = Boolean(progress?.indeterminate);
 
   return (
-    <section className={`spiritflix-restore ${skeleton ? "spiritflix-restore--overlay" : ""}`}>
+    <section className={`spiritflix-restore ${overlay ? "spiritflix-restore--overlay" : ""}`}>
       <div className="spiritflix-restore__panel">
         <div className="spiritflix-brand">
           <span className="spiritflix-brand__sigil">SF</span>

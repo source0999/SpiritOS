@@ -155,4 +155,41 @@ describe("SpiritFlixApp live library loading", () => {
     expect(screen.getByText("Jellyfin request timed out while loading library data.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
+
+  it("uses the route library for silent focus refreshes on mobile navigation races", async () => {
+    const libraries = [
+      { Id: "library-1", Name: "Library", CollectionType: "movies" },
+      { Id: "library-2", Name: "Other", CollectionType: "movies" },
+    ];
+    const getLibraryItemsPage = vi.fn((libraryId: string) =>
+      Promise.resolve(
+        page([
+          {
+            ...libraryItem,
+            Id: `${libraryId}-scene`,
+            Name: `${libraryId} Scene`,
+          },
+        ]),
+      ),
+    );
+    mocks.client = createClient({
+      getLibraries: vi.fn().mockResolvedValue(libraries),
+      getLibraryItemsPage,
+    });
+
+    render(<SpiritFlixApp />);
+
+    await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("library-1", expect.objectContaining({ fields: "card" })));
+    await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
+
+    getLibraryItemsPage.mockClear();
+    window.history.pushState(window.history.state, "", "/spiritflix?library=library-2");
+
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+
+    await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("library-2", expect.objectContaining({ fields: "card" })));
+    expect(getLibraryItemsPage).not.toHaveBeenCalledWith("library-1", expect.anything());
+  });
 });
