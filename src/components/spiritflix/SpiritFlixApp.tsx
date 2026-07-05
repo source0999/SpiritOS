@@ -73,6 +73,7 @@ const MOBILE_LIBRARY_PAGE_SIZE = 24;
 const DESKTOP_LIBRARY_PAGE_SIZE = 48;
 const MOBILE_SHELF_PAGE_SIZE = 10;
 const DESKTOP_SHELF_PAGE_SIZE = 18;
+const LATEST_ADDED_PAGE_SIZE = DESKTOP_SHELF_PAGE_SIZE;
 const MOBILE_HISTORY_PAGE_SIZE = 16;
 const DESKTOP_HISTORY_PAGE_SIZE = 32;
 
@@ -188,6 +189,7 @@ function getInitialPageSizes() {
   return {
     library: mobile ? MOBILE_LIBRARY_PAGE_SIZE : DESKTOP_LIBRARY_PAGE_SIZE,
     shelf: mobile ? MOBILE_SHELF_PAGE_SIZE : DESKTOP_SHELF_PAGE_SIZE,
+    latestAdded: LATEST_ADDED_PAGE_SIZE,
     history: mobile ? MOBILE_HISTORY_PAGE_SIZE : DESKTOP_HISTORY_PAGE_SIZE,
   };
 }
@@ -806,12 +808,12 @@ export function SpiritFlixApp() {
         });
         const latestPagePromise = selectedLibraryId
           ? client.getLibraryLatestAddedPage(selectedLibraryId, {
-              limit: pageSizes.shelf,
+              limit: pageSizes.latestAdded,
               fields: "card",
               signal: controller.signal,
             })
           : client.getLatestAddedPage({
-              limit: pageSizes.shelf,
+              limit: pageSizes.latestAdded,
               fields: "card",
               signal: controller.signal,
             });
@@ -964,7 +966,7 @@ export function SpiritFlixApp() {
     try {
       const options = {
         startIndex: paging.loaded,
-        limit: paging.pageSize || getInitialPageSizes().shelf,
+        limit: paging.pageSize || getInitialPageSizes().latestAdded,
         fields: "card" as const,
       };
       const page = current.selectedLibraryId

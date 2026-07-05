@@ -224,4 +224,19 @@ describe("SpiritFlixApp live library loading", () => {
     await waitFor(() => expect(getLatestAddedPage).toHaveBeenCalledTimes(2));
     expect(await screen.findAllByText("Fresh Phone Upload")).not.toHaveLength(0);
   });
+
+  it("loads the same latest added count on mobile as desktop", async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("pointer: coarse"),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    const getLatestAddedPage = vi.fn().mockResolvedValue(page([], 18));
+    mocks.client = createClient({ getLatestAddedPage });
+    window.history.replaceState(window.history.state, "", "/spiritflix");
+
+    render(<SpiritFlixApp />);
+
+    await waitFor(() => expect(getLatestAddedPage).toHaveBeenCalledWith(expect.objectContaining({ limit: 18, fields: "card" })));
+  });
 });
