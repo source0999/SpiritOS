@@ -90,6 +90,7 @@ Thumbs.db
 .codex-remote-attachments/
 .codex-*.pid
 .codex-spiritflix-upload-watchdog.state
+.spiritflix-admin/
 
 # Local coder gate runtime state (README is tracked; state.json is operator-local)
 .gate/state.json

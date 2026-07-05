@@ -12,6 +12,8 @@
     "dev:https:lan:watch": "bash ./scripts/spiritos-lan-watchdog.sh",
     "lan:restart": "bash ./scripts/restart-spiritos-lan.sh",
     "proxy:lan:restart": "bash ./scripts/restart-source-proxy-lan.sh",
+    "spiritflix:prod:start": "bash ./scripts/spiritflix-prod-start.sh",
+    "spiritflix:prod:rebuild": "bash ./scripts/spiritflix-prod-start.sh",
     "spiritflix:stable:restart": "bash ./scripts/restart-spiritflix-stable-3001.sh",
     "lanes:audit": "bash ./scripts/runtime-lanes-audit.sh",
     "spiritflix:admin:dev": "bash ./scripts/spiritflix-admin-dev.sh start",
