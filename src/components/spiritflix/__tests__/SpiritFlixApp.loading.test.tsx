@@ -196,7 +196,7 @@ describe("SpiritFlixApp live library loading", () => {
     expect(getLibraryItemsPage).not.toHaveBeenCalledWith("library-1", expect.anything());
   });
 
-  it("canonicalizes the stale Home Videos shell to the real yes folder library", async () => {
+  it("honors the Library navbar shell route instead of forcing it to yes", async () => {
     const libraries = [
       {
         Id: "home-videos-shell",
@@ -231,10 +231,8 @@ describe("SpiritFlixApp live library loading", () => {
 
     render(<SpiritFlixApp />);
 
-    await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("yes-folder", expect.objectContaining({ fields: "card" })));
-    expect(getLibraryItemsPage).not.toHaveBeenCalledWith("home-videos-shell", expect.anything());
-    // We do NOT rewrite the user's URL behind their back. The shell request is resolved to the
-    // real library internally, but the URL the user sees is left as-is.
+    await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("home-videos-shell", expect.objectContaining({ fields: "card" })));
+    expect(getLibraryItemsPage).not.toHaveBeenCalledWith("yes-folder", expect.anything());
     expect(window.location.search).toBe("?library=home-videos-shell");
   });
 

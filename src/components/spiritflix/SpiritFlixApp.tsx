@@ -101,17 +101,14 @@ function isHomeVideoCollectionShell(library: Pick<SpiritFlixSelectableLibrary, "
 }
 
 // Pick the library to load. We HONOR an explicit, still-valid request from the URL or user
-// click — we do not rewrite it to a hardcoded "canonical" library. We only fall back to a
-// sensible default when nothing is requested or when the request points at Jellyfin's stale
-// "Home Videos and Photos" shell (which exposes no real items on this install).
+// click — even Jellyfin's "Home Videos and Photos" shell, which the UI labels as Library
+// and the data client handles with flat-library fallbacks on this install.
 const DEFAULT_LIBRARY_FALLBACK_NAMES = ["yes", "media", "other"];
 
 export function resolveSpiritFlixLibraryId(libraries: SpiritFlixSelectableLibrary[], requestedLibraryId: string | null): string | null {
   if (requestedLibraryId) {
     const requested = libraries.find((library) => library.Id === requestedLibraryId);
-    if (requested && !isHomeVideoCollectionShell(requested)) {
-      return requested.Id;
-    }
+    if (requested) return requested.Id;
   }
   for (const fallbackName of DEFAULT_LIBRARY_FALLBACK_NAMES) {
     const match = libraries.find((library) => library.Name.trim().toLowerCase() === fallbackName && !isHomeVideoCollectionShell(library));

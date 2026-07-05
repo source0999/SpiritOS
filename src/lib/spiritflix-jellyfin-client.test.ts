@@ -283,7 +283,7 @@ describe("JellyfinClient paged card queries", () => {
     expect(page.hasMore).toBe(true);
   });
 
-  it("uses the real yes folder instead of the Jellyfin Home Videos shell", async () => {
+  it("keeps the Home Videos shell visible so the navbar can label it Library", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -315,7 +315,7 @@ describe("JellyfinClient paged card queries", () => {
 
     const libraries = await client.getLibraries();
 
-    expect(libraries.map((library) => library.Id)).toEqual(["yes-folder"]);
+    expect(libraries.map((library) => library.Id)).toEqual(["shell-fixture-id", "yes-folder"]);
     const folderCallBody = JSON.parse(fetchMock.mock.calls[1][1]?.body as string) as { path: string };
     const folderPath = new URL(`http://jellyfin.local${folderCallBody.path}`);
     expect(folderPath.pathname).toBe("/Users/user-1/Items");
@@ -323,10 +323,7 @@ describe("JellyfinClient paged card queries", () => {
     expect(folderPath.searchParams.get("IncludeItemTypes")).toBe("Folder");
   });
 
-  it("returns no libraries when Jellyfin only exposes the Home Videos shell and no real folders", async () => {
-    // We deliberately do NOT fabricate a library with a hardcoded id. If the real folder is
-    // absent from both /Views and the folder listing, getLibraries returns an empty list and
-    // the UI surfaces "no libraries" rather than silently injecting a fake entry.
+  it("keeps the Home Videos shell when Jellyfin exposes it without real folders", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -347,6 +344,6 @@ describe("JellyfinClient paged card queries", () => {
 
     const libraries = await client.getLibraries();
 
-    expect(libraries).toEqual([]);
+    expect(libraries.map((library) => library.Id)).toEqual(["shell-1"]);
   });
 });

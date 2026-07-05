@@ -218,12 +218,11 @@ function isHomeVideosCollectionShell(library: JellyfinLibrary): boolean {
   );
 }
 
-// Merge the /Views listing with the real folder listing from /Users/<id>/Items?IncludeItemTypes=Folder,
-// hiding Jellyfin's stale "Home Videos and Photos" shell. We do NOT force any library name,
-// inject libraries by hardcoded ID, or rename anything — we just make the real folders visible.
+// Merge the /Views listing with the real folder listing from /Users/<id>/Items?IncludeItemTypes=Folder.
+// Keep Jellyfin's "Home Videos and Photos" shell because the UI labels it as Library and uses
+// route-level fallbacks for this install's flat media collection.
 function withCanonicalSpiritFlixLibraries(libraries: JellyfinLibrary[]): JellyfinLibrary[] {
-  const real = libraries.filter((library) => !isHomeVideosCollectionShell(library));
-  return uniqueLibrariesById(real);
+  return uniqueLibrariesById(libraries);
 }
 
 function getItemFields(fields: "card" | "full" = "card"): string {
@@ -446,7 +445,17 @@ export class JellyfinClient {
       `/Users/${this.userId}/Items?${fallbackQuery}`,
       { signal },
     );
-    return pageFromResponse(fallbackData, { startIndex, limit });
+    const fallbackPage = pageFromResponse(fallbackData, { startIndex, limit });
+    if (fallbackPage.items.length === 0 && startIndex === 0) {
+      return this.getItemsPageByQuery(
+        {
+          SortBy: "DateCreated",
+          SortOrder: "Descending",
+        },
+        { searchTerm, limit, startIndex, fields, signal },
+      );
+    }
+    return fallbackPage;
   }
 
   async getLibraryItems(parentId: string, searchTerm = "", limit?: number): Promise<JellyfinItem[]> {
