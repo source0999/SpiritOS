@@ -1,0 +1,74 @@
+{
+  "schema": "spiritflix-live-frontend-proof/v1",
+  "generatedAt": "2026-07-05T18:57:31.594Z",
+  "baseUrl": "https://127.0.0.1:3000/spiritflix",
+  "sessionMode": "seeded-localStorage-proof-session",
+  "sessionNote": "No Jellyfin username/password was available to Codex. Screenshots seed the same localStorage session shape used by the app/tests, hit live prod over HTTPS, and validate the live manual model catalog counts. Jellyfin item calls return 401 with the proof token, so these screenshots are not evidence of a valid Jellyfin user token.",
+  "apiRows": {
+    "Lexi Marvel": {
+      "count": 262,
+      "catalogCount": 262,
+      "assignedCount": 14,
+      "source": "manual"
+    },
+    "Vibe With Mommy": {
+      "count": 12,
+      "catalogCount": 12,
+      "assignedCount": 2,
+      "source": "manual"
+    }
+  },
+  "captures": [
+    {
+      "modelName": "Lexi Marvel",
+      "viewport": "desktop",
+      "url": "https://127.0.0.1:3000/spiritflix?library=library-1&model=Lexi%20Marvel",
+      "screenshotPath": "/home/source/SpiritOS/docs/evidence/spiritflix-smart-scan-fix-20260705/live_lexi_marvel_page.desktop.png",
+      "pageMentionsModel": true,
+      "pageMentionsCount": true,
+      "pageIsNotLogin": true,
+      "jellyfinUnauthorizedObserved": true,
+      "bodyExcerpt": "SF\nSpiritFlix\nHome\nf599a2eb64d4\nproof-user\nF599A2EB64D4 / LIBRARY\nYour cinema is waiting\n\nChoose a library and stream from your real Jellyfin server.\n\nCould not load your Jellyfin library. Log out and back in if the token expired.\nLIBRARY\nModels\nGrid\nList\nHistory\nFavorites\nGallery\nModels\nAll videos / Title\nSmart scan done / 120 videos\nFilters\nDone\nVIDEO SHAPE\nAll\n0\nPortrait\n0\nLandscape\n0\nEXCLUDE CATEGORIES\nHide Twitter / X\n0\nSORT\nModel\nLast added\nDuration\nTitle\nORDER\nDescending\nAscending\n0\nVideos\n78\nModels\n0\nSelected\n0\nFiltered out\n0\nPortrait\n0\nLandscape\n0\nPics\n0\nIdentified\n0\nReview\n0\nUnscanned\n0\nNew\nMANUAL TAGS\nAll\nblowjob\n44\nfacial\n18\nasmr\n17\ntease\n16\ntwerk\n12\npublic\n9\nspit\n9\nwet noises\n9\n2 girls\n7\nsolo\n7\nfeet\n6\ncreampie\n5\ncum on tits\n5\ncumshot\n5\nkissing\n5\nbackshot\n4\ncompilation\n4\nhandjob\n4\nswallow\n4\ndeep throat\n3\nhumiliation\n3\njoi\n3\nkisses\n3\ntitjob\n3\ncum in mouth\n2\ncum walk\n2\nfaceless\n2\nfishnets\n2\ngrinding\n2\nhijab\n2\nlube\n2\nmulti cum\n2\nbounce\n1\ncar\n1\ndance\n1\ndoggy\n1\ngagging\n1\nlesbian\n1\nmilk\n1\nriding\n1\nthroat pie\n1\nthru clothes\n1\nAll Models\n0 videos / 78 models\nLexi Marvel\n262 videos\nSava Schultz\n54 videos\nLuna x pearl\n38 videos\nAaliyah Yasin\n31 videos\nDevorah Roloff\n30 videos / 923 pics\nPinkychu\n27 videos\nHeyimbee\n26 videos\nCute Geekie\n24 videos\nAaliyah Yasan\n22 videos\nRuth Lee\n16 videos\nSendnudesx\n16 videos\nJazmen Jafar\n15 videos\nEmiliaofficial\n13 videos\nVibe With Mommy\n12 videos\nIzzy Green\n10 videos\nJakara Mitchell\n9 videos\nKatiana Kay\n9 videos\nKinkykttn\n9 videos\nSienna Ababi\n9 videos\nNatalie Roush\n7 videos\nAmburnee\n6 videos\nWhoahannahjo\n6 videos\nChloe Lamb\n5 videos\nKat"
+    },
+    {
+      "modelName": "Vibe With Mommy",
+      "viewport": "desktop",
+      "url": "https://127.0.0.1:3000/spiritflix?library=library-1&model=Vibe%20With%20Mommy",
+      "screenshotPath": "/home/source/SpiritOS/docs/evidence/spiritflix-smart-scan-fix-20260705/live_vibe_with_mommy_page.desktop.png",
+      "pageMentionsModel": true,
+      "pageMentionsCount": true,
+      "pageIsNotLogin": true,
+      "jellyfinUnauthorizedObserved": true,
+      "bodyExcerpt": "SF\nSpiritFlix\nHome\nf599a2eb64d4\nproof-user\nF599A2EB64D4 / LIBRARY\nYour cinema is waiting\n\nChoose a library and stream from your real Jellyfin server.\n\nCould not load your Jellyfin library. Log out and back in if the token expired.\nLIBRARY\nModels\nGrid\nList\nHistory\nFavorites\nGallery\nModels\nAll videos / Title\nSmart scan done / 120 videos\nFilters\nDone\nVIDEO SHAPE\nAll\n0\nPortrait\n0\nLandscape\n0\nEXCLUDE CATEGORIES\nHide Twitter / X\n0\nSORT\nModel\nLast added\nDuration\nTitle\nORDER\nDescending\nAscending\n0\nVideos\n78\nModels\n0\nSelected\n0\nFiltered out\n0\nPortrait\n0\nLandscape\n0\nPics\n0\nIdentified\n0\nReview\n0\nUnscanned\n0\nNew\nMANUAL TAGS\nAll\nblowjob\n44\nfacial\n18\nasmr\n17\ntease\n16\ntwerk\n12\npublic\n9\nspit\n9\nwet noises\n9\n2 girls\n7\nsolo\n7\nfeet\n6\ncreampie\n5\ncum on tits\n5\ncumshot\n5\nkissing\n5\nbackshot\n4\ncompilation\n4\nhandjob\n4\nswallow\n4\ndeep throat\n3\nhumiliation\n3\njoi\n3\nkisses\n3\ntitjob\n3\ncum in mouth\n2\ncum walk\n2\nfaceless\n2\nfishnets\n2\ngrinding\n2\nhijab\n2\nlube\n2\nmulti cum\n2\nbounce\n1\ncar\n1\ndance\n1\ndoggy\n1\ngagging\n1\nlesbian\n1\nmilk\n1\nriding\n1\nthroat pie\n1\nthru clothes\n1\nAll Models\n0 videos / 78 models\nLexi Marvel\n262 videos\nSava Schultz\n54 videos\nLuna x pearl\n38 videos\nAaliyah Yasin\n31 videos\nDevorah Roloff\n30 videos\nPinkychu\n27 videos\nHeyimbee\n26 videos\nCute Geekie\n24 videos\nAaliyah Yasan\n22 videos\nRuth Lee\n16 videos\nSendnudesx\n16 videos\nJazmen Jafar\n15 videos\nEmiliaofficial\n13 videos\nVibe With Mommy\n12 videos\nIzzy Green\n10 videos\nJakara Mitchell\n9 videos\nKatiana Kay\n9 videos\nKinkykttn\n9 videos\nSienna Ababi\n9 videos\nNatalie Roush\n7 videos\nAmburnee\n6 videos\nWhoahannahjo\n6 videos\nChloe Lamb\n5 videos\nKatie Katrina\n"
+    },
+    {
+      "modelName": "Lexi Marvel",
+      "viewport": "mobile",
+      "url": "https://127.0.0.1:3000/spiritflix?library=library-1&model=Lexi%20Marvel",
+      "screenshotPath": "/home/source/SpiritOS/docs/evidence/spiritflix-smart-scan-fix-20260705/live_lexi_marvel_page.mobile.png",
+      "pageMentionsModel": true,
+      "pageMentionsCount": true,
+      "pageIsNotLogin": true,
+      "jellyfinUnauthorizedObserved": true,
+      "bodyExcerpt": "SF\nHome\nF599A2EB64D4 / LIBRARY\nYour cinema is waiting\n\nChoose a library and stream from your real Jellyfin server.\n\nCould not load your Jellyfin library. Log out and back in if the token expired.\nLIBRARY\nModels\nAll videos\nModels\nRefresh\n0\nVideos\n0\nSelected\n0\nPortrait\n0\nLandscape\nMANUAL TAGS\nAll\nblowjob\n44\nfacial\n18\nasmr\n17\ntease\n16\ntwerk\n12\npublic\n9\nspit\n9\nwet noises\n9\n2 girls\n7\nsolo\n7\nfeet\n6\ncreampie\n5\ncum on tits\n5\ncumshot\n5\nkissing\n5\nbackshot\n4\ncompilation\n4\nhandjob\n4\nswallow\n4\ndeep throat\n3\nhumiliation\n3\njoi\n3\nkisses\n3\ntitjob\n3\ncum in mouth\n2\ncum walk\n2\nfaceless\n2\nfishnets\n2\ngrinding\n2\nhijab\n2\nlube\n2\nmulti cum\n2\nbounce\n1\ncar\n1\ndance\n1\ndoggy\n1\ngagging\n1\nlesbian\n1\nmilk\n1\nriding\n1\nthroat pie\n1\nthru clothes\n1\nAll Models\n0 videos / 78 models\nLexi Marvel\n262 videos\nSava Schultz\n54 videos\nLuna x pearl\n38 videos\nAaliyah Yasin\n31 videos\nDevorah Roloff\n30 videos / 923 pics\nPinkychu\n27 videos\nHeyimbee\n26 videos\nCute Geekie\n24 videos\nAaliyah Yasan\n22 videos\nRuth Lee\n16 videos\nSendnudesx\n16 videos\nJazmen Jafar\n15 videos\nEmiliaofficial\n13 videos\nVibe With Mommy\n12 videos\nIzzy Green\n10 videos\nJakara Mitchell\n9 videos\nKatiana Kay\n9 videos\nKinkykttn\n9 videos\nSienna Ababi\n9 videos\nNatalie Roush\n7 videos\nAmburnee\n6 videos\nWhoahannahjo\n6 videos\nChloe Lamb\n5 videos\nKatie Katrina\n5 videos\nAlexa Pearl\n4 videos\nAllison Parker\n3 videos\nAngela White\n3 videos\nAzilia Hadid\n3 videos\nBearuby\n3 videos\nBrenda Trindade\n3 videos\nCe Ce Rose\n3 videos\nComatozze\n3 videos\nGem The Jewels\n3 videos\nHaylee Love\n3 videos\nLily Phillips\n3 videos\nMiss LiLu\n3 videos\nStrawberrytabby\n3 videos\nUrfavbella\n3 videos\nUrfavbellabby\n3 videos\nYummy Couple\n3 videos\nAlannasworldx\n2 videos\nAllinika\n2 videos\nBonnie Blue\n2 videos\nEve\n2 videos\nIsabelle Eleanore\n2 videos\nKatievaynes\n2 videos\nMaditay\n2 videos\nSophie Rain\n2 videos\n"
+    },
+    {
+      "modelName": "Vibe With Mommy",
+      "viewport": "mobile",
+      "url": "https://127.0.0.1:3000/spiritflix?library=library-1&model=Vibe%20With%20Mommy",
+      "screenshotPath": "/home/source/SpiritOS/docs/evidence/spiritflix-smart-scan-fix-20260705/live_vibe_with_mommy_page.mobile.png",
+      "pageMentionsModel": true,
+      "pageMentionsCount": true,
+      "pageIsNotLogin": true,
+      "jellyfinUnauthorizedObserved": true,
+      "bodyExcerpt": "SF\nHome\nF599A2EB64D4 / LIBRARY\nYour cinema is waiting\n\nChoose a library and stream from your real Jellyfin server.\n\nCould not load your Jellyfin library. Log out and back in if the token expired.\nLIBRARY\nModels\nAll videos\nModels\nRefresh\n0\nVideos\n0\nSelected\n0\nPortrait\n0\nLandscape\nMANUAL TAGS\nAll\nblowjob\n44\nfacial\n18\nasmr\n17\ntease\n16\ntwerk\n12\npublic\n9\nspit\n9\nwet noises\n9\n2 girls\n7\nsolo\n7\nfeet\n6\ncreampie\n5\ncum on tits\n5\ncumshot\n5\nkissing\n5\nbackshot\n4\ncompilation\n4\nhandjob\n4\nswallow\n4\ndeep throat\n3\nhumiliation\n3\njoi\n3\nkisses\n3\ntitjob\n3\ncum in mouth\n2\ncum walk\n2\nfaceless\n2\nfishnets\n2\ngrinding\n2\nhijab\n2\nlube\n2\nmulti cum\n2\nbounce\n1\ncar\n1\ndance\n1\ndoggy\n1\ngagging\n1\nlesbian\n1\nmilk\n1\nriding\n1\nthroat pie\n1\nthru clothes\n1\nAll Models\n0 videos / 78 models\nLexi Marvel\n262 videos\nSava Schultz\n54 videos\nLuna x pearl\n38 videos\nAaliyah Yasin\n31 videos\nDevorah Roloff\n30 videos / 923 pics\nPinkychu\n27 videos\nHeyimbee\n26 videos\nCute Geekie\n24 videos\nAaliyah Yasan\n22 videos\nRuth Lee\n16 videos\nSendnudesx\n16 videos\nJazmen Jafar\n15 videos\nEmiliaofficial\n13 videos\nVibe With Mommy\n12 videos\nIzzy Green\n10 videos\nJakara Mitchell\n9 videos\nKatiana Kay\n9 videos\nKinkykttn\n9 videos\nSienna Ababi\n9 videos\nNatalie Roush\n7 videos\nAmburnee\n6 videos\nWhoahannahjo\n6 videos\nChloe Lamb\n5 videos\nKatie Katrina\n5 videos\nAlexa Pearl\n4 videos\nAllison Parker\n3 videos\nAngela White\n3 videos\nAzilia Hadid\n3 videos\nBearuby\n3 videos\nBrenda Trindade\n3 videos\nCe Ce Rose\n3 videos\nComatozze\n3 videos\nGem The Jewels\n3 videos\nHaylee Love\n3 videos\nLily Phillips\n3 videos\nMiss LiLu\n3 videos\nStrawberrytabby\n3 videos\nUrfavbella\n3 videos\nUrfavbellabby\n3 videos\nYummy Couple\n3 videos\nAlannasworldx\n2 videos\nAllinika\n2 videos\nBonnie Blue\n2 videos\nEve\n2 videos\nIsabelle Eleanore\n2 videos\nKatievaynes\n2 videos\nMaditay\n2 videos\nSophie Rain\n2 videos\n"
+    }
+  ],
+  "greenChecks": {
+    "apiLexiCountIs262": true,
+    "apiVibeCountIs12": true,
+    "allScreensMentionModel": true,
+    "allScreensMentionExpectedCount": true,
+    "allScreensArePastLogin": true
+  }
+}
