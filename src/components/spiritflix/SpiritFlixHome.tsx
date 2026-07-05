@@ -284,8 +284,17 @@ function getStoredExcludedCategories(state: Partial<StoredLibraryUiState>): stri
 }
 const NON_MODEL_FOLDER_NAMES = new Set(["yes", "other"]);
 
+const LIBRARY_DISPLAY_NAME_OVERRIDES = new Map<string, string>([
+  ["home videos and photos", "Library"],
+  ["home videos & photos", "Library"],
+  // The real media folder on this install is named "yes" on disk; show it as "Library" in the UI.
+  ["yes", "Library"],
+]);
+
 function displayLibraryName(name?: string): string {
-  return name === TEMP_LIBRARY_NAME ? "Library" : name ?? "Library";
+  if (!name) return "Library";
+  const override = LIBRARY_DISPLAY_NAME_OVERRIDES.get(name.trim().toLowerCase());
+  return override ?? name;
 }
 
 function getModelAliasKey(name: string): string {
@@ -1763,6 +1772,34 @@ export function SpiritFlixHome({
     [getActiveShuffleItems, getActiveShuffleSourceTitle, onPlay],
   );
 
+  const goToPreviousLibraryPage = () => {
+    setLibraryPageIndex((page) => Math.max(0, page - 1));
+  };
+
+  const goToNextLibraryPage = () => {
+    if (clampedLibraryPageIndex < libraryPageCount - 1) {
+      setLibraryPageIndex((page) => Math.min(libraryPageCount - 1, page + 1));
+      return;
+    }
+    if (hasMoreLibraryItems && !loadingMore.library) {
+      onLoadMoreLibrary?.();
+    }
+  };
+
+  const goToPreviousFavoritePage = () => {
+    setLibraryPageIndex((page) => Math.max(0, page - 1));
+  };
+
+  const goToNextFavoritePage = () => {
+    if (clampedFavoritePageIndex < favoritePageCount - 1) {
+      setLibraryPageIndex((page) => Math.min(favoritePageCount - 1, page + 1));
+      return;
+    }
+    if (hasMoreFavoriteItems && !loadingMore.favorites) {
+      onLoadMoreFavorites?.();
+    }
+  };
+
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
       window.clearTimeout(longPressTimerRef.current);
@@ -2599,11 +2636,11 @@ export function SpiritFlixHome({
               )}
             </AnimatePresence>
 
-            {(viewMode === "grid" || viewMode === "list") && sortedLibraryItems.length > LIBRARY_PAGE_SIZE ? (
+            {(viewMode === "grid" || viewMode === "list") && (sortedLibraryItems.length > LIBRARY_PAGE_SIZE || hasMoreLibraryItems) ? (
               <div className="spiritflix-library-pager" aria-label="Library video pages">
                 <button
                   type="button"
-                  onClick={() => setLibraryPageIndex((page) => Math.max(0, page - 1))}
+                  onClick={goToPreviousLibraryPage}
                   disabled={clampedLibraryPageIndex === 0}
                   aria-label="Previous video page"
                 >
@@ -2614,22 +2651,12 @@ export function SpiritFlixHome({
                 </span>
                 <button
                   type="button"
-                  onClick={() => setLibraryPageIndex((page) => Math.min(libraryPageCount - 1, page + 1))}
-                  disabled={clampedLibraryPageIndex >= libraryPageCount - 1}
+                  onClick={goToNextLibraryPage}
+                  disabled={clampedLibraryPageIndex >= libraryPageCount - 1 && (!hasMoreLibraryItems || loadingMore.library)}
                   aria-label="Next video page"
                 >
                   <ChevronRight size={20} aria-hidden="true" />
                 </button>
-                {hasMoreLibraryItems ? (
-                  <button
-                    type="button"
-                    onClick={onLoadMoreLibrary}
-                    disabled={loadingMore.library}
-                    aria-label="Load more library videos"
-                  >
-                    <ChevronRight size={20} aria-hidden="true" />
-                  </button>
-                ) : null}
               </div>
             ) : null}
 
@@ -2637,7 +2664,7 @@ export function SpiritFlixHome({
               <div className="spiritflix-library-pager" aria-label="Favorite video pages">
                 <button
                   type="button"
-                  onClick={() => setLibraryPageIndex((page) => Math.max(0, page - 1))}
+                  onClick={goToPreviousFavoritePage}
                   disabled={clampedFavoritePageIndex === 0}
                   aria-label="Previous favorite video page"
                 >
@@ -2648,22 +2675,12 @@ export function SpiritFlixHome({
                 </span>
                 <button
                   type="button"
-                  onClick={() => setLibraryPageIndex((page) => Math.min(favoritePageCount - 1, page + 1))}
-                  disabled={clampedFavoritePageIndex >= favoritePageCount - 1}
+                  onClick={goToNextFavoritePage}
+                  disabled={clampedFavoritePageIndex >= favoritePageCount - 1 && (!hasMoreFavoriteItems || loadingMore.favorites)}
                   aria-label="Next favorite video page"
                 >
                   <ChevronRight size={20} aria-hidden="true" />
                 </button>
-                {hasMoreFavoriteItems ? (
-                  <button
-                    type="button"
-                    onClick={onLoadMoreFavorites}
-                    disabled={loadingMore.favorites}
-                    aria-label="Load more favorite videos"
-                  >
-                    <ChevronRight size={20} aria-hidden="true" />
-                  </button>
-                ) : null}
               </div>
             ) : null}
 

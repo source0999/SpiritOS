@@ -18,6 +18,14 @@ const DEVICE_NAME = "SpiritFlix Web";
 const DEVICE_ID_KEY = "spiritflix_device_id";
 const SESSION_KEY = "spiritflix_private_gooner_session";
 const JELLYFIN_CLIENT_REQUEST_TIMEOUT_MS = 10000;
+// Jellyfin ships a default "Home Videos and Photos" collection shell that, on this
+// install, exposes no real items. We hide it by NAME/PATH pattern — never by hardcoded
+// library ID, since those IDs are specific to one Jellyfin database.
+const SPIRITFLIX_HOME_VIDEOS_SHELL_NAMES = new Set(["home videos and photos", "home videos & photos"]);
+const SPIRITFLIX_HOME_VIDEOS_SHELL_PATH_FRAGMENT = "/config/root/default/home videos and photos";
+// Folder(s) whose name lowercased marks a real media library. Used only to pick a sensible
+// default when no library is requested — never to force a selection or rename anything.
+const SPIRITFLIX_DEFAULT_LIBRARY_NAMES = new Set(["yes", "media", "other"]);
 const GOONER_ITEM_FIELDS =
   "Path,SeriesName,DateCreated,IndexNumber,ParentIndexNumber,Overview,ProductionYear,RunTimeTicks,Genres,People,UserData,PrimaryImageAspectRatio,MediaStreams,MediaSources,ChildCount";
 const CARD_ITEM_FIELDS =
@@ -193,6 +201,31 @@ function uniqueItemsById(items: JellyfinItem[]): JellyfinItem[] {
   });
 }
 
+function uniqueLibrariesById(libraries: JellyfinLibrary[]): JellyfinLibrary[] {
+  const seen = new Set<string>();
+  return libraries.filter((library) => {
+    if (seen.has(library.Id)) return false;
+    seen.add(library.Id);
+    return true;
+  });
+}
+
+function isHomeVideosCollectionShell(library: JellyfinLibrary): boolean {
+  const path = "Path" in library && typeof library.Path === "string" ? library.Path : "";
+  return (
+    SPIRITFLIX_HOME_VIDEOS_SHELL_NAMES.has(library.Name.trim().toLowerCase()) ||
+    path.toLowerCase().includes(SPIRITFLIX_HOME_VIDEOS_SHELL_PATH_FRAGMENT)
+  );
+}
+
+// Merge the /Views listing with the real folder listing from /Users/<id>/Items?IncludeItemTypes=Folder,
+// hiding Jellyfin's stale "Home Videos and Photos" shell. We do NOT force any library name,
+// inject libraries by hardcoded ID, or rename anything — we just make the real folders visible.
+function withCanonicalSpiritFlixLibraries(libraries: JellyfinLibrary[]): JellyfinLibrary[] {
+  const real = libraries.filter((library) => !isHomeVideosCollectionShell(library));
+  return uniqueLibrariesById(real);
+}
+
 function getItemFields(fields: "card" | "full" = "card"): string {
   return fields === "full" ? GOONER_ITEM_FIELDS : CARD_ITEM_FIELDS;
 }
@@ -351,7 +384,23 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinLibrary>>(
       `/Users/${this.userId}/Views`,
     );
-    return data.Items ?? [];
+    const libraries = data.Items ?? [];
+    try {
+      const folderQuery = toQuery({
+        Recursive: false,
+        IncludeItemTypes: "Folder",
+        Fields: "Path,ChildCount",
+        SortBy: "SortName",
+        SortOrder: "Ascending",
+        Limit: 200,
+      });
+      const folderData = await this.request<JellyfinItemsResponse<JellyfinLibrary>>(
+        `/Users/${this.userId}/Items?${folderQuery}`,
+      );
+      return withCanonicalSpiritFlixLibraries([...libraries, ...(folderData.Items ?? [])]);
+    } catch {
+      return withCanonicalSpiritFlixLibraries(libraries);
+    }
   }
 
   async getLibraryItemsPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
@@ -585,7 +634,14 @@ export class JellyfinClient {
       `/Users/${this.userId}/Items?${query}`,
       { signal },
     );
-    return pageFromResponse(data, { startIndex, limit });
+    const page = pageFromResponse(data, { startIndex, limit });
+    // If the parent scope (e.g. a stale Jellyfin shell container) yields nothing, fall back to
+    // the same global DateCreated-descending query the homepage uses. This keeps "Latest Added"
+    // correct on library routes even when the resolved library id scopes to an empty container.
+    if (page.items.length === 0 && startIndex === 0) {
+      return this.getLatestAddedPage(options);
+    }
+    return page;
   }
 
   async getFavorites(): Promise<JellyfinItem[]> {

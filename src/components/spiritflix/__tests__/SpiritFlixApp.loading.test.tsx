@@ -196,6 +196,48 @@ describe("SpiritFlixApp live library loading", () => {
     expect(getLibraryItemsPage).not.toHaveBeenCalledWith("library-1", expect.anything());
   });
 
+  it("canonicalizes the stale Home Videos shell to the real yes folder library", async () => {
+    const libraries = [
+      {
+        Id: "home-videos-shell",
+        Name: "Home Videos and Photos",
+        Type: "MediaBrowser.Controller.Entities.CollectionFolder",
+        CollectionType: "homevideos",
+        Path: "/config/root/default/Home Videos and Photos",
+      },
+      {
+        Id: "yes-folder",
+        Name: "yes",
+        Type: "Folder",
+        Path: "/media/yes",
+      },
+    ];
+    const getLibraryItemsPage = vi.fn((libraryId: string) =>
+      Promise.resolve(
+        page([
+          {
+            ...libraryItem,
+            Id: `${libraryId}-scene`,
+            Name: `${libraryId} Scene`,
+          },
+        ]),
+      ),
+    );
+    mocks.client = createClient({
+      getLibraries: vi.fn().mockResolvedValue(libraries),
+      getLibraryItemsPage,
+    });
+    window.history.replaceState(window.history.state, "", "/spiritflix?library=home-videos-shell");
+
+    render(<SpiritFlixApp />);
+
+    await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("yes-folder", expect.objectContaining({ fields: "card" })));
+    expect(getLibraryItemsPage).not.toHaveBeenCalledWith("home-videos-shell", expect.anything());
+    // We do NOT rewrite the user's URL behind their back. The shell request is resolved to the
+    // real library internally, but the URL the user sees is left as-is.
+    expect(window.location.search).toBe("?library=home-videos-shell");
+  });
+
   it("refreshes latest added immediately when a mobile tab comes back into focus", async () => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query.includes("pointer: coarse"),

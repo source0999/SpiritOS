@@ -14,6 +14,7 @@ import {
 } from "@/lib/spiritflix-jellyfin-client";
 import type {
   JellyfinItem,
+  JellyfinLibrary,
   SpiritFlixHomeData,
   SpiritFlixManualModelRecord,
   SpiritFlixPagingState,
@@ -77,6 +78,8 @@ const LATEST_ADDED_PAGE_SIZE = DESKTOP_SHELF_PAGE_SIZE;
 const MOBILE_HISTORY_PAGE_SIZE = 16;
 const DESKTOP_HISTORY_PAGE_SIZE = 32;
 
+type SpiritFlixSelectableLibrary = JellyfinLibrary & { Path?: string };
+
 function isMediaLibrary(library: { Name: string; CollectionType?: string }): boolean {
   const name = library.Name.toLowerCase();
   const collectionType = library.CollectionType?.toLowerCase();
@@ -86,6 +89,36 @@ function isMediaLibrary(library: { Name: string; CollectionType?: string }): boo
     collectionType !== "playlists" &&
     collectionType !== "music"
   );
+}
+
+function isHomeVideoCollectionShell(library: Pick<SpiritFlixSelectableLibrary, "Name" | "Path">): boolean {
+  const name = library.Name.trim().toLowerCase();
+  return (
+    name.startsWith("home videos and photos") ||
+    name.startsWith("home videos & photos") ||
+    Boolean(library.Path?.toLowerCase().includes("/config/root/default/home videos and photos"))
+  );
+}
+
+// Pick the library to load. We HONOR an explicit, still-valid request from the URL or user
+// click — we do not rewrite it to a hardcoded "canonical" library. We only fall back to a
+// sensible default when nothing is requested or when the request points at Jellyfin's stale
+// "Home Videos and Photos" shell (which exposes no real items on this install).
+const DEFAULT_LIBRARY_FALLBACK_NAMES = ["yes", "media", "other"];
+
+export function resolveSpiritFlixLibraryId(libraries: SpiritFlixSelectableLibrary[], requestedLibraryId: string | null): string | null {
+  if (requestedLibraryId) {
+    const requested = libraries.find((library) => library.Id === requestedLibraryId);
+    if (requested && !isHomeVideoCollectionShell(requested)) {
+      return requested.Id;
+    }
+  }
+  for (const fallbackName of DEFAULT_LIBRARY_FALLBACK_NAMES) {
+    const match = libraries.find((library) => library.Name.trim().toLowerCase() === fallbackName && !isHomeVideoCollectionShell(library));
+    if (match) return match.Id;
+  }
+  const firstReal = libraries.find((library) => !isHomeVideoCollectionShell(library));
+  return firstReal?.Id ?? libraries[0]?.Id ?? null;
 }
 
 function uniqueItems(items: JellyfinItem[]): JellyfinItem[] {
@@ -363,7 +396,7 @@ interface SpiritFlixBrowseRoute {
 
 const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
-const HOME_CACHE_KEY = "spiritflix_home_cache_v2";
+const HOME_CACHE_KEY = "spiritflix_home_cache_v4";
 const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
 const MOBILE_HOME_CACHE_TTL_MS = 15 * 1000;
 const LIVE_LIBRARY_LOAD_MIN_MS = 50;
@@ -765,13 +798,8 @@ export function SpiritFlixApp() {
         const libraries = reusableLibraries.length ? reusableLibraries : (await client.getLibraries()).filter(isMediaLibrary);
         if (isStale()) return;
         if (showBlockingLoader) updateLoadProgress({ percent: 30, label: "Stage 1 of 4: Connected" });
-        const otherLibrary = libraries.find((library) => library.Name.toLowerCase() === OTHER_LIBRARY_NAME.toLowerCase());
         const requestedLibraryId = libraryId === undefined ? homeData.selectedLibraryId : libraryId;
-        const selectedLibraryId = requestedLibraryId && libraries.some((library) => library.Id === requestedLibraryId)
-          ? requestedLibraryId
-          : requestedLibraryId === null
-            ? null
-            : otherLibrary?.Id ?? libraries[0]?.Id ?? null;
+        const selectedLibraryId = requestedLibraryId === null ? null : resolveSpiritFlixLibraryId(libraries, requestedLibraryId);
         const animeLibrary = libraries.find((library) => library.Name.toLowerCase() === "anime");
         const isNotDeleted = (item: JellyfinItem) => !deletedItemIdsRef.current.has(item.Id) && isVisibleSpiritFlixItem(item);
 

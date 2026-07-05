@@ -282,4 +282,71 @@ describe("JellyfinClient paged card queries", () => {
     expect(page.items).toHaveLength(1);
     expect(page.hasMore).toBe(true);
   });
+
+  it("uses the real yes folder instead of the Jellyfin Home Videos shell", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          Items: [
+            {
+              Id: "shell-fixture-id",
+              Name: "Home Videos and Photos",
+              Type: "MediaBrowser.Controller.Entities.CollectionFolder",
+              Path: "/config/root/default/Home Videos and Photos",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          Items: [
+            {
+              Id: "yes-folder",
+              Name: "yes",
+              Type: "Folder",
+              Path: "/media/yes",
+            },
+          ],
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const libraries = await client.getLibraries();
+
+    expect(libraries.map((library) => library.Id)).toEqual(["yes-folder"]);
+    const folderCallBody = JSON.parse(fetchMock.mock.calls[1][1]?.body as string) as { path: string };
+    const folderPath = new URL(`http://jellyfin.local${folderCallBody.path}`);
+    expect(folderPath.pathname).toBe("/Users/user-1/Items");
+    expect(folderPath.searchParams.get("Recursive")).toBe("false");
+    expect(folderPath.searchParams.get("IncludeItemTypes")).toBe("Folder");
+  });
+
+  it("returns no libraries when Jellyfin only exposes the Home Videos shell and no real folders", async () => {
+    // We deliberately do NOT fabricate a library with a hardcoded id. If the real folder is
+    // absent from both /Views and the folder listing, getLibraries returns an empty list and
+    // the UI surfaces "no libraries" rather than silently injecting a fake entry.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          Items: [
+            {
+              Id: "shell-1",
+              Name: "Home Videos and Photos",
+              Type: "MediaBrowser.Controller.Entities.CollectionFolder",
+              Path: "/config/root/default/Home Videos and Photos",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ Items: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    const libraries = await client.getLibraries();
+
+    expect(libraries).toEqual([]);
+  });
 });
