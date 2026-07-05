@@ -2012,6 +2012,18 @@ export function SpiritFlixHome({
                 <SlidersHorizontal size={18} aria-hidden="true" />
                 <span>{libraryFilterControlLabel}</span>
               </button>
+              {playPrimaryTapOnMobile ? (
+                <button
+                  type="button"
+                  className={`spiritflix-mobile-models-button ${viewMode === "models" ? "is-active" : ""}`}
+                  aria-label="Open Models"
+                  aria-pressed={viewMode === "models"}
+                  onClick={() => setViewMode("models")}
+                >
+                  <Sparkles size={18} aria-hidden="true" />
+                  <span>Models</span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="spiritflix-smart-rescan-button"

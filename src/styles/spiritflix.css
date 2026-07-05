@@ -1384,6 +1384,12 @@
   opacity: 0.78;
 }
 
+.spiritflix-mobile-models-button {
+  border-color: rgba(34, 211, 238, 0.28);
+  background: rgba(34, 211, 238, 0.1);
+  color: #dff8ff;
+}
+
 .spiritflix-smart-rescan-button .is-spinning {
   animation: spiritflix-spin 1.1s linear infinite;
 }
@@ -4102,13 +4108,30 @@
 
   .spiritflix-library-modebar {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.45rem;
     overflow: visible;
   }
 
   .spiritflix-filter-trigger,
+  .spiritflix-smart-rescan-button,
+  .spiritflix-mobile-models-button {
+    min-width: 0;
+  }
+
+  .spiritflix-filter-trigger {
+    justify-content: flex-start;
+    width: auto;
+  }
+
+  .spiritflix-mobile-models-button {
+    border-color: rgba(34, 211, 238, 0.28);
+    background: rgba(34, 211, 238, 0.1);
+    color: #dff8ff;
+  }
+
   .spiritflix-smart-rescan-button {
-    width: 100%;
+    width: auto;
   }
 
   .spiritflix-filter-popout {

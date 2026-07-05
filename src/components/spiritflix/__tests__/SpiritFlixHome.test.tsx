@@ -1009,6 +1009,55 @@ describe("SpiritFlixHome watch history", () => {
     expect(await screen.findByRole("button", { name: /luna x pearl\s+1 video/i })).toBeInTheDocument();
   });
 
+  it("keeps the Models view reachable from the mobile modebar", async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("pointer: coarse"),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    const client = createClient(emptyGallery, {
+      getAllLibraryItems: vi.fn().mockResolvedValue([modelItem, manualModelItem]),
+    } as Partial<JellyfinClient>);
+
+    render(
+      <SpiritFlixHome
+        client={client}
+        data={createData({
+          libraryItems: [modelItem, manualModelItem],
+          continueWatching: [],
+          watchHistory: [],
+        })}
+        loading={false}
+        error=""
+        session={{
+          serverUrl: "https://jellyfin.local",
+          accessToken: "token",
+          userId: "user-1",
+          username: "private-user",
+        }}
+        searchTerm=""
+        serverInfo={{ ServerName: "Jellyfin" }}
+        onLogout={vi.fn()}
+        onRefresh={vi.fn()}
+        onSearch={vi.fn()}
+        onSelectHome={vi.fn()}
+        onSelectLibrary={vi.fn()}
+        onSelectModel={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onPlay={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Open Models" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "All Models" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Models" }));
+
+    expect(await screen.findByRole("heading", { name: "Models" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open Models" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("shows catalog models from the restored model index even without loaded videos", async () => {
     vi.stubGlobal(
       "fetch",
