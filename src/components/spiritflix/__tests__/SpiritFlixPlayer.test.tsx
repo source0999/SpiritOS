@@ -502,6 +502,25 @@ describe("SpiritFlixPlayer mobile controls", () => {
     expect(client.getMobileOptimizedSource).not.toHaveBeenCalled();
   });
 
+  it("waits briefly for mobile optimized source before opening the proxied stream on mobile", async () => {
+    const client = {
+      ...createClient(),
+      getStreamUrl: vi.fn(() => "/api/spiritflix/stream?itemId=video-1"),
+      getCachedMobileOptimizedSource: vi.fn(() => null),
+      getMobileOptimizedSource: vi.fn().mockResolvedValue({
+        available: true,
+        mode: "mobile optimized",
+        url: "/api/spiritflix/mobile-optimized?stream=1&key=video-1",
+      }),
+    } as unknown as JellyfinClient;
+
+    renderPlayer({ client });
+
+    const video = document.querySelector("video");
+    await waitFor(() => expect(video?.getAttribute("src")).toBe("/api/spiritflix/mobile-optimized?stream=1&key=video-1"));
+    expect(video?.getAttribute("src")).not.toBe("/api/spiritflix/stream?itemId=video-1");
+  });
+
   it("assigns direct MP4 immediately and upgrades to mobile optimized when receipt resolves on desktop", async () => {
     Object.defineProperty(window, "matchMedia", {
       configurable: true,

@@ -144,6 +144,7 @@ const TIKTOK_SWIPE_VERTICAL_RATIO = 1.25;
 const PINCH_TOGGLE_THRESHOLD = 0.08;
 const PINCH_GESTURE_SUPPRESS_MS = 450;
 const HLS_MANIFEST_TIMEOUT_MS = 8000;
+const MOBILE_OPTIMIZED_LOOKUP_GRACE_MS = 450;
 const PLAYBACK_FEEDBACK_MS = 1150;
 const APP_WIDGET_IDLE_CLOSE_MS = 60000;
 const AUTO_FACE_MODEL_CONFIDENCE = 0.8;
@@ -272,6 +273,33 @@ function applyDirectPlayback(
     video.load();
     markSpiritFlixPerf("src-assigned", { source: "directMp4", url: directUrl });
   }
+}
+
+function waitForMobileOptimizedSource(
+  promise: Promise<MobileOptimizedSource | null>,
+  graceMs = MOBILE_OPTIMIZED_LOOKUP_GRACE_MS,
+): Promise<MobileOptimizedSource | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(null);
+    }, graceMs);
+    promise
+      .then((source) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(source);
+      })
+      .catch(() => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(null);
+      });
+  });
 }
 
 interface HlsController {
@@ -2503,31 +2531,38 @@ export function SpiritFlixPlayer({
         applyMobileOptimizedPlayback(video, cachedMobile, playbackSetters);
         markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: true });
       } else if (preferMobilePlayback) {
-        applyDirectPlayback(
-          video,
-          itemRef.current,
-          directUrl,
-          directSetters,
-          "direct MP4 assigned immediately while mobile optimized receipt resolves",
-        );
-        markSpiritFlixPerf("source-chosen", { source: "directMp4", cached: false });
-        void client
-          .getMobileOptimizedSource(itemRef.current)
-          .then((mobileSource) => {
-            if (cancelled) return;
-            if (mobileSource.available && mobileSource.url && video.src !== mobileSource.url) {
-              if (!video.paused && video.currentTime > 0.25) {
-                setMobileOptimizedSource(mobileSource);
-                markSpiritFlixPerf("source-available", { source: "mobileOptimized", deferred: true });
-                return;
+        const mobileLookup = client.getMobileOptimizedSource(itemRef.current).catch(() => null);
+        const earlyMobileSource = await waitForMobileOptimizedSource(mobileLookup);
+        if (cancelled) return;
+        if (earlyMobileSource?.available && earlyMobileSource.url) {
+          applyMobileOptimizedPlayback(video, earlyMobileSource, playbackSetters);
+          markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false, early: true });
+        } else {
+          applyDirectPlayback(
+            video,
+            itemRef.current,
+            directUrl,
+            directSetters,
+            "direct MP4 assigned after mobile optimized receipt grace window",
+          );
+          markSpiritFlixPerf("source-chosen", { source: "directMp4", cached: false, mobileGraceExpired: true });
+          void mobileLookup
+            .then((mobileSource) => {
+              if (cancelled) return;
+              if (mobileSource?.available && mobileSource.url && video.src !== mobileSource.url) {
+                if (!video.paused && video.currentTime > 0.25) {
+                  setMobileOptimizedSource(mobileSource);
+                  markSpiritFlixPerf("source-available", { source: "mobileOptimized", deferred: true });
+                  return;
+                }
+                const resumeTime = video.currentTime;
+                applyMobileOptimizedPlayback(video, mobileSource, playbackSetters);
+                markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false, upgraded: true });
+                if (resumeTime > 0) video.currentTime = resumeTime;
               }
-              const resumeTime = video.currentTime;
-              applyMobileOptimizedPlayback(video, mobileSource, playbackSetters);
-              markSpiritFlixPerf("source-chosen", { source: "mobileOptimized", cached: false, upgraded: true });
-              if (resumeTime > 0) video.currentTime = resumeTime;
-            }
-          })
-          .catch(() => undefined);
+            })
+            .catch(() => undefined);
+        }
       } else {
         applyDirectPlayback(
           video,
