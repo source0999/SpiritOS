@@ -436,7 +436,15 @@ def dedupe_rank_candidates(candidates: Iterable[dict[str, Any]]) -> list[dict[st
 def extract_filename_candidates(video_path: Path) -> list[dict[str, Any]]:
     stem = video_path.stem
     raw_candidates = [stem]
-    raw_candidates.extend(re.split(r"[-_\s\[\](){}#]+", stem))
+    stem_tokens = [token for token in re.split(r"[-_\s\[\](){}#]+", stem) if token]
+    if stem_tokens:
+        raw_candidates.append(stem_tokens[0])
+    for size in range(min(4, len(stem_tokens)), 1, -1):
+        raw_candidates.append(" ".join(stem_tokens[:size]))
+    for size in range(2, 5):
+        for index in range(0, max(0, len(stem_tokens) - size + 1)):
+            raw_candidates.append(" ".join(stem_tokens[index : index + size]))
+    raw_candidates.extend(stem_tokens)
     raw_candidates.append(video_path.parent.name)
     candidates: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -456,7 +464,7 @@ def extract_filename_candidates(video_path: Path) -> list[dict[str, Any]]:
         candidate = normalized_candidate(name, "filename", min(score, 0.75), raw, evidence_role="filename_hint")
         if candidate:
             candidates.append(candidate)
-    return candidates[:6]
+    return candidates[:12]
 
 
 def request_json(url: str, headers: dict[str, str], timeout: int = 15) -> Any:
@@ -1304,6 +1312,7 @@ def build_metadata_hints(video_path: Path, enable_online: bool, frame_paths: lis
         "generated_at": utc_now(),
         "status": "candidate_hints_only",
         "candidate_names": all_candidates[:10],
+        "filename_candidates": filename_candidates[:10],
         "text_verification_queries": text_verification_queries(all_candidates[:10]),
         "watermark_ocr": ocr_results[:20],
         "providers": {
@@ -2208,8 +2217,25 @@ def update_registry_entry(
     entry["evidence"] = evidence[-20:]
 
 
-def canonicalize_record(record: dict[str, Any], registry: dict[str, Any], source_dir: Path) -> tuple[dict[str, Any], bool]:
+def canonicalize_record(
+    record: dict[str, Any],
+    registry: dict[str, Any],
+    source_dir: Path,
+    db_dir: Path | None = None,
+) -> tuple[dict[str, Any], bool]:
     changed = False
+    video_value = str(record.get("_resolved_video_path") or record.get("video_path") or "").strip()
+    video_path = Path(video_value) if video_value else None
+    if video_path and video_path.name:
+        hints = dict(record.get("metadata_hints") or {})
+        filename_candidates = extract_filename_candidates(video_path)
+        if filename_candidates and hints.get("filename_candidates") != filename_candidates[:10]:
+            hints["filename_candidates"] = filename_candidates[:10]
+            record["metadata_hints"] = hints
+            changed = True
+        before_identity = json.dumps(record, sort_keys=True, default=str)
+        record = apply_combined_identity(record, source_dir, db_dir)
+        changed = changed or before_identity != json.dumps(record, sort_keys=True, default=str)
     performers = record.get("performers") or []
     new_performers: list[dict[str, Any]] = []
     for performer in performers:
@@ -2312,7 +2338,18 @@ def best_filename_identity_hint(metadata_hints: dict[str, Any], db_dir: Path | N
     lookup = exact_filename_identity_lookup(db_dir)
     if not lookup:
         return None
-    for item in metadata_hints.get("candidate_names", []):
+    seen: set[tuple[str, str]] = set()
+    candidates: list[dict[str, Any]] = []
+    for source in (metadata_hints.get("filename_candidates", []), metadata_hints.get("candidate_names", [])):
+        for item in source or []:
+            if not isinstance(item, dict):
+                continue
+            key = (str(item.get("name") or ""), str(item.get("raw") or ""))
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append(item)
+    for item in candidates:
         if not isinstance(item, dict) or str(item.get("source") or "") != "filename":
             continue
         raw_name = str(item.get("name") or "")
@@ -2434,7 +2471,7 @@ def apply_combined_identity(meta: dict[str, Any], source_dir: Path, db_dir: Path
         meta["performers"] = [resolved] + [
             item
             for item in performers
-            if normalize_identity_key(str(item.get("name", ""))) != key and item.get("status") != "unknown"
+            if normalize_identity_key(canonical_performer_name(str(item.get("name", "")))) != key and item.get("status") != "unknown"
         ]
         meta["verification_needed"] = any(item.get("verification_needed") for item in meta["performers"])
     meta["suggested_organization"] = suggested_org(meta.get("performers", []), source_dir)
@@ -2991,9 +3028,13 @@ def scan_recent_unscanned_videos(
             break
     if scanned and refresh_pages:
         logging.info("Auto-scanned %s recent upload(s) without face sidecars", len(scanned))
+        if config.apply:
+            verify_performers(config, enable_online=False, organize=False)
         refresh_organizer_pages(config, refresh_stale_enrollment=True, include_verification_report=True, scan_recent_uploads=False)
     elif scanned:
         logging.info("Auto-scanned %s recent upload(s) without refreshing organizer pages", len(scanned))
+        if config.apply:
+            verify_performers(config, enable_online=False, organize=False)
     return scanned
 
 
@@ -3521,7 +3562,7 @@ def verify_performers(config: OrganizerConfig, enable_online: bool = False, orga
     for record in records:
         scanned_records += 1
         before = json.dumps(record, sort_keys=True, default=str)
-        record, changed = canonicalize_record(record, registry, config.source_dir)
+        record, changed = canonicalize_record(record, registry, config.source_dir, config.db_dir)
         after = json.dumps(record, sort_keys=True, default=str)
         changed = changed or before != after
         if changed:

@@ -251,6 +251,7 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
 
     def test_filename_exact_alias_can_support_combined_identity(self) -> None:
         hints = fo.build_metadata_hints(Path("/DATA/yes/Leximarvel Test Probe #999.mp4"), False, [], False)
+        spaced_hints = fo.build_metadata_hints(Path("/DATA/yes/Vibe with Mommy Stepmom Finds a New Roommate.mp4"), False, [], False)
         meta = {
             "schema": "media-face-organizer/v1",
             "video_path": "/DATA/yes/Leximarvel Test Probe #999.mp4",
@@ -264,6 +265,55 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertEqual(resolved["performers"][0]["name"], "Lexi Marvel")
         self.assertEqual(resolved["performers"][0]["source_signals"], ["filename_hint"])
         self.assertFalse(resolved["performers"][0]["verification_needed"])
+        self.assertEqual(fo.best_filename_identity_hint(spaced_hints)["name"], "Vibe With Mommy")
+
+    def test_verify_performers_repairs_filename_identity_when_ocr_crowds_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            video = root / "VibeWithMommy - Mom Bets You Cant Last.mp4"
+            sidecar = root / f"{video.name}.face-meta.json"
+            sidecar.write_text(
+                json.dumps(
+                    {
+                        "schema": "media-face-organizer/v1",
+                        "video_path": str(video),
+                        "verification_needed": True,
+                        "performers": [
+                            {
+                                "name": "unknown performer",
+                                "status": "unknown",
+                                "similarity": 0.19,
+                                "verification_needed": True,
+                            }
+                        ],
+                        "metadata_hints": {
+                            "candidate_names": [
+                                {
+                                    "name": f"Ocr Noise {index}",
+                                    "source": "watermark_ocr",
+                                    "confidence": 0.87,
+                                    "raw": f"@OCRNOISE{index}",
+                                }
+                                for index in range(10)
+                            ]
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            registry_path = root / "performer_verification.json"
+            config = dataclasses.replace(make_test_config(root, registry_path), apply=True)
+
+            fo.verify_performers(config, organize=False)
+            repaired = json.loads(sidecar.read_text(encoding="utf-8"))
+            model_index = json.loads((root / "model_index.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(repaired["performers"][0]["name"], "Vibe With Mommy")
+        self.assertEqual(repaired["performers"][0]["source_signals"], ["filename_hint"])
+        self.assertFalse(repaired["verification_needed"])
+        vibe_rows = [row for row in model_index["models"] if row.get("slug") == "vibe-with-mommy"]
+        self.assertEqual(len(vibe_rows), 1)
+        self.assertEqual(vibe_rows[0]["video_count"], 1)
 
     def test_407017_ocr_hints_keep_visible_text_variants_without_web_calls(self) -> None:
         candidates = fo.watermark_candidates(
@@ -2391,6 +2441,57 @@ class FaceOrganizerSchemaTests(unittest.TestCase):
         self.assertEqual(result["video_path"], str(video))
         self.assertTrue(video_sidecar_exists)
         self.assertFalse(sibling_sidecar_exists)
+
+    def test_recent_upload_scan_refreshes_model_index_without_organizing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            video = root / "Leximarvel Test Probe #999.mp4"
+            video.write_bytes(b"video")
+            config = dataclasses.replace(make_test_config(root, root / "performer_verification.json"), apply=True)
+            verify_calls = []
+
+            def fake_scan_single_video(
+                scan_config: fo.OrganizerConfig,
+                video_path: Path,
+                *,
+                refresh_pages: bool = True,
+            ) -> dict:
+                self.assertFalse(refresh_pages)
+                sidecar = fo.meta_path_for(video_path)
+                sidecar.write_text(
+                    json.dumps(
+                        {
+                            "video_path": str(video_path),
+                            "performers": [
+                                {
+                                    "name": "Lexi Marvel",
+                                    "status": "auto",
+                                    "source_signals": ["filename_hint"],
+                                    "verification_needed": False,
+                                }
+                            ],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                return {"video_path": str(video_path)}
+
+            def fake_verify_performers(
+                verify_config: fo.OrganizerConfig,
+                enable_online: bool = False,
+                organize: bool = True,
+            ) -> dict:
+                verify_calls.append({"enable_online": enable_online, "organize": organize})
+                return {"scanned_records": 1}
+
+            with (
+                patch.object(fo, "scan_single_video", side_effect=fake_scan_single_video),
+                patch.object(fo, "verify_performers", side_effect=fake_verify_performers),
+            ):
+                scanned = fo.scan_recent_unscanned_videos(config, refresh_pages=False)
+
+        self.assertEqual(scanned, [str(video)])
+        self.assertEqual(verify_calls, [{"enable_online": False, "organize": False}])
 
     def test_metadata_only_sava_candidate_is_pending_video_match(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
