@@ -2915,6 +2915,21 @@ export function SpiritFlixHome({
             />
           </>
         ) : null}
+        {!isHomeView && !isAnimeView ? (
+          <SpiritFlixRail
+            title="Latest Added"
+            variant="poster"
+            client={client}
+            items={data.latestAdded}
+            playOnPrimaryTap={playPrimaryTapOnMobile}
+            hasMore={Boolean(data.latestAddedPaging?.hasMore)}
+            loadingMore={Boolean(loadingMore.latestAdded)}
+            onLoadMore={onLoadMoreLatestAdded}
+            onOpenDetails={onOpenDetails}
+            onPlay={onPlay}
+            emptyText="No recent videos found."
+          />
+        ) : null}
       </div>
       {galleryLightbox ? (
         <GalleryLightbox

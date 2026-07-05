@@ -222,7 +222,15 @@ function isHomeVideosCollectionShell(library: JellyfinLibrary): boolean {
 // Keep Jellyfin's "Home Videos and Photos" shell because the UI labels it as Library and uses
 // route-level fallbacks for this install's flat media collection.
 function withCanonicalSpiritFlixLibraries(libraries: JellyfinLibrary[]): JellyfinLibrary[] {
-  return uniqueLibrariesById(libraries);
+  let keptHomeVideosShell = false;
+  return uniqueLibrariesById(
+    libraries.filter((library) => {
+      if (!isHomeVideosCollectionShell(library)) return true;
+      if (keptHomeVideosShell) return false;
+      keptHomeVideosShell = true;
+      return true;
+    }),
+  );
 }
 
 function getItemFields(fields: "card" | "full" = "card"): string {

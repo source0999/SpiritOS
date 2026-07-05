@@ -69,7 +69,7 @@ const emptyHome: SpiritFlixHomeData = {
 
 const OTHER_LIBRARY_NAME = "Other";
 const PLAYLIST_LIBRARY_NAME = "Playlists";
-const HIDDEN_LIBRARY_NAMES = new Set(["music"]);
+const HIDDEN_LIBRARY_NAMES = new Set(["music", "optimized movies"]);
 const MOBILE_LIBRARY_PAGE_SIZE = 24;
 const DESKTOP_LIBRARY_PAGE_SIZE = 48;
 const MOBILE_SHELF_PAGE_SIZE = 10;
