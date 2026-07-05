@@ -1006,7 +1006,7 @@ describe("SpiritFlixHome watch history", () => {
     fireEvent.click(screen.getByRole("button", { name: /^models$/i }));
 
     expect(await screen.findByRole("heading", { name: "Models" })).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /luna x pearl\s+1 videos/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /luna x pearl\s+1 video/i })).toBeInTheDocument();
   });
 
   it("shows catalog models from the restored model index even without loaded videos", async () => {
@@ -1108,7 +1108,7 @@ describe("SpiritFlixHome watch history", () => {
     await waitFor(() => expect(client.getAllLibraryItems).toHaveBeenCalledWith("library-1", expect.objectContaining({ fields: "card", pageSize: 100, maxItems: 1000 })));
 
     fireEvent.click(screen.getByRole("button", { name: /^models$/i }));
-    const lunaButtons = await screen.findAllByRole("button", { name: /luna x pearl\s+1 videos/i });
+    const lunaButtons = await screen.findAllByRole("button", { name: /luna x pearl\s+1 video/i });
     fireEvent.click(lunaButtons[0]);
     fireEvent.click(screen.getByRole("button", { name: /grid/i }));
 

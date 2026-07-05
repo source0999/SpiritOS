@@ -110,7 +110,7 @@ describe("SpiritFlixApp live library loading", () => {
     vi.clearAllMocks();
   });
 
-  it("shows the current library grid before slow shelf requests finish", async () => {
+  it("paints the current library grid behind the loader before slow shelf requests finish", async () => {
     const slowShelves = deferred<JellyfinItemPage>();
     let shelvesResolved = false;
     slowShelves.promise.then(() => {
@@ -127,8 +127,9 @@ describe("SpiritFlixApp live library loading", () => {
     render(<SpiritFlixApp />);
 
     await waitFor(() => expect(mocks.client.getLibraryItemsPage).toHaveBeenCalled());
-    await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
-    expect(await screen.findByText("Scene One")).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /library model library/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "All Models" })).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: /stage 3 of 4: loading shelves/i })).toBeInTheDocument();
     expect(mocks.client.getLibraryLatestAddedPage).toHaveBeenCalled();
     expect(shelvesResolved).toBe(false);
   });
@@ -144,12 +145,14 @@ describe("SpiritFlixApp live library loading", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(screen.getByRole("progressbar", { name: "Connecting to Jellyfin" })).toHaveAttribute("aria-valuenow", "5");
+    const progress = screen.getByRole("progressbar", { name: "Stage 1 of 4: Connecting to Jellyfin" });
+    expect(progress).not.toHaveAttribute("aria-valuenow");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(12000);
     });
 
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.getByText("Jellyfin request timed out while loading library data.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 });

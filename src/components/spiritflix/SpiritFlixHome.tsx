@@ -173,6 +173,7 @@ const LIBRARY_PAGE_SIZE = 20;
 const FACE_METADATA_PAGELOAD_ITEM_LIMIT = LIBRARY_PAGE_SIZE;
 const BACKGROUND_MODEL_GROUP_ITEM_LIMIT = 1000;
 const BACKGROUND_MODEL_GROUP_PAGE_SIZE = 100;
+const ENABLE_FULL_LIBRARY_SCAN = process.env.SPIRITFLIX_FULL_LIBRARY_SCAN === "1";
 const TEMP_LIBRARY_NAME = "Home Videos and Photos";
 const TWITTER_SOURCE_MODEL_NAME = "Twitter";
 export function getBoundedHomeFaceMetadataItems(
@@ -887,6 +888,7 @@ export function SpiritFlixHome({
   const [smartRescanError, setSmartRescanError] = useState("");
   const [isLibraryShuffleLoading, setIsLibraryShuffleLoading] = useState(false);
   const [fullLibraryItems, setFullLibraryItems] = useState<JellyfinItem[]>([]);
+  const [isFullLibraryCounting, setIsFullLibraryCounting] = useState(false);
   const [libraryPageIndex, setLibraryPageIndex] = useState(() => {
     const storedPageIndex = Number(storedLibraryUiState.pageIndex);
     return Number.isInteger(storedPageIndex) && storedPageIndex >= 0 ? storedPageIndex : 0;
@@ -910,6 +912,7 @@ export function SpiritFlixHome({
   );
   const visibleLoadProgress = loadProgress ?? { percent: 0, label: "Loading library" };
   const isBlockingLoad = loading && visibleLoadProgress.percent < 100;
+  const canRetryLoad = /timed out/i.test(error);
   const selectedLibrary = data.libraries.find((library) => library.Id === data.selectedLibraryId);
   const libraryTitle = isHomeView ? "Home" : displayLibraryName(selectedLibrary?.Name);
   const isAnimeView = !isHomeView && selectedLibrary?.Name.toLowerCase() === "anime";
@@ -927,6 +930,7 @@ export function SpiritFlixHome({
     return map;
   }, [manualModelRecords]);
   const libraryModelSourceItems = fullLibraryItems.length ? fullLibraryItems : data.libraryItems;
+  const modelCountsAreCounting = isLibraryDashboardView && isFullLibraryCounting;
   const modelAwareLibraryItems = useMemo(
     () => applyManualModelMapToItems(libraryModelSourceItems, manualModelMap),
     [libraryModelSourceItems, manualModelMap],
@@ -1174,7 +1178,7 @@ export function SpiritFlixHome({
       value: knownLibraryVideoTotal,
       detail: knownLibraryVideoTotal > loadedLibraryVideoCount ? `${loadedLibraryVideoCount} loaded` : undefined,
     },
-    { label: "Models", value: modelGroups.length },
+    { label: "Models", value: modelGroups.length, detail: modelCountsAreCounting ? "counting..." : undefined },
     { label: "Selected", value: sortedLibraryItems.length },
     { label: "Filtered out", value: scopedLibraryItems.length - filteredLibraryItems.length },
     { label: "Portrait", value: orientationCounts.portrait },
@@ -1224,6 +1228,15 @@ export function SpiritFlixHome({
         : smartRescan.status === "failed"
           ? "Smart scan failed"
           : "Smart scan";
+
+  const formatModelCountLabel = (videoCount: number, galleryCount = 0): string => {
+    const videoText = modelCountsAreCounting ? "counting..." : getVideoCountLabel(videoCount);
+    return galleryCount ? `${videoText} / ${galleryCount} pics` : videoText;
+  };
+
+  const allModelsCountLabel = modelCountsAreCounting
+    ? `counting... / ${modelGroups.length} models`
+    : `${getVideoCountLabel(playableLibraryItems.length)} / ${modelGroups.length} models`;
 
   const loadGallery = useCallback(async () => {
     try {
@@ -1358,32 +1371,41 @@ export function SpiritFlixHome({
   useEffect(() => {
     if (!isLibraryDashboardView || !data.selectedLibraryId) {
       setFullLibraryItems([]);
+      setIsFullLibraryCounting(false);
       return undefined;
     }
     const libraryId = data.selectedLibraryId;
     const controller = new AbortController();
     let cancelled = false;
     setFullLibraryItems([]);
+    setIsFullLibraryCounting(true);
     const cancelDeferredFullLibraryLoad = scheduleDeferredHomeTask(() => {
       void client
         .getAllLibraryItems(libraryId, {
           searchTerm,
           fields: "card",
           pageSize: BACKGROUND_MODEL_GROUP_PAGE_SIZE,
-          maxItems: BACKGROUND_MODEL_GROUP_ITEM_LIMIT,
+          maxItems: ENABLE_FULL_LIBRARY_SCAN ? undefined : BACKGROUND_MODEL_GROUP_ITEM_LIMIT,
           signal: controller.signal,
         })
         .then((items) => {
-          if (!cancelled) setFullLibraryItems(items);
+          if (!cancelled) {
+            setFullLibraryItems(items);
+            setIsFullLibraryCounting(false);
+          }
         })
         .catch(() => {
-          if (!cancelled) setFullLibraryItems([]);
+          if (!cancelled) {
+            setFullLibraryItems([]);
+            setIsFullLibraryCounting(false);
+          }
         });
     });
     return () => {
       cancelled = true;
       cancelDeferredFullLibraryLoad();
       controller.abort();
+      setIsFullLibraryCounting(false);
     };
   }, [client, data.selectedLibraryId, isLibraryDashboardView, searchTerm]);
 
@@ -1783,7 +1805,16 @@ export function SpiritFlixHome({
       </section>
       ) : null}
 
-      {error ? <p className="spiritflix-error spiritflix-error--home">{error}</p> : null}
+      {error ? (
+        <div className="spiritflix-error spiritflix-error--home">
+          <span>{error}</span>
+          {canRetryLoad ? (
+            <button type="button" className="spiritflix-secondary-button" onClick={onRefresh}>
+              Retry
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {isBlockingLoad ? <SpiritFlixSplash progress={visibleLoadProgress} skeleton /> : null}
 
       <div className={`spiritflix-rows ${isAnimeView ? "spiritflix-rows--anime" : ""} ${isBlockingLoad ? "spiritflix-rows--behind-loader" : ""}`} data-spiritflix-useful-content={hasUsefulHomeContent ? "ready" : "pending"}>
@@ -2231,7 +2262,7 @@ export function SpiritFlixHome({
                       )}
                       <span>
                         <strong>{model.name}</strong>
-                        <small>{model.indexedCount} videos{galleryCount ? ` / ${galleryCount} pics` : ""}</small>
+                        <small>{formatModelCountLabel(model.indexedCount, galleryCount)}</small>
                       </span>
                     </motion.button>
                   );
@@ -2260,7 +2291,7 @@ export function SpiritFlixHome({
                   >
                     <span>
                       <strong>All Models</strong>
-                      <small>{playableLibraryItems.length} videos / {modelGroups.length} models</small>
+                      <small>{allModelsCountLabel}</small>
                     </span>
                   </button>
                   {modelGroups.map((model) => {
@@ -2286,7 +2317,7 @@ export function SpiritFlixHome({
                         )}
                         <span>
                           <strong>{model.name}</strong>
-                          <small>{model.indexedCount} videos{galleryCount ? ` / ${galleryCount} pics` : ""}</small>
+                          <small>{formatModelCountLabel(model.indexedCount, galleryCount)}</small>
                         </span>
                       </motion.button>
                     );

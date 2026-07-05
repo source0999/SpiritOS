@@ -275,6 +275,7 @@ describe("SpiritFlixAdminApp", () => {
       />,
     );
 
+    fireEvent.error(screen.getByRole("img", { name: "Image Fail.mp4" }));
     await waitFor(() => {
       expect(document.querySelector('[data-thumbnail-source="local"], .spiritflix-admin-thumbnail__fallback')).toBeTruthy();
     });

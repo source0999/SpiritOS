@@ -576,6 +576,8 @@ export function SpiritFlixApp() {
   const loadHomeAbortRef = useRef<AbortController | null>(null);
   const loadHomeSequenceRef = useRef(0);
   const loadCompletionPendingRef = useRef(false);
+  const blockingShelvesReadyRef = useRef(false);
+  const blockingMetadataReadyRef = useRef(false);
   const loadingHomeRef = useRef(false);
   const lastPlaybackRefreshAtRef = useRef(0);
   const activeHomeLoadKeyRef = useRef<string | null>(null);
@@ -639,17 +641,26 @@ export function SpiritFlixApp() {
 
   const finishBlockingLoad = useCallback(() => {
     loadCompletionPendingRef.current = false;
+    blockingShelvesReadyRef.current = false;
+    blockingMetadataReadyRef.current = false;
     clearBlockingLoadStartedAt();
     setLoadProgress({ percent: 100, label: "Ready" });
     setLoadingHome(false);
     setLiveLibraryLoadingId(null);
   }, []);
 
-  const handleVisibleMetadataReady = useCallback(() => {
-    if (!loadCompletionPendingRef.current) return;
-    updateLoadProgress({ percent: 90, label: "Reading visible face metadata" });
+  const finishBlockingLoadIfReady = useCallback(() => {
+    if (!loadCompletionPendingRef.current || !blockingShelvesReadyRef.current || !blockingMetadataReadyRef.current) return;
+    updateLoadProgress({ percent: 100, label: "Stage 4 of 4: Ready" });
     finishBlockingLoad();
   }, [finishBlockingLoad, updateLoadProgress]);
+
+  const handleVisibleMetadataReady = useCallback(() => {
+    if (!loadCompletionPendingRef.current) return;
+    blockingMetadataReadyRef.current = true;
+    updateLoadProgress({ percent: 90, label: "Stage 4 of 4: Visible metadata ready" });
+    finishBlockingLoadIfReady();
+  }, [finishBlockingLoadIfReady, updateLoadProgress]);
 
   useEffect(() => {
     if (!loadingHome) return undefined;
@@ -660,6 +671,8 @@ export function SpiritFlixApp() {
     const timeout = window.setTimeout(() => {
       loadHomeAbortRef.current?.abort();
       loadCompletionPendingRef.current = false;
+      blockingShelvesReadyRef.current = false;
+      blockingMetadataReadyRef.current = false;
       clearBlockingLoadStartedAt();
       setLoadProgress({ percent: 100, label: "Load failed" });
       setHomeError("Jellyfin request timed out while loading library data.");
@@ -691,11 +704,15 @@ export function SpiritFlixApp() {
       loadCompletionPendingRef.current = false;
       if (shouldGateLiveLibrary) setLiveLibraryLoadingId(requestedLibraryIdBeforeLookup);
       if (showBlockingLoader) {
+        blockingShelvesReadyRef.current = false;
+        blockingMetadataReadyRef.current = false;
         const now = Date.now();
         const blockingStartedAt = readBlockingLoadStartedAt() ?? now;
         if (now - blockingStartedAt >= LIVE_LIBRARY_LOAD_TIMEOUT_MS) {
           clearBlockingLoadStartedAt();
           loadCompletionPendingRef.current = false;
+          blockingShelvesReadyRef.current = false;
+          blockingMetadataReadyRef.current = false;
           setLoadProgress({ percent: 100, label: "Load failed" });
           setHomeError("Jellyfin request timed out while loading library data.");
           setLoadingHome(false);
@@ -705,7 +722,7 @@ export function SpiritFlixApp() {
           return;
         }
         writeBlockingLoadStartedAt(blockingStartedAt);
-        setLoadProgress({ percent: 5, label: "Connecting to Jellyfin" });
+        setLoadProgress({ percent: 5, label: "Stage 1 of 4: Connecting to Jellyfin", indeterminate: true });
         setLoadingHome(true);
       }
       setHomeError("");
@@ -716,6 +733,8 @@ export function SpiritFlixApp() {
           if (loadHomeSequenceRef.current !== loadId) return;
           loadFailed = true;
           loadCompletionPendingRef.current = false;
+          blockingShelvesReadyRef.current = false;
+          blockingMetadataReadyRef.current = false;
           setLoadProgress({ percent: 100, label: "Load failed" });
           setHomeError("Jellyfin request timed out while loading library data.");
           setLoadingHome(false);
@@ -727,7 +746,7 @@ export function SpiritFlixApp() {
         const reusableLibraries = options.reuseLibraries ? homeDataRef.current.libraries.filter(isMediaLibrary) : [];
         const libraries = reusableLibraries.length ? reusableLibraries : (await client.getLibraries()).filter(isMediaLibrary);
         if (isStale()) return;
-        if (showBlockingLoader) updateLoadProgress({ percent: 18, label: "Finding libraries" });
+        if (showBlockingLoader) updateLoadProgress({ percent: 30, label: "Stage 1 of 4: Connected" });
         const otherLibrary = libraries.find((library) => library.Name.toLowerCase() === OTHER_LIBRARY_NAME.toLowerCase());
         const requestedLibraryId = libraryId === undefined ? homeData.selectedLibraryId : libraryId;
         const selectedLibraryId = requestedLibraryId && libraries.some((library) => library.Id === requestedLibraryId)
@@ -792,6 +811,7 @@ export function SpiritFlixApp() {
               signal: controller.signal,
             });
 
+        if (showBlockingLoader) updateLoadProgress({ percent: 30, label: "Stage 2 of 4: Loading videos", indeterminate: true });
         const libraryPage = await libraryPagePromise;
         if (isStale()) return;
         const libraryItemsUnique = uniqueItems(libraryPage.items.filter(isNotDeleted));
@@ -805,10 +825,11 @@ export function SpiritFlixApp() {
         };
         setHomeData(partialHome);
         if (showBlockingLoader) {
-          updateLoadProgress({ percent: 48, label: "Painting visible grid" });
-          finishBlockingLoad();
+          loadCompletionPendingRef.current = true;
+          updateLoadProgress({ percent: 55, label: "Stage 2 of 4: Visible videos loaded" });
         }
 
+        if (showBlockingLoader) updateLoadProgress({ percent: 55, label: "Stage 3 of 4: Loading shelves", indeterminate: true });
         const [featuredPage, continuePage, watchHistoryPage, latestPage, favoritesPage] = await Promise.all([
           featuredPagePromise,
           continuePagePromise,
@@ -842,11 +863,17 @@ export function SpiritFlixApp() {
         };
         setHomeData(nextHome);
         writeCachedHomeData(nextHome);
-        if (showBlockingLoader) updateLoadProgress({ percent: 76, label: "Loading shelves" });
+        if (showBlockingLoader) {
+          blockingShelvesReadyRef.current = true;
+          updateLoadProgress({ percent: 80, label: "Stage 4 of 4: Reading visible face metadata", indeterminate: true });
+          finishBlockingLoadIfReady();
+        }
       } catch (error) {
         if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) return;
         loadFailed = true;
         loadCompletionPendingRef.current = false;
+        blockingShelvesReadyRef.current = false;
+        blockingMetadataReadyRef.current = false;
         clearBlockingLoadStartedAt();
         setLoadProgress({ percent: 100, label: "Load failed" });
         const errorMessage = error instanceof Error ? error.message : "";
@@ -870,7 +897,7 @@ export function SpiritFlixApp() {
         if (activeHomeLoadKeyRef.current === loadKey) activeHomeLoadKeyRef.current = null;
       }
     },
-    [client, finishBlockingLoad, homeData.selectedLibraryId, searchTerm, session, updateLoadProgress],
+    [client, finishBlockingLoad, finishBlockingLoadIfReady, homeData.selectedLibraryId, searchTerm, session, updateLoadProgress],
   );
 
   const setLoadingMoreKey = useCallback((key: string, value: boolean) => {

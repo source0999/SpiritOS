@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 export interface SpiritFlixLoadProgress {
   percent: number;
   label: string;
+  indeterminate?: boolean;
 }
 
 export function SpiritFlixSplash({
@@ -18,6 +19,7 @@ export function SpiritFlixSplash({
 }) {
   const progressValue = Math.max(0, Math.min(100, Math.round(progress?.percent ?? 0)));
   const progressLabel = progress?.label ?? message;
+  const isIndeterminate = Boolean(progress?.indeterminate);
 
   return (
     <section className={`spiritflix-restore ${skeleton ? "spiritflix-restore--overlay" : ""}`}>
@@ -27,13 +29,20 @@ export function SpiritFlixSplash({
           <span>SpiritFlix</span>
         </div>
         {progress ? (
-          <div className="spiritflix-load-progress" aria-label={progressLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressValue} role="progressbar">
+          <div
+            className={`spiritflix-load-progress ${isIndeterminate ? "is-indeterminate" : ""}`}
+            aria-label={progressLabel}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={isIndeterminate ? undefined : progressValue}
+            role="progressbar"
+          >
             <div className="spiritflix-load-progress__track">
-              <span style={{ width: `${progressValue}%` }} />
+              <span style={{ width: isIndeterminate ? undefined : `${progressValue}%` }} />
             </div>
             <div className="spiritflix-load-progress__meta">
               <span>{progressLabel}</span>
-              <strong>{progressValue}%</strong>
+              <strong>{isIndeterminate ? "Working" : `${progressValue}%`}</strong>
             </div>
           </div>
         ) : progressLabel ? (

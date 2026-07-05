@@ -83,7 +83,7 @@ describe("SpiritFlixSmartReviewPanel", () => {
     vi.mocked(fetch).mockResolvedValueOnce(Response.json(analysisPayload));
     render(<SpiritFlixSmartReviewPanel item={video} open onClose={() => undefined} />);
     await screen.findByText(/confirms only metadata sidecars/i);
-    expect(screen.getByRole("button", { name: /Approve full HD/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Approve full HD/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Reject full HD/i })).toBeInTheDocument();
     expect(screen.getByText(/does not rename the file yet/i)).toBeInTheDocument();
   });

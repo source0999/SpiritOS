@@ -324,6 +324,25 @@
   transition: width 220ms ease;
 }
 
+.spiritflix-load-progress.is-indeterminate .spiritflix-load-progress__track span {
+  width: 38%;
+  animation: spiritflix-indeterminate-load 1.05s ease-in-out infinite;
+}
+
+@keyframes spiritflix-indeterminate-load {
+  0% {
+    transform: translateX(-105%);
+  }
+
+  50% {
+    transform: translateX(85%);
+  }
+
+  100% {
+    transform: translateX(260%);
+  }
+}
+
 .spiritflix-load-progress__meta {
   display: flex;
   align-items: center;
