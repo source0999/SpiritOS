@@ -361,8 +361,9 @@ interface SpiritFlixBrowseRoute {
 
 const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
-const HOME_CACHE_KEY = "spiritflix_home_cache_v1";
+const HOME_CACHE_KEY = "spiritflix_home_cache_v2";
 const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
+const MOBILE_HOME_CACHE_TTL_MS = 15 * 1000;
 const LIVE_LIBRARY_LOAD_MIN_MS = 50;
 const LIVE_LIBRARY_LOAD_TIMEOUT_MS = 12000;
 const LIVE_LIBRARY_METADATA_MAX_WAIT_MS = 750;
@@ -384,7 +385,8 @@ function readCachedHomeData(): SpiritFlixHomeData | null {
       at?: number;
       data?: SpiritFlixHomeData;
     } | null;
-    if (!parsed?.data || !parsed.at || Date.now() - parsed.at > HOME_CACHE_TTL_MS) return null;
+    const ttlMs = isMobileSpiritFlixViewport() ? MOBILE_HOME_CACHE_TTL_MS : HOME_CACHE_TTL_MS;
+    if (!parsed?.data || !parsed.at || Date.now() - parsed.at > ttlMs) return null;
     return parsed.data;
   } catch {
     return null;
@@ -1127,7 +1129,8 @@ export function SpiritFlixApp() {
       if (loadingHomeRef.current || !hasUsefulHomeContent(homeDataRef.current)) return;
       if (source !== "interval") {
         const now = Date.now();
-        if (now - lastPlaybackRefreshAtRef.current < PLAYBACK_FOCUS_REFRESH_THROTTLE_MS) return;
+        const shouldThrottleRefresh = !isMobileSpiritFlixViewport();
+        if (shouldThrottleRefresh && now - lastPlaybackRefreshAtRef.current < PLAYBACK_FOCUS_REFRESH_THROTTLE_MS) return;
         lastPlaybackRefreshAtRef.current = now;
       }
       const routeQuery = new URLSearchParams(window.location.search);

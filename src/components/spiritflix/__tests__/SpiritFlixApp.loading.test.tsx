@@ -64,8 +64,11 @@ function createClient(overrides: Record<string, unknown> = {}): JellyfinClient {
     getLibraries: vi.fn().mockResolvedValue([{ Id: "library-1", Name: "Library", CollectionType: "movies" }]),
     getLibraryItemsPage: vi.fn().mockResolvedValue(page([libraryItem])),
     getLibraryFeaturedItemsPage: vi.fn().mockResolvedValue(page([])),
+    getContinueWatchingPage: vi.fn().mockResolvedValue(page([])),
     getLibraryResumeItemsPage: vi.fn().mockResolvedValue(page([])),
     getWatchHistoryPage: vi.fn().mockResolvedValue(page([])),
+    getLatestAddedPage: vi.fn().mockResolvedValue(page([])),
+    getFavoritesPage: vi.fn().mockResolvedValue(page([])),
     getLibraryLatestAddedPage: vi.fn().mockResolvedValue(page([])),
     getLibraryFavoriteItemsPage: vi.fn().mockResolvedValue(page([])),
     getFaceOrganizerMetadata: vi.fn().mockResolvedValue({ knownPerformers: [], videos: {}, scannedCount: 0 }),
@@ -191,5 +194,34 @@ describe("SpiritFlixApp live library loading", () => {
 
     await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("library-2", expect.objectContaining({ fields: "card" })));
     expect(getLibraryItemsPage).not.toHaveBeenCalledWith("library-1", expect.anything());
+  });
+
+  it("refreshes latest added immediately when a mobile tab comes back into focus", async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("pointer: coarse"),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    const staleUpload = { ...libraryItem, Id: "old-upload", Name: "Old Upload" };
+    const freshUpload = { ...libraryItem, Id: "fresh-upload", Name: "Fresh Phone Upload" };
+    window.history.replaceState(window.history.state, "", "/spiritflix");
+    const getLatestAddedPage = vi
+      .fn()
+      .mockResolvedValueOnce(page([staleUpload], 12))
+      .mockResolvedValue(page([freshUpload], 12));
+    mocks.client = createClient({ getLatestAddedPage });
+
+    render(<SpiritFlixApp />);
+
+    expect(await screen.findAllByText("Old Upload")).not.toHaveLength(0);
+    await waitFor(() => expect(getLatestAddedPage).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
+
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+
+    await waitFor(() => expect(getLatestAddedPage).toHaveBeenCalledTimes(2));
+    expect(await screen.findAllByText("Fresh Phone Upload")).not.toHaveLength(0);
   });
 });
