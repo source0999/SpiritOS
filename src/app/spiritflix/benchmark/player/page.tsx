@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { SpiritFlixPlayer } from "@/components/spiritflix/SpiritFlixPlayer";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/lib/spiritflix/benchmark-client";
 import { SPIRITFLIX_DEFAULT_SERVER } from "@/lib/spiritflix-jellyfin-client";
 
-export default function SpiritFlixBenchmarkPlayerPage() {
+function SpiritFlixBenchmarkPlayerContent() {
   const searchParams = useSearchParams();
   const itemId = searchParams.get("itemId") ?? SPIRITFLIX_BENCHMARK_DEFAULT_ITEM_ID;
   const sourcePath = searchParams.get("sourcePath") ?? undefined;
@@ -54,5 +54,13 @@ export default function SpiritFlixBenchmarkPlayerPage() {
         onClose={() => undefined}
       />
     </main>
+  );
+}
+
+export default function SpiritFlixBenchmarkPlayerPage() {
+  return (
+    <Suspense fallback={null}>
+      <SpiritFlixBenchmarkPlayerContent />
+    </Suspense>
   );
 }

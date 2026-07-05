@@ -110,7 +110,7 @@ describe("SpiritFlixApp live library loading", () => {
     vi.clearAllMocks();
   });
 
-  it("shows the current library grid before slow shelf requests finish", async () => {
+  it("keeps the blocking loader up until shelves and model counts settle", async () => {
     const slowShelves = deferred<JellyfinItemPage>();
     let shelvesResolved = false;
     slowShelves.promise.then(() => {
@@ -127,10 +127,17 @@ describe("SpiritFlixApp live library loading", () => {
     render(<SpiritFlixApp />);
 
     await waitFor(() => expect(mocks.client.getLibraryItemsPage).toHaveBeenCalled());
-    await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
-    expect(await screen.findByText("Scene One")).toBeInTheDocument();
+    expect(await screen.findByRole("progressbar", { name: "Stage 2 of 5: Painting visible grid" })).toHaveAttribute("aria-valuenow", "48");
     expect(mocks.client.getLibraryLatestAddedPage).toHaveBeenCalled();
     expect(shelvesResolved).toBe(false);
+
+    await act(async () => {
+      slowShelves.resolve(page([]));
+      await slowShelves.promise;
+    });
+
+    await waitFor(() => expect(mocks.client.getAllLibraryItems).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
   });
 
   it("fails the blocking loader when the first Jellyfin library request never settles", async () => {

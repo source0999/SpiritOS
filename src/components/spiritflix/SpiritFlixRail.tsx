@@ -73,7 +73,7 @@ export function SpiritFlixRail({
   };
 
   return (
-    <section className={`spiritflix-rail spiritflix-rail--${variant}`}>
+    <section className={`spiritflix-rail spiritflix-rail--${variant}`} data-spiritflix-rail={title}>
       <div className="spiritflix-rail__header">
         {onTitleClick ? (
           <button
@@ -106,7 +106,7 @@ export function SpiritFlixRail({
         ) : null}
       </div>
       {items.length ? (
-        <div className="spiritflix-rail__track" ref={trackRef} onScroll={handleScroll}>
+        <div className="spiritflix-rail__track" ref={trackRef} onScroll={handleScroll} data-spiritflix-rail-track={title}>
           {visibleItems.map((item, index) => (
             <SpiritFlixCard
               key={item.Id}

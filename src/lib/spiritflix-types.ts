@@ -261,6 +261,7 @@ export interface JellyfinLibrary {
   Name: string;
   Type?: string;
   CollectionType?: string;
+  Path?: string;
 }
 
 export interface JellyfinItemsResponse<T> {
@@ -285,6 +286,7 @@ export interface SpiritFlixHomeData {
   watchHistory: JellyfinItem[];
   latestAdded: JellyfinItem[];
   favorites: JellyfinItem[];
+  modelCountItems?: JellyfinItem[];
   libraryPaging?: SpiritFlixPagingState;
   continueWatchingPaging?: SpiritFlixPagingState;
   watchHistoryPaging?: SpiritFlixPagingState;

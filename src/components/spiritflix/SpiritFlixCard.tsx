@@ -38,7 +38,7 @@ export function SpiritFlixCard({
   const resumeTicks = item.UserData?.PlaybackPositionTicks;
 
   return (
-    <article className={`spiritflix-card spiritflix-card--${variant}`}>
+    <article className={`spiritflix-card spiritflix-card--${variant}`} data-spiritflix-item-id={item.Id} data-spiritflix-item-title={item.Name}>
       <button
         className="spiritflix-card__poster"
         type="button"

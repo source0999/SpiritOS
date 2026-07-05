@@ -926,7 +926,8 @@ export function SpiritFlixHome({
     });
     return map;
   }, [manualModelRecords]);
-  const libraryModelSourceItems = fullLibraryItems.length ? fullLibraryItems : data.libraryItems;
+  const hasBlockingModelCountItems = Boolean(data.modelCountItems?.length);
+  const libraryModelSourceItems = hasBlockingModelCountItems ? data.modelCountItems ?? [] : fullLibraryItems.length ? fullLibraryItems : data.libraryItems;
   const modelAwareLibraryItems = useMemo(
     () => applyManualModelMapToItems(libraryModelSourceItems, manualModelMap),
     [libraryModelSourceItems, manualModelMap],
@@ -1356,7 +1357,7 @@ export function SpiritFlixHome({
   }, [isLibraryDashboardView, loadManualModels, loadManualTags]);
 
   useEffect(() => {
-    if (!isLibraryDashboardView || !data.selectedLibraryId) {
+    if (!isLibraryDashboardView || !data.selectedLibraryId || hasBlockingModelCountItems) {
       setFullLibraryItems([]);
       return undefined;
     }
@@ -1385,7 +1386,7 @@ export function SpiritFlixHome({
       cancelDeferredFullLibraryLoad();
       controller.abort();
     };
-  }, [client, data.selectedLibraryId, isLibraryDashboardView, searchTerm]);
+  }, [client, data.selectedLibraryId, hasBlockingModelCountItems, isLibraryDashboardView, searchTerm]);
 
   useEffect(() => {
     const queries = [
@@ -2219,6 +2220,8 @@ export function SpiritFlixHome({
                       key={model.name}
                       type="button"
                       className={`spiritflix-model-card ${selectedModel === model.name ? "is-active" : ""}`}
+                      data-spiritflix-model-card={model.name}
+                      data-spiritflix-model-count={model.indexedCount}
                       onClick={() => selectModel(model.name)}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -2231,7 +2234,7 @@ export function SpiritFlixHome({
                       )}
                       <span>
                         <strong>{model.name}</strong>
-                        <small>{model.indexedCount} videos{galleryCount ? ` / ${galleryCount} pics` : ""}</small>
+                      <small>{model.indexedCount} videos{galleryCount ? ` / ${galleryCount} pics` : ""}</small>
                       </span>
                     </motion.button>
                   );
@@ -2253,6 +2256,8 @@ export function SpiritFlixHome({
                   <button
                     type="button"
                     className={`spiritflix-model-card spiritflix-model-card--all ${selectedModel === null ? "is-active" : ""}`}
+                    data-spiritflix-model-card="All Models"
+                    data-spiritflix-model-count={playableLibraryItems.length}
                     onClick={() => {
                       selectModel(null);
                       setViewMode("grid");
@@ -2271,6 +2276,8 @@ export function SpiritFlixHome({
                         key={model.name}
                         type="button"
                         className={`spiritflix-model-card ${selectedModel === model.name ? "is-active" : ""}`}
+                        data-spiritflix-model-card={model.name}
+                        data-spiritflix-model-count={model.indexedCount}
                         onClick={() => {
                           selectModel(model.name);
                           setViewMode("grid");
@@ -2748,6 +2755,21 @@ export function SpiritFlixHome({
               <p className="spiritflix-empty">No anime episodes are indexed yet.</p>
             )}
           </section>
+        ) : null}
+        {isLibraryDashboardView ? (
+          <SpiritFlixRail
+            title="Latest Added"
+            variant="poster"
+            client={client}
+            items={data.latestAdded}
+            playOnPrimaryTap={playPrimaryTapOnMobile}
+            hasMore={Boolean(data.latestAddedPaging?.hasMore)}
+            loadingMore={Boolean(loadingMore.latestAdded)}
+            onLoadMore={onLoadMoreLatestAdded}
+            onOpenDetails={onOpenDetails}
+            onPlay={onPlay}
+            emptyText="No recent videos found."
+          />
         ) : null}
         {isHomeView ? (
           <>

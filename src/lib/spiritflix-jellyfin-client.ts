@@ -193,6 +193,56 @@ function uniqueItemsById(items: JellyfinItem[]): JellyfinItem[] {
   });
 }
 
+const SPIRITFLIX_DEFAULT_LIBRARY_NAMES = new Set(["yes", "media", "other"]);
+
+function isHomeVideosCollectionShell(library: JellyfinLibrary): boolean {
+  const name = library.Name.trim().toLowerCase();
+  return (
+    name === "home videos" ||
+    name === "home videos and photos" ||
+    library.CollectionType?.toLowerCase() === "homevideos"
+  );
+}
+
+function withCanonicalSpiritFlixLibraries(libraries: JellyfinLibrary[]): JellyfinLibrary[] {
+  const byId = new Map<string, JellyfinLibrary>();
+  libraries.forEach((library) => byId.set(library.Id, library));
+  return Array.from(byId.values()).sort((left, right) => {
+    const leftDefault = SPIRITFLIX_DEFAULT_LIBRARY_NAMES.has(left.Name.trim().toLowerCase()) ? 0 : 1;
+    const rightDefault = SPIRITFLIX_DEFAULT_LIBRARY_NAMES.has(right.Name.trim().toLowerCase()) ? 0 : 1;
+    return leftDefault - rightDefault || left.Name.localeCompare(right.Name);
+  });
+}
+
+function getDefaultLibraryFolder(libraries: JellyfinLibrary[]): JellyfinLibrary | undefined {
+  return libraries.find(
+    (library) =>
+      SPIRITFLIX_DEFAULT_LIBRARY_NAMES.has(library.Name.trim().toLowerCase()) &&
+      !isHomeVideosCollectionShell(library),
+  );
+}
+
+function getLibraryQueryAliasMap(libraries: JellyfinLibrary[]): Map<string, string> {
+  const defaultFolder = getDefaultLibraryFolder(libraries);
+  if (!defaultFolder) return new Map();
+
+  const aliases = new Map<string, string>();
+  libraries.forEach((library) => {
+    if (library.Id !== defaultFolder.Id && isHomeVideosCollectionShell(library)) {
+      aliases.set(library.Id, defaultFolder.Id);
+    }
+  });
+  return aliases;
+}
+
+function getDefaultLibraryIds(libraries: JellyfinLibrary[]): Set<string> {
+  const explicitDefaultIds = libraries
+    .filter((library) => SPIRITFLIX_DEFAULT_LIBRARY_NAMES.has(library.Name.trim().toLowerCase()) && !isHomeVideosCollectionShell(library))
+    .map((library) => library.Id);
+  if (explicitDefaultIds.length) return new Set(explicitDefaultIds);
+  return new Set(libraries.filter(isHomeVideosCollectionShell).map((library) => library.Id));
+}
+
 function getItemFields(fields: "card" | "full" = "card"): string {
   return fields === "full" ? GOONER_ITEM_FIELDS : CARD_ITEM_FIELDS;
 }
@@ -263,6 +313,8 @@ export class JellyfinClient {
   readonly serverUrl: string;
   readonly token?: string;
   readonly userId?: string;
+  private libraryQueryAliasById = new Map<string, string>();
+  private defaultLibraryIds = new Set<string>();
 
   constructor(serverUrl: string, token?: string, userId?: string) {
     this.serverUrl = normalizeJellyfinServerUrl(serverUrl || SPIRITFLIX_DEFAULT_SERVER);
@@ -351,7 +403,35 @@ export class JellyfinClient {
     const data = await this.request<JellyfinItemsResponse<JellyfinLibrary>>(
       `/Users/${this.userId}/Views`,
     );
-    return data.Items ?? [];
+    const libraries = data.Items ?? [];
+    try {
+      const folderQuery = toQuery({
+        Recursive: false,
+        IncludeItemTypes: "Folder",
+        Fields: "Path",
+        ImageTypeLimit: 1,
+        EnableImageTypes: "Primary,Backdrop,Thumb,Logo",
+        SortBy: "SortName",
+        SortOrder: "Ascending",
+        Limit: 100,
+      });
+      const folderData = await this.request<JellyfinItemsResponse<JellyfinLibrary>>(
+        `/Users/${this.userId}/Items?${folderQuery}`,
+      );
+      return this.rememberLibraries(withCanonicalSpiritFlixLibraries([...libraries, ...(folderData.Items ?? [])]));
+    } catch {
+      return this.rememberLibraries(withCanonicalSpiritFlixLibraries(libraries));
+    }
+  }
+
+  private rememberLibraries(libraries: JellyfinLibrary[]): JellyfinLibrary[] {
+    this.libraryQueryAliasById = getLibraryQueryAliasMap(libraries);
+    this.defaultLibraryIds = getDefaultLibraryIds(libraries);
+    return libraries;
+  }
+
+  private getLibraryQueryParentId(parentId: string): string {
+    return this.libraryQueryAliasById.get(parentId) ?? parentId;
   }
 
   async getLibraryItemsPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
@@ -569,8 +649,12 @@ export class JellyfinClient {
   async getLibraryLatestAddedPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
     if (!this.userId) return emptyItemPage({ startIndex: options.startIndex, limit: options.limit });
     const { limit = 18, startIndex = 0, fields = "card", signal } = options;
+    const queryParentId = this.getLibraryQueryParentId(parentId);
+    if (this.defaultLibraryIds.has(queryParentId)) {
+      return this.getLatestAddedPage(options);
+    }
     const query = toQuery({
-      ParentId: parentId,
+      ParentId: queryParentId,
       Recursive: true,
       IncludeItemTypes: "Movie,Episode,Video",
       Fields: getItemFields(fields),
@@ -585,7 +669,11 @@ export class JellyfinClient {
       `/Users/${this.userId}/Items?${query}`,
       { signal },
     );
-    return pageFromResponse(data, { startIndex, limit });
+    const page = pageFromResponse(data, { startIndex, limit });
+    if (page.items.length === 0 && startIndex === 0) {
+      return this.getLatestAddedPage(options);
+    }
+    return page;
   }
 
   async getFavorites(): Promise<JellyfinItem[]> {
