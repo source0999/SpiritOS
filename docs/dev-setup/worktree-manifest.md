@@ -10,3 +10,9 @@ Snapshot: 2026-07-11 cleanup normalization. Refresh this file whenever a worktre
 | Lane 2 sparse proxy | `/home/source/SpiritOS-lane2-proxy-sparse` | `lane2-proxy-set-b` | `80c8081caae5f53272c1a4a3421ede2be16c447e` | stale/prunable metadata; do not use until independently repaired | none |
 
 The completed Source Proxy structural milestone is `91c3ab11`, not the mixed SpiritFlix branch. The final LumaCart files in the holding checkout are intentionally retained test output and are not part of that commit.
+
+## Managed service identity
+
+- Backend 8787: CWD /home/source/SpiritOS-source-proxy-20260711, branch codex/source-proxy-structural-milestone-20260711.
+- Frontend 3000: CWD /home/source/SpiritOS-source-proxy-20260711, served by its production Next process on 3002 and HTTPS proxy on 3000.
+- Verify identity with eadlink -f /proc/<pid>/cwd, then read branch, HEAD, and /health from that same path before using a runtime result.
