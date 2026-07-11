@@ -181,6 +181,23 @@ def test_git_authority_no_go_for_dirty_source_proxy() -> None:
     assert payload["dirty_source_proxy_count"] == 1
 
 
+def test_git_authority_no_go_for_untracked_source_proxy() -> None:
+    result = runtime_health.CommandResult(
+        returncode=0,
+        stdout="?? source_proxy/context/new_broker.py\x00",
+        stderr="",
+    )
+    with mock.patch("source_proxy.decision.runtime_health.shutil.which", return_value="/usr/bin/git"), mock.patch(
+        "source_proxy.decision.runtime_health._run_command",
+        return_value=result,
+    ):
+        payload = runtime_health.check_git_authority()
+
+    assert payload["status"] == "NO_GO"
+    assert payload["dirty_source_proxy"] is True
+    assert payload["dirty_source_proxy_count"] == 1
+
+
 def test_git_authority_partial_for_unrelated_dirty_files() -> None:
     result = runtime_health.CommandResult(
         returncode=0,

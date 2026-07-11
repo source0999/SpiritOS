@@ -6,6 +6,7 @@ import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-sto
 
 import {
   isSelectedDummyCoderApply,
+  selectedDummyPrompt1CreateFilesFromDiff,
   selectedDummyProductsReplacementFromDiff,
   selectedPrompt3DiffViolations,
   POST,
@@ -177,6 +178,7 @@ describe("execute-approved route", () => {
 
     const [, init] = mockedSourceProxyFetch.mock.calls[0];
     const body = JSON.parse(String(init?.body));
+    expect(body.approval_id).toBe("approval-54865365133e9340");
     expect(body.approved_diff_sha256).toBe("fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe");
     expect(body.applied_diff_sha256).toBe(body.approved_diff_sha256);
     expect(body.provenance_hash_normalization).toBe("lf_trailing_newline_v1");
@@ -232,6 +234,55 @@ describe("execute-approved route", () => {
       ],
       target: "tests/ui-agent-trials/fixtures/dummy-product-site/",
     });
+  });
+
+  it("preserves selected prompt backend diagnostic envelopes from Source Proxy", async () => {
+    const backendEnvelope = {
+      detail: {
+        diagnostic_envelope: {
+          apply_block_layer: "task_store_before_model_call",
+          reason_code: "task_store_sqlite_locked",
+          safe_block: true,
+          truth_status: "BLOCKED_SAFE",
+        },
+        reason_code: "task_store_sqlite_locked",
+        task_id: "missing: task_store_unavailable_before_task_id",
+        truth_status: "BLOCKED_SAFE",
+      },
+    };
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 503,
+        statusText: "Service Unavailable",
+        text: async () => JSON.stringify(backendEnvelope),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
+
+    const approvedDiff = [
+      "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "--- a/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "+++ b/tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "@@ -1 +1 @@",
+      "-<h1>Old</h1>",
+      "+<h1>LumaCart</h1>",
+      "",
+    ].join("\n");
+
+    const response = await POST(
+      jsonRequest({
+        action: "Run selected dummy Coder prompt coder-001-init-dummy-product-site",
+        allowed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+        approved: true,
+        approved_diff: approvedDiff,
+        target: "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        task_id: "task-selected-001",
+      }),
+    );
+
+    await expect(response.json()).resolves.toEqual(backendEnvelope);
+    expect(response.status).toBe(503);
+    expect(mockedSourceProxyFetch).toHaveBeenCalledTimes(1);
   });
 
   it("limits selected dummy local apply eligibility to the isolated fixture root", () => {
@@ -409,6 +460,43 @@ describe("execute-approved route", () => {
     expect(applyArgs.slice(0, 2)).toEqual(["apply", "--recount"]);
   });
 
+  it("extracts model-authored Prompt 1 create bundle files from a stale create diff", () => {
+    const fileContents: Record<string, string> = {
+      "README.md": "# LumaCart\nIsolated dummy coder trial fixture.\n",
+      "package.json": "{\"name\":\"lumacart-dummy\",\"private\":true}\n",
+      "index.html": "<div id=\"app\">LumaCart</div>\n<script type=\"module\" src=\"./src/main.js\"></script>\n",
+      "src/main.js": "import { products } from './products.js';\nconsole.log('LumaCart', products.length);\n",
+      "src/products.js": "export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];\n",
+      "src/styles.css": "body { font-family: system-ui; }\n",
+    };
+    const approvedDiff = Object.entries(fileContents)
+      .map(([path, content]) => {
+        const repoPath = `tests/ui-agent-trials/fixtures/dummy-product-site/${path}`;
+        return [
+          `diff --git a/${repoPath} b/${repoPath}`,
+          "new file mode 100644",
+          "--- /dev/null",
+          `+++ b/${repoPath}`,
+          `@@ -0,0 +1,${content.trimEnd().split("\n").length} @@`,
+          ...content.trimEnd().split("\n").map((line) => `+${line}`),
+        ].join("\n");
+      })
+      .join("\n");
+
+    const recovered = selectedDummyPrompt1CreateFilesFromDiff(approvedDiff);
+
+    expect(recovered).toMatchObject({ ok: true });
+    if (!recovered.ok) {
+      throw new Error(recovered.reason);
+    }
+    expect(recovered.files["tests/ui-agent-trials/fixtures/dummy-product-site/README.md"]).toBe(
+      fileContents["README.md"],
+    );
+    expect(recovered.files["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"]).toContain(
+      "Desk Lamp",
+    );
+  });
+
   it("reconstructs a valid Prompt 2 products.js replacement from a stale unified diff", () => {
     const approvedDiff = [
       "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
@@ -482,13 +570,26 @@ describe("execute-approved route", () => {
     );
 
     await expect(response.json()).resolves.toMatchObject({
+      acceptance_gate: expect.objectContaining({
+        binary_verdict: "NO-GO",
+        phase_verifier_status: "skipped_with_reason",
+      }),
+      anti_cheat: expect.objectContaining({
+        anti_cheat_reasons: ["skipped_due_to_apply_block"],
+        anti_cheat_status: "not_run",
+      }),
       changed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"],
       error: "Selected dummy fixture apply failed during git apply --recount --check.",
+      final_truth_summary: expect.objectContaining({
+        truth_status: "FAILED_INCOMPLETE_DIAG",
+      }),
       reason_code: "selected_dummy_git_apply_check_failed",
       route: "/v1/actions/execute-approved",
+      safe_block: true,
       stage: "git apply --recount --check",
       stderr: expect.stringContaining("patch failed"),
       task_id: "task-selected-002",
+      truth_status: "FAILED_INCOMPLETE_DIAG",
     });
     expect(response.status).toBe(409);
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
@@ -827,9 +928,39 @@ describe("execute-approved route", () => {
     );
 
     await expect(response.json()).resolves.toMatchObject({
+      apply_block_layer: "frontend_bridge",
+      approval_binding: expect.objectContaining({
+        approval_binding_failure_reason: "approval_id_mismatch",
+        approval_binding_safe_block: true,
+        approval_binding_status: "failed",
+        diff_sha256_match: "unknown",
+        expected_approval_id: "approval-54865365133e9340",
+        received_approval_id: "approval-stale",
+        safe_block: true,
+        target_match: "unknown",
+        task_id_match: "unknown",
+      }),
+      anti_cheat: expect.objectContaining({
+        anti_cheat_status: "not_run",
+        anti_cheat_reasons: ["skipped_due_to_apply_block"],
+      }),
       error:
         "execute-approved approval_id does not match task_id, target, and approved_diff.",
+      final_truth_summary: expect.objectContaining({
+        truth_status: "BLOCKED_SAFE",
+        commit_safe: false,
+      }),
+      safe_block: true,
+      stage_id: "next.execute_approved.approval_binding_preflight",
+      truth_status: "BLOCKED_SAFE",
+      unavailable_fields: expect.arrayContaining([
+        expect.objectContaining({ field: "anti_cheat.detector_results" }),
+      ]),
       expected_approval_id: "approval-54865365133e9340",
+      received_approval_id: "approval-stale",
+      verification: expect.objectContaining({
+        post_apply_verification_status: "skipped_due_to_apply_block",
+      }),
     });
     expect(response.status).toBe(409);
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
@@ -856,7 +987,8 @@ describe("execute-approved route", () => {
       }),
     );
 
-    await expect(response.json()).resolves.toEqual({
+    await expect(response.json()).resolves.toMatchObject({
+      backend_payload: { ok: true },
       error: "execute-approved returned success without the Plan 4 causal output contract.",
       missing_fields: [
         "task_id",

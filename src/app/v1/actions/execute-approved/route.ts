@@ -3,18 +3,54 @@ import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-sto
 import type { DurableCodingRunProvenance } from "@/lib/coding/durable-run-types";
 import { execFile } from "node:child_process";
 import { createHash } from "crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const DUMMY_CODER_10_FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
+const DUMMY_CODER_10_PROMPT1_FILES = [
+  "README.md",
+  "package.json",
+  "index.html",
+  "src/main.js",
+  "src/products.js",
+  "src/styles.css",
+].map((file) => `${DUMMY_CODER_10_FIXTURE_ROOT}${file}`);
 const SELECTED_DUMMY_GIT_APPLY_FLAG_CHAINS: string[][] = [
   [],
   ["--ignore-whitespace"],
   ["--ignore-space-change"],
 ];
+
+type DiagnosticEnvelope = {
+  stage_id: string;
+  subsystem: string;
+  task_id: string;
+  selected_prompt_task_id: string;
+  run_id: string;
+  trace_id: string;
+  invocation_event_id: string;
+  consumer_event_id: string;
+  status: string;
+  truth_status: "GO" | "BLOCKED_SAFE" | "FAILED_UNSAFE" | "FAILED_INCOMPLETE_DIAG" | "NOT_RUN_WITH_REASON" | "MISSING_DIAGNOSTIC_ENVELOPE";
+  safe_block: boolean;
+  error_code: string;
+  reason_code: string;
+  human_message: string;
+  machine_reason: string;
+  apply_block_layer: string;
+  recommended_next_action: string;
+  approval_binding: Record<string, unknown>;
+  diff_provenance: Record<string, unknown>;
+  anti_cheat: Record<string, unknown>;
+  acceptance_gate: Record<string, unknown>;
+  verification: Record<string, unknown>;
+  unavailable_fields: Array<{ field: string; reason: string }>;
+  persisted_at: string;
+  surfaced_at: string;
+};
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -170,11 +206,13 @@ export async function POST(request: Request) {
   });
   if (approvalId.trim() && approvalId !== expectedApprovalId) {
     return Response.json(
-      {
-        error:
-          "execute-approved approval_id does not match task_id, target, and approved_diff.",
-        expected_approval_id: expectedApprovalId,
-      },
+      approvalBindingFailurePayload({
+        approvedDiff,
+        expectedApprovalId,
+        receivedApprovalId: approvalId,
+        target,
+        taskId,
+      }),
       { status: 409 },
     );
   }
@@ -257,10 +295,14 @@ export async function POST(request: Request) {
     ? plan4ExecuteApprovedContractCheck(responseText)
     : { ok: true as const };
   if (!contractCheck.ok) {
+    const backendPayload = parseJsonObject(responseText);
     return Response.json(
       {
+        ...backendPayload,
         error:
           "execute-approved returned success without the Plan 4 causal output contract.",
+        backend_payload: backendPayload,
+        diagnostic_envelope: diagnosticEnvelopeFromPayload(backendPayload),
         missing_fields: contractCheck.missingFields,
         reason_code: "plan4_execute_approved_contract_missing",
         task_id: taskId,
@@ -488,6 +530,21 @@ async function tryRecoverSelectedDummyApply(input: {
   approvedDiff: string;
   changedFiles: string[];
 }) {
+  const prompt1Recovery = await tryRecoverSelectedDummyPrompt1CreateApply(input);
+  if (prompt1Recovery) {
+    return {
+      applyMode: "model_authored_prompt1_create_bundle_after_stale_context",
+      checksResult:
+        "git apply --recount --check failed; validated and wrote model-authored Prompt 1 create bundle",
+      checksRun: [
+        "git apply --recount --check",
+        "model-authored Prompt 1 create bundle validation",
+      ],
+      fallbackUsed: false,
+      diffSource: "model_authored_prompt1_create_bundle_after_stale_context",
+      trustStatus: "model_authored_diff_proven",
+    };
+  }
   const prompt2Recovery = await tryRecoverSelectedDummyProductsApply(input);
   if (prompt2Recovery) {
     return {
@@ -523,6 +580,30 @@ async function tryRecoverSelectedDummyApply(input: {
     };
   }
   return null;
+}
+
+async function tryRecoverSelectedDummyPrompt1CreateApply(input: {
+  action: string;
+  approvedDiff: string;
+  changedFiles: string[];
+}) {
+  if (!/coder-001-init-dummy-product-site/.test(input.action)) {
+    return false;
+  }
+  const changedFiles = input.changedFiles.map(normalizeRepoPath).sort();
+  if (changedFiles.join("\n") !== [...DUMMY_CODER_10_PROMPT1_FILES].sort().join("\n")) {
+    return false;
+  }
+  const files = selectedDummyPrompt1CreateFilesFromDiff(input.approvedDiff);
+  if (!files.ok) {
+    return false;
+  }
+  for (const [repoPath, content] of Object.entries(files.files)) {
+    const target = path.join(process.cwd(), repoPath);
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, content, "utf8");
+  }
+  return true;
 }
 
 async function tryRecoverSelectedDummyProductsApply(input: {
@@ -738,7 +819,20 @@ function selectedDummyApplyErrorPayload(
   const selectedError = error instanceof SelectedDummyApplyError ? error : null;
   const details = selectedError?.details ?? execErrorDetails(error);
   const message = error instanceof Error ? error.message : String(error);
+  const reasonCode = selectedError?.reasonCode ?? "selected_dummy_apply_unexpected_error";
+  const recommendedNextAction = selectedError
+    ? "Inspect the approved diff against the current dummy fixture state, then clear/reverse stale selected-prompt leftovers before retrying."
+    : "Inspect Next route logs for /v1/actions/execute-approved and retry after clearing stale selected-prompt state.";
+  const envelope = selectedDummyApplyDiagnosticEnvelope({
+    details,
+    input,
+    message,
+    reasonCode,
+    recommendedNextAction,
+    selectedError,
+  });
   return {
+    ...envelope,
     action: input.action,
     changed_files: input.changedFiles,
     command: details.command ?? null,
@@ -748,10 +842,8 @@ function selectedDummyApplyErrorPayload(
       : "Selected dummy fixture apply route failed before returning an apply result.",
     exit_code: details.exit_code ?? null,
     message,
-    reason_code: selectedError?.reasonCode ?? "selected_dummy_apply_unexpected_error",
-    recommended_next_action: selectedError
-      ? "Inspect the approved diff against the current dummy fixture state, then clear/reverse stale selected-prompt leftovers before retrying."
-      : "Inspect Next route logs for /v1/actions/execute-approved and retry after clearing stale selected-prompt state.",
+    reason_code: reasonCode,
+    recommended_next_action: recommendedNextAction,
     route: "/v1/actions/execute-approved",
     signal: details.signal ?? null,
     stage: selectedError?.stage ?? "selected dummy apply",
@@ -759,6 +851,104 @@ function selectedDummyApplyErrorPayload(
     stdout: details.stdout ?? "",
     target: input.target,
     task_id: input.taskId,
+  };
+}
+
+function selectedDummyApplyDiagnosticEnvelope({
+  details,
+  input,
+  message,
+  reasonCode,
+  recommendedNextAction,
+  selectedError,
+}: {
+  details: Record<string, unknown>;
+  input: {
+    action: string;
+    approvedDiff: string;
+    changedFiles: string[];
+    target: string;
+    taskId: string;
+  };
+  message: string;
+  reasonCode: string;
+  recommendedNextAction: string;
+  selectedError: SelectedDummyApplyError | null;
+}): DiagnosticEnvelope & Record<string, unknown> {
+  const now = new Date().toISOString();
+  const diffSha = normalizedDiffSha256(input.approvedDiff);
+  return {
+    stage_id: "next.execute_approved.selected_dummy_apply",
+    subsystem: "next_execute_approved_route",
+    task_id: input.taskId,
+    selected_prompt_task_id: input.taskId,
+    run_id: "next_execute_approved_selected_dummy_apply",
+    trace_id: "not_available: route_error_before_model_call",
+    invocation_event_id: "not_available: route_error_before_model_call",
+    consumer_event_id: "not_applicable: apply failed before backend consumer",
+    status: "blocked",
+    truth_status: "FAILED_INCOMPLETE_DIAG",
+    safe_block: true,
+    error_code: reasonCode,
+    reason_code: reasonCode,
+    human_message: message,
+    machine_reason: reasonCode,
+    apply_block_layer: "next_selected_dummy_apply_route",
+    recommended_next_action: recommendedNextAction,
+    approval_binding: {
+      approval_binding_status: "not_applicable: selected dummy route local apply failed after route preflight",
+      safe_block: true,
+      target_used_for_apply: input.target,
+      task_id_used_for_apply: input.taskId,
+    },
+    diff_provenance: {
+      applied_diff_sha256: "not_recorded: apply_did_not_happen",
+      approved_diff_sha256: diffSha,
+      backend_converted_diff_sha256: "not_applicable: selected dummy route applied client-approved diff",
+      changed_files: input.changedFiles,
+      diff_source: "approved_diff_request_body",
+      provenance_hash_normalization: "lf_trailing_newline_v1",
+    },
+    anti_cheat: {
+      anti_cheat_status: "not_run",
+      anti_cheat_reasons: ["skipped_due_to_apply_block"],
+      grader_result_state: "not_applicable: fixture_pre_apply_block",
+    },
+    acceptance_gate: {
+      acceptance_failures: [reasonCode],
+      binary_verdict: "NO-GO",
+      causal_crosscheck_status: "skipped_with_reason",
+      fail_closed_lane_status: "skipped_with_reason",
+      missing_fields: ["source_proxy_apply_receipt"],
+      phase_verifier_status: "skipped_with_reason",
+      plan5_gate_id: "plan5_next_selected_dummy_apply_block",
+      plan5_gate_present: false,
+      plan5_gate_version: "plan5_acceptance_v1",
+      reason: "skipped_due_to_apply_block",
+    },
+    verification: {
+      post_apply_verification_status: "skipped_due_to_apply_block",
+      preview_verification_status: selectedError?.stage ?? "not_recorded: backend did not provide field",
+      stderr: String(details.stderr ?? ""),
+      stdout: String(details.stdout ?? ""),
+    },
+    unavailable_fields: [
+      { field: "trace_id", reason: "route_error_before_model_call" },
+      { field: "invocation_event_id", reason: "route_error_before_model_call" },
+      { field: "consumer_event_id", reason: "apply failed before backend consumer" },
+      { field: "anti_cheat.detector_results", reason: "skipped_due_to_apply_block" },
+    ],
+    persisted_at: now,
+    surfaced_at: now,
+    final_truth_summary: {
+      commit_safe: false,
+      proof_level: "fixture_pre_apply_block",
+      raw_backend_status: reasonCode,
+      recommended_next_action: recommendedNextAction,
+      run_status: "blocked",
+      truth_status: "FAILED_INCOMPLETE_DIAG",
+      why_not_go: message,
+    },
   };
 }
 
@@ -1055,6 +1245,81 @@ function changedFilesFromApprovedDiff(diff: string): string[] {
   return [...files];
 }
 
+export function selectedDummyPrompt1CreateFilesFromDiff(
+  diff: string,
+): { ok: true; files: Record<string, string> } | { ok: false; reason: string } {
+  const expected = [...DUMMY_CODER_10_PROMPT1_FILES].sort();
+  const changedFiles = changedFilesFromApprovedDiff(diff).map(normalizeRepoPath).sort();
+  if (changedFiles.join("\n") !== expected.join("\n")) {
+    return { ok: false, reason: "diff_must_touch_exact_prompt1_file_bundle" };
+  }
+
+  const files: Record<string, string> = {};
+  let currentPath = "";
+  let sawDevNull = false;
+  let inHunk = false;
+  let nextLines: string[] = [];
+
+  const flush = () => {
+    if (!currentPath) return;
+    if (!sawDevNull) {
+      files[currentPath] = "";
+      return;
+    }
+    files[currentPath] = `${nextLines.join("\n").trimEnd()}\n`;
+  };
+
+  for (const line of diff.split(/\r?\n/)) {
+    if (line.startsWith("diff --git ")) {
+      flush();
+      currentPath = "";
+      sawDevNull = false;
+      inHunk = false;
+      nextLines = [];
+      const match = line.match(/^diff --git a\/(.+?) b\/(.+)$/);
+      if (match?.[2]) {
+        currentPath = normalizeRepoPath(match[2]);
+      }
+      continue;
+    }
+    if (line === "--- /dev/null") {
+      sawDevNull = true;
+      continue;
+    }
+    if (line.startsWith("+++ b/")) {
+      currentPath = normalizeRepoPath(line.slice("+++ b/".length));
+      continue;
+    }
+    if (line.startsWith("@@")) {
+      inHunk = true;
+      continue;
+    }
+    if (!inHunk || line.startsWith("\\ No newline at end of file")) {
+      continue;
+    }
+    if (line.startsWith("+") && !line.startsWith("+++")) {
+      nextLines.push(line.slice(1));
+    }
+  }
+  flush();
+
+  const recoveredPaths = Object.keys(files).sort();
+  if (recoveredPaths.join("\n") !== expected.join("\n")) {
+    return { ok: false, reason: "prompt1_recovered_paths_mismatch" };
+  }
+  if (Object.values(files).some((content) => !content.trim() || content.length > 30000)) {
+    return { ok: false, reason: "prompt1_recovered_content_invalid_size" };
+  }
+  const combined = Object.values(files).join("\n");
+  if (!/LumaCart/i.test(combined)) {
+    return { ok: false, reason: "prompt1_recovered_content_missing_lumacart" };
+  }
+  if (!/dummy|fixture|trial/i.test(files[`${DUMMY_CODER_10_FIXTURE_ROOT}README.md`] ?? "")) {
+    return { ok: false, reason: "prompt1_readme_missing_fixture_boundary" };
+  }
+  return { ok: true, files };
+}
+
 export function selectedDummyProductsReplacementFromDiff(
   diff: string,
   targetPath = `${DUMMY_CODER_10_FIXTURE_ROOT}src/products.js`,
@@ -1205,4 +1470,145 @@ function approvalIdForApprovedDiff({
   const diffHash = diffHashForApprovedDiff(approvedDiff);
   const key = [taskId.trim(), target.trim(), diffHash].join("|");
   return `approval-${createHash("sha256").update(key).digest("hex").slice(0, 16)}`;
+}
+
+function approvalBindingFailurePayload({
+  approvedDiff,
+  expectedApprovalId,
+  receivedApprovalId,
+  target,
+  taskId,
+}: {
+  approvedDiff: string;
+  expectedApprovalId: string;
+  receivedApprovalId: string;
+  target: string;
+  taskId: string;
+}) {
+  const canonicalDiffSha256 = normalizedDiffSha256(approvedDiff);
+  const rawDiffSha256 = createHash("sha256").update(approvedDiff, "utf8").digest("hex");
+  const canonicalizationChanged = normalizeDiffForProvenance(approvedDiff) !== approvedDiff;
+  const changedFiles = changedFilesFromApprovedDiff(approvedDiff);
+  const recommendedNextAction =
+    "Inspect src/app/v1/actions/execute-approved/route.ts approvalIdForApprovedDiff and the caller that supplied approval_id; do not apply until task_id, target, and diff hash match.";
+  const now = new Date().toISOString();
+  const envelope: DiagnosticEnvelope & Record<string, unknown> = {
+    stage_id: "next.execute_approved.approval_binding_preflight",
+    subsystem: "next_execute_approved_route",
+    task_id: taskId,
+    selected_prompt_task_id: taskId,
+    run_id: "next_execute_approved_preflight",
+    trace_id: "not_started: preflight_block",
+    invocation_event_id: "not_started: preflight_block",
+    consumer_event_id: "not_applicable: preflight_block",
+    status: "blocked_approval_mismatch",
+    truth_status: "BLOCKED_SAFE",
+    safe_block: true,
+    error_code: "approval_id_mismatch",
+    reason_code: "approval_id_mismatch",
+    human_message: "execute-approved approval_id does not match task_id, target, and approved_diff.",
+    machine_reason: "approval_id_mismatch",
+    apply_block_layer: "frontend_bridge",
+    recommended_next_action: recommendedNextAction,
+    error: "execute-approved approval_id does not match task_id, target, and approved_diff.",
+    task_identity: {
+      backend_task_id: taskId,
+      consumer_event_id: "not_applicable: preflight_block",
+      invocation_event_id: "not_started: preflight_block",
+      run_id: "next_execute_approved_preflight",
+      selected_prompt_id: "not_recorded: route did not receive selected prompt id",
+      selected_prompt_task_id: taskId,
+      task_id_match: "unknown",
+      trace_id: "not_started: preflight_block",
+      unavailable_reason: "received_approval_binding_components_not_recorded",
+    },
+    diff_provenance: {
+      applied_diff_sha256: "not_applicable: apply_blocked",
+      approved_diff_sha256: canonicalDiffSha256,
+      backend_converted_diff_sha256: "not_recorded: backend did not provide field",
+      changed_files: changedFiles,
+      diff_source: "approved_diff_request_body",
+      provenance_hash_normalization: "lf_trailing_newline_v1",
+      raw_approved_diff_sha256: rawDiffSha256,
+    },
+    approval_binding: {
+      approval_binding_failure_reason: "approval_id_mismatch",
+      approval_binding_safe_block: true,
+      approval_binding_status: "failed",
+      approval_id_algorithm: "sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)",
+      approval_source: "client/request",
+      apply_block_layer: "frontend_bridge",
+      apply_block_reason: "approval_id_mismatch",
+      canonical_diff_sha256_at_apply: canonicalDiffSha256,
+      canonical_diff_sha256_before_approval: "not_recorded: backend did not provide field",
+      canonicalization_changed: canonicalizationChanged,
+      diff_sha256_match: "unknown",
+      diff_sha256_used_for_apply: canonicalDiffSha256,
+      diff_sha256_used_for_preview: "not_recorded: backend did not provide field",
+      expected_approval_id: expectedApprovalId,
+      received_approval_id: receivedApprovalId.trim() || "missing",
+      safe_block: true,
+      target_match: "unknown",
+      target_used_for_apply: target,
+      target_used_for_preview: "not_recorded: backend did not provide field",
+      task_id_match: "unknown",
+      task_id_used_for_apply: taskId,
+      task_id_used_for_preview: "not_recorded: backend did not provide field",
+      unavailable_reason: "received_approval_binding_components_not_recorded",
+    },
+    verification: {
+      post_apply_verification_status: "skipped_due_to_apply_block",
+      preview_verification_status: "not_recorded: backend did not provide field",
+    },
+    anti_cheat: {
+      anti_cheat_status: "not_run",
+      anti_cheat_reasons: ["skipped_due_to_apply_block"],
+      grader_result_state: "not_applicable: fixture_pre_apply_block",
+      trial_result_trust_status: "blocked_before_apply",
+    },
+    acceptance_gate: {
+      binary_verdict: "NO-GO",
+      plan5_gate_present: false,
+      missing_fields: ["source_proxy_apply_receipt"],
+      acceptance_failures: ["approval_id_mismatch"],
+    },
+    final_truth_summary: {
+      commit_safe: false,
+      proof_level: target.includes("dummy-product-site") ? "fixture_only" : "route_level_non_fixture",
+      raw_backend_status: "approval_id_mismatch",
+      recommended_next_action: recommendedNextAction,
+      run_status: "blocked",
+      truth_status: "BLOCKED_SAFE",
+      why_not_go: "approval binding failed before workspace apply",
+    },
+    unavailable_fields: [
+      { field: "trace_id", reason: "preflight block occurred before backend invocation" },
+      { field: "backend_converted_diff_sha256", reason: "backend did not provide field" },
+      { field: "anti_cheat.detector_results", reason: "skipped_due_to_apply_block" },
+    ],
+    persisted_at: now,
+    surfaced_at: now,
+    expected_approval_id: expectedApprovalId,
+    received_approval_id: receivedApprovalId.trim() || "missing",
+  };
+  return envelope;
+}
+
+function parseJsonObject(text: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function diagnosticEnvelopeFromPayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const detail = payload.detail && typeof payload.detail === "object" && !Array.isArray(payload.detail)
+    ? (payload.detail as Record<string, unknown>)
+    : {};
+  const source = Object.keys(detail).length > 0 ? detail : payload;
+  return source.stage_id || source.approval_binding || source.final_truth_summary ? source : {};
 }

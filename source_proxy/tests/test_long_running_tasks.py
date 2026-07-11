@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import difflib
 import os
 import json
 import sqlite3
 import subprocess
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -15,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from source_proxy.api.long_running_tasks import router as long_running_tasks_router
+from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.planning.plan import (
     PLAN_SCHEMA_VERSION,
     AcceptanceCriterion,
@@ -43,6 +46,7 @@ from source_proxy.tasks.long_running import (
     reset_long_running_tasks,
     update_long_running_task,
 )
+import source_proxy.tasks.long_running as long_running_module
 
 
 def _approval_id(task_id: str, diff: str, target: str) -> str:
@@ -51,6 +55,100 @@ def _approval_id(task_id: str, diff: str, target: str) -> str:
         approved_diff=diff,
         target=target,
     )
+
+
+def _passing_managed_browser_proof() -> dict[str, object]:
+    return {
+        "schema_version": "dummy-storefront-browser-proof/v1",
+        "status": "passed",
+        "browser_verification_status": "passed",
+        "storefront_runtime_status": "passed",
+        "storefront_runtime_engine": "playwright_chromium",
+        "real_browser_used": True,
+        "managed_frontend_origin": "https://localhost:3000",
+        "preview_url": "https://localhost:3000/v1/coding/dummy-product-site-preview",
+        "preview_http_status": 200,
+        "document_ready_state": "complete",
+        "product_count": 6,
+        "rendered_card_count": 6,
+        "module_script_loaded": True,
+        "stylesheet_loaded": True,
+        "noscript_card_count": 0,
+        "asset_responses": {
+            "/v1/coding/dummy-product-site-preview": 200,
+            "/v1/coding/dummy-product-site-preview/src/main.js": 200,
+            "/v1/coding/dummy-product-site-preview/src/products.js": 200,
+            "/v1/coding/dummy-product-site-preview/src/styles.css": 200,
+        },
+        "visible_fields": {
+            "name": True,
+            "price": True,
+            "category": True,
+            "description": True,
+        },
+        "console_errors": [],
+        "page_errors": [],
+        "request_failures": [],
+        "observed_at": "2026-07-11T12:00:00Z",
+    }
+
+
+def _dummy_product_site_lifecycle_diff(
+    readme_before: str,
+) -> tuple[str, dict[str, str]]:
+    root = "tests/ui-agent-trials/fixtures/dummy-product-site"
+    applied_contents = {
+        f"{root}/README.md": "# LumaCart\n\nA model-authored demo storefront.\n",
+        f"{root}/package.json": (
+            '{"name":"lumacart-lifecycle-test","private":true,"type":"module"}\n'
+        ),
+        f"{root}/index.html": (
+            "<!doctype html><html><body><main id=\"products\"></main>"
+            "<script type=\"module\" src=\"src/main.js\"></script></body></html>\n"
+        ),
+        f"{root}/src/main.js": (
+            'import products from "./products.js";\n'
+            'const root = document.querySelector("#products");\n'
+            "products.forEach((product) => {\n"
+            "  root.insertAdjacentHTML(\"beforeend\", `<article class=\"product-card\">"
+            "<h2>${product.name}</h2><p>${product.category}</p>"
+            "<p>${product.description}</p><strong>${product.price}</strong></article>`);\n"
+            "});\n"
+        ),
+        f"{root}/src/products.js": (
+            "export default [\n"
+            + "\n".join(
+                f'  {{ id: {index}, name: "Product {index}", price: {index}.99, '
+                f'category: "Demo", description: "Product {index} description" }},'
+                for index in range(1, 7)
+            )
+            + "\n];\n"
+        ),
+        f"{root}/src/styles.css": ".product-card { border: 1px solid #ddd; padding: 1rem; }\n",
+    }
+
+    patches: list[str] = []
+    for path, after in applied_contents.items():
+        before = readme_before if path.endswith("/README.md") else ""
+        fromfile = f"a/{path}" if before else "/dev/null"
+        patch_lines = difflib.unified_diff(
+            before.splitlines(),
+            after.splitlines(),
+            fromfile=fromfile,
+            tofile=f"b/{path}",
+            lineterm="",
+        )
+        patches.append(
+            "\n".join(
+                [
+                    f"diff --git a/{path} b/{path}",
+                    *(["new file mode 100644"] if not before else []),
+                    *patch_lines,
+                    "",
+                ]
+            )
+        )
+    return "".join(patches), applied_contents
 
 
 def _manual_plan(task_id: str) -> ArchitectPlan:
@@ -176,6 +274,65 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertFalse(first_poll["task"]["would_execute"])
         self.assertFalse(first_poll["task"]["writes_allowed"])
 
+    def test_polling_alone_never_completes_task(self) -> None:
+        created = create_long_running_task("Review a large patch")
+        task_id = created["task"]["id"]
+
+        statuses = [get_long_running_task(task_id)["task"]["status"] for _ in range(12)]
+        final = get_long_running_task(task_id)
+
+        self.assertNotIn("completed", statuses)
+        self.assertEqual(final["task"]["status"], "running")
+        self.assertGreaterEqual(final["task"]["poll_count"], 13)
+        self.assertFalse(final["task"]["would_execute"])
+        self.assertFalse(final["task"]["writes_allowed"])
+
+    def test_stale_browser_dependent_task_waits_for_operator_readback(self) -> None:
+        created = create_long_running_task("Target file: docs/stale.md\nAppend a stale note.")
+        task_id = created["task"]["id"]
+
+        from source_proxy.tasks import long_running
+
+        task = long_running._lookup_task(task_id)
+        task.status = "running"
+        task.created_at = (datetime.now(UTC) - timedelta(minutes=16)).isoformat()
+        task.updated_at = task.created_at
+        long_running._save_task(task)
+
+        payload = get_long_running_task(task_id)
+
+        self.assertEqual(payload["task"]["status"], "waiting_for_operator_browser")
+        self.assertEqual(payload["task"]["architect_status"], "blocked")
+        self.assertIn("/coding", payload["task"]["architect_reason"])
+        self.assertTrue(
+            any(
+                event["event_type"] == "status_transition"
+                and event["status_after"] == "waiting_for_operator_browser"
+                for event in payload["task"]["causal_events"]
+            )
+        )
+
+    def test_create_advance_and_poll_do_not_write_files_or_claim_execution(self) -> None:
+        target = os.path.join(self._tempdir.name, "docs", "no-write.md")
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        with open(target, "w", encoding="utf-8") as handle:
+            handle.write("# No Write\n\nBefore.\n")
+        audit_path = os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"]
+        task_text = "Target file: docs/no-write.md\nAppend a note."
+
+        created = create_long_running_task(task_text)
+        task_id = created["task"]["id"]
+        polled = get_long_running_task(task_id)
+        advanced = advance_long_running_task(task_id)
+
+        with open(target, encoding="utf-8") as handle:
+            self.assertEqual(handle.read(), "# No Write\n\nBefore.\n")
+        self.assertFalse(os.path.exists(audit_path))
+        self.assertNotIn("execution", created)
+        self.assertFalse(created["task"]["would_execute"])
+        self.assertFalse(polled["task"]["writes_allowed"])
+        self.assertNotEqual(advanced["task"]["status"], "completed")
+
     def test_list_long_running_tasks_returns_read_only_queue_items(self) -> None:
         created = create_long_running_task("Target file: source_proxy/main.py\nUpdate docs.")
         task_id = created["task"]["id"]
@@ -239,10 +396,82 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(second["task"]["scope_key"], "source_proxy/main.py")
         self.assertTrue(second["task"]["write_capable"])
         self.assertIn("write_scope_conflict", second["task"]["truncated_test_results"])
+        self.assertEqual(second["truth_status"], "BLOCKED_SAFE")
+        self.assertEqual(second["reason_code"], "write_scope_conflict")
+        self.assertEqual(second["approval_binding_status"], "not_run: route_error_before_model_call")
+        self.assertEqual(second["anti_cheat_status"], "not_run")
+        self.assertEqual(
+            second["anti_cheat_reasons"],
+            ["route_error_before_model_call"],
+        )
+        self.assertEqual(
+            second["diagnostic_envelope"]["acceptance_gate"]["phase_verifier_status"],
+            "skipped_with_reason",
+        )
         self.assertEqual(
             second["task"]["ast_snapshot"]["queue_policy"],
             "one_write_capable_task_per_scope",
         )
+
+    def test_create_returns_persisted_task_id_with_creation_diagnostics(self) -> None:
+        with mock.patch.object(long_running_module.subprocess, "run") as run:
+            created = create_long_running_task(
+                "Target file: source_proxy/main.py\nUpdate implementation."
+            )
+
+        self.assertRegex(created["task"]["id"], r"^task_[0-9a-f]+$")
+        self.assertEqual(created["task_creation_status"], "persisted_task_id")
+        self.assertEqual(created["task"]["task_creation_status"], "persisted_task_id")
+        self.assertGreaterEqual(created["task_creation_elapsed_ms"], 0)
+        self.assertEqual(
+            created["task_creation_timeout_stage"],
+            "not_applicable: task_id_persisted",
+        )
+        self.assertEqual(created["task_creation_last_checkpoint"], "task_envelope_built")
+        self.assertEqual(
+            created["task_creation_blocking_subsystem"],
+            "not_applicable: task_id_persisted",
+        )
+        checkpoint_stages = [
+            checkpoint["stage"]
+            for checkpoint in created["task_creation_checkpoints"]
+        ]
+        self.assertIn("task_persisted", checkpoint_stages)
+        self.assertIn("task_envelope_built", checkpoint_stages)
+        self.assertNotIn("prompt_packet_requested", checkpoint_stages)
+        self.assertNotIn("diff_generation_started", checkpoint_stages)
+        run.assert_not_called()
+
+    def test_create_route_surfaces_creation_diagnostics(self) -> None:
+        app = FastAPI()
+        app.include_router(long_running_tasks_router)
+        client = TestClient(app)
+
+        with mock.patch.object(
+            long_running_module,
+            "_write_scope_conflict_for_task",
+            side_effect=AssertionError("route task create must return id before queue checks"),
+        ):
+            response = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Target file: source_proxy/main.py\nUpdate implementation."},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertRegex(payload["task"]["id"], r"^task_[0-9a-f]+$")
+        self.assertEqual(payload["task_creation_status"], "persisted_task_id")
+        self.assertEqual(payload["task"]["task_creation_status"], "persisted_task_id")
+        self.assertEqual(
+            payload["task_creation_timeout_stage"],
+            "not_applicable: task_id_persisted",
+        )
+        checkpoint_stages = [
+            checkpoint["stage"]
+            for checkpoint in payload["task_creation_checkpoints"]
+        ]
+        self.assertIn("write_scope_conflict_deferred", checkpoint_stages)
+        self.assertIn("old_tasks_prune_deferred", checkpoint_stages)
 
     def test_create_ignores_pre_execution_safety_block_on_same_scope(self) -> None:
         poisoned = create_long_running_task(
@@ -473,15 +702,15 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(payload["task"]["current_agent_role"], "coder")
         self.assertLessEqual(payload["task"]["progress"], 50)
 
-    def test_task_completes_after_multiple_polls(self) -> None:
+    def test_task_stays_running_after_multiple_polls_without_execution(self) -> None:
         created = create_long_running_task("Prepare verification plan")
         task_id = created["task"]["id"]
 
         for _ in range(4):
             payload = get_long_running_task(task_id)
 
-        self.assertEqual(payload["task"]["status"], "completed")
-        self.assertEqual(payload["task"]["progress"], 100)
+        self.assertEqual(payload["task"]["status"], "running")
+        self.assertLess(payload["task"]["progress"], 100)
 
     def test_router_can_cancel_task(self) -> None:
         app = FastAPI()
@@ -497,6 +726,33 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
 
         self.assertEqual(cancelled.status_code, 200)
         self.assertEqual(cancelled.json()["task"]["status"], "cancelled")
+
+    def test_router_can_cancel_waiting_for_operator_browser_task(self) -> None:
+        app = FastAPI()
+        app.include_router(long_running_tasks_router)
+        client = TestClient(app)
+
+        created = create_long_running_task(
+            "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/README.md\n"
+            "Run selected dummy prompt."
+        )
+        task_id = created["task"]["id"]
+        update_long_running_task(
+            task_id,
+            status="waiting_for_operator_browser",
+            architect_status="blocked",
+            architect_reason="operator must run preview/apply from /coding",
+            truncated_test_results=(
+                "reason_code: operator_browser_required; "
+                "operator must run preview/apply from /coding"
+            ),
+        )
+
+        cancelled = client.post(f"/v1/tasks/long-running/{task_id}/cancel")
+
+        self.assertEqual(cancelled.status_code, 200)
+        self.assertEqual(cancelled.json()["task"]["status"], "cancelled")
+        self.assertIsNotNone(cancelled.json()["task"]["cancelled_at"])
 
     def test_router_marks_selected_dummy_apply_completed(self) -> None:
         app = FastAPI()
@@ -626,6 +882,79 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(row[2], "ok")
         self.assertEqual(row[3], "coder")
         self.assertEqual(row[4], 0)
+
+    def test_store_initialization_skips_schema_write_when_schema_complete(self) -> None:
+        create_long_running_task("Initialize task store schema")
+        long_running_module._TASK_STORE_INITIALIZED_PATHS.clear()
+
+        with mock.patch.object(
+            long_running_module,
+            "_ensure_column",
+            side_effect=AssertionError("schema migration should not run"),
+        ):
+            created = create_long_running_task("Create without schema write")
+
+        self.assertEqual(created["task"]["description"], "Create without schema write")
+
+    def test_default_sqlite_path_ignores_spirit_project_apply_roots(self) -> None:
+        configured_db = os.environ.pop("SOURCE_PROXY_LONG_RUNNING_TASKS_DB", None)
+        configured_spirit_root = os.environ.get("SPIRIT_PROJECT_PATH")
+        try:
+            external_root = os.path.join(self._tempdir.name, "external-apply-root")
+            os.makedirs(external_root, exist_ok=True)
+            os.environ["SPIRIT_PROJECT_PATH"] = external_root
+
+            sqlite_path = long_running_module._sqlite_path()
+
+            self.assertEqual(sqlite_path.name, "long_running_tasks.sqlite3")
+            self.assertNotIn("external-apply-root", str(sqlite_path))
+            self.assertEqual(sqlite_path.parent.name, "data")
+        finally:
+            if configured_db is not None:
+                os.environ["SOURCE_PROXY_LONG_RUNNING_TASKS_DB"] = configured_db
+            if configured_spirit_root is not None:
+                os.environ["SPIRIT_PROJECT_PATH"] = configured_spirit_root
+
+    def test_two_near_simultaneous_task_creates_do_not_lock_store(self) -> None:
+        def create(index: int) -> str:
+            payload = create_long_running_task(f"Concurrent queue item {index}")
+            return payload["task"]["id"]
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            task_ids = list(executor.map(create, [1, 2]))
+
+        self.assertEqual(len(set(task_ids)), 2)
+        queue = list_long_running_tasks(limit=10)
+        queued_ids = {item["task_id"] for item in queue["tasks"]}
+        self.assertTrue(set(task_ids).issubset(queued_ids))
+
+    def test_router_returns_structured_diagnostic_when_store_is_locked(self) -> None:
+        app = FastAPI()
+        app.include_router(long_running_tasks_router)
+        client = TestClient(app)
+
+        with mock.patch(
+            "source_proxy.api.long_running_tasks.create_long_running_task",
+            side_effect=sqlite3.OperationalError("database is locked"),
+        ):
+            response = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Selected prompt store failure"},
+            )
+
+        self.assertEqual(response.status_code, 503)
+        detail = response.json()["detail"]
+        self.assertEqual(detail["truth_status"], "BLOCKED_SAFE")
+        self.assertEqual(detail["reason_code"], "task_store_sqlite_locked")
+        self.assertEqual(
+            detail["approval_binding"]["approval_binding_status"],
+            "not_run: task_store_unavailable_before_task_id",
+        )
+        self.assertEqual(detail["anti_cheat"]["anti_cheat_status"], "not_run")
+        self.assertEqual(
+            detail["diagnostic_envelope"]["apply_block_layer"],
+            "task_store_before_model_call",
+        )
 
     def test_pre_save_hook_truncates_logs_and_purges_verified_diffs(self) -> None:
         created = create_long_running_task("Trim debugger output")
@@ -935,7 +1264,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 event for event in events if event["event_type"] == "invocation"
             )
             consumer = next(
-                event for event in events if event["event_type"] == "consumer"
+                event for event in events
+                if event["event_type"] == "consumer"
+                and event["consumer_subsystem"] == "long_running_status_observer"
             )
             self.assertEqual(invocation["task_id"], task_id)
             self.assertEqual(invocation["approval_id"], _approval_id(task_id, diff, "src/app/demo/page.tsx"))
@@ -951,6 +1282,46 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 payload["execution"]["invocation_event_id"],
                 invocation["event_id"],
             )
+            self.assertEqual(payload["execution"]["acceptance"]["binary_verdict"], "GO")
+            self.assertEqual(
+                payload["execution"]["acceptance"]["fail_closed_lane_status"],
+                "GO",
+            )
+            self.assertEqual(payload["diagnostic_envelope"]["reason_code"], "post_apply_verification_required")
+            self.assertEqual(
+                payload["diagnostic_envelope"]["approval_binding"]["approval_binding_status"],
+                "valid",
+            )
+            self.assertEqual(
+                payload["diagnostic_envelope"]["approval_binding"]["expected_approval_id"],
+                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+            )
+            self.assertEqual(
+                payload["diagnostic_envelope"]["approval_binding"]["received_approval_id"],
+                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+            )
+            self.assertEqual(payload["diagnostic_envelope"]["acceptance_gate"]["plan5_gate_present"], True)
+            self.assertEqual(
+                payload["diagnostic_envelope"]["verification"]["post_apply_verification_reason"],
+                "post_apply_verification_incomplete",
+            )
+            self.assertIn(
+                "Run the listed post-apply verification checks",
+                payload["diagnostic_envelope"]["verification"]["verification_required_action"],
+            )
+            self.assertEqual(payload["task"]["approval_binding_status"], "valid")
+            self.assertEqual(payload["task"]["truth_status"], "BLOCKED_SAFE")
+            self.assertEqual(payload["task"]["commit_safe"], False)
+            self.assertEqual(
+                payload["task"]["commit_safe_reason"],
+                "post_apply_verification_incomplete",
+            )
+            audit_payload = json.loads(audit_line)
+            self.assertEqual(audit_payload["acceptance"]["binary_verdict"], "GO")
+            self.assertEqual(
+                audit_payload["acceptance"]["gate_id"],
+                "plan5_execute_approved_acceptance",
+            )
         finally:
             os.chdir(previous_cwd)
             if previous_audit_path is None:
@@ -959,6 +1330,53 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"] = (
                 previous_audit_path
             )
+
+    def test_execute_approved_acceptance_no_go_when_causal_evidence_missing(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("docs", exist_ok=True)
+            with open("docs/nogo.md", "w", encoding="utf-8") as handle:
+                handle.write("# No Go\n\nBefore.\n")
+
+            created = create_long_running_task("Append docs note with stripped causal evidence")
+            task_id = created["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/docs/nogo.md b/docs/nogo.md",
+                    "--- a/docs/nogo.md",
+                    "+++ b/docs/nogo.md",
+                    "@@ -1,3 +1,4 @@",
+                    " # No Go",
+                    " ",
+                    " Before.",
+                    "+After.",
+                    "",
+                ]
+            )
+
+            with mock.patch(
+                "source_proxy.tasks.long_running._record_execute_approved_plan2_integration",
+                return_value=None,
+            ):
+                payload = execute_approved_long_running_task(
+                    task_id,
+                    action="append docs note",
+                    approval_id=_approval_id(task_id, diff, "docs/nogo.md"),
+                    approved_by="test",
+                    approved_diff=diff,
+                    target="docs/nogo.md",
+                )
+
+            acceptance = payload["execution"]["acceptance"]
+            self.assertEqual(payload["task"]["status"], "applied_needs_verification")
+            self.assertEqual(acceptance["binary_verdict"], "NO-GO")
+            self.assertIn("subsystem_record_missing", acceptance["failures"])
+            with open(os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"], encoding="utf-8") as handle:
+                audit_payload = json.loads(handle.readline())
+            self.assertEqual(audit_payload["acceptance"]["binary_verdict"], "NO-GO")
+        finally:
+            os.chdir(previous_cwd)
 
     def test_causal_events_persist_with_task_record(self) -> None:
         previous_cwd = os.getcwd()
@@ -1023,6 +1441,34 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
 
         self.assertNotIn("abcd1234abcd1234abcd1234", json.dumps(event))
         self.assertIn("[REDACTED]", event["notes"][0])
+
+    def test_approval_id_uses_canonical_lf_trailing_newline_diff_hash(self) -> None:
+        lf_no_trailing = "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new"
+        lf_trailing = f"{lf_no_trailing}\n"
+        crlf_trailing = lf_trailing.replace("\n", "\r\n")
+
+        baseline = approval_id_for_approved_diff(
+            task_id="task-123",
+            approved_diff=lf_no_trailing,
+            target="src/demo.ts",
+        )
+
+        self.assertEqual(
+            baseline,
+            approval_id_for_approved_diff(
+                task_id="task-123",
+                approved_diff=lf_trailing,
+                target="src/demo.ts",
+            ),
+        )
+        self.assertEqual(
+            baseline,
+            approval_id_for_approved_diff(
+                task_id="task-123",
+                approved_diff=crlf_trailing,
+                target="src/demo.ts",
+            ),
+        )
 
     def test_central_gate_failure_creates_failure_event_without_status_advance(self) -> None:
         previous_cwd = os.getcwd()
@@ -1157,8 +1603,181 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 )
 
             self.assertEqual(blocked.exception.reason_code, "approval_id_mismatch")
+            diagnostic = blocked.exception.diagnostics
+            self.assertEqual(diagnostic["stage_id"], "execute_approved.approval_binding")
+            self.assertEqual(diagnostic["truth_status"], "BLOCKED_SAFE")
+            self.assertTrue(diagnostic["safe_block"])
+            self.assertEqual(diagnostic["reason_code"], "approval_id_mismatch")
+            self.assertEqual(diagnostic["apply_block_layer"], "source_proxy")
+            self.assertIn("recommended_next_action", diagnostic)
+            self.assertIn("unavailable_fields", diagnostic)
+            self.assertEqual(
+                diagnostic["approval_binding"]["approval_binding_status"],
+                "failed",
+            )
+            self.assertTrue(
+                diagnostic["approval_binding"]["approval_binding_safe_block"]
+            )
+            self.assertEqual(
+                diagnostic["approval_binding"]["approval_binding_failure_reason"],
+                "approval_id_mismatch",
+            )
+            self.assertEqual(
+                diagnostic["approval_binding"]["expected_approval_id"],
+                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+            )
+            self.assertEqual(
+                diagnostic["approval_binding"]["received_approval_id"],
+                "approval-stale",
+            )
+            self.assertIn(
+                diagnostic["approval_binding"]["task_id_match"],
+                {True, "unknown"},
+            )
+            self.assertIn(
+                diagnostic["approval_binding"]["target_match"],
+                {True, "unknown"},
+            )
+            self.assertIn(
+                diagnostic["approval_binding"]["diff_sha256_match"],
+                {True, False, "unknown"},
+            )
+            self.assertEqual(
+                diagnostic["anti_cheat"]["anti_cheat_status"],
+                "not_run",
+            )
+            self.assertEqual(
+                diagnostic["anti_cheat"]["anti_cheat_reasons"],
+                ["skipped_due_to_apply_block"],
+            )
+            self.assertEqual(
+                diagnostic["verification"]["post_apply_verification_status"],
+                "skipped_due_to_apply_block",
+            )
+            self.assertEqual(
+                diagnostic["acceptance_gate"]["binary_verdict"],
+                "NO-GO",
+            )
+            self.assertEqual(
+                diagnostic["acceptance_gate"]["phase_verifier_status"],
+                "skipped_with_reason",
+            )
+            self.assertEqual(
+                diagnostic["acceptance_gate"]["fail_closed_lane_status"],
+                "skipped_with_reason",
+            )
+            self.assertEqual(
+                diagnostic["acceptance_gate"]["causal_crosscheck_status"],
+                "skipped_with_reason",
+            )
+            self.assertEqual(
+                diagnostic["final_truth_summary"]["truth_status"],
+                "BLOCKED_SAFE",
+            )
+            poll_payload = get_long_running_task_snapshot(task_id)
+            self.assertEqual(poll_payload["truth_status"], "BLOCKED_SAFE")
+            self.assertEqual(
+                poll_payload["approval_binding_status"],
+                "failed",
+            )
+            self.assertEqual(
+                poll_payload["expected_approval_id"],
+                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+            )
+            self.assertEqual(poll_payload["received_approval_id"], "approval-stale")
+            self.assertEqual(poll_payload["safe_block"], True)
+            self.assertEqual(poll_payload["anti_cheat_status"], "not_run")
+            self.assertEqual(
+                poll_payload["anti_cheat_reasons"],
+                ["skipped_due_to_apply_block"],
+            )
+            self.assertEqual(
+                poll_payload["task"]["approval_binding_status"],
+                "failed",
+            )
+            blocked_receipt_path = os.path.join("data", "blocked_actions.audit.jsonl")
+            self.assertTrue(os.path.exists(blocked_receipt_path))
+            with open(blocked_receipt_path, encoding="utf-8") as handle:
+                receipt = json.loads(handle.readlines()[-1])
+            self.assertEqual(receipt["task_id"], task_id)
+            self.assertEqual(receipt["truth_status"], "BLOCKED_SAFE")
+            self.assertTrue(receipt["safe_block"])
+            self.assertEqual(receipt["reason_code"], "approval_id_mismatch")
+            self.assertEqual(receipt["approval_id"], "approval-stale")
+            self.assertEqual(
+                receipt["expected_approval_id"],
+                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+            )
+            self.assertEqual(
+                receipt["anti_cheat"]["anti_cheat_reasons"],
+                ["skipped_due_to_apply_block"],
+            )
             with open("src/app/demo/page.tsx", encoding="utf-8") as handle:
                 self.assertEqual(handle.read(), "export const value = 'old';\n")
+        finally:
+            os.chdir(previous_cwd)
+
+    def test_execute_approved_api_preserves_approval_mismatch_envelope(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("src/app/demo", exist_ok=True)
+            with open("src/app/demo/page.tsx", "w", encoding="utf-8") as handle:
+                handle.write("export const value = 'old';\n")
+
+            app = FastAPI()
+            app.include_router(long_running_tasks_router)
+            client = TestClient(app)
+            created = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Apply approved stale route diff"},
+            )
+            task_id = created.json()["task"]["id"]
+            diff = "\n".join(
+                [
+                    "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
+                    "--- a/src/app/demo/page.tsx",
+                    "+++ b/src/app/demo/page.tsx",
+                    "@@ -1 +1 @@",
+                    "-export const value = 'old';",
+                    "+export const value = 'new';",
+                    "",
+                ]
+            )
+
+            blocked = client.post(
+                f"/v1/tasks/long-running/{task_id}/execute-approved",
+                json={
+                    "action": "modify file",
+                    "approval_id": "approval-stale",
+                    "approved": True,
+                    "approved_diff": diff,
+                    "target": "src/app/demo/page.tsx",
+                },
+            )
+
+            self.assertEqual(blocked.status_code, 422)
+            detail = blocked.json()["detail"]
+            self.assertEqual(detail["truth_status"], "BLOCKED_SAFE")
+            self.assertEqual(detail["approval_binding"]["approval_binding_status"], "failed")
+            self.assertEqual(detail["anti_cheat"]["anti_cheat_reasons"], ["skipped_due_to_apply_block"])
+            self.assertEqual(detail["acceptance_gate"]["phase_verifier_status"], "skipped_with_reason")
+
+            poll = client.get(f"/v1/tasks/long-running/{task_id}").json()
+            self.assertEqual(poll["truth_status"], "BLOCKED_SAFE")
+            self.assertEqual(poll["approval_binding_status"], "failed")
+            self.assertEqual(poll["task"]["status"], "blocked_approval_mismatch")
+            self.assertEqual(poll["task"]["anti_cheat_status"], "not_run")
+
+            with client.stream(
+                "GET",
+                f"/v1/tasks/long-running/{task_id}/stream?max_events=10&interval_seconds=0.1",
+            ) as response:
+                stream_text = response.read().decode("utf-8")
+            self.assertIn("event: task", stream_text)
+            self.assertIn('"truth_status": "BLOCKED_SAFE"', stream_text)
+            self.assertIn('"approval_binding_status": "failed"', stream_text)
+            self.assertIn('"status": "blocked_approval_mismatch"', stream_text)
         finally:
             os.chdir(previous_cwd)
 
@@ -2101,6 +2720,437 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertLessEqual(payload["task"]["progress"], 95)
         self.assertGreaterEqual(payload["task"]["progress"], 50)
         self.assertIn("SOURCE_PROXY_CODER_MODEL_ALIAS", payload["task"]["next_action"])
+
+    def test_managed_dummy_browser_verifier_is_pinned_to_port_3000(self) -> None:
+        workspace = Path(self._tempdir.name).resolve()
+        script = workspace / "scripts/verify-dummy-storefront-browser.mjs"
+        script.parent.mkdir(parents=True, exist_ok=True)
+        script.write_text("// test placeholder\n", encoding="utf-8")
+        completed = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=json.dumps(_passing_managed_browser_proof()),
+            stderr="",
+        )
+        with mock.patch.object(
+            long_running_module.subprocess,
+            "run",
+            return_value=completed,
+        ) as run_mock:
+            proof = long_running_module._run_managed_dummy_storefront_browser_proof(
+                workspace
+            )
+
+        command = run_mock.call_args.args[0]
+        self.assertEqual(command[0], "node")
+        self.assertEqual(command[1], str(script.resolve()))
+        self.assertEqual(command[2:4], ["--url", "https://localhost:3000/v1/coding/dummy-product-site-preview"])
+        self.assertNotIn("3100", " ".join(command))
+        self.assertEqual(run_mock.call_args.kwargs["cwd"], workspace)
+        self.assertEqual(proof["storefront_runtime_engine"], "playwright_chromium")
+        self.assertTrue(proof["real_browser_used"])
+
+    def _apply_and_verify_manifest_backed_dummy_fixture(
+        self,
+        managed_browser_proof: dict[str, object] | None = None,
+        *,
+        tamper_manifest_before_postapply: bool = False,
+    ) -> dict[str, object]:
+        workspace = Path(self._tempdir.name).resolve()
+        fixture = workspace / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        fixture.mkdir(parents=True, exist_ok=True)
+        readme_before = "# Prior fixture\n\nPreserve this exact prior state.\n"
+        (fixture / "README.md").write_text(readme_before, encoding="utf-8")
+        sentinel = workspace / "unrelated-sentinel.txt"
+        sentinel.write_text("unrelated user state\n", encoding="utf-8")
+
+        diff, applied_contents = _dummy_product_site_lifecycle_diff(readme_before)
+        created = create_long_running_task(
+            "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/\n"
+            "Run selected dummy coder prompt 1."
+        )
+        task_id = created["task"]["id"]
+        context_report = build_context_broker_report(
+            [
+                {
+                    "source": "supplied_context",
+                    "status": "used",
+                    "reason": "selected_prompt_context_supplied",
+                    "considered": True,
+                    "required": True,
+                    "selected": True,
+                    "included": True,
+                }
+            ],
+            downstream_consumers={
+                "planner": {
+                    "applicable": True,
+                    "acknowledged": True,
+                    "sources": ["supplied_context"],
+                    "evidence": "planner_built_context_bound_task",
+                },
+                "coder": {
+                    "applicable": True,
+                    "acknowledged": True,
+                    "sources": ["supplied_context"],
+                    "evidence": "coder_authored_context_bound_diff",
+                },
+            },
+            applicable_consumers=("planner", "coder", "reviewer"),
+        )
+        long_running_module.record_canonical_context_broker(task_id, context_report)
+
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(workspace)
+            applied = execute_approved_long_running_task(
+                task_id,
+                action="Run selected dummy coder prompt 1",
+                approval_id=_approval_id(
+                    task_id,
+                    diff,
+                    "tests/ui-agent-trials/fixtures/dummy-product-site/",
+                ),
+                approved_diff=diff,
+                target="tests/ui-agent-trials/fixtures/dummy-product-site/",
+            )
+            manifest_rel = applied["task"]["ast_snapshot"][
+                "approved_execution_evidence"
+            ]["backup_manifest"]
+            if tamper_manifest_before_postapply:
+                manifest_path = workspace / manifest_rel
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["rollback_hint"] = "tampered after approved apply"
+                manifest_path.write_text(
+                    json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+            with mock.patch.object(
+                long_running_module,
+                "_run_managed_dummy_storefront_browser_proof",
+                return_value=managed_browser_proof or _passing_managed_browser_proof(),
+            ):
+                verified = record_post_apply_verification(
+                    task_id,
+                    verification_profile="dummy_product_site",
+                    run_snapshot_verification=True,
+                    browser_evidence={
+                        "browser_verification_status": "passed",
+                        "product_count": 999,
+                        "storefront_runtime_engine": "frontend_simulation",
+                    },
+                )
+        finally:
+            os.chdir(previous_cwd)
+        return {
+            "workspace": workspace,
+            "fixture": fixture,
+            "readme_before": readme_before,
+            "sentinel": sentinel,
+            "diff": diff,
+            "applied_contents": applied_contents,
+            "task_id": task_id,
+            "manifest_rel": manifest_rel,
+            "verified": verified,
+        }
+
+    def test_dummy_manifest_postapply_syncs_evidence_context_and_exact_undo(self) -> None:
+        lifecycle = self._apply_and_verify_manifest_backed_dummy_fixture()
+        workspace = lifecycle["workspace"]
+        fixture = lifecycle["fixture"]
+        task_id = lifecycle["task_id"]
+        manifest_rel = lifecycle["manifest_rel"]
+        verified = lifecycle["verified"]
+        assert isinstance(workspace, Path)
+        assert isinstance(fixture, Path)
+        assert isinstance(task_id, str)
+        assert isinstance(manifest_rel, str)
+        assert isinstance(verified, dict)
+
+        task = verified["task"]
+        verification = task["post_apply_verification"]
+        snapshot = task["ast_snapshot"]
+        execution_evidence = snapshot["approved_execution_evidence"]
+        context_report = snapshot["canonical_context_broker"]
+        manifest_path = workspace / manifest_rel
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(task["status"], "completed")
+        self.assertEqual(verification["status"], "verified")
+        self.assertEqual(snapshot["post_apply_verification"], verification)
+        self.assertEqual(execution_evidence["post_apply_verification"], verification)
+        self.assertEqual(len(task["open_diffs"]), 1)
+        self.assertEqual(task["open_diffs"][0]["status"], "verified")
+        self.assertEqual(manifest["post_apply_verification"], verification)
+        self.assertEqual(execution_evidence["final_truth_status"], "GO")
+        self.assertTrue(execution_evidence["commit_safe"])
+        self.assertEqual(manifest["stage"], "post_apply_verified")
+        self.assertEqual(manifest["final_truth_status"], "GO")
+        self.assertTrue(manifest["commit_safe"])
+        finalized_manifest_sha256 = long_running_module._sha256_file(manifest_path)
+        self.assertEqual(
+            execution_evidence["backup_manifest_sha256"],
+            finalized_manifest_sha256,
+        )
+        self.assertEqual(
+            execution_evidence["backup_manifest_finalized_sha256"],
+            finalized_manifest_sha256,
+        )
+        self.assertNotEqual(
+            execution_evidence["backup_manifest_applied_sha256"],
+            finalized_manifest_sha256,
+        )
+        browser_evidence = verification["browser_evidence"]
+        self.assertEqual(
+            browser_evidence["storefront_runtime_engine"],
+            "playwright_chromium",
+        )
+        self.assertTrue(browser_evidence["real_browser_used"])
+        self.assertEqual(browser_evidence["managed_frontend_origin"], "https://localhost:3000")
+        self.assertEqual(browser_evidence["task_id"], task_id)
+        self.assertEqual(
+            browser_evidence["backup_manifest_sha256"],
+            execution_evidence["backup_manifest_applied_sha256"],
+        )
+        self.assertEqual(browser_evidence["product_count"], 6)
+        self.assertNotEqual(browser_evidence["product_count"], 999)
+        self.assertFalse(verification["client_browser_evidence_decision_bearing"])
+        self.assertTrue(
+            verification["snapshot_verification"]["client_browser_evidence_ignored"]
+        )
+        self.assertEqual(manifest["browser_evidence"], browser_evidence)
+        self.assertEqual(
+            verification["browser_evidence_sha256"],
+            browser_evidence["browser_evidence_sha256"],
+        )
+        self.assertTrue(context_report["go_eligible"])
+        self.assertEqual(context_report["verdict"], "GO_ELIGIBLE")
+        self.assertEqual(context_report["consumed_sources"], ["supplied_context"])
+        self.assertTrue(
+            context_report["downstream_acknowledgements"]["verifier"][
+                "acknowledged"
+            ]
+        )
+        self.assertTrue(
+            context_report["downstream_acknowledgements"]["final_receipt_builder"][
+                "acknowledged"
+            ]
+        )
+        self.assertEqual(
+            manifest["canonical_context_report_hash"],
+            context_report["canonical_report_hash"],
+        )
+        undo = long_running_module.undo_last_approved_change(
+            task_id,
+            confirm_undo=True,
+            expected_backup_manifest=manifest_rel,
+            requested_by="lifecycle-test",
+        )
+
+        self.assertEqual(
+            (fixture / "README.md").read_text(encoding="utf-8"),
+            lifecycle["readme_before"],
+        )
+        self.assertEqual(
+            sorted(
+                str(path.relative_to(fixture)).replace("\\", "/")
+                for path in fixture.rglob("*")
+                if path.is_file()
+            ),
+            ["README.md"],
+        )
+        self.assertFalse((fixture / "src").exists())
+        self.assertEqual(
+            lifecycle["sentinel"].read_text(encoding="utf-8"),
+            "unrelated user state\n",
+        )
+        receipt = undo["undo"]
+        self.assertTrue(receipt["filesystem_verified"])
+        self.assertEqual(receipt["unrelated_paths_touched"], [])
+        self.assertTrue(receipt["untouched_scope_assertion"])
+        self.assertEqual(len(receipt["files_restored"]), 6)
+        self.assertTrue(all(item["verified"] for item in receipt["files_restored"]))
+        self.assertTrue((workspace / receipt["receipt_path"]).is_file())
+        undone_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(undone_manifest["stage"], "undone")
+        self.assertEqual(
+            undone_manifest["undo_receipt"]["undo_receipt_id"],
+            receipt["undo_receipt_id"],
+        )
+        undone_evidence = undo["task"]["ast_snapshot"]["approved_execution_evidence"]
+        self.assertEqual(
+            undone_evidence["backup_manifest_sha256"],
+            long_running_module._sha256_file(manifest_path),
+        )
+        self.assertEqual(
+            undone_evidence["backup_manifest_undone_sha256"],
+            undone_evidence["backup_manifest_sha256"],
+        )
+        undone_open_diffs = undo["task"]["open_diffs"]
+        self.assertEqual(len(undone_open_diffs), 1)
+        self.assertEqual(undone_open_diffs[0]["status"], "undone")
+        self.assertFalse(undone_open_diffs[0]["verified"])
+        self.assertEqual(
+            undone_open_diffs[0]["undo_receipt_id"],
+            receipt["undo_receipt_id"],
+        )
+        self.assertEqual(
+            undone_open_diffs[0]["undo_receipt_path"],
+            receipt["receipt_path"],
+        )
+
+    def test_dummy_postapply_uses_the_exact_applied_root_when_project_roots_differ(self) -> None:
+        with tempfile.TemporaryDirectory() as unrelated_project_root:
+            with mock.patch.dict(
+                os.environ,
+                {"SPIRIT_PROJECT_PATH": unrelated_project_root},
+                clear=False,
+            ):
+                lifecycle = self._apply_and_verify_manifest_backed_dummy_fixture()
+
+        verified = lifecycle["verified"]
+        workspace = lifecycle["workspace"]
+        assert isinstance(verified, dict)
+        assert isinstance(workspace, Path)
+        evidence = verified["task"]["ast_snapshot"]["approved_execution_evidence"]
+        self.assertEqual(verified["task"]["status"], "completed")
+        self.assertEqual(Path(evidence["workspace_root"]), workspace)
+
+    def test_dummy_postapply_rejects_tampered_backup_manifest(self) -> None:
+        with self.assertRaises(LongRunningTaskError) as blocked:
+            self._apply_and_verify_manifest_backed_dummy_fixture(
+                tamper_manifest_before_postapply=True,
+            )
+
+        self.assertEqual(
+            blocked.exception.reason_code,
+            "post_apply_manifest_hash_mismatch",
+        )
+
+    def test_dummy_postapply_rejects_frontend_pass_when_managed_browser_fails(self) -> None:
+        failed_proof = {
+            **_passing_managed_browser_proof(),
+            "status": "failed",
+            "browser_verification_status": "failed",
+            "storefront_runtime_status": "failed",
+            "real_browser_used": True,
+            "rendered_card_count": 0,
+            "visible_fields": {
+                "name": False,
+                "price": False,
+                "category": False,
+                "description": False,
+            },
+            "page_errors": ["ReferenceError: products is not defined"],
+        }
+        lifecycle = self._apply_and_verify_manifest_backed_dummy_fixture(failed_proof)
+        verified = lifecycle["verified"]
+        assert isinstance(verified, dict)
+        task = verified["task"]
+        verification = task["post_apply_verification"]
+
+        self.assertEqual(task["status"], "verification_failed")
+        self.assertEqual(verification["status"], "verification_failed")
+        self.assertEqual(
+            verification["browser_evidence"]["storefront_runtime_engine"],
+            "playwright_chromium",
+        )
+        self.assertEqual(verification["browser_evidence"]["rendered_card_count"], 0)
+        self.assertFalse(verification["client_browser_evidence_decision_bearing"])
+        self.assertTrue(
+            verification["snapshot_verification"]["client_browser_evidence_ignored"]
+        )
+        self.assertIn(
+            "post_apply_verification_failed",
+            verification["commit_blockers"],
+        )
+
+    def test_dummy_manifest_undo_hash_drift_fails_before_touching_any_file(self) -> None:
+        lifecycle = self._apply_and_verify_manifest_backed_dummy_fixture()
+        workspace = lifecycle["workspace"]
+        fixture = lifecycle["fixture"]
+        task_id = lifecycle["task_id"]
+        manifest_rel = lifecycle["manifest_rel"]
+        assert isinstance(workspace, Path)
+        assert isinstance(fixture, Path)
+        assert isinstance(task_id, str)
+        assert isinstance(manifest_rel, str)
+
+        (fixture / "index.html").write_text("tampered after verification\n", encoding="utf-8")
+        state_before_undo = {
+            str(path.relative_to(fixture)).replace("\\", "/"): path.read_bytes()
+            for path in fixture.rglob("*")
+            if path.is_file()
+        }
+
+        with self.assertRaises(LongRunningTaskError) as blocked:
+            long_running_module.undo_last_approved_change(
+                task_id,
+                confirm_undo=True,
+                expected_backup_manifest=manifest_rel,
+                requested_by="lifecycle-test",
+            )
+
+        self.assertEqual(blocked.exception.reason_code, "undo_hash_drift")
+        self.assertEqual(
+            {
+                str(path.relative_to(fixture)).replace("\\", "/"): path.read_bytes()
+                for path in fixture.rglob("*")
+                if path.is_file()
+            },
+            state_before_undo,
+        )
+        self.assertEqual(
+            lifecycle["sentinel"].read_text(encoding="utf-8"),
+            "unrelated user state\n",
+        )
+        manifest_path = workspace / manifest_rel
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["stage"], "post_apply_verified")
+        self.assertFalse((manifest_path.parent / "undo-receipt.json").exists())
+
+    def test_dummy_manifest_undo_rejects_tampered_finalized_manifest(self) -> None:
+        lifecycle = self._apply_and_verify_manifest_backed_dummy_fixture()
+        workspace = lifecycle["workspace"]
+        fixture = lifecycle["fixture"]
+        task_id = lifecycle["task_id"]
+        manifest_rel = lifecycle["manifest_rel"]
+        assert isinstance(workspace, Path)
+        assert isinstance(fixture, Path)
+        assert isinstance(task_id, str)
+        assert isinstance(manifest_rel, str)
+
+        manifest_path = workspace / manifest_rel
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["rollback_hint"] = "tampered after post-apply finalization"
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        state_before_undo = {
+            str(path.relative_to(fixture)).replace("\\", "/"): path.read_bytes()
+            for path in fixture.rglob("*")
+            if path.is_file()
+        }
+
+        with self.assertRaises(LongRunningTaskError) as blocked:
+            long_running_module.undo_last_approved_change(
+                task_id,
+                confirm_undo=True,
+                expected_backup_manifest=manifest_rel,
+                requested_by="lifecycle-test",
+            )
+
+        self.assertEqual(blocked.exception.reason_code, "undo_manifest_hash_mismatch")
+        self.assertEqual(
+            {
+                str(path.relative_to(fixture)).replace("\\", "/"): path.read_bytes()
+                for path in fixture.rglob("*")
+                if path.is_file()
+            },
+            state_before_undo,
+        )
+        self.assertFalse((manifest_path.parent / "undo-receipt.json").exists())
 
 
 if __name__ == "__main__":

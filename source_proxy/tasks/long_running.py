@@ -19,7 +19,7 @@ from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, TypedDict
 from uuid import uuid4
 
 from source_proxy.agents.registry import SwarmAgentRole, normalize_agent_role
@@ -40,6 +40,7 @@ from source_proxy.routing.ollama_route import (
     resolve_ollama_route,
 )
 from source_proxy.context.obsidian import obsidian_context_diagnostics
+from source_proxy.context.canonical_broker import acknowledge_context_consumer
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
     CoderPacket,
@@ -609,7 +610,29 @@ Legacy accepted JSON shapes:
 Return the file block now.
 """
 DEFAULT_SQLITE_PATH = Path("data") / "long_running_tasks.sqlite3"
+_TASK_STORE_REQUIRED_COLUMNS = {
+    "id",
+    "description",
+    "status",
+    "created_at",
+    "updated_at",
+    "cancelled_at",
+    "steps_json",
+    "poll_count",
+    "ast_snapshot_json",
+    "open_diffs_json",
+    "truncated_test_results",
+    "current_agent_role",
+    "cycle_count",
+    "architect_plan_json",
+    "architect_status",
+    "architect_reason",
+    "causal_events_json",
+}
+_TASK_STORE_INITIALIZED_PATHS: set[str] = set()
+_TASK_STORE_IO_LOCK = threading.RLock()
 DEFAULT_AUDIT_LOG_PATH = Path("data") / "approved_actions.audit.jsonl"
+DEFAULT_BLOCKED_ACTION_AUDIT_LOG_PATH = Path("data") / "blocked_actions.audit.jsonl"
 DEFAULT_STEPS = [
     "Capture task scope.",
     "Collect safe context.",
@@ -634,9 +657,44 @@ CAUSAL_EVENT_SECRET_PATTERNS = (
 
 
 class LongRunningTaskError(ValueError):
-    def __init__(self, message: str, reason_code: str) -> None:
+    def __init__(
+        self,
+        message: str,
+        reason_code: str,
+        *,
+        diagnostics: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(message)
         self.reason_code = reason_code
+        self.diagnostics = diagnostics or {}
+
+
+class DiagnosticEnvelope(TypedDict, total=False):
+    stage_id: str
+    subsystem: str
+    task_id: str
+    selected_prompt_task_id: str
+    run_id: str
+    trace_id: str
+    invocation_event_id: str
+    consumer_event_id: str
+    status: str
+    truth_status: str
+    safe_block: bool
+    error_code: str
+    reason_code: str
+    human_message: str
+    machine_reason: str
+    apply_block_layer: str
+    recommended_next_action: str
+    approval_binding: dict[str, Any]
+    diff_provenance: dict[str, Any]
+    anti_cheat: dict[str, Any]
+    acceptance_gate: dict[str, Any]
+    verification: dict[str, Any]
+    unavailable_fields: list[dict[str, str]]
+    persisted_at: str
+    surfaced_at: str
 
 
 def _now_iso() -> str:
@@ -688,6 +746,11 @@ class LongRunningTask:
             "causal_events": list(self.causal_events[-50:]),
             "causal_trace": _causal_trace_summary(self.causal_events),
             "plan_3_durable_state": _plan3_readback_state(self),
+            "canonical_context_broker": (
+                self.ast_snapshot.get("canonical_context_broker")
+                if isinstance(self.ast_snapshot, dict)
+                else None
+            ),
             "would_execute": _has_approved_execution(self.open_diffs),
             "writes_allowed": _has_approved_execution(self.open_diffs),
             "worker_lanes": _worker_lanes_for_task(self),
@@ -704,6 +767,8 @@ class LongRunningTask:
             return min(75, max(25, self.poll_count * 25))
         if self.status == "failed_needs_human":
             return min(95, self.cycle_count * 18)
+        if self.status == "waiting_for_operator_browser":
+            return min(90, max(25, self.poll_count * 25))
         if self.status in {"applied_verification_failed", "verification_failed"}:
             return 95
         if self.status == "applied_needs_verification":
@@ -736,6 +801,8 @@ class LongRunningTask:
             return "Retry Local Coder with stricter output repair, then use a manual browser prompt if needed."
         if self.status == "failed_needs_human":
             return "The swarm hit the safety cycle limit. Review the latest diff and sandbox output manually."
+        if self.status == "waiting_for_operator_browser":
+            return self.architect_reason or "Operator must run preview/apply from /coding."
         if self.status in {"applied_verification_failed", "verification_failed"}:
             return "Approved diff was applied, but verification failed. Generate a fix prompt from the verification error."
         if self.status == "applied_needs_verification":
@@ -761,38 +828,92 @@ _tasks: dict[str, LongRunningTask] = {}
 def create_long_running_task(
     description: str,
     steps: list[str] | None = None,
+    *,
+    run_queue_checks: bool = True,
 ) -> dict[str, Any]:
+    started = time.perf_counter()
+    checkpoints: list[dict[str, Any]] = []
+
+    def checkpoint(stage: str) -> None:
+        checkpoints.append(
+            {
+                "stage": stage,
+                "elapsed_ms": round((time.perf_counter() - started) * 1000, 2),
+            }
+        )
+
+    checkpoint("request_received")
     normalized_description = _normalize_task_description(description)
+    checkpoint("description_normalized")
     if not normalized_description:
         raise LongRunningTaskError("Task description is required.", "empty_description")
 
     if len(_tasks) >= MAX_LONG_TASKS:
         oldest_id = next(iter(_tasks))
         _tasks.pop(oldest_id, None)
+        checkpoint("memory_queue_pruned")
 
     task = LongRunningTask(description=normalized_description)
+    checkpoint("task_object_created")
     if steps:
         task.steps = [step.strip() for step in steps if step.strip()][:12] or list(
             DEFAULT_STEPS
         )
     _reset_task_focus(task)
-    conflict = _write_scope_conflict_for_task(task)
-    if conflict is not None:
-        task.status = "blocked"
-        task.architect_status = "blocked"
-        task.architect_reason = "write_scope_conflict"
-        task.truncated_test_results = (
-            f"reason_code: write_scope_conflict; scope={conflict['scope_key']}; "
-            f"existing_task={conflict['task_id']}"
-        )
-        task.ast_snapshot = {
-            "queue_conflict": conflict,
-            "queue_policy": "one_write_capable_task_per_scope",
-        }
+    checkpoint("task_focus_reset")
+    if run_queue_checks:
+        conflict = _write_scope_conflict_for_task(task)
+        checkpoint("write_scope_conflict_checked")
+        if conflict is not None:
+            task.status = "blocked"
+            task.architect_status = "blocked"
+            task.architect_reason = "write_scope_conflict"
+            task.truncated_test_results = (
+                f"reason_code: write_scope_conflict; scope={conflict['scope_key']}; "
+                f"existing_task={conflict['task_id']}"
+            )
+            task.ast_snapshot = {
+                "queue_conflict": conflict,
+                "queue_policy": "one_write_capable_task_per_scope",
+            }
+    else:
+        checkpoint("write_scope_conflict_deferred")
     _tasks[task.id] = task
+    checkpoint("task_registered_in_memory")
     _save_task(task)
-    _prune_old_tasks()
-    return _task_envelope(task)
+    checkpoint("task_persisted")
+    if run_queue_checks:
+        _prune_old_tasks()
+        checkpoint("old_tasks_pruned")
+    else:
+        checkpoint("old_tasks_prune_deferred")
+    envelope = _task_envelope(task)
+    checkpoint("task_envelope_built")
+    return _with_task_creation_diagnostics(
+        envelope,
+        {
+            "task_creation_status": "persisted_task_id",
+            "task_creation_elapsed_ms": checkpoints[-1]["elapsed_ms"],
+            "task_creation_timeout_stage": "not_applicable: task_id_persisted",
+            "task_creation_last_checkpoint": checkpoints[-1]["stage"],
+            "task_creation_blocking_subsystem": "not_applicable: task_id_persisted",
+            "task_creation_checkpoints": checkpoints,
+        },
+    )
+
+
+def _with_task_creation_diagnostics(
+    envelope: dict[str, Any],
+    diagnostics: dict[str, Any],
+) -> dict[str, Any]:
+    envelope.update(diagnostics)
+    task = envelope.get("task")
+    if isinstance(task, dict):
+        task.update(diagnostics)
+    diagnostic_envelope = envelope.get("diagnostic_envelope")
+    if isinstance(diagnostic_envelope, dict):
+        diagnostic_envelope.update(diagnostics)
+    return envelope
 
 
 def _normalize_task_description(description: str) -> str:
@@ -807,15 +928,13 @@ def get_long_running_task(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
     if _task_has_plan3_durable_state(task):
         task.poll_count += 1
+        _apply_operator_browser_boundary_if_stale(task)
         task.updated_at = _now_iso()
         _save_task(task)
     elif task.status not in _terminal_or_waiting_statuses():
         task.poll_count += 1
-        task.status = (
-            "running"
-            if _task_is_waiting_for_coder_output(task)
-            else "completed" if task.poll_count >= 4 else "running"
-        )
+        if not _apply_operator_browser_boundary_if_stale(task):
+            task.status = "running"
         task.updated_at = _now_iso()
         _save_task(task)
     return _task_envelope(task)
@@ -896,6 +1015,84 @@ def _task_is_stale_dummy_product_site_verification_lock(task: LongRunningTask) -
     return (datetime.now(UTC) - updated).total_seconds() > 60
 
 
+def _operator_browser_staleness_seconds() -> float:
+    raw = os.getenv("SOURCE_PROXY_OPERATOR_BROWSER_STALE_SECONDS", "").strip()
+    if not raw:
+        return 15 * 60
+    try:
+        return max(1.0, float(raw))
+    except ValueError:
+        return 15 * 60
+
+
+def _latest_operator_boundary_activity(task: LongRunningTask) -> datetime | None:
+    candidates: list[datetime] = []
+    for event in task.causal_events:
+        if not isinstance(event, dict):
+            continue
+        created_at = str(event.get("created_at") or "")
+        try:
+            candidates.append(datetime.fromisoformat(created_at))
+        except ValueError:
+            continue
+    if candidates:
+        return max(candidates)
+    try:
+        return datetime.fromisoformat(task.created_at)
+    except ValueError:
+        return None
+
+
+def _operator_browser_boundary_reason(task: LongRunningTask) -> str:
+    if _has_approved_execution(task.open_diffs) or task.status == "executing":
+        return "operator must review execute-approved result from /coding"
+    if any(isinstance(diff, dict) and str(diff.get("diff") or "").strip() for diff in task.open_diffs):
+        return "operator must run apply from /coding"
+    return "operator must run preview/apply from /coding"
+
+
+def _apply_operator_browser_boundary_if_stale(task: LongRunningTask) -> bool:
+    if task.status in _terminal_or_waiting_statuses():
+        return False
+    if _task_has_plan3_durable_state(task):
+        return False
+    if task.status not in {"queued", "running", "executing"}:
+        return False
+    latest = _latest_operator_boundary_activity(task)
+    if latest is None:
+        return False
+    if (datetime.now(UTC) - latest).total_seconds() <= _operator_browser_staleness_seconds():
+        return False
+    before = task.status
+    next_reason = _operator_browser_boundary_reason(task)
+    task.status = "failed_needs_human" if before == "executing" else "waiting_for_operator_browser"
+    task.architect_status = "blocked"
+    task.architect_reason = next_reason
+    task.truncated_test_results = f"reason_code: operator_browser_required; {next_reason}"
+    task.steps = _append_unique_steps(
+        task.steps,
+        [
+            "Automatic progress paused at the browser boundary.",
+            next_reason,
+        ],
+    )
+    _append_causal_event(
+        task,
+        event_type="status_transition",
+        subsystem="source_proxy_long_running",
+        status_before=before,
+        status_after=task.status,
+        changed_state_fields=[
+            "status",
+            "architect_status",
+            "architect_reason",
+            "truncated_test_results",
+        ],
+        notes=["operator_browser_required"],
+    )
+    return True
+
+
 def get_long_running_task_snapshot(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
     return _task_envelope(task)
@@ -908,6 +1105,10 @@ def list_long_running_tasks(
 ) -> dict[str, Any]:
     bounded_limit = min(max(limit, 1), 100)
     tasks = _load_recent_tasks(limit=bounded_limit)
+    for task in tasks:
+        if _apply_operator_browser_boundary_if_stale(task):
+            task.updated_at = _now_iso()
+            _save_task(task)
     if not include_completed:
         terminal = _terminal_or_waiting_statuses()
         tasks = [task for task in tasks if task.status not in terminal]
@@ -996,6 +1197,30 @@ def execute_approved_long_running_task(
         target=target,
     )
     if approval_id != expected_approval_id:
+        approval_binding_diagnostic = _approval_binding_failure_diagnostic(
+            task=task,
+            action=action,
+            approved_diff=approved_diff,
+            approval_id=approval_id,
+            expected_approval_id=expected_approval_id,
+            invocation_event=invocation_event,
+            run_id=run_id,
+            target=target,
+        )
+        snapshot = _ensure_ast_snapshot_dict(task)
+        snapshot["latest_approval_binding_diagnostic"] = approval_binding_diagnostic
+        task.ast_snapshot = snapshot
+        task.status = "blocked_approval_mismatch"
+        task.architect_status = "blocked"
+        task.architect_reason = "approval_id_mismatch"
+        task.truncated_test_results = json.dumps(
+            {
+                "reason_code": "approval_id_mismatch",
+                "truth_status": "BLOCKED_SAFE",
+                "approval_binding": approval_binding_diagnostic.get("approval_binding"),
+            },
+            sort_keys=True,
+        )
         _append_causal_event(
             task,
             event_type="failure",
@@ -1004,13 +1229,35 @@ def execute_approved_long_running_task(
             run_id=run_id,
             status_before=status_before,
             status_after=task.status,
-            changed_state_fields=[],
-            notes=["approval_id_mismatch"],
+            changed_state_fields=[
+                "status",
+                "architect_status",
+                "architect_reason",
+                "ast_snapshot.latest_approval_binding_diagnostic",
+                "truncated_test_results",
+            ],
+            notes=[
+                "approval_id_mismatch",
+                approval_binding_diagnostic["final_truth_summary"]["recommended_next_action"],
+            ],
+        )
+        _append_blocked_action_log(
+            _blocked_action_receipt(
+                task=task,
+                action=action,
+                approval_id=approval_id,
+                approved_diff=approved_diff,
+                diagnostics=approval_binding_diagnostic,
+                expected_approval_id=expected_approval_id,
+                reason_code="approval_id_mismatch",
+                target=target,
+            )
         )
         _save_task(task)
         raise LongRunningTaskError(
             "Approved diff approval_id does not match the task, target, and diff.",
             "approval_id_mismatch",
+            diagnostics=approval_binding_diagnostic,
         )
     from source_proxy.planning.plan import load_plan
 
@@ -1080,6 +1327,41 @@ def execute_approved_long_running_task(
             "approved_diff_blocked",
         )
 
+    context_report = acknowledge_task_context_consumer(
+        task_id,
+        consumer="reviewer",
+        evidence="execute_approved_preview_diff_verification_passed",
+        applicable=True,
+        reason="reviewer_consumed_context_bound_task_and_verified_diff_scope",
+    )
+    if is_reversible_live_trial and not isinstance(context_report, dict):
+        task.status = "blocked"
+        task.architect_status = "blocked"
+        task.architect_reason = "canonical_context_report_missing"
+        task.truncated_test_results = "reason_code: canonical_context_report_missing"
+        task.updated_at = _now_iso()
+        _save_task(task)
+        raise LongRunningTaskError(
+            "Selected-prompt apply is missing the canonical context report.",
+            "canonical_context_report_missing",
+        )
+    if isinstance(context_report, dict) and context_report.get("go_eligible") is not True:
+        task.status = "blocked"
+        task.architect_status = "blocked"
+        task.architect_reason = "required_context_blocked"
+        task.truncated_test_results = (
+            "reason_code: required_context_blocked; blockers="
+            + ";".join(
+                str(item) for item in context_report.get("required_context_blockers", [])
+            )[:1200]
+        )
+        task.updated_at = _now_iso()
+        _save_task(task)
+        raise LongRunningTaskError(
+            "Canonical context acknowledgement failed closed before apply.",
+            "required_context_blocked",
+        )
+
     before_executing = task.status
     task.status = "executing"
     _append_causal_event(
@@ -1137,6 +1419,7 @@ def execute_approved_long_running_task(
         _save_task(task)
         raise
 
+    post_apply_verification = _initial_post_apply_verification(verification)
     audit_record = {
         "action": action,
         "approval_id": approval_id,
@@ -1152,20 +1435,35 @@ def execute_approved_long_running_task(
         "rollback_hint": "Use the backup manifest and approved.diff under backup_root before reverting files.",
         "target": target,
         "task_id": task.id,
+        "workspace_root": apply_result["workspace_root"],
     }
-    snapshot = _ensure_ast_snapshot_dict(task)
-    snapshot["post_apply_backup_audit"] = {
-        "backup_manifest": audit_record["backup_manifest"],
-        "backup_root": audit_record["backup_root"],
-        "task_id": task.id,
-    }
-    task.ast_snapshot = snapshot
-    _append_audit_log(audit_record)
-    _finalize_backup_manifest(
+    acceptance = _build_execute_approved_plan5_acceptance(
+        task,
+        action=action,
+        approved_by=approved_by,
+        audit_record=audit_record,
+        post_apply_verification=post_apply_verification,
+        verification=verification,
+    )
+    audit_record["acceptance"] = acceptance
+    backup_manifest_applied_sha256 = _finalize_backup_manifest(
         workspace_root=Path(apply_result["workspace_root"]),
         manifest_path=apply_result["manifest_path"],
         audit_record=audit_record,
     )
+    audit_record["backup_manifest_applied_sha256"] = (
+        backup_manifest_applied_sha256
+    )
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["post_apply_backup_audit"] = {
+        "backup_manifest": audit_record["backup_manifest"],
+        "backup_manifest_applied_sha256": backup_manifest_applied_sha256,
+        "backup_root": audit_record["backup_root"],
+        "task_id": task.id,
+        "workspace_root": apply_result["workspace_root"],
+    }
+    task.ast_snapshot = snapshot
+    _append_audit_log(audit_record)
 
     before_applied = task.status
     task.status = "applied_needs_verification"
@@ -1181,7 +1479,6 @@ def execute_approved_long_running_task(
         notes=["approved diff applied"],
     )
     _set_task_role(task, "debugger", reason="approved_diff_applied")
-    post_apply_verification = _initial_post_apply_verification(verification)
     for diff in task.open_diffs:
         if diff.get("status") == "executing":
             diff["status"] = "applied_needs_verification"
@@ -1199,6 +1496,7 @@ def execute_approved_long_running_task(
     _record_approved_execution_evidence(
         task,
         audit_record=audit_record,
+        backup_manifest_sha256=backup_manifest_applied_sha256,
         backup_root=apply_result["backup_root"],
         post_apply_verification=post_apply_verification,
         verification_plan=verification["verification_plan"],
@@ -1219,6 +1517,7 @@ def execute_approved_long_running_task(
         "approval_id": approval_id,
         "applied_at": audit_record["approved_at"],
         "audit": audit_record,
+        "acceptance": acceptance,
         "backup_root": apply_result["backup_root"],
         "changed_file_snapshots": apply_result["changed_file_snapshots"],
         "changed_files": verification["changed_files"],
@@ -1236,6 +1535,207 @@ def execute_approved_long_running_task(
         "push_ran": False,
     }
     return payload
+
+
+def _build_execute_approved_plan5_acceptance(
+    task: LongRunningTask,
+    *,
+    action: str,
+    approved_by: str,
+    audit_record: dict[str, Any],
+    post_apply_verification: dict[str, Any],
+    verification: dict[str, Any],
+) -> dict[str, Any]:
+    from source_proxy.acceptance.plan5_acceptance import build_plan5_acceptance_gate
+    from source_proxy.tasks.durable_execution import (
+        FAIL_CLOSED_ACTIONS,
+        HUMAN_REQUIRED_ACTIONS,
+    )
+
+    subsystem = "source_proxy_execute_approved_apply"
+    action_policy = _execute_approved_action_policy_status(
+        action,
+        approved_by=approved_by,
+        fail_closed_actions=FAIL_CLOSED_ACTIONS,
+        human_required_actions=HUMAN_REQUIRED_ACTIONS,
+    )
+    _record_execute_approved_plan2_integration(
+        task,
+        subsystem=subsystem,
+        consumer_subsystem="plan5_execute_approved_acceptance_consumer",
+        upstream_state={
+            "approval_id": audit_record.get("approval_id"),
+            "approved_diff_sha256": audit_record.get("approved_diff_sha256"),
+            "changed_files": audit_record.get("changed_files"),
+            "target": audit_record.get("target"),
+            "verification_status": verification.get("status"),
+        },
+        output={
+            "summary": "execute-approved applied verified diff with backup and audit evidence",
+            "status": "APPLIED_NEEDS_VERIFICATION",
+            "approval_id": audit_record.get("approval_id"),
+            "approved_diff_sha256": audit_record.get("approved_diff_sha256"),
+            "backup_manifest": audit_record.get("backup_manifest"),
+            "backup_root": audit_record.get("backup_root"),
+            "changed_files": audit_record.get("changed_files"),
+            "post_apply_verification_status": post_apply_verification.get("status"),
+        },
+        status="INTEGRATED_LIVE",
+        changed_state_fields=[
+            "ast_snapshot.approved_execution_evidence",
+            "open_diffs",
+        ],
+    )
+    gate = build_plan5_acceptance_gate(
+        {"task": task.to_payload()},
+        subsystem=subsystem,
+        focused_checks=[
+            str(item)
+            for item in verification.get("verification_plan", [])
+            if str(item or "").strip()
+        ],
+        git_status="runtime_apply_receipt_pending",
+        evidence_budget_status="within_execute_approved_runtime_gate",
+    )
+    causal_crosscheck_status = (
+        "GO"
+        if gate.get("same_trace")
+        and gate.get("output_consumed_downstream")
+        and not gate.get("missing_fields")
+        else "NO-GO"
+    )
+    binary_verdict = (
+        "GO"
+        if gate.get("status") == "GO"
+        and action_policy["fail_closed_lane_status"] == "GO"
+        and causal_crosscheck_status == "GO"
+        else "NO-GO"
+    )
+    failures = list(gate.get("failures") or [])
+    failures.extend(action_policy["failures"])
+    return {
+        "binary_verdict": binary_verdict,
+        "causal_crosscheck_status": causal_crosscheck_status,
+        "fail_closed_action_classes": action_policy["fail_closed_action_classes"],
+        "fail_closed_lane_status": action_policy["fail_closed_lane_status"],
+        "failures": failures,
+        "gate_id": "plan5_execute_approved_acceptance",
+        "gate_version": "plan5_acceptance_v1",
+        "human_required_action_classes": action_policy["human_required_action_classes"],
+        "missing_fields": list(gate.get("missing_fields") or []),
+        "phase_verifier_status": "GO" if gate.get("status") == "GO" else "NO-GO",
+        "plan": 5,
+        "reason": "; ".join(failures) if failures else "",
+        "subsystem": subsystem,
+    }
+
+
+def _execute_approved_action_policy_status(
+    action: str,
+    *,
+    approved_by: str,
+    fail_closed_actions: set[str],
+    human_required_actions: set[str],
+) -> dict[str, Any]:
+    normalized = _normalize_action_class_text(action)
+    fail_closed = sorted(
+        item for item in fail_closed_actions if _action_class_matches(normalized, item)
+    )
+    human_required = sorted(
+        item for item in human_required_actions if _action_class_matches(normalized, item)
+    )
+    human_authority = str(approved_by or "").strip().lower() in {
+        "coding-ui",
+        "human",
+        "operator",
+        "test",
+    }
+    failures: list[str] = []
+    if fail_closed:
+        failures.append("fail_closed_action_class_not_supported_by_execute_approved")
+    if human_required and not human_authority:
+        failures.append("human_authority_missing_for_action_class")
+    return {
+        "fail_closed_action_classes": fail_closed,
+        "fail_closed_lane_status": "GO" if not failures else "NO-GO",
+        "failures": failures,
+        "human_authority_present": human_authority,
+        "human_required_action_classes": human_required,
+    }
+
+
+def _normalize_action_class_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+
+
+def _action_class_matches(normalized_action: str, action_class: str) -> bool:
+    normalized_class = _normalize_action_class_text(action_class)
+    parts = set(normalized_action.split("_"))
+    return normalized_action == normalized_class or normalized_class in parts
+
+
+def _record_execute_approved_plan2_integration(
+    task: LongRunningTask,
+    *,
+    subsystem: str,
+    consumer_subsystem: str,
+    upstream_state: dict[str, Any],
+    output: dict[str, Any],
+    status: str,
+    changed_state_fields: list[str],
+) -> None:
+    trace_id = _ensure_causal_trace_id(task)
+    invocation_event = _append_causal_event(
+        task,
+        event_type="invocation",
+        subsystem=subsystem,
+        run_id=f"plan5_execute_approved:{task.id}:{subsystem}",
+        status_before=task.status,
+        status_after=task.status,
+        changed_state_fields=["ast_snapshot"],
+        notes=[
+            f"Plan 5 execute-approved gate upstream keys: {sorted(upstream_state.keys())[:8]}",
+            f"status={status}",
+        ],
+    )
+    snapshot = _ensure_ast_snapshot_dict(task)
+    integrations = snapshot.get("plan_2_subsystem_integrations")
+    if not isinstance(integrations, dict):
+        integrations = {}
+    output_hash = hashlib.sha256(
+        json.dumps(output, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+    integrations[subsystem] = {
+        "consumer_subsystem": consumer_subsystem,
+        "failure_reason": "",
+        "invocation_event_id": invocation_event["event_id"],
+        "output_hash": output_hash,
+        "output_summary": _sanitize_causal_note(output.get("summary") or status),
+        "status": status,
+        "trace_id": trace_id,
+        "upstream_state_keys": sorted(upstream_state.keys()),
+    }
+    snapshot["plan_2_subsystem_integrations"] = integrations
+    snapshot["plan_2_last_subsystem_output"] = {
+        "subsystem": subsystem,
+        "status": status,
+        "output_hash": output_hash,
+        "output": output,
+    }
+    task.ast_snapshot = snapshot
+    consumer_event = _append_causal_event(
+        task,
+        event_type="consumer",
+        subsystem=subsystem,
+        consumer_subsystem=consumer_subsystem,
+        run_id=f"plan5_execute_approved:{task.id}:{subsystem}:consumer",
+        status_before=task.status,
+        status_after=task.status,
+        changed_state_fields=changed_state_fields,
+        notes=[f"{consumer_subsystem} consumed {subsystem} output hash {output_hash[:16]}"],
+    )
+    integrations[subsystem]["consumer_event_id"] = consumer_event["event_id"]
+    task.ast_snapshot = snapshot
 
 
 def _reversible_live_trial_task_spec(
@@ -1309,14 +1809,225 @@ def approval_id_for_approved_diff(
     approved_diff: str,
     target: str | None,
 ) -> str:
-    key = "|".join(
-        [
-            task_id.strip(),
-            (target or "").strip(),
-            hashlib.sha256(approved_diff.encode("utf-8")).hexdigest(),
-        ]
-    )
+    key = "|".join([task_id.strip(), (target or "").strip(), _canonical_diff_sha256(approved_diff)])
     return f"approval-{hashlib.sha256(key.encode('utf-8')).hexdigest()[:16]}"
+
+
+def _raw_diff_sha256(approved_diff: str) -> str:
+    return hashlib.sha256(approved_diff.encode("utf-8")).hexdigest()
+
+
+def _canonicalize_diff_for_provenance(approved_diff: str) -> str:
+    normalized = approved_diff.replace("\r\n", "\n").replace("\r", "\n").rstrip("\n")
+    return f"{normalized}\n"
+
+
+def _canonical_diff_sha256(approved_diff: str) -> str:
+    return hashlib.sha256(
+        _canonicalize_diff_for_provenance(approved_diff).encode("utf-8")
+    ).hexdigest()
+
+
+def _approval_id_for_diff_sha256(
+    *,
+    task_id: str,
+    target: str | None,
+    diff_sha256: str,
+) -> str:
+    key = "|".join([task_id.strip(), (target or "").strip(), diff_sha256])
+    return f"approval-{hashlib.sha256(key.encode('utf-8')).hexdigest()[:16]}"
+
+
+def _approval_binding_failure_diagnostic(
+    *,
+    task: LongRunningTask,
+    action: str,
+    approved_diff: str,
+    approval_id: str,
+    expected_approval_id: str,
+    invocation_event: dict[str, Any],
+    run_id: str,
+    target: str | None,
+) -> dict[str, Any]:
+    persisted_at = _now_iso()
+    raw_diff_sha = _raw_diff_sha256(approved_diff)
+    canonical_diff_sha = _canonical_diff_sha256(approved_diff)
+    canonical_approval_id = _approval_id_for_diff_sha256(
+        task_id=task.id,
+        target=target,
+        diff_sha256=canonical_diff_sha,
+    )
+    canonicalization_changed = approved_diff != _canonicalize_diff_for_provenance(
+        approved_diff
+    )
+    received_id = approval_id.strip() or "missing"
+    matched_canonical_current_components = received_id == canonical_approval_id
+    match_if_same_components: bool | str = (
+        True if matched_canonical_current_components else "unknown"
+    )
+    diff_hash_match: bool | str = (
+        raw_diff_sha == canonical_diff_sha
+        if matched_canonical_current_components
+        else "unknown"
+    )
+    unavailable_reason = (
+        ""
+        if matched_canonical_current_components
+        else "preview_binding_components_not_recorded"
+    )
+    recommended_next_action = (
+        "Inspect src/app/v1/actions/execute-approved/route.ts approvalIdForApprovedDiff and "
+        "source_proxy/tasks/long_running.py approval_id_for_approved_diff for diff canonicalization drift."
+        if matched_canonical_current_components and canonicalization_changed
+        else "Inspect the prompt-packet route and execute-approved caller for stale task_id, target, or diff reuse."
+    )
+    approval_binding = {
+        "approval_binding_failure_reason": "approval_id_mismatch",
+        "approval_binding_safe_block": True,
+        "approval_binding_status": "failed",
+        "approval_id_algorithm": "sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)",
+        "approval_source": (
+            "canonicalized_preview"
+            if matched_canonical_current_components
+            else "stale/cache/unknown"
+        ),
+        "apply_block_layer": "source_proxy",
+        "apply_block_reason": "approval_id_mismatch",
+        "canonical_diff_sha256_at_apply": canonical_diff_sha,
+        "canonical_diff_sha256_before_approval": (
+            canonical_diff_sha
+            if matched_canonical_current_components
+            else "not_recorded: preview_binding_components_not_recorded"
+        ),
+        "canonicalization_changed": canonicalization_changed,
+        "diff_sha256_match": diff_hash_match,
+        "diff_sha256_used_for_apply": canonical_diff_sha,
+        "diff_sha256_used_for_preview": (
+            canonical_diff_sha
+            if matched_canonical_current_components
+            else "not_recorded: preview_binding_components_not_recorded"
+        ),
+        "expected_approval_id": expected_approval_id,
+        "received_approval_id": received_id,
+        "safe_block": True,
+        "target_match": match_if_same_components,
+        "target_used_for_apply": target or "",
+        "target_used_for_preview": (
+            (target or "")
+            if matched_canonical_current_components
+            else "not_recorded: preview_binding_components_not_recorded"
+        ),
+        "task_id_match": match_if_same_components,
+        "task_id_used_for_apply": task.id,
+        "task_id_used_for_preview": (
+            task.id
+            if matched_canonical_current_components
+            else "not_recorded: preview_binding_components_not_recorded"
+        ),
+        "unavailable_reason": unavailable_reason,
+    }
+    diff_provenance = {
+        "applied_diff_sha256": "not_applicable: apply_blocked",
+        "approved_diff_sha256": canonical_diff_sha,
+        "raw_approved_diff_sha256": raw_diff_sha,
+        "backend_converted_diff_sha256": "not_recorded: backend did not provide field",
+        "changed_files": [
+            str(file.get("path") or "")
+            for file in _parse_changed_files(approved_diff)
+            if isinstance(file, dict) and str(file.get("path") or "").strip()
+        ],
+        "diff_source": "approved_diff_request_body",
+        "provenance_hash_normalization": "lf_trailing_newline_v1",
+    }
+    anti_cheat = {
+        "anti_cheat_status": "not_run",
+        "anti_cheat_reasons": ["skipped_due_to_apply_block"],
+        "grader_result_state": "not_applicable: fixture_pre_apply_block",
+        "trial_result_trust_status": "blocked_before_apply",
+    }
+    acceptance_gate = {
+        "acceptance_failures": ["approval_id_mismatch"],
+        "binary_verdict": "NO-GO",
+        "causal_crosscheck_status": "skipped_with_reason",
+        "fail_closed_lane_status": "skipped_with_reason",
+        "gate_id": "plan5_execute_approved_block_acceptance",
+        "gate_version": "plan5_acceptance_v1",
+        "missing_fields": ["source_proxy_apply_receipt"],
+        "phase_verifier_status": "skipped_with_reason",
+        "plan5_gate_id": "plan5_execute_approved_block_acceptance",
+        "plan5_gate_present": False,
+        "plan5_gate_version": "plan5_acceptance_v1",
+        "reason": "skipped_due_to_apply_block",
+    }
+    verification = {
+        "post_apply_verification_status": "skipped_due_to_apply_block",
+        "preview_verification_status": "not_recorded: backend did not provide field",
+    }
+    unavailable_fields = [
+        {
+            "field": "selected_prompt_task_id",
+            "reason": "backend apply request did not include selected prompt task id",
+        },
+        {
+            "field": "consumer_event_id",
+            "reason": "apply blocked before downstream consumer event",
+        },
+        {
+            "field": "preview_binding_components",
+            "reason": unavailable_reason or "available",
+        },
+        {
+            "field": "anti_cheat.detector_results",
+            "reason": "skipped_due_to_apply_block",
+        },
+    ]
+    return {
+        "stage_id": "execute_approved.approval_binding",
+        "subsystem": "source_proxy_execute_approved",
+        "task_id": task.id,
+        "selected_prompt_task_id": "not_recorded: backend apply request did not include selected prompt task id",
+        "run_id": run_id,
+        "trace_id": str(invocation_event.get("trace_id") or ""),
+        "invocation_event_id": str(invocation_event.get("event_id") or ""),
+        "consumer_event_id": "not_applicable: apply blocked before downstream consumer event",
+        "status": "blocked_approval_mismatch",
+        "truth_status": "BLOCKED_SAFE",
+        "safe_block": True,
+        "error_code": "approval_id_mismatch",
+        "reason_code": "approval_id_mismatch",
+        "human_message": "Approved diff approval_id does not match the task, target, and diff.",
+        "machine_reason": "approval_id_mismatch",
+        "apply_block_layer": "source_proxy",
+        "recommended_next_action": recommended_next_action,
+        "unavailable_fields": unavailable_fields,
+        "persisted_at": persisted_at,
+        "surfaced_at": persisted_at,
+        "task_identity": {
+            "backend_task_id": task.id,
+            "consumer_event_id": "not_applicable: apply blocked before downstream consumer event",
+            "invocation_event_id": invocation_event.get("event_id"),
+            "run_id": run_id,
+            "selected_prompt_id": "not_recorded: backend apply request did not include selected prompt id",
+            "selected_prompt_task_id": "not_recorded: backend apply request did not include selected prompt task id",
+            "task_id_match": match_if_same_components,
+            "trace_id": invocation_event.get("trace_id"),
+            "unavailable_reason": unavailable_reason,
+        },
+        "diff_provenance": diff_provenance,
+        "approval_binding": approval_binding,
+        "verification": verification,
+        "anti_cheat": anti_cheat,
+        "acceptance_gate": acceptance_gate,
+        "final_truth_summary": {
+            "commit_safe": False,
+            "proof_level": "fixture_only" if "dummy-product-site" in action else "route_level_non_fixture",
+            "raw_backend_status": "approval_id_mismatch",
+            "recommended_next_action": recommended_next_action,
+            "run_status": "blocked",
+            "truth_status": "BLOCKED_SAFE",
+            "why_not_go": "approval binding failed before workspace apply",
+        },
+    }
 
 
 PLAN_REJECTION_REASON_CODES = {
@@ -1412,6 +2123,9 @@ def record_post_apply_verification(
     confirm_no_unintended_files: bool = False,
     manual_browser_check_done: bool = False,
     run_code_verification: bool = False,
+    verification_profile: str | None = None,
+    run_snapshot_verification: bool = False,
+    browser_evidence: dict[str, Any] | None = None,
     skip_reason: str | None = None,
     verification_note: str | None = None,
 ) -> dict[str, Any]:
@@ -1433,10 +2147,37 @@ def record_post_apply_verification(
             "Post-apply verification is not marked required for this task.",
             "post_apply_verification_not_required",
         )
+    _load_hash_bound_backup_manifest(task, reason_prefix="post_apply")
     changed_files = _verification_changed_files(verification, task)
     docs_only = _docs_only_changed_files(changed_files)
     skip = (skip_reason or "").strip()
-    if run_code_verification:
+    profile = str(verification_profile or "").strip().lower()
+    if profile == "dummy_product_site":
+        checks, profile_evidence = _run_dummy_product_site_post_apply_verification(
+            task,
+            changed_files=changed_files,
+            client_browser_evidence=browser_evidence or {},
+            run_snapshot_verification=run_snapshot_verification,
+        )
+        verification["checks"] = [dict(check) for check in checks]
+        verification["verification_profile"] = profile
+        verification["snapshot_verification"] = profile_evidence
+        verification["browser_evidence"] = dict(
+            profile_evidence.get("browser_evidence")
+            if isinstance(profile_evidence.get("browser_evidence"), dict)
+            else {}
+        )
+        verification["browser_evidence_sha256"] = str(
+            profile_evidence.get("browser_evidence_sha256") or ""
+        )
+        verification["client_browser_evidence_decision_bearing"] = False
+        manual_browser_check_done = bool(profile_evidence.get("browser_verified"))
+        run_code_verification = True
+        verification_note = (
+            verification_note
+            or "Server verified the bounded dummy-product-site snapshot and browser evidence."
+        )
+    elif run_code_verification:
         if docs_only:
             raise LongRunningTaskError(
                 "Code verification is only available for code/test file changes.",
@@ -1567,7 +2308,89 @@ def record_post_apply_verification(
     task.truncated_test_results = _post_apply_results_json(task, verification)
     snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
     snapshot["post_apply_verification"] = verification
+    approved_execution_evidence = (
+        snapshot.get("approved_execution_evidence")
+        if isinstance(snapshot.get("approved_execution_evidence"), dict)
+        else {}
+    )
+    if approved_execution_evidence:
+        approved_execution_evidence["post_apply_verification"] = verification
+        approved_execution_evidence["final_truth_status"] = (
+            "GO" if task.status == "completed" else "BLOCKED_SAFE"
+        )
+        approved_execution_evidence["commit_safe"] = task.status == "completed"
+        snapshot["approved_execution_evidence"] = approved_execution_evidence
     task.ast_snapshot = snapshot
+    _finalize_post_apply_backup_manifest(task, verification)
+
+    if task.status == "completed":
+        context_report = acknowledge_task_context_consumer(
+            task.id,
+            consumer="verifier",
+            evidence="dummy_post_apply_snapshot_and_browser_verification_passed"
+            if profile == "dummy_product_site"
+            else "post_apply_verification_passed",
+            applicable=True,
+            reason="verifier_consumed_context_bound_scope_and_post_apply_evidence",
+        )
+        if isinstance(context_report, dict):
+            context_report = acknowledge_task_context_consumer(
+                task.id,
+                consumer="final_receipt_builder",
+                evidence="final_receipt_copied_canonical_context_verdict",
+                applicable=True,
+                reason="final_receipt_builder_gated_completion_on_canonical_broker",
+            )
+        selected_prompt_context_required = str(
+            approved_execution_evidence.get("audit", {}).get("action")
+            if isinstance(approved_execution_evidence.get("audit"), dict)
+            else ""
+        ).lower().startswith("run selected dummy coder prompt")
+        if selected_prompt_context_required and not isinstance(context_report, dict):
+            verification["status"] = "verification_failed"
+            verification["commit_proposal_blocked"] = True
+            verification["commit_blockers"] = ["canonical_context_report_missing"]
+            task.status = "verification_failed"
+        elif isinstance(context_report, dict) and context_report.get("go_eligible") is not True:
+            verification["status"] = "verification_failed"
+            verification["commit_proposal_blocked"] = True
+            verification["commit_blockers"] = [
+                *[str(item) for item in verification.get("commit_blockers", [])],
+                *[str(item) for item in context_report.get("required_context_blockers", [])],
+            ]
+            task.status = "verification_failed"
+        if isinstance(context_report, dict):
+            verification["canonical_context_broker"] = context_report
+            verification["canonical_context_verdict"] = context_report.get("verdict")
+            verification["canonical_context_report_hash"] = context_report.get(
+                "canonical_report_hash"
+            )
+
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["post_apply_verification"] = verification
+    if isinstance(snapshot.get("approved_execution_evidence"), dict):
+        snapshot["approved_execution_evidence"]["post_apply_verification"] = verification
+        snapshot["approved_execution_evidence"]["final_truth_status"] = (
+            "GO" if task.status == "completed" else "BLOCKED_SAFE"
+        )
+        snapshot["approved_execution_evidence"]["commit_safe"] = task.status == "completed"
+    task.ast_snapshot = snapshot
+    # Context acknowledgements are part of final verification truth.  Re-sync
+    # every decision-bearing copy after that gate so a late context failure
+    # cannot leave the open diff claiming `verified` while the task and receipt
+    # correctly say `verification_failed`.
+    for diff in task.open_diffs:
+        if str(diff.get("status") or "") in {
+            "applied_needs_verification",
+            "applied_verification_failed",
+            "verification_failed",
+            "verified",
+        }:
+            diff["status"] = task.status if task.status != "completed" else "verified"
+            diff["post_apply_verification"] = verification
+            diff["verified"] = task.status == "completed"
+    task.truncated_test_results = _post_apply_results_json(task, verification)
+    _finalize_post_apply_backup_manifest(task, verification)
     task.updated_at = _now_iso()
     _save_task(task)
     return _task_envelope(task)
@@ -1642,6 +2465,7 @@ def _record_approved_execution_evidence(
     task: LongRunningTask,
     *,
     audit_record: dict[str, Any],
+    backup_manifest_sha256: str,
     backup_root: str,
     post_apply_verification: dict[str, Any],
     verification_plan: list[str],
@@ -1651,8 +2475,11 @@ def _record_approved_execution_evidence(
         "audit": audit_record,
         "backup_root": backup_root,
         "backup_manifest": audit_record.get("backup_manifest"),
+        "backup_manifest_sha256": backup_manifest_sha256,
+        "backup_manifest_applied_sha256": backup_manifest_sha256,
         "approved_diff_path": audit_record.get("approved_diff_path"),
         "approved_diff_sha256": audit_record.get("approved_diff_sha256"),
+        "workspace_root": audit_record.get("workspace_root"),
         "post_apply_verification": post_apply_verification,
         "verification_plan": verification_plan,
     }
@@ -1979,6 +2806,335 @@ def _run_code_post_apply_verification(
     return results
 
 
+def _run_managed_dummy_storefront_browser_proof(
+    workspace_root: Path,
+) -> dict[str, Any]:
+    """Run the fixed managed preview through real Chromium and return bounded evidence.
+
+    Browser claims supplied by the frontend are deliberately not accepted here.  The Source
+    Proxy launches the verifier itself against the managed Next lane on port 3000 so a source
+    parser or caller-provided boolean cannot satisfy the post-apply browser gate.
+    """
+
+    preview_url = "https://localhost:3000/v1/coding/dummy-product-site-preview"
+    script_path = (workspace_root / "scripts/verify-dummy-storefront-browser.mjs").resolve()
+    base: dict[str, Any] = {
+        "schema_version": "dummy-storefront-browser-proof/v1",
+        "status": "failed",
+        "browser_verification_status": "failed",
+        "storefront_runtime_status": "failed",
+        "storefront_runtime_engine": "playwright_chromium",
+        "real_browser_used": False,
+        "managed_frontend_origin": "https://localhost:3000",
+        "preview_url": preview_url,
+        "reason": "browser_verifier_not_run",
+    }
+    if not _is_relative_to(script_path, workspace_root) or not script_path.is_file():
+        return {**base, "reason": "managed_browser_verifier_script_missing"}
+    try:
+        completed = subprocess.run(
+            [
+                "node",
+                str(script_path),
+                "--url",
+                preview_url,
+                "--timeout-ms",
+                "30000",
+            ],
+            cwd=workspace_root,
+            capture_output=True,
+            text=True,
+            timeout=45,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {**base, "reason": "managed_browser_verifier_timeout"}
+    except OSError as error:
+        return {
+            **base,
+            "reason": "managed_browser_verifier_unavailable",
+            "error_type": type(error).__name__,
+        }
+
+    stdout = (completed.stdout or "").strip()
+    try:
+        payload = json.loads(stdout) if stdout else {}
+    except json.JSONDecodeError:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    if not payload:
+        return {
+            **base,
+            "reason": "managed_browser_verifier_invalid_output",
+            "returncode": completed.returncode,
+            "stderr_tail": (completed.stderr or "")[-500:],
+        }
+    payload["verifier_returncode"] = completed.returncode
+    if completed.returncode != 0:
+        payload["status"] = "failed"
+        payload["browser_verification_status"] = "failed"
+        payload["storefront_runtime_status"] = "failed"
+        payload["real_browser_used"] = False
+        payload.setdefault("reason", "managed_browser_verifier_failed")
+    return payload
+
+
+def _run_dummy_product_site_post_apply_verification(
+    task: LongRunningTask,
+    *,
+    changed_files: list[dict[str, Any]],
+    client_browser_evidence: dict[str, Any],
+    run_snapshot_verification: bool,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Verify the bounded mixed web fixture without broad command execution."""
+
+    workspace_root = _approved_execution_workspace_root(
+        task,
+        reason_prefix="post_apply",
+    )
+    dummy_root = DUMMY_PRODUCT_SITE_ROOT.rstrip("/") + "/"
+    paths = [
+        str(item.get("path") or "").replace("\\", "/")
+        for item in changed_files
+        if isinstance(item, dict)
+    ]
+    scope_ok = bool(paths) and all(path.startswith(dummy_root) for path in paths)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    execution_evidence = (
+        snapshot.get("approved_execution_evidence")
+        if isinstance(snapshot.get("approved_execution_evidence"), dict)
+        else {}
+    )
+    audit = (
+        execution_evidence.get("audit")
+        if isinstance(execution_evidence.get("audit"), dict)
+        else {}
+    )
+    manifest_rel = str(execution_evidence.get("backup_manifest") or "")
+    manifest_path = (workspace_root / manifest_rel).resolve() if manifest_rel else workspace_root
+    manifest_safe = bool(
+        manifest_rel
+        and _is_relative_to(manifest_path, workspace_root)
+        and manifest_path.is_file()
+    )
+    manifest: dict[str, Any] = {}
+    if manifest_safe:
+        try:
+            loaded = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest = loaded if isinstance(loaded, dict) else {}
+        except (OSError, json.JSONDecodeError):
+            manifest = {}
+    expected_manifest_sha256 = str(
+        execution_evidence.get("backup_manifest_sha256") or ""
+    )
+    actual_manifest_sha256 = (
+        _sha256_file(manifest_path) if manifest_safe else ""
+    )
+    approved_diff_rel = str(execution_evidence.get("approved_diff_path") or "")
+    approved_diff_path = (
+        (workspace_root / approved_diff_rel).resolve()
+        if approved_diff_rel
+        else workspace_root
+    )
+    approved_diff_hash_ok = bool(
+        approved_diff_rel
+        and _is_relative_to(approved_diff_path, workspace_root)
+        and approved_diff_path.is_file()
+        and _sha256_file(approved_diff_path)
+        == str(execution_evidence.get("approved_diff_sha256") or "")
+    )
+    manifest_ok = bool(
+        manifest_safe
+        and bool(expected_manifest_sha256)
+        and actual_manifest_sha256 == expected_manifest_sha256
+        and manifest.get("task_id") == task.id
+        and str(manifest.get("approved_diff_sha256") or "")
+        == str(execution_evidence.get("approved_diff_sha256") or "")
+        and approved_diff_hash_ok
+    )
+
+    recorded_snapshots = {
+        str(item.get("path") or "").replace("\\", "/"): item
+        for item in audit.get("changed_file_snapshots", [])
+        if isinstance(item, dict) and item.get("path")
+    }
+    snapshot_results: list[dict[str, Any]] = []
+    for rel_path in paths:
+        file_path = (workspace_root / rel_path).resolve()
+        record = recorded_snapshots.get(rel_path, {})
+        actual_hash = _sha256_file(file_path) if file_path.is_file() else None
+        expected_hash = record.get("sha256_after")
+        snapshot_results.append(
+            {
+                "path": rel_path,
+                "expected_sha256_after": expected_hash,
+                "actual_sha256": actual_hash,
+                "matches": bool(expected_hash and actual_hash == expected_hash),
+            }
+        )
+    snapshots_ok = bool(
+        run_snapshot_verification
+        and snapshot_results
+        and all(item["matches"] for item in snapshot_results)
+    )
+
+    package_path = workspace_root / f"{dummy_root}package.json"
+    package_ok = False
+    try:
+        package_payload = json.loads(package_path.read_text(encoding="utf-8"))
+        package_ok = isinstance(package_payload, dict) and bool(package_payload.get("name"))
+    except (OSError, json.JSONDecodeError):
+        package_ok = False
+
+    js_results: list[dict[str, Any]] = []
+    for rel_path in paths:
+        if not rel_path.endswith((".js", ".mjs", ".cjs")):
+            continue
+        completed = subprocess.run(
+            ["node", "--check", str((workspace_root / rel_path).resolve())],
+            cwd=workspace_root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        js_results.append(
+            {
+                "path": rel_path,
+                "returncode": completed.returncode,
+                "output_tail": (completed.stderr or completed.stdout)[-500:],
+            }
+        )
+    js_ok = bool(js_results) and all(item["returncode"] == 0 for item in js_results)
+    web_assets_ok = all(
+        (workspace_root / rel_path).is_file()
+        and (workspace_root / rel_path).stat().st_size > 0
+        for rel_path in paths
+        if rel_path.endswith((".html", ".css", ".json", ".md"))
+    )
+
+    diff_result = subprocess.run(
+        ["git", "diff", "--no-ext-diff", "--", *paths],
+        cwd=workspace_root,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    rediff = diff_result.stdout if diff_result.returncode == 0 else ""
+    rediff_hash = hashlib.sha256(rediff.encode("utf-8")).hexdigest() if rediff else ""
+    snapshot_binding_sha256 = hashlib.sha256(
+        json.dumps(snapshot_results, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    browser_evidence = _run_managed_dummy_storefront_browser_proof(workspace_root)
+    browser_evidence.update(
+        {
+            "task_id": task.id,
+            "approved_diff_sha256": str(
+                execution_evidence.get("approved_diff_sha256") or ""
+            ),
+            "backup_manifest": manifest_rel,
+            "backup_manifest_sha256": expected_manifest_sha256,
+            "post_apply_rediff_sha256": rediff_hash,
+            "snapshot_binding_sha256": snapshot_binding_sha256,
+        }
+    )
+    browser_evidence_sha256 = hashlib.sha256(
+        json.dumps(browser_evidence, sort_keys=True, separators=(",", ":")).encode(
+            "utf-8"
+        )
+    ).hexdigest()
+    browser_evidence["browser_evidence_sha256"] = browser_evidence_sha256
+    visible_fields = (
+        browser_evidence.get("visible_fields")
+        if isinstance(browser_evidence.get("visible_fields"), dict)
+        else {}
+    )
+    asset_responses = (
+        browser_evidence.get("asset_responses")
+        if isinstance(browser_evidence.get("asset_responses"), dict)
+        else {}
+    )
+    required_browser_assets = (
+        "/v1/coding/dummy-product-site-preview",
+        "/v1/coding/dummy-product-site-preview/src/main.js",
+        "/v1/coding/dummy-product-site-preview/src/products.js",
+        "/v1/coding/dummy-product-site-preview/src/styles.css",
+    )
+    browser_verified = bool(
+        browser_evidence.get("schema_version")
+        == "dummy-storefront-browser-proof/v1"
+        and browser_evidence.get("status") == "passed"
+        and browser_evidence.get("browser_verification_status") == "passed"
+        and browser_evidence.get("storefront_runtime_status") == "passed"
+        and browser_evidence.get("storefront_runtime_engine")
+        == "playwright_chromium"
+        and browser_evidence.get("real_browser_used") is True
+        and browser_evidence.get("managed_frontend_origin")
+        == "https://localhost:3000"
+        and browser_evidence.get("preview_http_status") == 200
+        and browser_evidence.get("document_ready_state") == "complete"
+        and browser_evidence.get("module_script_loaded") is True
+        and browser_evidence.get("stylesheet_loaded") is True
+        and int(browser_evidence.get("noscript_card_count") or 0) == 0
+        and all(asset_responses.get(path) == 200 for path in required_browser_assets)
+        and int(browser_evidence.get("product_count") or 0) >= 6
+        and int(browser_evidence.get("rendered_card_count") or 0)
+        == int(browser_evidence.get("product_count") or 0)
+        and all(visible_fields.get(field) is True for field in (
+            "name",
+            "price",
+            "category",
+            "description",
+        ))
+        and not browser_evidence.get("console_errors")
+        and not browser_evidence.get("page_errors")
+        and not browser_evidence.get("request_failures")
+        and browser_evidence.get("task_id") == task.id
+        and browser_evidence.get("approved_diff_sha256")
+        == str(execution_evidence.get("approved_diff_sha256") or "")
+        and browser_evidence.get("backup_manifest_sha256")
+        == actual_manifest_sha256
+        and browser_evidence.get("post_apply_rediff_sha256") == rediff_hash
+    )
+
+    checks = [
+        _post_apply_profile_check("dummy_scope", scope_ok, "Only dummy fixture paths changed."),
+        _post_apply_profile_check("backup_manifest", manifest_ok, "Backup manifest and approved diff hashes match."),
+        _post_apply_profile_check("snapshot_hashes", snapshots_ok, "Every changed file matches its recorded post-apply hash."),
+        _post_apply_profile_check("package_json", package_ok, "Dummy package.json parses with a package name."),
+        _post_apply_profile_check("javascript_syntax", js_ok, "Dummy JavaScript passes node --check."),
+        _post_apply_profile_check("web_assets", web_assets_ok, "HTML/CSS/JSON/README assets exist and are non-empty."),
+        _post_apply_profile_check("browser_storefront", browser_verified, "Browser rendered at least six product cards."),
+    ]
+    return checks, {
+        "scope_ok": scope_ok,
+        "manifest_ok": manifest_ok,
+        "backup_manifest_sha256": actual_manifest_sha256,
+        "snapshot_results": snapshot_results,
+        "browser_verified": browser_verified,
+        "browser_evidence": browser_evidence,
+        "browser_evidence_sha256": browser_evidence_sha256,
+        "client_browser_evidence_decision_bearing": False,
+        "client_browser_evidence_ignored": bool(client_browser_evidence),
+        "post_apply_rediff_sha256": rediff_hash,
+        "post_apply_rediff_present": bool(rediff),
+        "apply_mode": "backend_git_apply_with_backup_manifest",
+        "changed_files": paths,
+    }
+
+
+def _post_apply_profile_check(check_id: str, passed: bool, summary: str) -> dict[str, Any]:
+    return {
+        "id": check_id,
+        "command": f"server:{check_id}",
+        "required": True,
+        "status": "passed" if passed else "failed",
+        "summary": summary,
+    }
+
+
 def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, Any]:
     changed_files = [
         file for file in verification.get("changed_files", []) if isinstance(file, dict)
@@ -2053,12 +3209,265 @@ def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, 
 
 def cancel_long_running_task(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
-    if task.status not in _terminal_or_waiting_statuses():
+    if task.status not in _terminal_or_waiting_statuses() or task.status == "waiting_for_operator_browser":
         task.status = "cancelled"
         task.cancelled_at = _now_iso()
         task.updated_at = task.cancelled_at
         _save_task(task)
     return _task_envelope(task)
+
+
+def undo_last_approved_change(
+    task_id: str,
+    *,
+    confirm_undo: bool,
+    expected_backup_manifest: str,
+    requested_by: str = "coding-ui",
+) -> dict[str, Any]:
+    """Restore exactly the files captured by one approved execution manifest."""
+
+    if not confirm_undo:
+        raise LongRunningTaskError("Undo requires explicit confirmation.", "undo_not_confirmed")
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    evidence = (
+        snapshot.get("approved_execution_evidence")
+        if isinstance(snapshot.get("approved_execution_evidence"), dict)
+        else {}
+    )
+    manifest_rel = str(evidence.get("backup_manifest") or "")
+    if not manifest_rel or expected_backup_manifest != manifest_rel:
+        raise LongRunningTaskError(
+            "Undo manifest does not match the original approved execution receipt.",
+            "undo_manifest_mismatch",
+        )
+    workspace_root = _approved_execution_workspace_root(task, reason_prefix="undo")
+    manifest_path, manifest, _ = _load_hash_bound_backup_manifest(
+        task,
+        reason_prefix="undo",
+    )
+    if manifest.get("stage") == "undone" and isinstance(manifest.get("undo_receipt"), dict):
+        receipt = manifest["undo_receipt"]
+        if _undo_receipt_state_matches(workspace_root, receipt):
+            return {
+                **_task_envelope(task),
+                "undo": {**receipt, "already_undone": True},
+            }
+        raise LongRunningTaskError(
+            "Undo was already recorded but the restored state has drifted.",
+            "undo_restored_state_drift",
+        )
+    if task.status != "completed" or manifest.get("stage") != "post_apply_verified":
+        raise LongRunningTaskError(
+            "Undo is only available after completed post-apply verification.",
+            "undo_not_verified",
+        )
+
+    approved_diff_rel = str(manifest.get("approved_diff_path") or "")
+    approved_diff_path = (workspace_root / approved_diff_rel).resolve()
+    if (
+        not approved_diff_rel
+        or not _is_relative_to(approved_diff_path, workspace_root)
+        or not approved_diff_path.is_file()
+        or _sha256_file(approved_diff_path)
+        != str(manifest.get("approved_diff_sha256") or "")
+        or str(manifest.get("approved_diff_sha256") or "")
+        != str(evidence.get("approved_diff_sha256") or "")
+    ):
+        raise LongRunningTaskError(
+            "Undo approved-diff hash binding failed.",
+            "undo_approved_diff_hash_mismatch",
+        )
+
+    audit = manifest.get("audit_record") if isinstance(manifest.get("audit_record"), dict) else {}
+    snapshots = [
+        dict(item)
+        for item in audit.get("changed_file_snapshots", [])
+        if isinstance(item, dict)
+    ]
+    backups = {
+        str(item.get("path") or "").replace("\\", "/"): dict(item)
+        for item in manifest.get("backed_up_files", [])
+        if isinstance(item, dict) and item.get("path")
+    }
+    paths = [str(item.get("path") or "").replace("\\", "/") for item in snapshots]
+    manifest_paths = [
+        str(item.get("path") or "").replace("\\", "/")
+        for item in manifest.get("changed_files", [])
+        if isinstance(item, dict)
+    ]
+    if not paths or sorted(paths) != sorted(manifest_paths) or set(paths) != set(backups):
+        raise LongRunningTaskError(
+            "Undo manifest file sets do not match.",
+            "undo_manifest_scope_mismatch",
+        )
+    selected_dummy = str(audit.get("action") or "").lower().startswith(
+        "run selected dummy coder prompt"
+    )
+    if selected_dummy and not all(
+        path.startswith(DUMMY_PRODUCT_SITE_ROOT.rstrip("/") + "/") for path in paths
+    ):
+        raise LongRunningTaskError(
+            "Selected-prompt undo escaped the dummy fixture.",
+            "undo_dummy_scope_escape",
+        )
+
+    validations: list[dict[str, Any]] = []
+    for record in snapshots:
+        rel_path = str(record.get("path") or "").replace("\\", "/")
+        current_path = (workspace_root / rel_path).resolve()
+        if not _is_relative_to(current_path, workspace_root):
+            raise LongRunningTaskError("Undo path escapes workspace.", "undo_path_escape")
+        current_hash = _sha256_file(current_path) if current_path.is_file() else None
+        expected_after = record.get("sha256_after")
+        backup = backups[rel_path]
+        backup_rel = backup.get("backup_path")
+        backup_hash_ok = True
+        if backup_rel:
+            backup_path = (workspace_root / str(backup_rel)).resolve()
+            backup_hash_ok = bool(
+                _is_relative_to(backup_path, manifest_path.parent)
+                and backup_path.is_file()
+                and _sha256_file(backup_path) == record.get("sha256_before")
+                and record.get("sha256_before") == backup.get("sha256")
+            )
+        elif not record.get("missing_before_apply"):
+            backup_hash_ok = False
+        validations.append(
+            {
+                "path": rel_path,
+                "current_sha256": current_hash,
+                "expected_sha256_after": expected_after,
+                "current_matches_applied": bool(expected_after and current_hash == expected_after),
+                "backup_hash_ok": backup_hash_ok,
+            }
+        )
+    if not all(item["current_matches_applied"] and item["backup_hash_ok"] for item in validations):
+        raise LongRunningTaskError(
+            "Undo refused because current or backup file hashes drifted.",
+            "undo_hash_drift",
+        )
+
+    central_gate_check("apply", run_id=f"undo_last_approved_change:{task.id}")
+    restored: list[dict[str, Any]] = []
+    for record in snapshots:
+        rel_path = str(record.get("path") or "").replace("\\", "/")
+        current_path = (workspace_root / rel_path).resolve()
+        backup = backups[rel_path]
+        if record.get("missing_before_apply"):
+            current_path.unlink()
+        else:
+            backup_path = (workspace_root / str(backup.get("backup_path") or "")).resolve()
+            current_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(backup_path, current_path)
+        actual_before = _sha256_file(current_path) if current_path.is_file() else None
+        expected_before = record.get("sha256_before")
+        restored.append(
+            {
+                "path": rel_path,
+                "expected_sha256_before": expected_before,
+                "actual_sha256": actual_before,
+                "absent": not current_path.exists(),
+                "verified": (
+                    actual_before == expected_before
+                    if expected_before
+                    else not current_path.exists()
+                ),
+            }
+        )
+    _restore_manifest_directory_state(workspace_root, manifest)
+    if not all(item["verified"] for item in restored):
+        raise LongRunningTaskError(
+            "Undo restoration verification failed.",
+            "undo_restore_verification_failed",
+        )
+
+    receipt = {
+        "schema_version": 1,
+        "undo_receipt_id": f"undo-{uuid4().hex[:16]}",
+        "original_task_id": task.id,
+        "selected_backup_manifest": manifest_rel,
+        "approved_diff_sha256": manifest.get("approved_diff_sha256"),
+        "requested_by": requested_by,
+        "executed_at": _now_iso(),
+        "files_restored": restored,
+        "filesystem_verified": True,
+        "unrelated_paths_touched": [],
+        "untouched_scope_assertion": True,
+        "expected_browser_state": "fixture_missing" if selected_dummy else "prior_state",
+        "browser_verification_status": "pending_external_browser_probe",
+        "final_truth_status": "UNDO_FILESYSTEM_VERIFIED",
+    }
+    receipt_path = manifest_path.parent / "undo-receipt.json"
+    receipt["receipt_path"] = str(receipt_path.relative_to(workspace_root)).replace("\\", "/")
+    receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest["stage"] = "undone"
+    manifest["undo_receipt"] = receipt
+    manifest["undo_receipt_path"] = receipt["receipt_path"]
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    undone_manifest_sha256 = _sha256_file(manifest_path)
+    evidence["backup_manifest_sha256"] = undone_manifest_sha256
+    evidence["backup_manifest_undone_sha256"] = undone_manifest_sha256
+
+    snapshot["undo_receipt"] = receipt
+    snapshot["undo_status"] = "filesystem_verified"
+    snapshot["approved_execution_evidence"] = evidence
+    task.ast_snapshot = snapshot
+    for diff in task.open_diffs:
+        if str(diff.get("status") or "") in {"verified", "completed"}:
+            diff["status"] = "undone"
+            diff["verified"] = False
+            diff["undo_receipt_id"] = receipt["undo_receipt_id"]
+            diff["undo_receipt_path"] = receipt["receipt_path"]
+    _append_causal_event(
+        task,
+        event_type="status_transition",
+        subsystem="source_proxy_manifest_undo",
+        consumer_subsystem="coding_ui_undo",
+        run_id=f"undo_last_approved_change:{task.id}",
+        status_before=task.status,
+        status_after=task.status,
+        changed_state_fields=["ast_snapshot.undo_receipt", "open_diffs"],
+        notes=["approved execution restored from exact backup manifest"],
+    )
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return {**_task_envelope(task), "undo": receipt}
+
+
+def _undo_receipt_state_matches(workspace_root: Path, receipt: dict[str, Any]) -> bool:
+    restored = receipt.get("files_restored")
+    if not isinstance(restored, list) or not restored:
+        return False
+    for item in restored:
+        if not isinstance(item, dict):
+            return False
+        path = (workspace_root / str(item.get("path") or "")).resolve()
+        if not _is_relative_to(path, workspace_root):
+            return False
+        expected = item.get("expected_sha256_before")
+        if expected:
+            if not path.is_file() or _sha256_file(path) != expected:
+                return False
+        elif path.exists():
+            return False
+    return True
+
+
+def _restore_manifest_directory_state(workspace_root: Path, manifest: dict[str, Any]) -> None:
+    directories = [
+        dict(item)
+        for item in manifest.get("directory_state_before", [])
+        if isinstance(item, dict) and item.get("existed_before_apply") is False
+    ]
+    directories.sort(key=lambda item: len(Path(str(item.get("path") or "")).parts), reverse=True)
+    for item in directories:
+        path = (workspace_root / str(item.get("path") or "")).resolve()
+        if _is_relative_to(path, workspace_root) and path.is_dir():
+            try:
+                path.rmdir()
+            except OSError:
+                continue
 
 
 def reset_long_running_tasks() -> None:
@@ -2085,6 +3494,92 @@ def update_long_running_task(task_id: str, **changes: Any) -> dict[str, Any]:
     task.updated_at = _now_iso()
     _save_task(task)
     return _task_envelope(task)
+
+
+def record_canonical_context_broker(
+    task_id: str,
+    report: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist the canonical context report on the durable task blackboard."""
+
+    if report.get("canonical") is not True or not str(report.get("canonical_report_hash") or ""):
+        raise LongRunningTaskError(
+            "Canonical context report is missing its decision-bearing hash.",
+            "canonical_context_report_invalid",
+        )
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    durable_report = json.loads(json.dumps(report, sort_keys=True, default=str))
+    snapshot["canonical_context_broker"] = durable_report
+    snapshot["canonical_context_report_hash"] = durable_report["canonical_report_hash"]
+    task.ast_snapshot = snapshot
+    _append_causal_event(
+        task,
+        event_type="consumer",
+        subsystem="canonical_context_broker",
+        consumer_subsystem="source_proxy_task_blackboard",
+        run_id=f"canonical_context:{task.id}:persist",
+        status_after=task.status,
+        changed_state_fields=["ast_snapshot.canonical_context_broker"],
+        notes=[
+            f"canonical context report persisted: {durable_report['canonical_report_hash'][:16]}",
+        ],
+    )
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return durable_report
+
+
+def acknowledge_task_context_consumer(
+    task_id: str,
+    *,
+    consumer: str,
+    evidence: str,
+    source_names: list[str] | None = None,
+    applicable: bool = True,
+    reason: str = "",
+) -> dict[str, Any] | None:
+    """Record an acknowledgement only from the actual lifecycle call site."""
+
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    current = snapshot.get("canonical_context_broker")
+    if not isinstance(current, dict):
+        return None
+    updated = acknowledge_context_consumer(
+        current,
+        consumer=consumer,
+        evidence=evidence,
+        source_names=source_names,
+        applicable=applicable,
+        reason=reason,
+    )
+    snapshot["canonical_context_broker"] = updated
+    snapshot["canonical_context_report_hash"] = updated.get("canonical_report_hash", "")
+    task.ast_snapshot = snapshot
+    _append_causal_event(
+        task,
+        event_type="consumer",
+        subsystem="canonical_context_broker",
+        consumer_subsystem=consumer,
+        run_id=f"canonical_context:{task.id}:{consumer}",
+        status_after=task.status,
+        changed_state_fields=["ast_snapshot.canonical_context_broker"],
+        notes=[
+            evidence,
+            f"canonical context verdict: {updated.get('verdict')}",
+        ],
+    )
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return updated
+
+
+def canonical_context_broker_for_task(task_id: str) -> dict[str, Any] | None:
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    report = snapshot.get("canonical_context_broker")
+    return dict(report) if isinstance(report, dict) else None
 
 
 def record_subsystem_integration_result(
@@ -2399,9 +3894,17 @@ def _task_envelope(task: LongRunningTask) -> dict[str, Any]:
     payload = task.to_payload()
     payload["post_apply_verification"] = _current_post_apply_verification(task)
     payload["plan_3_durable_state"] = _plan3_readback_state(task)
+    payload["canonical_context_broker"] = (
+        task.ast_snapshot.get("canonical_context_broker")
+        if isinstance(task.ast_snapshot, dict)
+        else None
+    )
     payload["scope_key"] = _task_scope_key(task)
     payload["write_capable"] = _task_is_write_capable(task)
-    return {
+    diagnostic = _latest_task_diagnostic_envelope(task)
+    if diagnostic:
+        _lift_diagnostic_envelope_fields(payload, diagnostic)
+    envelope = {
         "tool": "long_running_task_tracker",
         "access_scope": "read_only_task_status_tracking",
         "task": payload,
@@ -2413,6 +3916,362 @@ def _task_envelope(task: LongRunningTask) -> dict[str, Any]:
             "max_cycles": MAX_CYCLES,
         },
     }
+    if diagnostic:
+        _lift_diagnostic_envelope_fields(envelope, diagnostic)
+        envelope["diagnostic_envelope"] = diagnostic
+    return envelope
+
+
+def _latest_task_diagnostic_envelope(task: LongRunningTask) -> dict[str, Any] | None:
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    diagnostic = snapshot.get("latest_approval_binding_diagnostic")
+    if isinstance(diagnostic, dict):
+        return diagnostic
+    approved_execution_diagnostic = _approved_execution_diagnostic_envelope(task)
+    if approved_execution_diagnostic:
+        return approved_execution_diagnostic
+    if task.status in {"blocked", "blocked_after_retries", "blocked_by_review", "coder_config_blocked", "needs_context"}:
+        return _blocked_task_diagnostic_envelope(task)
+    return None
+
+
+def _approved_execution_diagnostic_envelope(task: LongRunningTask) -> dict[str, Any] | None:
+    if task.status not in {"applied_needs_verification", "completed"}:
+        return None
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    evidence = snapshot.get("approved_execution_evidence")
+    if not isinstance(evidence, dict):
+        return None
+    audit = evidence.get("audit")
+    if not isinstance(audit, dict):
+        return None
+
+    approval_id = str(audit.get("approval_id") or "").strip()
+    if not approval_id:
+        return None
+    task_id = str(audit.get("task_id") or task.id)
+    target = str(audit.get("target") or "")
+    approved_diff_sha = str(
+        evidence.get("approved_diff_sha256")
+        or audit.get("approved_diff_sha256")
+        or ""
+    )
+    changed_files = [
+        str(item)
+        for item in audit.get("changed_files", [])
+        if str(item or "").strip()
+    ]
+    post_apply = evidence.get("post_apply_verification")
+    if not isinstance(post_apply, dict):
+        post_apply = {}
+    acceptance = audit.get("acceptance")
+    if not isinstance(acceptance, dict):
+        acceptance = {}
+    trace = _causal_trace_summary(task.causal_events)
+    plan2_integration = snapshot.get("plan_2_subsystem_integrations")
+    if not isinstance(plan2_integration, dict):
+        plan2_integration = {}
+    execute_integration = plan2_integration.get("source_proxy_execute_approved_apply")
+    if not isinstance(execute_integration, dict):
+        execute_integration = {}
+
+    post_status = str(post_apply.get("status") or "not_recorded: backend did not provide field")
+    commit_blockers = [
+        str(item)
+        for item in post_apply.get("commit_blockers", [])
+        if str(item or "").strip()
+    ]
+    commit_safe = task.status == "completed" and not commit_blockers
+    truth_status = "GO" if commit_safe else "BLOCKED_SAFE"
+    reason_code = "go_ready" if commit_safe else "post_apply_verification_required"
+    recommended_next_action = (
+        "Post-apply verification is complete; commit remains a separate explicit operator action."
+        if commit_safe
+        else "Run the post-apply verification checks, inspect changed files and browser proof, then rerun or record verification before any commit."
+    )
+    why_not_go = (
+        ""
+        if commit_safe
+        else "; ".join(commit_blockers) or post_status or "post_apply_verification_required"
+    )
+    post_apply_reason = (
+        "post_apply_verification_complete"
+        if commit_safe
+        else "; ".join(commit_blockers)
+        or post_status
+        or "post_apply_verification_required"
+    )
+    verification_required_action = (
+        "not_applicable: verification_complete"
+        if commit_safe
+        else "Run the listed post-apply verification checks, confirm browser/manual review when required, and record verification on the task before commit."
+    )
+    commit_safe_reason = (
+        "post_apply_verification_complete"
+        if commit_safe
+        else why_not_go or "post_apply_verification_required"
+    )
+    now = _now_iso()
+    block_receipt_path = str(audit.get("backup_manifest") or "")
+
+    return {
+        "stage_id": "execute_approved.post_apply_verification",
+        "subsystem": "source_proxy_long_running",
+        "task_id": task.id,
+        "selected_prompt_task_id": task.id,
+        "run_id": f"execute_approved_long_running_task:{task.id}:post_apply",
+        "trace_id": str(trace.get("trace_id") or snapshot.get("causal_trace_id") or ""),
+        "invocation_event_id": str(
+            execute_integration.get("invocation_event_id")
+            or trace.get("invocation_event_id")
+            or ""
+        ),
+        "consumer_event_id": str(
+            execute_integration.get("consumer_event_id")
+            or trace.get("consumer_event_id")
+            or ""
+        ),
+        "status": task.status,
+        "truth_status": truth_status,
+        "safe_block": not commit_safe,
+        "error_code": reason_code,
+        "reason_code": reason_code,
+        "human_message": (
+            "Approved diff applied; post-apply verification is still required before completion."
+            if not commit_safe
+            else "Approved diff applied and verification is complete."
+        ),
+        "machine_reason": reason_code,
+        "apply_block_layer": "post_apply_commit_gate" if not commit_safe else "not_applicable: apply_succeeded",
+        "recommended_next_action": recommended_next_action,
+        "task_identity": {
+            "backend_task_id": task_id,
+            "selected_prompt_task_id": task.id,
+            "target": target,
+            "trace_id": str(trace.get("trace_id") or snapshot.get("causal_trace_id") or ""),
+        },
+        "diff_provenance": {
+            "applied_diff_sha256": approved_diff_sha,
+            "approved_diff_sha256": approved_diff_sha,
+            "backend_converted_diff_sha256": "not_applicable: backend applied approved diff",
+            "changed_files": changed_files,
+            "diff_source": "approved_diff_request_body",
+            "provenance_hash_normalization": "lf_trailing_newline_v1",
+        },
+        "approval_binding": {
+            "approval_binding_failure_reason": "not_applicable: approval_binding_valid",
+            "approval_binding_safe_block": False,
+            "approval_binding_status": "valid",
+            "approval_id_algorithm": "sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)",
+            "approval_source": "canonicalized_preview",
+            "apply_block_layer": "not_applicable: apply_succeeded",
+            "apply_block_reason": "not_applicable: approval_binding_valid",
+            "block_receipt_path": block_receipt_path or "not_applicable: no backup manifest recorded",
+            "canonical_diff_sha256_at_apply": approved_diff_sha,
+            "canonical_diff_sha256_before_approval": approved_diff_sha,
+            "canonicalization_changed": False,
+            "diff_sha256_match": True,
+            "diff_sha256_used_for_apply": approved_diff_sha,
+            "diff_sha256_used_for_preview": approved_diff_sha,
+            "expected_approval_id": approval_id,
+            "received_approval_id": approval_id,
+            "safe_block": False,
+            "target_match": True,
+            "target_used_for_apply": target,
+            "target_used_for_preview": target,
+            "task_id_match": True,
+            "task_id_used_for_apply": task_id,
+            "task_id_used_for_preview": task_id,
+        },
+        "verification": {
+            "post_apply_verification_status": post_status,
+            "post_apply_verification_reason": post_apply_reason,
+            "preview_verification_status": "passed",
+            "manual_browser_check_required": bool(post_apply.get("manual_browser_check_required")),
+            "manual_browser_check_done": bool(post_apply.get("manual_browser_check_done")),
+            "commit_blockers": commit_blockers,
+            "verification_required_action": verification_required_action,
+        },
+        "anti_cheat": {
+            "anti_cheat_status": "not_applicable: execute_approved_apply_gate",
+            "anti_cheat_reasons": ["not_applicable: backend apply receipt is not the frontend anti-cheat grader"],
+            "grader_result_state": "not_applicable: backend_apply_receipt",
+            "trial_result_trust_status": "approval_binding_valid_apply_receipt",
+        },
+        "acceptance_gate": {
+            "acceptance_failures": list(acceptance.get("failures") or []),
+            "binary_verdict": acceptance.get("binary_verdict") or "NO-GO",
+            "causal_crosscheck_status": acceptance.get("causal_crosscheck_status") or "missing",
+            "fail_closed_lane_status": acceptance.get("fail_closed_lane_status") or "missing",
+            "gate_id": acceptance.get("gate_id") or "plan5_execute_approved_acceptance",
+            "gate_version": acceptance.get("gate_version") or "plan5_acceptance_v1",
+            "missing_fields": list(acceptance.get("missing_fields") or []),
+            "phase_verifier_status": acceptance.get("phase_verifier_status") or "missing",
+            "plan5_gate_id": acceptance.get("gate_id") or "plan5_execute_approved_acceptance",
+            "plan5_gate_present": bool(acceptance),
+            "plan5_gate_version": acceptance.get("gate_version") or "plan5_acceptance_v1",
+            "reason": acceptance.get("reason") or "",
+        },
+        "final_truth_summary": {
+            "commit_safe": commit_safe,
+            "commit_safe_reason": commit_safe_reason,
+            "proof_level": "approved_apply_receipt",
+            "raw_backend_status": task.status,
+            "recommended_next_action": recommended_next_action,
+            "run_status": task.status,
+            "block_receipt_path": block_receipt_path or "not_applicable: no backup manifest recorded",
+            "truth_status": truth_status,
+            "why_not_go": why_not_go,
+        },
+        "persisted_at": task.updated_at,
+        "surfaced_at": now,
+    }
+
+
+def _blocked_task_diagnostic_envelope(task: LongRunningTask) -> dict[str, Any]:
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    reason_code = (
+        _task_blocker_reason_code(task.truncated_test_results)
+        or task.architect_reason
+        or task.status
+    )
+    queue_conflict = snapshot.get("queue_conflict") if isinstance(snapshot, dict) else {}
+    if not isinstance(queue_conflict, dict):
+        queue_conflict = {}
+    now = _now_iso()
+    recommended_next_action = (
+        "Resolve or cancel the existing write-capable task for this scope, then rerun the selected prompt."
+        if reason_code == "write_scope_conflict"
+        else task.next_action
+    )
+    unavailable_reason = "route_error_before_model_call"
+    return {
+        "stage_id": f"long_running_task.{reason_code}",
+        "subsystem": "source_proxy_long_running",
+        "task_id": task.id,
+        "selected_prompt_task_id": task.id,
+        "run_id": f"long_running_task:{task.id}:{reason_code}",
+        "trace_id": "",
+        "invocation_event_id": "not_available: route_error_before_model_call",
+        "consumer_event_id": "not_applicable: blocked before downstream consumer",
+        "status": task.status,
+        "truth_status": "BLOCKED_SAFE",
+        "safe_block": True,
+        "error_code": reason_code,
+        "reason_code": reason_code,
+        "human_message": task.architect_reason or task.truncated_test_results or task.status,
+        "machine_reason": reason_code,
+        "apply_block_layer": "source_proxy_pre_apply",
+        "recommended_next_action": recommended_next_action,
+        "approval_binding": {
+            "approval_binding_status": "not_run: route_error_before_model_call",
+            "approval_binding_safe_block": True,
+            "apply_block_layer": "source_proxy_pre_apply",
+            "safe_block": True,
+        },
+        "diff_provenance": {
+            "applied_diff_sha256": "not_recorded: apply_did_not_happen",
+            "approved_diff_sha256": "not_recorded: apply_did_not_happen",
+            "backend_converted_diff_sha256": "missing: backend did not provide field",
+            "changed_files": [],
+            "diff_source": "not_run: route_error_before_model_call",
+        },
+        "anti_cheat": {
+            "anti_cheat_status": "not_run",
+            "anti_cheat_reasons": [unavailable_reason],
+            "grader_result_state": "not_applicable: route_error_before_model_call",
+            "trial_result_trust_status": "blocked_before_apply",
+        },
+        "acceptance_gate": {
+            "acceptance_failures": [reason_code],
+            "binary_verdict": "NO-GO",
+            "causal_crosscheck_status": "skipped_with_reason",
+            "fail_closed_lane_status": "skipped_with_reason",
+            "missing_fields": ["source_proxy_apply_receipt"],
+            "phase_verifier_status": "skipped_with_reason",
+            "plan5_gate_id": "plan5_pre_apply_block_acceptance",
+            "plan5_gate_present": False,
+            "plan5_gate_version": "plan5_acceptance_v1",
+            "reason": reason_code,
+        },
+        "verification": {
+            "post_apply_verification_status": "not_run: route_error_before_model_call",
+            "preview_verification_status": "not_run: route_error_before_model_call",
+        },
+        "final_truth_summary": {
+            "commit_safe": False,
+            "proof_level": "pre_apply_block",
+            "raw_backend_status": reason_code,
+            "recommended_next_action": recommended_next_action,
+            "run_status": task.status,
+            "truth_status": "BLOCKED_SAFE",
+            "why_not_go": task.truncated_test_results or reason_code,
+        },
+        "queue_conflict": queue_conflict,
+        "unavailable_fields": [
+            {"field": "trace_id", "reason": unavailable_reason},
+            {"field": "invocation_event_id", "reason": unavailable_reason},
+            {"field": "consumer_event_id", "reason": "blocked before downstream consumer"},
+            {"field": "anti_cheat.detector_results", "reason": unavailable_reason},
+            {"field": "approval_binding.expected_approval_id", "reason": unavailable_reason},
+        ],
+        "persisted_at": task.updated_at,
+        "surfaced_at": now,
+    }
+
+
+def _lift_diagnostic_envelope_fields(target: dict[str, Any], diagnostic: dict[str, Any]) -> None:
+    approval_binding = diagnostic.get("approval_binding")
+    anti_cheat = diagnostic.get("anti_cheat")
+    final_truth = diagnostic.get("final_truth_summary")
+    if isinstance(approval_binding, dict):
+        for key in (
+            "approval_binding_status",
+            "expected_approval_id",
+            "received_approval_id",
+            "task_id_match",
+            "target_match",
+            "diff_sha256_match",
+            "canonicalization_changed",
+            "safe_block",
+            "apply_block_layer",
+        ):
+            if key in approval_binding:
+                target[key] = approval_binding[key]
+    if isinstance(anti_cheat, dict):
+        target["anti_cheat_status"] = anti_cheat.get("anti_cheat_status")
+        target["anti_cheat_reasons"] = list(anti_cheat.get("anti_cheat_reasons") or [])
+    if isinstance(final_truth, dict):
+        for key in (
+            "commit_safe",
+            "commit_safe_reason",
+        ):
+            if key in final_truth:
+                target[key] = final_truth[key]
+    for key in (
+        "stage_id",
+        "subsystem",
+        "task_id",
+        "selected_prompt_task_id",
+        "run_id",
+        "trace_id",
+        "invocation_event_id",
+        "consumer_event_id",
+        "status",
+        "truth_status",
+        "safe_block",
+        "error_code",
+        "reason_code",
+        "human_message",
+        "machine_reason",
+        "apply_block_layer",
+        "recommended_next_action",
+        "unavailable_fields",
+        "persisted_at",
+        "surfaced_at",
+    ):
+        if key in diagnostic:
+            target[key] = diagnostic[key]
 
 
 def _ensure_ast_snapshot_dict(task: LongRunningTask) -> dict[str, Any]:
@@ -2618,7 +4477,10 @@ def _apply_verified_diff(
     backup_root = _backup_root_for(workspace_root)
     backup_root.mkdir(parents=True, exist_ok=True)
     approved_diff_path = backup_root / "approved.diff"
-    approved_diff_path.write_text(unified_diff, encoding="utf-8")
+    # The approval id and audit bind the exact UTF-8 diff bytes.  Disable host
+    # newline translation so the durable artifact has the same hash on Windows
+    # and Linux.
+    approved_diff_path.write_text(unified_diff, encoding="utf-8", newline="")
     backed_up_files: list[dict[str, Any]] = []
 
     for file in changed_files:
@@ -2773,6 +4635,22 @@ def _write_backup_manifest(
     backed_up_files: list[dict[str, Any]],
     stage: str,
 ) -> None:
+    directory_state_before: list[dict[str, Any]] = []
+    seen_directories: set[str] = set()
+    for changed_file in changed_files:
+        rel_path = str(changed_file.get("path") or "").replace("\\", "/")
+        parent = Path(rel_path).parent
+        while str(parent) not in {"", "."}:
+            rel_parent = str(parent).replace("\\", "/")
+            if rel_parent not in seen_directories:
+                seen_directories.add(rel_parent)
+                directory_state_before.append(
+                    {
+                        "path": rel_parent,
+                        "existed_before_apply": (workspace_root / parent).is_dir(),
+                    }
+                )
+            parent = parent.parent
     payload = {
         "created_at": _now_iso(),
         "stage": stage,
@@ -2781,6 +4659,10 @@ def _write_backup_manifest(
         "approved_diff_sha256": _sha256_file(approved_diff_path),
         "changed_files": changed_files,
         "backed_up_files": backed_up_files,
+        "directory_state_before": sorted(
+            directory_state_before,
+            key=lambda item: str(item.get("path") or ""),
+        ),
         "rollback_hint": "Rollback by restoring backed_up_files from backup_path after reviewing approved.diff and current git diff.",
     }
     manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -2791,16 +4673,25 @@ def _finalize_backup_manifest(
     workspace_root: Path,
     manifest_path: str,
     audit_record: dict[str, Any],
-) -> None:
+) -> str:
     path = (workspace_root / manifest_path).resolve()
     if not _is_relative_to(path, workspace_root) or not path.is_file():
-        return
+        raise LongRunningTaskError(
+            "Backup manifest could not be finalized because its path is unavailable.",
+            "backup_manifest_finalize_failed",
+        )
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return
+    except (OSError, json.JSONDecodeError) as error:
+        raise LongRunningTaskError(
+            f"Backup manifest could not be finalized: {error}",
+            "backup_manifest_finalize_failed",
+        ) from error
     if not isinstance(payload, dict):
-        return
+        raise LongRunningTaskError(
+            "Backup manifest could not be finalized because it is not an object.",
+            "backup_manifest_finalize_failed",
+        )
     payload.update(
         {
             "stage": "applied",
@@ -2812,6 +4703,155 @@ def _finalize_backup_manifest(
         }
     )
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return _sha256_file(path)
+
+
+def _load_hash_bound_backup_manifest(
+    task: LongRunningTask,
+    *,
+    reason_prefix: str,
+) -> tuple[Path, dict[str, Any], str]:
+    snapshot = _ensure_ast_snapshot_dict(task)
+    evidence = (
+        snapshot.get("approved_execution_evidence")
+        if isinstance(snapshot.get("approved_execution_evidence"), dict)
+        else {}
+    )
+    manifest_rel = str(evidence.get("backup_manifest") or "")
+    expected_sha256 = str(evidence.get("backup_manifest_sha256") or "")
+    workspace_root = _approved_execution_workspace_root(
+        task,
+        reason_prefix=reason_prefix,
+    )
+    path = (workspace_root / manifest_rel).resolve() if manifest_rel else workspace_root
+    if not manifest_rel or not _is_relative_to(path, workspace_root) or not path.is_file():
+        raise LongRunningTaskError(
+            "Backup manifest is unavailable.",
+            f"{reason_prefix}_manifest_unavailable",
+        )
+    if not expected_sha256:
+        raise LongRunningTaskError(
+            "Backup manifest has no persisted hash binding.",
+            f"{reason_prefix}_manifest_hash_missing",
+        )
+    actual_sha256 = _sha256_file(path)
+    if actual_sha256 != expected_sha256:
+        raise LongRunningTaskError(
+            "Backup manifest hash binding failed; the manifest changed after it was recorded.",
+            f"{reason_prefix}_manifest_hash_mismatch",
+        )
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise LongRunningTaskError(
+            f"Backup manifest could not be read: {error}",
+            f"{reason_prefix}_manifest_invalid",
+        ) from error
+    if not isinstance(payload, dict):
+        raise LongRunningTaskError(
+            "Backup manifest must be an object.",
+            f"{reason_prefix}_manifest_invalid",
+        )
+    if payload.get("task_id") != task.id:
+        raise LongRunningTaskError(
+            "Backup manifest task binding failed.",
+            f"{reason_prefix}_task_mismatch",
+        )
+    if Path(str(payload.get("workspace_root") or "")).resolve() != workspace_root:
+        raise LongRunningTaskError(
+            "Backup manifest workspace binding failed.",
+            f"{reason_prefix}_workspace_mismatch",
+        )
+    return path, payload, actual_sha256
+
+
+def _approved_execution_workspace_root(
+    task: LongRunningTask,
+    *,
+    reason_prefix: str,
+) -> Path:
+    """Resolve receipts against the exact root selected by the apply operation."""
+
+    snapshot = _ensure_ast_snapshot_dict(task)
+    evidence = (
+        snapshot.get("approved_execution_evidence")
+        if isinstance(snapshot.get("approved_execution_evidence"), dict)
+        else {}
+    )
+    audit = evidence.get("audit") if isinstance(evidence.get("audit"), dict) else {}
+    recorded_root = str(
+        evidence.get("workspace_root") or audit.get("workspace_root") or ""
+    ).strip()
+    if not recorded_root:
+        return _workspace_root().resolve()
+
+    candidate = Path(recorded_root).expanduser().resolve()
+    allowed_roots = {
+        root.resolve()
+        for root in _ordered_workspace_roots_for_apply()
+        if root.is_dir()
+    }
+    if not candidate.is_dir() or candidate not in allowed_roots:
+        raise LongRunningTaskError(
+            "Approved execution workspace root is unavailable or no longer allowlisted.",
+            f"{reason_prefix}_workspace_root_unavailable",
+        )
+    return candidate
+
+
+def _finalize_post_apply_backup_manifest(
+    task: LongRunningTask,
+    verification: dict[str, Any],
+) -> None:
+    snapshot = _ensure_ast_snapshot_dict(task)
+    evidence = (
+        snapshot.get("approved_execution_evidence")
+        if isinstance(snapshot.get("approved_execution_evidence"), dict)
+        else {}
+    )
+    manifest_rel = str(evidence.get("backup_manifest") or "")
+    if not manifest_rel:
+        return
+    path, payload, prior_sha256 = _load_hash_bound_backup_manifest(
+        task,
+        reason_prefix="post_apply",
+    )
+    context_report = (
+        snapshot.get("canonical_context_broker")
+        if isinstance(snapshot.get("canonical_context_broker"), dict)
+        else {}
+    )
+    snapshot_verification = (
+        verification.get("snapshot_verification")
+        if isinstance(verification.get("snapshot_verification"), dict)
+        else {}
+    )
+    payload.update(
+        {
+            "stage": "post_apply_verified"
+            if task.status == "completed"
+            else "post_apply_blocked",
+            "post_apply_verification": verification,
+            "post_apply_rediff_sha256": str(
+                snapshot_verification.get("post_apply_rediff_sha256") or ""
+            ),
+            "browser_evidence": verification.get("browser_evidence", {}),
+            "canonical_context_verdict": str(context_report.get("verdict") or ""),
+            "canonical_context_report_hash": str(
+                context_report.get("canonical_report_hash") or ""
+            ),
+            "final_truth_status": "GO" if task.status == "completed" else "BLOCKED_SAFE",
+            "commit_safe": task.status == "completed",
+            "finalized_at": _now_iso(),
+        }
+    )
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    finalized_sha256 = _sha256_file(path)
+    evidence.setdefault("backup_manifest_applied_sha256", prior_sha256)
+    evidence["backup_manifest_sha256"] = finalized_sha256
+    evidence["backup_manifest_finalized_sha256"] = finalized_sha256
+    snapshot["approved_execution_evidence"] = evidence
+    task.ast_snapshot = snapshot
 
 
 def _sha256_file(path: Path) -> str:
@@ -2829,11 +4869,62 @@ def _append_audit_log(record: dict[str, Any]) -> None:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
 
 
+def _append_blocked_action_log(record: dict[str, Any]) -> None:
+    audit_path = _blocked_action_audit_log_path()
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
+    with audit_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+
 def _audit_log_path() -> Path:
     configured = os.getenv("SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG")
     if configured:
         return Path(configured)
     return _workspace_root() / DEFAULT_AUDIT_LOG_PATH
+
+
+def _blocked_action_audit_log_path() -> Path:
+    configured = os.getenv("SOURCE_PROXY_BLOCKED_ACTION_AUDIT_LOG")
+    if configured:
+        return Path(configured)
+    return _workspace_root() / DEFAULT_BLOCKED_ACTION_AUDIT_LOG_PATH
+
+
+def _blocked_action_receipt(
+    *,
+    task: LongRunningTask,
+    action: str,
+    approval_id: str,
+    approved_diff: str,
+    diagnostics: dict[str, Any],
+    expected_approval_id: str,
+    reason_code: str,
+    target: str | None,
+) -> dict[str, Any]:
+    approval_binding = diagnostics.get("approval_binding") if isinstance(diagnostics, dict) else {}
+    anti_cheat = diagnostics.get("anti_cheat") if isinstance(diagnostics, dict) else {}
+    acceptance_gate = diagnostics.get("acceptance_gate") if isinstance(diagnostics, dict) else {}
+    return {
+        "action": action,
+        "anti_cheat": anti_cheat if isinstance(anti_cheat, dict) else {},
+        "approval_binding": approval_binding if isinstance(approval_binding, dict) else {},
+        "approval_id": approval_id.strip() or "missing",
+        "changed_files": [
+            str(file.get("path") or "")
+            for file in _parse_changed_files(approved_diff)
+            if isinstance(file, dict) and str(file.get("path") or "").strip()
+        ],
+        "expected_approval_id": expected_approval_id,
+        "plan5_block_fields": acceptance_gate if isinstance(acceptance_gate, dict) else {},
+        "reason_code": reason_code,
+        "received_approval_id": approval_id.strip() or "missing",
+        "safe_block": True,
+        "target": target or "",
+        "task_id": task.id,
+        "timestamp": _now_iso(),
+        "trace_id": diagnostics.get("trace_id"),
+        "truth_status": diagnostics.get("truth_status") or "BLOCKED_SAFE",
+    }
 
 
 def _is_relative_to(path: Path, root: Path) -> bool:
@@ -2846,95 +4937,97 @@ def _is_relative_to(path: Path, root: Path) -> bool:
 
 def _save_task(task: LongRunningTask) -> None:
     _apply_pre_save_hook(task)
-    with closing(_connect()) as connection:
-        _initialize_store(connection)
-        connection.execute(
-            """
-            INSERT INTO long_running_tasks (
-                id,
-                description,
-                status,
-                created_at,
-                updated_at,
-                cancelled_at,
-                steps_json,
-                poll_count,
-                ast_snapshot_json,
-                open_diffs_json,
-                truncated_test_results,
-                current_agent_role,
-                cycle_count,
-                architect_status,
-                architect_reason,
-                causal_events_json
+    with _TASK_STORE_IO_LOCK:
+        with closing(_connect()) as connection:
+            _initialize_store(connection)
+            connection.execute(
+                """
+                INSERT INTO long_running_tasks (
+                    id,
+                    description,
+                    status,
+                    created_at,
+                    updated_at,
+                    cancelled_at,
+                    steps_json,
+                    poll_count,
+                    ast_snapshot_json,
+                    open_diffs_json,
+                    truncated_test_results,
+                    current_agent_role,
+                    cycle_count,
+                    architect_status,
+                    architect_reason,
+                    causal_events_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    description = excluded.description,
+                    status = excluded.status,
+                    created_at = excluded.created_at,
+                    updated_at = excluded.updated_at,
+                    cancelled_at = excluded.cancelled_at,
+                    steps_json = excluded.steps_json,
+                    poll_count = excluded.poll_count,
+                    ast_snapshot_json = excluded.ast_snapshot_json,
+                    open_diffs_json = excluded.open_diffs_json,
+                    truncated_test_results = excluded.truncated_test_results,
+                    current_agent_role = excluded.current_agent_role,
+                    cycle_count = excluded.cycle_count,
+                    architect_status = excluded.architect_status,
+                    architect_reason = excluded.architect_reason,
+                    causal_events_json = excluded.causal_events_json
+                """,
+                (
+                    task.id,
+                    task.description,
+                    task.status,
+                    task.created_at,
+                    task.updated_at,
+                    task.cancelled_at,
+                    json.dumps(task.steps),
+                    task.poll_count,
+                    json.dumps(task.ast_snapshot),
+                    json.dumps(task.open_diffs),
+                    task.truncated_test_results,
+                    task.current_agent_role,
+                    task.cycle_count,
+                    task.architect_status,
+                    task.architect_reason,
+                    json.dumps(task.causal_events[-100:]),
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                description = excluded.description,
-                status = excluded.status,
-                created_at = excluded.created_at,
-                updated_at = excluded.updated_at,
-                cancelled_at = excluded.cancelled_at,
-                steps_json = excluded.steps_json,
-                poll_count = excluded.poll_count,
-                ast_snapshot_json = excluded.ast_snapshot_json,
-                open_diffs_json = excluded.open_diffs_json,
-                truncated_test_results = excluded.truncated_test_results,
-                current_agent_role = excluded.current_agent_role,
-                cycle_count = excluded.cycle_count,
-                architect_status = excluded.architect_status,
-                architect_reason = excluded.architect_reason,
-                causal_events_json = excluded.causal_events_json
-            """,
-            (
-                task.id,
-                task.description,
-                task.status,
-                task.created_at,
-                task.updated_at,
-                task.cancelled_at,
-                json.dumps(task.steps),
-                task.poll_count,
-                json.dumps(task.ast_snapshot),
-                json.dumps(task.open_diffs),
-                task.truncated_test_results,
-                task.current_agent_role,
-                task.cycle_count,
-                task.architect_status,
-                task.architect_reason,
-                json.dumps(task.causal_events[-100:]),
-            ),
-        )
-        connection.commit()
+            connection.commit()
 
 
 def _load_task(task_id: str) -> LongRunningTask | None:
-    with closing(_connect()) as connection:
-        _initialize_store(connection)
-        row = connection.execute(
-            """
-            SELECT
-                id,
-                description,
-                status,
-                created_at,
-                updated_at,
-                cancelled_at,
-                steps_json,
-                poll_count,
-                ast_snapshot_json,
-                open_diffs_json,
-                truncated_test_results,
-                current_agent_role,
-                cycle_count,
-                architect_status,
-                architect_reason,
-                causal_events_json
-            FROM long_running_tasks
-            WHERE id = ?
-            """,
-            (task_id,),
-        ).fetchone()
+    with _TASK_STORE_IO_LOCK:
+        with closing(_connect()) as connection:
+            _initialize_store(connection)
+            row = connection.execute(
+                """
+                SELECT
+                    id,
+                    description,
+                    status,
+                    created_at,
+                    updated_at,
+                    cancelled_at,
+                    steps_json,
+                    poll_count,
+                    ast_snapshot_json,
+                    open_diffs_json,
+                    truncated_test_results,
+                    current_agent_role,
+                    cycle_count,
+                    architect_status,
+                    architect_reason,
+                    causal_events_json
+                FROM long_running_tasks
+                WHERE id = ?
+                """,
+                (task_id,),
+            ).fetchone()
     if row is None:
         return None
 
@@ -2959,33 +5052,34 @@ def _load_task(task_id: str) -> LongRunningTask | None:
 
 
 def _load_recent_tasks(*, limit: int) -> list[LongRunningTask]:
-    with closing(_connect()) as connection:
-        _initialize_store(connection)
-        rows = connection.execute(
-            """
-            SELECT
-                id,
-                description,
-                status,
-                created_at,
-                updated_at,
-                cancelled_at,
-                steps_json,
-                poll_count,
-                ast_snapshot_json,
-                open_diffs_json,
-                truncated_test_results,
-                current_agent_role,
-                cycle_count,
-                architect_status,
-                architect_reason,
-                causal_events_json
-            FROM long_running_tasks
-            ORDER BY updated_at DESC, created_at DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+    with _TASK_STORE_IO_LOCK:
+        with closing(_connect()) as connection:
+            _initialize_store(connection)
+            rows = connection.execute(
+                """
+                SELECT
+                    id,
+                    description,
+                    status,
+                    created_at,
+                    updated_at,
+                    cancelled_at,
+                    steps_json,
+                    poll_count,
+                    ast_snapshot_json,
+                    open_diffs_json,
+                    truncated_test_results,
+                    current_agent_role,
+                    cycle_count,
+                    architect_status,
+                    architect_reason,
+                    causal_events_json
+                FROM long_running_tasks
+                ORDER BY updated_at DESC, created_at DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
     return [_task_from_row(row) for row in rows]
 
 
@@ -3471,12 +5565,20 @@ def _apply_pre_save_hook(task: LongRunningTask) -> None:
         task.truncated_test_results = task.truncated_test_results[
             -TRUNCATED_TEST_RESULTS_LIMIT:
         ]
+    retain_verified_diff_history = _has_manifest_backed_execution_receipt(task)
     task.open_diffs = [
         diff
         for diff in task.open_diffs
-        if isinstance(diff, dict) and not _diff_is_verified(diff)
+        if isinstance(diff, dict)
+        and (retain_verified_diff_history or not _diff_is_verified(diff))
     ]
     task.current_agent_role = _normalize_agent_role(task.current_agent_role)
+
+
+def _has_manifest_backed_execution_receipt(task: LongRunningTask) -> bool:
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    evidence = snapshot.get("approved_execution_evidence")
+    return isinstance(evidence, dict) and bool(evidence.get("backup_manifest"))
 
 
 def _diff_is_verified(diff: dict[str, Any]) -> bool:
@@ -3518,73 +5620,95 @@ def _prune_old_tasks() -> None:
 
 
 def _delete_persisted_tasks() -> None:
-    with closing(_connect()) as connection:
-        _initialize_store(connection)
-        connection.execute("DELETE FROM long_running_tasks")
-        connection.commit()
+    with _TASK_STORE_IO_LOCK:
+        with closing(_connect()) as connection:
+            _initialize_store(connection)
+            connection.execute("DELETE FROM long_running_tasks")
+            connection.commit()
 
 
 def _connect() -> sqlite3.Connection:
     database_path = _sqlite_path()
     database_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(database_path)
+    connection = sqlite3.connect(database_path, timeout=30)
+    connection.execute("PRAGMA busy_timeout = 30000")
     connection.row_factory = sqlite3.Row
     return connection
 
 
 def _initialize_store(connection: sqlite3.Connection) -> None:
-    connection.execute(
-        """
-        CREATE TABLE IF NOT EXISTS long_running_tasks (
-            id TEXT PRIMARY KEY,
-            description TEXT NOT NULL,
-            status TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            cancelled_at TEXT,
-            steps_json TEXT NOT NULL,
-            poll_count INTEGER NOT NULL DEFAULT 0,
-            ast_snapshot_json TEXT,
-            open_diffs_json TEXT NOT NULL DEFAULT '[]',
-            truncated_test_results TEXT NOT NULL DEFAULT '',
-            current_agent_role TEXT NOT NULL DEFAULT 'architect',
-            cycle_count INTEGER NOT NULL DEFAULT 0,
-            architect_plan_json TEXT,
-            architect_status TEXT NOT NULL DEFAULT 'idle',
-            architect_reason TEXT NOT NULL DEFAULT '',
-            causal_events_json TEXT NOT NULL DEFAULT '[]'
+    database_path = _sqlite_path()
+    database_key = str(database_path.resolve())
+    if database_key in _TASK_STORE_INITIALIZED_PATHS:
+        return
+    with _TASK_STORE_IO_LOCK:
+        if database_key in _TASK_STORE_INITIALIZED_PATHS:
+            return
+        columns = _task_store_columns(connection)
+        if _TASK_STORE_REQUIRED_COLUMNS.issubset(columns):
+            _TASK_STORE_INITIALIZED_PATHS.add(database_key)
+            return
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS long_running_tasks (
+                id TEXT PRIMARY KEY,
+                description TEXT NOT NULL,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                cancelled_at TEXT,
+                steps_json TEXT NOT NULL,
+                poll_count INTEGER NOT NULL DEFAULT 0,
+                ast_snapshot_json TEXT,
+                open_diffs_json TEXT NOT NULL DEFAULT '[]',
+                truncated_test_results TEXT NOT NULL DEFAULT '',
+                current_agent_role TEXT NOT NULL DEFAULT 'architect',
+                cycle_count INTEGER NOT NULL DEFAULT 0,
+                architect_plan_json TEXT,
+                architect_status TEXT NOT NULL DEFAULT 'idle',
+                architect_reason TEXT NOT NULL DEFAULT '',
+                causal_events_json TEXT NOT NULL DEFAULT '[]'
+            )
+            """
         )
-        """
-    )
-    _ensure_column(connection, "ast_snapshot_json", "TEXT")
-    _ensure_column(connection, "open_diffs_json", "TEXT NOT NULL DEFAULT '[]'")
-    _ensure_column(
-        connection,
-        "truncated_test_results",
-        "TEXT NOT NULL DEFAULT ''",
-    )
-    _ensure_column(
-        connection,
-        "current_agent_role",
-        "TEXT NOT NULL DEFAULT 'architect'",
-    )
-    _ensure_column(connection, "cycle_count", "INTEGER NOT NULL DEFAULT 0")
-    _ensure_column(connection, "architect_plan_json", "TEXT")
-    _ensure_column(
-        connection,
-        "architect_status",
-        "TEXT NOT NULL DEFAULT 'idle'",
-    )
-    _ensure_column(
-        connection,
-        "architect_reason",
-        "TEXT NOT NULL DEFAULT ''",
-    )
-    _ensure_column(
-        connection,
-        "causal_events_json",
-        "TEXT NOT NULL DEFAULT '[]'",
-    )
+        _ensure_column(connection, "ast_snapshot_json", "TEXT")
+        _ensure_column(connection, "open_diffs_json", "TEXT NOT NULL DEFAULT '[]'")
+        _ensure_column(
+            connection,
+            "truncated_test_results",
+            "TEXT NOT NULL DEFAULT ''",
+        )
+        _ensure_column(
+            connection,
+            "current_agent_role",
+            "TEXT NOT NULL DEFAULT 'architect'",
+        )
+        _ensure_column(connection, "cycle_count", "INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(connection, "architect_plan_json", "TEXT")
+        _ensure_column(
+            connection,
+            "architect_status",
+            "TEXT NOT NULL DEFAULT 'idle'",
+        )
+        _ensure_column(
+            connection,
+            "architect_reason",
+            "TEXT NOT NULL DEFAULT ''",
+        )
+        _ensure_column(
+            connection,
+            "causal_events_json",
+            "TEXT NOT NULL DEFAULT '[]'",
+        )
+        connection.commit()
+        _TASK_STORE_INITIALIZED_PATHS.add(database_key)
+
+
+def _task_store_columns(connection: sqlite3.Connection) -> set[str]:
+    return {
+        row["name"] if isinstance(row, sqlite3.Row) else row[1]
+        for row in connection.execute("PRAGMA table_info(long_running_tasks)")
+    }
 
 
 def _ensure_column(
@@ -3592,10 +5716,7 @@ def _ensure_column(
     column_name: str,
     column_definition: str,
 ) -> None:
-    columns = {
-        row["name"]
-        for row in connection.execute("PRAGMA table_info(long_running_tasks)")
-    }
+    columns = _task_store_columns(connection)
     if column_name not in columns:
         connection.execute(
             f"ALTER TABLE long_running_tasks ADD COLUMN {column_name} {column_definition}"
@@ -3606,7 +5727,7 @@ def _sqlite_path() -> Path:
     configured = os.getenv("SOURCE_PROXY_LONG_RUNNING_TASKS_DB")
     if configured:
         return Path(configured)
-    return _workspace_root() / DEFAULT_SQLITE_PATH
+    return _workspace_root_from_package_walk() / DEFAULT_SQLITE_PATH
 
 
 def _json_value(raw_value: str | None, default: Any) -> Any:
@@ -3680,19 +5801,18 @@ def generate_unified_diff_from_content(
     root = workspace_root.resolve()
     normalized_target = _normalize_replacement_target(root, target_path)
     target = (root / normalized_target).resolve()
+    header = [
+        f"diff --git a/{normalized_target} b/{normalized_target}\n",
+    ]
     if target.is_file():
         old_content = target.read_text(encoding="utf-8", errors="replace")
         old_content = _normalize_replacement_content(old_content)
         old_lines = old_content.splitlines(keepends=True)
         fromfile = f"a/{normalized_target}"
-        header: list[str] = []
     else:
         old_lines = []
         fromfile = "/dev/null"
-        header = [
-            f"diff --git a/{normalized_target} b/{normalized_target}\n",
-            "new file mode 100644\n",
-        ]
+        header.append("new file mode 100644\n")
     new_content = _normalize_replacement_content(new_content)
     new_lines = new_content.splitlines(keepends=True)
     diff_lines = list(
@@ -3704,9 +5824,40 @@ def generate_unified_diff_from_content(
             lineterm="\n",
         )
     )
-    diff_text = "".join(header + diff_lines)
-    if not diff_text and old_lines == new_lines:
+    if not diff_lines and old_lines == new_lines:
         return ""
+    diff_text = "".join(header + diff_lines)
+    if not diff_text.endswith("\n"):
+        diff_text += "\n"
+    return sanitize_unified_diff_for_git_apply(diff_text, repair_hunks=False)
+
+
+def generate_new_file_unified_diff_from_content(
+    workspace_root: Path,
+    target_path: str,
+    new_content: str,
+) -> str:
+    """Generate a create-file diff without consulting disk state."""
+    root = workspace_root.resolve()
+    normalized_target = _normalize_replacement_target(root, target_path)
+    normalized_content = _normalize_replacement_content(new_content)
+    new_lines = normalized_content.splitlines(keepends=True)
+    diff_lines = list(
+        difflib.unified_diff(
+            [],
+            new_lines,
+            fromfile="/dev/null",
+            tofile=f"b/{normalized_target}",
+            lineterm="\n",
+        )
+    )
+    diff_text = "".join(
+        [
+            f"diff --git a/{normalized_target} b/{normalized_target}\n",
+            "new file mode 100644\n",
+            *diff_lines,
+        ]
+    )
     if not diff_text.endswith("\n"):
         diff_text += "\n"
     return sanitize_unified_diff_for_git_apply(diff_text, repair_hunks=False)
@@ -3730,6 +5881,46 @@ def replacement_content_matches_disk(
     return _normalize_replacement_content(current_content) == _normalize_replacement_content(
         new_content
     )
+
+
+def _replacement_target_filesystem_snapshot(
+    workspace_root: Path,
+    target_path: str,
+) -> dict[str, Any]:
+    """Capture disk state used by backend bundle-to-diff conversion diagnostics."""
+    try:
+        root = workspace_root.resolve()
+        normalized_target = _normalize_replacement_target(root, target_path)
+        target = (root / normalized_target).resolve()
+    except Exception as error:  # noqa: BLE001
+        return {
+            "path": target_path,
+            "snapshot_status": "path_rejected",
+            "error": str(error),
+        }
+    snapshot: dict[str, Any] = {
+        "path": normalized_target,
+        "exists": False,
+        "is_file": False,
+    }
+    try:
+        if not target.exists():
+            return snapshot
+        snapshot["exists"] = True
+        snapshot["is_file"] = target.is_file()
+        if not target.is_file():
+            return snapshot
+        raw = target.read_bytes()
+        snapshot["size_bytes"] = len(raw)
+        snapshot["sha256"] = hashlib.sha256(raw).hexdigest()
+        snapshot["normalized_text_sha256"] = _sha256_lf_trailing_newline_v1(
+            raw.decode("utf-8", errors="replace")
+        )
+        return snapshot
+    except Exception as error:  # noqa: BLE001
+        snapshot["snapshot_status"] = "read_error"
+        snapshot["error"] = str(error)
+        return snapshot
 
 
 DUMMY_PRODUCT_SITE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
@@ -3819,47 +6010,134 @@ def _dummy_product_site_model_timeout_seconds() -> float:
         return 45.0
 
 
-def _dummy_product_site_existing_starter_files_present(root: Path) -> bool:
+def _dummy_product_site_existing_storefront_rendered(root: Path) -> tuple[bool, dict[str, Any]]:
+    validation: dict[str, Any] = {
+        "preview_behavior_status": "FAIL_BARE_PAGE",
+        "preview_asset_status": "missing",
+        "product_count": 0,
+        "preview_visible_text_summary": "",
+        "storefront_runtime_status": "failed",
+        "storefront_runtime_engine": "python_static_probe",
+        "storefront_runtime_product_count": 0,
+        "storefront_runtime_reasons": [],
+        "storefront_runtime_visible_fields": {
+            "name": False,
+            "price": False,
+            "category": False,
+            "description": False,
+        },
+        "present_files": [],
+    }
+    reasons: list[str] = validation["storefront_runtime_reasons"]
     try:
         fixture_root = (root / DUMMY_PRODUCT_SITE_ROOT).resolve()
         if not fixture_root.is_dir():
-            return False
-        combined = []
+            reasons.append("fixture_root_missing")
+            return False, validation
+
+        contents: dict[str, str] = {}
         for expected in DUMMY_PRODUCT_SITE_STARTER_FILES:
             path = (fixture_root / expected).resolve()
             if not path.is_file():
-                return False
+                reasons.append(f"missing:{expected}")
+                continue
             content = path.read_text(encoding="utf-8", errors="replace")
             if not content.strip():
-                return False
-            combined.append(content)
-        return "lumacart" in "\n".join(combined).lower()
-    except Exception:
-        return False
+                reasons.append(f"empty:{expected}")
+                continue
+            validation["present_files"].append(expected)
+            contents[expected] = content
+
+        if len(contents) != len(DUMMY_PRODUCT_SITE_STARTER_FILES):
+            return False, validation
+
+        combined = "\n".join(contents.values()).lower()
+        if "lumacart" not in combined:
+            reasons.append("missing_lumacart_brand")
+
+        index_html = contents.get("index.html", "")
+        main_js = contents.get("src/main.js", "")
+        products_js = contents.get("src/products.js", "")
+
+        validation["preview_asset_status"] = "present"
+        has_module_script = bool(re.search(r"<script[^>]+type=[\"']module[\"'][^>]+src=[\"'](?:\./)?src/main\.js[\"']", index_html, re.I))
+        if not has_module_script:
+            reasons.append("missing_module_script_to_src_main")
+
+        has_product_import = bool(re.search(r"import\s+(?:\{\s*)?products(?:\s*\})?\s+from\s+[\"']\.\/products\.js[\"']", main_js))
+        if not has_product_import:
+            reasons.append("missing_static_products_import")
+
+        product_count = len(re.findall(r"['\"]?(?:name|title)['\"]?\s*:", products_js))
+        validation["product_count"] = product_count
+        if product_count < 6:
+            reasons.append("fewer_than_six_products")
+
+        visible_fields = {
+            "name": bool(re.search(r"\bproduct\.name\b", main_js)),
+            "price": bool(re.search(r"\bproduct\.price\b", main_js)),
+            "category": bool(re.search(r"\bproduct\.category\b", main_js)),
+            "description": bool(re.search(r"\bproduct\.description\b", main_js)),
+        }
+        validation["storefront_runtime_visible_fields"] = visible_fields
+        for field, present in visible_fields.items():
+            if not present:
+                reasons.append(f"missing_rendered_product_{field}")
+
+        has_dynamic_loop = bool(re.search(r"\bproducts\s*\.\s*(?:forEach|map)\s*\(", main_js))
+        if not has_dynamic_loop:
+            reasons.append("missing_render_marker:products_loop")
+        if "product-card" not in main_js:
+            reasons.append("missing_render_marker:product-card")
+        has_dom_insertion = ("createElement" in main_js and "appendChild" in main_js) or "innerHTML" in main_js
+        if not has_dom_insertion:
+            reasons.append("missing_render_marker:dom_insertion")
+
+        passed = not reasons
+        validation["preview_behavior_status"] = "PASS_STOREFRONT_RENDERED" if passed else "FAIL_BARE_PAGE"
+        validation["storefront_runtime_status"] = "passed" if passed else "failed"
+        validation["storefront_runtime_product_count"] = product_count if passed else 0
+        validation["preview_visible_text_summary"] = f"LumaCart, {product_count} catalog item(s), prices, categories"
+        return passed, validation
+    except Exception as exc:
+        reasons.append(f"probe_error:{type(exc).__name__}")
+        return False, validation
 
 
-def _dummy_product_site_already_satisfied_payload(*, diagnostics: dict[str, Any]) -> dict[str, Any]:
+def _dummy_product_site_already_satisfied_payload(
+    *,
+    diagnostics: dict[str, Any],
+    validation: dict[str, Any],
+) -> dict[str, Any]:
     satisfied_diagnostics = {
         **diagnostics,
         "validation_status": "already_satisfied",
         "already_satisfied": True,
         "no_changes_needed": True,
         "existing_starter_files_present": True,
+        "existing_starter_files_validation": {
+            "ok": True,
+            "present_files": validation.get("present_files", []),
+        },
+        "storefront_probe": validation,
         "generated_diff_length": 0,
         "normalized_diff_length": 0,
         "generated_diff_by_backend": False,
         "diff_source": "already_satisfied_existing_dummy_product_site",
         "generation_source": "disk_inspection",
         "model_output_classification": "already_satisfied_noop",
-        "trial_result_trust_status": "existing_files_verified_no_diff_needed",
-        "recommended_next_action": "Prompt 1 already satisfied; continue with the next dummy-product-site prompt.",
-        "checks_run": ["existing dummy product site starter files present"],
+        "trial_result_trust_status": "existing_storefront_render_verified_no_diff_needed",
+        "recommended_next_action": "Prompt 1 already satisfied with rendered storefront proof; continue with the next dummy-product-site prompt, or clear the fixture before rerunning Prompt 1 for a fresh apply proof.",
+        "checks_run": [
+            "existing Prompt 1 starter-file validation",
+            "existing Prompt 1 storefront render validation",
+        ],
     }
     return _finalize_coder_anticheat_payload({
         "proposed_diff": "",
         "target": DUMMY_PRODUCT_SITE_ROOT,
         "coder_notes": [
-            "Existing LumaCart dummy product site starter files are already present.",
+            "Existing LumaCart dummy product site starter files render the storefront.",
             "CODER_NO_CHANGES_NEEDED: Prompt 1 already satisfied.",
         ],
         "coder_diagnostics": satisfied_diagnostics,
@@ -3872,7 +6150,10 @@ def _dummy_product_site_already_satisfied_payload(*, diagnostics: dict[str, Any]
         "already_satisfied": True,
         "alreadySatisfied": True,
         "changed_files": [],
-        "checks_run": ["existing dummy product site starter files present"],
+        "checks_run": [
+            "existing Prompt 1 starter-file validation",
+            "existing Prompt 1 storefront render validation",
+        ],
         "reason_code": "coder_no_changes_needed",
         "reasonCode": "coder_no_changes_needed",
         "blocked_reason": "",
@@ -3880,7 +6161,7 @@ def _dummy_product_site_already_satisfied_payload(*, diagnostics: dict[str, Any]
         "needed_context": "",
         "neededContext": "",
         "status": "already_satisfied",
-        "message": "Prompt 1 already satisfied: LumaCart starter files already exist.",
+        "message": "Prompt 1 already satisfied: LumaCart starter files render the storefront.",
     })
 
 
@@ -4172,15 +6453,38 @@ def propose_dummy_product_site_create_diff(
     workspace_root: Path | None = None,
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
+    canonical_context: dict[str, Any] | None = None,
+    canonical_context_text: str = "",
 ) -> dict[str, Any]:
     """Model-authored multi-file create path for Coder 001 LumaCart."""
     root = (workspace_root or _workspace_root()).resolve()
+    target_root_exists_at_start = (root / DUMMY_PRODUCT_SITE_ROOT).exists()
     selected_alias = model_alias or _dummy_product_site_create_model_alias()
     diagnostics: dict[str, Any] = {
         **_base_coder_diagnostics(DUMMY_PRODUCT_SITE_ROOT),
         "context_mode": "dummy_product_site_create",
-        "context_slices": [],
-        "target_exists": (root / DUMMY_PRODUCT_SITE_ROOT).is_dir(),
+        "context_slices": [
+            {
+                "path": f"context://{source.get('source')}",
+                "kind": "canonical_context",
+                "report_hash": str((canonical_context or {}).get("canonical_report_hash") or ""),
+            }
+            for source in (canonical_context or {}).get("sources_considered", [])
+            if isinstance(source, dict) and source.get("selected") is True
+        ],
+        "canonical_context_broker": canonical_context or {},
+        "canonical_context_report_hash": str(
+            (canonical_context or {}).get("canonical_report_hash") or ""
+        ),
+        "canonical_context_included_in_model_prompt": bool(canonical_context_text.strip()),
+        "canonical_context_consumed_by_coder_execution": bool(canonical_context_text.strip()),
+        "target_exists": target_root_exists_at_start,
+        "target_exists_at_start": target_root_exists_at_start,
+        "create_diff_mode": (
+            "force_new_file_diffs_from_missing_start"
+            if not target_root_exists_at_start
+            else "compare_against_current_disk"
+        ),
         "target_action": "create file bundle",
         "trial_mode": "live_apply",
         "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
@@ -4202,6 +6506,19 @@ def propose_dummy_product_site_create_diff(
             "package.json",
             "package-lock.json",
         ],
+        "structured_bundle_status": "not_run",
+        "structured_bundle_parser_stage": "not_started",
+        "structured_bundle_file_count": 0,
+        "structured_bundle_accepted_paths": [],
+        "structured_bundle_rejected_paths": [],
+        "structured_bundle_rejection_reason": "",
+        "model_output_shape_summary": "not_run: provider_call_not_started",
+        "diff_generation_status": "not_run",
+        "diff_generation_reason": "not_run: model_call_not_started",
+        "diff_contract_create_fallback_used": False,
+        "patch_verification_status": "not_run",
+        "patch_verification_reason": "not_run: diff_not_generated",
+        "verification_required_action": "Run Coder 001 and require backend-generated diff verification before apply.",
     }
     _set_trial_generation_provenance(diagnostics, trial_mode=True)
     _record_coder_provider_model_truth(
@@ -4209,8 +6526,18 @@ def propose_dummy_product_site_create_diff(
         selected_alias=selected_alias,
         provider_call_made=False,
     )
-    if _dummy_product_site_existing_starter_files_present(root):
-        return _dummy_product_site_already_satisfied_payload(diagnostics=diagnostics)
+    starter_storefront_satisfied, starter_storefront_validation = _dummy_product_site_existing_storefront_rendered(root)
+    diagnostics["existing_starter_storefront_validation"] = starter_storefront_validation
+    diagnostics["create_diff_contract_fallback_allowed"] = (
+        bool(target_root_exists_at_start) and not bool(starter_storefront_satisfied)
+    )
+    if target_root_exists_at_start and not starter_storefront_satisfied:
+        diagnostics["create_diff_mode"] = "prompt1_create_contract_new_file_diffs_for_unsatisfied_existing_fixture"
+    if starter_storefront_satisfied:
+        return _dummy_product_site_already_satisfied_payload(
+            diagnostics=diagnostics,
+            validation=starter_storefront_validation,
+        )
     alias_error = None if llm_call is not None else _coder_model_alias_configuration_error(selected_alias)
     if alias_error is not None:
         reason, needed_context = alias_error
@@ -4224,7 +6551,10 @@ def propose_dummy_product_site_create_diff(
             needed_context=reason,
             reason_code="coder_model_not_configured",
         )
-    prompt = _render_dummy_product_site_create_prompt(task)
+    prompt = _render_dummy_product_site_create_prompt(
+        task,
+        canonical_context_text=canonical_context_text,
+    )
     model_timeout_seconds = _dummy_product_site_model_timeout_seconds()
     try:
         _record_coder_provider_model_truth(
@@ -4251,15 +6581,31 @@ def propose_dummy_product_site_create_diff(
     diagnostics["diff_source"] = "pending_backend_diff_from_model_file_bundle"
     diagnostics["raw_response_length"] = len(raw_response or "")
     diagnostics["raw_response_excerpt_safe"] = _safe_raw_response_excerpt(raw_response or "")
+    diagnostics["raw_model_response_sha256"] = _sha256_lf_trailing_newline_v1(raw_response or "")
     diagnostics["model_output_classification"] = "model_structured_file_bundle"
+    diagnostics["model_output_shape_summary"] = _dummy_product_site_model_output_shape_summary(raw_response or "")
+    diagnostics["structured_bundle_parser_stage"] = "initial_parse"
     files, parse_error = _parse_dummy_product_site_file_bundle(raw_response or "")
     parse_meta = _dummy_product_site_parse_meta(raw_response or "", files)
     diagnostics.update(parse_meta)
+    _update_dummy_product_site_bundle_diagnostics(
+        diagnostics,
+        files=files,
+        status="parsed" if not parse_error and files is not None else _dummy_product_site_parse_failure_status(parse_error),
+        stage="initial_parse",
+        reason=parse_error,
+    )
     if parse_error:
+        diagnostics["diff_generation_status"] = "blocked_no_diff"
+        diagnostics["diff_generation_reason"] = f"parser_rejected:{parse_error}"
+        diagnostics["patch_verification_status"] = "not_run"
+        diagnostics["patch_verification_reason"] = "not_run: parser_rejected_bundle"
+        diagnostics["verification_required_action"] = "Retry Coder 001 with only accepted file-block or create_file_bundle output."
         repair_prompt = _render_dummy_product_site_create_repair_prompt(
             task,
             parse_error=parse_error,
             raw_response=raw_response or "",
+            canonical_context_text=canonical_context_text,
         )
         try:
             repair_response = (
@@ -4281,6 +6627,9 @@ def propose_dummy_product_site_create_diff(
         diagnostics["repair_attempted"] = True
         diagnostics["repair_raw_response_length"] = len(repair_response or "")
         diagnostics["repair_raw_response_excerpt_safe"] = _safe_raw_response_excerpt(repair_response or "")
+        diagnostics["repair_raw_model_response_sha256"] = _sha256_lf_trailing_newline_v1(repair_response or "")
+        diagnostics["model_output_shape_summary"] = _dummy_product_site_model_output_shape_summary(repair_response or "")
+        diagnostics["structured_bundle_parser_stage"] = "repair_parse"
         repair_variance = _character_variance(raw_response or "", repair_response or "")
         diagnostics["repair_character_variance"] = repair_variance
         diagnostics["repair_similarity_guard_min_variance"] = DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE
@@ -4292,11 +6641,23 @@ def propose_dummy_product_site_create_diff(
             repair_parse_meta = _dummy_product_site_parse_meta(repair_response or "", files)
             diagnostics.update(repair_parse_meta)
             diagnostics["parser_repair_used"] = not bool(parse_error)
+        _update_dummy_product_site_bundle_diagnostics(
+            diagnostics,
+            files=files,
+            status="parsed" if not parse_error and files is not None else _dummy_product_site_parse_failure_status(parse_error),
+            stage="repair_parse",
+            reason=parse_error,
+        )
     if parse_error:
         diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
         diagnostics["parse_error_message"] = parse_error
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
         diagnostics["recommended_next_action"] = "retry_with_file_blocks_or_delimited_bundle"
+        diagnostics["diff_generation_status"] = "blocked_no_diff"
+        diagnostics["diff_generation_reason"] = f"parser_rejected:{parse_error}"
+        diagnostics["patch_verification_status"] = "not_run"
+        diagnostics["patch_verification_reason"] = "not_run: parser_rejected_bundle"
+        diagnostics["verification_required_action"] = "Return only deterministic file blocks or JSON create_file_bundle for the six Prompt 1 starter files."
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
@@ -4307,14 +6668,30 @@ def propose_dummy_product_site_create_diff(
             reason_code="coder_file_bundle_validation_failed",
         )
     assert files is not None
+    diagnostics["model_file_bundle_sha256"] = _sha256_lf_trailing_newline_v1(
+        json.dumps(files, sort_keys=True, ensure_ascii=False)
+    )
     validation = _validate_dummy_product_site_file_bundle(files)
     diagnostics["content_validation"] = validation
+    _update_dummy_product_site_bundle_diagnostics(
+        diagnostics,
+        files=files,
+        status="validated" if validation["ok"] else "rejected",
+        stage="content_validation",
+        validation=validation,
+        reason="" if validation["ok"] else str(validation["summary"]),
+    )
     honesty_gate = _dummy_product_site_honesty_gate(files, task=task)
     diagnostics["structured_honesty_gate"] = honesty_gate
     if not validation["ok"]:
         diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
         diagnostics["recommended_next_action"] = "retry_with_dummy_root_only_file_bundle"
+        diagnostics["diff_generation_status"] = "blocked_no_diff"
+        diagnostics["diff_generation_reason"] = "content_validation_failed"
+        diagnostics["patch_verification_status"] = "not_run"
+        diagnostics["patch_verification_reason"] = "not_run: content_validation_failed"
+        diagnostics["verification_required_action"] = "Retry with all six Prompt 1 starter files under tests/ui-agent-trials/fixtures/dummy-product-site/ only."
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
@@ -4328,6 +6705,14 @@ def propose_dummy_product_site_create_diff(
         diagnostics["validation_status"] = "coder_file_bundle_validation_failed"
         diagnostics["trial_result_trust_status"] = "model_output_not_usable"
         diagnostics["recommended_next_action"] = "retry_with_honest_dummy_product_site_bundle"
+        diagnostics["structured_bundle_status"] = "rejected"
+        diagnostics["structured_bundle_parser_stage"] = "honesty_gate"
+        diagnostics["structured_bundle_rejection_reason"] = str(honesty_gate["summary"])
+        diagnostics["diff_generation_status"] = "blocked_no_diff"
+        diagnostics["diff_generation_reason"] = "honesty_gate_blocked"
+        diagnostics["patch_verification_status"] = "not_run"
+        diagnostics["patch_verification_reason"] = "not_run: honesty_gate_blocked"
+        diagnostics["verification_required_action"] = "Retry with an honest LumaCart starter bundle that includes product data and stays inside the dummy root."
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_file_bundle_validation_failed"],
@@ -4338,11 +6723,112 @@ def propose_dummy_product_site_create_diff(
             reason_code="coder_file_bundle_validation_failed",
         )
     diffs: list[str] = []
+    diff_added_paths: list[str] = []
+    diff_skipped_paths: list[str] = []
+    diff_skipped_reasons: list[str] = []
+    diff_filesystem_snapshots: list[dict[str, Any]] = []
+    diagnostics["structured_bundle_parser_stage"] = "diff_generation"
+    diagnostics["diff_generation_status"] = "running"
+    diagnostics["diff_generation_reason"] = "converting_model_file_bundle_to_unified_diff"
+    contract_create_fallback_used = bool(target_root_exists_at_start and not starter_storefront_satisfied)
+    diagnostics["diff_contract_create_fallback_used"] = contract_create_fallback_used
     for file in files:
-        diffs.append(generate_unified_diff_from_content(root, file["path"], file["content"]))
+        path = str(file["path"])
+        content = str(file["content"])
+        target = (root / path).resolve()
+        diff_filesystem_snapshots.append(
+            _replacement_target_filesystem_snapshot(root, path)
+        )
+        if not target_root_exists_at_start or contract_create_fallback_used:
+            generated = generate_new_file_unified_diff_from_content(root, path, content)
+        else:
+            generated = generate_unified_diff_from_content(root, path, content)
+            if not generated.strip() and not target.is_file() and content.strip():
+                generated = generate_new_file_unified_diff_from_content(root, path, content)
+        if generated.strip():
+            diffs.append(generated)
+            diff_added_paths.append(path)
+            continue
+        diff_skipped_paths.append(path)
+        if replacement_content_matches_disk(root, path, content):
+            reason = "content_matches_current_disk"
+        elif not content.strip():
+            reason = "model_content_empty_after_normalization"
+        elif not target.is_file():
+            reason = "missing_target_create_diff_empty_after_fallback"
+        else:
+            reason = "diff_writer_returned_empty_for_changed_file"
+        diff_skipped_reasons.append(f"{path}: {reason}")
     unified = ("\n".join(diff.strip("\n") for diff in diffs if diff.strip()) + "\n").replace("\r\n", "\n")
+    diagnostics["diff_file_count"] = len(diff_added_paths)
+    diagnostics["diff_added_paths"] = diff_added_paths
+    diagnostics["diff_skipped_paths"] = diff_skipped_paths
+    diagnostics["diff_skipped_reasons"] = diff_skipped_reasons
+    diagnostics["diff_filesystem_snapshots"] = diff_filesystem_snapshots
+    diagnostics["diff_filesystem_snapshot_summary"] = [
+        (
+            f"{snapshot.get('path')}: exists={snapshot.get('exists')} "
+            f"is_file={snapshot.get('is_file')} "
+            f"size_bytes={snapshot.get('size_bytes', 'n/a')} "
+            f"sha256={snapshot.get('sha256', 'n/a')}"
+        )
+        for snapshot in diff_filesystem_snapshots
+    ]
+    all_skipped_paths_matched_disk = bool(diff_skipped_reasons) and all(
+        item.endswith(": content_matches_current_disk") for item in diff_skipped_reasons
+    )
+    if (
+        not unified.strip()
+        and target_root_exists_at_start
+        and all_skipped_paths_matched_disk
+        and not starter_storefront_satisfied
+    ):
+        diagnostics["diff_contract_create_fallback_initial_skipped_paths"] = list(diff_skipped_paths)
+        diagnostics["diff_contract_create_fallback_initial_skipped_reasons"] = list(diff_skipped_reasons)
+        diagnostics["diff_contract_create_fallback_reason"] = (
+            "validated_prompt1_bundle_matched_transient_disk_but_existing_storefront_not_satisfied"
+        )
+        fallback_diffs: list[str] = []
+        fallback_added_paths: list[str] = []
+        fallback_skipped_paths: list[str] = []
+        fallback_skipped_reasons: list[str] = []
+        for file in files:
+            path = str(file["path"])
+            content = str(file["content"])
+            generated = generate_new_file_unified_diff_from_content(root, path, content)
+            if generated.strip():
+                fallback_diffs.append(generated)
+                fallback_added_paths.append(path)
+                continue
+            fallback_skipped_paths.append(path)
+            fallback_skipped_reasons.append(f"{path}: prompt1_create_contract_fallback_diff_empty")
+        fallback_unified = (
+            "\n".join(diff.strip("\n") for diff in fallback_diffs if diff.strip()) + "\n"
+        ).replace("\r\n", "\n")
+        if fallback_unified.strip():
+            unified = fallback_unified
+            diff_added_paths = fallback_added_paths
+            diff_skipped_paths = fallback_skipped_paths
+            diff_skipped_reasons = fallback_skipped_reasons
+            diagnostics["create_diff_mode"] = "prompt1_create_contract_new_file_diffs_after_transient_disk_match"
+            diagnostics["diff_file_count"] = len(diff_added_paths)
+            diagnostics["diff_added_paths"] = diff_added_paths
+            diagnostics["diff_skipped_paths"] = diff_skipped_paths
+            diagnostics["diff_skipped_reasons"] = diff_skipped_reasons
+            diagnostics["diff_contract_create_fallback_used"] = True
     if not unified.strip():
         diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
+        diagnostics["diff_generation_status"] = "blocked_no_diff"
+        diagnostics["diff_generation_reason"] = (
+            "all_bundle_files_matched_current_disk"
+            if diff_skipped_reasons and all(item.endswith(": content_matches_current_disk") for item in diff_skipped_reasons)
+            else "empty_diff_after_bundle_conversion"
+        )
+        diagnostics["patch_verification_status"] = "not_run"
+        diagnostics["patch_verification_reason"] = f"not_run: {diagnostics['diff_generation_reason']}"
+        diagnostics["verification_required_action"] = (
+            "Confirm the clean-missing dummy fixture state, then retry Coder 001 with file contents that differ from disk."
+        )
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_backend_diff_generation_failed"],
@@ -4352,9 +6838,36 @@ def propose_dummy_product_site_create_diff(
             needed_context="Retry Coder 001 with files that differ from disk.",
             reason_code="coder_backend_diff_generation_failed",
         )
+    diagnostics["diff_generation_status"] = "produced_diff"
+    diagnostics["diff_generation_reason"] = (
+        "model_bundle_converted_to_prompt1_create_diff_for_unsatisfied_existing_fixture"
+        if contract_create_fallback_used
+        else "model_bundle_converted_to_unified_diff"
+    )
+    diagnostics["backend_converted_diff_sha256"] = _sha256_lf_trailing_newline_v1(unified)
+    diagnostics["patch_verification_status"] = "running"
+    diagnostics["patch_verification_reason"] = "git apply --check pending"
     apply_ok, apply_error = _git_apply_generated_diff_ok(root, unified)
+    clean_workspace_check_used = False
+    if not apply_ok and (not target_root_exists_at_start or contract_create_fallback_used):
+        clean_apply_ok, clean_apply_error = _git_apply_generated_diff_ok_in_empty_workspace(
+            unified
+        )
+        diagnostics["patch_verification_live_workspace_reason"] = str(
+            apply_error or "git apply --check rejected live workspace"
+        )
+        diagnostics["patch_verification_clean_workspace_reason"] = str(
+            clean_apply_error or ""
+        )
+        if clean_apply_ok:
+            apply_ok = True
+            apply_error = ""
+            clean_workspace_check_used = True
     if not apply_ok:
         diagnostics["validation_status"] = "coder_backend_diff_generation_failed"
+        diagnostics["patch_verification_status"] = "rejected"
+        diagnostics["patch_verification_reason"] = str(apply_error or "git apply --check rejected generated diff")
+        diagnostics["verification_required_action"] = "Inspect the backend-generated unified diff and retry with a clean file bundle under the dummy root."
         return _coder_blocked_payload(
             target=DUMMY_PRODUCT_SITE_ROOT,
             notes=["CODER_BLOCKED reason_code: coder_backend_diff_generation_failed"],
@@ -4366,6 +6879,14 @@ def propose_dummy_product_site_create_diff(
         )
     changed_files = [file["path"] for file in files]
     diagnostics["validation_status"] = "preview_ready"
+    diagnostics["structured_bundle_status"] = "validated"
+    diagnostics["structured_bundle_parser_stage"] = "patch_verification"
+    diagnostics["patch_verification_status"] = "passed"
+    diagnostics["patch_verification_reason"] = (
+        "git apply --check passed in clean missing workspace; live workspace drift recorded"
+        if clean_workspace_check_used
+        else "git apply --check passed"
+    )
     diagnostics["changed_files"] = changed_files
     diagnostics["generated_diff_length"] = len(unified)
     diagnostics["generated_diff_by_backend"] = True
@@ -4383,7 +6904,11 @@ def propose_dummy_product_site_create_diff(
         "reason_code": "dummy_product_site_create_bundle",
         "coder_diagnostics": diagnostics,
         "changed_files": changed_files,
-        "checks_run": ["git apply --check"],
+        "checks_run": [
+            "git apply --check"
+            if not clean_workspace_check_used
+            else "git apply --check (clean missing workspace)"
+        ],
     })
 
 
@@ -4393,13 +6918,32 @@ def propose_dummy_product_site_product_data_diff(
     workspace_root: Path | None = None,
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
+    canonical_context: dict[str, Any] | None = None,
+    canonical_context_text: str = "",
 ) -> dict[str, Any]:
     root = (workspace_root or _workspace_root()).resolve()
     selected_alias = model_alias or _dummy_product_site_create_model_alias()
     target_abs = root / DUMMY_PRODUCT_SITE_PRODUCTS
     diagnostics: dict[str, Any] = {
         "context_mode": "dummy_product_site_product_data",
-        "context_slices": _dummy_product_site_product_data_context_slices(root),
+        "context_slices": [
+            *_dummy_product_site_product_data_context_slices(root),
+            *[
+                {
+                    "path": f"context://{source.get('source')}",
+                    "kind": "canonical_context",
+                    "report_hash": str((canonical_context or {}).get("canonical_report_hash") or ""),
+                }
+                for source in (canonical_context or {}).get("sources_considered", [])
+                if isinstance(source, dict) and source.get("selected") is True
+            ],
+        ],
+        "canonical_context_broker": canonical_context or {},
+        "canonical_context_report_hash": str(
+            (canonical_context or {}).get("canonical_report_hash") or ""
+        ),
+        "canonical_context_included_in_model_prompt": bool(canonical_context_text.strip()),
+        "canonical_context_consumed_by_coder_execution": bool(canonical_context_text.strip()),
         "target_exists": target_abs.is_file(),
         "source_proxy_run_id": f"prompt2-{uuid4().hex[:12]}",
         "scaffold_used": False,
@@ -4431,7 +6975,11 @@ def propose_dummy_product_site_product_data_diff(
             validation=existing_validation,
         )
 
-    prompt = _render_dummy_product_site_product_data_prompt(task, root)
+    prompt = _render_dummy_product_site_product_data_prompt(
+        task,
+        root,
+        canonical_context_text=canonical_context_text,
+    )
     model_timeout_seconds = _dummy_product_site_model_timeout_seconds()
     attempt_started = time.perf_counter()
     diagnostics["model_alias"] = selected_alias
@@ -4606,6 +7154,8 @@ def propose_dummy_product_site_render_cards_diff(
     workspace_root: Path | None = None,
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
+    canonical_context: dict[str, Any] | None = None,
+    canonical_context_text: str = "",
 ) -> dict[str, Any]:
     """Model-authored multi-file render path for Prompt 3 LumaCart cards."""
     root = (workspace_root or _workspace_root()).resolve()
@@ -4614,7 +7164,24 @@ def propose_dummy_product_site_render_cards_diff(
         **_base_coder_diagnostics(DUMMY_PRODUCT_SITE_ROOT),
         "source_proxy_run_id": f"prompt3-{uuid4().hex}",
         "context_mode": "dummy_product_site_render_cards",
-        "context_slices": _dummy_product_site_prompt3_context_slices(root),
+        "context_slices": [
+            *_dummy_product_site_prompt3_context_slices(root),
+            *[
+                {
+                    "path": f"context://{source.get('source')}",
+                    "kind": "canonical_context",
+                    "report_hash": str((canonical_context or {}).get("canonical_report_hash") or ""),
+                }
+                for source in (canonical_context or {}).get("sources_considered", [])
+                if isinstance(source, dict) and source.get("selected") is True
+            ],
+        ],
+        "canonical_context_broker": canonical_context or {},
+        "canonical_context_report_hash": str(
+            (canonical_context or {}).get("canonical_report_hash") or ""
+        ),
+        "canonical_context_included_in_model_prompt": bool(canonical_context_text.strip()),
+        "canonical_context_consumed_by_coder_execution": bool(canonical_context_text.strip()),
         "target_exists": (root / DUMMY_PRODUCT_SITE_ROOT).is_dir(),
         "target_action": "edit fixture files",
         "trial_mode": "live_apply",
@@ -4668,7 +7235,11 @@ def propose_dummy_product_site_render_cards_diff(
         )
 
     model_timeout_seconds = _dummy_product_site_model_timeout_seconds()
-    prompt = _render_dummy_product_site_render_cards_prompt(task, root)
+    prompt = _render_dummy_product_site_render_cards_prompt(
+        task,
+        root,
+        canonical_context_text=canonical_context_text,
+    )
     diagnostics["prompt_context_byte_size"] = len(prompt.encode("utf-8"))
     diagnostics["prompt_context_char_count"] = len(prompt)
     diagnostics["context_slice_count"] = len(diagnostics.get("context_slices") or [])
@@ -4695,6 +7266,7 @@ def propose_dummy_product_site_render_cards_diff(
             task,
             feedback=PROMPT3_STATIC_CLASSIC_RETRY_FEEDBACK,
             root=root,
+            canonical_context_text=canonical_context_text,
         )
         result = _call_and_validate_dummy_product_site_render_cards(
             root=root,
@@ -5203,7 +7775,12 @@ def _dummy_product_site_product_data_context_slices(root: Path) -> list[dict[str
     return [{"path": DUMMY_PRODUCT_SITE_PRODUCTS, "content": content}]
 
 
-def _render_dummy_product_site_product_data_prompt(task: str, root: Path) -> str:
+def _render_dummy_product_site_product_data_prompt(
+    task: str,
+    root: Path,
+    *,
+    canonical_context_text: str = "",
+) -> str:
     try:
         current_products = (root / DUMMY_PRODUCT_SITE_PRODUCTS).read_text(
             encoding="utf-8",
@@ -5215,6 +7792,8 @@ def _render_dummy_product_site_product_data_prompt(task: str, root: Path) -> str
         [
             "You are Coder 002 for the isolated LumaCart dummy fixture.",
             task.strip(),
+            "Canonical context selected by the Source Proxy broker:",
+            canonical_context_text.strip() or "No optional context source was selected.",
             "Return only one file block. Do not return markdown or prose.",
             f"Required path: {DUMMY_PRODUCT_SITE_PRODUCTS}.",
             "The file must export an array of at least 6 fake products.",
@@ -5287,11 +7866,18 @@ def _dummy_product_site_prompt3_context_slices(root: Path) -> list[dict[str, str
     return slices
 
 
-def _render_dummy_product_site_render_cards_prompt(task: str, root: Path) -> str:
+def _render_dummy_product_site_render_cards_prompt(
+    task: str,
+    root: Path,
+    *,
+    canonical_context_text: str = "",
+) -> str:
     return "\n".join(
         [
             "You are Coder 003 for the isolated LumaCart dummy fixture.",
             task.strip(),
+            "Canonical context selected by the Source Proxy broker:",
+            canonical_context_text.strip() or "No optional context source was selected.",
             "Return only file blocks. Do not return markdown or prose.",
             "Required paths: tests/ui-agent-trials/fixtures/dummy-product-site/index.html and tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js.",
             "Optional path: tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css.",
@@ -5320,12 +7906,17 @@ def _render_dummy_product_site_render_cards_retry_prompt(
     *,
     feedback: str,
     root: Path,
+    canonical_context_text: str = "",
 ) -> str:
     return "\n".join(
         [
             feedback,
             "Return a fresh corrected response. Return only file blocks.",
-            _render_dummy_product_site_render_cards_prompt(task, root),
+            _render_dummy_product_site_render_cards_prompt(
+                task,
+                root,
+                canonical_context_text=canonical_context_text,
+            ),
         ]
     )
 
@@ -5416,7 +8007,11 @@ def _validate_dummy_product_site_prompt3_files(root: Path, files: list[dict[str,
     }
 
 
-def _render_dummy_product_site_create_prompt(task: str) -> str:
+def _render_dummy_product_site_create_prompt(
+    task: str,
+    *,
+    canonical_context_text: str = "",
+) -> str:
     expected_paths = [
         f"{DUMMY_PRODUCT_SITE_ROOT}{name}"
         for name in DUMMY_PRODUCT_SITE_STARTER_FILES
@@ -5425,6 +8020,8 @@ def _render_dummy_product_site_create_prompt(task: str) -> str:
         [
             "You are Coder 001 for the isolated LumaCart dummy fixture.",
             task.strip(),
+            "Canonical context selected by the Source Proxy broker:",
+            canonical_context_text.strip() or "No optional context source was selected.",
             "Return only file blocks. Do not return markdown or prose.",
             "Preferred format, repeated once per file:",
             '<file path="tests/ui-agent-trials/fixtures/dummy-product-site/README.md">',
@@ -5440,6 +8037,11 @@ def _render_dummy_product_site_create_prompt(task: str) -> str:
             f"Caps: max {DUMMY_PRODUCT_SITE_MAX_FILES} files, max {DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE} lines per file, max {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES} total lines.",
             "Do not edit root package.json, Source Proxy, src/app, src/components, src/lib, docs, .env, or lock files.",
             "Content must be model-authored, small, static, and coherent for a fake product storefront named LumaCart.",
+            "src/products.js must define at least 6 fake products.",
+            "Every product must include id, name, price, category, and description.",
+            "index.html must load src/main.js as a module script.",
+            "src/main.js must import products from './products.js' and render product cards dynamically.",
+            "Rendered cards must include product.name, product.price, product.category, and product.description.",
         ]
     )
 
@@ -5449,6 +8051,7 @@ def _render_dummy_product_site_create_repair_prompt(
     *,
     parse_error: str,
     raw_response: str,
+    canonical_context_text: str = "",
 ) -> str:
     expected_paths = [
         f"{DUMMY_PRODUCT_SITE_ROOT}{name}"
@@ -5468,9 +8071,14 @@ def _render_dummy_product_site_create_repair_prompt(
             "Create these starter files: " + ", ".join(expected_paths) + ".",
             f"Caps: max {DUMMY_PRODUCT_SITE_MAX_FILES} files, max {DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE} lines per file, max {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES} total lines.",
             "The fake product site must be named LumaCart.",
+            "src/products.js must define at least 6 fake products with id, name, price, category, and description.",
+            "index.html must load src/main.js as a module script.",
+            "src/main.js must import products from './products.js' and render product cards dynamically with name, price, category, and description.",
             "Do not edit root package.json, Source Proxy, src/app, src/components, src/lib, docs, .env, or lock files.",
             "Original task:",
             task.strip(),
+            "Canonical context selected by the Source Proxy broker:",
+            canonical_context_text.strip() or "No optional context source was selected.",
             "Do not copy the rejected response. Generate fresh valid file blocks.",
         ]
     )
@@ -5568,6 +8176,85 @@ def _dummy_product_site_parse_meta(
         "json_repair_source": "",
         "parsed_output_mode": "create_file_bundle",
     }
+
+
+def _dummy_product_site_model_output_shape_summary(raw_response: str) -> str:
+    normalized = (raw_response or "").replace("\r\n", "\n").replace("\r", "\n")
+    stripped = normalized.strip()
+    shape = {
+        "length": len(normalized),
+        "line_count": len(normalized.splitlines()),
+        "empty": not bool(stripped),
+        "has_xml_file_blocks": bool(re.search(r"<file\s+path=", normalized, re.IGNORECASE)),
+        "has_delimited_file_blocks": "<<<FILE:" in normalized,
+        "has_json_create_file_bundle": '"create_file_bundle"' in normalized or "'create_file_bundle'" in normalized,
+        "has_unified_diff_markers": _looks_like_unified_diff(normalized),
+        "has_markdown_fence": stripped.startswith("```"),
+    }
+    return "; ".join(f"{key}={value}" for key, value in shape.items())
+
+
+def _dummy_product_site_parse_failure_status(parse_error: str) -> str:
+    lowered = (parse_error or "").lower()
+    if not lowered:
+        return "unknown"
+    if "non-empty" in lowered or "empty" in lowered:
+        return "empty"
+    return "malformed"
+
+
+def _dummy_product_site_rejected_paths_from_validation(validation: dict[str, Any] | None) -> list[str]:
+    if not validation:
+        return []
+    rejected: list[str] = []
+    prefixes = (
+        "missing starter file:",
+        "duplicate file rejected:",
+        "outside dummy root:",
+        "root package mutation rejected:",
+        "forbidden path rejected:",
+        "env path rejected:",
+        "empty content:",
+        "file line cap exceeded:",
+    )
+    for item in validation.get("missing", []):
+        text = str(item)
+        candidate = ""
+        for prefix in prefixes:
+            if text.startswith(prefix):
+                candidate = text[len(prefix):].strip().split()[0].rstrip(",")
+                break
+        if not candidate and " in " in text and text.startswith("blacklist keyword rejected:"):
+            candidate = text.rsplit(" in ", 1)[-1].strip().split()[0].rstrip(",")
+        if candidate:
+            rejected.append(candidate)
+    return sorted(set(rejected))
+
+
+def _update_dummy_product_site_bundle_diagnostics(
+    diagnostics: dict[str, Any],
+    *,
+    files: list[dict[str, str]] | None,
+    status: str,
+    stage: str,
+    reason: str = "",
+    validation: dict[str, Any] | None = None,
+) -> None:
+    paths = [str(file.get("path") or "") for file in files or [] if str(file.get("path") or "")]
+    rejected_paths = _dummy_product_site_rejected_paths_from_validation(validation)
+    accepted_paths = [path for path in paths if path not in set(rejected_paths)]
+    diagnostics["structured_bundle_status"] = status
+    diagnostics["structured_bundle_parser_stage"] = stage
+    diagnostics["structured_bundle_file_count"] = len(paths)
+    diagnostics["structured_bundle_accepted_paths"] = accepted_paths
+    diagnostics["structured_bundle_rejected_paths"] = rejected_paths
+    diagnostics["structured_bundle_rejection_reason"] = reason or (
+        "; ".join(str(item) for item in (validation or {}).get("missing", [])[:8])
+        if validation and not validation.get("ok")
+        else ""
+    )
+    if validation is not None:
+        diagnostics["structured_bundle_validation_summary"] = str(validation.get("summary") or "")
 
 
 def _parse_multi_file_blocks(raw_response: str) -> tuple[list[dict[str, str]] | None, str]:
@@ -5700,6 +8387,30 @@ def _validate_dummy_product_site_file_bundle(files: list[dict[str, str]]) -> dic
             if keyword in lowered_path or keyword in lowered_content:
                 missing.append(f"blacklist keyword rejected: {keyword.strip()} in {file['path']}")
                 break
+    by_path = {
+        file["path"].replace("\\", "/").lstrip("./"): file["content"]
+        for file in files
+    }
+    index_html = by_path.get(DUMMY_PRODUCT_SITE_INDEX, "")
+    main_js = by_path.get(DUMMY_PRODUCT_SITE_MAIN, "")
+    products_js = by_path.get(DUMMY_PRODUCT_SITE_PRODUCTS, "")
+    if not re.search(r"<script\b[^>]*type=['\"]module['\"][^>]*src=['\"](?:\./)?src/main\.js['\"]", index_html, re.I):
+        missing.append("prompt1_missing_module_script_to_src_main")
+    if not re.search(r"import\s+(?:\{\s*)?products(?:\s*\})?\s+from\s*['\"]\.\/products\.js['\"]", main_js):
+        missing.append("prompt1_missing_static_products_import")
+    product_count = len(re.findall(r"['\"]?(?:name|title)['\"]?\s*:", products_js))
+    if product_count < 6:
+        missing.append("prompt1_requires_at_least_six_products")
+    for field in ("id", "name", "price", "category", "description"):
+        if not re.search(rf"['\"]?{field}['\"]?\s*:", products_js):
+            missing.append(f"prompt1_product_data_missing_{field}")
+    for token in ("product.name", "product.price", "product.category", "product.description"):
+        if token not in main_js:
+            missing.append(f"prompt1_render_missing_{token}")
+    if "product-card" not in main_js:
+        missing.append("prompt1_render_missing_product_card")
+    if not re.search(r"\bproducts\s*\.\s*(?:forEach|map)\s*\(", main_js):
+        missing.append("prompt1_render_not_dynamic")
     if total_lines > DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES:
         missing.append(f"total line cap exceeded: {total_lines} > {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES}")
     return {
@@ -6301,11 +9012,29 @@ def _git_apply_generated_diff_ok(root: Path, unified_diff: str) -> tuple[bool, s
     return False, failures[-1] if failures else "git apply --check failed"
 
 
+def _git_apply_generated_diff_ok_in_empty_workspace(
+    unified_diff: str,
+) -> tuple[bool, str]:
+    with tempfile.TemporaryDirectory(prefix="source-proxy-create-diff-") as temp_dir:
+        root = Path(temp_dir)
+        init = subprocess.run(
+            ["git", "init"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if init.returncode != 0:
+            return False, init.stderr.strip() or "git init failed for clean diff check"
+        return _git_apply_generated_diff_ok(root, unified_diff)
+
+
 def propose_coder_agent_implementation_diff(
     packet: CoderPacket,
     workspace_root: Path,
     *,
     source_task: str = "",
+    canonical_context_text: str = "",
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
     reviewer_feedback: list[str] | None = None,
@@ -6357,6 +9086,7 @@ def propose_coder_agent_implementation_diff(
     prompt = _render_coder_prompt_from_packet(
         packet,
         source_task=_coder_reviewer_feedback_task(source_task, reviewer_feedback),
+        context_override=canonical_context_text.strip() or None,
     )
     selected_alias = model_alias or _coder_model_alias()
     if llm_call is None:
@@ -6570,6 +9300,8 @@ def propose_coder_agent_diff_payload_from_plan(
     model_alias: str | None = None,
     reviewer_feedback: list[str] | None = None,
     force_live_model: bool = False,
+    canonical_context: dict[str, Any] | None = None,
+    canonical_context_text: str = "",
     _review_attempt: int = 1,
     _previous_reviewer_signature: str = "",
 ) -> dict[str, Any]:
@@ -6595,6 +9327,21 @@ def propose_coder_agent_diff_payload_from_plan(
     target_path = packet.target_file.path
     notes: list[str] = []
     diagnostics: dict[str, Any] = _base_coder_diagnostics(target_path)
+    selected_context_sources = [
+        source
+        for source in (canonical_context or {}).get("sources_considered", [])
+        if isinstance(source, dict) and source.get("selected") is True
+    ]
+    diagnostics["canonical_context_broker"] = canonical_context or {}
+    diagnostics["canonical_context_report_hash"] = str(
+        (canonical_context or {}).get("canonical_report_hash") or ""
+    )
+    diagnostics["canonical_context_included_in_model_prompt"] = bool(
+        canonical_context_text.strip()
+    )
+    diagnostics["canonical_context_consumed_by_coder_execution"] = bool(
+        canonical_context_text.strip()
+    )
     diagnostics["trial_mode"] = "live_apply" if force_live_model else "preview_only_or_standard"
     _set_trial_generation_provenance(diagnostics, trial_mode=force_live_model)
     diagnostics["coder_attempt_count"] = _review_attempt
@@ -6650,6 +9397,13 @@ def propose_coder_agent_diff_payload_from_plan(
     diagnostics["context_slices"] = [
         {"path": item.path, "kind": item.kind}
         for item in packet.context_slices
+    ] + [
+        {
+            "path": f"context://{source.get('source')}",
+            "kind": "canonical_context",
+            "report_hash": diagnostics["canonical_context_report_hash"],
+        }
+        for source in selected_context_sources
     ]
     abs_target = (root / target_path).resolve()
     if not _is_relative_to(abs_target, root):
@@ -6665,7 +9419,12 @@ def propose_coder_agent_diff_payload_from_plan(
     diagnostics["target_exists"] = target_exists
     diagnostics["target_action"] = "replace file" if target_exists else "create file"
     _mark_coder_timing("architect_plan_done")
-    prompt = _render_coder_prompt_from_packet(packet, source_task=task)
+    coder_source_task = task
+    prompt = _render_coder_prompt_from_packet(
+        packet,
+        source_task=coder_source_task,
+        context_override=canonical_context_text.strip() or None,
+    )
     diagnostics["prompt_size"] = len(prompt)
     _mark_coder_timing(
         "prompt_context",
@@ -6695,7 +9454,8 @@ def propose_coder_agent_diff_payload_from_plan(
         response = propose_coder_agent_implementation_diff(
             packet,
             root,
-            source_task=task,
+            source_task=coder_source_task,
+            canonical_context_text=canonical_context_text,
             llm_call=llm_call,
             model_alias=model_alias,
             reviewer_feedback=reviewer_feedback,
@@ -7005,6 +9765,8 @@ def propose_coder_agent_diff_payload_from_plan(
                 model_alias=model_alias,
                 reviewer_feedback=feedback,
                 force_live_model=force_live_model,
+                canonical_context=canonical_context,
+                canonical_context_text=canonical_context_text,
                 _review_attempt=_review_attempt + 1,
                 _previous_reviewer_signature=signature,
             )
@@ -7832,12 +10594,17 @@ def forbidden_paths_for_context_mode(context_mode: ContextMode) -> tuple[str, ..
     )
 
 
-def _render_coder_prompt_from_packet(packet: CoderPacket, *, source_task: str = "") -> str:
+def _render_coder_prompt_from_packet(
+    packet: CoderPacket,
+    *,
+    source_task: str = "",
+    context_override: str | None = None,
+) -> str:
     target_path = packet.target_file.path
     criteria = _render_packet_acceptance_criteria(packet)
     constraints = _render_packet_constraints(packet)
     styles = "\n".join(f"- {item}" for item in packet.style_directives[:6]) or "- none"
-    context = _render_packet_context_slices(packet)
+    context = context_override if context_override is not None else _render_packet_context_slices(packet)
     task = source_task.strip() or f"Target file: {target_path}"
     task_contract = json.dumps(
         task_spec_from_packet(packet).to_dict(),

@@ -9,6 +9,7 @@ from unittest import mock
 
 from source_proxy.context.obsidian import ObsidianContextConfig, obsidian_context_config_from_env
 from source_proxy.context.source_readiness import (
+    ContextSourcePacket,
     build_context_source_readiness_packet,
     build_cartographer_context_packet,
     build_design_context_packet,
@@ -185,11 +186,166 @@ class ContextSourceReadinessTests(unittest.TestCase):
                 )
 
         self.assertTrue(packet["ready_for_source_proxy_packet"])
+        self.assertEqual(packet["schema_version"], 2)
+        self.assertTrue(packet["canonical_context_broker"]["canonical"])
         self.assertEqual(packet["source_status"]["cartographer"], "used")
         self.assertEqual(packet["source_status"]["obsidian"], "skipped")
         self.assertEqual(packet["source_status"]["scout_search"], "skipped")
         self.assertEqual(packet["source_status"]["design"], "used")
         self.assertFalse(packet["authority"]["can_start_worker"])
+        cartographer = next(
+            source for source in packet["sources"] if source["source"] == "cartographer"
+        )
+        self.assertTrue(cartographer["considered"])
+        self.assertFalse(cartographer["required"])
+        self.assertFalse(cartographer["selected"])
+        self.assertFalse(cartographer["included"])
+        self.assertFalse(cartographer["consumed"])
+
+    def test_selected_required_source_needs_real_v2_consumer_acknowledgement(self) -> None:
+        cartographer = ContextSourcePacket(
+            source="cartographer",
+            status="used",
+            reason="repo_map_ready",
+            packet={"files_indexed": 4},
+        )
+        obsidian = ContextSourcePacket(
+            source="obsidian",
+            status="skipped",
+            reason="disabled",
+        )
+        design = ContextSourcePacket(
+            source="design",
+            status="skipped",
+            reason="not_needed",
+        )
+
+        async def fake_scout(_task: str):
+            return ContextSourcePacket(
+                source="scout_search",
+                status="skipped",
+                reason="not_needed",
+            )
+
+        with (
+            mock.patch(
+                "source_proxy.context.source_readiness.build_cartographer_context_packet",
+                return_value=cartographer,
+            ),
+            mock.patch(
+                "source_proxy.context.source_readiness.build_obsidian_context_packet",
+                return_value=obsidian,
+            ),
+            mock.patch(
+                "source_proxy.context.source_readiness.build_design_context_packet",
+                return_value=design,
+            ),
+            mock.patch(
+                "source_proxy.context.source_readiness.build_scout_search_context_packet",
+                fake_scout,
+            ),
+        ):
+            blocked = asyncio.run(
+                build_context_source_readiness_packet(
+                    "Implement the target",
+                    source_states={
+                        "cartographer": {
+                            "required": True,
+                            "selected": True,
+                            "included": True,
+                        }
+                    },
+                    applicable_consumers=("planner",),
+                )
+            )
+            acknowledged = asyncio.run(
+                build_context_source_readiness_packet(
+                    "Implement the target",
+                    source_states={
+                        "cartographer": {
+                            "required": True,
+                            "selected": True,
+                            "included": True,
+                        }
+                    },
+                    downstream_consumers={
+                        "planner": {
+                            "applicable": True,
+                            "acknowledged": True,
+                            "sources": ["cartographer"],
+                            "evidence": "planner_prompt_hash:abc123",
+                        }
+                    },
+                    applicable_consumers=("planner",),
+                )
+            )
+
+        self.assertFalse(blocked["ready_for_source_proxy_packet"])
+        self.assertIn(
+            "required_context_unacknowledged:cartographer:planner",
+            blocked["canonical_context_broker"]["required_context_blockers"],
+        )
+        self.assertTrue(acknowledged["ready_for_source_proxy_packet"])
+        selected = next(
+            source
+            for source in acknowledged["sources"]
+            if source["source"] == "cartographer"
+        )
+        self.assertTrue(selected["required"])
+        self.assertTrue(selected["selected"])
+        self.assertTrue(selected["included"])
+        self.assertTrue(selected["consumed"])
+        self.assertEqual(selected["acknowledged_by"], ["planner"])
+
+    def test_missing_named_required_source_is_preserved_and_fails_closed(self) -> None:
+        cartographer = ContextSourcePacket(
+            source="cartographer",
+            status="skipped",
+            reason="not_needed",
+        )
+
+        async def fake_scout(_task: str):
+            return ContextSourcePacket(
+                source="scout_search",
+                status="skipped",
+                reason="not_needed",
+            )
+
+        with (
+            mock.patch(
+                "source_proxy.context.source_readiness.build_cartographer_context_packet",
+                return_value=cartographer,
+            ),
+            mock.patch(
+                "source_proxy.context.source_readiness.build_obsidian_context_packet",
+                return_value=ContextSourcePacket("obsidian", "skipped", "not_needed"),
+            ),
+            mock.patch(
+                "source_proxy.context.source_readiness.build_design_context_packet",
+                return_value=ContextSourcePacket("design", "skipped", "not_needed"),
+            ),
+            mock.patch(
+                "source_proxy.context.source_readiness.build_scout_search_context_packet",
+                fake_scout,
+            ),
+        ):
+            packet = asyncio.run(
+                build_context_source_readiness_packet(
+                    "Use the Mac worker",
+                    required_sources=("mac_worker",),
+                )
+            )
+
+        mac_worker = next(
+            source for source in packet["sources"] if source["source"] == "mac_worker"
+        )
+        self.assertEqual(mac_worker["status"], "unavailable")
+        self.assertTrue(mac_worker["required"])
+        self.assertFalse(packet["ready_for_source_proxy_packet"])
+        self.assertIn(
+            "required_context_unavailable:mac_worker",
+            packet["canonical_context_broker"]["required_context_blockers"],
+        )
 
     def test_combined_packet_uses_default_obsidian_vault_without_explicit_config(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

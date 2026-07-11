@@ -304,6 +304,11 @@ type DummyCoder10RunState = {
   verificationStatus: string | null;
   generationSource: string | null;
   diffSource: string | null;
+  backend_anti_cheat_status: string | null;
+  backend_anti_cheat_hard_fail_ids: string[];
+  backend_anti_cheat_advisory_ids: string[];
+  backend_anti_cheat_report: string | null;
+  backend_anti_cheat_reasons: string[];
   modelOutputClassification: string | null;
   noDiffFailureCause: string | null;
   parserExtractorDecision: string | null;
@@ -319,11 +324,34 @@ type DummyCoder10RunState = {
   rawModelResponseSha256: string | null;
   modelFileBundleSha256: string | null;
   backendConvertedDiffSha256: string | null;
+  structuredBundleStatus: string | null;
+  structuredBundleParserStage: string | null;
+  structuredBundleFileCount: number | null;
+  structuredBundleAcceptedPaths: string[];
+  structuredBundleRejectedPaths: string[];
+  structuredBundleRejectionReason: string | null;
+  modelOutputShapeSummary: string | null;
+  diffGenerationStatus: string | null;
+  diffGenerationReason: string | null;
+  diffFileCount: number | null;
+  diffAddedPaths: string[];
+  diffSkippedPaths: string[];
+  diffSkippedReasons: string[];
+  diffFilesystemSnapshotSummary: string[];
+  patchVerificationStatus: string | null;
+  patchVerificationReason: string | null;
+  taskCreationStatus: string | null;
+  taskCreationElapsedMs: number | null;
+  taskCreationTimeoutStage: string | null;
+  taskCreationLastCheckpoint: string | null;
+  taskCreationBlockingSubsystem: string | null;
   approvedDiffSha256: string | null;
   appliedDiffSha256: string | null;
+  backupManifest?: string | null;
   postApplyRediffSha256: string | null;
   provenanceHashNormalization: string | null;
   recommendedNextAction: string | null;
+  lastFailureDiagnostics: Record<string, unknown> | null;
   grader: DummyCoder10GradingResult | null;
   packet: unknown | null;
   // Wall-clock production timing for the diagnostics report. startedAt is captured when the run
@@ -333,6 +361,10 @@ type DummyCoder10RunState = {
   // Storefront render probe result (coder-001 only). Null on other prompts or when the fixture
   // contents could not be read. Surfaces whether the page renders real storefront content.
   storefrontProbe: DummyStorefrontProbeResult | null;
+  canonicalContextVerdict: string | null;
+  canonicalContextReportHash: string | null;
+  canonicalContextBlockers: string[];
+  canonicalContextAcknowledgements: string[];
 };
 
 export type SelectedPromptAuditDiagnosticsState = Pick<
@@ -340,16 +372,49 @@ export type SelectedPromptAuditDiagnosticsState = Pick<
   | "appliedDiffSha256"
   | "applyMode"
   | "approvedDiffSha256"
+  | "backupManifest"
   | "backendConvertedDiffSha256"
+  | "structuredBundleStatus"
+  | "structuredBundleParserStage"
+  | "structuredBundleFileCount"
+  | "structuredBundleAcceptedPaths"
+  | "structuredBundleRejectedPaths"
+  | "structuredBundleRejectionReason"
+  | "backend_anti_cheat_status"
+  | "backend_anti_cheat_hard_fail_ids"
+  | "backend_anti_cheat_advisory_ids"
+  | "backend_anti_cheat_report"
+  | "backend_anti_cheat_reasons"
   | "diffSource"
   | "fallbackUsed"
+  | "generationSource"
   | "modelFileBundleSha256"
+  | "modelOutputShapeSummary"
+  | "diffGenerationStatus"
+  | "diffGenerationReason"
+  | "diffFileCount"
+  | "diffAddedPaths"
+  | "diffSkippedPaths"
+  | "diffSkippedReasons"
+  | "diffFilesystemSnapshotSummary"
+  | "patchVerificationStatus"
+  | "patchVerificationReason"
+  | "taskCreationStatus"
+  | "taskCreationElapsedMs"
+  | "taskCreationTimeoutStage"
+  | "taskCreationLastCheckpoint"
+  | "taskCreationBlockingSubsystem"
   | "postApplyRediffSha256"
   | "provenanceHashNormalization"
   | "rawModelResponseSha256"
   | "stalePatchRecovered"
   | "storefrontProbe"
   | "trialResultTrustStatus"
+  | "verificationStatus"
+  | "canonicalContextVerdict"
+  | "canonicalContextReportHash"
+  | "canonicalContextBlockers"
+  | "canonicalContextAcknowledgements"
 >;
 
 export function selectedPromptAuditDiagnosticsLines(input: {
@@ -357,27 +422,396 @@ export function selectedPromptAuditDiagnosticsLines(input: {
   state: SelectedPromptAuditDiagnosticsState;
 }) {
   const { grader, state } = input;
+  const normalizedBackendAntiCheatStatus = state.backend_anti_cheat_status
+    ?.trim()
+    .toLowerCase();
+  const backendAntiCheatBlocked = ["blocked", "fail", "failed"].includes(
+    normalizedBackendAntiCheatStatus ?? "",
+  );
+  const backendAntiCheatStatus =
+    normalizedBackendAntiCheatStatus === "pass"
+      ? "passed"
+      : backendAntiCheatBlocked
+        ? "fail"
+        : state.backend_anti_cheat_status;
+  const antiCheatStatus =
+    backendAntiCheatBlocked
+      ? "fail"
+      : grader?.provenance?.anti_cheat_status ??
+        backendAntiCheatStatus ??
+        "missing: no diagnostic envelope received";
+  const antiCheatHardFailIds = backendAntiCheatBlocked
+    ? [
+        ...new Set([
+          ...(state.backend_anti_cheat_hard_fail_ids ?? []),
+          ...(grader?.provenance?.anti_cheat_hard_fail_ids ?? []),
+        ]),
+      ]
+    : grader?.provenance?.anti_cheat_hard_fail_ids ??
+      state.backend_anti_cheat_hard_fail_ids ??
+      [];
+  const antiCheatAdvisoryIds = backendAntiCheatBlocked
+    ? [
+        ...new Set([
+          ...(state.backend_anti_cheat_advisory_ids ?? []),
+          ...(grader?.provenance?.anti_cheat_advisory_ids ?? []),
+        ]),
+      ]
+    : grader?.provenance?.anti_cheat_advisory_ids ??
+      state.backend_anti_cheat_advisory_ids ??
+      [];
+  const antiCheatReasons = backendAntiCheatBlocked
+    ? [
+        ...new Set([
+          ...(state.backend_anti_cheat_reasons ?? []),
+          ...(grader?.provenance?.anti_cheat_reasons ?? []),
+        ]),
+      ]
+    : grader?.provenance?.anti_cheat_reasons ?? state.backend_anti_cheat_reasons ?? [];
+  const generationStatus =
+    state.generationSource === "model" && Boolean(state.rawModelResponseSha256)
+      ? "passed"
+      : "not_completed";
+  const previewVerificationStatus = /pass|verified|ready/i.test(
+    state.patchVerificationStatus ?? "",
+  )
+    ? "passed"
+    : state.patchVerificationStatus ?? "not_completed";
+  const approvalStatus = state.approvedDiffSha256 ? "valid" : "not_completed";
+  const applyStatus =
+    state.applyMode && state.appliedDiffSha256 ? "performed" : "not_performed";
+  const postApplyVerificationStatus = /post-apply verified|\bverified\b/i.test(
+    state.verificationStatus ?? "",
+  )
+    ? "passed"
+    : state.verificationStatus ?? "not_completed";
+  const browserVerificationStatus =
+    state.storefrontProbe?.storefront_runtime_status === "passed" &&
+    (state.storefrontProbe?.product_count ?? 0) >= 6
+      ? "passed"
+      : "not_completed";
+  const authoritativeAntiCheatStatus =
+    antiCheatStatus === "passed" && antiCheatHardFailIds.length === 0
+      ? "passed"
+      : antiCheatStatus;
+  const requiredContextConsumers = [
+    "planner",
+    "coder",
+    "reviewer",
+    "verifier",
+    "final_receipt_builder",
+  ];
+  const contextStatus =
+    state.canonicalContextVerdict === "GO_ELIGIBLE" &&
+    state.canonicalContextBlockers.length === 0 &&
+    requiredContextConsumers.every((consumer) =>
+      state.canonicalContextAcknowledgements.includes(consumer),
+    )
+      ? "passed"
+      : "blocked";
+  const commitSafe =
+    generationStatus === "passed" &&
+    previewVerificationStatus === "passed" &&
+    approvalStatus === "valid" &&
+    applyStatus === "performed" &&
+    postApplyVerificationStatus === "passed" &&
+    browserVerificationStatus === "passed" &&
+    authoritativeAntiCheatStatus === "passed" &&
+    contextStatus === "passed" &&
+    grader?.label === "PASS";
+  const requiredAction = commitSafe
+    ? "none"
+    : contextStatus !== "passed"
+      ? "resolve canonical context blockers or missing acknowledgements"
+      : postApplyVerificationStatus !== "passed"
+        ? "complete post-apply verification"
+        : browserVerificationStatus !== "passed"
+          ? "complete browser verification"
+          : authoritativeAntiCheatStatus !== "passed"
+            ? "resolve anti-cheat findings"
+            : "complete the next failed lifecycle stage";
   return [
-    `anti_cheat_status: ${grader?.provenance?.anti_cheat_status ?? "not graded"}`,
-    `anti_cheat_hard_fail_ids: ${formatList(grader?.provenance?.anti_cheat_hard_fail_ids ?? [], "none")}`,
-    `anti_cheat_advisory_ids: ${formatList(grader?.provenance?.anti_cheat_advisory_ids ?? [], "none")}`,
-    `anti_cheat_reasons: ${formatList(grader?.provenance?.anti_cheat_reasons ?? [], "none")}`,
-    `raw_model_response_sha256: ${state.rawModelResponseSha256 ?? "not recorded"}`,
-    `model_file_bundle_sha256: ${state.modelFileBundleSha256 ?? "not recorded"}`,
-    `backend_converted_diff_sha256: ${state.backendConvertedDiffSha256 ?? "not recorded"}`,
-    `approved_diff_sha256: ${state.approvedDiffSha256 ?? "not recorded"}`,
-    `applied_diff_sha256: ${state.appliedDiffSha256 ?? "not recorded"}`,
-    `post_apply_rediff_sha256: ${state.postApplyRediffSha256 ?? "not recorded"}`,
-    `provenance_hash_normalization: ${state.provenanceHashNormalization ?? "not recorded"}`,
-    `apply_mode: ${state.applyMode ?? "not recorded"}`,
+    `grader_anti_cheat_status: ${antiCheatStatus}`,
+    `anti_cheat_hard_fail_ids: ${formatList(antiCheatHardFailIds, "not_applicable: no anti-cheat hard failures")}`,
+    `anti_cheat_advisory_ids: ${formatList(antiCheatAdvisoryIds, "not_applicable: no anti-cheat advisory findings")}`,
+    `anti_cheat_reasons: ${formatList(antiCheatReasons, "missing: backend did not provide field")}`,
+    `raw_model_response_sha256: ${state.rawModelResponseSha256 ?? "not_recorded: route_error_before_model_call"}`,
+    `model_file_bundle_sha256: ${state.modelFileBundleSha256 ?? "not_recorded: route_error_before_model_call"}`,
+    `backend_converted_diff_sha256: ${state.backendConvertedDiffSha256 ?? "missing: backend did not provide field"}`,
+    `structured_bundle_status: ${state.structuredBundleStatus ?? "missing: backend did not provide field"}`,
+    `structured_bundle_parser_stage: ${state.structuredBundleParserStage ?? "missing: backend did not provide field"}`,
+    `structured_bundle_file_count: ${state.structuredBundleFileCount ?? "missing: backend did not provide field"}`,
+    `structured_bundle_accepted_paths: ${formatList(state.structuredBundleAcceptedPaths, "missing: backend did not provide field")}`,
+    `structured_bundle_rejected_paths: ${formatList(state.structuredBundleRejectedPaths, "not_applicable: no rejected paths")}`,
+    `structured_bundle_rejection_reason: ${state.structuredBundleRejectionReason ?? "not_applicable: bundle was not rejected"}`,
+    `model_output_shape_summary: ${state.modelOutputShapeSummary ?? "missing: backend did not provide field"}`,
+    `diff_generation_status: ${state.diffGenerationStatus ?? "missing: backend did not provide field"}`,
+    `diff_generation_reason: ${state.diffGenerationReason ?? "missing: backend did not provide field"}`,
+    `diff_file_count: ${state.diffFileCount ?? "missing: backend did not provide field"}`,
+    `diff_added_paths: ${formatList(state.diffAddedPaths, "not_applicable: no added paths")}`,
+    `diff_skipped_paths: ${formatList(state.diffSkippedPaths, "not_applicable: no skipped paths")}`,
+    `diff_skipped_reasons: ${formatList(state.diffSkippedReasons, "not_applicable: no skipped paths")}`,
+    `diff_filesystem_snapshot_summary: ${formatList(state.diffFilesystemSnapshotSummary, "not_applicable: no filesystem snapshot summary")}`,
+    `patch_verification_status: ${state.patchVerificationStatus ?? "missing: backend did not provide field"}`,
+    `patch_verification_reason: ${state.patchVerificationReason ?? "missing: backend did not provide field"}`,
+    `task_creation_status: ${state.taskCreationStatus ?? "missing: backend did not provide field"}`,
+    `task_creation_elapsed_ms: ${state.taskCreationElapsedMs ?? "missing: backend did not provide field"}`,
+    `task_creation_timeout_stage: ${state.taskCreationTimeoutStage ?? "missing: backend did not provide field"}`,
+    `task_creation_last_checkpoint: ${state.taskCreationLastCheckpoint ?? "missing: backend did not provide field"}`,
+    `task_creation_blocking_subsystem: ${state.taskCreationBlockingSubsystem ?? "missing: backend did not provide field"}`,
+    `approved_diff_sha256: ${state.approvedDiffSha256 ?? "not_recorded: apply_did_not_happen"}`,
+    `applied_diff_sha256: ${state.appliedDiffSha256 ?? "not_recorded: apply_did_not_happen"}`,
+    `backup_manifest: ${state.backupManifest ?? "not_recorded: apply_did_not_happen"}`,
+    `post_apply_rediff_sha256: ${state.postApplyRediffSha256 ?? "not_recorded: apply_did_not_happen"}`,
+    `provenance_hash_normalization: ${state.provenanceHashNormalization ?? "missing: backend did not provide field"}`,
+    `apply_mode: ${state.applyMode ?? "not_recorded: apply_did_not_happen"}`,
     `stale_patch_recovered: ${String(state.stalePatchRecovered ?? false)}`,
     `fallback_used: ${String(state.fallbackUsed ?? false)}`,
-    `diff_source: ${state.diffSource ?? "none"}`,
-    `trial_result_trust_status: ${state.trialResultTrustStatus ?? "none"}`,
+    `diff_source: ${state.diffSource ?? "missing: backend did not provide field"}`,
+    `trial_result_trust_status: ${state.trialResultTrustStatus ?? "missing: backend did not provide field"}`,
     `storefront_runtime_status: ${state.storefrontProbe?.storefront_runtime_status ?? "not probed"}`,
+    `preview_behavior_status: ${state.storefrontProbe?.preview_behavior_status ?? "not probed"}`,
     `storefront_runtime_engine: ${state.storefrontProbe?.storefront_runtime_engine ?? "not probed"}`,
+    `browser_evidence_source: ${state.storefrontProbe?.browser_evidence_source ?? "not_proven_by_managed_browser"}`,
+    `real_browser_used: ${String(state.storefrontProbe?.real_browser_used === true)}`,
     `storefront_runtime_product_count: ${state.storefrontProbe?.storefront_runtime_product_count ?? "not probed"}`,
+    `canonical_context_status: ${contextStatus}`,
+    `canonical_context_consumption_status: ${contextStatus === "passed" ? "consumed" : "blocked"}`,
+    `downstream_context_acknowledgement_status: ${contextStatus === "passed" ? "acknowledged" : "blocked"}`,
+    `required_context_status: ${contextStatus === "passed" ? "passed" : "blocked"}`,
+    `canonical_context_verdict: ${state.canonicalContextVerdict ?? "missing"}`,
+    `canonical_context_report_hash: ${state.canonicalContextReportHash ?? "missing"}`,
+    `canonical_context_blockers: ${formatList(state.canonicalContextBlockers, contextStatus === "passed" ? "not_applicable: no canonical context blockers" : "missing: backend did not provide canonical context blockers")}`,
+    `canonical_context_acknowledgements: ${formatList(state.canonicalContextAcknowledgements, "missing: backend did not provide canonical context acknowledgements")}`,
+    `generation_status: ${generationStatus}`,
+    `preview_verification_status: ${previewVerificationStatus}`,
+    `approval_status: ${approvalStatus}`,
+    `apply_status: ${applyStatus}`,
+    `post_apply_verification_status: ${postApplyVerificationStatus}`,
+    `browser_verification_status: ${browserVerificationStatus}`,
+    `anti_cheat_status: ${authoritativeAntiCheatStatus}`,
+    `commit_safe: ${String(commitSafe)}`,
+    `final_truth_status: ${commitSafe ? "GO" : "BLOCKED_SAFE"}`,
+    `final_receipt_status: ${commitSafe ? "GO" : "BLOCKED_SAFE"}`,
+    `required_action: ${requiredAction}`,
   ];
+}
+
+export function selectedPromptFailureDiagnosticLines(diagnostics: Record<string, unknown> | null | undefined) {
+  if (!diagnostics) return [];
+  const sections = [
+    "task_identity",
+    "prompt_packet",
+    "model_provenance",
+    "diff_provenance",
+    "approval_binding",
+    "verification",
+    "anti_cheat",
+    "acceptance_gate",
+    "final_truth_summary",
+  ];
+  const lines: string[] = [];
+  for (const section of sections) {
+    const record = asRecord(diagnostics[section]);
+    for (const [key, value] of Object.entries(record)) {
+      lines.push(`${section}_${key}: ${formatDiagnosticValue(value)}`);
+    }
+  }
+  for (const key of [
+    "reason_code",
+    "error",
+    "expected_approval_id",
+    "received_approval_id",
+    "task_creation_status",
+    "task_creation_elapsed_ms",
+    "task_creation_timeout_stage",
+    "task_creation_last_checkpoint",
+    "task_creation_blocking_subsystem",
+  ]) {
+    if (diagnostics[key] != null && !lines.some((line) => line.startsWith(`${key}:`))) {
+      lines.push(`${key}: ${formatDiagnosticValue(diagnostics[key])}`);
+    }
+  }
+  return lines;
+}
+
+export function selectedPromptFallbackDiagnosticLines(state: DummyCoder10RunState) {
+  const executeApprovedNotReached = "not_applicable: execute_approved_not_reached";
+  const reasonCode =
+    state.rawBackendStatus ??
+    state.noDiffFailureCause ??
+    state.errorText ??
+    (state.status === "blocked" ? "selected_prompt_blocked_before_execute_approved" : "missing_diagnostic_envelope");
+  const safeBlock = state.status === "blocked" || state.status === "error" || state.status === "timeout";
+  const truthStatus =
+    state.status === "blocked"
+      ? "BLOCKED_SAFE"
+      : state.status === "applied" || state.status === "complete"
+        ? "MISSING_DIAGNOSTIC_ENVELOPE"
+        : "NO-GO";
+  const recommendedNextAction =
+    state.recommendedNextAction ??
+    (safeBlock
+      ? "Inspect the selected-prompt pre-apply failure, clear dirty fixture state if needed, then rerun this prompt."
+      : "Inspect Source Proxy route health; expected execute-approved diagnostics were not surfaced.");
+  return [
+    `truth_status: ${truthStatus}`,
+    `reason_code: ${reasonCode}`,
+    `structured_bundle_status: ${state.structuredBundleStatus ?? "missing: backend did not provide field"}`,
+    `structured_bundle_file_count: ${state.structuredBundleFileCount ?? "missing: backend did not provide field"}`,
+    `structured_bundle_accepted_paths: ${formatList(state.structuredBundleAcceptedPaths, "missing: backend did not provide field")}`,
+    `structured_bundle_rejected_paths: ${formatList(state.structuredBundleRejectedPaths, "not_applicable: no rejected paths")}`,
+    `diff_generation_status: ${state.diffGenerationStatus ?? "missing: backend did not provide field"}`,
+    `diff_generation_reason: ${state.diffGenerationReason ?? "missing: backend did not provide field"}`,
+    `diff_file_count: ${state.diffFileCount ?? "missing: backend did not provide field"}`,
+    `diff_added_paths: ${formatList(state.diffAddedPaths, "not_applicable: no added paths")}`,
+    `diff_skipped_paths: ${formatList(state.diffSkippedPaths, "not_applicable: no skipped paths")}`,
+    `diff_skipped_reasons: ${formatList(state.diffSkippedReasons, "not_applicable: no skipped paths")}`,
+    `diff_filesystem_snapshot_summary: ${formatList(state.diffFilesystemSnapshotSummary, "not_applicable: no filesystem snapshot summary")}`,
+    `patch_verification_status: ${state.patchVerificationStatus ?? "missing: backend did not provide field"}`,
+    `patch_verification_reason: ${state.patchVerificationReason ?? "missing: backend did not provide field"}`,
+    `task_creation_status: ${state.taskCreationStatus ?? "missing: backend did not provide field"}`,
+    `task_creation_elapsed_ms: ${state.taskCreationElapsedMs ?? "missing: backend did not provide field"}`,
+    `task_creation_timeout_stage: ${state.taskCreationTimeoutStage ?? "missing: backend did not provide field"}`,
+    `task_creation_last_checkpoint: ${state.taskCreationLastCheckpoint ?? "missing: backend did not provide field"}`,
+    `task_creation_blocking_subsystem: ${state.taskCreationBlockingSubsystem ?? "missing: backend did not provide field"}`,
+    `approval_binding_status: not_run: execute_approved_not_reached`,
+    `approval_binding_failure_reason: ${executeApprovedNotReached}`,
+    `expected_approval_id: ${executeApprovedNotReached}`,
+    `received_approval_id: ${executeApprovedNotReached}`,
+    `task_id_match: ${executeApprovedNotReached}`,
+    `target_match: ${executeApprovedNotReached}`,
+    `diff_sha256_match: ${executeApprovedNotReached}`,
+    `apply_block_layer: selected_prompt_pre_apply`,
+    `block_receipt_path: ${executeApprovedNotReached}`,
+    `safe_block: ${String(safeBlock)}`,
+    `binary_verdict: NO-GO`,
+    `causal_crosscheck_status: skipped_with_reason`,
+    `fail_closed_lane_status: skipped_with_reason`,
+    `phase_verifier_status: skipped_with_reason`,
+    `plan5_gate_id: plan5_selected_prompt_pre_apply_block`,
+    `plan5_gate_present: false`,
+    `post_apply_verification_status: not_run: execute_approved_not_reached`,
+    `post_apply_verification_reason: ${executeApprovedNotReached}`,
+    `verification_required_action: ${safeBlock ? "Resolve the pre-apply block, then rerun the selected prompt." : executeApprovedNotReached}`,
+    `commit_safe: false`,
+    `commit_safe_reason: selected_prompt_not_verified`,
+    `recommended_next_action: ${recommendedNextAction}`,
+  ];
+}
+
+export function selectedPromptPreApplyBlockDiagnostic({
+  dirtyFiles = [],
+  message,
+  reasonCode,
+  selectedPromptId,
+  taskId = null,
+}: {
+  dirtyFiles?: string[];
+  message: string;
+  reasonCode: string;
+  selectedPromptId: string;
+  taskId?: string | null;
+}): Record<string, unknown> {
+  const taskLabel = taskId ?? "not_applicable: task_not_created";
+  const action =
+    reasonCode === "dirty_dummy_fixture_reset_failed"
+      ? "Run the dummy fixture cleanup/sweep successfully, verify baseline_clean_for_fresh_suite, then rerun Prompt 1."
+      : "Verify the dummy fixture baseline, then rerun Prompt 1 from a clean missing-fixture state.";
+  return {
+    stage_id: "coding_ui.selected_prompt.pre_apply_fixture_baseline",
+    subsystem: "coding_cockpit_selected_prompt",
+    task_id: taskLabel,
+    selected_prompt_task_id: taskLabel,
+    run_id: `selected_prompt:${selectedPromptId}:pre_apply_fixture_baseline`,
+    trace_id: "not_applicable: execute_approved_not_reached",
+    invocation_event_id: "not_applicable: execute_approved_not_reached",
+    consumer_event_id: "not_applicable: execute_approved_not_reached",
+    status: "blocked",
+    truth_status: "BLOCKED_SAFE",
+    safe_block: true,
+    error_code: reasonCode,
+    reason_code: reasonCode,
+    human_message: message,
+    machine_reason: reasonCode,
+    apply_block_layer: "selected_prompt_pre_apply",
+    recommended_next_action: action,
+    task_identity: {
+      backend_task_id: taskLabel,
+      selected_prompt_id: selectedPromptId,
+      selected_prompt_task_id: taskLabel,
+      trace_id: "not_applicable: execute_approved_not_reached",
+    },
+    diff_provenance: {
+      applied_diff_sha256: "not_applicable: apply_did_not_happen",
+      approved_diff_sha256: "not_applicable: execute_approved_not_reached",
+      backend_converted_diff_sha256: "not_applicable: execute_approved_not_reached",
+      changed_files: dirtyFiles,
+      diff_source: "not_applicable: execute_approved_not_reached",
+      provenance_hash_normalization: "not_applicable: execute_approved_not_reached",
+    },
+    approval_binding: {
+      approval_binding_status: "not_run: execute_approved_not_reached",
+      approval_binding_failure_reason: "not_applicable: execute_approved_not_reached",
+      apply_block_layer: "selected_prompt_pre_apply",
+      block_receipt_path: "not_applicable: apply_did_not_happen",
+      expected_approval_id: "not_applicable: execute_approved_not_reached",
+      received_approval_id: "not_applicable: execute_approved_not_reached",
+      safe_block: true,
+    },
+    verification: {
+      post_apply_verification_status: "not_run: execute_approved_not_reached",
+      post_apply_verification_reason: reasonCode,
+      preview_verification_status: "not_run: selected_prompt_pre_apply_block",
+      verification_required_action: action,
+    },
+    anti_cheat: {
+      anti_cheat_status: "not_run",
+      anti_cheat_reasons: [reasonCode],
+      grader_result_state: "not_applicable: selected_prompt_pre_apply_block",
+      trial_result_trust_status: "blocked_before_apply",
+    },
+    acceptance_gate: {
+      acceptance_failures: [reasonCode],
+      binary_verdict: "NO-GO",
+      causal_crosscheck_status: "skipped_with_reason",
+      fail_closed_lane_status: "skipped_with_reason",
+      missing_fields: ["execute_approved_apply_receipt"],
+      phase_verifier_status: "skipped_with_reason",
+      plan5_gate_id: "plan5_selected_prompt_pre_apply_block",
+      plan5_gate_present: false,
+      plan5_gate_version: "plan5_acceptance_v1",
+      reason: reasonCode,
+    },
+    final_truth_summary: {
+      commit_safe: false,
+      commit_safe_reason: reasonCode,
+      proof_level: "selected_prompt_pre_apply_block",
+      raw_backend_status: reasonCode,
+      recommended_next_action: action,
+      run_status: "blocked",
+      block_receipt_path: "not_applicable: apply_did_not_happen",
+      truth_status: "BLOCKED_SAFE",
+      why_not_go: message,
+    },
+    queue_conflict: {},
+    unavailable_fields: [
+      { field: "expected_approval_id", reason: "execute-approved not reached" },
+      { field: "received_approval_id", reason: "execute-approved not reached" },
+      { field: "block_receipt_path", reason: "apply did not happen" },
+    ],
+    persisted_at: "not_applicable: ui_pre_apply_block",
+    surfaced_at: new Date().toISOString(),
+  };
+}
+
+function formatDiagnosticValue(value: unknown): string {
+  if (Array.isArray(value)) return formatList(value.map((item) => String(item)), "missing: backend did not provide field");
+  if (value == null || value === "") return "missing: backend did not provide field";
+  if (typeof value === "boolean") return String(value);
+  if (typeof value === "number") return String(value);
+  if (typeof value === "string") return value;
+  return JSON.stringify(value);
 }
 
 function buildRouteUnavailableSuitePromptResult(
@@ -729,6 +1163,7 @@ type VerificationTarget = {
 type AppliedRunReceipt = {
   allowedFiles: string[];
   appliedAt: string;
+  backupManifest?: string | null;
   changedFiles: string[];
   diff: string;
   id: string;
@@ -739,6 +1174,10 @@ type AppliedRunReceipt = {
   providerModelStatus: string;
   hermesUsedForThisRun: boolean | null;
   revertedAt: string | null;
+  undoReceiptId?: string | null;
+  undoReceiptPath?: string | null;
+  postApplyVerificationStatus?: string | null;
+  finalTruthStatus?: string | null;
   reversalProvider: string | null;
   reversalModel: string | null;
   reversalProviderModelSource: string | null;
@@ -927,6 +1366,11 @@ function defaultDummyCoderRunState(
     changedFiles: [],
     checksRun: [],
     diffSource: null,
+    backend_anti_cheat_status: null,
+    backend_anti_cheat_hard_fail_ids: [],
+    backend_anti_cheat_advisory_ids: [],
+    backend_anti_cheat_report: null,
+    backend_anti_cheat_reasons: [],
     errorText: null,
     fallbackUsed: null,
     generatedDiffByBackend: null,
@@ -940,19 +1384,46 @@ function defaultDummyCoderRunState(
     rawBackendStatus: null,
     rawModelResponseSha256: null,
     recommendedNextAction: null,
+    lastFailureDiagnostics: null,
     scaffoldUsed: null,
     selectedPromptId: null,
     startedAt: null,
     finishedAt: null,
     applyMode: null,
     appliedDiffSha256: null,
+    backupManifest: null,
     approvedDiffSha256: null,
     backendConvertedDiffSha256: null,
+    structuredBundleStatus: null,
+    structuredBundleParserStage: null,
+    structuredBundleFileCount: null,
+    structuredBundleAcceptedPaths: [],
+    structuredBundleRejectedPaths: [],
+    structuredBundleRejectionReason: null,
+    modelOutputShapeSummary: null,
+    diffGenerationStatus: null,
+    diffGenerationReason: null,
+    diffFileCount: null,
+    diffAddedPaths: [],
+    diffSkippedPaths: [],
+    diffSkippedReasons: [],
+    diffFilesystemSnapshotSummary: [],
+    patchVerificationStatus: null,
+    patchVerificationReason: null,
+    taskCreationStatus: null,
+    taskCreationElapsedMs: null,
+    taskCreationTimeoutStage: null,
+    taskCreationLastCheckpoint: null,
+    taskCreationBlockingSubsystem: null,
     modelFileBundleSha256: null,
     postApplyRediffSha256: null,
     provenanceHashNormalization: null,
     stalePatchRecovered: null,
     storefrontProbe: null,
+    canonicalContextVerdict: null,
+    canonicalContextReportHash: null,
+    canonicalContextBlockers: [],
+    canonicalContextAcknowledgements: [],
     taskId: null,
     status,
     trialResultTrustStatus: null,
@@ -1130,6 +1601,11 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
       changedFiles: storedStringArray(parsed.changedFiles),
       checksRun: storedStringArray(parsed.checksRun),
       diffSource: storedStringOrNull(parsed.diffSource),
+      backend_anti_cheat_status: storedStringOrNull(parsed.backend_anti_cheat_status),
+      backend_anti_cheat_hard_fail_ids: storedStringArray(parsed.backend_anti_cheat_hard_fail_ids),
+      backend_anti_cheat_advisory_ids: storedStringArray(parsed.backend_anti_cheat_advisory_ids),
+      backend_anti_cheat_report: storedStringOrNull(parsed.backend_anti_cheat_report),
+      backend_anti_cheat_reasons: storedStringArray(parsed.backend_anti_cheat_reasons),
       errorText: storedStringOrNull(parsed.errorText),
       fallbackUsed: storedBooleanOrNull(parsed.fallbackUsed),
       generatedDiffByBackend: storedBooleanOrNull(parsed.generatedDiffByBackend),
@@ -1146,15 +1622,41 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
       rawBackendStatus: storedStringOrNull(parsed.rawBackendStatus),
       rawModelResponseSha256: storedStringOrNull(parsed.rawModelResponseSha256),
       recommendedNextAction: storedStringOrNull(parsed.recommendedNextAction),
+      lastFailureDiagnostics:
+        parsed.lastFailureDiagnostics && typeof parsed.lastFailureDiagnostics === "object"
+          ? (parsed.lastFailureDiagnostics as Record<string, unknown>)
+          : null,
       scaffoldUsed: storedBooleanOrNull(parsed.scaffoldUsed),
       selectedPromptId,
       startedAt: typeof parsed.startedAt === "number" ? parsed.startedAt : null,
       finishedAt: typeof parsed.finishedAt === "number" ? parsed.finishedAt : null,
       applyMode: storedStringOrNull(parsed.applyMode),
       appliedDiffSha256: storedStringOrNull(parsed.appliedDiffSha256),
+      backupManifest: storedStringOrNull(parsed.backupManifest),
       approvedDiffSha256: storedStringOrNull(parsed.approvedDiffSha256),
-      backendConvertedDiffSha256: storedStringOrNull(parsed.backendConvertedDiffSha256),
-      modelFileBundleSha256: storedStringOrNull(parsed.modelFileBundleSha256),
+        backendConvertedDiffSha256: storedStringOrNull(parsed.backendConvertedDiffSha256),
+        structuredBundleStatus: storedStringOrNull(parsed.structuredBundleStatus),
+        structuredBundleParserStage: storedStringOrNull(parsed.structuredBundleParserStage),
+        structuredBundleFileCount: typeof parsed.structuredBundleFileCount === "number" ? parsed.structuredBundleFileCount : null,
+        structuredBundleAcceptedPaths: storedStringArray(parsed.structuredBundleAcceptedPaths),
+        structuredBundleRejectedPaths: storedStringArray(parsed.structuredBundleRejectedPaths),
+        structuredBundleRejectionReason: storedStringOrNull(parsed.structuredBundleRejectionReason),
+        modelOutputShapeSummary: storedStringOrNull(parsed.modelOutputShapeSummary),
+        diffGenerationStatus: storedStringOrNull(parsed.diffGenerationStatus),
+        diffGenerationReason: storedStringOrNull(parsed.diffGenerationReason),
+        diffFileCount: typeof parsed.diffFileCount === "number" ? parsed.diffFileCount : null,
+        diffAddedPaths: storedStringArray(parsed.diffAddedPaths),
+        diffSkippedPaths: storedStringArray(parsed.diffSkippedPaths),
+        diffSkippedReasons: storedStringArray(parsed.diffSkippedReasons),
+        diffFilesystemSnapshotSummary: storedStringArray(parsed.diffFilesystemSnapshotSummary),
+        patchVerificationStatus: storedStringOrNull(parsed.patchVerificationStatus),
+        patchVerificationReason: storedStringOrNull(parsed.patchVerificationReason),
+        taskCreationStatus: storedStringOrNull(parsed.taskCreationStatus),
+        taskCreationElapsedMs: typeof parsed.taskCreationElapsedMs === "number" ? parsed.taskCreationElapsedMs : null,
+        taskCreationTimeoutStage: storedStringOrNull(parsed.taskCreationTimeoutStage),
+        taskCreationLastCheckpoint: storedStringOrNull(parsed.taskCreationLastCheckpoint),
+        taskCreationBlockingSubsystem: storedStringOrNull(parsed.taskCreationBlockingSubsystem),
+        modelFileBundleSha256: storedStringOrNull(parsed.modelFileBundleSha256),
       postApplyRediffSha256: storedStringOrNull(parsed.postApplyRediffSha256),
       provenanceHashNormalization: storedStringOrNull(parsed.provenanceHashNormalization),
       stalePatchRecovered: storedBooleanOrNull(parsed.stalePatchRecovered),
@@ -1162,6 +1664,10 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
         parsed.storefrontProbe && typeof parsed.storefrontProbe === "object"
           ? (parsed.storefrontProbe as DummyStorefrontProbeResult)
           : null,
+      canonicalContextVerdict: storedStringOrNull(parsed.canonicalContextVerdict),
+      canonicalContextReportHash: storedStringOrNull(parsed.canonicalContextReportHash),
+      canonicalContextBlockers: storedStringArray(parsed.canonicalContextBlockers),
+      canonicalContextAcknowledgements: storedStringArray(parsed.canonicalContextAcknowledgements),
       taskId: storedStringOrNull(parsed.taskId),
       status:
         parsed.status === "starting" || parsed.status === "request_sent" || parsed.status === "running"
@@ -3952,16 +4458,12 @@ export function CodingCockpitShell() {
     () => defaultReversibleSuiteState(),
   );
   const [reversibleTrialCount, setReversibleTrialCount] = useState<ReversibleTrialCount>(10);
-  const [selectedDummyCoderPromptId, setSelectedDummyCoderPromptId] = useState(() => {
-    const stored = loadStoredDummyCoderRunState();
-    return stored.selectedPromptId && dummyCoder10Prompts.some((prompt) => prompt.id === stored.selectedPromptId)
-      ? stored.selectedPromptId
-      : dummyCoder10Prompts[0].id;
-  });
+  const [selectedDummyCoderPromptId, setSelectedDummyCoderPromptId] = useState(dummyCoder10Prompts[0].id);
   const [dummyCoderRunCopyStatus, setDummyCoderRunCopyStatus] = useState("");
   const [dummyCoderRunState, setDummyCoderRunState] = useState<DummyCoder10RunState>(
-    () => loadStoredDummyCoderRunState(),
+    () => defaultDummyCoderRunState(),
   );
+  const [dummyCoderStorageHydrated, setDummyCoderStorageHydrated] = useState(process.env.NODE_ENV === "test");
   const [composerTiming, setComposerTiming] = useState<ComposerTimingState>({
     diffPreviewMs: null,
     promptPacketMs: null,
@@ -4009,6 +4511,15 @@ export function CodingCockpitShell() {
   );
 
   useEffect(() => {
+    const storedDummyCoderRun = loadStoredDummyCoderRunState();
+    if (
+      storedDummyCoderRun.selectedPromptId &&
+      dummyCoder10Prompts.some((prompt) => prompt.id === storedDummyCoderRun.selectedPromptId)
+    ) {
+      setSelectedDummyCoderPromptId(storedDummyCoderRun.selectedPromptId);
+    }
+    setDummyCoderRunState(storedDummyCoderRun);
+    setDummyCoderStorageHydrated(true);
     setAppliedRunReceipts(loadStoredAppliedRunReceipts());
     setPromptHistory(loadPromptHistory());
     setHasBrowserMounted(true);
@@ -4020,8 +4531,9 @@ export function CodingCockpitShell() {
   }, [appliedRunReceipts]);
 
   useEffect(() => {
+    if (!dummyCoderStorageHydrated) return;
     storeDummyCoderRunState(dummyCoderRunState);
-  }, [dummyCoderRunState]);
+  }, [dummyCoderRunState, dummyCoderStorageHydrated]);
 
   useEffect(() => {
     let cancelled = false;
@@ -4403,25 +4915,18 @@ export function CodingCockpitShell() {
     const selectedPromptReceipt = selectedPromptReceiptFromState();
     if (selectedPromptReceipt) {
       setBackgroundCleanupActive(true);
-      setReversibleSuiteCopyStatus("Reversing selected-prompt edit and clearing Trial Runner results...");
+      setReversibleSuiteCopyStatus("Undoing the selected-prompt edit and verifying the fixed dummy fixture reset...");
       try {
         await handleRevertReceipt(selectedPromptReceipt);
+        const resetNote = await resetDummyProductSiteViaServer();
         await clearReversibleSuitePanel({ syncBackend: true });
-        clearDummyCoder10RunState("Selected-prompt edits reversed. Results cleared.");
-        // Reverting the applied diff does not reliably delete freshly-created fixture files
-        // (e.g. the LumaCart starter set), which left the baseline "dirty" and forced a second
-        // reverse click to actually sweep the files. Sweep leftovers + refresh the baseline here
-        // so a single reverse/clear returns disk and UI to clean truth together.
-        const sweepNote = await sweepAgentLabLeftoverFilesViaServer();
-        await refreshAgentLabBaseline();
+        clearDummyCoder10RunState("Selected-prompt Undo and fixed fixture reset verified. Results cleared.");
         setReversibleSuiteCopyStatus(
-          sweepNote && !sweepNote.toLowerCase().includes("no leftover")
-            ? `Selected-prompt edits reversed and leftover fixture files swept. ${sweepNote}`
-            : "Selected-prompt edits reversed. Trial Runner results cleared.",
+          `Selected-prompt Undo verified. ${resetNote} Trial Runner results cleared.`,
         );
       } catch (error) {
         setReversibleSuiteCopyStatus(
-          error instanceof Error ? error.message : "Selected-prompt reverse failed.",
+          error instanceof Error ? error.message : "Selected-prompt Undo or fixed fixture reset failed.",
         );
       } finally {
         setBackgroundCleanupActive(false);
@@ -4429,8 +4934,21 @@ export function CodingCockpitShell() {
       return;
     }
     if (dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared") {
-      clearDummyCoder10RunState();
-      setReversibleSuiteCopyStatus("Selected-prompt result cleared. No applied edits were recorded.");
+      setBackgroundCleanupActive(true);
+      setReversibleSuiteCopyStatus("Verifying the fixed dummy fixture reset before clearing selected-prompt state...");
+      try {
+        const resetNote = await resetDummyProductSiteViaServer();
+        clearDummyCoder10RunState();
+        setReversibleSuiteCopyStatus(`${resetNote} Selected-prompt result cleared; no applied receipt was recorded.`);
+      } catch (error) {
+        setReversibleSuiteCopyStatus(
+          error instanceof Error
+            ? error.message
+            : "Fixed dummy fixture reset failed; selected-prompt state was kept visible.",
+        );
+      } finally {
+        setBackgroundCleanupActive(false);
+      }
       return;
     }
     const baseline = await refreshAgentLabBaseline();
@@ -5019,6 +5537,9 @@ export function CodingCockpitShell() {
     reversibleSuiteState.status === "done" || reversibleSuiteState.status === "failed";
   const hasSelectedPromptResult =
     dummyCoderRunState.status !== "idle" && dummyCoderRunState.status !== "cleared";
+  const selectedPromptUndoReceipt = hasSelectedPromptResult
+    ? selectedPromptReceiptFromState()
+    : null;
   const canCleanUpTrialRunner =
     !isReverting &&
     !reversibleSuiteBusy &&
@@ -5071,7 +5592,7 @@ export function CodingCockpitShell() {
     backgroundCleanupActive || isReverting
       ? "Cleanup/reverse is still running. Wait for it to finish before starting another benchmark."
       : hasSelectedPromptResult
-        ? selectedPromptReceiptFromState()
+        ? selectedPromptUndoReceipt
           ? "Selected prompt applied reversible edits. This button reverses them and clears the selected-prompt result."
           : "No applied selected-prompt edits to reverse. This button clears the selected-prompt result."
       : agentLabHasLeftovers
@@ -5101,12 +5622,15 @@ export function CodingCockpitShell() {
     <>
       <button
         className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--ddv4-pill-border)] px-3 text-sm font-semibold text-[var(--ddv4-fg)] transition-colors hover:bg-[var(--ddv4-surface-fill)] disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+        data-testid={selectedPromptUndoReceipt ? "selected-prompt-undo-last-change" : undefined}
         disabled={!canCleanUpTrialRunner}
         onClick={() => void handleCleanUpTrialRunner()}
         type="button"
       >
         {isReverting || backgroundCleanupActive
           ? "Cleaning up trial run..."
+          : selectedPromptUndoReceipt
+            ? "Undo last change"
           : agentLabBaselineLoadState === "error"
             ? "Retry agent-lab cleanup"
           : agentLabHasLeftovers && reversibleSuiteState.results.length === 0
@@ -5738,8 +6262,49 @@ export function CodingCockpitShell() {
         const status = stringValue(task.status);
         if (!response.ok || !status || cancelled) return;
         const steps = arrayOfStrings(task.steps);
+        const taskResultsText = stringValue(task.truncated_test_results);
+        let taskResults: Record<string, unknown> = {};
+        if (taskResultsText?.startsWith("{")) {
+          try {
+            taskResults = asRecord(JSON.parse(taskResultsText));
+          } catch {
+            taskResults = {};
+          }
+        }
+        const taskCoderDiagnostics = asRecord(taskResults.coder_diagnostics);
+        const taskEnvelope = asRecord(payload);
+        const taskCreationDiagnostics = asRecord(taskEnvelope.diagnostic_envelope);
+        const taskAntiCheat = asRecord(
+          taskEnvelope.anti_cheat ??
+          task.anti_cheat ??
+          taskCreationDiagnostics.anti_cheat,
+        );
+        let taskAntiCheatStatus =
+          stringValue(taskCoderDiagnostics.anti_cheat_status) ??
+          stringValue(task.anti_cheat_status) ??
+          stringValue(taskEnvelope.anti_cheat_status) ??
+          stringValue(taskAntiCheat.anti_cheat_status);
+        const taskAntiCheatReasons = [
+          ...arrayOfStrings(taskCoderDiagnostics.anti_cheat_reasons),
+          ...arrayOfStrings(task.anti_cheat_reasons),
+          ...arrayOfStrings(taskEnvelope.anti_cheat_reasons),
+          ...arrayOfStrings(taskAntiCheat.anti_cheat_reasons),
+        ];
+        const taskAntiCheatHardFailIds = [
+          ...arrayOfStrings(taskCoderDiagnostics.anti_cheat_hard_fail_ids),
+          ...arrayOfStrings(task.anti_cheat_hard_fail_ids),
+          ...arrayOfStrings(taskEnvelope.anti_cheat_hard_fail_ids),
+          ...arrayOfStrings(taskAntiCheat.anti_cheat_hard_fail_ids),
+        ];
+        const taskReasonCode = stringValue(taskResults.reason_code);
+        if ((taskAntiCheatStatus === "not_run" || !taskAntiCheatStatus) && taskReasonCode) {
+          taskAntiCheatStatus = "failed";
+          taskAntiCheatHardFailIds.push(`pre_apply_block:${taskReasonCode}`);
+          taskAntiCheatReasons.push(taskReasonCode);
+        }
         const taskMessage =
-          stringValue(task.truncated_test_results) ??
+          stringValue(taskResults.summary) ??
+          taskResultsText ??
           stringValue(task.message) ??
           stringValue(task.error) ??
           steps.at(-1) ??
@@ -5764,6 +6329,26 @@ export function CodingCockpitShell() {
               message: taskMessage,
               rawBackendStatus: status,
               status: "running",
+              taskCreationStatus:
+                stringValue(task.task_creation_status) ??
+                stringValue(taskCreationDiagnostics.task_creation_status) ??
+                current.taskCreationStatus,
+              taskCreationElapsedMs:
+                numberValue(task.task_creation_elapsed_ms) ??
+                numberValue(taskCreationDiagnostics.task_creation_elapsed_ms) ??
+                current.taskCreationElapsedMs,
+              taskCreationTimeoutStage:
+                stringValue(task.task_creation_timeout_stage) ??
+                stringValue(taskCreationDiagnostics.task_creation_timeout_stage) ??
+                current.taskCreationTimeoutStage,
+              taskCreationLastCheckpoint:
+                stringValue(task.task_creation_last_checkpoint) ??
+                stringValue(taskCreationDiagnostics.task_creation_last_checkpoint) ??
+                current.taskCreationLastCheckpoint,
+              taskCreationBlockingSubsystem:
+                stringValue(task.task_creation_blocking_subsystem) ??
+                stringValue(taskCreationDiagnostics.task_creation_blocking_subsystem) ??
+                current.taskCreationBlockingSubsystem,
             };
           });
           return;
@@ -5785,13 +6370,122 @@ export function CodingCockpitShell() {
           }
           return {
             ...current,
-            errorText: status === "failed" || status === "cancelled" ? taskMessage : null,
+            backendConvertedDiffSha256:
+              stringValue(taskCoderDiagnostics.backend_converted_diff_sha256) ?? current.backendConvertedDiffSha256,
+            backend_anti_cheat_status:
+              taskAntiCheatStatus ?? current.backend_anti_cheat_status,
+            backend_anti_cheat_hard_fail_ids:
+              taskAntiCheatHardFailIds.length > 0
+                ? [...new Set(taskAntiCheatHardFailIds)]
+                : current.backend_anti_cheat_hard_fail_ids,
+            backend_anti_cheat_advisory_ids:
+              arrayOfStrings(taskCoderDiagnostics.anti_cheat_advisory_ids).length > 0
+                ? arrayOfStrings(taskCoderDiagnostics.anti_cheat_advisory_ids)
+                : current.backend_anti_cheat_advisory_ids,
+            backend_anti_cheat_reasons:
+              taskAntiCheatReasons.length > 0
+                ? [...new Set(taskAntiCheatReasons)]
+                : current.backend_anti_cheat_reasons,
+            diffGenerationReason:
+              stringValue(taskCoderDiagnostics.diff_generation_reason) ??
+              taskReasonCode ??
+              current.diffGenerationReason,
+            diffGenerationStatus:
+              stringValue(taskCoderDiagnostics.diff_generation_status) ??
+              (taskReasonCode ? "blocked" : current.diffGenerationStatus),
+            diffAddedPaths:
+              arrayOfStrings(taskCoderDiagnostics.diff_added_paths).length > 0
+                ? arrayOfStrings(taskCoderDiagnostics.diff_added_paths)
+                : current.diffAddedPaths,
+            diffFileCount:
+              numberValue(taskCoderDiagnostics.diff_file_count) ?? current.diffFileCount,
+            diffSkippedPaths:
+              arrayOfStrings(taskCoderDiagnostics.diff_skipped_paths).length > 0
+                ? arrayOfStrings(taskCoderDiagnostics.diff_skipped_paths)
+                : current.diffSkippedPaths,
+            diffSkippedReasons:
+              arrayOfStrings(taskCoderDiagnostics.diff_skipped_reasons).length > 0
+                ? arrayOfStrings(taskCoderDiagnostics.diff_skipped_reasons)
+                : current.diffSkippedReasons,
+            diffFilesystemSnapshotSummary:
+              arrayOfStrings(taskCoderDiagnostics.diff_filesystem_snapshot_summary).length > 0
+                ? arrayOfStrings(taskCoderDiagnostics.diff_filesystem_snapshot_summary)
+                : current.diffFilesystemSnapshotSummary,
+            diffSource: stringValue(taskCoderDiagnostics.diff_source) ?? current.diffSource,
+            errorText:
+              status === "failed" || status === "cancelled"
+                ? taskMessage
+                : taskReasonCode
+                  ? `No diff produced: ${taskReasonCode}.`
+                  : null,
+            generatedDiffByBackend:
+              booleanValue(taskCoderDiagnostics.generated_diff_by_backend) ?? current.generatedDiffByBackend,
+            generationSource: stringValue(taskCoderDiagnostics.generation_source) ?? current.generationSource,
             message: completed
               ? `${taskMessage} The prompt-packet route is still finalizing; if this hangs, cancel and rerun Prompt 1.`
               : taskMessage,
-            rawBackendStatus: status,
+            modelFileBundleSha256:
+              stringValue(taskCoderDiagnostics.model_file_bundle_sha256) ?? current.modelFileBundleSha256,
+            modelOutputClassification:
+              stringValue(taskCoderDiagnostics.model_output_classification) ?? current.modelOutputClassification,
+            modelOutputShapeSummary:
+              stringValue(taskCoderDiagnostics.model_output_shape_summary) ?? current.modelOutputShapeSummary,
+            noDiffFailureCause:
+              stringValue(taskCoderDiagnostics.no_diff_failure_cause) ??
+              stringValue(taskCoderDiagnostics.safe_response_classification) ??
+              current.noDiffFailureCause,
+            parserExtractorDecision:
+              stringValue(taskCoderDiagnostics.parser_extractor_decision) ?? current.parserExtractorDecision,
+            patchVerificationReason:
+              stringValue(taskCoderDiagnostics.patch_verification_reason) ??
+              (taskReasonCode ? "not_applicable: diff_generation_blocked" : current.patchVerificationReason),
+            patchVerificationStatus:
+              stringValue(taskCoderDiagnostics.patch_verification_status) ??
+              (taskReasonCode ? "not_run" : current.patchVerificationStatus),
+            rawBackendStatus: taskReasonCode ?? status,
+            rawModelResponseSha256:
+              stringValue(taskCoderDiagnostics.raw_model_response_sha256) ?? current.rawModelResponseSha256,
             recommendedNextAction: stringValue(task.next_action) ?? current.recommendedNextAction,
             status: completed ? "running" : status === "blocked" ? "blocked" : "error",
+            taskCreationStatus:
+              stringValue(task.task_creation_status) ??
+              stringValue(taskCreationDiagnostics.task_creation_status) ??
+              current.taskCreationStatus,
+            taskCreationElapsedMs:
+              numberValue(task.task_creation_elapsed_ms) ??
+              numberValue(taskCreationDiagnostics.task_creation_elapsed_ms) ??
+              current.taskCreationElapsedMs,
+            taskCreationTimeoutStage:
+              stringValue(task.task_creation_timeout_stage) ??
+              stringValue(taskCreationDiagnostics.task_creation_timeout_stage) ??
+              current.taskCreationTimeoutStage,
+            taskCreationLastCheckpoint:
+              stringValue(task.task_creation_last_checkpoint) ??
+              stringValue(taskCreationDiagnostics.task_creation_last_checkpoint) ??
+              current.taskCreationLastCheckpoint,
+            taskCreationBlockingSubsystem:
+              stringValue(task.task_creation_blocking_subsystem) ??
+              stringValue(taskCreationDiagnostics.task_creation_blocking_subsystem) ??
+              current.taskCreationBlockingSubsystem,
+            structuredBundleAcceptedPaths:
+              arrayOfStrings(taskCoderDiagnostics.structured_bundle_accepted_paths).length > 0
+                ? arrayOfStrings(taskCoderDiagnostics.structured_bundle_accepted_paths)
+                : current.structuredBundleAcceptedPaths,
+            structuredBundleFileCount:
+              numberValue(taskCoderDiagnostics.structured_bundle_file_count) ?? current.structuredBundleFileCount,
+            structuredBundleParserStage:
+              stringValue(taskCoderDiagnostics.structured_bundle_parser_stage) ?? current.structuredBundleParserStage,
+            structuredBundleRejectedPaths:
+              arrayOfStrings(taskCoderDiagnostics.structured_bundle_rejected_paths).length > 0
+                ? arrayOfStrings(taskCoderDiagnostics.structured_bundle_rejected_paths)
+                : current.structuredBundleRejectedPaths,
+            structuredBundleRejectionReason:
+              stringValue(taskCoderDiagnostics.structured_bundle_rejection_reason) ??
+              current.structuredBundleRejectionReason,
+            structuredBundleStatus:
+              stringValue(taskCoderDiagnostics.structured_bundle_status) ?? current.structuredBundleStatus,
+            trialResultTrustStatus:
+              stringValue(taskCoderDiagnostics.trial_result_trust_status) ?? current.trialResultTrustStatus,
             verificationStatus: stringValue(task.post_apply_verification) ?? current.verificationStatus,
           };
         });
@@ -6370,8 +7064,8 @@ export function CodingCockpitShell() {
           : "—";
     if (state.status === "cleared" || !state.selectedPromptId) {
       return [
-        "selected_prompt_result: none",
-        "selected_prompt_task_id: none",
+        "selected_prompt_result: not_applicable: no selected-prompt run active",
+        "selected_prompt_task_id: not_applicable: no selected-prompt run active",
         "selected_prompt_status: cleared",
         "message: no active selected-prompt result",
         `existing_dummy_project_summary: ${dummyProjectSummary}`,
@@ -6379,49 +7073,37 @@ export function CodingCockpitShell() {
     }
     return [
       `selected_prompt_id: ${state.selectedPromptId ?? selectedDummyCoderPrompt.id}`,
-      `selected_prompt_task_id: ${state.taskId ?? "none"}`,
+      `selected_prompt_task_id: ${state.taskId ?? "missing: backend did not provide field"}`,
       `selected_prompt_number: ${selectedDummyCoderPrompt.number}`,
       `selected_prompt_title: ${selectedDummyCoderPrompt.title}`,
       `submitted_prompt: ${selectedDummyCoderPrompt.submittedPrompt}`,
       `fixture_root: ${selectedDummyCoderPrompt.fixtureRoot}`,
       `allowed_write_root: ${selectedDummyCoderPrompt.allowedWriteRoot}`,
-      `primary_expected_targets: ${formatList(selectedDummyCoderPrompt.primaryExpectedTargets, "none")}`,
+      `primary_expected_targets: ${formatList(selectedDummyCoderPrompt.primaryExpectedTargets, "not_applicable: no primary expected targets")}`,
       `expected_result_state: ${selectedDummyCoderPrompt.expectedResultState}`,
       `run_status: ${state.status}`,
-      `error_text: ${state.errorText ?? "none"}`,
-      `raw_backend_status: ${state.rawBackendStatus ?? "none"}`,
-      `changed_files: ${formatList(state.changedFiles, "none")}`,
-      `checks_run: ${formatList(state.checksRun, "none")}`,
-      `verification_status: ${state.verificationStatus ?? "none"}`,
-      `generation_source: ${state.generationSource ?? "none"}`,
-      `diff_source: ${state.diffSource ?? "none"}`,
-      `model_output_classification: ${state.modelOutputClassification ?? "none"}`,
-      `trial_result_trust_status: ${state.trialResultTrustStatus ?? "none"}`,
+      `error_text: ${state.errorText ?? "missing: no diagnostic envelope received"}`,
+      `raw_backend_status: ${state.rawBackendStatus ?? "missing: backend did not provide field"}`,
+      ...selectedPromptFailureDiagnosticLines(state.lastFailureDiagnostics),
+      ...(state.lastFailureDiagnostics ? [] : selectedPromptFallbackDiagnosticLines(state)),
+      `changed_files: ${formatList(state.changedFiles, "not_recorded: apply_did_not_happen")}`,
+      `checks_run: ${formatList(state.checksRun, "not_recorded: apply_did_not_happen")}`,
+      `verification_status: ${state.verificationStatus ?? "missing: backend did not provide field"}`,
+      `generation_source: ${state.generationSource ?? "missing: backend did not provide field"}`,
+      `diff_source: ${state.diffSource ?? "missing: backend did not provide field"}`,
+      `model_output_classification: ${state.modelOutputClassification ?? "missing: backend did not provide field"}`,
+      `trial_result_trust_status: ${state.trialResultTrustStatus ?? "missing: backend did not provide field"}`,
       ...selectedPromptAuditDiagnosticsLines({ grader, state }),
-      `anti_cheat_status: ${grader?.provenance?.anti_cheat_status ?? "not graded"}`,
-      `anti_cheat_hard_fail_ids: ${formatList(grader?.provenance?.anti_cheat_hard_fail_ids ?? [], "none")}`,
-      `anti_cheat_advisory_ids: ${formatList(grader?.provenance?.anti_cheat_advisory_ids ?? [], "none")}`,
-      `anti_cheat_reasons: ${formatList(grader?.provenance?.anti_cheat_reasons ?? [], "none")}`,
-      `raw_model_response_sha256: ${state.rawModelResponseSha256 ?? "not recorded"}`,
-      `model_file_bundle_sha256: ${state.modelFileBundleSha256 ?? "not recorded"}`,
-      `backend_converted_diff_sha256: ${state.backendConvertedDiffSha256 ?? "not recorded"}`,
-      `approved_diff_sha256: ${state.approvedDiffSha256 ?? "not recorded"}`,
-      `applied_diff_sha256: ${state.appliedDiffSha256 ?? "not recorded"}`,
-      `post_apply_rediff_sha256: ${state.postApplyRediffSha256 ?? "not recorded"}`,
-      `provenance_hash_normalization: ${state.provenanceHashNormalization ?? "not recorded"}`,
       `scaffold_used: ${String(state.scaffoldUsed ?? false)}`,
-      `fallback_used: ${String(state.fallbackUsed ?? false)}`,
       `generated_diff_by_backend: ${String(state.generatedDiffByBackend ?? false)}`,
-      `apply_mode: ${state.applyMode ?? "not recorded"}`,
-      `stale_patch_recovered: ${String(state.stalePatchRecovered ?? false)}`,
-      `grader_result_state: ${grader?.resultState ?? "not graded"}`,
-      `grader_label: ${grader?.label ?? "not graded"}`,
-      `grader_score: ${grader?.score ?? "not graded"}`,
-      `grader_reason: ${grader?.reason ?? "not graded"}`,
-      `critical_failures: ${formatList(grader?.criticalFailures ?? [], "none")}`,
-      `file_scope_status: ${grader?.fileScope?.file_scope_status ?? "not graded"}`,
-      `provenance_status: ${grader?.provenance?.provenance_status ?? "not graded"}`,
-      `recommended_next_action: ${state.recommendedNextAction ?? grader?.recommendedNextAction ?? "none"}`,
+      `grader_result_state: ${grader?.resultState ?? "not_run: skipped_due_to_apply_block"}`,
+      `grader_label: ${grader?.label ?? "not_run: skipped_due_to_apply_block"}`,
+      `grader_score: ${grader?.score ?? "not_run: skipped_due_to_apply_block"}`,
+      `grader_reason: ${grader?.reason ?? "not_run: skipped_due_to_apply_block"}`,
+      `critical_failures: ${formatList(grader?.criticalFailures ?? [], "not_applicable: no grader findings")}`,
+      `file_scope_status: ${grader?.fileScope?.file_scope_status ?? "not_run: skipped_due_to_apply_block"}`,
+      `provenance_status: ${grader?.provenance?.provenance_status ?? "not_run: skipped_due_to_apply_block"}`,
+      `recommended_next_action: ${state.recommendedNextAction ?? grader?.recommendedNextAction ?? "missing: no diagnostic envelope received"}`,
       `production_time: ${productionTime} (started ${state.startedAt ? new Date(state.startedAt).toISOString() : "n/a"}${state.finishedAt ? `, finished ${new Date(state.finishedAt).toISOString()}` : ""})`,
       `preview_behavior_status: ${state.storefrontProbe?.preview_behavior_status ?? "not probed"}`,
       `preview_visible_text_summary: ${state.storefrontProbe?.preview_visible_text_summary ?? "not probed"}`,
@@ -6429,6 +7111,8 @@ export function CodingCockpitShell() {
       `preview_product_count: ${state.storefrontProbe?.product_count ?? "not probed"}`,
       `storefront_runtime_status: ${state.storefrontProbe?.storefront_runtime_status ?? "not probed"}`,
       `storefront_runtime_engine: ${state.storefrontProbe?.storefront_runtime_engine ?? "not probed"}`,
+      `browser_evidence_source: ${state.storefrontProbe?.browser_evidence_source ?? "not_proven_by_managed_browser"}`,
+      `real_browser_used: ${String(state.storefrontProbe?.real_browser_used === true)}`,
       `storefront_runtime_product_count: ${state.storefrontProbe?.storefront_runtime_product_count ?? "not probed"}`,
       `existing_dummy_project_summary: ${dummyProjectSummary}`,
     ].join("\n");
@@ -6468,22 +7152,57 @@ export function CodingCockpitShell() {
 
   function failSelectedPromptStart(error: unknown) {
     const message = error instanceof Error ? error.message : "Dummy Coder 10 prompt failed.";
+    const failureDiagnostics = diagnosticPayloadFromError(error);
     const timeoutLayer = timeoutLayerFromError(error);
     const timedOut =
       timeoutLayer !== "network_fetch_error" &&
       timeoutLayer !== "unknown_timeout" &&
       /timeout|abort/i.test(`${message} ${timeoutLayer}`);
     updateDummyCoderRunState((current) => {
+      const effectiveDiagnostics =
+        failureDiagnostics ??
+        missingSelectedPromptDiagnosticEnvelope({
+          message,
+          rawBackendStatus: current.rawBackendStatus ?? "request_failed",
+          selectedPromptId: current.selectedPromptId ?? selectedDummyCoderPrompt.id,
+          taskId: current.taskId,
+          timeoutLayer,
+        });
+      const failureTruthSummary = asRecord(effectiveDiagnostics.final_truth_summary);
       const taskCreationFailed = !current.taskId && current.status === "starting";
       if (taskCreationFailed && timedOut) {
         return {
           ...current,
           errorText: SELECTED_PROMPT_TASK_ID_STUCK_MESSAGE,
           finishedAt: Date.now(),
+          lastFailureDiagnostics: effectiveDiagnostics,
           message: SELECTED_PROMPT_TASK_ID_STUCK_MESSAGE,
           rawBackendStatus: "/v1/tasks/long-running:timeout",
-          recommendedNextAction: "Retry Prompt 1 after confirming the long-running task route can create a durable task id.",
+          recommendedNextAction:
+            stringValue(effectiveDiagnostics.recommended_next_action) ??
+            stringValue(failureTruthSummary.recommended_next_action) ??
+            "Retry Prompt 1 after confirming the long-running task route can create a durable task id. Fallback reason: missing diagnostic envelope.",
           status: "timeout",
+          taskCreationStatus:
+            stringValue(effectiveDiagnostics.task_creation_status) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_status) ??
+            "timeout_before_task_id",
+          taskCreationElapsedMs:
+            numberValue(effectiveDiagnostics.task_creation_elapsed_ms) ??
+            numberValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_elapsed_ms) ??
+            current.taskCreationElapsedMs,
+          taskCreationTimeoutStage:
+            stringValue(effectiveDiagnostics.task_creation_timeout_stage) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_timeout_stage) ??
+            timeoutLayer,
+          taskCreationLastCheckpoint:
+            stringValue(effectiveDiagnostics.task_creation_last_checkpoint) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_last_checkpoint) ??
+            current.taskCreationLastCheckpoint,
+          taskCreationBlockingSubsystem:
+            stringValue(effectiveDiagnostics.task_creation_blocking_subsystem) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_blocking_subsystem) ??
+            "source_proxy_long_running_task_route",
         };
       }
       if (taskCreationFailed) {
@@ -6491,19 +7210,46 @@ export function CodingCockpitShell() {
           ...current,
           errorText: message,
           finishedAt: Date.now(),
+          lastFailureDiagnostics: effectiveDiagnostics,
           message,
           rawBackendStatus: "/v1/tasks/long-running:no_task_id",
-          recommendedNextAction: "Inspect /v1/tasks/long-running before running this prompt again.",
+          recommendedNextAction:
+            stringValue(effectiveDiagnostics.recommended_next_action) ??
+            stringValue(failureTruthSummary.recommended_next_action) ??
+            "Inspect /v1/tasks/long-running before running this prompt again. Fallback reason: missing diagnostic envelope.",
           status: "error",
+          taskCreationStatus:
+            stringValue(effectiveDiagnostics.task_creation_status) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_status) ??
+            "failed_before_task_id",
+          taskCreationElapsedMs:
+            numberValue(effectiveDiagnostics.task_creation_elapsed_ms) ??
+            numberValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_elapsed_ms) ??
+            current.taskCreationElapsedMs,
+          taskCreationTimeoutStage:
+            stringValue(effectiveDiagnostics.task_creation_timeout_stage) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_timeout_stage) ??
+            timeoutLayer,
+          taskCreationLastCheckpoint:
+            stringValue(effectiveDiagnostics.task_creation_last_checkpoint) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_last_checkpoint) ??
+            current.taskCreationLastCheckpoint,
+          taskCreationBlockingSubsystem:
+            stringValue(effectiveDiagnostics.task_creation_blocking_subsystem) ??
+            stringValue(asRecord(effectiveDiagnostics.diagnostic_envelope).task_creation_blocking_subsystem) ??
+            "source_proxy_long_running_task_route",
         };
       }
       return {
         ...current,
         errorText: message,
         finishedAt: Date.now(),
+        lastFailureDiagnostics: effectiveDiagnostics,
         message,
         rawBackendStatus: current.rawBackendStatus ?? "request_failed",
-        recommendedNextAction: "Inspect the prompt-packet route before running this prompt again.",
+        recommendedNextAction:
+          stringValue(failureTruthSummary.recommended_next_action) ??
+          "Inspect the failed route before running this prompt again. Fallback reason: missing diagnostic envelope.",
         status: timedOut ? "timeout" : "error",
       };
     });
@@ -6535,7 +7281,7 @@ export function CodingCockpitShell() {
 
   async function handleRunDummyCoder10Prompt() {
     const prompt = selectedDummyCoderPrompt;
-    const packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
+    let packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
     const selectedTarget = selectedPromptTarget(prompt);
     const taskDescription = selectedPromptTaskDescription(prompt);
     const modelTask = selectedPromptModelTask(prompt);
@@ -6547,8 +7293,17 @@ export function CodingCockpitShell() {
     selectedPromptAbortRef.current = abortController;
     updateDummyCoderRunState({
       changedFiles: [],
+      canonicalContextVerdict: null,
+      canonicalContextReportHash: null,
+      canonicalContextBlockers: [],
+      canonicalContextAcknowledgements: [],
       checksRun: [],
       diffSource: null,
+      backend_anti_cheat_status: null,
+      backend_anti_cheat_hard_fail_ids: [],
+      backend_anti_cheat_advisory_ids: [],
+      backend_anti_cheat_report: null,
+      backend_anti_cheat_reasons: [],
       errorText: null,
       fallbackUsed: null,
       generatedDiffByBackend: null,
@@ -6569,10 +7324,33 @@ export function CodingCockpitShell() {
       appliedDiffSha256: null,
       approvedDiffSha256: null,
       backendConvertedDiffSha256: null,
+      structuredBundleStatus: null,
+      structuredBundleParserStage: null,
+      structuredBundleFileCount: null,
+      structuredBundleAcceptedPaths: [],
+      structuredBundleRejectedPaths: [],
+      structuredBundleRejectionReason: null,
+      modelOutputShapeSummary: null,
+      diffGenerationStatus: null,
+      diffGenerationReason: null,
+      diffFileCount: null,
+      diffAddedPaths: [],
+      diffSkippedPaths: [],
+      diffSkippedReasons: [],
+      diffFilesystemSnapshotSummary: [],
+      patchVerificationStatus: null,
+      patchVerificationReason: null,
+      taskCreationStatus: "creating_task",
+      taskCreationElapsedMs: null,
+      taskCreationTimeoutStage: null,
+      taskCreationLastCheckpoint: "ui_request_not_sent",
+      taskCreationBlockingSubsystem: null,
       modelFileBundleSha256: null,
+      backupManifest: null,
       postApplyRediffSha256: null,
       provenanceHashNormalization: null,
       rawModelResponseSha256: null,
+      lastFailureDiagnostics: null,
       stalePatchRecovered: null,
       storefrontProbe: null,
       taskId: null,
@@ -6590,19 +7368,138 @@ export function CodingCockpitShell() {
       }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
       const taskPayload = await readJson(taskResponse);
       if (!taskResponse.ok) {
-        throw new Error(messageFromPayload(taskPayload, taskResponse.status));
+        throw new PayloadBackedError(messageFromPayload(taskPayload, taskResponse.status), taskPayload, taskResponse.status);
       }
       const taskId = taskIdFromPayload(taskPayload);
       if (!taskId) {
         throw new Error("No backend task id returned by /v1/tasks/long-running.");
       }
+      const taskPayloadRecord = asRecord(taskPayload);
+      const taskPayloadTask = asRecord(taskPayloadRecord.task);
       updateDummyCoderRunState((current) => ({
         ...current,
-        message: `Request sent with task ${taskId}`,
+        message: `Task ${taskId} persisted; checking Prompt 1 baseline`,
         rawBackendStatus: "task_created",
         status: "request_sent",
+        taskCreationStatus:
+          stringValue(taskPayloadRecord.task_creation_status) ??
+          stringValue(taskPayloadTask.task_creation_status) ??
+          "persisted_task_id",
+        taskCreationElapsedMs:
+          numberValue(taskPayloadRecord.task_creation_elapsed_ms) ??
+          numberValue(taskPayloadTask.task_creation_elapsed_ms) ??
+          current.taskCreationElapsedMs,
+        taskCreationTimeoutStage:
+          stringValue(taskPayloadRecord.task_creation_timeout_stage) ??
+          stringValue(taskPayloadTask.task_creation_timeout_stage) ??
+          "not_applicable: task_id_persisted",
+        taskCreationLastCheckpoint:
+          stringValue(taskPayloadRecord.task_creation_last_checkpoint) ??
+          stringValue(taskPayloadTask.task_creation_last_checkpoint) ??
+          current.taskCreationLastCheckpoint,
+        taskCreationBlockingSubsystem:
+          stringValue(taskPayloadRecord.task_creation_blocking_subsystem) ??
+          stringValue(taskPayloadTask.task_creation_blocking_subsystem) ??
+          "not_applicable: task_id_persisted",
         taskId,
       }));
+
+      if (prompt.id === "coder-001-init-dummy-product-site") {
+        updateDummyCoderRunState((current) => ({
+          ...current,
+          message: `Checking clean dummy fixture baseline before Prompt 1 with task ${taskId}`,
+          rawBackendStatus: "checking_dummy_fixture_baseline",
+        }));
+        const baselineBefore = await refreshAgentLabBaseline();
+        if (!baselineBefore) {
+          const blockMessage = `Dummy fixture baseline check failed: ${agentLabBaselineLoadError || "baseline route returned no snapshot"}`;
+          const diagnostics = selectedPromptPreApplyBlockDiagnostic({
+            dirtyFiles: [],
+            message: blockMessage,
+            reasonCode: "dirty_dummy_fixture_baseline_unknown",
+            selectedPromptId: prompt.id,
+          });
+          updateDummyCoderRunState((current) => ({
+            ...current,
+            errorText: blockMessage,
+            finishedAt: Date.now(),
+            lastFailureDiagnostics: diagnostics,
+            message: blockMessage,
+            rawBackendStatus: "dirty_dummy_fixture_baseline_unknown",
+            recommendedNextAction:
+              "Restore Source Proxy baseline route health, verify the dummy fixture baseline, then rerun Prompt 1.",
+            status: "blocked",
+          }));
+          return;
+        }
+        if (!baselineBefore.baseline_clean_for_fresh_suite) {
+          updateDummyCoderRunState((current) => ({
+            ...current,
+            changedFiles: baselineBefore.baseline_dirty_agent_lab_files,
+            message: `Resetting dirty dummy fixture baseline (${baselineBefore.baseline_dirty_agent_lab_files.length} file(s)) before Prompt 1`,
+            rawBackendStatus: "resetting_dirty_dummy_fixture_baseline",
+          }));
+          let resetMessage = "";
+          try {
+            resetMessage = await resetDummyProductSiteViaServer();
+          } catch (error) {
+            const blockMessage =
+              error instanceof Error ? error.message : "Fixed dummy fixture reset failed before Prompt 1.";
+            const diagnostics = selectedPromptPreApplyBlockDiagnostic({
+              dirtyFiles: baselineBefore.baseline_dirty_agent_lab_files,
+              message: blockMessage,
+              reasonCode: "dirty_dummy_fixture_reset_failed",
+              selectedPromptId: prompt.id,
+            });
+            updateDummyCoderRunState((current) => ({
+              ...current,
+              changedFiles: baselineBefore.baseline_dirty_agent_lab_files,
+              errorText: blockMessage,
+              finishedAt: Date.now(),
+              lastFailureDiagnostics: diagnostics,
+              message: blockMessage,
+              rawBackendStatus: "dirty_dummy_fixture_reset_failed",
+              recommendedNextAction:
+                "Run the fixed dummy fixture reset successfully, verify baseline_clean_for_fresh_suite, then rerun Prompt 1.",
+              status: "blocked",
+            }));
+            return;
+          }
+          const baselineAfter = await refreshAgentLabBaseline();
+          if (!baselineAfter?.baseline_clean_for_fresh_suite) {
+            const dirtyFiles = baselineAfter?.baseline_dirty_agent_lab_files ?? baselineBefore.baseline_dirty_agent_lab_files;
+            const blockMessage = `Fixed dummy fixture reset did not reach a clean baseline: ${formatList(dirtyFiles, "unknown dirty files")}. ${resetMessage}`;
+            const diagnostics = selectedPromptPreApplyBlockDiagnostic({
+              dirtyFiles,
+              message: blockMessage,
+              reasonCode: "dirty_dummy_fixture_reset_incomplete",
+              selectedPromptId: prompt.id,
+            });
+            updateDummyCoderRunState((current) => ({
+              ...current,
+              changedFiles: dirtyFiles,
+              errorText: blockMessage,
+              finishedAt: Date.now(),
+              lastFailureDiagnostics: diagnostics,
+              message: blockMessage,
+              rawBackendStatus: "dirty_dummy_fixture_reset_incomplete",
+              recommendedNextAction:
+                "Inspect the remaining dummy fixture files, then rerun cleanup before Prompt 1.",
+              status: "blocked",
+            }));
+            return;
+          }
+          const cleanSummary = existingDummyProjectSummaryForBaseline(baselineAfter);
+          packet = buildDummyCoder10RunnerPacket(prompt, cleanSummary);
+          updateDummyCoderRunState((current) => ({
+            ...current,
+            changedFiles: [],
+            message: "Clean dummy fixture baseline confirmed for Prompt 1",
+            packet,
+            rawBackendStatus: "dummy_fixture_baseline_clean",
+          }));
+        }
+      }
 
       updateDummyCoderRunState((current) => ({
         ...current,
@@ -6643,6 +7540,25 @@ export function CodingCockpitShell() {
       const payload = proposalRead.payload;
       const record = asRecord(payload);
       const coderDiagnostics = asRecord(record.coder_diagnostics);
+      const contextMetadata = asRecord(record.context_metadata);
+      const canonicalContextBroker = asRecord(
+        record.canonical_context_broker ?? contextMetadata.canonical_context_broker,
+      );
+      const canonicalContextAcknowledgementRecord = asRecord(
+        canonicalContextBroker.downstream_acknowledgements,
+      );
+      let canonicalContextAcknowledgements = Object.entries(
+        canonicalContextAcknowledgementRecord,
+      )
+        .filter(([, value]) => asRecord(value).acknowledged === true)
+        .map(([consumer]) => consumer);
+      let canonicalContextVerdict: string | null =
+        stringValue(canonicalContextBroker.verdict) ?? null;
+      let canonicalContextReportHash: string | null =
+        stringValue(canonicalContextBroker.canonical_report_hash) ?? null;
+      let canonicalContextBlockers = arrayOfStrings(
+        canonicalContextBroker.required_context_blockers,
+      );
       const changedFiles = changedFilesFromPayload(payload);
       const proposedDiff = stringValue(record.proposed_diff) ?? stringValue(record.proposedDiff) ?? "";
       const responseSelectedTarget =
@@ -6658,7 +7574,7 @@ export function CodingCockpitShell() {
           ].filter(Boolean),
         ),
       ];
-      const rawBackendStatus = stringValue(record.status) ?? `http_${response.status}`;
+      let rawBackendStatus = stringValue(record.status) ?? `http_${response.status}`;
       const reasonCode = stringValue(record.reason_code) ?? stringValue(record.reasonCode);
       const scaffoldUsed = booleanValue(record.scaffold_used) ?? booleanValue(coderDiagnostics.scaffold_used);
       let fallbackUsed = booleanValue(record.fallback_used) ?? booleanValue(coderDiagnostics.fallback_used);
@@ -6669,6 +7585,35 @@ export function CodingCockpitShell() {
       let diffSource = stringValue(record.diff_source) ?? stringValue(coderDiagnostics.diff_source) ?? null;
       const modelOutputClassification =
         stringValue(record.model_output_classification) ?? stringValue(coderDiagnostics.model_output_classification) ?? null;
+      let backendAntiCheatStatus =
+        stringValue(coderDiagnostics.anti_cheat_status) ?? stringValue(record.anti_cheat_status) ?? null;
+      const backendAntiCheatHardFailIds = [
+        ...new Set([
+          ...arrayOfStrings(coderDiagnostics.anti_cheat_hard_fail_ids),
+          ...arrayOfStrings(record.anti_cheat_hard_fail_ids),
+        ]),
+      ];
+      const backendAntiCheatAdvisoryIds = [
+        ...new Set([
+          ...arrayOfStrings(coderDiagnostics.anti_cheat_advisory_ids),
+          ...arrayOfStrings(record.anti_cheat_advisory_ids),
+        ]),
+      ];
+      const backendAntiCheatReasons = [
+        ...new Set([
+          ...arrayOfStrings(coderDiagnostics.anti_cheat_reasons),
+          ...arrayOfStrings(record.anti_cheat_reasons),
+        ]),
+      ];
+      if ((backendAntiCheatStatus === "not_run" || !backendAntiCheatStatus) && reasonCode) {
+        backendAntiCheatStatus = "failed";
+        backendAntiCheatHardFailIds.push(`pre_apply_block:${reasonCode}`);
+        backendAntiCheatReasons.push(reasonCode);
+      }
+      const backendAntiCheatReportRaw = coderDiagnostics.anti_cheat_report ?? record.anti_cheat_report;
+      const backendAntiCheatReport =
+        stringValue(backendAntiCheatReportRaw) ??
+        (backendAntiCheatReportRaw == null ? null : JSON.stringify(backendAntiCheatReportRaw));
       const noDiffFailureCause =
         stringValue(record.no_diff_failure_cause) ??
         stringValue(record.noDiffFailureCause) ??
@@ -6693,6 +7638,64 @@ export function CodingCockpitShell() {
         stringValue(record.model_file_bundle_sha256) ?? stringValue(coderDiagnostics.model_file_bundle_sha256) ?? null;
       const backendConvertedDiffSha256 =
         stringValue(record.backend_converted_diff_sha256) ?? stringValue(coderDiagnostics.backend_converted_diff_sha256) ?? null;
+      const structuredBundleStatus =
+        stringValue(record.structured_bundle_status) ?? stringValue(coderDiagnostics.structured_bundle_status) ?? null;
+      const structuredBundleParserStage =
+        stringValue(record.structured_bundle_parser_stage) ?? stringValue(coderDiagnostics.structured_bundle_parser_stage) ?? null;
+      const structuredBundleFileCount =
+        numberValue(record.structured_bundle_file_count) ?? numberValue(coderDiagnostics.structured_bundle_file_count);
+      const structuredBundleAcceptedPaths = [
+        ...new Set([
+          ...arrayOfStrings(record.structured_bundle_accepted_paths),
+          ...arrayOfStrings(coderDiagnostics.structured_bundle_accepted_paths),
+        ]),
+      ];
+      const structuredBundleRejectedPaths = [
+        ...new Set([
+          ...arrayOfStrings(record.structured_bundle_rejected_paths),
+          ...arrayOfStrings(coderDiagnostics.structured_bundle_rejected_paths),
+        ]),
+      ];
+      const structuredBundleRejectionReason =
+        stringValue(record.structured_bundle_rejection_reason) ??
+        stringValue(coderDiagnostics.structured_bundle_rejection_reason) ??
+        null;
+      const modelOutputShapeSummary =
+        stringValue(record.model_output_shape_summary) ?? stringValue(coderDiagnostics.model_output_shape_summary) ?? null;
+      const diffGenerationStatus =
+        stringValue(record.diff_generation_status) ?? stringValue(coderDiagnostics.diff_generation_status) ?? null;
+      const diffGenerationReason =
+        stringValue(record.diff_generation_reason) ?? stringValue(coderDiagnostics.diff_generation_reason) ?? null;
+      const diffFileCount =
+        numberValue(record.diff_file_count) ?? numberValue(coderDiagnostics.diff_file_count);
+      const diffAddedPaths = [
+        ...new Set([
+          ...arrayOfStrings(record.diff_added_paths),
+          ...arrayOfStrings(coderDiagnostics.diff_added_paths),
+        ]),
+      ];
+      const diffSkippedPaths = [
+        ...new Set([
+          ...arrayOfStrings(record.diff_skipped_paths),
+          ...arrayOfStrings(coderDiagnostics.diff_skipped_paths),
+        ]),
+      ];
+      const diffSkippedReasons = [
+        ...new Set([
+          ...arrayOfStrings(record.diff_skipped_reasons),
+          ...arrayOfStrings(coderDiagnostics.diff_skipped_reasons),
+        ]),
+      ];
+      const diffFilesystemSnapshotSummary = [
+        ...new Set([
+          ...arrayOfStrings(record.diff_filesystem_snapshot_summary),
+          ...arrayOfStrings(coderDiagnostics.diff_filesystem_snapshot_summary),
+        ]),
+      ];
+      const patchVerificationStatus =
+        stringValue(record.patch_verification_status) ?? stringValue(coderDiagnostics.patch_verification_status) ?? null;
+      const patchVerificationReason =
+        stringValue(record.patch_verification_reason) ?? stringValue(coderDiagnostics.patch_verification_reason) ?? null;
       let approvedDiffSha256 =
         stringValue(record.approved_diff_sha256) ?? stringValue(coderDiagnostics.approved_diff_sha256) ?? null;
       let appliedDiffSha256 =
@@ -6748,6 +7751,10 @@ export function CodingCockpitShell() {
       let appliedChangedFiles = changedFiles;
       let verificationStatus = stringValue(record.verification_status) ?? stringValue(record.checks_result) ?? null;
       let applyMessage: string | null = null;
+      let applyDiagnosticEnvelope: Record<string, unknown> | null = null;
+      let backendBackupManifest: string | null = null;
+      let postApplyVerificationStatus: string | null = null;
+      let finalTruthStatus: string | null = null;
       let prompt3Context: { currentIndexHtml?: string; currentMainJs?: string } | undefined;
       if (prompt.id === "coder-003-render-product-cards" && proposedDiff.trim()) {
         try {
@@ -6808,7 +7815,7 @@ export function CodingCockpitShell() {
                   risk_tier: "low",
                   source: "dummy-coder-10-selected-prompt",
                   target: responseSelectedTarget,
-                  task_type: "create_or_modify_files",
+                  task_type: prompt.id === "coder-001-init-dummy-product-site" ? "create_file_bundle" : "create_or_modify_files",
                   verification: ["git diff --check"],
                 },
             task_text: prompt.submittedPrompt,
@@ -6819,12 +7826,145 @@ export function CodingCockpitShell() {
         }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
         const diffPayload = await readJson(diffResponse);
         if (!diffResponse.ok) {
-          throw new Error(messageFromPayload(diffPayload, diffResponse.status));
+          throw new PayloadBackedError(messageFromPayload(diffPayload, diffResponse.status), diffPayload, diffResponse.status);
         }
         const diffStatus = statusFromPayload(diffPayload);
         const previewChangedFiles = changedFilesFromPayload(diffPayload);
         if (diffStatus === "blocked") {
-          throw new Error(messageFromPayload(diffPayload, diffResponse.status));
+          const previewBlocker = blockerFromPayload(diffPayload) || messageFromPayload(diffPayload, diffResponse.status);
+          const previewDiagnostics = diagnosticPayloadFromResponse(diffPayload);
+          const previewBlockedReasons = Array.isArray(asRecord(diffPayload).blocked_reasons)
+            ? (asRecord(diffPayload).blocked_reasons as unknown[])
+            : [];
+          const previewReasonCode =
+            stringValue(asRecord(previewBlockedReasons[0]).reason_code) ??
+            stringValue(previewDiagnostics.reason_code) ??
+            "diff_preview_blocked";
+          const previewBlockDiagnostics: Record<string, unknown> = {
+            stage_id: "coding_ui.selected_prompt.diff_preview",
+            subsystem: "coding_cockpit_selected_prompt",
+            status: "blocked",
+            truth_status: "BLOCKED_SAFE",
+            safe_block: true,
+            reason_code: previewReasonCode,
+            human_message: previewBlocker,
+            task_identity: {
+              backend_task_id: taskId,
+              selected_prompt_id: prompt.id,
+              selected_prompt_task_id: taskId,
+            },
+            prompt_packet: {
+              raw_backend_status: rawBackendStatus,
+              structured_bundle_status: structuredBundleStatus,
+              structured_bundle_parser_stage: structuredBundleParserStage,
+              structured_bundle_file_count: structuredBundleFileCount,
+              structured_bundle_accepted_paths: structuredBundleAcceptedPaths,
+              structured_bundle_rejected_paths: structuredBundleRejectedPaths,
+              structured_bundle_rejection_reason: structuredBundleRejectionReason,
+              model_output_classification: modelOutputClassification,
+              model_output_shape_summary: modelOutputShapeSummary,
+              diff_generation_status: diffGenerationStatus,
+              diff_generation_reason: diffGenerationReason,
+              diff_file_count: diffFileCount,
+              diff_added_paths: diffAddedPaths,
+              diff_skipped_paths: diffSkippedPaths,
+              diff_skipped_reasons: diffSkippedReasons,
+              diff_filesystem_snapshot_summary: diffFilesystemSnapshotSummary,
+              patch_verification_status: patchVerificationStatus,
+              patch_verification_reason: patchVerificationReason,
+            },
+            diff_provenance: {
+              backend_converted_diff_sha256: backendConvertedDiffSha256,
+              changed_files: previewChangedFiles.length > 0 ? previewChangedFiles : changedFiles,
+              diff_source: diffSource,
+              generated_diff_by_backend: generatedDiffByBackend,
+              model_file_bundle_sha256: modelFileBundleSha256,
+              raw_model_response_sha256: rawModelResponseSha256,
+              trial_result_trust_status: trialResultTrustStatus,
+            },
+            approval_binding: {
+              approval_binding_status: "not_run: execute_approved_not_reached",
+              apply_block_layer: "diff_preview",
+              block_receipt_path: "not_applicable: apply_did_not_happen",
+              safe_block: true,
+            },
+            verification: {
+              preview_verification_status: "blocked",
+              preview_blocked_reasons: previewBlockedReasons,
+              post_apply_verification_status: "not_run: execute_approved_not_reached",
+              post_apply_verification_reason: "diff_preview_blocked",
+              verification_required_action: "Inspect diff preview blocked_reasons, then rerun Prompt 1 from the managed /coding lane.",
+            },
+            anti_cheat: {
+              anti_cheat_status: backendAntiCheatStatus ?? "not_run",
+              anti_cheat_hard_fail_ids: backendAntiCheatHardFailIds,
+              anti_cheat_advisory_ids: backendAntiCheatAdvisoryIds,
+              anti_cheat_reasons: backendAntiCheatReasons,
+              trial_result_trust_status: trialResultTrustStatus,
+            },
+            acceptance_gate: {
+              binary_verdict: "NO-GO",
+              plan5_gate_id: "plan5_selected_prompt_diff_preview_block",
+              plan5_gate_present: false,
+              reason: previewReasonCode,
+            },
+            final_truth_summary: {
+              commit_safe: false,
+              commit_safe_reason: "diff_preview_blocked",
+              proof_level: "selected_prompt_pre_apply_block",
+              raw_backend_status: diffStatus,
+              recommended_next_action: "Inspect diff preview blocked_reasons, then rerun Prompt 1 from the managed /coding lane.",
+              run_status: "blocked",
+              block_receipt_path: "not_applicable: apply_did_not_happen",
+              truth_status: "BLOCKED_SAFE",
+              why_not_go: previewBlocker,
+            },
+            diff_preview: previewDiagnostics,
+          };
+          updateDummyCoderRunState((current) => ({
+            ...current,
+            backendConvertedDiffSha256,
+            backend_anti_cheat_status: backendAntiCheatStatus,
+            backend_anti_cheat_hard_fail_ids: backendAntiCheatHardFailIds,
+            backend_anti_cheat_advisory_ids: backendAntiCheatAdvisoryIds,
+            backend_anti_cheat_reasons: backendAntiCheatReasons,
+            changedFiles: previewChangedFiles.length > 0 ? previewChangedFiles : changedFiles,
+            diffAddedPaths,
+            diffFileCount,
+            diffFilesystemSnapshotSummary,
+            diffGenerationReason,
+            diffGenerationStatus,
+            diffSkippedPaths,
+            diffSkippedReasons,
+            diffSource,
+            errorText: previewBlocker,
+            finishedAt: Date.now(),
+            generatedDiffByBackend,
+            generationSource,
+            lastFailureDiagnostics: previewBlockDiagnostics,
+            message: "Selected prompt diff preview blocked before apply.",
+            modelFileBundleSha256,
+            modelOutputClassification,
+            modelOutputShapeSummary,
+            patchVerificationReason,
+            patchVerificationStatus,
+            rawBackendStatus: diffStatus,
+            rawModelResponseSha256,
+            recommendedNextAction: "Inspect diff preview blocked_reasons, then rerun Prompt 1 from the managed /coding lane.",
+            selectedPromptId: prompt.id,
+            startedAt: current.startedAt ?? Date.now(),
+            status: "blocked",
+            structuredBundleAcceptedPaths,
+            structuredBundleFileCount,
+            structuredBundleParserStage,
+            structuredBundleRejectedPaths,
+            structuredBundleRejectionReason,
+            structuredBundleStatus,
+            taskId,
+            trialResultTrustStatus,
+            verificationStatus: "diff preview blocked",
+          }));
+          return;
         }
         updateDummyCoderRunState((current) => ({
           ...current,
@@ -6848,7 +7988,35 @@ export function CodingCockpitShell() {
         }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
         const applyPayload = await readJson(applyResponse);
         if (!applyResponse.ok) {
-          throw new Error(messageFromPayload(applyPayload, applyResponse.status));
+          const failureDiagnostics = diagnosticPayloadFromResponse(applyPayload);
+          const failureTruthSummary = asRecord(failureDiagnostics.final_truth_summary);
+          const failureAntiCheat = asRecord(failureDiagnostics.anti_cheat);
+          const failureMessage = messageFromPayload(applyPayload, applyResponse.status);
+          updateDummyCoderRunState((current) => ({
+            ...current,
+            backend_anti_cheat_status: stringValue(failureAntiCheat.anti_cheat_status) ?? "not_run",
+            backend_anti_cheat_reasons: arrayOfStrings(failureAntiCheat.anti_cheat_reasons),
+            changedFiles: previewChangedFiles.length > 0 ? previewChangedFiles : changedFiles,
+            errorText: failureMessage,
+            finishedAt: Date.now(),
+            lastFailureDiagnostics: failureDiagnostics,
+            message:
+              stringValue(failureTruthSummary.why_not_go) ??
+              "Selected prompt apply blocked before workspace changes.",
+            rawBackendStatus:
+              stringValue(failureDiagnostics.reason_code) ??
+              stringValue(failureTruthSummary.raw_backend_status) ??
+              `http_${applyResponse.status}`,
+            recommendedNextAction:
+              stringValue(failureTruthSummary.recommended_next_action) ??
+              "Inspect the execute-approved approval binding diagnostic before rerunning this prompt.",
+            selectedPromptId: prompt.id,
+            startedAt: current.startedAt ?? Date.now(),
+            status: stringValue(failureTruthSummary.truth_status) === "BLOCKED_SAFE" ? "blocked" : "error",
+            taskId,
+            verificationStatus: "skipped_due_to_apply_block",
+          }));
+          return;
         }
         appliedChangedFiles = changedFilesFromApplyPayloadOrDiff(applyPayload, proposedDiff);
         applyMessage = messageFromPayload(applyPayload, applyResponse.status);
@@ -6857,19 +8025,49 @@ export function CodingCockpitShell() {
           applyPayload && typeof applyPayload === "object"
             ? (applyPayload as Record<string, unknown>)
             : null;
+        const applyDiagnostics = diagnosticPayloadFromResponse(applyPayload);
+        const applyExecution = asRecord(applyRecord?.execution);
+        const applyAudit = asRecord(applyExecution.audit);
+        const applyTask = asRecord(applyRecord?.task);
+        const applyTaskEvidence = asRecord(
+          asRecord(applyTask.ast_snapshot).approved_execution_evidence,
+        );
+        const applyTaskAudit = asRecord(applyTaskEvidence.audit);
+        backendBackupManifest =
+          stringValue(applyAudit.backup_manifest) ??
+          stringValue(applyExecution.backup_manifest) ??
+          stringValue(applyRecord?.backup_manifest) ??
+          stringValue(applyTaskEvidence.backup_manifest) ??
+          stringValue(applyTaskAudit.backup_manifest) ??
+          null;
+        applyDiagnosticEnvelope =
+          Object.keys(asRecord(applyDiagnostics.approval_binding)).length > 0 ||
+          Object.keys(asRecord(applyDiagnostics.final_truth_summary)).length > 0
+            ? applyDiagnostics
+            : null;
+        const applyDiffProvenance = asRecord(applyDiagnostics.diff_provenance);
         const applyModeFromPayload =
-          typeof applyRecord?.apply_mode === "string" ? applyRecord.apply_mode : null;
-        const stalePatchRecoveredFromPayload = Boolean(applyRecord?.stale_patch_recovered);
+          typeof applyRecord?.apply_mode === "string"
+            ? applyRecord.apply_mode
+            : stringValue(applyDiffProvenance.apply_mode) ?? null;
+        const stalePatchRecoveredFromPayload =
+          Boolean(applyRecord?.stale_patch_recovered) || applyDiffProvenance.stale_patch_recovered === true;
         approvedDiffSha256 =
-          typeof applyRecord?.approved_diff_sha256 === "string" ? applyRecord.approved_diff_sha256 : approvedDiffSha256;
+          typeof applyRecord?.approved_diff_sha256 === "string"
+            ? applyRecord.approved_diff_sha256
+            : stringValue(applyDiffProvenance.approved_diff_sha256) ?? approvedDiffSha256;
         appliedDiffSha256 =
-          typeof applyRecord?.applied_diff_sha256 === "string" ? applyRecord.applied_diff_sha256 : appliedDiffSha256;
+          typeof applyRecord?.applied_diff_sha256 === "string"
+            ? applyRecord.applied_diff_sha256
+            : stringValue(applyDiffProvenance.applied_diff_sha256) ?? appliedDiffSha256;
         postApplyRediffSha256 =
-          typeof applyRecord?.post_apply_rediff_sha256 === "string" ? applyRecord.post_apply_rediff_sha256 : postApplyRediffSha256;
+          typeof applyRecord?.post_apply_rediff_sha256 === "string"
+            ? applyRecord.post_apply_rediff_sha256
+            : stringValue(applyDiffProvenance.post_apply_rediff_sha256) ?? postApplyRediffSha256;
         provenanceHashNormalization =
           typeof applyRecord?.provenance_hash_normalization === "string"
             ? applyRecord.provenance_hash_normalization
-            : provenanceHashNormalization;
+            : stringValue(applyDiffProvenance.provenance_hash_normalization) ?? provenanceHashNormalization;
         applyModeForGrader = applyModeFromPayload ?? applyModeForGrader;
         stalePatchRecoveredForGrader = stalePatchRecoveredFromPayload;
         // Recovery provenance override: if execute-approved reports that git
@@ -6892,12 +8090,14 @@ export function CodingCockpitShell() {
           applyMode: applyModeFromPayload,
           appliedDiffSha256,
           approvedDiffSha256,
+          backupManifest: backendBackupManifest,
           backendConvertedDiffSha256,
           stalePatchRecovered: stalePatchRecoveredFromPayload,
           postApplyRediffSha256,
           provenanceHashNormalization,
           diffSource: recoveryFallbackUsed && recoveryDiffSource ? recoveryDiffSource : current.diffSource,
           fallbackUsed: recoveryFallbackUsed || current.fallbackUsed,
+          lastFailureDiagnostics: applyDiagnosticEnvelope ?? current.lastFailureDiagnostics,
           trialResultTrustStatus:
             recoveryFallbackUsed && recoveryTrustStatus ? recoveryTrustStatus : current.trialResultTrustStatus,
         }));
@@ -6905,6 +8105,7 @@ export function CodingCockpitShell() {
         const receipt: AppliedRunReceipt = {
           allowedFiles: [prompt.allowedWriteRoot],
           appliedAt,
+          backupManifest: backendBackupManifest,
           changedFiles: appliedChangedFiles,
           diff: proposedDiff,
           hermesUsedForThisRun: null,
@@ -6915,12 +8116,16 @@ export function CodingCockpitShell() {
           providerModelSource: stringValue(record.provider_model_source) ?? "selected-prompt",
           providerModelStatus: stringValue(record.provider_model_status) ?? "recorded",
           revertedAt: null,
+          finalTruthStatus: null,
+          postApplyVerificationStatus: null,
           reversalModel: null,
           reversalProvider: null,
           reversalProviderModelSource: null,
           reverseDiff: reverseUnifiedDiff(proposedDiff),
           target: responseSelectedTarget,
           taskId,
+          undoReceiptId: null,
+          undoReceiptPath: null,
         };
         updateAppliedRunReceipts((receipts) => appendAppliedRunReceipt(receipts, receipt));
       }
@@ -6928,9 +8133,11 @@ export function CodingCockpitShell() {
       // Storefront proof probe: read the just-applied fixture contents and verify the page would
       // render catalog/product content, not only a bare heading. HTTP 200 / files-present must not
       // equal PASS for storefront prompts.
-      let storefrontProbe: DummyStorefrontProbeResult | null = null;
+      let storefrontProbe = storefrontProbeFromPayload(
+        coderDiagnostics.storefront_probe ?? coderDiagnostics.storefrontProbe,
+      );
       if (
-        prompt.id === "coder-001-init-dummy-product-site" ||
+        !storefrontProbe &&
         prompt.id === "coder-003-render-product-cards"
       ) {
         try {
@@ -6938,7 +8145,7 @@ export function CodingCockpitShell() {
             ["index.html", "src/products.js", "src/main.js", "src/styles.css"].map(async (rel) => {
               try {
                 const fileResponse = await fetchWithTimeout(
-                  `/v1/coding/dummy-product-site-preview/${rel}`,
+                  `/v1/coding/dummy-product-site-preview/${rel}?t=${Date.now()}`,
                   { cache: "no-store" },
                   TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
                 );
@@ -6978,6 +8185,139 @@ export function CodingCockpitShell() {
         storefrontProbe.description_render_path_present &&
         storefrontProbe.price_render_path_present &&
         storefrontProbe.storefront_runtime_status === "passed";
+
+      if (prompt.id === "coder-001-init-dummy-product-site" && applyMessage) {
+        const verificationResponse = await fetchWithTimeout(
+          `/v1/tasks/long-running/${encodeURIComponent(taskId)}/verify`,
+          {
+            body: JSON.stringify({
+              confirm_backup_audit_present: true,
+              confirm_changed_files_reviewed: true,
+              confirm_expected_change_present: true,
+              confirm_no_unintended_files: true,
+              manual_browser_check_done: false,
+              run_snapshot_verification: true,
+              verification_profile: "dummy_product_site",
+              verification_note:
+                "Source Proxy must run managed Chromium against the fixed port-3000 preview before completion.",
+            }),
+            headers: { "content-type": "application/json" },
+            method: "POST",
+          },
+          TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+        );
+        const verificationPayload = await readJson(verificationResponse);
+        const verificationRecord = asRecord(verificationPayload);
+        const verificationTask = asRecord(verificationRecord.task);
+        const verificationTaskEvidence = asRecord(
+          asRecord(verificationTask.ast_snapshot).approved_execution_evidence,
+        );
+        backendBackupManifest =
+          backendBackupManifest ??
+          stringValue(verificationTaskEvidence.backup_manifest) ??
+          null;
+        const postApplyVerification = asRecord(
+          verificationTask.post_apply_verification ?? verificationRecord.post_apply_verification,
+        );
+        const managedBrowserEvidence = asRecord(postApplyVerification.browser_evidence);
+        storefrontProbe = storefrontProbeFromManagedBrowserEvidence(managedBrowserEvidence);
+        const snapshotVerification = asRecord(postApplyVerification.snapshot_verification);
+        applyModeForGrader =
+          stringValue(snapshotVerification.apply_mode) ?? applyModeForGrader;
+        postApplyRediffSha256 =
+          stringValue(snapshotVerification.post_apply_rediff_sha256) ??
+          postApplyRediffSha256;
+        const contextBroker = asRecord(verificationTask.canonical_context_broker);
+        const finalContextAcks = asRecord(contextBroker.downstream_acknowledgements);
+        canonicalContextAcknowledgements = Object.entries(finalContextAcks)
+          .filter(([, value]) => asRecord(value).acknowledged === true)
+          .map(([consumer]) => consumer);
+        canonicalContextVerdict = stringValue(contextBroker.verdict) ?? null;
+        canonicalContextReportHash = stringValue(contextBroker.canonical_report_hash) ?? null;
+        canonicalContextBlockers = arrayOfStrings(contextBroker.required_context_blockers);
+        postApplyVerificationStatus =
+          stringValue(postApplyVerification.status) ??
+          stringValue(verificationTask.status) ??
+          null;
+        const postApplyVerified =
+          verificationResponse.ok &&
+          verificationTask.status === "completed" &&
+          postApplyVerification.status === "verified" &&
+          contextBroker.go_eligible === true &&
+          stringValue(contextBroker.verdict) === "GO_ELIGIBLE";
+        rawBackendStatus =
+          stringValue(verificationTask.status) ?? rawBackendStatus;
+        if (postApplyVerified && applyDiagnosticEnvelope) {
+          const priorVerification = asRecord(applyDiagnosticEnvelope.verification);
+          const priorFinalTruth = asRecord(applyDiagnosticEnvelope.final_truth_summary);
+          applyDiagnosticEnvelope = {
+            ...applyDiagnosticEnvelope,
+            verification: {
+              ...priorVerification,
+              commit_blockers: [],
+              manual_browser_check_done: true,
+              post_apply_verification_reason: "post_apply_verification_passed",
+              post_apply_verification_status: "verified",
+              verification_required_action: "none",
+            },
+            final_truth_summary: {
+              ...priorFinalTruth,
+              commit_safe: true,
+              commit_safe_reason: "post_apply_verification_passed",
+              proof_level: "post_apply_verified",
+              raw_backend_status: "completed",
+              recommended_next_action: "none",
+              run_status: "completed",
+              truth_status: "GO",
+              why_not_go: "",
+            },
+          };
+        }
+        finalTruthStatus = postApplyVerified ? "GO" : "BLOCKED_SAFE";
+        updateAppliedRunReceipts((receipts) =>
+          receipts.map((receipt) =>
+            receipt.id === `selected-prompt:${prompt.id}:${taskId}`
+              ? {
+                  ...receipt,
+                  backupManifest: receipt.backupManifest ?? backendBackupManifest,
+                  finalTruthStatus,
+                  postApplyVerificationStatus,
+                }
+              : receipt,
+          ),
+        );
+        if (!postApplyVerified) {
+          const failureMessage = messageFromPayload(
+            verificationPayload,
+            verificationResponse.status,
+          );
+          updateDummyCoderRunState((current) => ({
+            ...current,
+            canonicalContextAcknowledgements,
+            canonicalContextBlockers,
+            canonicalContextReportHash,
+            canonicalContextVerdict,
+            backupManifest: backendBackupManifest,
+            errorText: failureMessage,
+            finishedAt: Date.now(),
+            message: "Prompt 1 applied, but canonical post-apply verification did not reach GO.",
+            rawBackendStatus: postApplyVerificationStatus ?? "post_apply_verification_failed",
+            recommendedNextAction:
+              "Inspect the task verification receipt; do not count this apply as complete.",
+            status: "blocked",
+            storefrontProbe,
+            taskId,
+            verificationStatus: postApplyVerificationStatus ?? "post-apply verification failed",
+          }));
+          return;
+        }
+        verificationStatus = "post-apply verified with browser proof";
+        updateDummyCoderRunState((current) => ({
+          ...current,
+          applyMode: applyModeForGrader,
+          backupManifest: backendBackupManifest,
+        }));
+      }
       if (
         !noOpEvidence &&
         prompt.id === "coder-003-render-product-cards" &&
@@ -7049,10 +8389,36 @@ export function CodingCockpitShell() {
       updateDummyCoderRunState((current) => ({
         ...current,
         changedFiles: appliedChangedFiles,
+        canonicalContextAcknowledgements,
+        canonicalContextBlockers,
+        canonicalContextReportHash,
+        canonicalContextVerdict,
         checksRun,
+        backend_anti_cheat_status: backendAntiCheatStatus,
+        backend_anti_cheat_hard_fail_ids: backendAntiCheatHardFailIds,
+        backend_anti_cheat_advisory_ids: backendAntiCheatAdvisoryIds,
+        backend_anti_cheat_report: backendAntiCheatReport,
+        backend_anti_cheat_reasons: backendAntiCheatReasons,
         appliedDiffSha256,
+        applyMode: applyModeForGrader,
         approvedDiffSha256,
         backendConvertedDiffSha256,
+        structuredBundleStatus,
+        structuredBundleParserStage,
+        structuredBundleFileCount,
+        structuredBundleAcceptedPaths,
+        structuredBundleRejectedPaths,
+        structuredBundleRejectionReason,
+        modelOutputShapeSummary,
+        diffGenerationStatus,
+        diffGenerationReason,
+        diffFileCount,
+        diffAddedPaths,
+        diffSkippedPaths,
+        diffSkippedReasons,
+        diffFilesystemSnapshotSummary,
+        patchVerificationStatus,
+        patchVerificationReason,
         diffSource,
         errorText:
           selectedPromptStatus === "blocked" && noDiffFailureCause && !proposedDiff.trim()
@@ -7072,6 +8438,7 @@ export function CodingCockpitShell() {
         noDiffFailureCause,
         parserExtractorDecision,
         packet,
+        lastFailureDiagnostics: applyDiagnosticEnvelope ?? current.lastFailureDiagnostics,
         postApplyRediffSha256,
         provenanceHashNormalization,
         rawBackendStatus,
@@ -7120,7 +8487,11 @@ export function CodingCockpitShell() {
       .filter((path) => isCoderTrialCleanupPath(path));
     try {
       const query = unrevertedTargets.length > 0 ? `?unreverted_targets=${encodeURIComponent(unrevertedTargets.join(","))}` : "";
-      const response = await fetch(`/v1/coding/agent-lab-baseline${query}`, { cache: "no-store" });
+      const response = await fetchWithTimeout(
+        `/v1/coding/agent-lab-baseline${query}`,
+        { cache: "no-store" },
+        15_000,
+      );
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");
         setAgentLabBaselineLoadState("error");
@@ -7208,6 +8579,41 @@ export function CodingCockpitShell() {
       await refreshAgentLabBaseline();
     }
     return payload.message || (payload.clean ? "Workspace is clean for a fresh Coder benchmark." : "Agent-lab sweep finished.");
+  }
+
+  async function resetDummyProductSiteViaServer(): Promise<string> {
+    const response = await fetchWithTimeout(
+      "/v1/coding/dummy-product-site-preview/reset",
+      {
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+      120_000,
+    );
+    const payload = (await response.json().catch(() => ({}))) as {
+      status?: string;
+      reset_verified?: boolean;
+      fixture_root?: string;
+      clean_verified?: boolean;
+      reset_receipt_id?: string;
+      error?: string;
+    };
+    if (
+      !response.ok ||
+      payload.status !== "reset_verified" ||
+      payload.reset_verified !== true ||
+      payload.clean_verified !== true
+    ) {
+      throw new Error(
+        payload.error ||
+          `dummy-product-site reset did not verify clean state (HTTP ${response.status})`,
+      );
+    }
+    const baseline = await refreshAgentLabBaseline();
+    if (!baseline?.baseline_clean_for_fresh_suite) {
+      throw new Error("Reset receipt passed, but the baseline API still reports fixture files.");
+    }
+    return `Dummy fixture reset verified (${payload.reset_receipt_id ?? "receipt missing"}).`;
   }
 
   function buildAgentLabCleanupSeedReceipt(target: string): AppliedRunReceipt {
@@ -10751,6 +12157,59 @@ export function CodingCockpitShell() {
   }
 
   async function applyReverseReceipt(receipt: AppliedRunReceipt) {
+    if (receipt.backupManifest) {
+      const undoResponse = await fetchWithTimeout(
+        `/v1/tasks/long-running/${encodeURIComponent(receipt.taskId)}/undo`,
+        {
+          body: JSON.stringify({
+            confirm_undo: true,
+            expected_backup_manifest: receipt.backupManifest,
+            requested_by: "coding-ui",
+          }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        },
+        TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+      );
+      const undoPayload = await readJson(undoResponse);
+      if (!undoResponse.ok) {
+        throw new Error(messageFromPayload(undoPayload, undoResponse.status));
+      }
+      const undo = asRecord(asRecord(undoPayload).undo);
+      if (undo.filesystem_verified !== true || undo.untouched_scope_assertion !== true) {
+        throw new Error("Undo returned without filesystem and untouched-scope verification.");
+      }
+      if (stringValue(undo.expected_browser_state) === "fixture_missing") {
+        const previewResponse = await fetchWithTimeout(
+          `/v1/coding/dummy-product-site-preview/index.html?t=${Date.now()}`,
+          { cache: "no-store" },
+          TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+        );
+        if (previewResponse.status !== 404) {
+          throw new Error(
+            `Undo filesystem receipt expected a missing fixture, but browser preview returned HTTP ${previewResponse.status}.`,
+          );
+        }
+        const baseline = await refreshAgentLabBaseline();
+        if (!baseline?.baseline_clean_for_fresh_suite) {
+          throw new Error("Undo receipt passed, but the baseline API did not confirm a clean fixture.");
+        }
+      }
+      updateAppliedRunReceipts((receipts) =>
+        receipts.map((item) =>
+          item.id === receipt.id
+            ? {
+                ...item,
+                finalTruthStatus: "UNDO_VERIFIED",
+                undoReceiptId: stringValue(undo.undo_receipt_id),
+                undoReceiptPath: stringValue(undo.receipt_path),
+              }
+            : item,
+        ),
+      );
+      const restoredCount = Array.isArray(undo.files_restored) ? undo.files_restored.length : 0;
+      return `Manifest-backed Undo verified ${restoredCount || "all"} approved file(s).`;
+    }
     const reverseDiff = executeReadyReverseDiff(reverseDiffForReceipt(receipt));
     const changedFiles = changedFilesFromDiffPreview(reverseDiff);
     const allowedFiles = [
@@ -11210,6 +12669,10 @@ export function CodingCockpitShell() {
     verificationChangedFiles: activeRunDisplay.previewState.changedFiles,
   });
   const activeRunProviderTruth = providerTruthForPreviewState(activeRunDisplay.previewState, selectedProviderTruth);
+  const selectedPromptDiagnosticsForDom = dummyCoder10DiagnosticsText(
+    dummyCoderRunState,
+    existingDummyProjectSummary,
+  );
   const codingPipelineSteps = buildCodingPipelineSteps({
     applyPreflightNeedsFix: activeRunDisplay.source === "composer" ? applyPreflightNeedsFix : false,
     currentChangedFilesDiagnostics: activeRunChangedFilesDiagnostics,
@@ -11662,6 +13125,7 @@ export function CodingCockpitShell() {
                     <select
                       aria-label="Dummy Coder prompt"
                       className={`min-h-10 rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-3 text-sm font-semibold ${commandTextClass} ${commandControlClass}`}
+                      data-testid="dummy-coder-prompt-select"
                       disabled={dummyCoderRunState.status === "running" || dummyCoderRunState.status === "starting" || dummyCoderRunState.status === "request_sent"}
                       onChange={(event) => {
                         setSelectedDummyCoderPromptId(event.target.value);
@@ -11705,6 +13169,7 @@ export function CodingCockpitShell() {
                   </details>
                   <button
                     className={`inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-emerald-300 px-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 ${commandFocusClass}`}
+                    data-testid="run-selected-dummy-coder-prompt"
                     disabled={
                       dummyCoderRunState.status === "running" ||
                       dummyCoderRunState.status === "starting" ||
@@ -11720,6 +13185,16 @@ export function CodingCockpitShell() {
                     ) : null}
                     Run selected prompt
                   </button>
+                  <pre
+                    data-error-text={dummyCoderRunState.errorText ?? "none"}
+                    data-raw-backend-status={dummyCoderRunState.rawBackendStatus ?? "none"}
+                    data-selected-prompt-id={dummyCoderRunState.selectedPromptId ?? selectedDummyCoderPrompt.id}
+                    data-selected-prompt-status={dummyCoderRunState.status}
+                    data-testid="selected-prompt-diagnostics"
+                    hidden
+                  >
+                    {selectedPromptDiagnosticsForDom}
+                  </pre>
                   {(dummyCoderRunState.status === "running" ||
                     dummyCoderRunState.status === "starting" ||
                     dummyCoderRunState.status === "request_sent") ? (
@@ -14087,6 +15562,18 @@ class BrowserAbortTimeoutError extends Error {
   }
 }
 
+class PayloadBackedError extends Error {
+  payload: unknown;
+  status: number;
+
+  constructor(message: string, payload: unknown, status: number) {
+    super(message);
+    this.name = "PayloadBackedError";
+    this.payload = payload;
+    this.status = status;
+  }
+}
+
 async function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit = {},
@@ -14217,6 +15704,196 @@ function timeoutLayerFromError(error: unknown): "browser_abort_timeout" | "sourc
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function storefrontProbeFromPayload(value: unknown): DummyStorefrontProbeResult | null {
+  const record = asRecord(value);
+  const previewStatus = stringValue(record.preview_behavior_status);
+  const runtimeStatus = stringValue(record.storefront_runtime_status);
+  if (!previewStatus || !runtimeStatus) return null;
+  return record as unknown as DummyStorefrontProbeResult;
+}
+
+function storefrontProbeFromManagedBrowserEvidence(
+  value: unknown,
+): DummyStorefrontProbeResult | null {
+  const record = asRecord(value);
+  if (stringValue(record.storefront_runtime_engine) !== "playwright_chromium") {
+    return null;
+  }
+  const runtimeStatus =
+    stringValue(record.storefront_runtime_status) === "passed" ? "passed" : "failed";
+  const productCount = numberValue(record.product_count) ?? 0;
+  const renderedCardCount = numberValue(record.rendered_card_count) ?? 0;
+  const visibleFields = asRecord(record.visible_fields);
+  const allFieldsVisible = ["name", "price", "category", "description"].every(
+    (field) => visibleFields[field] === true,
+  );
+  const assetResponses = asRecord(record.asset_responses);
+  const assetsPassed =
+    Object.keys(assetResponses).length >= 4 &&
+    Object.values(assetResponses).every((status) => status === 200);
+  const passed =
+    runtimeStatus === "passed" &&
+    productCount >= 6 &&
+    renderedCardCount === productCount &&
+    allFieldsVisible &&
+    assetsPassed;
+  return {
+    preview_behavior_status: passed ? "PASS_STOREFRONT_RENDERED" : "FAIL_BARE_PAGE",
+    preview_visible_text_summary: passed
+      ? `Managed Chromium rendered ${renderedCardCount} LumaCart product cards with name, price, category, and description.`
+      : "Managed Chromium did not prove the required storefront DOM.",
+    preview_asset_status: assetsPassed ? "present" : "empty",
+    product_count: productCount,
+    card_render_path_present: renderedCardCount === productCount && productCount > 0,
+    category_render_path_present: visibleFields.category === true,
+    description_render_path_present: visibleFields.description === true,
+    price_render_path_present: visibleFields.price === true,
+    stylesheet_linked: record.stylesheet_loaded === true,
+    visible_product_names: arrayOfStrings(record.rendered_headings),
+    storefront_runtime_status: runtimeStatus,
+    storefront_runtime_engine: "playwright_chromium",
+    real_browser_used: record.real_browser_used === true,
+    browser_evidence_source: "source_proxy_managed_playwright",
+    storefront_runtime_product_count: renderedCardCount,
+    storefront_runtime_visible_fields: {
+      name: visibleFields.name === true,
+      price: visibleFields.price === true,
+      category: visibleFields.category === true,
+      description: visibleFields.description === true,
+    },
+    storefront_runtime_reasons: passed
+      ? []
+      : [stringValue(record.reason) ?? "managed_browser_dom_contract_failed"],
+  };
+}
+
+function diagnosticPayloadFromResponse(payload: unknown): Record<string, unknown> {
+  const record = asRecord(payload);
+  const detail = asRecord(record.detail);
+  const detailDiagnosticEnvelope = asRecord(detail.diagnostic_envelope);
+  if (Object.keys(detailDiagnosticEnvelope).length > 0) return detailDiagnosticEnvelope;
+  const diagnosticEnvelope = asRecord(record.diagnostic_envelope);
+  if (Object.keys(diagnosticEnvelope).length > 0) return diagnosticEnvelope;
+  return Object.keys(detail).length > 0 ? detail : record;
+}
+
+function diagnosticPayloadFromError(error: unknown): Record<string, unknown> | null {
+  if (error instanceof PayloadBackedError) {
+    const diagnostic = diagnosticPayloadFromResponse(error.payload);
+    return Object.keys(diagnostic).length > 0 ? diagnostic : null;
+  }
+  return null;
+}
+
+function missingSelectedPromptDiagnosticEnvelope({
+  message,
+  rawBackendStatus,
+  selectedPromptId,
+  taskId,
+  timeoutLayer,
+}: {
+  message: string;
+  rawBackendStatus: string;
+  selectedPromptId: string;
+  taskId: string | null;
+  timeoutLayer: string;
+}): Record<string, unknown> {
+  const effectiveTaskId = taskId ?? "missing: backend did not provide field";
+  const reasonCode =
+    timeoutLayer === "network_fetch_error"
+      ? "network_fetch_error"
+      : timeoutLayer === "browser_abort_timeout"
+        ? "browser_abort_timeout"
+        : "missing_diagnostic_envelope";
+  const recommendedNextAction =
+    "Inspect Source Proxy and Next route health for the selected prompt task, then rerun only this prompt after the route returns a structured diagnostic envelope.";
+  return {
+    stage_id: "coding_ui.selected_prompt.failure_catch",
+    subsystem: "coding_cockpit_selected_prompt",
+    task_id: effectiveTaskId,
+    selected_prompt_task_id: effectiveTaskId,
+    run_id: `selected_prompt:${selectedPromptId}:${effectiveTaskId}`,
+    trace_id: "missing: no diagnostic envelope received",
+    invocation_event_id: "missing: no diagnostic envelope received",
+    consumer_event_id: "missing: no diagnostic envelope received",
+    status: "error",
+    truth_status: "MISSING_DIAGNOSTIC_ENVELOPE",
+    safe_block: true,
+    error_code: reasonCode,
+    reason_code: reasonCode,
+    human_message: message,
+    machine_reason: reasonCode,
+    apply_block_layer: "route_error_before_model_call",
+    task_creation_status: taskId ? "task_id_known_after_route_error" : "failed_before_task_id",
+    task_creation_elapsed_ms: null,
+    task_creation_timeout_stage: timeoutLayer,
+    task_creation_last_checkpoint: "ui_failure_catch",
+    task_creation_blocking_subsystem: "coding_cockpit_selected_prompt",
+    recommended_next_action: recommendedNextAction,
+    task_identity: {
+      backend_task_id: effectiveTaskId,
+      selected_prompt_id: selectedPromptId,
+      selected_prompt_task_id: effectiveTaskId,
+      trace_id: "missing: no diagnostic envelope received",
+    },
+    approval_binding: {
+      approval_binding_status: "not_run: route_error_before_model_call",
+      approval_binding_safe_block: true,
+      apply_block_layer: "route_error_before_model_call",
+      block_receipt_path: "not_applicable: route_error_before_model_call_before_apply_receipt",
+      safe_block: true,
+    },
+    diff_provenance: {
+      applied_diff_sha256: "not_recorded: apply_did_not_happen",
+      approved_diff_sha256: "not_recorded: apply_did_not_happen",
+      backend_converted_diff_sha256: "missing: backend did not provide field",
+      changed_files: [],
+      diff_source: "not_run: route_error_before_model_call",
+    },
+    verification: {
+      post_apply_verification_status: "not_run: route_error_before_model_call",
+      preview_verification_status: "not_run: route_error_before_model_call",
+    },
+    anti_cheat: {
+      anti_cheat_status: "not_run",
+      anti_cheat_reasons: ["route_error_before_model_call"],
+      grader_result_state: "not_applicable: route_error_before_model_call",
+      trial_result_trust_status: "missing_diagnostic_envelope",
+    },
+    acceptance_gate: {
+      acceptance_failures: [reasonCode],
+      binary_verdict: "NO-GO",
+      causal_crosscheck_status: "skipped_with_reason",
+      fail_closed_lane_status: "skipped_with_reason",
+      missing_fields: ["diagnostic_envelope"],
+      phase_verifier_status: "skipped_with_reason",
+      plan5_gate_id: "plan5_ui_missing_diagnostic_envelope",
+      plan5_gate_present: false,
+      plan5_gate_version: "plan5_acceptance_v1",
+      reason: "missing_diagnostic_envelope",
+    },
+    final_truth_summary: {
+      commit_safe: false,
+      proof_level: "operator_ui_route_failure",
+      raw_backend_status: rawBackendStatus,
+      recommended_next_action: recommendedNextAction,
+      run_status: "error",
+      block_receipt_path: "not_applicable: route_error_before_model_call_before_apply_receipt",
+      truth_status: "MISSING_DIAGNOSTIC_ENVELOPE",
+      why_not_go: message,
+    },
+    unavailable_fields: [
+      { field: "trace_id", reason: "missing: no diagnostic envelope received" },
+      { field: "approval_binding.expected_approval_id", reason: "route_error_before_model_call" },
+      { field: "approval_binding.received_approval_id", reason: "route_error_before_model_call" },
+      { field: "anti_cheat.detector_results", reason: "route_error_before_model_call" },
+      { field: "receipt_path", reason: "apply_did_not_happen" },
+    ],
+    persisted_at: "missing: no diagnostic envelope received",
+    surfaced_at: new Date().toISOString(),
+  };
 }
 
 function messageFromPayload(payload: unknown, status: number): string {
@@ -14664,6 +16341,10 @@ function blockerFromPayload(payload: unknown): string {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function booleanValue(value: unknown): boolean | null {

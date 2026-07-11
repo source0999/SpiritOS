@@ -122,6 +122,12 @@ from source_proxy.context.source_readiness import (
     build_design_context_packet,
     build_obsidian_context_packet,
 )
+from source_proxy.context.canonical_broker import (
+    acknowledge_context_consumer,
+    build_context_broker_report,
+    extend_context_broker_sources,
+    render_context_broker_prompt,
+)
 from source_proxy.decision.research import (
     run_repo_research_preview,
     run_searxng_research_diagnostics,
@@ -535,6 +541,291 @@ async def _build_fip2_research_packet(
     }
     research_packet["research_packet_hash"] = _json_hash(research_packet)
     return research_packet
+
+
+def _build_canonical_context_packet(
+    *,
+    request: PromptPacketRequest,
+    original_request: PromptPacketRequest,
+    task: str,
+    explicit_target: str,
+    fip1_context_packet: dict[str, Any],
+    fip2_research_packet: dict[str, Any],
+) -> tuple[dict[str, Any], str]:
+    """Unify every prompt-path context source before any model execution."""
+
+    implementation_required = bool(request.wants_implementation or request.needs_codebase_context)
+    # Requirement intent excludes structured target declarations.  Both the
+    # router and callers may prepend `Target file:`; path segments such as
+    # `ui-agent-trials` must not invent a required design lane.
+    requirement_intent = "\n".join(
+        line
+        for line in request.task.splitlines()
+        if not re.match(r"^\s*target\s+file\s*:", line, flags=re.IGNORECASE)
+    )
+    lowered_task = requirement_intent.lower()
+    visual_context_required = bool(
+        implementation_required
+        and re.search(r"\b(ux|visual|design)\b", lowered_task)
+    )
+    mac_context_required = bool(
+        implementation_required
+        and re.search(r"\b(mac worker|mac mini|macos worker)\b", lowered_task)
+    )
+    context_sources = [
+        source
+        for source in fip1_context_packet.get("sources", [])
+        if isinstance(source, dict)
+    ]
+    by_source = {
+        str(source.get("source") or ""): dict(source)
+        for source in context_sources
+    }
+
+    supplied_context = str(request.relevant_context or "").strip()
+    fip1_context_enabled = bool(fip1_context_packet)
+    workspace_root = _workspace_root().resolve()
+    normalized_target = explicit_target.replace("\\", "/").lstrip("./")
+    target_path = (workspace_root / normalized_target).resolve() if normalized_target else workspace_root
+    target_safe = bool(
+        normalized_target
+        and (target_path == workspace_root or workspace_root in target_path.parents)
+        and unsafe_target_for_route(
+            task,
+            ResolvedTarget(
+                path=normalized_target,
+                exists=target_path.is_file(),
+                source="explicit_line",
+            ),
+            workspace_root,
+        )
+        is None
+    )
+    target_exists = bool(target_safe and target_path.is_file())
+    target_excerpt = ""
+    if target_exists:
+        try:
+            target_excerpt = target_path.read_text(encoding="utf-8", errors="replace")[:6000]
+        except OSError:
+            target_exists = False
+    target_file_context = {
+        "source": "target_file_context",
+        "considered": True,
+        "status": "used" if target_exists else "blocked" if normalized_target and not target_safe else "skipped",
+        "reason": (
+            "target_file_context_included"
+            if target_exists
+            else "target_file_context_unsafe"
+            if normalized_target and not target_safe
+            else "target_file_missing_or_not_selected"
+        ),
+        "required": bool(implementation_required and target_exists),
+        "selected": target_exists,
+        "included": target_exists,
+        "packet": {
+            "path": normalized_target,
+            "sha256": hashlib.sha256(target_excerpt.encode("utf-8")).hexdigest()
+            if target_exists
+            else "",
+            "safe_excerpt": target_excerpt,
+        },
+        "authority": dict(READ_ONLY_AUTHORITY),
+    }
+    supplied = {
+        "source": "supplied_context",
+        "considered": True,
+        "status": "used" if supplied_context else "skipped",
+        "reason": "supplied_context_included" if supplied_context else "no_supplied_context",
+        "required": False,
+        "selected": bool(supplied_context),
+        "included": bool(supplied_context),
+        "packet": {"safe_excerpt": supplied_context[:6000]},
+        "authority": dict(READ_ONLY_AUTHORITY),
+    }
+
+    def lane_source(name: str, *, required: bool = False) -> dict[str, Any]:
+        lane = dict(by_source.get(name) or {})
+        status = str(
+            lane.get("status")
+            or ("skipped" if not fip1_context_enabled else "unavailable")
+        )
+        if not lane:
+            lane["reason"] = (
+                "fip1_context_lane_disabled"
+                if not fip1_context_enabled
+                else "context_lane_status_missing"
+            )
+        selected = status == "used"
+        return {
+            **lane,
+            "source": name,
+            "considered": True,
+            "status": status,
+            "required": required,
+            "selected": selected,
+            "included": selected,
+        }
+
+    search_needed = fip2_research_packet.get("search_needed") is True
+    repo_sources = [
+        item
+        for item in fip2_research_packet.get("repo_sources", [])
+        if isinstance(item, dict)
+    ]
+    scout_packet = (
+        fip2_research_packet.get("scout")
+        if isinstance(fip2_research_packet.get("scout"), dict)
+        else {}
+    )
+    scout_sources = [
+        item for item in scout_packet.get("scout_sources", []) if isinstance(item, dict)
+    ]
+    searxng_packet = (
+        fip2_research_packet.get("searxng")
+        if isinstance(fip2_research_packet.get("searxng"), dict)
+        else {}
+    )
+    searxng_sources = [
+        item for item in searxng_packet.get("searxng_sources", []) if isinstance(item, dict)
+    ]
+
+    sources = [
+        supplied,
+        target_file_context,
+        lane_source(
+            "cartographer",
+            required=bool(implementation_required and fip1_context_enabled),
+        ),
+        lane_source("obsidian"),
+        lane_source("design", required=visual_context_required),
+        lane_source("mac_worker", required=mac_context_required),
+        {
+            "source": "repo_research",
+            "considered": True,
+            "status": "used" if repo_sources else "skipped",
+            "reason": "repo_research_sources_selected" if repo_sources else "no_repo_research_sources",
+            "required": False,
+            "selected": bool(repo_sources),
+            "included": bool(repo_sources),
+            "packet": {"sources": repo_sources},
+            "authority": dict(READ_ONLY_AUTHORITY),
+        },
+        {
+            "source": "scout_research",
+            "considered": True,
+            "status": str(scout_packet.get("status") or "skipped"),
+            "reason": str(scout_packet.get("reason") or "scout_not_invoked"),
+            "required": False,
+            "selected": bool(scout_sources),
+            "included": bool(scout_sources),
+            "packet": {"sources": scout_sources},
+            "authority": dict(READ_ONLY_AUTHORITY),
+        },
+        {
+            "source": "searxng_research",
+            "considered": True,
+            "status": str(searxng_packet.get("status") or "skipped"),
+            "reason": str(searxng_packet.get("reason") or "searxng_not_invoked"),
+            "required": search_needed,
+            "selected": bool(searxng_sources),
+            "included": bool(searxng_sources),
+            "packet": {"sources": searxng_sources},
+            "authority": dict(READ_ONLY_AUTHORITY),
+        },
+        {
+            "source": "design_extractor",
+            "considered": True,
+            "status": "skipped",
+            "reason": "design_extractor_not_invoked_by_prompt_path",
+            "required": "design studio" in lowered_task or "designdna" in lowered_task,
+            "selected": False,
+            "included": False,
+            "packet": {},
+            "authority": dict(READ_ONLY_AUTHORITY),
+        },
+    ]
+
+    cleared_sources = {
+        "conversation_context": original_request.conversation_context,
+        "decision_memory": original_request.decision_memory,
+        "targeted_files": original_request.targeted_files,
+        "target_files": original_request.target_files,
+        "prior_diff": original_request.proposed_diff,
+    }
+    for source_name, raw_value in cleared_sources.items():
+        was_supplied = bool(raw_value)
+        sources.append(
+            {
+                "source": source_name,
+                "considered": True,
+                "status": "skipped",
+                "reason": (
+                    "cleared_by_prompt_file_focus_policy"
+                    if was_supplied
+                    else "not_supplied"
+                ),
+                "required": False,
+                "selected": False,
+                "included": False,
+                "packet": {"supplied": was_supplied},
+                "authority": dict(READ_ONLY_AUTHORITY),
+            }
+        )
+
+    selected_names = [
+        str(source.get("source") or "")
+        for source in sources
+        if source.get("selected") is True and source.get("included") is True
+    ]
+    acknowledgements = {
+        "planner": {
+            "applicable": True,
+            "acknowledged": bool(selected_names),
+            "sources": selected_names,
+            "evidence": f"canonical_context_policy_selected_target:{explicit_target or 'unresolved'}",
+            "reason": "planner_used_source_readiness_to_gate_generation",
+        },
+    }
+    report = build_context_broker_report(
+        sources,
+        downstream_consumers=acknowledgements,
+        applicable_consumers=("planner",),
+    )
+    report["task_id"] = str(request.active_task_id or "")
+    report["trace_id"] = f"context-{str(request.active_task_id or _json_hash(task))[:64]}"
+    report["explicit_target"] = explicit_target
+    report["finalized"] = False
+    return report, _canonical_context_prompt_text(report)
+
+
+def _canonical_context_prompt_text(report: dict[str, Any]) -> str:
+    return render_context_broker_prompt(report)
+
+
+def _canonical_context_blocked_coder_payload(report: dict[str, Any]) -> dict[str, Any]:
+    blockers = [str(item) for item in report.get("required_context_blockers", [])]
+    diagnostics = {
+        "context_mode": "canonical_context_blocked",
+        "context_slices": [],
+        "canonical_context_broker": report,
+        "validation_status": "required_context_blocked",
+        "trial_result_trust_status": "generation_not_attempted",
+        "provider_call_made": False,
+        "recommended_next_action": "Resolve the canonical context blockers, then retry generation.",
+    }
+    return {
+        "proposed_diff": "",
+        "target": "",
+        "coder_notes": ["CODER_BLOCKED reason_code: required_context_blocked"],
+        "bundle": None,
+        "coder_blocked": True,
+        "blocked_reason": "; ".join(blockers) or "canonical_context_not_go_eligible",
+        "needed_context": "; ".join(blockers),
+        "reason_code": "required_context_blocked",
+        "coder_diagnostics": diagnostics,
+        "changed_files": [],
+        "checks_run": [],
+    }
 
 
 def _research_sources_by_source(
@@ -2408,7 +2699,9 @@ def _fip4_final_coder_packet(
     fip2_research_packet: dict[str, Any],
     fip3_model_packet: dict[str, Any],
     checks: list[str],
+    canonical_context_broker: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    canonical_context_broker = canonical_context_broker or {}
     gemma = fip3_model_packet.get("gemma") if isinstance(fip3_model_packet.get("gemma"), dict) else {}
     hermes = (
         fip3_model_packet.get("hermes_critic")
@@ -2459,6 +2752,10 @@ def _fip4_final_coder_packet(
             "repo_result_count": fip2_research_packet.get("repo_result_count", 0),
         },
         "fip2_research_packet": fip2_research_packet,
+        "canonical_context_broker": canonical_context_broker,
+        "canonical_context_report_hash": str(
+            canonical_context_broker.get("canonical_report_hash") or ""
+        ),
         "fip2_scout_status_sources": fip2_research_packet.get("scout", {}),
         "fip2_searxng_status_sources": fip2_research_packet.get("searxng", {}),
         "tinyfish_deferred_status": "deferred_cloud_requires_britton_approval",
@@ -3573,7 +3870,9 @@ def _run_fip4_qwen_coder(
     fip1_context_packet: dict[str, Any],
     fip2_research_packet: dict[str, Any],
     fip3_model_packet: dict[str, Any],
+    canonical_context_broker: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    canonical_context_broker = canonical_context_broker or {}
     context_mode = derive_context_mode(explicit_target)
     allowed_files = _fip4_allowed_files(
         explicit_target=explicit_target,
@@ -3602,6 +3901,7 @@ def _run_fip4_qwen_coder(
         fip1_context_packet=fip1_context_packet,
         fip2_research_packet=fip2_research_packet,
         fip3_model_packet=fip3_model_packet,
+        canonical_context_broker=canonical_context_broker,
         checks=checks,
     )
     final_packet_hash = str(final_packet.get("final_packet_hash") or _json_hash(final_packet))
@@ -3845,6 +4145,14 @@ def _attach_fip0_truth_receipt(
         or ""
     )
     context_packet = fip1_context_packet or {}
+    canonical_context_broker = (
+        payload.get("canonical_context_broker")
+        if isinstance(payload.get("canonical_context_broker"), dict)
+        else payload.get("context_metadata", {}).get("canonical_context_broker")
+        if isinstance(payload.get("context_metadata"), dict)
+        and isinstance(payload.get("context_metadata", {}).get("canonical_context_broker"), dict)
+        else {}
+    )
     context_sources = (
         context_packet.get("sources")
         if isinstance(context_packet.get("sources"), list)
@@ -4030,6 +4338,11 @@ def _attach_fip0_truth_receipt(
             cloud_provider_used=False,
         ),
         "final_packet_hash": final_packet_hash,
+        "canonical_context_broker": canonical_context_broker,
+        "canonical_context_verdict": str(canonical_context_broker.get("verdict") or ""),
+        "canonical_context_report_hash": str(
+            canonical_context_broker.get("canonical_report_hash") or ""
+        ),
         "coder_received_packet_hash": coder_packet_hash,
         "used_sources": [],
         "skipped_reasons": [],
@@ -4522,6 +4835,12 @@ def _attach_fip0_truth_receipt(
             or fip5_result.get("reason")
             or "NO-GO: fip5_verifier_missing_final_verdict"
         )
+    if (
+        canonical_context_broker
+        and canonical_context_broker.get("go_eligible") is not True
+        and str(receipt.get("final_verdict") or "").startswith("GO:")
+    ):
+        receipt["final_verdict"] = "NO-GO: canonical_context_not_go_eligible"
     receipt["failure_classification"] = _receipt_failure_classification(receipt)
     receipt["failure_event"] = _receipt_failure_event(receipt)
     degraded_lanes = _lane_degradation_for_receipt(receipt)
@@ -4558,6 +4877,8 @@ async def _propose_coder_via_executor(
     architect_plan: Any,
     *,
     force_live_model: bool = False,
+    canonical_context: dict[str, Any] | None = None,
+    canonical_context_text: str = "",
 ) -> dict[str, Any]:
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
@@ -4566,8 +4887,199 @@ async def _propose_coder_via_executor(
             propose_coder_agent_diff_payload_from_plan,
             architect_plan=architect_plan,
             force_live_model=force_live_model,
+            canonical_context=canonical_context,
+            canonical_context_text=canonical_context_text,
         ),
     )
+
+
+def _architect_context_sources_for_broker(
+    architect_plan: Any,
+    *,
+    workspace_root: Path,
+) -> list[dict[str, Any]]:
+    """Describe late-bound Architect/repomix inputs before generic Coder runs."""
+
+    packet = getattr(architect_plan, "coder_packet", None)
+    packet_payload: dict[str, Any] = {}
+    raw_slices: list[Any] = []
+    try:
+        plan_payload = architect_plan.to_dict()
+        raw_packet = plan_payload.get("coder_packet") if isinstance(plan_payload, dict) else None
+        if isinstance(raw_packet, dict):
+            packet_payload = dict(raw_packet)
+            raw_slices = (
+                list(packet_payload.pop("context_slices", []))
+                if isinstance(packet_payload.get("context_slices"), list)
+                else []
+            )
+    except Exception:  # noqa: BLE001 - malformed plan becomes blocked broker truth
+        packet_payload = {}
+    packet_available = packet is not None and bool(packet_payload)
+
+    context_slices: list[dict[str, Any]] = []
+    tampered_slices: list[str] = []
+    if packet is not None:
+        for item in getattr(packet, "context_slices", []):
+            content = str(getattr(item, "content", "") or "")
+            expected_hash = str(getattr(item, "sha256", "") or "")
+            actual_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+            path_value = str(getattr(item, "path", "") or "")
+            if not expected_hash or actual_hash != expected_hash:
+                tampered_slices.append(path_value or "unknown")
+            line_range = getattr(item, "line_range", None)
+            context_slices.append(
+                {
+                    "path": path_value,
+                    "kind": str(getattr(item, "kind", "") or ""),
+                    "sha256": expected_hash,
+                    "line_range": list(line_range) if line_range else None,
+                    "safe_excerpt": content[:4000],
+                    "omitted_chars": max(0, len(content) - 4000),
+                }
+            )
+    else:
+        context_slices = [dict(item) for item in raw_slices if isinstance(item, dict)]
+
+    operation = str(getattr(packet, "operation", "") or "")
+    slices_required = bool(operation != "create" or context_slices)
+    slices_available = bool(context_slices) and not tampered_slices
+
+    snapshot = getattr(architect_plan, "bundle_snapshot", None)
+    expected_bundle_hash = str(getattr(snapshot, "bundle_sha256", "") or "")
+    bundle_path_text = str(getattr(snapshot, "bundle_path", "") or "")
+    snapshot_invoked = bool(snapshot is not None and (expected_bundle_hash or bundle_path_text))
+    bundle_path = Path(bundle_path_text) if bundle_path_text else workspace_root
+    if bundle_path_text and not bundle_path.is_absolute():
+        bundle_path = workspace_root / bundle_path
+    if snapshot_invoked and (not bundle_path_text or not bundle_path.is_file()):
+        for name in ("repomix-output.ast.xml", "repomix-output.xml"):
+            candidate = workspace_root / name
+            if candidate.is_file():
+                bundle_path = candidate
+                break
+    resolved_bundle = bundle_path.resolve()
+    bundle_safe = bool(
+        snapshot_invoked
+        and resolved_bundle.is_file()
+        and (resolved_bundle == workspace_root or workspace_root in resolved_bundle.parents)
+    )
+    actual_bundle_hash = (
+        hashlib.sha256(resolved_bundle.read_bytes()).hexdigest()
+        if bundle_safe
+        else ""
+    )
+    bundle_valid = bool(
+        bundle_safe
+        and expected_bundle_hash
+        and actual_bundle_hash == expected_bundle_hash
+    )
+
+    return [
+        {
+            "source": "architect_coder_packet",
+            "considered": True,
+            "status": "used" if packet_available else "blocked",
+            "reason": (
+                "architect_coder_packet_brokered"
+                if packet_available
+                else "architect_coder_packet_missing_or_malformed"
+            ),
+            "required": True,
+            "selected": packet_available,
+            "included": packet_available,
+            "packet": packet_payload,
+            "authority": dict(READ_ONLY_AUTHORITY),
+        },
+        {
+            "source": "architect_context_slices",
+            "considered": True,
+            "status": "used" if slices_available else "blocked" if slices_required else "skipped",
+            "reason": (
+                "architect_context_slices_brokered"
+                if slices_available
+                else f"architect_context_slice_hash_mismatch:{','.join(tampered_slices[:5])}"
+                if tampered_slices
+                else "architect_context_slices_missing"
+                if slices_required
+                else "create_packet_did_not_require_context_slices"
+            ),
+            "required": slices_required,
+            "selected": slices_available,
+            "included": slices_available,
+            "packet": {"slices": context_slices},
+            "authority": dict(READ_ONLY_AUTHORITY),
+        },
+        {
+            "source": "repomix_bundle_context",
+            "considered": True,
+            "status": "used" if bundle_valid else "blocked" if snapshot_invoked else "skipped",
+            "reason": (
+                "repomix_bundle_snapshot_hash_verified_and_brokered"
+                if bundle_valid
+                else "repomix_bundle_snapshot_hash_mismatch"
+                if bundle_safe and expected_bundle_hash
+                else "repomix_bundle_snapshot_missing_or_unsafe"
+                if snapshot_invoked
+                else "architect_plan_has_no_repomix_bundle_snapshot"
+            ),
+            "required": snapshot_invoked,
+            "selected": bundle_valid,
+            "included": bundle_valid,
+            "packet": {
+                "bundle_path": bundle_path_text,
+                "expected_sha256": expected_bundle_hash,
+                "actual_sha256": actual_bundle_hash,
+                "selected_context_slice_hashes": [
+                    str(item.get("sha256") or "") for item in context_slices
+                ],
+            },
+            "authority": dict(READ_ONLY_AUTHORITY),
+        },
+    ]
+
+
+def _extend_canonical_context_for_generic_coder(
+    canonical_context: dict[str, Any],
+    architect_plan: Any,
+) -> str:
+    updated = extend_context_broker_sources(
+        canonical_context,
+        _architect_context_sources_for_broker(
+            architect_plan,
+            workspace_root=_workspace_root().resolve(),
+        ),
+        planner_evidence="architect_plan_and_repomix_context_selected_before_generic_coder",
+    )
+    canonical_context.clear()
+    canonical_context.update(updated)
+    return render_context_broker_prompt(canonical_context)
+
+
+def _generic_coder_context_blocked_payload(
+    canonical_context: dict[str, Any],
+    *,
+    target: str,
+) -> dict[str, Any]:
+    blockers = [str(item) for item in canonical_context.get("required_context_blockers", [])]
+    return {
+        "proposed_diff": "",
+        "target": target,
+        "coder_notes": ["CODER_BLOCKED reason_code: required_context_blocked"],
+        "bundle": None,
+        "coder_blocked": True,
+        "blocked_reason": "; ".join(blockers) or "canonical_context_not_go_eligible",
+        "needed_context": "Resolve the Architect/repomix broker blockers, then regenerate the plan.",
+        "reason_code": "required_context_blocked",
+        "coder_diagnostics": {
+            "canonical_context_broker": canonical_context,
+            "canonical_context_report_hash": canonical_context.get("canonical_report_hash", ""),
+            "canonical_context_consumed_by_coder_execution": False,
+            "validation_status": "required_context_blocked",
+            "context_slices": [],
+            "provider_call_made": False,
+        },
+    }
 
 
 async def _bounded_coder_diff_or_stub(
@@ -4575,6 +5087,8 @@ async def _bounded_coder_diff_or_stub(
     architect_plan: Any | None = None,
     *,
     force_live_model: bool = False,
+    canonical_context: dict[str, Any] | None = None,
+    canonical_context_text: str = "",
 ) -> dict[str, Any]:
     """Run blocking coder work off the event loop; never exceed gateway patience."""
     if force_live_model:
@@ -4588,20 +5102,32 @@ async def _bounded_coder_diff_or_stub(
                 return product_satisfied
         dummy_live = _dummy_reversible_live_trial_coder_diff_payload(task)
         if dummy_live is not None:
-            return dummy_live
+            return _annotate_deterministic_coder_context_consumption(
+                dummy_live,
+                canonical_context=canonical_context,
+                canonical_context_text=canonical_context_text,
+            )
         expected_no_edit = _expected_no_edit_trial_payload(task)
         if expected_no_edit is not None:
             return expected_no_edit
         realistic_trial = _realistic_reversible_trial_coder_diff_payload(task)
         if realistic_trial is not None:
-            return realistic_trial
+            return _annotate_deterministic_coder_context_consumption(
+                realistic_trial,
+                canonical_context=canonical_context,
+                canonical_context_text=canonical_context_text,
+            )
     dummy_preview = (
         None
         if force_live_model or not _trial_harness_only_enabled()
         else _dummy_trial_coder_diff_payload(task)
     )
     if dummy_preview is not None:
-        return dummy_preview
+        return _annotate_deterministic_coder_context_consumption(
+            dummy_preview,
+            canonical_context=canonical_context,
+            canonical_context_text=canonical_context_text,
+        )
     if architect_plan is None:
         architect_plan = _deterministic_architect_plan_for_prompt_packet(task, None)
     if architect_plan is None:
@@ -4621,12 +5147,26 @@ async def _bounded_coder_diff_or_stub(
                 "forbidden_paths": list(forbidden_paths_for_context_mode(derive_context_mode(explicit))),
             },
         }
-
+    if canonical_context is not None:
+        canonical_context_text = _extend_canonical_context_for_generic_coder(
+            canonical_context,
+            architect_plan,
+        )
+        if canonical_context.get("go_eligible") is not True:
+            return _generic_coder_context_blocked_payload(
+                canonical_context,
+                target=_target_from_architect_plan(architect_plan),
+            )
     deadline = _coder_sync_deadline_seconds()
     reset_coder_timing_diagnostics()
     try:
         return await asyncio.wait_for(
-            _propose_coder_via_executor(architect_plan, force_live_model=force_live_model),
+            _propose_coder_via_executor(
+                architect_plan,
+                force_live_model=force_live_model,
+                canonical_context=canonical_context,
+                canonical_context_text=canonical_context_text,
+            ),
             timeout=deadline,
         )
     except asyncio.TimeoutError:
@@ -4695,6 +5235,54 @@ async def _bounded_coder_diff_or_stub(
                 "exception_type": type(error).__name__,
             },
         }
+
+
+def _annotate_deterministic_coder_context_consumption(
+    payload: dict[str, Any],
+    *,
+    canonical_context: dict[str, Any] | None,
+    canonical_context_text: str,
+) -> dict[str, Any]:
+    """Bind a deterministic coder result to the same canonical pre-execution gate."""
+
+    diagnostics = (
+        dict(payload.get("coder_diagnostics"))
+        if isinstance(payload.get("coder_diagnostics"), dict)
+        else {}
+    )
+    selected_sources = [
+        source
+        for source in (canonical_context or {}).get("sources_considered", [])
+        if isinstance(source, dict) and source.get("selected") is True
+    ]
+    context_ready = bool(
+        canonical_context
+        and canonical_context.get("go_eligible") is True
+        and canonical_context_text.strip()
+        and selected_sources
+    )
+    diagnostics["canonical_context_broker"] = canonical_context or {}
+    diagnostics["canonical_context_report_hash"] = str(
+        (canonical_context or {}).get("canonical_report_hash") or ""
+    )
+    diagnostics["canonical_context_included_in_model_prompt"] = False
+    diagnostics["canonical_context_consumed_by_coder_execution"] = context_ready
+    diagnostics["canonical_context_consumption_mode"] = "deterministic_pre_execution_gate"
+    existing_slices = [
+        item for item in diagnostics.get("context_slices", []) if isinstance(item, dict)
+    ]
+    diagnostics["context_slices"] = [
+        *existing_slices,
+        *[
+            {
+                "path": f"context://{source.get('source')}",
+                "kind": "canonical_context_gate",
+                "report_hash": diagnostics["canonical_context_report_hash"],
+            }
+            for source in selected_sources
+        ],
+    ]
+    return {**payload, "coder_diagnostics": diagnostics}
 
 
 def _product_trial_feature_already_satisfied_payload(
@@ -5770,7 +6358,13 @@ def _expected_no_edit_trial_payload(task: str) -> dict[str, Any] | None:
     }
 
 
-def _expected_no_edit_trial_payload_with_model(task: str, expected_outcome: str) -> dict[str, Any]:
+def _expected_no_edit_trial_payload_with_model(
+    task: str,
+    expected_outcome: str,
+    *,
+    canonical_context: dict[str, Any] | None = None,
+    canonical_context_text: str = "",
+) -> dict[str, Any]:
     target = _parse_explicit_target_file_line(task)
     reason_code = expected_outcome or "expected_no_edit"
     labels = {
@@ -5803,13 +6397,20 @@ def _expected_no_edit_trial_payload_with_model(task: str, expected_outcome: str)
         "validation_status": reason_code,
         "deterministic_preview": False,
         "trial_mode": "live_apply",
+        "canonical_context_broker": canonical_context or {},
+        "canonical_context_report_hash": str(
+            (canonical_context or {}).get("canonical_report_hash") or ""
+        ),
+        "canonical_context_included_in_model_prompt": bool(canonical_context_text.strip()),
+        "canonical_context_consumed_by_coder_execution": bool(canonical_context_text.strip()),
     }
     diagnostics.update(
         _trial_live_model_call_diagnostics(
             task,
             proof_prompt=(
                 "Return one short sentence explaining why this SpiritOS trial should not edit files yet. "
-                f"Task: {task[:600]}"
+                f"Task: {task[:600]}\nCanonical context selected by the Source Proxy broker:\n"
+                f"{canonical_context_text.strip()}"
             ),
         )
     )
@@ -6275,6 +6876,14 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     )
     if fip2_research_packet:
         route_payload["research_sources"] = fip2_research_sources
+    canonical_context_broker, canonical_context_prompt = _build_canonical_context_packet(
+        request=reset_request,
+        original_request=request,
+        task=trial_task,
+        explicit_target=explicit_target,
+        fip1_context_packet=fip1_context_packet,
+        fip2_research_packet=fip2_research_packet,
+    )
     resolved_for_safety = resolve_target_from_task(trial_task, _workspace_root())
     unsafe_target = unsafe_target_for_route(
         reset_request.task,
@@ -6377,6 +6986,9 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 },
             }
             architect_plan = None
+        elif canonical_context_broker.get("go_eligible") is not True:
+            architect_plan = None
+            coder = _canonical_context_blocked_coder_payload(canonical_context_broker)
         else:
             expected_no_edit = str(reset_request.expected_outcome or "") in {
                 "clarify_expected",
@@ -6401,6 +7013,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 coder = _expected_no_edit_trial_payload_with_model(
                     trial_task,
                     str(reset_request.expected_outcome or ""),
+                    canonical_context=canonical_context_broker,
+                    canonical_context_text=canonical_context_prompt,
                 )
             else:
                 # #region agent log
@@ -6427,7 +7041,11 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                     deterministic_preview = _dummy_trial_coder_diff_payload(trial_task)
                     if deterministic_preview is not None:
                         architect_plan = None
-                        coder = deterministic_preview
+                        coder = _annotate_deterministic_coder_context_consumption(
+                            deterministic_preview,
+                            canonical_context=canonical_context_broker,
+                            canonical_context_text=canonical_context_prompt,
+                        )
                     else:
                         architect_plan = _load_or_prepare_architect_plan(
                             trial_task,
@@ -6438,6 +7056,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             trial_task,
                             architect_plan,
                             force_live_model=False,
+                            canonical_context=canonical_context_broker,
+                            canonical_context_text=canonical_context_prompt,
                         )
                 elif dummy_product_site_create:
                     architect_plan = None
@@ -6447,6 +7067,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             propose_dummy_product_site_create_diff,
                             task=trial_task,
                             workspace_root=_workspace_root(),
+                            canonical_context=canonical_context_broker,
+                            canonical_context_text=canonical_context_prompt,
                         ),
                     )
                 elif dummy_product_site_product_data:
@@ -6457,6 +7079,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             propose_dummy_product_site_product_data_diff,
                             task=trial_task,
                             workspace_root=_workspace_root(),
+                            canonical_context=canonical_context_broker,
+                            canonical_context_text=canonical_context_prompt,
                         ),
                     )
                 elif dummy_product_site_render_cards:
@@ -6467,6 +7091,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             propose_dummy_product_site_render_cards_diff,
                             task=trial_task,
                             workspace_root=_workspace_root(),
+                            canonical_context=canonical_context_broker,
+                            canonical_context_text=canonical_context_prompt,
                         ),
                     )
                 elif _fip4_qwen_enabled() and explicit_target:
@@ -6484,6 +7110,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             fip1_context_packet=fip1_context_packet,
                             fip2_research_packet=fip2_research_packet,
                             fip3_model_packet=fip3_model_packet,
+                            canonical_context_broker=canonical_context_broker,
                         ),
                     )
                     if not isinstance(fip4_result_raw, dict):
@@ -6501,6 +7128,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             trial_task,
                             architect_plan,
                             force_live_model=reset_request.trial_mode == "live_apply",
+                            canonical_context=canonical_context_broker,
+                            canonical_context_text=canonical_context_prompt,
                         )
                     else:
                         fip4_result = fip4_result_raw
@@ -6552,6 +7181,17 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                                 ),
                                 "fip4_qwen_coder_result": fip4_result,
                                 "fip5_verifier_result": fip5_result or {},
+                                "canonical_context_broker": canonical_context_broker,
+                                "canonical_context_report_hash": canonical_context_broker.get(
+                                    "canonical_report_hash",
+                                    "",
+                                ),
+                                "canonical_context_included_in_model_prompt": bool(
+                                    fip4_result.get("provider_call_made")
+                                ),
+                                "canonical_context_consumed_by_coder_execution": bool(
+                                    fip4_result.get("provider_call_made")
+                                ),
                                 "provider_model_truth": fip4_result.get(
                                     "provider_model_truth",
                                     {},
@@ -6575,6 +7215,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                         trial_task,
                         architect_plan,
                         force_live_model=reset_request.trial_mode == "live_apply",
+                        canonical_context=canonical_context_broker,
+                        canonical_context_text=canonical_context_prompt,
                     )
         proposed = str(coder.get("proposed_diff") or "")
         target = str(coder.get("target") or "")
@@ -6602,6 +7244,48 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             else {}
         )
         provider_model_truth = _provider_model_truth_from_coder_diagnostics(diagnostics)
+        coder_context_applicable = bool(
+            proposed.strip()
+            or provider_model_truth.get("providerCallMade") is True
+        )
+        canonical_context_broker = _record_active_task_context_broker(
+            reset_request.active_task_id,
+            canonical_context_broker,
+            coder_applicable=coder_context_applicable,
+            coder_consumed=(
+                diagnostics.get("canonical_context_consumed_by_coder_execution") is True
+            ),
+            repair_attempted=bool(
+                diagnostics.get("repair_attempted") is True
+                or diagnostics.get("prompt3_retry_attempted") is True
+            ),
+            repair_consumed=(
+                diagnostics.get("canonical_context_consumed_by_coder_execution") is True
+            ),
+        )
+        diagnostics["canonical_context_broker"] = canonical_context_broker
+        diagnostics["canonical_context_report_hash"] = canonical_context_broker.get(
+            "canonical_report_hash",
+            "",
+        )
+        if (
+            coder_context_applicable
+            and canonical_context_broker.get("go_eligible") is not True
+        ):
+            context_blockers = [
+                str(item)
+                for item in canonical_context_broker.get("required_context_blockers", [])
+            ]
+            coder_blocked = True
+            blocked_reason = "; ".join(context_blockers) or "canonical_context_not_go_eligible"
+            needed_context = (
+                "Resolve the canonical context blockers and rerun generation before approval."
+            )
+            reason_code = "required_context_blocked"
+            proposed = ""
+            diagnostics["validation_status"] = "required_context_blocked"
+            diagnostics["trial_result_trust_status"] = "generation_not_approvable_context_blocked"
+            diagnostics["recommended_next_action"] = needed_context
         fip4_result_for_receipt = (
             diagnostics.get("fip4_qwen_coder_result")
             if isinstance(diagnostics.get("fip4_qwen_coder_result"), dict)
@@ -6651,6 +7335,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             blocked_reason=blocked_reason,
             needed_context=needed_context,
             target=target or explicit_target,
+            diagnostics_summary=_safe_coder_diagnostics_summary(diagnostics),
         )
         notes = coder.get("coder_notes") if isinstance(coder.get("coder_notes"), list) else []
         bundle = coder.get("bundle")
@@ -6736,6 +7421,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             "increment_label": increment_label,
             "increment_goal": increment_goal,
             "task_summary": _short_task_summary(reset_request.task),
+            "canonical_context_broker": canonical_context_broker,
+            "canonicalContextBroker": canonical_context_broker,
             "selected_prompt_id": reset_request.selected_prompt_id or reset_request.trial_prompt_id,
             "selectedPromptId": reset_request.selected_prompt_id or reset_request.trial_prompt_id,
             "selected_prompt_number": (
@@ -6754,6 +7441,11 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             ),
             "relevant_context": "\n".join(context_lines),
             "context_metadata": {
+                "canonical_context_broker": canonical_context_broker,
+                "canonical_context_report_hash": canonical_context_broker.get(
+                    "canonical_report_hash",
+                    "",
+                ),
                 "context_inclusion_mode": "coder_agent_repomix",
                 "context_mode": context_mode,
                 "included_paths": packet_context_paths or ([target] if target else []),
@@ -7013,6 +7705,22 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         )
     )
     payload = packet.as_payload()
+    canonical_context_broker = _record_active_task_context_broker(
+        reset_request.active_task_id,
+        canonical_context_broker,
+        coder_applicable=False,
+        coder_consumed=False,
+        repair_attempted=False,
+        repair_consumed=False,
+    )
+    payload["canonical_context_broker"] = canonical_context_broker
+    payload["canonicalContextBroker"] = canonical_context_broker
+    payload.setdefault("context_metadata", {})["canonical_context_broker"] = (
+        canonical_context_broker
+    )
+    payload["context_metadata"]["canonical_context_report_hash"] = (
+        canonical_context_broker.get("canonical_report_hash", "")
+    )
     payload["route_decision"] = route_payload
     payload["research_sources"] = fip2_research_sources
     payload["fip2_research_packet"] = fip2_research_packet
@@ -7553,6 +8261,110 @@ def _coder_prompt_packet_status(
     return ""
 
 
+def _record_active_task_context_broker(
+    task_id: str | None,
+    report: dict[str, Any],
+    *,
+    coder_applicable: bool,
+    coder_consumed: bool,
+    repair_attempted: bool,
+    repair_consumed: bool,
+) -> dict[str, Any]:
+    def acknowledge_in_memory(
+        current: dict[str, Any],
+        *,
+        consumer: str,
+        applicable: bool,
+        consumed: bool,
+        evidence: str,
+        consumed_reason: str,
+        missing_reason: str,
+    ) -> dict[str, Any]:
+        return acknowledge_context_consumer(
+            current,
+            consumer=consumer,
+            evidence=evidence if consumed else "",
+            applicable=applicable,
+            reason=consumed_reason if consumed else missing_reason,
+        )
+
+    if not task_id:
+        current = acknowledge_in_memory(
+            report,
+            consumer="coder",
+            applicable=coder_applicable,
+            consumed=coder_consumed,
+            evidence="canonical_context_rendered_into_coder_prompt_or_execution_gate",
+            consumed_reason="coder_execution_consumed_selected_context_packets",
+            missing_reason="coder_executed_without_canonical_context_consumption",
+        )
+        return acknowledge_in_memory(
+            current,
+            consumer="repair_loop",
+            applicable=repair_attempted,
+            consumed=repair_consumed,
+            evidence="bounded_repair_reused_canonical_context",
+            consumed_reason="repair_prompt_consumed_original_context_contract",
+            missing_reason="repair_executed_without_canonical_context_consumption",
+        )
+    try:
+        from source_proxy.tasks.long_running import (
+            acknowledge_task_context_consumer,
+            record_canonical_context_broker,
+        )
+
+        current = record_canonical_context_broker(task_id, report)
+        coder_report = acknowledge_task_context_consumer(
+            task_id,
+            consumer="coder",
+            evidence=(
+                "canonical_context_rendered_into_coder_prompt_or_execution_gate"
+                if coder_consumed
+                else ""
+            ),
+            applicable=coder_applicable,
+            reason=(
+                "coder_execution_consumed_selected_context_packets"
+                if coder_consumed
+                else "coder_executed_without_canonical_context_consumption"
+                if coder_applicable
+                else "coder_not_applicable_no_generation"
+            ),
+        )
+        if isinstance(coder_report, dict):
+            current = coder_report
+        repair_report = acknowledge_task_context_consumer(
+            task_id,
+            consumer="repair_loop",
+            evidence=(
+                "bounded_model_output_repair_reused_canonical_context"
+                if repair_consumed
+                else ""
+            ),
+            applicable=repair_attempted,
+            reason=(
+                "repair_prompt_consumed_original_task_and_context_contract"
+                if repair_consumed
+                else "repair_executed_without_canonical_context_consumption"
+                if repair_attempted
+                else "repair_not_required"
+            ),
+        )
+        return repair_report if isinstance(repair_report, dict) else current
+    except Exception as error:
+        return {
+            **report,
+            "persistence_status": "failed",
+            "persistence_reason": f"{type(error).__name__}: {error}",
+            "go_eligible": False,
+            "verdict": "NO_GO_REQUIRED_CONTEXT",
+            "required_context_blockers": [
+                *[str(item) for item in report.get("required_context_blockers", [])],
+                "canonical_context_task_persistence_failed",
+            ],
+        }
+
+
 def _mark_active_task_after_coder_result(
     task_id: str | None,
     *,
@@ -7563,6 +8375,7 @@ def _mark_active_task_after_coder_result(
     blocked_reason: str,
     needed_context: str,
     target: str,
+    diagnostics_summary: dict[str, Any] | None = None,
 ) -> None:
     if not task_id:
         return
@@ -7616,11 +8429,20 @@ def _mark_active_task_after_coder_result(
                 else "Coder blocked before producing an approvable diff."
             )
         )
+        results_payload = {
+            "summary": summary,
+            "coder_status": status_value or "blocked",
+            "reason_code": reason_code or "coder_blocked",
+            "target": target,
+            "blocked_reason": blocked_reason,
+            "needed_context": needed_context,
+            "coder_diagnostics": diagnostics_summary or {},
+        }
         update_long_running_task(
             task_id,
             status=task_status,
             current_agent_role="coder",
-            truncated_test_results=summary[:1500],
+            truncated_test_results=json.dumps(results_payload, separators=(",", ":"))[:1500],
             steps=_append_unique_strs([str(item) for item in steps], [step]),
         )
     except Exception:
@@ -7698,6 +8520,10 @@ def _safe_coder_diagnostics_summary(diagnostics: dict[str, Any]) -> dict[str, An
         "model_raw_diff_used",
         "generated_diff_by_backend",
         "trial_result_trust_status",
+        "anti_cheat_status",
+        "anti_cheat_hard_fail_ids",
+        "anti_cheat_advisory_ids",
+        "anti_cheat_reasons",
         "provider_call_made",
         "model_output_usable",
         "scaffold_or_fallback_blocked",
@@ -7706,6 +8532,20 @@ def _safe_coder_diagnostics_summary(diagnostics: dict[str, Any]) -> dict[str, An
         "target_path_selected",
         "context_mode",
         "structured_output_mode",
+        "structured_bundle_status",
+        "structured_bundle_parser_stage",
+        "structured_bundle_file_count",
+        "structured_bundle_accepted_paths",
+        "structured_bundle_rejected_paths",
+        "structured_bundle_rejection_reason",
+        "model_output_shape_summary",
+        "diff_generation_status",
+        "diff_generation_reason",
+        "patch_verification_status",
+        "patch_verification_reason",
+        "raw_model_response_sha256",
+        "model_file_bundle_sha256",
+        "backend_converted_diff_sha256",
         "file_block_repair_source",
         "json_repair_source",
         "parsed_output_mode",

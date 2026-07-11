@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
 
 const REPO_ROOT = process.cwd();
 const FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/";
@@ -56,103 +55,17 @@ function contentTypeFor(relPath: string): string {
 /**
  * Normalizes a served index.html so the LumaCart page actually renders.
  *
- * The model-authored fixture commonly writes `main.js` using ES module syntax
- * (`import products from './products.js'`) but loads it with a plain `<script src=...>`.
- * A classic script that contains an `import` statement throws a SyntaxError and the page
- * stays blank. This rewrite marks any external `<script src=...>` without an explicit type
- * as `type="module"` so relative ESM imports resolve against the viewer route. It only
- * also rewrites fixture-relative src/ and href assets to this preview route, because the
+ * The model-authored fixture must already declare a module script.  This route deliberately
+ * does not repair script types or synthesize DOM, because doing so could make broken generated
+ * output appear to work.  It only maps fixture-relative assets onto the preview route; the
  * extensionless viewer URL would otherwise resolve them under /v1/coding/.
  */
 function normalizeHtmlForPreview(html: string): string {
-  const withModuleScripts = html.replace(
-    /<script\b([^>]*?)\bsrc=(["'])([^"']+)\2([^>]*?)>/gi,
-    (match, before, quote, src, after) => {
-      const attrs = `${before} ${after}`;
-      return /\btype\s*=/.test(attrs) ? match : `<script type="module"${attrs} src=${quote}${src}${quote}>`;
-    },
-  );
-  return withModuleScripts.replace(
+  return html.replace(
     /\b(src|href)=(["'])src\/([^"']+)\2/gi,
     (_match, attr, quote, assetPath) =>
       `${attr}=${quote}/v1/coding/dummy-product-site-preview/src/${assetPath}${quote}`,
   );
-}
-
-type FixtureProduct = {
-  name?: string | null;
-  price?: string | number | null;
-  category?: string | null;
-  description?: string | null;
-};
-
-/**
- * Parses a best-effort product list from the fixture's products.js. The fixture is a tiny static
- * site, so we read the array-of-objects shape without evaluating JS. Each object block is scanned
- * for name/price/category/description fields. This is intentionally permissive (not a real JS
- * parser) — it only needs to surface catalog content for the server-rendered preview.
- */
-function parseFixtureProducts(productsJs: string): FixtureProduct[] {
-  const products: FixtureProduct[] = [];
-  // Match object blocks delimited by { ... } that look like product entries.
-  const objectBlocks = productsJs.match(/\{[^{}]*\}/g) ?? [];
-  for (const block of objectBlocks) {
-    const name = block.match(/["']?name["']?\s*:\s*["']([^"']+)["']/i)?.[1];
-    const priceStr = block.match(/["']?price["']?\s*:\s*([0-9.]+)/i)?.[1];
-    const category = block.match(/["']?category["']?\s*:\s*["']([^"']+)["']/i)?.[1];
-    const description = block.match(/["']?description["']?\s*:\s*["']([^"']+)["']/i)?.[1];
-    if (!name && !priceStr && !category && !description) continue;
-    products.push({
-      category: category ?? null,
-      description: description ?? null,
-      name: name ?? null,
-      price: priceStr ?? null,
-    });
-  }
-  return products;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/**
- * Adds no-script product cards to index.html so the LumaCart storefront still has visible fallback
- * markup without duplicating cards when the client-side module renders normally. The original
- * client script is preserved (loaded as a module) for the full interactive behavior.
- */
-function injectServerRenderedCards(html: string, fixtureFiles: Record<string, string>): string {
-  const probe = probeDummyStorefront({ files: fixtureFiles });
-  if (probe.preview_behavior_status !== "PASS_STOREFRONT_RENDERED") return html;
-
-  const products = parseFixtureProducts(fixtureFiles["src/products.js"] ?? "");
-  if (products.length === 0) return html;
-
-  const cards = products
-    .map((product) => {
-      const name = product.name ? `<h2>${escapeHtml(product.name)}</h2>` : "";
-      const description = product.description ? `<p>${escapeHtml(product.description)}</p>` : "";
-      const category = product.category ? `<p class="category">${escapeHtml(product.category)}</p>` : "";
-      const price = product.price != null ? `<p class="price">$${escapeHtml(String(product.price))}</p>` : "";
-      return `<div class="product-card">${name}${description}${category}${price}</div>`;
-    })
-    .join("\n      ");
-  const fallback = `<noscript>\n      ${cards}\n    </noscript>`;
-
-  // Insert server-rendered cards into the product container. If a container id is present, fill it;
-  // otherwise append a fallback container before </body>.
-  const containerMatch = html.match(/<main[^>]*id=["']product-list["'][^>]*>([\s\S]*?)<\/main>/i);
-  if (containerMatch) {
-    return html.replace(
-      /(<main[^>]*id=["']product-list["'][^>]*>)([\s\S]*?)(<\/main>)/i,
-      (_m, open, _inner, close) => `${open}\n      ${fallback}\n    ${close}`,
-    );
-  }
-  return html.replace("</body>", `    <main id="product-list">\n      ${fallback}\n    </main>\n  </body>`);
 }
 
 /**
@@ -200,21 +113,7 @@ export async function serveFixtureAsset(fixtureSubPath: string | null | undefine
       );
     }
     const isHtml = fixtureRelPath.toLowerCase().endsWith(".html");
-    let servedContent = isHtml ? normalizeHtmlForPreview(content) : content;
-    if (isHtml) {
-      // Server-render product cards so the storefront is visibly proven even when the browser
-      // fails to execute the client-side module. Read sibling fixture files for the probe + parser.
-      const fixtureFiles: Record<string, string> = { "index.html": servedContent };
-      const siblingRel = ["src/products.js", "src/main.js", "src/styles.css"];
-      for (const rel of siblingRel) {
-        try {
-          fixtureFiles[rel] = await readFile(path.resolve(absRoot, rel), "utf8");
-        } catch {
-          // Missing sibling is fine; the probe will report empty/missing asset status.
-        }
-      }
-      servedContent = injectServerRenderedCards(servedContent, fixtureFiles);
-    }
+    const servedContent = isHtml ? normalizeHtmlForPreview(content) : content;
     return new Response(servedContent, {
       headers: {
         "content-type": contentTypeFor(fixtureRelPath),

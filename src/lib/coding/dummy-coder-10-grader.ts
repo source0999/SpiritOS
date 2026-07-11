@@ -278,14 +278,15 @@ function modelAuthoredHashBindingFailures(input: DummyCoder10ProvenanceInput = {
   if (!input.raw_model_response_sha256) reasons.push("missing_raw_model_response_sha256");
   if (!input.model_file_bundle_sha256) reasons.push("missing_model_file_bundle_sha256");
   if (!input.backend_converted_diff_sha256) reasons.push("missing_backend_converted_diff_sha256");
+  if (!input.approved_diff_sha256) reasons.push("missing_approved_diff_sha256");
   if (!input.applied_diff_sha256) reasons.push("missing_applied_diff_sha256");
   if (input.provenance_hash_normalization !== "lf_trailing_newline_v1") reasons.push("invalid_provenance_hash_normalization");
   if (
-    input.backend_converted_diff_sha256 &&
+    input.approved_diff_sha256 &&
     input.applied_diff_sha256 &&
-    input.backend_converted_diff_sha256 !== input.applied_diff_sha256
+    input.approved_diff_sha256 !== input.applied_diff_sha256
   ) {
-    reasons.push("backend_converted_diff_sha256_mismatch");
+    reasons.push("approved_diff_sha256_mismatch");
   }
   if (input.fallback_used === true) reasons.push("fallback_used");
   if (diffSource.includes("deterministic") || normalized(input.apply_mode).includes("recovery")) {

@@ -1034,6 +1034,26 @@ DUMMY_PRODUCT_SITE_REQUIRED_FILES = {
 }
 
 
+def _dummy_product_site_create_new_file_preview(
+    files: list[dict[str, Any]],
+    unified_diff: str,
+) -> bool:
+    changed_paths = {
+        _normalize_task_spec_path(str(file.get("path") or ""))
+        for file in files
+        if isinstance(file, dict)
+    }
+    if not DUMMY_PRODUCT_SITE_REQUIRED_FILES.issubset(changed_paths):
+        return False
+    if any(not path.startswith(DUMMY_PRODUCT_SITE_ROOT) for path in changed_paths):
+        return False
+    normalized_diff = unified_diff.replace("\r\n", "\n").replace("\r", "\n")
+    for path in DUMMY_PRODUCT_SITE_REQUIRED_FILES:
+        if f"+++ b/{path}" not in normalized_diff:
+            return False
+    return "new file mode 100644" in normalized_diff and "--- /dev/null" in normalized_diff
+
+
 def _dummy_product_site_create_requirement_coverage(
     changed_paths: set[str],
     added_text: str,
@@ -1280,8 +1300,30 @@ def preview_diff_verification(
     }
 
     apply_ok, apply_err = _lr.git_apply_check_for_preview(unified_diff, files)
+    clean_workspace_apply_check = {
+        "used": False,
+        "ok": False,
+        "error": "",
+    }
+    if (
+        not apply_ok
+        and _dummy_product_site_create_new_file_preview(files, unified_diff)
+    ):
+        clean_apply_ok, clean_apply_err = _lr._git_apply_generated_diff_ok_in_empty_workspace(
+            unified_diff
+        )
+        clean_workspace_apply_check = {
+            "used": True,
+            "ok": clean_apply_ok,
+            "error": clean_apply_err,
+            "live_workspace_error": apply_err,
+        }
+        if clean_apply_ok:
+            apply_ok = True
+            apply_err = ""
     payload["git_apply_check_ok"] = apply_ok
     payload["git_apply_check_error"] = apply_err
+    payload["clean_workspace_apply_check"] = clean_workspace_apply_check
     deterministic_result = deterministic_checks_from_preview(
         apply_ok=apply_ok,
         apply_error=apply_err,

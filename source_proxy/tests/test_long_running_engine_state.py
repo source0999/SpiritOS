@@ -14,6 +14,7 @@ from source_proxy.tasks.engine.state import (
 def test_terminal_statuses_match_long_running_alias() -> None:
     assert terminal_or_waiting_statuses() == long_running._terminal_or_waiting_statuses()
     assert "completed" in terminal_or_waiting_statuses()
+    assert "waiting_for_operator_browser" in terminal_or_waiting_statuses()
     assert "running" not in terminal_or_waiting_statuses()
 
 

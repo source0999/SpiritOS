@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -10,6 +11,7 @@ from source_proxy.cartographer.blueprint_registry import list_blueprints
 from source_proxy.cartographer.component_mapper import build_component_map
 from source_proxy.cartographer.git_status import read_git_status_for_project
 from source_proxy.cartographer.repo_map import build_repo_map_for_project
+from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.context.obsidian import (
     ObsidianContextConfig,
     obsidian_context_config_from_env,
@@ -17,7 +19,14 @@ from source_proxy.context.obsidian import (
 )
 from source_proxy.decision.research import run_local_research_preview
 
-ContextReadinessStatus = Literal["used", "skipped", "blocked"]
+ContextReadinessStatus = Literal[
+    "used",
+    "available",
+    "skipped",
+    "blocked",
+    "unavailable",
+    "failed",
+]
 
 
 @dataclass(frozen=True)
@@ -235,21 +244,93 @@ async def build_context_source_readiness_packet(
     *,
     project_root: Path | None = None,
     obsidian_config: ObsidianContextConfig | None = None,
+    required_sources: Iterable[str] | None = None,
+    source_states: Mapping[str, Mapping[str, Any]] | None = None,
+    downstream_consumers: Mapping[str, Any] | None = None,
+    applicable_consumers: Iterable[str] | None = None,
 ) -> dict[str, Any]:
+    """Build readiness metadata through the canonical context contract.
+
+    Adapters report availability and packet contents.  Lifecycle callers must
+    explicitly select/include sources and provide v2 consumer acknowledgements;
+    adapter execution alone never proves downstream consumption.
+    """
+
     packets = [
         build_cartographer_context_packet(task, project_root=project_root),
         build_obsidian_context_packet(task, config=obsidian_config),
         await build_scout_search_context_packet(task),
         build_design_context_packet(task, project_root=project_root),
     ]
+    required = {
+        str(source).strip()
+        for source in (required_sources or ())
+        if str(source).strip()
+    }
+    explicit_states = dict(source_states or {})
+    broker_sources: list[dict[str, Any]] = []
+    packet_source_names: set[str] = set()
+    for packet in packets:
+        packet_source_names.add(packet.source)
+        source = packet.to_dict()
+        state = explicit_states.get(packet.source)
+        if isinstance(state, Mapping):
+            source.update(dict(state))
+        source["source"] = packet.source
+        source["considered"] = source.get("considered") is not False
+        source["required"] = source.get("required") is True or packet.source in required
+        source["selected"] = source.get("selected") is True
+        source["included"] = (
+            source.get("included") is True
+            or source.get("included_in_packet") is True
+        )
+        source["consumed"] = source.get("consumed") is True
+        broker_sources.append(source)
+
+    additional_source_names = list(
+        dict.fromkeys(
+            [
+                *(
+                    str(source).strip()
+                    for source in explicit_states
+                    if str(source).strip()
+                ),
+                *sorted(required),
+            ]
+        )
+    )
+    for source_name in additional_source_names:
+        if source_name in packet_source_names:
+            continue
+        state = explicit_states.get(source_name)
+        source = dict(state) if isinstance(state, Mapping) else {}
+        source["source"] = source_name
+        source["considered"] = source.get("considered") is not False
+        source["status"] = str(source.get("status") or "unavailable")
+        source["reason"] = str(
+            source.get("reason") or "context_source_adapter_not_reported"
+        )
+        source["required"] = source.get("required") is True or source_name in required
+        source["selected"] = source.get("selected") is True
+        source["included"] = (
+            source.get("included") is True
+            or source.get("included_in_packet") is True
+        )
+        source["consumed"] = source.get("consumed") is True
+        broker_sources.append(source)
+
+    broker = build_context_broker_report(
+        broker_sources,
+        downstream_consumers=downstream_consumers,
+        applicable_consumers=applicable_consumers,
+    )
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "task_excerpt": _safe_context_excerpt(task)[:300],
-        "sources": [packet.to_dict() for packet in packets],
-        "source_status": {packet.source: packet.status for packet in packets},
-        "ready_for_source_proxy_packet": all(
-            packet.status in {"used", "skipped", "blocked"} for packet in packets
-        ),
+        "sources": broker["sources_considered"],
+        "source_status": broker["source_status"],
+        "canonical_context_broker": broker,
+        "ready_for_source_proxy_packet": broker["go_eligible"],
         "authority": dict(READ_ONLY_AUTHORITY),
     }
 
@@ -382,4 +463,3 @@ def _safe_context_excerpt(value: str) -> str:
     cleaned = re.sub(r"sk-[A-Za-z0-9_-]{12,}", "[redacted-token]", cleaned)
     cleaned = re.sub(r"(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*\S+", r"\1=[redacted]", cleaned)
     return " ".join(cleaned.split())
-

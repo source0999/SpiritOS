@@ -1,4 +1,6 @@
 import { createHash } from "crypto";
+import { promises as fs } from "fs";
+import nodePath from "path";
 
 import {
   DUMMY_PRODUCT_SITE_TRIAL_ROOT,
@@ -7,7 +9,6 @@ import {
 import {
   AGENT_LAB_BASELINE_ROOTS,
   AGENT_LAB_CODER_PROBE_PATHS,
-  collectAgentLabFilesFromListEntries,
   evaluateAgentLabBaseline,
   type AgentLabBaselineSnapshot,
 } from "@/lib/coding/reversible-trial-runner";
@@ -62,8 +63,12 @@ function changedFilesFromApprovedDiff(diff: string): string[] {
   return [...files];
 }
 
+function normalizeDiffForProvenance(diff: string) {
+  return `${diff.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n*$/, "")}\n`;
+}
+
 function diffHashForApprovedDiff(approvedDiff: string) {
-  return createHash("sha256").update(approvedDiff).digest("hex");
+  return createHash("sha256").update(normalizeDiffForProvenance(approvedDiff), "utf8").digest("hex");
 }
 
 function approvalIdForApprovedDiff({
@@ -171,36 +176,68 @@ export async function readWorkspaceFileContent(
 export async function collectAgentLabBaselineFiles(): Promise<string[]> {
   const files = new Set<string>();
   for (const root of AGENT_LAB_BASELINE_ROOTS) {
-    const entries = await listWorkspacePath(root);
-    for (const file of collectAgentLabFilesFromListEntries(AGENT_LAB_BASELINE_ROOTS, entries)) {
+    for (const file of await collectLocalAgentLabFiles(root)) {
       files.add(file);
-    }
-    for (const entry of entries) {
-      const path = typeof entry.path === "string" ? entry.path.trim().replace(/\\/g, "/") : "";
-      if (!path || entry.kind !== "directory") continue;
-      const nested = await listWorkspacePath(path);
-      for (const file of collectAgentLabFilesFromListEntries(AGENT_LAB_BASELINE_ROOTS, nested)) {
-        files.add(file);
-      }
-      for (const nestedEntry of nested) {
-        const nestedPath =
-          typeof nestedEntry.path === "string" ? nestedEntry.path.trim().replace(/\\/g, "/") : "";
-        if (!nestedPath || nestedEntry.kind !== "directory") continue;
-        const deep = await listWorkspacePath(nestedPath);
-        for (const file of collectAgentLabFilesFromListEntries(AGENT_LAB_BASELINE_ROOTS, deep)) {
-          files.add(file);
-        }
-      }
     }
   }
 
   for (const path of AGENT_LAB_CODER_PROBE_PATHS) {
-    if (await readWorkspaceFileExists(path)) {
+    if (await localRepoFileExists(path)) {
       files.add(path);
     }
   }
 
   return Array.from(files).sort();
+}
+
+function repoAbsolutePath(relativePath: string): string | null {
+  const normalized = normalizeRepoPath(relativePath);
+  if (!normalized || normalized.startsWith("../") || normalized.includes("/../") || nodePath.isAbsolute(normalized)) {
+    return null;
+  }
+  return nodePath.join(process.cwd(), normalized);
+}
+
+async function localRepoFileExists(relativePath: string): Promise<boolean> {
+  const absolutePath = repoAbsolutePath(relativePath);
+  if (!absolutePath) return false;
+  try {
+    const stat = await fs.stat(absolutePath);
+    return stat.isFile();
+  } catch {
+    return false;
+  }
+}
+
+async function collectLocalAgentLabFiles(root: string): Promise<string[]> {
+  const normalizedRoot = normalizeRepoPath(root);
+  const absoluteRoot = repoAbsolutePath(normalizedRoot);
+  if (!absoluteRoot) return [];
+  try {
+    const stat = await fs.stat(absoluteRoot);
+    if (stat.isFile()) return [normalizedRoot];
+    if (!stat.isDirectory()) return [];
+  } catch {
+    return [];
+  }
+
+  const found: string[] = [];
+  async function walk(relativeDir: string) {
+    const absoluteDir = repoAbsolutePath(relativeDir);
+    if (!absoluteDir) return;
+    const entries = await fs.readdir(absoluteDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const relativeChild = normalizeRepoPath(`${relativeDir}/${entry.name}`);
+      if (entry.isDirectory()) {
+        await walk(relativeChild);
+      } else if (entry.isFile()) {
+        found.push(relativeChild);
+      }
+    }
+  }
+
+  await walk(normalizedRoot);
+  return found.sort();
 }
 
 export async function buildAgentLabBaselineSnapshot(

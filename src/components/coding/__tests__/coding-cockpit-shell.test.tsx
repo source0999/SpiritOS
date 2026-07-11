@@ -100,6 +100,16 @@ function installCommonFetchMock(extra?: (url: string, init?: RequestInit) => Res
         targets: [],
       });
     }
+    if (url.includes("/v1/coding/dummy-product-site-preview/reset")) {
+      return jsonResponse({
+        clean_verified: true,
+        fixture_root: "tests/ui-agent-trials/fixtures/dummy-product-site/",
+        removed_paths: [],
+        reset_receipt_id: "dummy-reset-test",
+        reset_verified: true,
+        status: "reset_verified",
+      });
+    }
     if (url.includes("/v1/coding/trial-receipt-reconcile")) {
       return jsonResponse({ ok: true, receipts: body ? JSON.parse(body).receipts ?? [] : [] });
     }
@@ -612,13 +622,21 @@ describe("CodingCockpitShell", () => {
 
     await waitFor(() => expect(within(runner).getByText("Cleared")).toBeInTheDocument());
     expect(window.localStorage.getItem(dummyCoderRunStorageKey)).toBeNull();
-    expect(within(runner).getAllByText("Selected-prompt result cleared. No applied edits were recorded.").length).toBeGreaterThan(0);
-    expect(calls.filter((call) => call.url.includes("/v1/coding/agent-lab-baseline")).length).toBe(baselineCallsBeforeClear);
+    expect(
+      within(runner).getAllByText(
+        "Dummy fixture reset verified (dummy-reset-test). Selected-prompt result cleared; no applied receipt was recorded.",
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(calls.filter((call) => call.url.includes("/v1/coding/agent-lab-baseline")).length).toBe(
+      baselineCallsBeforeClear + 1,
+    );
     await waitFor(() => expect(within(activePreview).getByText("not created")).toBeInTheDocument());
     expect(within(activePreview).queryByText("Selected trial blocked")).not.toBeInTheDocument();
     fireEvent.click(within(runner).getByRole("button", { name: "Copy diagnostics" }));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
-    expect(String(writeText.mock.calls.at(-1)?.[0] ?? "")).toContain("selected_prompt_result: none");
+    expect(String(writeText.mock.calls.at(-1)?.[0] ?? "")).toContain(
+      "selected_prompt_result: not_applicable: no selected-prompt run active",
+    );
   });
 
   it("accepts selected Prompt 1 when the LumaCart starter files already exist", async () => {
@@ -691,13 +709,13 @@ describe("CodingCockpitShell", () => {
           verification_status: "existing storefront render validation passed",
         });
       }
-      if (url.endsWith("/v1/coding/dummy-product-site-preview/index.html")) {
+      if (url.includes("/v1/coding/dummy-product-site-preview/index.html")) {
         return new Response(
           '<!doctype html><main id="product-list"></main><script type="module" src="src/main.js"></script>',
           { status: 200 },
         );
       }
-      if (url.endsWith("/v1/coding/dummy-product-site-preview/src/products.js")) {
+      if (url.includes("/v1/coding/dummy-product-site-preview/src/products.js")) {
         return new Response(
           [
             "export default [",
@@ -712,7 +730,7 @@ describe("CodingCockpitShell", () => {
           { status: 200 },
         );
       }
-      if (url.endsWith("/v1/coding/dummy-product-site-preview/src/main.js")) {
+      if (url.includes("/v1/coding/dummy-product-site-preview/src/main.js")) {
         return new Response(
           [
             "import products from './products.js';",
@@ -727,7 +745,7 @@ describe("CodingCockpitShell", () => {
           { status: 200 },
         );
       }
-      if (url.endsWith("/v1/coding/dummy-product-site-preview/src/styles.css")) {
+      if (url.includes("/v1/coding/dummy-product-site-preview/src/styles.css")) {
         return new Response(".product-card { display: grid; }\n", { status: 200 });
       }
       return null;
@@ -929,7 +947,6 @@ describe("CodingCockpitShell", () => {
         verificationStatus: "Applied approved diff.",
       }),
     );
-
     render(<CodingCockpitShell />);
     const runner = screen.getByRole("region", { name: "Trial Runner" });
     fireEvent.click(within(runner).getByRole("button", { name: "Copy diagnostics" }));
@@ -992,6 +1009,7 @@ describe("CodingCockpitShell", () => {
         message: "Request sent",
         rawBackendStatus: "request_sent",
         selectedPromptId: "coder-001-init-dummy-product-site",
+        storedAt: Date.now(),
         status: "request_sent",
         taskId: "task_cancel_001",
       }),
@@ -1067,6 +1085,7 @@ describe("CodingCockpitShell", () => {
         message: "Request sent",
         rawBackendStatus: "request_sent",
         selectedPromptId: "coder-001-init-dummy-product-site",
+        storedAt: Date.now(),
         status: "request_sent",
         taskId: "task_progress_001",
       }),
@@ -1158,6 +1177,34 @@ describe("CodingCockpitShell", () => {
         verificationStatus: "Applied approved diff.",
       }),
     );
+    window.localStorage.setItem(
+      "spiritos:coding:applied-run-receipts:v1",
+      JSON.stringify([
+        {
+          allowedFiles: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+          appliedAt: "2026-07-11T22:00:00.000Z",
+          backupManifest: ".spirit-backups/task_reload_001/manifest.json",
+          changedFiles: ["tests/ui-agent-trials/fixtures/dummy-product-site/package.json"],
+          diff: "diff --git a/package.json b/package.json",
+          finalTruthStatus: "GO",
+          hermesUsedForThisRun: null,
+          id: "selected-prompt:coder-001-init-dummy-product-site:task_reload_001",
+          model: "gpt-test",
+          postApplyVerificationStatus: "verified",
+          prompt: "Initialize the dummy product site.",
+          provider: "test-provider",
+          providerModelSource: "selected-prompt",
+          providerModelStatus: "recorded",
+          reverseDiff: "diff --git a/package.json b/package.json",
+          revertedAt: null,
+          reversalModel: null,
+          reversalProvider: null,
+          reversalProviderModelSource: null,
+          target: "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+          taskId: "task_reload_001",
+        },
+      ]),
+    );
 
     render(<CodingCockpitShell />);
 
@@ -1165,6 +1212,9 @@ describe("CodingCockpitShell", () => {
     await waitFor(() => expect(within(runner).getByText("Applied / review")).toBeInTheDocument());
     expect(within(runner).getByText(/Task task_reload_001/)).toBeInTheDocument();
     expect(within(runner).getByText(/Changed: tests\/ui-agent-trials\/fixtures\/dummy-product-site\/package\.json/)).toBeInTheDocument();
+    expect(within(runner).getByTestId("selected-prompt-undo-last-change")).toHaveTextContent(
+      "Undo last change",
+    );
 
     const activePreview = screen.getByRole("region", { name: "Active run preview" });
     await waitFor(() => expect(within(activePreview).getByText("Selected trial applied")).toBeInTheDocument());

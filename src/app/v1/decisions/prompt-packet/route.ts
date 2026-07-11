@@ -308,7 +308,23 @@ async function prompt1AlreadySatisfiedPayload(bodyText: string) {
     .map((item) => `tests/ui-agent-trials/fixtures/dummy-product-site/${item.file}`);
   if (presentFiles.length !== prompt1StarterFiles.length) return null;
 
-  const checksRun = ["existing Prompt 1 starter-file validation"];
+  const filesByPath = Object.fromEntries(fileContents.map((item) => [item.file, item.content]));
+  const probe = probeDummyStorefront({
+    files: {
+      "index.html": filesByPath["index.html"] ?? "",
+      "src/main.js": filesByPath["src/main.js"] ?? "",
+      "src/products.js": filesByPath["src/products.js"] ?? "",
+      "src/styles.css": filesByPath["src/styles.css"] ?? "",
+    },
+  });
+  const storefrontRendered =
+    probe.preview_behavior_status === "PASS_STOREFRONT_RENDERED" &&
+    probe.preview_asset_status === "present" &&
+    probe.product_count >= 6 &&
+    probe.storefront_runtime_status === "passed";
+  if (!storefrontRendered) return null;
+
+  const checksRun = ["existing Prompt 1 starter-file validation", "existing Prompt 1 storefront render validation"];
   const target = "tests/ui-agent-trials/fixtures/dummy-product-site/";
   return {
     active_task_id: metadata.task_id,
@@ -324,6 +340,7 @@ async function prompt1AlreadySatisfiedPayload(bodyText: string) {
         ok: true,
         present_files: presentFiles,
       },
+      storefront_probe: probe,
       generation_source: "disk_inspection",
       model_output_classification: "already_satisfied_noop",
       reason_code: "coder_no_changes_needed",

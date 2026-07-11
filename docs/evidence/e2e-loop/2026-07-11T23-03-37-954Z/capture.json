@@ -1,0 +1,1650 @@
+{
+  "schema_version": "coding-e2e-loop/v4",
+  "authoritative_stages": {
+    "context": {
+      "status": "GO",
+      "acknowledgement_status": "acknowledged",
+      "broker_status": "GO_ELIGIBLE",
+      "consumption_status": "consumed",
+      "required_context_status": "passed"
+    },
+    "post_apply_verification": {
+      "status": "GO",
+      "raw_status": "passed"
+    },
+    "browser_verification": {
+      "status": "GO",
+      "source": "playwright_direct_preview_plus_backend_managed_playwright_receipt",
+      "real_browser_used": true,
+      "managed_frontend_origin": "https://localhost:3000",
+      "preview_url": "https://localhost:3000/v1/coding/dummy-product-site-preview?lifecycle_browser_proof=1783811071502",
+      "preview_http_status": 200,
+      "product_count": 6,
+      "rendered_card_count": 6,
+      "product_field_matches": [
+        {
+          "fields_present": true,
+          "name": "LumaCart T-Shirt",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Laptop Bag",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Coffee Mug",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Desk Mat",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Mouse Pad",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Pen Set",
+          "rendered": true
+        }
+      ],
+      "rendered_headings": [
+        "LumaCart T-Shirt",
+        "LumaCart Laptop Bag",
+        "LumaCart Coffee Mug",
+        "LumaCart Desk Mat",
+        "LumaCart Mouse Pad",
+        "LumaCart Pen Set"
+      ],
+      "module_script_loaded": true,
+      "stylesheet_loaded": true,
+      "noscript_card_count": 0,
+      "asset_responses": {
+        "/v1/coding/dummy-product-site-preview": 200,
+        "/v1/coding/dummy-product-site-preview/src/main.js": 200,
+        "/v1/coding/dummy-product-site-preview/src/products.js": 200,
+        "/v1/coding/dummy-product-site-preview/src/styles.css": 200
+      },
+      "console_errors": [],
+      "page_errors": [],
+      "request_failures": [],
+      "runtime_error": null,
+      "backend_receipt_bound": true,
+      "backend_browser_engine": "playwright_chromium",
+      "backend_browser_evidence_sha256": "efccd93702326877dbfa461af3ba6517fc0df3fe8b1ca69d9972c29dd3d7b7fe",
+      "backend_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json",
+      "backend_post_apply_rediff_sha256": "8b1ed4a9b81d74fc1bdcce739f45b9bd7d971080cde44cfcc2335ede931d094a",
+      "task_id": "task_fb6c61badaa6"
+    },
+    "anti_cheat": {
+      "status": "GO",
+      "raw_statuses": [
+        "passed"
+      ],
+      "grader_label": "PASS",
+      "grader_labels": [
+        "PASS"
+      ],
+      "trial_result_trust_status": "model_authored_diff_proven",
+      "trial_result_trust_statuses": [
+        "model_authored_diff_proven",
+        "model_authored_diff_proven"
+      ]
+    },
+    "final_receipt": {
+      "status": "GO",
+      "commit_safe": true,
+      "receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json",
+      "run_status": "applied",
+      "truth_status": "GO"
+    },
+    "diagnostic_consistency": {
+      "status": "GO",
+      "conflicts": {}
+    },
+    "prompt1_initial_run": {
+      "status": "GO",
+      "task_id": "task_9abe771e0e76",
+      "terminal_status": "applied",
+      "apply_status": "performed",
+      "post_apply_verification_status": "GO",
+      "browser_verification_status": "GO",
+      "final_receipt_status": "GO",
+      "final_receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+      "commit_safe": true,
+      "grader_label": "PASS",
+      "trial_result_trust_status": "model_authored_diff_proven",
+      "changed_files": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+      "changed_paths": [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+      ],
+      "changed_files_present": true,
+      "expected_prompt1_changed_files": true,
+      "fixture_was_clean_before_run": true,
+      "already_satisfied": false,
+      "canonical_stages": {
+        "context": "GO",
+        "post_apply_verification": "GO",
+        "browser_verification": "GO",
+        "anti_cheat": "GO",
+        "final_receipt": "GO",
+        "diagnostic_consistency": "GO"
+      },
+      "lifecycle_sequence": 1,
+      "run_started_at_ms": 1783811021843,
+      "run_completed_at_ms": 1783811046213
+    },
+    "manifest_backed_undo": {
+      "status": "GO",
+      "ui_control_label": "Undo last change",
+      "ui_triggered": true,
+      "request_url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76/undo",
+      "http_status": 200,
+      "request_confirm_undo": true,
+      "requested_by": "coding-ui",
+      "original_task_id": "task_9abe771e0e76",
+      "expected_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+      "initial_final_receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+      "selected_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+      "undo_receipt_id": "undo-aacbd2abc74f4f5a",
+      "undo_receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/undo-receipt.json",
+      "filesystem_verified": true,
+      "untouched_scope_assertion": true,
+      "unrelated_paths_touched": [],
+      "independent_unrelated_worktree": {
+        "status": "GO",
+        "snapshot_matches": true,
+        "tracked_diff_matches": true,
+        "untracked_files_match": true,
+        "before_snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+        "after_snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+        "before_tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+        "after_tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+        "before_untracked_file_count": 63,
+        "after_untracked_file_count": 63,
+        "changed_paths": [],
+        "compared_at_ms": 1783811046928
+      },
+      "independent_unrelated_worktree_after": {
+        "schema_version": "unrelated-worktree-proof/v1",
+        "snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+        "tracked_diff_bytes": 4454294,
+        "tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+        "untracked_file_count": 63,
+        "captured_at_ms": 1783811046920
+      },
+      "expected_browser_state": "fixture_missing",
+      "restored_paths": [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+      ],
+      "files_restored": [
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        }
+      ],
+      "all_expected_files_restored": true,
+      "all_restored_to_absent": true,
+      "persisted_task_http_status": 200,
+      "persisted_receipt_verified": true,
+      "persisted_selected_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+      "persisted_restored_paths": [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+      ],
+      "persisted_files_restored": [
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+          "expected_sha256_before": null,
+          "actual_sha256": null,
+          "absent": true,
+          "verified": true
+        }
+      ],
+      "persisted_files_restored_verified": true,
+      "open_diff_marked_undone": true,
+      "ui_pre_reset_preview_http_status": 404,
+      "ui_pre_reset_preview_missing": true,
+      "ui_pre_reset_baseline_http_status": 200,
+      "ui_pre_reset_baseline_checked": true,
+      "ui_pre_reset_baseline_clean_for_fresh_suite": true,
+      "ui_pre_reset_baseline_dirty_files": [],
+      "ui_pre_reset_dummy_fixture_dirty_files": [],
+      "lifecycle_sequence": 2,
+      "initial_run_completed_at_ms": 1783811046213,
+      "response_observed_at_ms": 1783811046559,
+      "response_sequence": 37
+    },
+    "clean_baseline_after_undo": {
+      "status": "GO",
+      "baseline_http_status": 200,
+      "baseline_clean_for_fresh_suite": true,
+      "baseline_dirty_agent_lab_files": [],
+      "dummy_fixture_dirty_files": [],
+      "file_probes": [
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+          "http_status": 400,
+          "reason_code": "not_found",
+          "missing": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+          "http_status": 400,
+          "reason_code": "not_found",
+          "missing": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+          "http_status": 400,
+          "reason_code": "not_found",
+          "missing": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+          "http_status": 400,
+          "reason_code": "not_found",
+          "missing": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+          "http_status": 400,
+          "reason_code": "not_found",
+          "missing": true
+        },
+        {
+          "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+          "http_status": 400,
+          "reason_code": "not_found",
+          "missing": true
+        }
+      ],
+      "all_fixture_files_absent": true,
+      "preview_http_status": 404,
+      "preview_missing": true,
+      "lifecycle_sequence": 4,
+      "probe_started_at_ms": 1783811046930,
+      "probe_completed_at_ms": 1783811047423,
+      "probe_started_after_product_reset": true,
+      "verified_after_product_reset": true,
+      "verified_after_reset_response_sequence": 40
+    },
+    "product_reset_after_undo": {
+      "status": "GO",
+      "ui_triggered": true,
+      "request_url": "https://localhost:3000/v1/coding/dummy-product-site-preview/reset",
+      "http_status": 200,
+      "response_status": "reset_verified",
+      "reset_verified": true,
+      "clean_verified": true,
+      "reset_receipt_id": "dummy-product-site-reset-20260711T230406598360Z-22b30029f453",
+      "fixture_root": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+      "lifecycle_sequence": 3,
+      "response_observed_at_ms": 1783811046604,
+      "response_sequence": 40,
+      "occurred_after_undo": true
+    },
+    "prompt1_clean_rerun": {
+      "status": "GO",
+      "task_id": "task_fb6c61badaa6",
+      "terminal_status": "applied",
+      "apply_status": "performed",
+      "post_apply_verification_status": "GO",
+      "browser_verification_status": "GO",
+      "final_receipt_status": "GO",
+      "final_receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json",
+      "commit_safe": true,
+      "grader_label": "PASS",
+      "trial_result_trust_status": "model_authored_diff_proven",
+      "changed_files": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+      "changed_paths": [
+        "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+      ],
+      "changed_files_present": true,
+      "expected_prompt1_changed_files": true,
+      "fixture_was_clean_before_run": true,
+      "already_satisfied": false,
+      "canonical_stages": {
+        "context": "GO",
+        "post_apply_verification": "GO",
+        "browser_verification": "GO",
+        "anti_cheat": "GO",
+        "final_receipt": "GO",
+        "diagnostic_consistency": "GO"
+      },
+      "lifecycle_sequence": 5,
+      "run_started_at_ms": 1783811048055,
+      "run_completed_at_ms": 1783811072399,
+      "distinct_from_initial_task": true,
+      "initial_task_id": "task_9abe771e0e76",
+      "clean_baseline_completed_at_ms": 1783811047423,
+      "started_after_clean_baseline": true,
+      "started_after_product_reset": true,
+      "unrelated_workspace_preservation": {
+        "status": "GO",
+        "snapshot_matches": true,
+        "tracked_diff_matches": true,
+        "untracked_files_match": true,
+        "before_snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+        "after_snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+        "before_tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+        "after_tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+        "before_untracked_file_count": 63,
+        "after_untracked_file_count": 63,
+        "changed_paths": [],
+        "compared_at_ms": 1783811072680
+      },
+      "unrelated_workspace_after": {
+        "schema_version": "unrelated-worktree-proof/v1",
+        "snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+        "tracked_diff_bytes": 4454294,
+        "tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+        "untracked_file_count": 63,
+        "captured_at_ms": 1783811072672
+      }
+    }
+  },
+  "diagnostics": "=== prompt1_initial_run ===\nselected_prompt_id: coder-001-init-dummy-product-site\nselected_prompt_task_id: task_9abe771e0e76\nselected_prompt_number: 1\nselected_prompt_title: Init Dummy Product Site\nsubmitted_prompt: make a tiny fake product website project for testing the coder agent. call it LumaCart. put it only in `tests/ui-agent-trials/fixtures/dummy-product-site/`. if that folder doesnt exist create it. return one file block per file using `<file path=\"...\">...</file>` or `<<<FILE: path` delimiters. dont touch the real app, coding page, spiritflix, source_proxy, docs, or root package files.\nfixture_root: tests/ui-agent-trials/fixtures/dummy-product-site/\nallowed_write_root: tests/ui-agent-trials/fixtures/dummy-product-site/**\nprimary_expected_targets: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nexpected_result_state: PASS_DUMMY_PROJECT_INIT\nrun_status: applied\nerror_text: missing: no diagnostic envelope received\nraw_backend_status: completed\ntask_identity_backend_task_id: task_9abe771e0e76\ntask_identity_selected_prompt_task_id: task_9abe771e0e76\ntask_identity_target: tests/ui-agent-trials/fixtures/dummy-product-site/\ntask_identity_trace_id: trace_21d91130eb544d1c\ndiff_provenance_applied_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\ndiff_provenance_approved_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\ndiff_provenance_backend_converted_diff_sha256: not_applicable: backend applied approved diff\ndiff_provenance_changed_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_provenance_diff_source: approved_diff_request_body\ndiff_provenance_provenance_hash_normalization: lf_trailing_newline_v1\napproval_binding_approval_binding_failure_reason: not_applicable: approval_binding_valid\napproval_binding_approval_binding_safe_block: false\napproval_binding_approval_binding_status: valid\napproval_binding_approval_id_algorithm: sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)\napproval_binding_approval_source: canonicalized_preview\napproval_binding_apply_block_layer: not_applicable: apply_succeeded\napproval_binding_apply_block_reason: not_applicable: approval_binding_valid\napproval_binding_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json\napproval_binding_canonical_diff_sha256_at_apply: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_canonical_diff_sha256_before_approval: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_canonicalization_changed: false\napproval_binding_diff_sha256_match: true\napproval_binding_diff_sha256_used_for_apply: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_diff_sha256_used_for_preview: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_expected_approval_id: approval-348f32339e9d1508\napproval_binding_received_approval_id: approval-348f32339e9d1508\napproval_binding_safe_block: false\napproval_binding_target_match: true\napproval_binding_target_used_for_apply: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_target_used_for_preview: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_task_id_match: true\napproval_binding_task_id_used_for_apply: task_9abe771e0e76\napproval_binding_task_id_used_for_preview: task_9abe771e0e76\nverification_post_apply_verification_status: verified\nverification_post_apply_verification_reason: post_apply_verification_passed\nverification_preview_verification_status: passed\nverification_manual_browser_check_required: true\nverification_manual_browser_check_done: true\nverification_commit_blockers: missing: backend did not provide field\nverification_verification_required_action: none\nanti_cheat_anti_cheat_status: not_applicable: execute_approved_apply_gate\nanti_cheat_anti_cheat_reasons: not_applicable: backend apply receipt is not the frontend anti-cheat grader\nanti_cheat_grader_result_state: not_applicable: backend_apply_receipt\nanti_cheat_trial_result_trust_status: approval_binding_valid_apply_receipt\nacceptance_gate_acceptance_failures: missing: backend did not provide field\nacceptance_gate_binary_verdict: GO\nacceptance_gate_causal_crosscheck_status: GO\nacceptance_gate_fail_closed_lane_status: GO\nacceptance_gate_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_gate_version: plan5_acceptance_v1\nacceptance_gate_missing_fields: missing: backend did not provide field\nacceptance_gate_phase_verifier_status: GO\nacceptance_gate_plan5_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_plan5_gate_present: true\nacceptance_gate_plan5_gate_version: plan5_acceptance_v1\nacceptance_gate_reason: missing: backend did not provide field\nfinal_truth_summary_commit_safe: true\nfinal_truth_summary_commit_safe_reason: post_apply_verification_passed\nfinal_truth_summary_proof_level: post_apply_verified\nfinal_truth_summary_raw_backend_status: completed\nfinal_truth_summary_recommended_next_action: none\nfinal_truth_summary_run_status: completed\nfinal_truth_summary_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json\nfinal_truth_summary_truth_status: GO\nfinal_truth_summary_why_not_go: missing: backend did not provide field\nreason_code: post_apply_verification_required\nchanged_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nchecks_run: git apply --check (clean missing workspace)\nverification_status: post-apply verified with browser proof\ngeneration_source: model\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\nmodel_output_classification: model_structured_file_bundle\ntrial_result_trust_status: model_authored_diff_proven\ngrader_anti_cheat_status: passed\nanti_cheat_hard_fail_ids: not_applicable: no anti-cheat hard failures\nanti_cheat_advisory_ids: not_applicable: no anti-cheat advisory findings\nanti_cheat_reasons: missing: backend did not provide field\nraw_model_response_sha256: 48789af25b844f5e1cde157057499f88bc068377fb18cfd98b01e7075b21ec36\nmodel_file_bundle_sha256: b446d03cb35f78c686d48e8258d25cc76bd2ff9a4b6dcfe7c282eff97e6b3f82\nbackend_converted_diff_sha256: d1cd930fabd6eb5365b549809f3c57acb09f42c7297cf7eeea1f03dd007ed0b8\nstructured_bundle_status: validated\nstructured_bundle_parser_stage: patch_verification\nstructured_bundle_file_count: 6\nstructured_bundle_accepted_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nstructured_bundle_rejected_paths: not_applicable: no rejected paths\nstructured_bundle_rejection_reason: not_applicable: bundle was not rejected\nmodel_output_shape_summary: length=2728; line_count=109; empty=False; has_xml_file_blocks=True; has_delimited_file_blocks=False; has_json_create_file_bundle=False; has_unified_diff_markers=False; has_markdown_fence=False\ndiff_generation_status: produced_diff\ndiff_generation_reason: model_bundle_converted_to_prompt1_create_diff_for_unsatisfied_existing_fixture\ndiff_file_count: 6\ndiff_added_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_skipped_paths: not_applicable: no skipped paths\ndiff_skipped_reasons: not_applicable: no skipped paths\ndiff_filesystem_snapshot_summary: tests/ui-agent-trials/fixtures/dummy-product-site/README.md: exists=True is_file=True size_bytes=135 sha256=1132534902035b5e18e9e0e2c13b9bbfe9e5783d0e828c891158b4c2338fc0fc, tests/ui-agent-trials/fixtures/dummy-product-site/package.json: exists=True is_file=True size_bytes=334 sha256=e13a0a508e3a64103fd0cce5f6cc3628712e45de59b5eec2ac98aec1bcde35e3, tests/ui-agent-trials/fixtures/dummy-product-site/index.html: exists=True is_file=True size_bytes=371 sha256=138ee619e1b24ddfea71a1bf412a42ab386e6f156559e704a3618d53b5d445a5, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js: exists=True is_file=True size_bytes=362 sha256=ec6ff2d0d5056d18725b5241e9313d82f5816acaf6c488e4388bd7178df9c6a3, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js: exists=True is_file=True size_bytes=223 sha256=b9266d9988212c3b15cf6cb3fbed0a7eac9bba3e045008066e9d9866e5ee07cb, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css: exists=True is_file=True size_bytes=149 sha256=d9c195b4ab7303cfbfb66754de85dd7b97baa097a5f9e35a79be46fa57622a8b\npatch_verification_status: passed\npatch_verification_reason: git apply --check passed in clean missing workspace; live workspace drift recorded\ntask_creation_status: persisted_task_id\ntask_creation_elapsed_ms: 254.23\ntask_creation_timeout_stage: not_applicable: task_id_persisted\ntask_creation_last_checkpoint: task_envelope_built\ntask_creation_blocking_subsystem: not_applicable: task_id_persisted\napproved_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napplied_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\nbackup_manifest: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json\npost_apply_rediff_sha256: 79d03cef905d2ec15d0663d9339846c4c3a5e070c98a7efac578e6a208c37d90\nprovenance_hash_normalization: lf_trailing_newline_v1\napply_mode: backend_git_apply_with_backup_manifest\nstale_patch_recovered: false\nfallback_used: false\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\ntrial_result_trust_status: model_authored_diff_proven\nstorefront_runtime_status: passed\npreview_behavior_status: PASS_STOREFRONT_RENDERED\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\ncanonical_context_status: passed\ncanonical_context_consumption_status: consumed\ndownstream_context_acknowledgement_status: acknowledged\nrequired_context_status: passed\ncanonical_context_verdict: GO_ELIGIBLE\ncanonical_context_report_hash: f316f42411874736041e14917ceaadd2d5f8ceb39d4e74eec8bd975919d6cabd\ncanonical_context_blockers: not_applicable: no canonical context blockers\ncanonical_context_acknowledgements: planner, coder, reviewer, verifier, final_receipt_builder\ngeneration_status: passed\npreview_verification_status: passed\napproval_status: valid\napply_status: performed\npost_apply_verification_status: passed\nbrowser_verification_status: passed\nanti_cheat_status: passed\ncommit_safe: true\nfinal_truth_status: GO\nfinal_receipt_status: GO\nrequired_action: none\nscaffold_used: false\ngenerated_diff_by_backend: true\ngrader_result_state: PASS_DUMMY_PROJECT_INIT\ngrader_label: PASS\ngrader_score: 10\ngrader_reason: Bounded model-authored dummy-root result with verification evidence.\ncritical_failures: not_applicable: no grader findings\nfile_scope_status: inside_dummy_root\nprovenance_status: pass_compatible\nrecommended_next_action: Inspect changed files before continuing.\nproduction_time: 21s (started 2026-07-11T23:03:41.903Z, finished 2026-07-11T23:04:03.045Z)\npreview_behavior_status: PASS_STOREFRONT_RENDERED\npreview_visible_text_summary: Managed Chromium rendered 6 LumaCart product cards with name, price, category, and description.\npreview_asset_status: present\npreview_product_count: 6\nstorefront_runtime_status: passed\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\nexisting_dummy_project_summary: LumaCart exists under tests/ui-agent-trials/fixtures/dummy-product-site/ with README.md, index.html, package.json, src/main.js, src/products.js, and src/styles.css. It is not reported as imported into SpiritOS.\n=== prompt1_clean_rerun ===\nselected_prompt_id: coder-001-init-dummy-product-site\nselected_prompt_task_id: task_fb6c61badaa6\nselected_prompt_number: 1\nselected_prompt_title: Init Dummy Product Site\nsubmitted_prompt: make a tiny fake product website project for testing the coder agent. call it LumaCart. put it only in `tests/ui-agent-trials/fixtures/dummy-product-site/`. if that folder doesnt exist create it. return one file block per file using `<file path=\"...\">...</file>` or `<<<FILE: path` delimiters. dont touch the real app, coding page, spiritflix, source_proxy, docs, or root package files.\nfixture_root: tests/ui-agent-trials/fixtures/dummy-product-site/\nallowed_write_root: tests/ui-agent-trials/fixtures/dummy-product-site/**\nprimary_expected_targets: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nexpected_result_state: PASS_DUMMY_PROJECT_INIT\nrun_status: applied\nerror_text: missing: no diagnostic envelope received\nraw_backend_status: completed\ntask_identity_backend_task_id: task_fb6c61badaa6\ntask_identity_selected_prompt_task_id: task_fb6c61badaa6\ntask_identity_target: tests/ui-agent-trials/fixtures/dummy-product-site/\ntask_identity_trace_id: trace_666071e67c534e34\ndiff_provenance_applied_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\ndiff_provenance_approved_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\ndiff_provenance_backend_converted_diff_sha256: not_applicable: backend applied approved diff\ndiff_provenance_changed_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_provenance_diff_source: approved_diff_request_body\ndiff_provenance_provenance_hash_normalization: lf_trailing_newline_v1\napproval_binding_approval_binding_failure_reason: not_applicable: approval_binding_valid\napproval_binding_approval_binding_safe_block: false\napproval_binding_approval_binding_status: valid\napproval_binding_approval_id_algorithm: sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)\napproval_binding_approval_source: canonicalized_preview\napproval_binding_apply_block_layer: not_applicable: apply_succeeded\napproval_binding_apply_block_reason: not_applicable: approval_binding_valid\napproval_binding_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json\napproval_binding_canonical_diff_sha256_at_apply: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_canonical_diff_sha256_before_approval: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_canonicalization_changed: false\napproval_binding_diff_sha256_match: true\napproval_binding_diff_sha256_used_for_apply: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_diff_sha256_used_for_preview: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_expected_approval_id: approval-1df7c41e022d5317\napproval_binding_received_approval_id: approval-1df7c41e022d5317\napproval_binding_safe_block: false\napproval_binding_target_match: true\napproval_binding_target_used_for_apply: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_target_used_for_preview: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_task_id_match: true\napproval_binding_task_id_used_for_apply: task_fb6c61badaa6\napproval_binding_task_id_used_for_preview: task_fb6c61badaa6\nverification_post_apply_verification_status: verified\nverification_post_apply_verification_reason: post_apply_verification_passed\nverification_preview_verification_status: passed\nverification_manual_browser_check_required: true\nverification_manual_browser_check_done: true\nverification_commit_blockers: missing: backend did not provide field\nverification_verification_required_action: none\nanti_cheat_anti_cheat_status: not_applicable: execute_approved_apply_gate\nanti_cheat_anti_cheat_reasons: not_applicable: backend apply receipt is not the frontend anti-cheat grader\nanti_cheat_grader_result_state: not_applicable: backend_apply_receipt\nanti_cheat_trial_result_trust_status: approval_binding_valid_apply_receipt\nacceptance_gate_acceptance_failures: missing: backend did not provide field\nacceptance_gate_binary_verdict: GO\nacceptance_gate_causal_crosscheck_status: GO\nacceptance_gate_fail_closed_lane_status: GO\nacceptance_gate_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_gate_version: plan5_acceptance_v1\nacceptance_gate_missing_fields: missing: backend did not provide field\nacceptance_gate_phase_verifier_status: GO\nacceptance_gate_plan5_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_plan5_gate_present: true\nacceptance_gate_plan5_gate_version: plan5_acceptance_v1\nacceptance_gate_reason: missing: backend did not provide field\nfinal_truth_summary_commit_safe: true\nfinal_truth_summary_commit_safe_reason: post_apply_verification_passed\nfinal_truth_summary_proof_level: post_apply_verified\nfinal_truth_summary_raw_backend_status: completed\nfinal_truth_summary_recommended_next_action: none\nfinal_truth_summary_run_status: completed\nfinal_truth_summary_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json\nfinal_truth_summary_truth_status: GO\nfinal_truth_summary_why_not_go: missing: backend did not provide field\nreason_code: post_apply_verification_required\nchanged_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nchecks_run: git apply --check (clean missing workspace)\nverification_status: post-apply verified with browser proof\ngeneration_source: model\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\nmodel_output_classification: model_structured_file_bundle\ntrial_result_trust_status: model_authored_diff_proven\ngrader_anti_cheat_status: passed\nanti_cheat_hard_fail_ids: not_applicable: no anti-cheat hard failures\nanti_cheat_advisory_ids: not_applicable: no anti-cheat advisory findings\nanti_cheat_reasons: missing: backend did not provide field\nraw_model_response_sha256: fe6117cb5d7b3c7e71ecb967f4f7d17bbccac5a2c4369fa01842bee0a86a8898\nmodel_file_bundle_sha256: fafd83a1dd9f95e84af7175781c38553d5f60d622234bbc75e10e3f7d9dd913c\nbackend_converted_diff_sha256: 0534ef36e75debf650c46cc6845cccfaa46a842658178c3e44033849afd108bf\nstructured_bundle_status: validated\nstructured_bundle_parser_stage: patch_verification\nstructured_bundle_file_count: 6\nstructured_bundle_accepted_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nstructured_bundle_rejected_paths: not_applicable: no rejected paths\nstructured_bundle_rejection_reason: not_applicable: bundle was not rejected\nmodel_output_shape_summary: length=2716; line_count=112; empty=False; has_xml_file_blocks=True; has_delimited_file_blocks=False; has_json_create_file_bundle=False; has_unified_diff_markers=False; has_markdown_fence=False\ndiff_generation_status: produced_diff\ndiff_generation_reason: model_bundle_converted_to_prompt1_create_diff_for_unsatisfied_existing_fixture\ndiff_file_count: 6\ndiff_added_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_skipped_paths: not_applicable: no skipped paths\ndiff_skipped_reasons: not_applicable: no skipped paths\ndiff_filesystem_snapshot_summary: tests/ui-agent-trials/fixtures/dummy-product-site/README.md: exists=True is_file=True size_bytes=135 sha256=1132534902035b5e18e9e0e2c13b9bbfe9e5783d0e828c891158b4c2338fc0fc, tests/ui-agent-trials/fixtures/dummy-product-site/package.json: exists=True is_file=True size_bytes=334 sha256=e13a0a508e3a64103fd0cce5f6cc3628712e45de59b5eec2ac98aec1bcde35e3, tests/ui-agent-trials/fixtures/dummy-product-site/index.html: exists=True is_file=True size_bytes=371 sha256=138ee619e1b24ddfea71a1bf412a42ab386e6f156559e704a3618d53b5d445a5, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js: exists=True is_file=True size_bytes=362 sha256=ec6ff2d0d5056d18725b5241e9313d82f5816acaf6c488e4388bd7178df9c6a3, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js: exists=True is_file=True size_bytes=223 sha256=b9266d9988212c3b15cf6cb3fbed0a7eac9bba3e045008066e9d9866e5ee07cb, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css: exists=True is_file=True size_bytes=149 sha256=d9c195b4ab7303cfbfb66754de85dd7b97baa097a5f9e35a79be46fa57622a8b\npatch_verification_status: passed\npatch_verification_reason: git apply --check passed in clean missing workspace; live workspace drift recorded\ntask_creation_status: persisted_task_id\ntask_creation_elapsed_ms: 120.79\ntask_creation_timeout_stage: not_applicable: task_id_persisted\ntask_creation_last_checkpoint: task_envelope_built\ntask_creation_blocking_subsystem: not_applicable: task_id_persisted\napproved_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napplied_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\nbackup_manifest: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json\npost_apply_rediff_sha256: 8b1ed4a9b81d74fc1bdcce739f45b9bd7d971080cde44cfcc2335ede931d094a\nprovenance_hash_normalization: lf_trailing_newline_v1\napply_mode: backend_git_apply_with_backup_manifest\nstale_patch_recovered: false\nfallback_used: false\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\ntrial_result_trust_status: model_authored_diff_proven\nstorefront_runtime_status: passed\npreview_behavior_status: PASS_STOREFRONT_RENDERED\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\ncanonical_context_status: passed\ncanonical_context_consumption_status: consumed\ndownstream_context_acknowledgement_status: acknowledged\nrequired_context_status: passed\ncanonical_context_verdict: GO_ELIGIBLE\ncanonical_context_report_hash: 5606bfec9f1d57850180653fe8e78fa665f02ec4968499174c6c5976ae2abbe6\ncanonical_context_blockers: not_applicable: no canonical context blockers\ncanonical_context_acknowledgements: planner, coder, reviewer, verifier, final_receipt_builder\ngeneration_status: passed\npreview_verification_status: passed\napproval_status: valid\napply_status: performed\npost_apply_verification_status: passed\nbrowser_verification_status: passed\nanti_cheat_status: passed\ncommit_safe: true\nfinal_truth_status: GO\nfinal_receipt_status: GO\nrequired_action: none\nscaffold_used: false\ngenerated_diff_by_backend: true\ngrader_result_state: PASS_DUMMY_PROJECT_INIT\ngrader_label: PASS\ngrader_score: 10\ngrader_reason: Bounded model-authored dummy-root result with verification evidence.\ncritical_failures: not_applicable: no grader findings\nfile_scope_status: inside_dummy_root\nprovenance_status: pass_compatible\nrecommended_next_action: Inspect changed files before continuing.\nproduction_time: 18s (started 2026-07-11T23:04:08.137Z, finished 2026-07-11T23:04:26.494Z)\npreview_behavior_status: PASS_STOREFRONT_RENDERED\npreview_visible_text_summary: Managed Chromium rendered 6 LumaCart product cards with name, price, category, and description.\npreview_asset_status: present\npreview_product_count: 6\nstorefront_runtime_status: passed\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\nexisting_dummy_project_summary: LumaCart exists under tests/ui-agent-trials/fixtures/dummy-product-site/ with README.md, index.html, package.json, src/main.js, src/products.js, and src/styles.css. It is not reported as imported into SpiritOS.",
+  "fixture_state": "missing",
+  "http_events": [
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020075,
+      "sequence": 1,
+      "status": 200,
+      "url": "https://localhost:3000/coding"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020458,
+      "sequence": 2,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020459,
+      "sequence": 3,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020533,
+      "sequence": 4,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/recent?limit=1"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020547,
+      "sequence": 5,
+      "status": 200,
+      "url": "https://localhost:3000/coding"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020775,
+      "sequence": 6,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020775,
+      "sequence": 7,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020820,
+      "sequence": 8,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/recent?limit=1"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020860,
+      "sequence": 9,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/trial-fixture-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020905,
+      "sequence": 10,
+      "status": 200,
+      "url": "https://localhost:3000/coding?_rsc=hrhuu"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020989,
+      "sequence": 11,
+      "status": 200,
+      "url": "https://localhost:3000/coding?_rsc=3mc1x"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811020989,
+      "sequence": 12,
+      "status": 200,
+      "url": "https://localhost:3000/coding?_rsc=g2vcu"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811022180,
+      "sequence": 13,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811022192,
+      "sequence": 14,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811022278,
+      "sequence": 15,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811022887,
+      "sequence": 16,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811023745,
+      "sequence": 17,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811025414,
+      "sequence": 18,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811026750,
+      "sequence": 19,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811028419,
+      "sequence": 20,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811029745,
+      "sequence": 21,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811032755,
+      "sequence": 22,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811035749,
+      "sequence": 23,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811036221,
+      "sequence": 24,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811036296,
+      "sequence": 25,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811037353,
+      "sequence": 26,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811038749,
+      "sequence": 27,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811040416,
+      "sequence": 28,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811041027,
+      "sequence": 29,
+      "status": 200,
+      "url": "https://localhost:3000/v1/decisions/prompt-packet"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811041060,
+      "sequence": 30,
+      "status": 200,
+      "url": "https://localhost:3000/v1/verification/diff-preview"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811041501,
+      "sequence": 31,
+      "status": 200,
+      "url": "https://localhost:3000/v1/actions/execute-approved"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811041747,
+      "sequence": 32,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811043022,
+      "sequence": 33,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76/verify"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811043028,
+      "sequence": 34,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/trial-receipt-reconcile"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811043056,
+      "sequence": 35,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811044745,
+      "sequence": 36,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811046559,
+      "sequence": 37,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76/undo"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811046586,
+      "sequence": 38,
+      "status": 404,
+      "url": "https://localhost:3000/v1/coding/dummy-product-site-preview/index.html?t=1783811046569"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811046588,
+      "sequence": 39,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811046604,
+      "sequence": 40,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/dummy-product-site-preview/reset"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811046626,
+      "sequence": 41,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811046651,
+      "sequence": 42,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76/cancel"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811046653,
+      "sequence": 43,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76/cancel"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047436,
+      "sequence": 44,
+      "status": 200,
+      "url": "https://localhost:3000/coding"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047707,
+      "sequence": 45,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047707,
+      "sequence": 46,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047763,
+      "sequence": 47,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/recent?limit=1"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047786,
+      "sequence": 48,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/trial-fixture-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047928,
+      "sequence": 49,
+      "status": 200,
+      "url": "https://localhost:3000/coding?_rsc=hrhuu"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047928,
+      "sequence": 50,
+      "status": 200,
+      "url": "https://localhost:3000/coding?_rsc=3mc1x"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811047965,
+      "sequence": 51,
+      "status": 200,
+      "url": "https://localhost:3000/coding?_rsc=g2vcu"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811048269,
+      "sequence": 52,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811048277,
+      "sequence": 53,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811048395,
+      "sequence": 54,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811049020,
+      "sequence": 55,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811050674,
+      "sequence": 56,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811051633,
+      "sequence": 57,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811053670,
+      "sequence": 58,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811054780,
+      "sequence": 59,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811056671,
+      "sequence": 60,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811057601,
+      "sequence": 61,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811059672,
+      "sequence": 62,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811060549,
+      "sequence": 63,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811062675,
+      "sequence": 64,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811063529,
+      "sequence": 65,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811064370,
+      "sequence": 66,
+      "status": 200,
+      "url": "https://localhost:3000/v1/decisions/prompt-packet"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811064411,
+      "sequence": 67,
+      "status": 200,
+      "url": "https://localhost:3000/v1/verification/diff-preview"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811064962,
+      "sequence": 68,
+      "status": 200,
+      "url": "https://localhost:3000/v1/actions/execute-approved"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811065676,
+      "sequence": 69,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811066483,
+      "sequence": 70,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6/verify"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811066501,
+      "sequence": 71,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/agent-lab-baseline"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811066502,
+      "sequence": 72,
+      "status": 200,
+      "url": "https://localhost:3000/v1/tasks/long-running/task_fb6c61badaa6"
+    },
+    {
+      "method": "POST",
+      "observedAtMs": 1783811066509,
+      "sequence": 73,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/trial-receipt-reconcile"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811068673,
+      "sequence": 74,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    },
+    {
+      "method": "GET",
+      "observedAtMs": 1783811071679,
+      "sequence": 75,
+      "status": 200,
+      "url": "https://localhost:3000/v1/coding/runs/active"
+    }
+  ],
+  "selected_prompt_id": "coder-001-init-dummy-product-site",
+  "unrelated_workspace_before": {
+    "schema_version": "unrelated-worktree-proof/v1",
+    "snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+    "tracked_diff_bytes": 4454294,
+    "tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+    "untracked_file_count": 63,
+    "captured_at_ms": 1783811020036
+  },
+  "initial_fixture_clean_precondition": {
+    "status": "GO",
+    "baseline_http_status": 200,
+    "baseline_clean_for_fresh_suite": true,
+    "baseline_dirty_agent_lab_files": [],
+    "dummy_fixture_dirty_files": [],
+    "file_probes": [
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      }
+    ],
+    "all_fixture_files_absent": true,
+    "preview_http_status": 404,
+    "preview_missing": true,
+    "lifecycle_sequence": 0,
+    "probe_started_at_ms": 1783811020813,
+    "probe_completed_at_ms": 1783811021774
+  },
+  "initial_prompt1_run": {
+    "antiCheatStatus": "passed",
+    "applyStatus": "performed",
+    "authoritativeStages": {
+      "context": {
+        "status": "GO",
+        "acknowledgement_status": "acknowledged",
+        "broker_status": "GO_ELIGIBLE",
+        "consumption_status": "consumed",
+        "required_context_status": "passed"
+      },
+      "post_apply_verification": {
+        "status": "GO",
+        "raw_status": "passed"
+      },
+      "browser_verification": {
+        "status": "GO",
+        "source": "playwright_direct_preview_plus_backend_managed_playwright_receipt",
+        "real_browser_used": true,
+        "managed_frontend_origin": "https://localhost:3000",
+        "preview_url": "https://localhost:3000/v1/coding/dummy-product-site-preview?lifecycle_browser_proof=1783811045216",
+        "preview_http_status": 200,
+        "product_count": 6,
+        "rendered_card_count": 6,
+        "product_field_matches": [
+          {
+            "fields_present": true,
+            "name": "LumaCart T-Shirt",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Laptop Bag",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Coffee Mug",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Desk Mat",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Pen Set",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Mouse Pad",
+            "rendered": true
+          }
+        ],
+        "rendered_headings": [
+          "LumaCart T-Shirt",
+          "LumaCart Laptop Bag",
+          "LumaCart Coffee Mug",
+          "LumaCart Desk Mat",
+          "LumaCart Pen Set",
+          "LumaCart Mouse Pad"
+        ],
+        "module_script_loaded": true,
+        "stylesheet_loaded": true,
+        "noscript_card_count": 0,
+        "asset_responses": {
+          "/v1/coding/dummy-product-site-preview": 200,
+          "/v1/coding/dummy-product-site-preview/src/main.js": 200,
+          "/v1/coding/dummy-product-site-preview/src/products.js": 200,
+          "/v1/coding/dummy-product-site-preview/src/styles.css": 200
+        },
+        "console_errors": [],
+        "page_errors": [],
+        "request_failures": [],
+        "runtime_error": null,
+        "backend_receipt_bound": true,
+        "backend_browser_engine": "playwright_chromium",
+        "backend_browser_evidence_sha256": "c4848039084fb72de74bed48fe6e9ddc39bcb23acaa2b0de75505916e5aef523",
+        "backend_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+        "backend_post_apply_rediff_sha256": "79d03cef905d2ec15d0663d9339846c4c3a5e070c98a7efac578e6a208c37d90",
+        "task_id": "task_9abe771e0e76"
+      },
+      "anti_cheat": {
+        "status": "GO",
+        "raw_statuses": [
+          "passed"
+        ],
+        "grader_label": "PASS",
+        "grader_labels": [
+          "PASS"
+        ],
+        "trial_result_trust_status": "model_authored_diff_proven",
+        "trial_result_trust_statuses": [
+          "model_authored_diff_proven",
+          "model_authored_diff_proven"
+        ]
+      },
+      "final_receipt": {
+        "status": "GO",
+        "commit_safe": true,
+        "receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+        "run_status": "applied",
+        "truth_status": "GO"
+      },
+      "diagnostic_consistency": {
+        "status": "GO",
+        "conflicts": {}
+      }
+    },
+    "browserProof": {
+      "status": "GO",
+      "source": "playwright_direct_preview_plus_backend_managed_playwright_receipt",
+      "real_browser_used": true,
+      "managed_frontend_origin": "https://localhost:3000",
+      "preview_url": "https://localhost:3000/v1/coding/dummy-product-site-preview?lifecycle_browser_proof=1783811045216",
+      "preview_http_status": 200,
+      "product_count": 6,
+      "rendered_card_count": 6,
+      "product_field_matches": [
+        {
+          "fields_present": true,
+          "name": "LumaCart T-Shirt",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Laptop Bag",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Coffee Mug",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Desk Mat",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Pen Set",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Mouse Pad",
+          "rendered": true
+        }
+      ],
+      "rendered_headings": [
+        "LumaCart T-Shirt",
+        "LumaCart Laptop Bag",
+        "LumaCart Coffee Mug",
+        "LumaCart Desk Mat",
+        "LumaCart Pen Set",
+        "LumaCart Mouse Pad"
+      ],
+      "module_script_loaded": true,
+      "stylesheet_loaded": true,
+      "noscript_card_count": 0,
+      "asset_responses": {
+        "/v1/coding/dummy-product-site-preview": 200,
+        "/v1/coding/dummy-product-site-preview/src/main.js": 200,
+        "/v1/coding/dummy-product-site-preview/src/products.js": 200,
+        "/v1/coding/dummy-product-site-preview/src/styles.css": 200
+      },
+      "console_errors": [],
+      "page_errors": [],
+      "request_failures": [],
+      "runtime_error": null,
+      "backend_receipt_bound": true,
+      "backend_browser_engine": "playwright_chromium",
+      "backend_browser_evidence_sha256": "c4848039084fb72de74bed48fe6e9ddc39bcb23acaa2b0de75505916e5aef523",
+      "backend_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+      "backend_post_apply_rediff_sha256": "79d03cef905d2ec15d0663d9339846c4c3a5e070c98a7efac578e6a208c37d90",
+      "task_id": "task_9abe771e0e76"
+    },
+    "changedFiles": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+    "diagnostics": "selected_prompt_id: coder-001-init-dummy-product-site\nselected_prompt_task_id: task_9abe771e0e76\nselected_prompt_number: 1\nselected_prompt_title: Init Dummy Product Site\nsubmitted_prompt: make a tiny fake product website project for testing the coder agent. call it LumaCart. put it only in `tests/ui-agent-trials/fixtures/dummy-product-site/`. if that folder doesnt exist create it. return one file block per file using `<file path=\"...\">...</file>` or `<<<FILE: path` delimiters. dont touch the real app, coding page, spiritflix, source_proxy, docs, or root package files.\nfixture_root: tests/ui-agent-trials/fixtures/dummy-product-site/\nallowed_write_root: tests/ui-agent-trials/fixtures/dummy-product-site/**\nprimary_expected_targets: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nexpected_result_state: PASS_DUMMY_PROJECT_INIT\nrun_status: applied\nerror_text: missing: no diagnostic envelope received\nraw_backend_status: completed\ntask_identity_backend_task_id: task_9abe771e0e76\ntask_identity_selected_prompt_task_id: task_9abe771e0e76\ntask_identity_target: tests/ui-agent-trials/fixtures/dummy-product-site/\ntask_identity_trace_id: trace_21d91130eb544d1c\ndiff_provenance_applied_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\ndiff_provenance_approved_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\ndiff_provenance_backend_converted_diff_sha256: not_applicable: backend applied approved diff\ndiff_provenance_changed_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_provenance_diff_source: approved_diff_request_body\ndiff_provenance_provenance_hash_normalization: lf_trailing_newline_v1\napproval_binding_approval_binding_failure_reason: not_applicable: approval_binding_valid\napproval_binding_approval_binding_safe_block: false\napproval_binding_approval_binding_status: valid\napproval_binding_approval_id_algorithm: sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)\napproval_binding_approval_source: canonicalized_preview\napproval_binding_apply_block_layer: not_applicable: apply_succeeded\napproval_binding_apply_block_reason: not_applicable: approval_binding_valid\napproval_binding_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json\napproval_binding_canonical_diff_sha256_at_apply: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_canonical_diff_sha256_before_approval: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_canonicalization_changed: false\napproval_binding_diff_sha256_match: true\napproval_binding_diff_sha256_used_for_apply: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_diff_sha256_used_for_preview: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napproval_binding_expected_approval_id: approval-348f32339e9d1508\napproval_binding_received_approval_id: approval-348f32339e9d1508\napproval_binding_safe_block: false\napproval_binding_target_match: true\napproval_binding_target_used_for_apply: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_target_used_for_preview: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_task_id_match: true\napproval_binding_task_id_used_for_apply: task_9abe771e0e76\napproval_binding_task_id_used_for_preview: task_9abe771e0e76\nverification_post_apply_verification_status: verified\nverification_post_apply_verification_reason: post_apply_verification_passed\nverification_preview_verification_status: passed\nverification_manual_browser_check_required: true\nverification_manual_browser_check_done: true\nverification_commit_blockers: missing: backend did not provide field\nverification_verification_required_action: none\nanti_cheat_anti_cheat_status: not_applicable: execute_approved_apply_gate\nanti_cheat_anti_cheat_reasons: not_applicable: backend apply receipt is not the frontend anti-cheat grader\nanti_cheat_grader_result_state: not_applicable: backend_apply_receipt\nanti_cheat_trial_result_trust_status: approval_binding_valid_apply_receipt\nacceptance_gate_acceptance_failures: missing: backend did not provide field\nacceptance_gate_binary_verdict: GO\nacceptance_gate_causal_crosscheck_status: GO\nacceptance_gate_fail_closed_lane_status: GO\nacceptance_gate_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_gate_version: plan5_acceptance_v1\nacceptance_gate_missing_fields: missing: backend did not provide field\nacceptance_gate_phase_verifier_status: GO\nacceptance_gate_plan5_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_plan5_gate_present: true\nacceptance_gate_plan5_gate_version: plan5_acceptance_v1\nacceptance_gate_reason: missing: backend did not provide field\nfinal_truth_summary_commit_safe: true\nfinal_truth_summary_commit_safe_reason: post_apply_verification_passed\nfinal_truth_summary_proof_level: post_apply_verified\nfinal_truth_summary_raw_backend_status: completed\nfinal_truth_summary_recommended_next_action: none\nfinal_truth_summary_run_status: completed\nfinal_truth_summary_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json\nfinal_truth_summary_truth_status: GO\nfinal_truth_summary_why_not_go: missing: backend did not provide field\nreason_code: post_apply_verification_required\nchanged_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nchecks_run: git apply --check (clean missing workspace)\nverification_status: post-apply verified with browser proof\ngeneration_source: model\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\nmodel_output_classification: model_structured_file_bundle\ntrial_result_trust_status: model_authored_diff_proven\ngrader_anti_cheat_status: passed\nanti_cheat_hard_fail_ids: not_applicable: no anti-cheat hard failures\nanti_cheat_advisory_ids: not_applicable: no anti-cheat advisory findings\nanti_cheat_reasons: missing: backend did not provide field\nraw_model_response_sha256: 48789af25b844f5e1cde157057499f88bc068377fb18cfd98b01e7075b21ec36\nmodel_file_bundle_sha256: b446d03cb35f78c686d48e8258d25cc76bd2ff9a4b6dcfe7c282eff97e6b3f82\nbackend_converted_diff_sha256: d1cd930fabd6eb5365b549809f3c57acb09f42c7297cf7eeea1f03dd007ed0b8\nstructured_bundle_status: validated\nstructured_bundle_parser_stage: patch_verification\nstructured_bundle_file_count: 6\nstructured_bundle_accepted_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nstructured_bundle_rejected_paths: not_applicable: no rejected paths\nstructured_bundle_rejection_reason: not_applicable: bundle was not rejected\nmodel_output_shape_summary: length=2728; line_count=109; empty=False; has_xml_file_blocks=True; has_delimited_file_blocks=False; has_json_create_file_bundle=False; has_unified_diff_markers=False; has_markdown_fence=False\ndiff_generation_status: produced_diff\ndiff_generation_reason: model_bundle_converted_to_prompt1_create_diff_for_unsatisfied_existing_fixture\ndiff_file_count: 6\ndiff_added_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_skipped_paths: not_applicable: no skipped paths\ndiff_skipped_reasons: not_applicable: no skipped paths\ndiff_filesystem_snapshot_summary: tests/ui-agent-trials/fixtures/dummy-product-site/README.md: exists=True is_file=True size_bytes=135 sha256=1132534902035b5e18e9e0e2c13b9bbfe9e5783d0e828c891158b4c2338fc0fc, tests/ui-agent-trials/fixtures/dummy-product-site/package.json: exists=True is_file=True size_bytes=334 sha256=e13a0a508e3a64103fd0cce5f6cc3628712e45de59b5eec2ac98aec1bcde35e3, tests/ui-agent-trials/fixtures/dummy-product-site/index.html: exists=True is_file=True size_bytes=371 sha256=138ee619e1b24ddfea71a1bf412a42ab386e6f156559e704a3618d53b5d445a5, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js: exists=True is_file=True size_bytes=362 sha256=ec6ff2d0d5056d18725b5241e9313d82f5816acaf6c488e4388bd7178df9c6a3, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js: exists=True is_file=True size_bytes=223 sha256=b9266d9988212c3b15cf6cb3fbed0a7eac9bba3e045008066e9d9866e5ee07cb, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css: exists=True is_file=True size_bytes=149 sha256=d9c195b4ab7303cfbfb66754de85dd7b97baa097a5f9e35a79be46fa57622a8b\npatch_verification_status: passed\npatch_verification_reason: git apply --check passed in clean missing workspace; live workspace drift recorded\ntask_creation_status: persisted_task_id\ntask_creation_elapsed_ms: 254.23\ntask_creation_timeout_stage: not_applicable: task_id_persisted\ntask_creation_last_checkpoint: task_envelope_built\ntask_creation_blocking_subsystem: not_applicable: task_id_persisted\napproved_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\napplied_diff_sha256: 508b8517e425091cad83b9fdd1949772861e84b365e74ce301638805d75da39d\nbackup_manifest: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json\npost_apply_rediff_sha256: 79d03cef905d2ec15d0663d9339846c4c3a5e070c98a7efac578e6a208c37d90\nprovenance_hash_normalization: lf_trailing_newline_v1\napply_mode: backend_git_apply_with_backup_manifest\nstale_patch_recovered: false\nfallback_used: false\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\ntrial_result_trust_status: model_authored_diff_proven\nstorefront_runtime_status: passed\npreview_behavior_status: PASS_STOREFRONT_RENDERED\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\ncanonical_context_status: passed\ncanonical_context_consumption_status: consumed\ndownstream_context_acknowledgement_status: acknowledged\nrequired_context_status: passed\ncanonical_context_verdict: GO_ELIGIBLE\ncanonical_context_report_hash: f316f42411874736041e14917ceaadd2d5f8ceb39d4e74eec8bd975919d6cabd\ncanonical_context_blockers: not_applicable: no canonical context blockers\ncanonical_context_acknowledgements: planner, coder, reviewer, verifier, final_receipt_builder\ngeneration_status: passed\npreview_verification_status: passed\napproval_status: valid\napply_status: performed\npost_apply_verification_status: passed\nbrowser_verification_status: passed\nanti_cheat_status: passed\ncommit_safe: true\nfinal_truth_status: GO\nfinal_receipt_status: GO\nrequired_action: none\nscaffold_used: false\ngenerated_diff_by_backend: true\ngrader_result_state: PASS_DUMMY_PROJECT_INIT\ngrader_label: PASS\ngrader_score: 10\ngrader_reason: Bounded model-authored dummy-root result with verification evidence.\ncritical_failures: not_applicable: no grader findings\nfile_scope_status: inside_dummy_root\nprovenance_status: pass_compatible\nrecommended_next_action: Inspect changed files before continuing.\nproduction_time: 21s (started 2026-07-11T23:03:41.903Z, finished 2026-07-11T23:04:03.045Z)\npreview_behavior_status: PASS_STOREFRONT_RENDERED\npreview_visible_text_summary: Managed Chromium rendered 6 LumaCart product cards with name, price, category, and description.\npreview_asset_status: present\npreview_product_count: 6\nstorefront_runtime_status: passed\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\nexisting_dummy_project_summary: LumaCart exists under tests/ui-agent-trials/fixtures/dummy-product-site/ with README.md, index.html, package.json, src/main.js, src/products.js, and src/styles.css. It is not reported as imported into SpiritOS.",
+    "errorText": "missing: no diagnostic envelope received",
+    "rawBackendStatus": "completed",
+    "completedAtMs": 1783811046213,
+    "startedAtMs": 1783811021843,
+    "taskId": "task_9abe771e0e76",
+    "terminalStatus": "applied"
+  },
+  "manifest_backed_undo": {
+    "status": "GO",
+    "ui_control_label": "Undo last change",
+    "ui_triggered": true,
+    "request_url": "https://localhost:3000/v1/tasks/long-running/task_9abe771e0e76/undo",
+    "http_status": 200,
+    "request_confirm_undo": true,
+    "requested_by": "coding-ui",
+    "original_task_id": "task_9abe771e0e76",
+    "expected_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+    "initial_final_receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+    "selected_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+    "undo_receipt_id": "undo-aacbd2abc74f4f5a",
+    "undo_receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/undo-receipt.json",
+    "filesystem_verified": true,
+    "untouched_scope_assertion": true,
+    "unrelated_paths_touched": [],
+    "independent_unrelated_worktree": {
+      "status": "GO",
+      "snapshot_matches": true,
+      "tracked_diff_matches": true,
+      "untracked_files_match": true,
+      "before_snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+      "after_snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+      "before_tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+      "after_tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+      "before_untracked_file_count": 63,
+      "after_untracked_file_count": 63,
+      "changed_paths": [],
+      "compared_at_ms": 1783811046928
+    },
+    "independent_unrelated_worktree_after": {
+      "schema_version": "unrelated-worktree-proof/v1",
+      "snapshot_sha256": "a21a7a55ad852fb4f6d17264bfcfe27e4ac20ec51fc31e9ac8eaec1c406bfff3",
+      "tracked_diff_bytes": 4454294,
+      "tracked_diff_sha256": "bf55eb9dee82fa178577d8d3833f274b4dc8d951a054000435f84ad7bd963003",
+      "untracked_file_count": 63,
+      "captured_at_ms": 1783811046920
+    },
+    "expected_browser_state": "fixture_missing",
+    "restored_paths": [
+      "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+    ],
+    "files_restored": [
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      }
+    ],
+    "all_expected_files_restored": true,
+    "all_restored_to_absent": true,
+    "persisted_task_http_status": 200,
+    "persisted_receipt_verified": true,
+    "persisted_selected_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230401_317825_0000/manifest.json",
+    "persisted_restored_paths": [
+      "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+      "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css"
+    ],
+    "persisted_files_restored": [
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        "expected_sha256_before": null,
+        "actual_sha256": null,
+        "absent": true,
+        "verified": true
+      }
+    ],
+    "persisted_files_restored_verified": true,
+    "open_diff_marked_undone": true,
+    "ui_pre_reset_preview_http_status": 404,
+    "ui_pre_reset_preview_missing": true,
+    "ui_pre_reset_baseline_http_status": 200,
+    "ui_pre_reset_baseline_checked": true,
+    "ui_pre_reset_baseline_clean_for_fresh_suite": true,
+    "ui_pre_reset_baseline_dirty_files": [],
+    "ui_pre_reset_dummy_fixture_dirty_files": [],
+    "lifecycle_sequence": 2,
+    "initial_run_completed_at_ms": 1783811046213,
+    "response_observed_at_ms": 1783811046559,
+    "response_sequence": 37
+  },
+  "product_reset_after_undo": {
+    "status": "GO",
+    "ui_triggered": true,
+    "request_url": "https://localhost:3000/v1/coding/dummy-product-site-preview/reset",
+    "http_status": 200,
+    "response_status": "reset_verified",
+    "reset_verified": true,
+    "clean_verified": true,
+    "reset_receipt_id": "dummy-product-site-reset-20260711T230406598360Z-22b30029f453",
+    "fixture_root": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+    "lifecycle_sequence": 3,
+    "response_observed_at_ms": 1783811046604,
+    "response_sequence": 40,
+    "occurred_after_undo": true
+  },
+  "clean_baseline_after_undo": {
+    "status": "GO",
+    "baseline_http_status": 200,
+    "baseline_clean_for_fresh_suite": true,
+    "baseline_dirty_agent_lab_files": [],
+    "dummy_fixture_dirty_files": [],
+    "file_probes": [
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      },
+      {
+        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+        "http_status": 400,
+        "reason_code": "not_found",
+        "missing": true
+      }
+    ],
+    "all_fixture_files_absent": true,
+    "preview_http_status": 404,
+    "preview_missing": true,
+    "lifecycle_sequence": 4,
+    "probe_started_at_ms": 1783811046930,
+    "probe_completed_at_ms": 1783811047423,
+    "probe_started_after_product_reset": true,
+    "verified_after_product_reset": true,
+    "verified_after_reset_response_sequence": 40
+  },
+  "clean_prompt1_rerun": {
+    "antiCheatStatus": "passed",
+    "applyStatus": "performed",
+    "authoritativeStages": {
+      "context": {
+        "status": "GO",
+        "acknowledgement_status": "acknowledged",
+        "broker_status": "GO_ELIGIBLE",
+        "consumption_status": "consumed",
+        "required_context_status": "passed"
+      },
+      "post_apply_verification": {
+        "status": "GO",
+        "raw_status": "passed"
+      },
+      "browser_verification": {
+        "status": "GO",
+        "source": "playwright_direct_preview_plus_backend_managed_playwright_receipt",
+        "real_browser_used": true,
+        "managed_frontend_origin": "https://localhost:3000",
+        "preview_url": "https://localhost:3000/v1/coding/dummy-product-site-preview?lifecycle_browser_proof=1783811071502",
+        "preview_http_status": 200,
+        "product_count": 6,
+        "rendered_card_count": 6,
+        "product_field_matches": [
+          {
+            "fields_present": true,
+            "name": "LumaCart T-Shirt",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Laptop Bag",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Coffee Mug",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Desk Mat",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Mouse Pad",
+            "rendered": true
+          },
+          {
+            "fields_present": true,
+            "name": "LumaCart Pen Set",
+            "rendered": true
+          }
+        ],
+        "rendered_headings": [
+          "LumaCart T-Shirt",
+          "LumaCart Laptop Bag",
+          "LumaCart Coffee Mug",
+          "LumaCart Desk Mat",
+          "LumaCart Mouse Pad",
+          "LumaCart Pen Set"
+        ],
+        "module_script_loaded": true,
+        "stylesheet_loaded": true,
+        "noscript_card_count": 0,
+        "asset_responses": {
+          "/v1/coding/dummy-product-site-preview": 200,
+          "/v1/coding/dummy-product-site-preview/src/main.js": 200,
+          "/v1/coding/dummy-product-site-preview/src/products.js": 200,
+          "/v1/coding/dummy-product-site-preview/src/styles.css": 200
+        },
+        "console_errors": [],
+        "page_errors": [],
+        "request_failures": [],
+        "runtime_error": null,
+        "backend_receipt_bound": true,
+        "backend_browser_engine": "playwright_chromium",
+        "backend_browser_evidence_sha256": "efccd93702326877dbfa461af3ba6517fc0df3fe8b1ca69d9972c29dd3d7b7fe",
+        "backend_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json",
+        "backend_post_apply_rediff_sha256": "8b1ed4a9b81d74fc1bdcce739f45b9bd7d971080cde44cfcc2335ede931d094a",
+        "task_id": "task_fb6c61badaa6"
+      },
+      "anti_cheat": {
+        "status": "GO",
+        "raw_statuses": [
+          "passed"
+        ],
+        "grader_label": "PASS",
+        "grader_labels": [
+          "PASS"
+        ],
+        "trial_result_trust_status": "model_authored_diff_proven",
+        "trial_result_trust_statuses": [
+          "model_authored_diff_proven",
+          "model_authored_diff_proven"
+        ]
+      },
+      "final_receipt": {
+        "status": "GO",
+        "commit_safe": true,
+        "receipt_path": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json",
+        "run_status": "applied",
+        "truth_status": "GO"
+      },
+      "diagnostic_consistency": {
+        "status": "GO",
+        "conflicts": {}
+      }
+    },
+    "browserProof": {
+      "status": "GO",
+      "source": "playwright_direct_preview_plus_backend_managed_playwright_receipt",
+      "real_browser_used": true,
+      "managed_frontend_origin": "https://localhost:3000",
+      "preview_url": "https://localhost:3000/v1/coding/dummy-product-site-preview?lifecycle_browser_proof=1783811071502",
+      "preview_http_status": 200,
+      "product_count": 6,
+      "rendered_card_count": 6,
+      "product_field_matches": [
+        {
+          "fields_present": true,
+          "name": "LumaCart T-Shirt",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Laptop Bag",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Coffee Mug",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Desk Mat",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Mouse Pad",
+          "rendered": true
+        },
+        {
+          "fields_present": true,
+          "name": "LumaCart Pen Set",
+          "rendered": true
+        }
+      ],
+      "rendered_headings": [
+        "LumaCart T-Shirt",
+        "LumaCart Laptop Bag",
+        "LumaCart Coffee Mug",
+        "LumaCart Desk Mat",
+        "LumaCart Mouse Pad",
+        "LumaCart Pen Set"
+      ],
+      "module_script_loaded": true,
+      "stylesheet_loaded": true,
+      "noscript_card_count": 0,
+      "asset_responses": {
+        "/v1/coding/dummy-product-site-preview": 200,
+        "/v1/coding/dummy-product-site-preview/src/main.js": 200,
+        "/v1/coding/dummy-product-site-preview/src/products.js": 200,
+        "/v1/coding/dummy-product-site-preview/src/styles.css": 200
+      },
+      "console_errors": [],
+      "page_errors": [],
+      "request_failures": [],
+      "runtime_error": null,
+      "backend_receipt_bound": true,
+      "backend_browser_engine": "playwright_chromium",
+      "backend_browser_evidence_sha256": "efccd93702326877dbfa461af3ba6517fc0df3fe8b1ca69d9972c29dd3d7b7fe",
+      "backend_backup_manifest": ".spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json",
+      "backend_post_apply_rediff_sha256": "8b1ed4a9b81d74fc1bdcce739f45b9bd7d971080cde44cfcc2335ede931d094a",
+      "task_id": "task_fb6c61badaa6"
+    },
+    "changedFiles": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+    "diagnostics": "selected_prompt_id: coder-001-init-dummy-product-site\nselected_prompt_task_id: task_fb6c61badaa6\nselected_prompt_number: 1\nselected_prompt_title: Init Dummy Product Site\nsubmitted_prompt: make a tiny fake product website project for testing the coder agent. call it LumaCart. put it only in `tests/ui-agent-trials/fixtures/dummy-product-site/`. if that folder doesnt exist create it. return one file block per file using `<file path=\"...\">...</file>` or `<<<FILE: path` delimiters. dont touch the real app, coding page, spiritflix, source_proxy, docs, or root package files.\nfixture_root: tests/ui-agent-trials/fixtures/dummy-product-site/\nallowed_write_root: tests/ui-agent-trials/fixtures/dummy-product-site/**\nprimary_expected_targets: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nexpected_result_state: PASS_DUMMY_PROJECT_INIT\nrun_status: applied\nerror_text: missing: no diagnostic envelope received\nraw_backend_status: completed\ntask_identity_backend_task_id: task_fb6c61badaa6\ntask_identity_selected_prompt_task_id: task_fb6c61badaa6\ntask_identity_target: tests/ui-agent-trials/fixtures/dummy-product-site/\ntask_identity_trace_id: trace_666071e67c534e34\ndiff_provenance_applied_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\ndiff_provenance_approved_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\ndiff_provenance_backend_converted_diff_sha256: not_applicable: backend applied approved diff\ndiff_provenance_changed_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_provenance_diff_source: approved_diff_request_body\ndiff_provenance_provenance_hash_normalization: lf_trailing_newline_v1\napproval_binding_approval_binding_failure_reason: not_applicable: approval_binding_valid\napproval_binding_approval_binding_safe_block: false\napproval_binding_approval_binding_status: valid\napproval_binding_approval_id_algorithm: sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)\napproval_binding_approval_source: canonicalized_preview\napproval_binding_apply_block_layer: not_applicable: apply_succeeded\napproval_binding_apply_block_reason: not_applicable: approval_binding_valid\napproval_binding_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json\napproval_binding_canonical_diff_sha256_at_apply: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_canonical_diff_sha256_before_approval: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_canonicalization_changed: false\napproval_binding_diff_sha256_match: true\napproval_binding_diff_sha256_used_for_apply: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_diff_sha256_used_for_preview: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napproval_binding_expected_approval_id: approval-1df7c41e022d5317\napproval_binding_received_approval_id: approval-1df7c41e022d5317\napproval_binding_safe_block: false\napproval_binding_target_match: true\napproval_binding_target_used_for_apply: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_target_used_for_preview: tests/ui-agent-trials/fixtures/dummy-product-site/\napproval_binding_task_id_match: true\napproval_binding_task_id_used_for_apply: task_fb6c61badaa6\napproval_binding_task_id_used_for_preview: task_fb6c61badaa6\nverification_post_apply_verification_status: verified\nverification_post_apply_verification_reason: post_apply_verification_passed\nverification_preview_verification_status: passed\nverification_manual_browser_check_required: true\nverification_manual_browser_check_done: true\nverification_commit_blockers: missing: backend did not provide field\nverification_verification_required_action: none\nanti_cheat_anti_cheat_status: not_applicable: execute_approved_apply_gate\nanti_cheat_anti_cheat_reasons: not_applicable: backend apply receipt is not the frontend anti-cheat grader\nanti_cheat_grader_result_state: not_applicable: backend_apply_receipt\nanti_cheat_trial_result_trust_status: approval_binding_valid_apply_receipt\nacceptance_gate_acceptance_failures: missing: backend did not provide field\nacceptance_gate_binary_verdict: GO\nacceptance_gate_causal_crosscheck_status: GO\nacceptance_gate_fail_closed_lane_status: GO\nacceptance_gate_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_gate_version: plan5_acceptance_v1\nacceptance_gate_missing_fields: missing: backend did not provide field\nacceptance_gate_phase_verifier_status: GO\nacceptance_gate_plan5_gate_id: plan5_execute_approved_acceptance\nacceptance_gate_plan5_gate_present: true\nacceptance_gate_plan5_gate_version: plan5_acceptance_v1\nacceptance_gate_reason: missing: backend did not provide field\nfinal_truth_summary_commit_safe: true\nfinal_truth_summary_commit_safe_reason: post_apply_verification_passed\nfinal_truth_summary_proof_level: post_apply_verified\nfinal_truth_summary_raw_backend_status: completed\nfinal_truth_summary_recommended_next_action: none\nfinal_truth_summary_run_status: completed\nfinal_truth_summary_block_receipt_path: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json\nfinal_truth_summary_truth_status: GO\nfinal_truth_summary_why_not_go: missing: backend did not provide field\nreason_code: post_apply_verification_required\nchanged_files: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nchecks_run: git apply --check (clean missing workspace)\nverification_status: post-apply verified with browser proof\ngeneration_source: model\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\nmodel_output_classification: model_structured_file_bundle\ntrial_result_trust_status: model_authored_diff_proven\ngrader_anti_cheat_status: passed\nanti_cheat_hard_fail_ids: not_applicable: no anti-cheat hard failures\nanti_cheat_advisory_ids: not_applicable: no anti-cheat advisory findings\nanti_cheat_reasons: missing: backend did not provide field\nraw_model_response_sha256: fe6117cb5d7b3c7e71ecb967f4f7d17bbccac5a2c4369fa01842bee0a86a8898\nmodel_file_bundle_sha256: fafd83a1dd9f95e84af7175781c38553d5f60d622234bbc75e10e3f7d9dd913c\nbackend_converted_diff_sha256: 0534ef36e75debf650c46cc6845cccfaa46a842658178c3e44033849afd108bf\nstructured_bundle_status: validated\nstructured_bundle_parser_stage: patch_verification\nstructured_bundle_file_count: 6\nstructured_bundle_accepted_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\nstructured_bundle_rejected_paths: not_applicable: no rejected paths\nstructured_bundle_rejection_reason: not_applicable: bundle was not rejected\nmodel_output_shape_summary: length=2716; line_count=112; empty=False; has_xml_file_blocks=True; has_delimited_file_blocks=False; has_json_create_file_bundle=False; has_unified_diff_markers=False; has_markdown_fence=False\ndiff_generation_status: produced_diff\ndiff_generation_reason: model_bundle_converted_to_prompt1_create_diff_for_unsatisfied_existing_fixture\ndiff_file_count: 6\ndiff_added_paths: tests/ui-agent-trials/fixtures/dummy-product-site/README.md, tests/ui-agent-trials/fixtures/dummy-product-site/package.json, tests/ui-agent-trials/fixtures/dummy-product-site/index.html, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css\ndiff_skipped_paths: not_applicable: no skipped paths\ndiff_skipped_reasons: not_applicable: no skipped paths\ndiff_filesystem_snapshot_summary: tests/ui-agent-trials/fixtures/dummy-product-site/README.md: exists=True is_file=True size_bytes=135 sha256=1132534902035b5e18e9e0e2c13b9bbfe9e5783d0e828c891158b4c2338fc0fc, tests/ui-agent-trials/fixtures/dummy-product-site/package.json: exists=True is_file=True size_bytes=334 sha256=e13a0a508e3a64103fd0cce5f6cc3628712e45de59b5eec2ac98aec1bcde35e3, tests/ui-agent-trials/fixtures/dummy-product-site/index.html: exists=True is_file=True size_bytes=371 sha256=138ee619e1b24ddfea71a1bf412a42ab386e6f156559e704a3618d53b5d445a5, tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js: exists=True is_file=True size_bytes=362 sha256=ec6ff2d0d5056d18725b5241e9313d82f5816acaf6c488e4388bd7178df9c6a3, tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js: exists=True is_file=True size_bytes=223 sha256=b9266d9988212c3b15cf6cb3fbed0a7eac9bba3e045008066e9d9866e5ee07cb, tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css: exists=True is_file=True size_bytes=149 sha256=d9c195b4ab7303cfbfb66754de85dd7b97baa097a5f9e35a79be46fa57622a8b\npatch_verification_status: passed\npatch_verification_reason: git apply --check passed in clean missing workspace; live workspace drift recorded\ntask_creation_status: persisted_task_id\ntask_creation_elapsed_ms: 120.79\ntask_creation_timeout_stage: not_applicable: task_id_persisted\ntask_creation_last_checkpoint: task_envelope_built\ntask_creation_blocking_subsystem: not_applicable: task_id_persisted\napproved_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\napplied_diff_sha256: 3844b6d70be9742deab505b1580d345021066848e19b054f35bf345e136738a0\nbackup_manifest: .spirit-backups/2026-07-11/approved-diff-2026-07-11T230424_642906_0000/manifest.json\npost_apply_rediff_sha256: 8b1ed4a9b81d74fc1bdcce739f45b9bd7d971080cde44cfcc2335ede931d094a\nprovenance_hash_normalization: lf_trailing_newline_v1\napply_mode: backend_git_apply_with_backup_manifest\nstale_patch_recovered: false\nfallback_used: false\ndiff_source: model_authored_file_bundle_backend_converted_to_diff\ntrial_result_trust_status: model_authored_diff_proven\nstorefront_runtime_status: passed\npreview_behavior_status: PASS_STOREFRONT_RENDERED\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\ncanonical_context_status: passed\ncanonical_context_consumption_status: consumed\ndownstream_context_acknowledgement_status: acknowledged\nrequired_context_status: passed\ncanonical_context_verdict: GO_ELIGIBLE\ncanonical_context_report_hash: 5606bfec9f1d57850180653fe8e78fa665f02ec4968499174c6c5976ae2abbe6\ncanonical_context_blockers: not_applicable: no canonical context blockers\ncanonical_context_acknowledgements: planner, coder, reviewer, verifier, final_receipt_builder\ngeneration_status: passed\npreview_verification_status: passed\napproval_status: valid\napply_status: performed\npost_apply_verification_status: passed\nbrowser_verification_status: passed\nanti_cheat_status: passed\ncommit_safe: true\nfinal_truth_status: GO\nfinal_receipt_status: GO\nrequired_action: none\nscaffold_used: false\ngenerated_diff_by_backend: true\ngrader_result_state: PASS_DUMMY_PROJECT_INIT\ngrader_label: PASS\ngrader_score: 10\ngrader_reason: Bounded model-authored dummy-root result with verification evidence.\ncritical_failures: not_applicable: no grader findings\nfile_scope_status: inside_dummy_root\nprovenance_status: pass_compatible\nrecommended_next_action: Inspect changed files before continuing.\nproduction_time: 18s (started 2026-07-11T23:04:08.137Z, finished 2026-07-11T23:04:26.494Z)\npreview_behavior_status: PASS_STOREFRONT_RENDERED\npreview_visible_text_summary: Managed Chromium rendered 6 LumaCart product cards with name, price, category, and description.\npreview_asset_status: present\npreview_product_count: 6\nstorefront_runtime_status: passed\nstorefront_runtime_engine: playwright_chromium\nbrowser_evidence_source: source_proxy_managed_playwright\nreal_browser_used: true\nstorefront_runtime_product_count: 6\nexisting_dummy_project_summary: LumaCart exists under tests/ui-agent-trials/fixtures/dummy-product-site/ with README.md, index.html, package.json, src/main.js, src/products.js, and src/styles.css. It is not reported as imported into SpiritOS.",
+    "errorText": "missing: no diagnostic envelope received",
+    "rawBackendStatus": "completed",
+    "completedAtMs": 1783811072399,
+    "startedAtMs": 1783811048055,
+    "taskId": "task_fb6c61badaa6",
+    "terminalStatus": "applied"
+  },
+  "lifecycle_order": [
+    "prompt1_initial_run",
+    "manifest_backed_undo",
+    "product_reset_after_undo",
+    "clean_baseline_after_undo",
+    "prompt1_clean_rerun"
+  ]
+}

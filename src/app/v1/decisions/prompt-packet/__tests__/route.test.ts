@@ -56,6 +56,56 @@ function proxyBodyReadFailure(error: Error) {
   } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>;
 }
 
+function mockPrompt1StarterFixture(files: {
+  indexHtml: string;
+  mainJs: string;
+  productsJs: string;
+  stylesCss?: string;
+}) {
+  mockedReadFile.mockImplementation(async (filePath) => {
+    const normalized = String(filePath).replace(/\\/g, "/");
+    if (normalized.endsWith("/README.md")) return "# LumaCart\n";
+    if (normalized.endsWith("/package.json")) return '{"name":"lumacart-dummy","private":true}\n';
+    if (normalized.endsWith("/index.html")) return files.indexHtml;
+    if (normalized.endsWith("/src/main.js")) return files.mainJs;
+    if (normalized.endsWith("/src/products.js")) return files.productsJs;
+    if (normalized.endsWith("/src/styles.css")) return files.stylesCss ?? "body { font-family: system-ui; }\n";
+    throw new Error(`Unexpected fixture read: ${normalized}`);
+  });
+}
+
+const sixProductModule = [
+  "export default [",
+  "  { id: 'one', name: 'One', price: '$1', category: 'A', description: 'First' },",
+  "  { id: 'two', name: 'Two', price: '$2', category: 'B', description: 'Second' },",
+  "  { id: 'three', name: 'Three', price: '$3', category: 'C', description: 'Third' },",
+  "  { id: 'four', name: 'Four', price: '$4', category: 'D', description: 'Fourth' },",
+  "  { id: 'five', name: 'Five', price: '$5', category: 'E', description: 'Fifth' },",
+  "  { id: 'six', name: 'Six', price: '$6', category: 'F', description: 'Sixth' },",
+  "];",
+].join("\n");
+
+const renderingMainJs = [
+  "import products from './products.js';",
+  "const list = document.querySelector('#product-list');",
+  "products.forEach((product) => {",
+  "  const card = document.createElement('article');",
+  "  card.className = 'product-card';",
+  "  card.innerHTML = `<h2>${product.name}</h2><p class=\"price\">${product.price}</p><p class=\"category\">${product.category}</p><p>${product.description}</p>`;",
+  "  list.appendChild(card);",
+  "});",
+].join("\n");
+
+const prompt1RequestBody = {
+  active_task_id: "task-prompt-1",
+  allowed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+  selected_prompt_id: "coder-001-init-dummy-product-site",
+  selected_prompt_number: 1,
+  selected_target: "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+  task: "make a tiny fake product website project for testing the coder agent. call it LumaCart.",
+  wants_implementation: true,
+};
+
 describe("prompt-packet route", () => {
   beforeEach(() => {
     mockedReadFile.mockReset();
@@ -249,6 +299,73 @@ describe("prompt-packet route", () => {
         timeout_stage: "source_proxy_prompt_packet_body_read",
       }),
     );
+  });
+
+  it("does not short-circuit Prompt 1 when the starter files exist but the fixture is a bare page", async () => {
+    mockPrompt1StarterFixture({
+      indexHtml: '<!doctype html><h1>Welcome to LumaCart</h1><script src="src/main.js"></script>',
+      mainJs: "console.log('LumaCart');\n",
+      productsJs: sixProductModule,
+      stylesCss: "body { font-family: system-ui; }\n",
+    });
+    mockedSourceProxyLongJsonFetch.mockResolvedValueOnce(
+      proxyJson({
+        changed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js"],
+        coder_diagnostics: { provider_call_made: true },
+        proposed_diff:
+          "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js\n+render cards",
+        reason_code: "dummy_product_site_create_bundle",
+        status: "preview_ready",
+        target: "tests/ui-agent-trials/fixtures/dummy-product-site/",
+      }),
+    );
+
+    const response = await POST(jsonRequest(prompt1RequestBody));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mockedSourceProxyLongJsonFetch).toHaveBeenCalledWith(
+      "/v1/decisions/prompt-packet",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(body.status).toBe("preview_ready");
+    expect(body.status).not.toBe("already_satisfied");
+    expect(body.reason_code).toBe("dummy_product_site_create_bundle");
+    expect(body.proposed_diff).toContain("render cards");
+  });
+
+  it("returns already-satisfied for Prompt 1 only when the starter fixture renders products at runtime", async () => {
+    mockPrompt1StarterFixture({
+      indexHtml:
+        '<!doctype html><html><body><h1>Welcome to LumaCart</h1><main id="product-list"></main><script type="module" src="src/main.js"></script></body></html>',
+      mainJs: renderingMainJs,
+      productsJs: sixProductModule,
+      stylesCss: ".product-card { display: grid; }\n",
+    });
+
+    const response = await POST(jsonRequest(prompt1RequestBody));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mockedSourceProxyLongJsonFetch).not.toHaveBeenCalled();
+    expect(body.status).toBe("already_satisfied");
+    expect(body.reason_code).toBe("coder_no_changes_needed");
+    expect(body.proposed_diff).toBe("");
+    expect(body.changed_files).toEqual([]);
+    expect(body.diff_source).toBe("already_satisfied_existing_dummy_starter_files");
+    expect(body.checks_run).toEqual([
+      "existing Prompt 1 starter-file validation",
+      "existing Prompt 1 storefront render validation",
+    ]);
+    expect(body.coder_diagnostics).toMatchObject({
+      existing_starter_files_present: true,
+      existing_starter_files_validation: { ok: true },
+      storefront_probe: {
+        preview_behavior_status: "PASS_STOREFRONT_RENDERED",
+        product_count: 6,
+        storefront_runtime_status: "passed",
+      },
+    });
   });
 
   it("returns already-satisfied for Prompt 3 when the fixture already renders product cards", async () => {

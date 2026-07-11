@@ -2,8 +2,10 @@
 export type NormalizedAppliedRunReceipt = {
   allowedFiles: string[];
   appliedAt: string;
+  backupManifest?: string | null;
   changedFiles: string[];
   diff: string;
+  finalTruthStatus?: string | null;
   hermesUsedForThisRun: boolean | null;
   id: string;
   model: string | null;
@@ -19,6 +21,9 @@ export type NormalizedAppliedRunReceipt = {
   staleResolvedAt?: string | null;
   target: string;
   taskId: string;
+  undoReceiptId?: string | null;
+  undoReceiptPath?: string | null;
+  postApplyVerificationStatus?: string | null;
 };
 
 function stringField(record: Record<string, unknown>, ...keys: string[]): string {
@@ -68,8 +73,10 @@ export function normalizeAppliedRunReceiptFromJson(
   return {
     allowedFiles: stringList(item, "allowedFiles", "allowed_files"),
     appliedAt: stringField(item, "appliedAt", "applied_at"),
+    backupManifest: nullableString(item, "backupManifest", "backup_manifest"),
     changedFiles: stringList(item, "changedFiles", "changed_files"),
     diff,
+    finalTruthStatus: nullableString(item, "finalTruthStatus", "final_truth_status"),
     hermesUsedForThisRun: nullableBoolean(item, "hermesUsedForThisRun", "hermes_used_for_this_run"),
     id,
     model: nullableString(item, "model"),
@@ -91,5 +98,12 @@ export function normalizeAppliedRunReceiptFromJson(
     staleResolvedAt: nullableString(item, "staleResolvedAt", "stale_resolved_at"),
     target: stringField(item, "target"),
     taskId: stringField(item, "taskId", "task_id"),
+    undoReceiptId: nullableString(item, "undoReceiptId", "undo_receipt_id"),
+    undoReceiptPath: nullableString(item, "undoReceiptPath", "undo_receipt_path"),
+    postApplyVerificationStatus: nullableString(
+      item,
+      "postApplyVerificationStatus",
+      "post_apply_verification_status",
+    ),
   };
 }

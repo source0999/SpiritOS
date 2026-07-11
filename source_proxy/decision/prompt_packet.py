@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
+from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.context.obsidian import obsidian_context_diagnostics
 from source_proxy.decision.packet_decomposition import build_decomposition_from_brain_switch
 from source_proxy.decision.router import DecisionInput, RouteDecision, decide_route
@@ -51,6 +53,8 @@ class PromptPacketInput:
     brain_switch_recommendation: str | None = None
     task_shape: str | None = None
     evidence_ids: tuple[str, ...] = ()
+    context_downstream_acknowledgements: Mapping[str, Any] = field(default_factory=dict)
+    applicable_context_consumers: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -257,6 +261,28 @@ def _context_metadata_for(
         ]
 
     omitted_paths = _omitted_secret_shaped_paths(context)
+    canonical_context_broker = build_context_broker_report(
+        [
+            {
+                "source": "supplied_context",
+                "considered": True,
+                "status": "used" if context else "skipped",
+                "reason": "supplied_context_included" if context else "no_supplied_context",
+                "required": input_data.needs_codebase_context,
+                "selected": bool(context),
+                "included": bool(context),
+                "consumed": False,
+                "packet": {
+                    "context_inclusion_mode": mode,
+                    "included_paths": included_paths,
+                    "omitted_paths": omitted_paths,
+                    "file_contents_claimed": mode == "supplied_excerpt",
+                },
+            }
+        ],
+        downstream_consumers=input_data.context_downstream_acknowledgements,
+        applicable_consumers=input_data.applicable_context_consumers,
+    )
     return {
         "context_inclusion_mode": mode,
         "included_paths": included_paths,
@@ -265,6 +291,10 @@ def _context_metadata_for(
         "estimated_context_tokens": _estimate_tokens(relevant_context),
         "file_contents_claimed": mode == "supplied_excerpt",
         "memory_context_diagnostics": obsidian_context_diagnostics(),
+        "canonical_context_broker": canonical_context_broker,
+        "canonical_context_report_hash": canonical_context_broker[
+            "canonical_report_hash"
+        ],
     }
 
 

@@ -47,6 +47,7 @@ from source_proxy.planning.architect import (
 )
 from source_proxy.planning.plan import task_spec_from_plan, save_plan
 from source_proxy.tasks.long_running import (
+    _render_coder_prompt_from_packet,
     approval_id_for_approved_diff,
     create_long_running_task,
     execute_approved_long_running_task,
@@ -76,6 +77,54 @@ A_PLUS_FINAL_LABELS = {
     "inconclusive_environment",
     "inconclusive_missing_evidence",
 }
+
+
+def _dummy_prompt1_valid_file_contents() -> dict[str, str]:
+    products = """export const products = [
+  { id: 'desk-lamp', name: 'Desk Lamp', price: 32, category: 'Home', description: 'Warm light for a desk.' },
+  { id: 'coffee-maker', name: 'Coffee Maker', price: 58, category: 'Kitchen', description: 'Small brewer for mornings.' },
+  { id: 'water-bottle', name: 'Water Bottle', price: 18, category: 'Outdoor', description: 'Steel bottle for day trips.' },
+  { id: 'wireless-mouse', name: 'Wireless Mouse', price: 24, category: 'Office', description: 'Compact mouse for laptops.' },
+  { id: 'canvas-tote', name: 'Canvas Tote', price: 16, category: 'Everyday', description: 'Reusable carry bag.' },
+  { id: 'notebook-set', name: 'Notebook Set', price: 12, category: 'Office', description: 'Three soft-cover notebooks.' },
+];
+"""
+    main = """import { products } from './products.js';
+
+const app = document.querySelector('#app');
+app.innerHTML = '<h1>LumaCart</h1>';
+
+products.forEach((product) => {
+  const card = document.createElement('article');
+  card.className = 'product-card';
+  card.innerHTML = `
+    <h2>${product.name}</h2>
+    <p>${product.category}</p>
+    <p>${product.description}</p>
+    <strong>$${product.price}</strong>
+  `;
+  app.appendChild(card);
+});
+"""
+    return {
+        "README.md": "# LumaCart\nIsolated dummy coder trial fixture.\n",
+        "package.json": '{"name":"lumacart-dummy","private":true,"scripts":{"smoke":"node src/main.js"}}\n',
+        "index.html": '<div id="app">LumaCart</div>\n<script type="module" src="./src/main.js"></script>\n',
+        "src/main.js": main,
+        "src/products.js": products,
+        "src/styles.css": "body { font-family: system-ui; }\n.product-card { border: 1px solid #ddd; }\n",
+    }
+
+
+def _dummy_prompt1_valid_files_lines() -> list[tuple[str, list[str]]]:
+    return [
+        (path, content.rstrip("\n").split("\n"))
+        for path, content in _dummy_prompt1_valid_file_contents().items()
+    ]
+
+
+def _dummy_prompt1_valid_files_text() -> list[tuple[str, str]]:
+    return list(_dummy_prompt1_valid_file_contents().items())
 
 
 def _doc_append_task(literal: str = DOC_LITERAL) -> str:
@@ -112,6 +161,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         self._previous_gate_increment = os.environ.get("SOURCE_PROXY_GATE_INCREMENT")
         self._previous_gate_actions = os.environ.get("SOURCE_PROXY_GATE_ALLOWED_ACTIONS")
         self._previous_direct_ollama_proof = os.environ.get("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF")
+        self._previous_fip3_model_lanes = os.environ.get("SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED")
         self._tempdir = tempfile.TemporaryDirectory()
         self.root = Path(self._tempdir.name)
         os.environ["SOURCE_PROXY_LONG_RUNNING_TASKS_DB"] = str(self.root / "tasks.sqlite3")
@@ -132,6 +182,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         os.environ["SOURCE_PROXY_GATE_INCREMENT"] = "test"
         os.environ["SOURCE_PROXY_GATE_ALLOWED_ACTIONS"] = "model_call,apply"
         os.environ["SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF"] = "0"
+        os.environ["SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED"] = "0"
         (self.root / "source_proxy").mkdir(parents=True, exist_ok=True)
         _write(self.root / DOC_TARGET, DOC_BASE)
         os.chdir(self.root)
@@ -147,6 +198,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         self._restore_env("SOURCE_PROXY_GATE_INCREMENT", self._previous_gate_increment)
         self._restore_env("SOURCE_PROXY_GATE_ALLOWED_ACTIONS", self._previous_gate_actions)
         self._restore_env("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF", self._previous_direct_ollama_proof)
+        self._restore_env("SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED", self._previous_fip3_model_lanes)
         self._tempdir.cleanup()
 
     def _restore_env(self, name: str, value: str | None) -> None:
@@ -208,6 +260,7 @@ class CodingRegressionPackTests(unittest.TestCase):
                 "source": "deterministic",
             },
         )
+
         self.assertEqual(out["coder_diagnostics"]["task_spec"]["allowed_files"], [DOC_TARGET])
         self.assertEqual(out["target"], DOC_TARGET)
         self.assertEqual([file["path"] for file in preview["changed_files"]], [DOC_TARGET])
@@ -242,6 +295,23 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertFalse(preview["would_apply_diff"])
         self.assertFalse(preview["would_execute"])
         self.assertEqual((self.root / DOC_TARGET).read_text(encoding="utf-8"), before)
+
+    def test_generic_coder_prompt_uses_broker_render_instead_of_raw_packet_context(self) -> None:
+        plan = self._planned_doc_task()
+        broker_render = (
+            "[architect_context_slices packet; required=True] "
+            '{"slices":[{"path":"docs/phase-8-manual-check.md",'
+            '"safe_excerpt":"BROKER_SELECTED_CONTEXT"}]}'
+        )
+
+        prompt = _render_coder_prompt_from_packet(
+            plan.coder_packet,
+            source_task=_doc_append_task(),
+            context_override=broker_render,
+        )
+
+        self.assertIn("BROKER_SELECTED_CONTEXT", prompt)
+        self.assertNotIn("Approved diffs should require post-apply verification", prompt)
 
     def test_a_plus_receipt_final_label_contract_has_expected_values(self) -> None:
         expected = {
@@ -2986,14 +3056,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         llm_mock.assert_called()
 
     def test_dummy_product_site_create_mode_accepts_model_authored_bundle(self) -> None:
-        files = [
-            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
-            ("package.json", ['{"name":"lumacart-dummy","private":true,"scripts":{"smoke":"node src/main.js"}}']),
-            ("index.html", ["<div id=\"app\">LumaCart</div>", "<script type=\"module\" src=\"./src/main.js\"></script>"]),
-            ("src/main.js", ["import { products } from './products.js';", "console.log('LumaCart', products.length);"]),
-            ("src/products.js", ["export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];"]),
-            ("src/styles.css", ["body { font-family: system-ui; }"]),
-        ]
+        files = _dummy_prompt1_valid_files_lines()
         model_json = json.dumps(
             {
                 "action": "create_file_bundle",
@@ -3019,6 +3082,18 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css", payload["proposed_diff"])
         self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
         self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "json_create_file_bundle")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_status"], "validated")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_parser_stage"], "patch_verification")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_file_count"], 6)
+        self.assertIn(
+            "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+            payload["coder_diagnostics"]["structured_bundle_accepted_paths"],
+        )
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_rejected_paths"], [])
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "produced_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "passed")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_reason"], "git apply --check passed")
+        self.assertIn("new file mode 100644", payload["proposed_diff"])
         self.assertEqual(payload["coder_diagnostics"]["json_repair_source"], "raw")
         self.assertEqual(
             payload["coder_diagnostics"]["trial_result_trust_status"],
@@ -3026,15 +3101,43 @@ class CodingRegressionPackTests(unittest.TestCase):
         )
         self.assertFalse((self.root / "tests/ui-agent-trials/fixtures/dummy-product-site").exists())
 
-    def test_dummy_product_site_create_mode_reports_already_satisfied_when_starter_files_exist(self) -> None:
+    def test_dummy_product_site_create_mode_reports_already_satisfied_when_rendered_storefront_exists(self) -> None:
         fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        products_module = """const products = [
+  { id: 'desk-lamp', name: 'Desk Lamp', price: 32, category: 'Home', description: 'Warm light for a desk.' },
+  { id: 'coffee-maker', name: 'Coffee Maker', price: 58, category: 'Kitchen', description: 'Small brewer for mornings.' },
+  { id: 'water-bottle', name: 'Water Bottle', price: 18, category: 'Outdoor', description: 'Steel bottle for day trips.' },
+  { id: 'wireless-mouse', name: 'Wireless Mouse', price: 24, category: 'Office', description: 'Compact mouse for laptops.' },
+  { id: 'canvas-tote', name: 'Canvas Tote', price: 16, category: 'Everyday', description: 'Reusable carry bag.' },
+  { id: 'notebook-set', name: 'Notebook Set', price: 12, category: 'Office', description: 'Three soft-cover notebooks.' },
+];
+
+export default products;
+"""
+        main_js = """import products from './products.js';
+
+const app = document.querySelector('#app');
+app.innerHTML = '';
+
+products.forEach((product) => {
+  const card = document.createElement('article');
+  card.className = 'product-card';
+  card.innerHTML = `
+    <h2>${product.name}</h2>
+    <p class="category">${product.category}</p>
+    <p class="description">${product.description}</p>
+    <strong>$${product.price}</strong>
+  `;
+  app.appendChild(card);
+});
+"""
         files = {
             "README.md": "# LumaCart\nIsolated dummy coder trial fixture.\n",
             "package.json": '{"name":"lumacart-dummy","private":true}\n',
-            "index.html": '<div id="app">LumaCart</div>\n',
-            "src/main.js": "import { products } from './products.js';\nconsole.log('LumaCart', products.length);\n",
-            "src/products.js": "export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];\n",
-            "src/styles.css": "body { font-family: system-ui; }\n",
+            "index.html": '<div id="app">LumaCart</div>\n<script type="module" src="./src/main.js"></script>\n',
+            "src/main.js": main_js,
+            "src/products.js": products_module,
+            "src/styles.css": "body { font-family: system-ui; }\n.product-card { border: 1px solid #ddd; }\n",
         }
         for path, content in files.items():
             target = fixture_root / path
@@ -3057,19 +3160,131 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["changed_files"], [])
         self.assertTrue(payload["coder_diagnostics"]["existing_starter_files_present"])
         self.assertEqual(
+            payload["coder_diagnostics"]["storefront_probe"]["preview_behavior_status"],
+            "PASS_STOREFRONT_RENDERED",
+        )
+        self.assertEqual(
+            payload["coder_diagnostics"]["storefront_probe"]["storefront_runtime_status"],
+            "passed",
+        )
+        self.assertIn("existing Prompt 1 storefront render validation", payload["checks_run"])
+        self.assertEqual(
             payload["coder_diagnostics"]["trial_result_trust_status"],
-            "existing_files_verified_no_diff_needed",
+            "existing_storefront_render_verified_no_diff_needed",
         )
 
+    def test_dummy_product_site_create_mode_does_not_noop_for_bare_starter_files(self) -> None:
+        fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        existing_files = {
+            "README.md": "# LumaCart\nIsolated dummy coder trial fixture.\n",
+            "package.json": '{"name":"lumacart-dummy","private":true}\n',
+            "index.html": '<h1>Welcome to LumaCart</h1>\n<script src="src/main.js"></script>\n',
+            "src/main.js": "console.log('LumaCart fixture loaded without rendering products.');\n",
+            "src/products.js": """const products = [
+  { id: 'desk-lamp', name: 'Desk Lamp', price: 32, category: 'Home', description: 'Warm light for a desk.' },
+  { id: 'coffee-maker', name: 'Coffee Maker', price: 58, category: 'Kitchen', description: 'Small brewer for mornings.' },
+  { id: 'water-bottle', name: 'Water Bottle', price: 18, category: 'Outdoor', description: 'Steel bottle for day trips.' },
+  { id: 'wireless-mouse', name: 'Wireless Mouse', price: 24, category: 'Office', description: 'Compact mouse for laptops.' },
+  { id: 'canvas-tote', name: 'Canvas Tote', price: 16, category: 'Everyday', description: 'Reusable carry bag.' },
+  { id: 'notebook-set', name: 'Notebook Set', price: 12, category: 'Office', description: 'Three soft-cover notebooks.' },
+];
+
+export default products;
+""",
+            "src/styles.css": "body { font-family: system-ui; }\n",
+        }
+        for path, content in existing_files.items():
+            target = fixture_root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+
+        replacement_files = _dummy_prompt1_valid_files_lines()
+        model_json = json.dumps(
+            {
+                "action": "create_file_bundle",
+                "files": [
+                    {
+                        "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                        "content_lines": lines,
+                    }
+                    for path, lines in replacement_files
+                ],
+            }
+        )
+        llm_mock = mock.Mock(return_value=model_json)
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=llm_mock,
+            model_alias="coder",
+        )
+
+        llm_mock.assert_called()
+        self.assertNotEqual(payload.get("status"), "already_satisfied")
+        self.assertFalse(payload.get("already_satisfied", False))
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "produced_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "passed")
+        self.assertEqual(
+            payload["coder_diagnostics"]["existing_starter_storefront_validation"]["preview_behavior_status"],
+            "FAIL_BARE_PAGE",
+        )
+
+    def test_dummy_product_site_create_mode_forces_create_diff_when_bundle_matches_unsatisfied_disk(self) -> None:
+        fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
+        stale_files = {
+            "README.md": "# LumaCart\nIsolated dummy coder trial fixture.\n",
+            "package.json": '{"name":"lumacart-dummy","private":true}\n',
+            "index.html": '<div id="app">LumaCart</div>\n<script type="module" src="./src/main.js"></script>\n',
+            "src/main.js": "import { products } from './products.js';\nconsole.log('LumaCart', products.length);\n",
+            "src/products.js": "export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];\n",
+            "src/styles.css": "body { font-family: system-ui; }\n",
+        }
+        for path, content in stale_files.items():
+            target = fixture_root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+        model_files = _dummy_prompt1_valid_file_contents()
+        model_json = json.dumps(
+            {
+                "action": "create_file_bundle",
+                "files": [
+                    {
+                        "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                        "content": content,
+                    }
+                    for path, content in model_files.items()
+                ],
+            }
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_json,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        diagnostics = payload["coder_diagnostics"]
+        self.assertEqual(diagnostics["diff_generation_status"], "produced_diff")
+        self.assertEqual(
+            diagnostics["diff_generation_reason"],
+            "model_bundle_converted_to_prompt1_create_diff_for_unsatisfied_existing_fixture",
+        )
+        self.assertTrue(diagnostics["diff_contract_create_fallback_used"])
+        self.assertEqual(diagnostics["diff_file_count"], 6)
+        self.assertEqual(diagnostics["diff_skipped_paths"], [])
+        self.assertEqual(diagnostics["patch_verification_status"], "passed")
+        self.assertEqual(
+            diagnostics["patch_verification_reason"],
+            "git apply --check passed in clean missing workspace; live workspace drift recorded",
+        )
+        self.assertIn("new file mode 100644", payload["proposed_diff"])
+
     def test_dummy_product_site_create_mode_accepts_xml_file_blocks(self) -> None:
-        files = [
-            ("README.md", "# LumaCart\nIsolated dummy coder trial fixture."),
-            ("package.json", '{"name":"lumacart-dummy","private":true}'),
-            ("index.html", '<div id="app">LumaCart</div>'),
-            ("src/main.js", "import { products } from './products.js';\nconsole.log('LumaCart', products.length);"),
-            ("src/products.js", "export const products = [{ id: 'lamp', name: 'Desk Lamp', price: 32 }];"),
-            ("src/styles.css", "body { font-family: system-ui; }"),
-        ]
+        files = _dummy_prompt1_valid_files_text()
         model_blocks = "\n".join(
             f'<file path="tests/ui-agent-trials/fixtures/dummy-product-site/{path}">\n{content}\n</file>'
             for path, content in files
@@ -3089,6 +3304,28 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
         self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "xml_file_blocks")
         self.assertEqual(payload["coder_diagnostics"]["file_block_repair_source"], "xml_file_blocks")
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "produced_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "passed")
+
+    def test_dummy_product_site_create_mode_accepts_delimited_file_blocks(self) -> None:
+        files = _dummy_prompt1_valid_files_text()
+        model_blocks = "\n".join(
+            f"<<<FILE: tests/ui-agent-trials/fixtures/dummy-product-site/{path}\n{content}\n>>>"
+            for path, content in files
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_blocks,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "delimited_file_blocks")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_file_count"], 6)
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "produced_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "passed")
 
     def test_dummy_product_site_create_mode_times_out_cleanly(self) -> None:
         def timed_out(_prompt: str, _alias: str) -> str:
@@ -3130,6 +3367,10 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(payload["coder_blocked"])
         self.assertIn("blacklist keyword rejected: token", payload["needed_context"])
         self.assertNotIn("diff --git", payload["proposed_diff"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_status"], "rejected")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_parser_stage"], "content_validation")
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "blocked_no_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "not_run")
 
     def test_dummy_product_site_create_mode_blocks_too_similar_repair(self) -> None:
         rejected = "not a bundle"
@@ -3145,6 +3386,9 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["reason_code"], "coder_file_bundle_validation_failed")
         self.assertTrue(payload["coder_diagnostics"]["repair_attempted"])
         self.assertEqual(payload["coder_diagnostics"]["parse_error_message"], "repair_response_too_similar_to_rejected_response")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_status"], "malformed")
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "blocked_no_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "not_run")
         self.assertLess(
             payload["coder_diagnostics"]["repair_character_variance"],
             payload["coder_diagnostics"]["repair_similarity_guard_min_variance"],
@@ -3174,16 +3418,13 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["reason_code"], "coder_file_bundle_validation_failed")
         self.assertTrue(payload["coder_blocked"])
         self.assertIn("root package mutation rejected: package.json", payload["needed_context"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_status"], "rejected")
+        self.assertIn("package.json", payload["coder_diagnostics"]["structured_bundle_rejected_paths"])
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "blocked_no_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "not_run")
 
     def test_dummy_product_site_create_mode_repairs_invalid_local_json_with_model_retry(self) -> None:
-        files = [
-            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
-            ("package.json", ['{"name":"lumacart-dummy","private":true}']),
-            ("index.html", ["<div id=\"app\">LumaCart</div>"]),
-            ("src/main.js", ["console.log('LumaCart');"]),
-            ("src/products.js", ["export const products = [];"]),
-            ("src/styles.css", ["body { font-family: system-ui; }"]),
-        ]
+        files = _dummy_prompt1_valid_files_lines()
         valid_json = json.dumps(
             {
                 "action": "create_file_bundle",
@@ -3218,18 +3459,14 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
         self.assertTrue(payload["coder_diagnostics"]["parser_repair_used"])
         self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "json_create_file_bundle")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_parser_stage"], "patch_verification")
+        self.assertEqual(payload["coder_diagnostics"]["diff_generation_status"], "produced_diff")
+        self.assertEqual(payload["coder_diagnostics"]["patch_verification_status"], "passed")
         self.assertIn("tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js", payload["changed_files"])
 
     def test_prompt_packet_coder_001_uses_create_mode_not_readme_replacement(self) -> None:
         client = self._decision_client()
-        files = [
-            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
-            ("package.json", ['{"name":"lumacart-dummy","private":true}']),
-            ("index.html", ["<div id=\"app\">LumaCart</div>"]),
-            ("src/main.js", ["console.log('LumaCart');"]),
-            ("src/products.js", ["export const products = [];"]),
-            ("src/styles.css", ["body { font-family: system-ui; }"]),
-        ]
+        files = _dummy_prompt1_valid_files_lines()
 
         with (
             mock.patch.dict(os.environ, {"SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED": "1"}),
@@ -3282,6 +3519,136 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(payload["diagnostics_summary"]["content_validation"]["ok"], True)
         self.assertEqual(payload["diagnostics_summary"]["structured_honesty_gate"]["status"], "passed")
 
+    def test_prompt_packet_coder_001_ui_target_path_does_not_require_design_context(
+        self,
+    ) -> None:
+        client = self._decision_client()
+        files = _dummy_prompt1_valid_files_lines()
+        model_payload = json.dumps(
+            {
+                "action": "create_file_bundle",
+                "files": [
+                    {
+                        "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                        "content_lines": lines,
+                    }
+                    for path, lines in files
+                ],
+            }
+        )
+
+        with (
+            mock.patch.dict(os.environ, {"SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED": "1"}),
+            mock.patch("source_proxy.api.decision._run_fip4_qwen_coder") as fip4_mock,
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet") as fip3_mock,
+            mock.patch(
+                "source_proxy.tasks.long_running.available_model_aliases",
+                return_value={"coder"},
+            ),
+            mock.patch(
+                "source_proxy.tasks.long_running._call_dummy_product_site_llm_raw",
+                return_value=model_payload,
+            ) as model_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": (
+                        "make a tiny fake product website project for testing the coder agent. "
+                        "call it LumaCart. put it only in "
+                        "`tests/ui-agent-trials/fixtures/dummy-product-site/`."
+                    ),
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
+                    "selected_prompt_id": "coder-001-init-dummy-product-site",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        model_mock.assert_called()
+        fip4_mock.assert_not_called()
+        fip3_mock.assert_not_called()
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        broker = payload["canonical_context_broker"]
+        design = next(
+            source
+            for source in broker["sources_considered"]
+            if source["source"] == "design"
+        )
+        self.assertEqual(design["status"], "blocked")
+        self.assertFalse(design["required"])
+        self.assertFalse(design["selected"])
+        self.assertFalse(design["included"])
+        self.assertFalse(design["consumed"])
+        self.assertNotIn(
+            "required_context_blocked:design",
+            broker["required_context_blockers"],
+        )
+        planner = broker["downstream_acknowledgements"]["planner"]
+        self.assertTrue(planner["applicable"])
+        self.assertTrue(planner["acknowledged"])
+        self.assertTrue(planner["evidence"])
+        self.assertIn("cartographer", planner["sources"])
+
+    def test_prompt_packet_explicit_visual_task_requires_design_context_before_model(
+        self,
+    ) -> None:
+        client = self._decision_client()
+
+        with (
+            mock.patch.dict(os.environ, {"SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED": "1"}),
+            mock.patch("source_proxy.api.decision._run_fip4_qwen_coder") as fip4_mock,
+            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet") as fip3_mock,
+            mock.patch(
+                "source_proxy.tasks.long_running._call_dummy_product_site_llm_raw",
+            ) as raw_model_mock,
+            mock.patch("source_proxy.tasks.long_running._call_coder_llm") as model_mock,
+        ):
+            response = client.post(
+                "/v1/decisions/prompt-packet",
+                json={
+                    "task": "Design the LumaCart storefront UI for this coder regression fixture.",
+                    "selected_target": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                    "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
+                    "wants_implementation": True,
+                    "needs_codebase_context": True,
+                    "trial_mode": "live_apply",
+                    "expected_result_state": "PASS_DUMMY_PROJECT_INIT",
+                    "selected_prompt_id": "coder-001-init-dummy-product-site",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        raw_model_mock.assert_not_called()
+        model_mock.assert_not_called()
+        fip4_mock.assert_not_called()
+        fip3_mock.assert_not_called()
+        self.assertEqual(payload["reason_code"], "required_context_blocked")
+        broker = payload["canonical_context_broker"]
+        design = next(
+            source
+            for source in broker["sources_considered"]
+            if source["source"] == "design"
+        )
+        self.assertEqual(design["status"], "blocked")
+        self.assertEqual(design["reason"], "design_context_unavailable")
+        self.assertTrue(design["required"])
+        self.assertFalse(design["selected"])
+        self.assertFalse(design["included"])
+        self.assertFalse(design["consumed"])
+        self.assertEqual(design["acknowledged_by"], [])
+        self.assertEqual(design["missing_acknowledgements"], ["planner"])
+        self.assertIn(
+            "required_context_blocked:design",
+            broker["required_context_blockers"],
+        )
+
     def test_prompt_packet_coder_002_builds_product_data_bundle(self) -> None:
         client = self._decision_client()
         fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"
@@ -3330,7 +3697,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         payload = response.json()
         fip4_mock.assert_not_called()
         fip3_mock.assert_not_called()
-        self.assertEqual(payload["status"], "preview_ready")
+        self.assertEqual(payload["status"], "preview_ready", payload)
         self.assertEqual(payload["reason_code"], "dummy_product_site_prompt2_bundle")
         self.assertEqual(payload["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js")
         self.assertEqual(payload["changed_files"], ["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"])
@@ -3501,7 +3868,7 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         payload = response.json()
         self.assertNotEqual(payload["reason_code"], "coder_packet_missing_context")
-        self.assertEqual(payload["status"], "preview_ready")
+        self.assertEqual(payload["status"], "preview_ready", payload)
         self.assertEqual(payload["target"], "tests/ui-agent-trials/fixtures/dummy-product-site/")
         self.assertIn('<script type="module" src="src/main.js"></script>', payload["proposed_diff"])
         self.assertIn("import products from './products.js';", payload["proposed_diff"])
@@ -3530,7 +3897,14 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertTrue(str(diagnostics["source_proxy_run_id"]).startswith("prompt3-"))
         self.assertEqual(diagnostics["model_alias"], "coder")
         self.assertGreater(diagnostics["prompt_context_byte_size"], 0)
-        self.assertEqual(diagnostics["context_slice_count"], 4)
+        self.assertGreaterEqual(diagnostics["context_slice_count"], 4)
+        self.assertTrue(
+            any(
+                str(item.get("path") or "").startswith("context://")
+                for item in diagnostics["context_slices"]
+                if isinstance(item, dict)
+            )
+        )
         self.assertEqual(diagnostics["parse_status"], "passed")
         self.assertTrue(diagnostics["diff_produced"])
         self.assertTrue(diagnostics["apply_attempted"])
@@ -3637,14 +4011,7 @@ class CodingRegressionPackTests(unittest.TestCase):
 
     def test_prompt_packet_coder_001_accepts_xml_file_blocks_and_reports_contract(self) -> None:
         client = self._decision_client()
-        files = [
-            ("README.md", "# LumaCart\nIsolated dummy coder trial fixture."),
-            ("package.json", '{"name":"lumacart-dummy","private":true}'),
-            ("index.html", '<div id="app">LumaCart</div>'),
-            ("src/main.js", "console.log('LumaCart');"),
-            ("src/products.js", "export const products = [];"),
-            ("src/styles.css", "body { font-family: system-ui; }"),
-        ]
+        files = _dummy_prompt1_valid_files_text()
         model_blocks = "\n".join(
             f'<file path="tests/ui-agent-trials/fixtures/dummy-product-site/{path}">\n{content}\n</file>'
             for path, content in files
@@ -3682,14 +4049,7 @@ class CodingRegressionPackTests(unittest.TestCase):
 
     def test_prompt_packet_coder_001_create_mode_can_use_cloud_alias(self) -> None:
         client = self._decision_client()
-        files = [
-            ("README.md", ["# LumaCart", "Isolated dummy coder trial fixture."]),
-            ("package.json", ['{"name":"lumacart-dummy","private":true}']),
-            ("index.html", ["<div id=\"app\">LumaCart</div>"]),
-            ("src/main.js", ["console.log('LumaCart');"]),
-            ("src/products.js", ["export const products = [];"]),
-            ("src/styles.css", ["body { font-family: system-ui; }"]),
-        ]
+        files = _dummy_prompt1_valid_files_lines()
 
         with (
             mock.patch.dict(os.environ, {"SOURCE_PROXY_CODER_MODEL_ALIAS": "coder"}),

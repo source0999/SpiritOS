@@ -45,11 +45,11 @@ describe("coding dummy-product-site preview handler", () => {
     expect(resolveFixturePath("C:/Windows/system32")).toBeNull();
   });
 
-  it("serves the LumaCart index.html with server-rendered product cards so the storefront is visible", async () => {
+  it("serves the model-authored index without injecting product cards", async () => {
     mockedReadFile.mockImplementation(async (target: unknown) => {
       const p = String(target).replace(/\\/g, "/");
       if (p.endsWith("index.html")) {
-        return '<!doctype html><html><head><title>LumaCart</title><link rel="stylesheet" href="src/styles.css"></head><body><header><h1>Welcome to LumaCart</h1></header><main id="product-list"></main><script src="src/main.js"></script></body></html>';
+        return '<!doctype html><html><head><title>LumaCart</title><link rel="stylesheet" href="src/styles.css"></head><body><header><h1>Welcome to LumaCart</h1></header><main id="product-list"></main><script type="module" src="src/main.js"></script></body></html>';
       }
       if (p.endsWith("src/products.js")) {
         return "const products = [\n  { name: 'Product A', category: 'Demo', description: 'This is product A.', price: 19.99 },\n  { name: 'Product B', category: 'Demo', description: 'This is product B.', price: 29.99 },\n  { name: 'Product C', category: 'Demo', description: 'This is product C.', price: 9.99 },\n  { name: 'Product D', category: 'Demo', description: 'This is product D.', price: 12.99 },\n  { name: 'Product E', category: 'Demo', description: 'This is product E.', price: 14.99 },\n  { name: 'Product F', category: 'Demo', description: 'This is product F.', price: 16.99 }\n];\nexport default products;";
@@ -69,12 +69,12 @@ describe("coding dummy-product-site preview handler", () => {
     const text = await response.text();
     // Static heading still present.
     expect(text).toContain("<h1>Welcome to LumaCart</h1>");
-    // Server-rendered cards prove the storefront content is visible without client JS.
-    expect(text).toContain('class="product-card"');
-    expect(text).toContain("Product A");
-    expect(text).toContain("Product B");
-    expect(text).toContain("$19.99");
-    // The module script is still loaded as type=module so the interactive path is preserved.
+    // The preview route must not synthesize cards from products.js. Runtime proof belongs to the
+    // managed Chromium verifier and must fail if the model-authored module does not render.
+    expect(text).not.toContain('class="product-card"');
+    expect(text).not.toContain("Product A");
+    expect(text).not.toContain("<noscript>");
+    // The model-authored client module remains the only rendering path.
     expect(text).toContain('href="/v1/coding/dummy-product-site-preview/src/styles.css"');
     expect(text).toMatch(
       /<script\b[^>]*type="module"[^>]*src="\/v1\/coding\/dummy-product-site-preview\/src\/main\.js"/,
@@ -116,6 +116,18 @@ describe("coding dummy-product-site preview handler", () => {
     const response = await serveFixtureAsset(null);
     const text = await response.text();
     expect(text).toContain('type="application/json"');
+    expect(text).not.toContain('type="module"');
+  });
+
+  it("does not repair a broken classic script into a module", async () => {
+    mockedReadFile.mockResolvedValueOnce(
+      '<html><body><div id="app"></div><script src="src/main.js"></script></body></html>',
+    );
+    const response = await serveFixtureAsset(null);
+    const text = await response.text();
+    expect(text).toContain(
+      '<script src="/v1/coding/dummy-product-site-preview/src/main.js">',
+    );
     expect(text).not.toContain('type="module"');
   });
 });

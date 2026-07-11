@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sqlite3
+import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -20,6 +22,7 @@ from source_proxy.tasks.long_running import (
     list_long_running_tasks,
     record_post_apply_verification,
     reject_long_running_task_plan,
+    undo_last_approved_change,
     update_long_running_task,
 )
 
@@ -55,6 +58,9 @@ class LongRunningTaskVerificationRequest(BaseModel):
     confirm_no_unintended_files: bool = False
     manual_browser_check_done: bool = False
     run_code_verification: bool = False
+    verification_profile: str | None = Field(default=None, max_length=120)
+    run_snapshot_verification: bool = False
+    browser_evidence: dict[str, Any] | None = None
     skip_reason: str | None = Field(default=None, max_length=1000)
     verification_note: str | None = Field(default=None, max_length=1000)
 
@@ -62,6 +68,12 @@ class LongRunningTaskVerificationRequest(BaseModel):
 class LongRunningTaskSelectedDummyApplyRequest(BaseModel):
     changed_files: list[str] = Field(default_factory=list)
     reason_code: str = Field(default="selected_dummy_apply_completed", max_length=120)
+
+
+class LongRunningTaskUndoRequest(BaseModel):
+    confirm_undo: bool
+    expected_backup_manifest: str = Field(min_length=1, max_length=2000)
+    requested_by: str = Field(default="coding-ui", max_length=120)
 
 
 class LongRunningTaskRejectPlanRequest(BaseModel):
@@ -74,12 +86,32 @@ class LongRunningTaskRejectPlanRequest(BaseModel):
 async def long_running_task_create(
     request: LongRunningTaskCreateRequest,
 ) -> dict[str, Any]:
+    started = time.perf_counter()
     try:
-        return create_long_running_task(request.description, request.steps)
+        return create_long_running_task(
+            request.description,
+            request.steps,
+            run_queue_checks=False,
+        )
     except LongRunningTaskError as error:
+        elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
         raise HTTPException(
             status_code=400,
-            detail={"error": str(error), "reason_code": error.reason_code},
+            detail={
+                "error": str(error),
+                "reason_code": error.reason_code,
+                "task_creation_status": "blocked_before_task_id",
+                "task_creation_elapsed_ms": elapsed_ms,
+                "task_creation_timeout_stage": "not_applicable: validation_error",
+                "task_creation_last_checkpoint": "request_validated",
+                "task_creation_blocking_subsystem": "source_proxy_long_running_task_route",
+            },
+        ) from error
+    except sqlite3.Error as error:
+        elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
+        raise HTTPException(
+            status_code=503,
+            detail=_task_store_unavailable_envelope(error, elapsed_ms=elapsed_ms),
         ) from error
 
 
@@ -88,10 +120,107 @@ async def long_running_task_queue(
     include_completed: bool = Query(default=True),
     limit: int = Query(default=25, ge=1, le=100),
 ) -> dict[str, Any]:
-    return list_long_running_tasks(
-        include_completed=include_completed,
-        limit=limit,
+    try:
+        return list_long_running_tasks(
+            include_completed=include_completed,
+            limit=limit,
+        )
+    except sqlite3.Error as error:
+        raise HTTPException(
+            status_code=503,
+            detail=_task_store_unavailable_envelope(error),
+        ) from error
+
+
+def _task_store_unavailable_envelope(
+    error: sqlite3.Error,
+    *,
+    elapsed_ms: float | None = None,
+) -> dict[str, Any]:
+    message = str(error) or error.__class__.__name__
+    reason_code = (
+        "task_store_sqlite_locked"
+        if "locked" in message.lower()
+        else "task_store_unavailable"
     )
+    now = "not_recorded: task_store_unavailable_before_task_id"
+    return {
+        "stage_id": "source_proxy.long_running_task_store",
+        "subsystem": "source_proxy_backend",
+        "task_id": "missing: task_store_unavailable_before_task_id",
+        "selected_prompt_task_id": "missing: task_store_unavailable_before_task_id",
+        "status": "blocked",
+        "truth_status": "BLOCKED_SAFE",
+        "safe_block": True,
+        "error": "Source Proxy task store is unavailable before task creation.",
+        "error_code": reason_code,
+        "reason_code": reason_code,
+        "human_message": "Source Proxy could not create or read the long-running task store.",
+        "machine_reason": message,
+        "apply_block_layer": "task_store_before_model_call",
+        "task_creation_status": "blocked_before_task_id",
+        "task_creation_elapsed_ms": elapsed_ms,
+        "task_creation_timeout_stage": "not_applicable: task_store_unavailable",
+        "task_creation_last_checkpoint": "task_store_write",
+        "task_creation_blocking_subsystem": "source_proxy_long_running_task_store",
+        "recommended_next_action": (
+            "Inspect the long-running task SQLite store path and live process locks, "
+            "then retry the selected prompt after the task route returns a task id."
+        ),
+        "approval_binding": {
+            "approval_binding_status": "not_run: task_store_unavailable_before_task_id",
+            "apply_block_layer": "task_store_before_model_call",
+            "safe_block": True,
+        },
+        "diff_provenance": {
+            "approved_diff_sha256": now,
+            "applied_diff_sha256": "not_applicable: apply_blocked_before_task_id",
+        },
+        "anti_cheat": {
+            "anti_cheat_status": "not_run",
+            "anti_cheat_reasons": ["task_store_unavailable_before_model_call"],
+            "grader_result_state": "not_applicable: task_store_unavailable_before_task_id",
+        },
+        "acceptance_gate": {
+            "binary_verdict": "NO-GO",
+            "phase_verifier_status": "skipped_with_reason",
+            "reason": reason_code,
+        },
+        "verification": {
+            "post_apply_verification_status": "skipped_due_to_task_store_unavailable",
+        },
+        "final_truth_summary": {
+            "commit_safe": False,
+            "raw_backend_status": "task_store_unavailable",
+            "run_status": "blocked",
+            "truth_status": "BLOCKED_SAFE",
+            "why_not_go": "task store failed before model call and before task id creation",
+        },
+        "unavailable_fields": [
+            {
+                "field": "task_id",
+                "reason": "task store failed before durable task id creation",
+            },
+            {
+                "field": "source_proxy_apply_receipt",
+                "reason": "apply did not run because task creation failed",
+            },
+        ],
+        "diagnostic_envelope": {
+            "stage_id": "source_proxy.long_running_task_store",
+            "subsystem": "source_proxy_backend",
+            "truth_status": "BLOCKED_SAFE",
+            "safe_block": True,
+            "reason_code": reason_code,
+            "machine_reason": message,
+            "apply_block_layer": "task_store_before_model_call",
+            "task_creation_status": "blocked_before_task_id",
+            "task_creation_elapsed_ms": elapsed_ms,
+            "task_creation_timeout_stage": "not_applicable: task_store_unavailable",
+            "task_creation_last_checkpoint": "task_store_write",
+            "task_creation_blocking_subsystem": "source_proxy_long_running_task_store",
+        },
+    }
 
 
 @router.post("/long-running/{task_id}/advance")
@@ -134,9 +263,12 @@ async def long_running_task_execute_approved(
             test_command=request.test_command,
         )
     except LongRunningTaskError as error:
+        detail = {"error": str(error), "reason_code": error.reason_code}
+        if error.diagnostics:
+            detail.update(error.diagnostics)
         raise HTTPException(
             status_code=422,
-            detail={"error": str(error), "reason_code": error.reason_code},
+            detail=detail,
         ) from error
 
 
@@ -158,6 +290,8 @@ async def long_running_task_stream(
                     "error": str(error),
                     "reason_code": error.reason_code,
                 }
+                if error.diagnostics:
+                    error_payload.update(error.diagnostics)
                 yield f"event: error\ndata: {json.dumps(error_payload)}\n\n"
                 return
 
@@ -181,9 +315,16 @@ async def long_running_task_stream(
 
             status = payload["task"]["status"]
             if status in {
+                "blocked",
+                "blocked_approval_mismatch",
+                "blocked_after_retries",
+                "blocked_by_review",
                 "cancelled",
                 "completed",
+                "coder_config_blocked",
                 "failed_needs_human",
+                "needs_context",
+                "waiting_for_operator_browser",
                 "applied_needs_verification",
                 "applied_verification_failed",
                 "verification_failed",
@@ -283,6 +424,9 @@ async def long_running_task_verification(
             confirm_no_unintended_files=request.confirm_no_unintended_files,
             manual_browser_check_done=request.manual_browser_check_done,
             run_code_verification=request.run_code_verification,
+            verification_profile=request.verification_profile,
+            run_snapshot_verification=request.run_snapshot_verification,
+            browser_evidence=request.browser_evidence,
             skip_reason=request.skip_reason,
             verification_note=request.verification_note,
         )
@@ -299,6 +443,25 @@ async def long_running_task_verify(
     request: LongRunningTaskVerificationRequest,
 ) -> dict[str, Any]:
     return await long_running_task_verification(task_id, request)
+
+
+@router.post("/long-running/{task_id}/undo")
+async def long_running_task_undo(
+    task_id: str,
+    request: LongRunningTaskUndoRequest,
+) -> dict[str, Any]:
+    try:
+        return undo_last_approved_change(
+            task_id,
+            confirm_undo=request.confirm_undo,
+            expected_backup_manifest=request.expected_backup_manifest,
+            requested_by=request.requested_by,
+        )
+    except LongRunningTaskError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": str(error), "reason_code": error.reason_code},
+        ) from error
 
 
 @router.post("/long-running/{task_id}/cancel")

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import json
+import shutil
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -32,6 +36,8 @@ BOUNDED_DIFF_PREVIEW_OLD_PHRASE = "Read-only preview passed."
 BOUNDED_DIFF_PREVIEW_NEW_PHRASE = (
     "Read-only preview passed. Human review remains required before apply."
 )
+DUMMY_PRODUCT_SITE_FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site"
+DUMMY_PRODUCT_SITE_RESET_RECEIPT_ROOT = "data/source-proxy"
 
 
 class CodexAdapterRequest(BaseModel):
@@ -71,6 +77,156 @@ async def codex_adapter(request: CodexAdapterRequest) -> dict[str, Any]:
 @router.post("/bounded-diff-preview")
 async def bounded_diff_preview(request: BoundedDiffPreviewRequest) -> dict[str, Any]:
     return build_bounded_diff_preview(request)
+
+
+@router.post("/dummy-product-site/reset")
+async def reset_dummy_product_site_fixture_endpoint() -> dict[str, Any]:
+    try:
+        return reset_dummy_product_site_fixture(Path.cwd())
+    except ValueError as error:
+        raise HTTPException(
+            status_code=409,
+            detail=_blocked_error_detail(
+                str(error),
+                getattr(error, "reason_code", "unsafe_reset_target"),
+            ),
+        ) from error
+    except OSError as error:
+        raise HTTPException(
+            status_code=500,
+            detail=_blocked_error_detail(
+                "The dummy product site was reset, but its receipt could not be persisted.",
+                "reset_receipt_write_failed",
+            ),
+        ) from error
+
+
+def reset_dummy_product_site_fixture(workspace_root: Path) -> dict[str, Any]:
+    """Remove only the fixed dummy fixture and persist the verified result."""
+
+    expected_root = "tests/ui-agent-trials/fixtures/dummy-product-site"
+    normalized_root = normalize_repo_path_candidate(DUMMY_PRODUCT_SITE_FIXTURE_ROOT).rstrip("/")
+    if normalized_root != expected_root:
+        raise _request_error(
+            "Dummy product site reset target does not match the fixed fixture root.",
+            "unsafe_reset_target",
+        )
+
+    workspace = workspace_root.resolve()
+    finding = unsafe_target_finding(normalized_root, workspace_root=workspace)
+    if finding is not None:
+        raise _request_error(finding.message, "unsafe_reset_target")
+
+    lexical_target = workspace.joinpath(*normalized_root.split("/"))
+    _reject_linked_reset_path(workspace, normalized_root)
+    target = lexical_target.resolve()
+    expected_target = (workspace / expected_root).resolve()
+    if target != expected_target or workspace not in target.parents:
+        raise _request_error(
+            "Resolved dummy product site reset target escaped the workspace.",
+            "unsafe_reset_target",
+        )
+
+    existed = lexical_target.exists()
+    fixture_root = f"{expected_root}/"
+    removed_paths: list[str] = []
+    if existed:
+        if not lexical_target.is_dir():
+            raise _request_error(
+                "Dummy product site reset target is not a normal directory.",
+                "unsafe_reset_target",
+            )
+        try:
+            shutil.rmtree(lexical_target)
+        except OSError as error:
+            raise _request_error(
+                "Dummy product site reset could not remove the fixed fixture.",
+                "reset_remove_failed",
+            ) from error
+        removed_paths.append(fixture_root)
+
+    clean_verified = not lexical_target.exists() and not _path_is_link_like(lexical_target)
+    if not clean_verified:
+        raise _request_error(
+            "Dummy product site reset could not verify a clean fixture state.",
+            "reset_clean_verification_failed",
+        )
+
+    recorded_at = datetime.now(timezone.utc)
+    reset_receipt_id = (
+        f"dummy-product-site-reset-{recorded_at.strftime('%Y%m%dT%H%M%S%fZ')}-"
+        f"{uuid4().hex[:12]}"
+    )
+    result = {
+        "status": "reset_verified",
+        "reset_verified": True,
+        "fixture_root": fixture_root,
+        "existed": existed,
+        "removed_paths": removed_paths,
+        "clean_verified": clean_verified,
+        "reset_receipt_id": reset_receipt_id,
+    }
+    _write_dummy_product_site_reset_receipt(
+        workspace=workspace,
+        recorded_at=recorded_at,
+        result=result,
+    )
+    return result
+
+
+def _write_dummy_product_site_reset_receipt(
+    *,
+    workspace: Path,
+    recorded_at: datetime,
+    result: dict[str, Any],
+) -> None:
+    _reject_linked_reset_path(workspace, DUMMY_PRODUCT_SITE_RESET_RECEIPT_ROOT)
+    receipt_root = (workspace / DUMMY_PRODUCT_SITE_RESET_RECEIPT_ROOT).resolve()
+    try:
+        receipt_root.relative_to(workspace)
+    except ValueError as error:
+        raise _request_error(
+            "Dummy product site reset receipt path escaped the workspace.",
+            "unsafe_reset_receipt_target",
+        ) from error
+
+    reset_receipt_id = str(result["reset_receipt_id"])
+    receipt_root.mkdir(parents=True, exist_ok=True)
+    receipt_path = receipt_root / f"{reset_receipt_id}.json"
+    temporary_path = receipt_root / f".{reset_receipt_id}.{uuid4().hex}.tmp"
+    receipt = {
+        "receipt_type": "dummy_product_site_reset.v1",
+        "recorded_at": recorded_at.isoformat().replace("+00:00", "Z"),
+        **result,
+        "scope": {
+            "fixed_fixture_only": True,
+            "generic_cleanup_tasks_started": False,
+        },
+    }
+    try:
+        temporary_path.write_text(
+            json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        temporary_path.replace(receipt_path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def _reject_linked_reset_path(workspace: Path, relative_path: str) -> None:
+    current = workspace
+    for part in relative_path.split("/"):
+        current = current / part
+        if _path_is_link_like(current):
+            raise _request_error(
+                "Dummy product site reset paths may not contain links or junctions.",
+                "unsafe_reset_target",
+            )
+
+
+def _path_is_link_like(path: Path) -> bool:
+    is_junction = getattr(path, "is_junction", None)
+    return path.is_symlink() or bool(is_junction and is_junction())
 
 
 def build_codex_adapter_preview(request: CodexAdapterRequest) -> dict[str, Any]:

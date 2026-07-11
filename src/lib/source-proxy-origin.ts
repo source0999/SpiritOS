@@ -1,4 +1,6 @@
 import { Agent, fetch } from "undici";
+import http from "node:http";
+import https from "node:https";
 
 // ── Source proxy URL for Next.js → FastAPI hops ─────────────────────────────
 // `proxy:dev` = HTTP; `proxy:https` = HTTPS on the same port. Without
@@ -52,6 +54,116 @@ function longJsonDispatcherForBase(base: string) {
 }
 
 type UndiciFetchInit = NonNullable<Parameters<typeof fetch>[1]>;
+
+type SourceProxyFastJsonFetchOptions = {
+  perCandidateTimeoutMs?: number;
+};
+
+type NativeFastJsonBody = string | Buffer | Uint8Array;
+
+function sourceProxyFastJsonCandidateTimeoutMs(
+  options: SourceProxyFastJsonFetchOptions = {},
+) {
+  if (options.perCandidateTimeoutMs != null) {
+    return Math.max(250, options.perCandidateTimeoutMs);
+  }
+  const raw = Number(process.env.SOURCE_PROXY_FAST_JSON_CANDIDATE_TIMEOUT_MS ?? "");
+  if (Number.isFinite(raw) && raw > 0) return Math.max(250, raw);
+  return 5_000;
+}
+
+function nativeFastJsonBody(body: UndiciFetchInit["body"]): NativeFastJsonBody | undefined {
+  if (body == null) return undefined;
+  if (typeof body === "string" || Buffer.isBuffer(body) || body instanceof Uint8Array) {
+    return body;
+  }
+  throw new Error("sourceProxyFastJsonFetch only supports buffered JSON request bodies");
+}
+
+function nativeFastJsonHeaders(headers: UndiciFetchInit["headers"]): Record<string, string> {
+  const output: Record<string, string> = {};
+  if (!headers) return output;
+  const entries =
+    headers instanceof Headers
+      ? [...headers.entries()]
+      : Array.isArray(headers)
+        ? headers
+        : Object.entries(headers as Record<string, string>);
+  for (const [key, value] of entries) {
+    output[key] = String(value);
+  }
+  return output;
+}
+
+function responseHeadersFromNative(headers: http.IncomingHttpHeaders): Headers {
+  const output = new Headers();
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      for (const item of value) output.append(key, item);
+    } else if (value != null) {
+      output.set(key, String(value));
+    }
+  }
+  return output;
+}
+
+function nativeFastJsonFetch(
+  url: string,
+  init: UndiciFetchInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const parsed = new URL(url);
+  const isHttps = parsed.protocol === "https:";
+  const body = nativeFastJsonBody(init.body);
+  const headers = nativeFastJsonHeaders(init.headers);
+  if (body != null && headers["content-length"] == null && headers["Content-Length"] == null) {
+    headers["content-length"] = String(Buffer.byteLength(body));
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = (isHttps ? https : http).request(
+      {
+        headers,
+        hostname: parsed.hostname,
+        method: String(init.method ?? "GET"),
+        path: `${parsed.pathname}${parsed.search}`,
+        port: parsed.port,
+        rejectUnauthorized: false,
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+        response.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+        response.on("end", () => {
+          resolve(
+            new Response(Buffer.concat(chunks), {
+              headers: responseHeadersFromNative(response.headers),
+              status: response.statusCode ?? 502,
+              statusText: response.statusMessage,
+            }),
+          );
+        });
+      },
+    );
+    request.setTimeout(timeoutMs, () => {
+      request.destroy(new Error("source_proxy_candidate_timeout"));
+    });
+    request.on("error", reject);
+    if (init.signal) {
+      const signal = init.signal as AbortSignal;
+      if (signal.aborted) {
+        request.destroy(new Error("source_proxy_request_aborted"));
+      } else {
+        signal.addEventListener(
+          "abort",
+          () => request.destroy(new Error("source_proxy_request_aborted")),
+          { once: true },
+        );
+      }
+    }
+    if (body != null) request.write(body);
+    request.end();
+  });
+}
 
 function trimTrailingSlash(base: string): string {
   return base.replace(/\/+$/, "");
@@ -107,6 +219,39 @@ export async function sourceProxyFetch(
     try {
       const dispatcher = getSourceProxyUndiciDispatcher(base);
       return await fetch(url, { ...init, dispatcher });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Fast JSON hop for short control-plane calls. The default HTTP->HTTPS fallback
+ * can hang on a TLS-only proxy when the first plain HTTP candidate accepts the
+ * socket but never sends HTTP headers. Task creation must return an id quickly,
+ * so each candidate gets a small deadline before trying the next base.
+ */
+export async function sourceProxyFastJsonFetch(
+  pathAndQuery: string,
+  init: UndiciFetchInit = {},
+  options: SourceProxyFastJsonFetchOptions = {},
+): Promise<Response> {
+  if (!pathAndQuery.startsWith("/")) {
+    throw new Error(
+      `sourceProxyFastJsonFetch path must start with /, got: ${pathAndQuery.slice(0, 80)}`,
+    );
+  }
+  const bases = [...getSourceProxyBases()].sort((left, right) => {
+    if (left.startsWith("https://") === right.startsWith("https://")) return 0;
+    return left.startsWith("https://") ? -1 : 1;
+  });
+  const perCandidateTimeoutMs = sourceProxyFastJsonCandidateTimeoutMs(options);
+  let lastError: unknown;
+  for (const base of bases) {
+    const url = `${trimTrailingSlash(base)}${pathAndQuery}`;
+    try {
+      return await nativeFastJsonFetch(url, init, perCandidateTimeoutMs);
     } catch (error) {
       lastError = error;
     }

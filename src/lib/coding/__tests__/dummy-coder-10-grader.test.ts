@@ -18,11 +18,14 @@ const prompt009 = dummyCoder10Prompts[8];
 const prompt010 = dummyCoder10Prompts[9];
 
 const modelProvenance = {
+  approved_diff_sha256: "model-diff-hash",
+  applied_diff_sha256: "model-diff-hash",
   generation_source: "model",
   diff_source: "model_authored_diff",
   model_output_classification: "model_authored_diff",
   trial_result_trust_status: "model_authored",
   provider_call_made: true,
+  provenance_hash_normalization: "lf_trailing_newline_v1",
 };
 
 function provenanceHash(value: string) {
@@ -75,6 +78,7 @@ describe("dummy Coder 10 provenance classifier", () => {
         {
           ...modelProvenance,
           applied_diff_sha256: "abc",
+          approved_diff_sha256: "abc",
           backend_converted_diff_sha256: "abc",
           diff_source: "model_authored_file_bundle_backend_converted_to_diff",
           generated_diff_by_backend: true,
@@ -131,6 +135,7 @@ describe("dummy Coder 10 provenance classifier", () => {
       {
         ...modelProvenance,
         applied_diff_sha256: "applied",
+        approved_diff_sha256: "approved",
         backend_converted_diff_sha256: "backend",
         diff_source: "model_authored_prompt3_file_bundle_backend_converted_to_diff",
         generated_diff_by_backend: true,
@@ -145,7 +150,7 @@ describe("dummy Coder 10 provenance classifier", () => {
     expect(missing.pass_compatible).toBe(false);
     expect(missing.reasons).toContain("missing_raw_model_response_sha256");
     expect(mismatch.pass_compatible).toBe(false);
-    expect(mismatch.reasons).toContain("backend_converted_diff_sha256_mismatch");
+    expect(mismatch.reasons).toContain("approved_diff_sha256_mismatch");
   });
 
   it("keeps benchmark runtime branch detectors advisory only", () => {

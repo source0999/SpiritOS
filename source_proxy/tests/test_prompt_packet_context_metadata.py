@@ -147,6 +147,19 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertFalse(metadata["file_contents_claimed"])
         self.assertEqual(metadata["included_paths"], [])
         self.assertIn("ask for the specific files", packet["relevant_context"])
+        broker = metadata["canonical_context_broker"]
+        source = broker["sources_considered"][0]
+        self.assertEqual(broker["schema_version"], 2)
+        self.assertFalse(broker["go_eligible"])
+        self.assertTrue(source["considered"])
+        self.assertTrue(source["required"])
+        self.assertFalse(source["selected"])
+        self.assertFalse(source["included"])
+        self.assertFalse(source["consumed"])
+        self.assertIn(
+            "required_context_skipped:supplied_context",
+            broker["required_context_blockers"],
+        )
 
     def test_prompt_packet_marks_path_listing_only_and_omits_secret_paths(self) -> None:
         packet = build_prompt_packet(
@@ -184,6 +197,58 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertFalse(metadata["file_contents_claimed"])
         self.assertIn("repomix-output.ast.xml", metadata["included_paths"])
         self.assertGreater(metadata["estimated_context_tokens"], 0)
+
+    def test_prompt_packet_selected_context_without_acknowledgement_is_no_go(self) -> None:
+        packet = build_prompt_packet(
+            PromptPacketInput(
+                task="Review the supplied implementation excerpt",
+                relevant_context="source_proxy/context/source_readiness.py\ndef build(): pass",
+                needs_codebase_context=True,
+            )
+        ).as_payload()
+
+        broker = packet["context_metadata"]["canonical_context_broker"]
+        source = broker["sources_considered"][0]
+        self.assertFalse(broker["go_eligible"])
+        self.assertTrue(source["selected"])
+        self.assertTrue(source["included"])
+        self.assertFalse(source["consumed"])
+        self.assertIn(
+            "selected_context_no_applicable_consumer:supplied_context",
+            broker["required_context_blockers"],
+        )
+
+    def test_prompt_packet_v2_consumer_acknowledgement_proves_consumption(self) -> None:
+        packet = build_prompt_packet(
+            PromptPacketInput(
+                task="Review the supplied implementation excerpt",
+                relevant_context="source_proxy/context/source_readiness.py\ndef build(): pass",
+                needs_codebase_context=True,
+                context_downstream_acknowledgements={
+                    "coder": {
+                        "applicable": True,
+                        "acknowledged": True,
+                        "sources": ["supplied_context"],
+                        "evidence": "rendered_prompt_hash:abc123",
+                        "reason": "context_rendered_into_coder_prompt",
+                    }
+                },
+                applicable_context_consumers=("coder",),
+            )
+        ).as_payload()
+
+        metadata = packet["context_metadata"]
+        broker = metadata["canonical_context_broker"]
+        source = broker["sources_considered"][0]
+        self.assertTrue(broker["go_eligible"])
+        self.assertEqual(broker["verdict"], "GO_ELIGIBLE")
+        self.assertEqual(broker["consumed_sources"], ["supplied_context"])
+        self.assertTrue(source["consumed"])
+        self.assertEqual(source["acknowledged_by"], ["coder"])
+        self.assertEqual(
+            metadata["canonical_context_report_hash"],
+            broker["canonical_report_hash"],
+        )
 
     def test_prompt_packet_endpoint_returns_context_metadata(self) -> None:
         client = self._client()
@@ -2992,6 +3057,20 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             advance_long_running_task(task_id)
 
             def fake_coder(*, architect_plan, **_kwargs):
+                canonical = _kwargs["canonical_context"]
+                canonical_text = _kwargs["canonical_context_text"]
+                self.assertTrue(canonical["go_eligible"])
+                self.assertIn("target_file_context", canonical_text)
+                self.assertIn("architect_coder_packet", canonical_text)
+                self.assertIn("architect_context_slices", canonical_text)
+                self.assertIn("# Manual Check", canonical_text)
+                source_truth = {
+                    item["source"]: item
+                    for item in canonical["sources_considered"]
+                }
+                self.assertTrue(source_truth["architect_coder_packet"]["selected"])
+                self.assertTrue(source_truth["architect_context_slices"]["selected"])
+                self.assertIn("repomix_bundle_context", source_truth)
                 packet = architect_plan.coder_packet
                 self.assertEqual(
                     packet.target_file.path,
@@ -3027,6 +3106,7 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
                             {"path": "docs/phase-8-manual-check.md", "kind": "target"}
                         ],
                         "forbidden_paths": ["source_proxy/"],
+                        "canonical_context_consumed_by_coder_execution": True,
                     },
                 }
 
@@ -3051,6 +3131,11 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
                     os.environ["SPIRIT_PROJECT_PATH"] = previous_project_path
 
         self.assertEqual(response.status_code, 200, response.text)
+        self.assertNotEqual(
+            response.json().get("reason_code"),
+            "required_context_blocked",
+            response.json(),
+        )
         coder_mock.assert_called_once()
         body = response.json()
         self.assertEqual(body["target"], "docs/phase-8-manual-check.md")
@@ -3185,9 +3270,30 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
             "Target file: src/app/coding/design-demo/page.tsx\n\n"
             "Ensure the design demo page is already complete."
         )
-        with patch(
-            "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan",
-        ) as coder_mock:
+        with (
+            patch(
+                "source_proxy.api.decision._build_fip1_context_lane_packet",
+                return_value={
+                    "sources": [
+                        {
+                            "source": "cartographer",
+                            "status": "used",
+                            "reason": "test_cartographer_ready",
+                            "packet": {"repo_map": {"files": []}},
+                        },
+                        {
+                            "source": "design",
+                            "status": "used",
+                            "reason": "test_design_context_ready",
+                            "packet": {"component_refs": ["design-demo"]},
+                        },
+                    ]
+                },
+            ),
+            patch(
+                "source_proxy.api.decision.propose_coder_agent_diff_payload_from_plan",
+            ) as coder_mock,
+        ):
             coder_mock.return_value = {
                 "proposed_diff": "",
                 "target": "src/app/coding/design-demo/page.tsx",
@@ -3631,7 +3737,7 @@ class PromptPacketContextMetadataTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
         coder_mock.assert_not_called()
-        self.assertTrue(body.get("coder_agent_local_diff"))
+        self.assertTrue(body.get("coder_agent_local_diff"), body)
         self.assertEqual(body.get("target"), target)
         self.assertEqual(
             body.get("reason_code"),
