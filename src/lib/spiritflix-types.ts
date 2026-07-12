@@ -140,6 +140,8 @@ export interface SpiritFlixManualModelSummary {
   count: number;
   catalogCount?: number;
   assignedCount?: number;
+  aliases?: string[];
+  catalogStatus?: string;
   source?: "manual" | "registry" | "merged";
 }
 
@@ -220,6 +222,11 @@ export interface SpiritFlixFaceLearningRecord {
     pendingCorrectionWritten: boolean;
     scanCurrentVideoRequested: boolean;
     scanLibraryMatchesRequested: boolean;
+    faceEnrollmentAttempted?: boolean;
+    faceEnrollmentPerformed?: boolean;
+    faceEnrollmentError?: string;
+    enrolledCropPath?: string;
+    organizerCorrectionConfirmed?: boolean;
   };
   source: "player-model-widget";
 }

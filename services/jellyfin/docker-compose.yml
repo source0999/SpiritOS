@@ -24,7 +24,7 @@ services:
       - /mnt/spirit-8tb/media/anime:/media/anime:ro
       - /mnt/spirit-8tb/media/other:/media/other:ro
       - /mnt/spirit-8tb/media/optimized-test:/media/optimized-test:ro
-      - /DATA/yes:/media/yes:ro
+      - /mnt/spirit-8tb/media/yes:/media/yes:ro
     environment:
       - JELLYFIN_PublishedServerUrl=http://127.0.0.1:8096
     healthcheck:

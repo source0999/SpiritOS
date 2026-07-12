@@ -21,11 +21,16 @@ import type {
   SpiritFlixServerInfo,
   SpiritFlixSession,
 } from "@/lib/spiritflix-types";
-import { hasResumeProgress } from "@/lib/spiritflix-resume";
+import { hasResumeProgress, hasWatchActivity } from "@/lib/spiritflix-resume";
 import { filterItemsByVideoOrientation, getOrientationFilterLabel, type SpiritFlixVideoOrientation } from "@/lib/spiritflix-orientation";
-import { SpiritFlixHome } from "./SpiritFlixHome";
 import { SpiritFlixLogin } from "./SpiritFlixLogin";
-import { SpiritFlixSplash, type SpiritFlixLoadProgress } from "./SpiritFlixSplash";
+import type { SpiritFlixLoadProgress } from "./SpiritFlixSplash";
+
+const SpiritFlixHome = lazy(() =>
+  import("./SpiritFlixHome").then((module) => ({
+    default: module.SpiritFlixHome,
+  })),
+);
 
 const SpiritFlixDetailsModal = lazy(() =>
   import("./SpiritFlixDetailsModal").then((module) => ({
@@ -72,6 +77,7 @@ const PLAYLIST_LIBRARY_NAME = "Playlists";
 const HIDDEN_LIBRARY_NAMES = new Set(["music", "optimized movies"]);
 const MOBILE_LIBRARY_PAGE_SIZE = 24;
 const DESKTOP_LIBRARY_PAGE_SIZE = 48;
+const FULL_LIBRARY_DASHBOARD_PAGE_SIZE = 2500;
 const MOBILE_SHELF_PAGE_SIZE = 10;
 const DESKTOP_SHELF_PAGE_SIZE = 18;
 const LATEST_ADDED_PAGE_SIZE = DESKTOP_SHELF_PAGE_SIZE;
@@ -198,15 +204,6 @@ function getLastPlayedMs(item: JellyfinItem): number {
 
 function sortByLastPlayed(items: JellyfinItem[]): JellyfinItem[] {
   return [...items].sort((left, right) => getLastPlayedMs(right) - getLastPlayedMs(left));
-}
-
-function hasWatchActivity(item: JellyfinItem): boolean {
-  return Boolean(
-    item.UserData?.LastPlayedDate ||
-      item.UserData?.Played ||
-      (item.UserData?.PlaybackPositionTicks && item.UserData.PlaybackPositionTicks > 0) ||
-      (item.UserData?.PlayCount && item.UserData.PlayCount > 0),
-  );
 }
 
 function isMobileSpiritFlixViewport(): boolean {
@@ -744,10 +741,21 @@ export function SpiritFlixApp() {
       const pageSizes = getInitialPageSizes();
       const isStale = () => controller.signal.aborted || loadHomeSequenceRef.current !== loadId;
       activeHomeLoadKeyRef.current = loadKey;
-      const shouldGateLiveLibrary = !options.silent && typeof requestedLibraryIdBeforeLookup === "string" && requestedLibraryIdBeforeLookup.length > 0;
+      const shouldGateLiveLibrary = false;
       const startedAt = performance.now();
-      const showBlockingLoader = !options.silent && (shouldGateLiveLibrary || !hasUsefulHomeContent(homeDataRef.current));
+      // Blocking splash removed: it was finishing before background model data
+      // was ready (so counts kept changing post-load) and re-firing on every
+      // model click / library switch. Local Jellyfin is fast enough that the
+      // shelves stream in without a fake progress gate.
+      const showBlockingLoader = false;
       loadCompletionPendingRef.current = false;
+      if (options.silent) {
+        blockingShelvesReadyRef.current = false;
+        blockingMetadataReadyRef.current = false;
+        clearBlockingLoadStartedAt();
+        setLoadingHome(false);
+        setLiveLibraryLoadingId(null);
+      }
       if (shouldGateLiveLibrary) setLiveLibraryLoadingId(requestedLibraryIdBeforeLookup);
       if (showBlockingLoader) {
         blockingShelvesReadyRef.current = false;
@@ -803,7 +811,7 @@ export function SpiritFlixApp() {
         const libraryPagePromise = selectedLibraryId
           ? client.getLibraryItemsPage(selectedLibraryId, {
               searchTerm: term,
-              limit: pageSizes.library,
+              limit: FULL_LIBRARY_DASHBOARD_PAGE_SIZE,
               fields: "card",
               signal: controller.signal,
             })
@@ -1367,6 +1375,10 @@ export function SpiritFlixApp() {
             : nextContinueWatching.filter((item) => item.Id !== progress.itemId),
         };
       });
+
+      // Keep the active unexplored queue intact for Previous/Next navigation.
+      // Fresh unexplored shuffles fetch current Jellyfin watch state and exclude
+      // every item that has since been started.
     },
     [],
   );
@@ -1437,7 +1449,7 @@ export function SpiritFlixApp() {
     setInitialModelName(null);
     setInitialManualTag(null);
     setSpiritFlixBrowseRoute({ libraryId, modelName: null, tag: null });
-    void loadHome(libraryId);
+    void loadHome(libraryId, searchTerm, { silent: hasUsefulHomeContent(homeDataRef.current), reuseLibraries: true });
   };
 
   const handleSelectModel = (modelName: string | null) => {
@@ -1451,9 +1463,7 @@ export function SpiritFlixApp() {
 
   return (
     <main className="spiritflix-shell">
-      {isRestoringSession ? (
-        <SpiritFlixSplash progress={initialLoadProgress} />
-      ) : !session ? (
+      {!isRestoringSession && !session ? (
         <SpiritFlixLogin
           serverUrl={serverUrl}
           serverInfo={serverInfo}
@@ -1462,34 +1472,36 @@ export function SpiritFlixApp() {
           onRetry={() => checkServer(serverUrl)}
           onLogin={handleLogin}
         />
-      ) : (
-        <SpiritFlixHome
-          client={client}
-          data={visibleHomeData}
-          loading={loadingHome}
-          loadProgress={loadProgress}
-          error={homeError}
-          session={session}
-          searchTerm={searchTerm}
-          serverInfo={serverInfo}
-          onLogout={handleLogout}
-          onRefresh={() => loadHome(homeData.selectedLibraryId)}
-          onSearch={handleSearch}
-          onSelectHome={handleSelectHome}
-          onSelectLibrary={handleSelectLibrary}
-          loadingMore={loadingMore}
-          onLoadMoreLibrary={loadMoreLibraryItems}
-          onLoadMoreContinueWatching={loadMoreContinueWatching}
-          onLoadMoreLatestAdded={loadMoreLatestAdded}
-          onLoadMoreFavorites={loadMoreFavorites}
-          initialModelName={initialModelName}
-          initialManualTag={initialManualTag}
-          onSelectModel={handleSelectModel}
-          onOpenDetails={handleOpenDetails}
-          onPlay={handlePlay}
-          onVisibleMetadataReady={handleVisibleMetadataReady}
-        />
-      )}
+      ) : !isRestoringSession && session && !playingItem ? (
+        <Suspense fallback={null}>
+          <SpiritFlixHome
+            client={client}
+            data={visibleHomeData}
+            loading={loadingHome}
+            loadProgress={loadProgress}
+            error={homeError}
+            session={session}
+            searchTerm={searchTerm}
+            serverInfo={serverInfo}
+            onLogout={handleLogout}
+            onRefresh={() => loadHome(homeData.selectedLibraryId)}
+            onSearch={handleSearch}
+            onSelectHome={handleSelectHome}
+            onSelectLibrary={handleSelectLibrary}
+            loadingMore={loadingMore}
+            onLoadMoreLibrary={loadMoreLibraryItems}
+            onLoadMoreContinueWatching={loadMoreContinueWatching}
+            onLoadMoreLatestAdded={loadMoreLatestAdded}
+            onLoadMoreFavorites={loadMoreFavorites}
+            initialModelName={initialModelName}
+            initialManualTag={initialManualTag}
+            onSelectModel={handleSelectModel}
+            onOpenDetails={handleOpenDetails}
+            onPlay={handlePlay}
+            onVisibleMetadataReady={handleVisibleMetadataReady}
+          />
+        </Suspense>
+      ) : null}
 
       {selectedItem ? (
         <Suspense fallback={null}>

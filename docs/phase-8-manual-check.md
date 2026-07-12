@@ -14,3 +14,5 @@ Phase 4E-2 safe tiny edit manual check.
 Phase 10.10 Codex real-task trial docs-only Task 1 was captured safely.
 Proxy backend safe preview test passed.
 Coding cockpit wired preview smoke test passed.
+
+P0 daily-driver route-level proof executed on 2026-07-06 with Plan 5 acceptance metadata.

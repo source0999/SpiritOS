@@ -676,7 +676,7 @@ describe("SpiritFlixPlayer mobile controls", () => {
     });
   });
 
-  it("unmutes mobile playback to an audible volume and opens the volume slider", async () => {
+  it("starts playback full volume even when stale storage says muted", async () => {
     window.localStorage.setItem("spiritflix_player_muted", "true");
     window.localStorage.setItem("spiritflix_player_volume", "0");
     renderPlayer();
@@ -684,13 +684,12 @@ describe("SpiritFlixPlayer mobile controls", () => {
     const player = screen.getByLabelText("Fold Tap Test player");
     await waitFor(() => expect(player).toHaveClass("is-awake"));
 
-    fireEvent.click(screen.getByRole("button", { name: "Open volume" }));
-
     const video = document.querySelector("video");
     expect(video?.muted).toBe(false);
-    expect(video?.volume).toBe(0.8);
-    expect(screen.getByLabelText("Volume")).toHaveValue("0.8");
-    expect(screen.getByRole("button", { name: "Close volume" })).toHaveAttribute("aria-expanded", "true");
+    expect(video?.volume).toBe(1);
+    expect(window.localStorage.getItem("spiritflix_player_muted")).toBe("false");
+    expect(window.localStorage.getItem("spiritflix_player_volume")).toBe("1");
+    expect(screen.getByLabelText("Volume")).toHaveValue("1");
   });
 
   it("uses episode controls and hides library tools for anime series playback", async () => {
@@ -2318,6 +2317,10 @@ describe("SpiritFlixPlayer mobile controls", () => {
     expect(video).not.toBeNull();
     if (!video) return;
     video.currentTime = 0;
+    Object.defineProperty(video, "duration", {
+      configurable: true,
+      value: 20,
+    });
     Object.defineProperty(scrub, "getBoundingClientRect", {
       configurable: true,
       value: () => ({

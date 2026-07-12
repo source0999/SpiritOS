@@ -6,7 +6,7 @@ describe("SpiritFlix load performance harness", () => {
     const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as { scripts?: Record<string, string> };
     const harness = readFileSync("scripts/spiritflix-load-perf.mjs", "utf8");
 
-    expect(packageJson.scripts?.["spiritflix:perf"]).toBe("node ./scripts/spiritflix-load-perf.mjs");
+    expect(packageJson.scripts?.["spiritflix:perf:synthetic"]).toBe("node ./scripts/spiritflix-load-perf.mjs");
     expect(harness).toContain("faceMetadataItems: 20");
     expect(harness).toContain("libraryRequestsBeforeGrid: 1");
     expect(harness).toContain("docs/evidence/spiritflix-load-perf-");

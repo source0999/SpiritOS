@@ -37,6 +37,16 @@ export function hasResumeProgress(item: JellyfinItem): boolean {
   return true;
 }
 
+/** True once this user has started or completed the item in Jellyfin. */
+export function hasWatchActivity(item: JellyfinItem): boolean {
+  return Boolean(
+    item.UserData?.LastPlayedDate ||
+      item.UserData?.Played ||
+      (item.UserData?.PlaybackPositionTicks && item.UserData.PlaybackPositionTicks > 0) ||
+      (item.UserData?.PlayCount && item.UserData.PlayCount > 0),
+  );
+}
+
 export function getResumeSlotLabel(item: JellyfinItem): string {
   const positionSeconds = ticksToSeconds(getResumePositionTicks(item));
   const durationSeconds = ticksToSeconds(item.RunTimeTicks);

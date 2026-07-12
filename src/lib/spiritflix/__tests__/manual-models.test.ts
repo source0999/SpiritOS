@@ -125,6 +125,39 @@ describe("SpiritFlix manual models", () => {
     );
   });
 
+  it("preserves catalog aliases and status in restored model summaries", async () => {
+    const modelIndexPath = path.join(rootDir, "model_index.json");
+    await fs.writeFile(
+      modelIndexPath,
+      JSON.stringify({
+        models: [
+          {
+            name: "Lexi Marvel",
+            slug: "lexi-marvel",
+            aliases: ["LexiMarvell"],
+            status: "needs-review",
+            video_count: 5,
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    await expect(getSpiritFlixManualModelIndex({ rootDir, modelIndexPath })).resolves.toEqual(
+      expect.objectContaining({
+        models: [
+          expect.objectContaining({
+            modelName: "Lexi Marvel",
+            count: 0,
+            catalogCount: 5,
+            aliases: ["lexi-marvel", "LexiMarvell"],
+            catalogStatus: "needs-review",
+          }),
+        ],
+      }),
+    );
+  });
+
   it("canonicalizes legacy saved aliases when reading manual model records", async () => {
     const modelIndexPath = path.join(rootDir, "model_index.json");
     await fs.writeFile(

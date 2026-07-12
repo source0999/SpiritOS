@@ -8,6 +8,11 @@ import { buildAllowedDevOrigins } from "./allowed-dev-origins";
  * Tailscale / LAN: set `NEXT_ALLOWED_DEV_ORIGINS` (comma-separated hostnames), restart dev.
  */
 const nextConfig: NextConfig = {
+  experimental: {
+    cpus: 1,
+    workerThreads: false,
+  },
+
   turbopack: {
     root: realpathSync(process.cwd()),
   },
@@ -37,6 +42,8 @@ const nextConfig: NextConfig = {
           "**/node_modules/**",
           "**/.git/**",
           "**/.next/**",
+          "**/tmp/**",
+          "**/docs/evidence/**",
           "**/models/**",
           "**/backend/**",
           "**/.cursor/**",

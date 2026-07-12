@@ -7,6 +7,7 @@ import type {
   FaceOrganizerStatus,
   FaceOrganizerVideoMatch,
 } from "@/lib/spiritflix-types";
+import { shouldUseSpiritFlixKnownModelIndexEntry } from "@/lib/spiritflix/manual-models";
 
 interface FaceMetadataRequestItem {
   id?: string;
@@ -43,7 +44,10 @@ interface FaceSidecar {
   face_match_decisions?: FaceMatchDecision[];
 }
 
-const MEDIA_ROOTS = ["/mnt/spirit-8tb/media/yes", "/mnt/spirit-8tb/media/other"];
+// Active media root is /DATA/yes on this install (the SPIRITFLIX_MEDIA_ROOT
+// const elsewhere hardcodes /mnt/spirit-8tb/media, but the live mount is /DATA).
+// Include both so the route works regardless of which mount is active.
+const MEDIA_ROOTS = ["/DATA/yes", "/DATA/other", "/mnt/spirit-8tb/media/yes", "/mnt/spirit-8tb/media/other"];
 const KNOWN_PERFORMERS_INDEX = "/home/source/SpiritOS/scripts/media/known_performers/index.json";
 const FACE_ENROLLED_GROUPS = "/home/source/SpiritOS/scripts/media/face_enrolled_performers.json";
 const MODEL_INDEX = "/home/source/SpiritOS/scripts/media/model_index.json";
@@ -158,9 +162,10 @@ async function readEnrolledSources(): Promise<NonNullable<FaceOrganizerMetadataR
 
   try {
     const parsed = JSON.parse(await readFile(MODEL_INDEX, "utf8")) as {
-      models?: Array<{ name?: string; slug?: string; aliases?: string[]; video_count?: number }>;
+      models?: Array<{ name?: string; slug?: string; aliases?: string[]; status?: string; video_count?: number }>;
     };
     (parsed.models ?? []).forEach((model) => {
+      if (!shouldUseSpiritFlixKnownModelIndexEntry(model)) return;
       if (!model.name) return;
       const keySet = new Set([model.name, model.slug, ...(model.aliases ?? [])].filter(Boolean).map((item) => normalizeNameKey(item)));
       const candidateVideos = Math.max(0, model.video_count ?? 0);

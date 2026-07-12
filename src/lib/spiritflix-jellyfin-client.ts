@@ -165,6 +165,32 @@ function isHttpsPage(): boolean {
   return typeof window !== "undefined" && window.location.protocol === "https:";
 }
 
+function isPrivateMediaHost(hostname: string): boolean {
+  const normalized = hostname.trim().toLowerCase();
+  if (!normalized) return false;
+  if (normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1") return true;
+  if (normalized.endsWith(".ts.net")) return true;
+  const parts = normalized.split(".").map((part) => Number(part));
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  const [first, second] = parts;
+  return (
+    first === 10 ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    (first === 100 && second >= 64 && second <= 127)
+  );
+}
+
+function shouldUseDirectPrivateMediaUrl(directServerUrl: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const mediaHost = new URL(directServerUrl).hostname;
+    return isPrivateMediaHost(window.location.hostname) && isPrivateMediaHost(mediaHost);
+  } catch {
+    return false;
+  }
+}
+
 function getDirectServerUrl(serverUrl: string): string {
   return typeof window !== "undefined" && window.location.hostname && !["localhost", "127.0.0.1"].includes(window.location.hostname)
     ? `http://${window.location.hostname}:8096`
@@ -231,6 +257,27 @@ function withCanonicalSpiritFlixLibraries(libraries: JellyfinLibrary[]): Jellyfi
       return true;
     }),
   );
+}
+
+function getDefaultLibraryFolder(libraries: JellyfinLibrary[]): JellyfinLibrary | undefined {
+  return libraries.find(
+    (library) =>
+      SPIRITFLIX_DEFAULT_LIBRARY_NAMES.has(library.Name.trim().toLowerCase()) &&
+      !isHomeVideosCollectionShell(library),
+  );
+}
+
+function getLibraryQueryAliasMap(libraries: JellyfinLibrary[]): Map<string, string> {
+  const defaultFolder = getDefaultLibraryFolder(libraries);
+  if (!defaultFolder) return new Map();
+
+  const aliases = new Map<string, string>();
+  libraries.forEach((library) => {
+    if (library.Id !== defaultFolder.Id && isHomeVideosCollectionShell(library)) {
+      aliases.set(library.Id, defaultFolder.Id);
+    }
+  });
+  return aliases;
 }
 
 function getItemFields(fields: "card" | "full" = "card"): string {
@@ -303,6 +350,7 @@ export class JellyfinClient {
   readonly serverUrl: string;
   readonly token?: string;
   readonly userId?: string;
+  private libraryQueryAliasById = new Map<string, string>();
 
   constructor(serverUrl: string, token?: string, userId?: string) {
     this.serverUrl = normalizeJellyfinServerUrl(serverUrl || SPIRITFLIX_DEFAULT_SERVER);
@@ -404,10 +452,18 @@ export class JellyfinClient {
       const folderData = await this.request<JellyfinItemsResponse<JellyfinLibrary>>(
         `/Users/${this.userId}/Items?${folderQuery}`,
       );
-      return withCanonicalSpiritFlixLibraries([...libraries, ...(folderData.Items ?? [])]);
+      const mergedLibraries = withCanonicalSpiritFlixLibraries([...libraries, ...(folderData.Items ?? [])]);
+      this.libraryQueryAliasById = getLibraryQueryAliasMap(mergedLibraries);
+      return mergedLibraries;
     } catch {
-      return withCanonicalSpiritFlixLibraries(libraries);
+      const mergedLibraries = withCanonicalSpiritFlixLibraries(libraries);
+      this.libraryQueryAliasById = getLibraryQueryAliasMap(mergedLibraries);
+      return mergedLibraries;
     }
+  }
+
+  private getLibraryQueryParentId(parentId: string): string {
+    return this.libraryQueryAliasById.get(parentId) ?? parentId;
   }
 
   async getLibraryItemsPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
@@ -635,8 +691,11 @@ export class JellyfinClient {
   async getLibraryLatestAddedPage(parentId: string, options: JellyfinItemPageOptions = {}): Promise<JellyfinItemPage> {
     if (!this.userId) return emptyItemPage({ startIndex: options.startIndex, limit: options.limit });
     const { limit = 18, startIndex = 0, fields = "card", signal } = options;
+    const queryParentId = this.getLibraryQueryParentId(parentId);
+    // A Home Videos shell is only a UI container. Query its discovered real-media
+    // folder so the library route stays scoped to the media the user selected.
     const query = toQuery({
-      ParentId: parentId,
+      ParentId: queryParentId,
       Recursive: true,
       IncludeItemTypes: "Movie,Episode,Video",
       Fields: getItemFields(fields),
@@ -652,9 +711,8 @@ export class JellyfinClient {
       { signal },
     );
     const page = pageFromResponse(data, { startIndex, limit });
-    // If the parent scope (e.g. a stale Jellyfin shell container) yields nothing, fall back to
-    // the same global DateCreated-descending query the homepage uses. This keeps "Latest Added"
-    // correct on library routes even when the resolved library id scopes to an empty container.
+    // Defensive fallback: if a non-default parent scope yields nothing, fall back to the global
+    // query so the shelf is never empty when there are recent uploads.
     if (page.items.length === 0 && startIndex === 0) {
       return this.getLatestAddedPage(options);
     }
@@ -828,7 +886,6 @@ export class JellyfinClient {
       token: this.token,
       audioStreamIndex: options.audioStreamIndex,
     });
-    if (isHttpsPage()) return `/api/spiritflix/stream?${query}`;
 
     const directQuery = toQuery({
       Static: "true",
@@ -836,6 +893,7 @@ export class JellyfinClient {
       PlaySessionId: `spiritflix-${itemId}`,
       AudioStreamIndex: options.audioStreamIndex,
     });
+    if (isHttpsPage() && !shouldUseDirectPrivateMediaUrl(directServerUrl)) return `/api/spiritflix/stream?${query}`;
     return `${directServerUrl}/Videos/${encodeURIComponent(itemId)}/Stream?${directQuery}`;
   }
 

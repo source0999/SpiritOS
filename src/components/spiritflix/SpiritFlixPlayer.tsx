@@ -16,7 +16,16 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type TouchEvent as ReactTouchEvent,
+} from "react";
 import {
   Captions,
   ChevronsDown,
@@ -154,6 +163,8 @@ const MANUAL_TAG_CHANGED_EVENT = "spiritflix:manual-tags-changed";
 const MANUAL_MODEL_CHANGED_EVENT = "spiritflix:manual-models-changed";
 const MANUAL_METADATA_RETRY_MS = 180;
 const CAPTION_APPLY_RETRY_MS = [80, 240, 700, 1500, 3000, 5000];
+const QUEUE_DRAWER_RENDER_LIMIT = 80;
+const QUEUE_CONTEXT_ITEM_LIMIT = 160;
 const FIT_MODE_ORDER: FitMode[] = ["fit", "fill", "crop", "stretch"];
 const FIT_MODE_LABELS: Record<FitMode, string> = {
   fit: "Aspect fit",
@@ -358,6 +369,28 @@ function getQueueDndId(itemId: string): string {
 
 function getItemIdFromQueueDndId(id: string): string | null {
   return id.startsWith(QUEUE_DND_PREFIX) ? id.slice(QUEUE_DND_PREFIX.length) : null;
+}
+
+function getQueueDrawerWindow(items: JellyfinItem[], currentIndex: number): Array<{ item: JellyfinItem; index: number }> {
+  if (items.length <= QUEUE_DRAWER_RENDER_LIMIT) {
+    return items.map((item, index) => ({ item, index }));
+  }
+  const before = Math.floor(QUEUE_DRAWER_RENDER_LIMIT / 3);
+  const start = Math.max(0, Math.min(currentIndex - before, items.length - QUEUE_DRAWER_RENDER_LIMIT));
+  return items.slice(start, start + QUEUE_DRAWER_RENDER_LIMIT).map((item, offset) => ({ item, index: start + offset }));
+}
+
+function getQueueContextItems(items: JellyfinItem[], currentItem: JellyfinItem): JellyfinItem[] {
+  if (items.length <= QUEUE_CONTEXT_ITEM_LIMIT) return items;
+  const seen = new Set<string>([currentItem.Id]);
+  return [
+    currentItem,
+    ...items.filter((candidate) => {
+      if (candidate.Id === currentItem.Id || seen.has(candidate.Id)) return false;
+      seen.add(candidate.Id);
+      return true;
+    }).slice(0, QUEUE_CONTEXT_ITEM_LIMIT - 1),
+  ];
 }
 
 function secondsToTicks(seconds: number): number {
@@ -726,14 +759,11 @@ function getStoredTikTokMode(): boolean {
 }
 
 function getStoredVolume(): number {
-  if (typeof window === "undefined") return 1;
-  const stored = Number(window.localStorage.getItem(VOLUME_STORAGE_KEY));
-  return Number.isFinite(stored) ? Math.max(0, Math.min(1, stored)) : 1;
+  return 1;
 }
 
 function getStoredMuted(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(MUTED_STORAGE_KEY) === "true";
+  return false;
 }
 
 export function getSmartFillScale(shellAspectRatio: number, videoAspectRatio: number): number {
@@ -1074,9 +1104,10 @@ export function SpiritFlixPlayer({
   const [audioTrackSwitchAvailable, setAudioTrackSwitchAvailable] = useState(false);
   const seriesAudioPreference =
     seriesAudioState.seriesKey === seriesKey ? seriesAudioState.preference : getStoredSeriesAudioPreference(seriesKey);
+  const shouldPreserveProvidedQueue = Boolean(queue?.isShuffled);
   const seriesQueueItems = useMemo(
-    () => getSeriesPlaybackQueue(item, [...(queue?.items ?? []), ...libraryItems]),
-    [item, libraryItems, queue?.items],
+    () => (shouldPreserveProvidedQueue ? [] : getSeriesPlaybackQueue(item, [...(queue?.items ?? []), ...libraryItems])),
+    [item, libraryItems, queue?.items, shouldPreserveProvidedQueue],
   );
   const queueItems = useMemo(
     () => (isSeriesPlayback && seriesQueueItems.length ? seriesQueueItems : queue?.items ?? [item]),
@@ -1085,6 +1116,10 @@ export function SpiritFlixPlayer({
   const originalQueueItems = useMemo(
     () => (queue?.originalItems?.length ? queue.originalItems : queueItems),
     [queue, queueItems],
+  );
+  const queueContextItems = useMemo(
+    () => getQueueContextItems(originalQueueItems, item),
+    [item, originalQueueItems],
   );
   const orientationCounts = useMemo(() => countItemsByVideoOrientation(originalQueueItems), [originalQueueItems]);
   const queueIndex = queueItems.findIndex((queueItem) => queueItem.Id === item.Id);
@@ -1210,7 +1245,7 @@ export function SpiritFlixPlayer({
     };
     manualModelIndex?.models?.forEach((model) => addOption(model.modelName));
     addOption(faceModelSuggestion?.primaryPerformer?.name ?? "");
-    originalQueueItems.forEach((queueItem) => addOption(getInferredModelName(queueItem)));
+    queueContextItems.forEach((queueItem) => addOption(getInferredModelName(queueItem)));
     addOption(getInferredModelName(item));
     addOption(draftModelName);
     return Array.from(options.values()).sort((left, right) => {
@@ -1218,12 +1253,12 @@ export function SpiritFlixPlayer({
       const rightSelected = getModelOptionKey(right) === getModelOptionKey(draftModelName);
       return Number(rightSelected) - Number(leftSelected) || left.localeCompare(right);
     });
-  }, [draftModelName, faceModelSuggestion?.primaryPerformer?.name, item, manualModelIndex, originalQueueItems]);
+  }, [draftModelName, faceModelSuggestion?.primaryPerformer?.name, item, manualModelIndex, queueContextItems]);
   const modelShuffleItems = useMemo(() => {
     const currentModelKey = getModelOptionKey(knownCurrentModelName);
     if (!currentModelKey) return [];
     const candidates = new Map<string, JellyfinItem>();
-    [item, ...libraryItems, ...originalQueueItems, ...queueItems].forEach((candidate) => {
+    [item, ...libraryItems, ...queueContextItems].forEach((candidate) => {
       if (candidate?.Id && isPlayableItem(candidate) && !candidates.has(candidate.Id)) candidates.set(candidate.Id, candidate);
     });
     return Array.from(candidates.values()).filter((candidate) => {
@@ -1237,23 +1272,23 @@ export function SpiritFlixPlayer({
               : "");
       return getModelOptionKey(candidateModelName) === currentModelKey;
     });
-  }, [faceMetadata, item, knownCurrentModelName, libraryItems, originalQueueItems, queueItems]);
+  }, [faceMetadata, item, knownCurrentModelName, libraryItems, queueContextItems]);
   const relatedModelTagItems = useMemo(() => {
     const modelName = getModelOptionKey(manualModelRecord?.modelName || item.ManualModelName || getInferredModelName(item));
     if (!modelName) return [];
-    const candidates = libraryItems.length ? libraryItems : originalQueueItems;
+    const candidates = libraryItems.length ? libraryItems : queueContextItems;
     return candidates
       .filter((candidate) => candidate.Id !== item.Id && getModelOptionKey(candidate.ManualModelName || getInferredModelName(candidate)) === modelName)
       .map((candidate) => ({
         itemId: candidate.Id,
         filePath: getItemSourcePath(candidate),
       }));
-  }, [item, libraryItems, manualModelRecord?.modelName, originalQueueItems]);
+  }, [item, libraryItems, manualModelRecord?.modelName, queueContextItems]);
   const getRelatedItemsForModelName = useCallback(
     (modelNameInput: string) => {
       const modelName = getModelOptionKey(modelNameInput);
       if (!modelName) return [];
-      const candidates = libraryItems.length ? libraryItems : originalQueueItems;
+      const candidates = libraryItems.length ? libraryItems : queueContextItems;
       return candidates
         .filter((candidate) => candidate.Id !== item.Id && getModelOptionKey(candidate.ManualModelName || getInferredModelName(candidate)) === modelName)
         .map((candidate) => ({
@@ -1261,18 +1296,25 @@ export function SpiritFlixPlayer({
           filePath: getItemSourcePath(candidate),
         }));
     },
-    [item.Id, libraryItems, originalQueueItems],
+    [item.Id, libraryItems, queueContextItems],
   );
   const getTitleMatchedItemsForModelName = useCallback(
     (modelNameInput: string) =>
-      getTitleMatchedModelItems(modelNameInput, [item, ...libraryItems, ...originalQueueItems, ...queueItems], item),
-    [item, libraryItems, originalQueueItems, queueItems],
+      getTitleMatchedModelItems(modelNameInput, [item, ...libraryItems, ...queueContextItems], item),
+    [item, libraryItems, queueContextItems],
   );
   const mediaDiagnostics = useMemo(() => getMediaCodecSummary(item), [item]);
   const routeHint = typeof window === "undefined" ? "unknown" : getRouteHint();
   const canonicalMp4Present = mediaDiagnostics.container === "mp4";
   const rangeSupport = playbackSourceClass === "mac_optimized_mp4" || playbackSourceClass === "canonical_mp4";
-  const queueDndIds = useMemo(() => queueItems.map((queueItem) => getQueueDndId(queueItem.Id)), [queueItems]);
+  const visibleQueueDrawerItems = useMemo(
+    () => (isQueueOpen ? getQueueDrawerWindow(queueItems, currentIndex) : []),
+    [currentIndex, isQueueOpen, queueItems],
+  );
+  const queueDndIds = useMemo(
+    () => visibleQueueDrawerItems.map(({ item }) => getQueueDndId(item.Id)),
+    [visibleQueueDrawerItems],
+  );
   const queueDndSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
@@ -1534,11 +1576,10 @@ export function SpiritFlixPlayer({
     if (!Number.isFinite(seconds)) return;
     const videoDuration = video.duration;
     const fallbackDuration = duration || ticksToSeconds(item.RunTimeTicks);
-    const maxSeconds = Number.isFinite(videoDuration) && videoDuration > 0
-      ? videoDuration
-      : Number.isFinite(fallbackDuration) && fallbackDuration > 0
-        ? fallbackDuration
-        : Number.MAX_SAFE_INTEGER;
+    const maxSeconds = Math.max(
+      Number.isFinite(videoDuration) && videoDuration > 0 ? videoDuration : 0,
+      Number.isFinite(fallbackDuration) && fallbackDuration > 0 ? fallbackDuration : 0,
+    ) || Number.MAX_SAFE_INTEGER;
     video.currentTime = Math.max(0, Math.min(maxSeconds, seconds));
     setCurrentTime(video.currentTime);
   }, [duration, item.RunTimeTicks]);
@@ -1546,7 +1587,10 @@ export function SpiritFlixPlayer({
   const getSeekableDuration = useCallback(() => {
     const videoDuration = videoRef.current?.duration ?? 0;
     const fallbackDuration = duration || ticksToSeconds(item.RunTimeTicks);
-    const seekableDuration = Number.isFinite(videoDuration) && videoDuration > 0 ? videoDuration : fallbackDuration;
+    const seekableDuration = Math.max(
+      Number.isFinite(videoDuration) && videoDuration > 0 ? videoDuration : 0,
+      Number.isFinite(fallbackDuration) && fallbackDuration > 0 ? fallbackDuration : 0,
+    );
     return Number.isFinite(seekableDuration) && seekableDuration > 0 ? seekableDuration : 0;
   }, [duration, item.RunTimeTicks]);
 
@@ -1581,6 +1625,18 @@ export function SpiritFlixPlayer({
       event.stopPropagation();
       event.preventDefault();
       seekFromScrubClientX(event.clientX, event.currentTarget);
+      revealControls(true);
+    },
+    [revealControls, seekFromScrubClientX],
+  );
+
+  const handleScrubTouch = useCallback(
+    (event: ReactTouchEvent<HTMLInputElement>) => {
+      const touch = getTouchAt(event.touches, 0);
+      if (!touch) return;
+      event.stopPropagation();
+      event.preventDefault();
+      seekFromScrubClientX(touch.clientX, event.currentTarget);
       revealControls(true);
     },
     [revealControls, seekFromScrubClientX],
@@ -2000,7 +2056,7 @@ export function SpiritFlixPlayer({
 
   const loadPlayerFaceMetadata = useCallback(async () => {
     const byId = new Map<string, JellyfinItem>();
-    [item, ...originalQueueItems, ...libraryItems].forEach((candidate) => {
+    [item, ...queueContextItems, ...libraryItems].forEach((candidate) => {
       if (candidate?.Id && !byId.has(candidate.Id)) byId.set(candidate.Id, candidate);
     });
     try {
@@ -2010,7 +2066,7 @@ export function SpiritFlixPlayer({
     } catch {
       setFaceLearningError("Face metadata is unavailable.");
     }
-  }, [client, item, libraryItems, originalQueueItems]);
+  }, [client, item, libraryItems, queueContextItems]);
 
   const requestFaceLearning = useCallback(
     async (modelName: string, faceMatch?: FaceOrganizerVideoMatch, relatedItems = relatedModelTagItems) => {
@@ -2408,6 +2464,12 @@ export function SpiritFlixPlayer({
       video.pause();
       video.removeAttribute("src");
       video.load();
+      volumeRef.current = 1;
+      mutedRef.current = false;
+      setVolume(1);
+      setIsMuted(false);
+      window.localStorage.setItem(VOLUME_STORAGE_KEY, "1");
+      window.localStorage.setItem(MUTED_STORAGE_KEY, "false");
       video.volume = volumeRef.current;
       video.muted = mutedRef.current;
       video.loop = repeatModeRef.current === "one";
@@ -2472,23 +2534,10 @@ export function SpiritFlixPlayer({
         await video.play();
       } catch (error) {
         if (cancelled || isPlaybackAbort(error)) return;
-        if (!usingHlsRef.current && !video.muted) {
-          video.muted = true;
-          mutedRef.current = true;
-          setIsMuted(true);
-          window.localStorage.setItem(MUTED_STORAGE_KEY, "true");
-          try {
-            await video.play();
-            return;
-          } catch (retryError) {
-            if (cancelled || isPlaybackAbort(retryError)) return;
-            setShowControls(true);
-            if (retryError instanceof DOMException && retryError.name !== "NotAllowedError") {
-              setStreamError(retryError.message);
-            }
-            return;
-          }
-        }
+        video.muted = false;
+        mutedRef.current = false;
+        setIsMuted(false);
+        window.localStorage.setItem(MUTED_STORAGE_KEY, "false");
         setShowControls(true);
         if (error instanceof DOMException && error.name !== "NotAllowedError") {
           setStreamError(error.message);
@@ -2925,6 +2974,7 @@ export function SpiritFlixPlayer({
     },
     [shellSize.height, shellSize.width, videoAspectRatio],
   );
+  const scrubDuration = getSeekableDuration();
 
   return (
     <section
@@ -3345,16 +3395,18 @@ export function SpiritFlixPlayer({
             aria-label="Seek"
             type="range"
             min={0}
-            max={duration || ticksToSeconds(item.RunTimeTicks) || 0}
+            max={scrubDuration}
             step={0.1}
-            value={Math.min(currentTime, duration || currentTime)}
+            value={Math.min(currentTime, scrubDuration || currentTime)}
             onPointerDown={handleScrubPointerDown}
             onPointerMove={handleScrubPointerMove}
             onPointerUp={endScrubPointer}
             onPointerCancel={endScrubPointer}
+            onTouchStart={handleScrubTouch}
+            onTouchMove={handleScrubTouch}
             onChange={(event) => seekTo(Number(event.target.value))}
           />
-          <span className="spiritflix-player__time">{formatTime(duration || ticksToSeconds(item.RunTimeTicks))}</span>
+          <span className="spiritflix-player__time">{formatTime(scrubDuration)}</span>
         </div>
 
         <div className="spiritflix-player__button-row">
@@ -3705,7 +3757,11 @@ export function SpiritFlixPlayer({
           ) : null}
           {showFaceLearningStatus && faceLearningRecord ? (
             <p className="spiritflix-model-editor__learning" aria-live="polite">
-              Face learning queued{faceLearningRecord.actions.pendingCorrectionWritten ? " with sidecar correction" : ""}.
+              {faceLearningRecord.actions.faceEnrollmentPerformed
+                ? "Face enrolled for future model matching."
+                : faceLearningRecord.actions.faceEnrollmentAttempted && faceLearningRecord.actions.faceEnrollmentError
+                  ? `Face learning queued; enrollment needs a stronger face crop (${faceLearningRecord.actions.faceEnrollmentError}).`
+                  : `Face learning queued${faceLearningRecord.actions.pendingCorrectionWritten ? " with sidecar correction" : ""}.`}
             </p>
           ) : null}
           {faceLearningError ? <p className="spiritflix-tag-editor__error" role="alert">{faceLearningError}</p> : null}
@@ -3933,7 +3989,7 @@ export function SpiritFlixPlayer({
           >
             <SortableContext items={queueDndIds} strategy={verticalListSortingStrategy}>
               <div className="spiritflix-player__queue-list">
-                {queueItems.map((queueItem, index) => {
+                {visibleQueueDrawerItems.map(({ item: queueItem, index }) => {
                   const isCurrent = queueItem.Id === item.Id;
                   return (
                     <SortableQueueItem
