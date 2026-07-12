@@ -15,6 +15,7 @@ HEALTH_STARTUP_GRACE="${SPIRITOS_LAN_HEALTH_STARTUP_GRACE:-180}"
 HEALTH_FAILURE_LIMIT="${SPIRITOS_LAN_HEALTH_FAILURE_LIMIT:-5}"
 HEALTH_CURL_TIMEOUT="${SPIRITOS_LAN_HEALTH_CURL_TIMEOUT:-15}"
 CACHE_CLEAR_EVERY="${SPIRITOS_LAN_CACHE_CLEAR_EVERY:-3}"
+WATCHDOG_PAUSE_FILE="${SPIRITOS_LAN_WATCHDOG_PAUSE_FILE:-$ROOT/.spiritos-lan-watchdog.paused}"
 
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
 
@@ -81,6 +82,10 @@ health_check() {
   [[ "$code" =~ ^[23] ]]
 }
 
+watchdog_restart_paused() {
+  [[ "${SPIRITOS_LAN_WATCHDOG_PAUSED:-0}" == "1" || -f "$WATCHDOG_PAUSE_FILE" ]]
+}
+
 cd "$ROOT" || {
   log "cannot cd to $ROOT"
   exit 1
@@ -126,6 +131,12 @@ while true; do
       failures=$((failures + 1))
       log "frontend health check failed $failures/$HEALTH_FAILURE_LIMIT for $HEALTH_URL"
       if (( failures >= HEALTH_FAILURE_LIMIT )); then
+        if watchdog_restart_paused; then
+          log "frontend restart skipped because watchdog pause is active (env SPIRITOS_LAN_WATCHDOG_PAUSED=1 or marker $WATCHDOG_PAUSE_FILE)"
+          failures=0
+          sleep "$HEALTH_INTERVAL"
+          continue
+        fi
         log "frontend is hung or unreachable; restarting"
         snapshot
         stop_frontend_processes "$app_pid"
