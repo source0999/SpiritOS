@@ -3323,7 +3323,7 @@
   position: absolute;
   right: max(0.75rem, env(safe-area-inset-right));
   bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 6.2rem);
-  z-index: 12;
+  z-index: 30;
   display: grid;
   gap: 0.75rem;
   width: min(27rem, calc(100% - 1.5rem));
@@ -5225,6 +5225,107 @@
     padding: 0.55rem 0.85rem 0.85rem;
     background: rgba(9, 9, 18, 0.96);
     backdrop-filter: blur(18px);
+  }
+}
+
+@media (max-width: 760px) and (orientation: portrait), (pointer: coarse) and (max-width: 760px) and (orientation: portrait) {
+  .spiritflix-player .spiritflix-player__controls {
+    padding-right: 4.45rem;
+  }
+
+  .spiritflix-player .spiritflix-player__scrub-row {
+    padding-right: 0;
+  }
+
+  .spiritflix-player .spiritflix-player__button-row {
+    position: absolute;
+    right: 0.62rem;
+    bottom: calc(100% + 3.1rem);
+    z-index: 32;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.42rem;
+    width: 2.45rem;
+    padding: 0;
+  }
+
+  .spiritflix-player .spiritflix-player__transport,
+  .spiritflix-player .spiritflix-player__tools {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.34rem;
+    width: 2.45rem;
+    overflow: visible;
+  }
+
+  .spiritflix-player .spiritflix-player__tools {
+    position: relative;
+  }
+
+  .spiritflix-player .spiritflix-player__tool--more {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: auto !important;
+    order: -1 !important;
+    transform: none !important;
+  }
+
+  .spiritflix-player .spiritflix-player__tools-overflow {
+    position: absolute !important;
+    top: 0 !important;
+    right: calc(100% + 0.55rem) !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 41 !important;
+    grid-template-columns: repeat(2, 2.45rem) !important;
+    max-height: min(18rem, calc(100dvh - 7rem)) !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(0.35rem) scale(0.98) !important;
+  }
+
+  .spiritflix-player .spiritflix-player__tools.is-open .spiritflix-player__tools-overflow {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: translateX(0) scale(1) !important;
+  }
+
+  .spiritflix-player .spiritflix-player__volume input {
+    position: absolute !important;
+    top: 50% !important;
+    right: calc(100% + 0.55rem) !important;
+    bottom: auto !important;
+    z-index: 43 !important;
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    height: 2.25rem;
+    border-radius: 999px;
+    padding: 0 0.5rem;
+    background: rgba(6, 8, 14, 0.9);
+    box-shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) !important;
+    transform-origin: center;
+    touch-action: pan-x;
+  }
+
+  .spiritflix-player .spiritflix-player__volume.is-expanded input,
+  .spiritflix-player .spiritflix-player__volume:focus-within input {
+    width: min(11.5rem, calc(100vw - 6.2rem));
+    min-width: min(11.5rem, calc(100vw - 6.2rem));
+    max-width: min(11.5rem, calc(100vw - 6.2rem));
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 

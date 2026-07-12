@@ -113,12 +113,8 @@ describe("SpiritFlixApp live library loading", () => {
     vi.clearAllMocks();
   });
 
-  it("paints the current library grid behind the loader before slow shelf requests finish", async () => {
+  it("does not show a blocking loader splash while shelves stream in", async () => {
     const slowShelves = deferred<JellyfinItemPage>();
-    let shelvesResolved = false;
-    slowShelves.promise.then(() => {
-      shelvesResolved = true;
-    });
     mocks.client = createClient({
       getLibraryFeaturedItemsPage: vi.fn(() => slowShelves.promise),
       getLibraryResumeItemsPage: vi.fn(() => slowShelves.promise),
@@ -130,14 +126,21 @@ describe("SpiritFlixApp live library loading", () => {
     render(<SpiritFlixApp />);
 
     await waitFor(() => expect(mocks.client.getLibraryItemsPage).toHaveBeenCalled());
-    expect(await screen.findByRole("region", { name: /library model library/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "All Models" })).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: /stage 3 of 4: loading shelves/i })).toBeInTheDocument();
-    expect(mocks.client.getLibraryLatestAddedPage).toHaveBeenCalled();
-    expect(shelvesResolved).toBe(false);
+    // The blocking splash was removed entirely — content streams in without a
+    // fake progress gate. No progressbar should ever appear for library loads.
+    await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
   });
 
-  it("fails the blocking loader when the first Jellyfin library request never settles", async () => {
+  it("does not flash the restore-session splash at 0 percent", async () => {
+    mocks.client = createClient();
+
+    render(<SpiritFlixApp />);
+
+    expect(screen.queryByRole("progressbar", { name: /connecting to jellyfin/i })).not.toBeInTheDocument();
+    await waitFor(() => expect(mocks.client.getLibraryItemsPage).toHaveBeenCalled());
+  });
+
+  it("does not block or time out when the first Jellyfin library request never settles", async () => {
     vi.useFakeTimers();
     mocks.client = createClient({
       getLibraries: vi.fn(() => new Promise(() => {})),
@@ -148,15 +151,11 @@ describe("SpiritFlixApp live library loading", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
-    const progress = screen.getByRole("progressbar", { name: "Stage 1 of 4: Connecting to Jellyfin" });
-    expect(progress).not.toHaveAttribute("aria-valuenow");
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(12000);
-    });
-
+    // No blocking loader, no fake timeout error UI — the app simply waits for
+    // the request and renders whatever is available.
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-    expect(screen.getByText("Jellyfin request timed out while loading library data.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.queryByText("Jellyfin request timed out while loading library data.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
   });
 
   it("uses the route library for silent focus refreshes on mobile navigation races", async () => {
@@ -194,6 +193,38 @@ describe("SpiritFlixApp live library loading", () => {
 
     await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("library-2", expect.objectContaining({ fields: "card" })));
     expect(getLibraryItemsPage).not.toHaveBeenCalledWith("library-1", expect.anything());
+  });
+
+  it("does not show the blocking loader when switching libraries over visible content", async () => {
+    const libraries = [
+      { Id: "library-1", Name: "Library", CollectionType: "movies" },
+      { Id: "library-2", Name: "Other", CollectionType: "movies" },
+    ];
+    const slowOtherLibrary = deferred<JellyfinItemPage>();
+    const getLibraryItemsPage = vi.fn((libraryId: string) =>
+      libraryId === "library-2"
+        ? slowOtherLibrary.promise
+        : Promise.resolve(page([{ ...libraryItem, Id: "library-1-scene", Name: "Library One Scene" }])),
+    );
+    mocks.client = createClient({
+      getLibraries: vi.fn().mockResolvedValue(libraries),
+      getLibraryItemsPage,
+    });
+
+    render(<SpiritFlixApp />);
+
+    expect(await screen.findAllByText("Library One Scene")).not.toHaveLength(0);
+    await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
+
+    await act(async () => {
+      screen.getByRole("button", { name: "Other" }).click();
+    });
+
+    await waitFor(() => expect(getLibraryItemsPage).toHaveBeenCalledWith("library-2", expect.objectContaining({ fields: "card" })));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+
+    slowOtherLibrary.resolve(page([{ ...libraryItem, Id: "library-2-scene", Name: "Other Scene" }]));
+    expect(await screen.findAllByText("Other Scene")).not.toHaveLength(0);
   });
 
   it("honors the Library navbar shell route instead of forcing it to yes", async () => {

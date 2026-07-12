@@ -37,6 +37,7 @@ import {
   getResumeProgressPercent,
   getResumeSlotLabel,
   getTimeLeftLabel,
+  hasWatchActivity,
   hasResumeProgress,
 } from "@/lib/spiritflix-resume";
 import {
@@ -96,6 +97,7 @@ interface SpiritFlixHomeProps {
 type LibraryViewMode = "grid" | "list" | "history" | "favorites" | "gallery" | "models";
 type LibrarySortMode = "model" | "title" | "dateAdded" | "duration";
 type LibrarySortDirection = "asc" | "desc";
+type LibraryShuffleMode = "all" | "unexplored";
 type LibrarySmartRescanState = {
   status: "idle" | "running" | "completed" | "failed";
   startedAt?: string;
@@ -168,14 +170,15 @@ const LIBRARY_SORT_DIRECTION_KEY = "spiritflix_library_sort_direction";
 const LIBRARY_ORIENTATION_FILTER_KEY = "spiritflix_library_orientation_filter";
 const LIBRARY_UI_STATE_KEY = "spiritflix_library_ui_state";
 const FACE_METADATA_CACHE_KEY = "spiritflix_face_metadata_v6";
+const FULL_LIBRARY_ITEMS_CACHE_KEY = "spiritflix_full_library_items_v1";
 const GALLERY_INTERVAL_KEY = "spiritflix_gallery_interval_seconds";
 const LIBRARY_PAGE_SIZE = 20;
 const FACE_METADATA_PAGELOAD_ITEM_LIMIT = LIBRARY_PAGE_SIZE;
-const BACKGROUND_MODEL_GROUP_ITEM_LIMIT = 1000;
-const BACKGROUND_MODEL_GROUP_PAGE_SIZE = 100;
-const ENABLE_FULL_LIBRARY_SCAN = process.env.SPIRITFLIX_FULL_LIBRARY_SCAN === "1";
+const BACKGROUND_MODEL_GROUP_PAGE_SIZE = 50;
 const TEMP_LIBRARY_NAME = "Home Videos and Photos";
 const TWITTER_SOURCE_MODEL_NAME = "Twitter";
+const UNKNOWN_MODEL_NAME = "Unknown";
+const HIGH_CONFIDENCE_MODEL_MATCH = 0.8;
 export function getBoundedHomeFaceMetadataItems(
   items: JellyfinItem[],
   limit = FACE_METADATA_PAGELOAD_ITEM_LIMIT,
@@ -215,6 +218,10 @@ const MODEL_NAME_ALIASES: Record<string, string> = {
   sendnudesx: "Sendnudesx",
   sendnudexx: "Sendnudesx",
   sendnudesxx: "Sendnudesx",
+  ibeithmommy: "Vibe With Mommy",
+  viaewitnmommiy: "Vibe With Mommy",
+  vibewithmommy: "Vibe With Mommy",
+  vibewithmorim: "Vibe With Mommy",
   whoahannahjo: "Whoahannahjo",
 };
 
@@ -227,6 +234,7 @@ interface StoredLibraryUiState {
   sortMode: LibrarySortMode;
   sortDirection: LibrarySortDirection;
   orientationFilter: SpiritFlixOrientationFilter;
+  shuffleMode: LibraryShuffleMode;
   filtersOpen: boolean;
   pageIndex: number;
 }
@@ -251,6 +259,10 @@ function isLibrarySortMode(value: unknown): value is LibrarySortMode {
 
 function isLibrarySortDirection(value: unknown): value is LibrarySortDirection {
   return value === "asc" || value === "desc";
+}
+
+function isLibraryShuffleMode(value: unknown): value is LibraryShuffleMode {
+  return value === "all" || value === "unexplored";
 }
 
 function isOrientationFilter(value: unknown): value is SpiritFlixOrientationFilter {
@@ -281,6 +293,65 @@ function getStoredExcludedCategories(state: Partial<StoredLibraryUiState>): stri
   return Array.isArray(state.excludedCategories)
     ? state.excludedCategories.filter((category): category is string => typeof category === "string")
     : [];
+}
+
+function getFullLibraryCacheKey(libraryId: string, searchTerm: string): string {
+  return `${libraryId}\u0000${searchTerm}`;
+}
+
+function readCachedFullLibraryItems(libraryId: string, searchTerm: string): JellyfinItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem(FULL_LIBRARY_ITEMS_CACHE_KEY) ?? "{}") as Record<string, JellyfinItem[]>;
+    const cached = parsed[getFullLibraryCacheKey(libraryId, searchTerm)];
+    return Array.isArray(cached) ? cached : [];
+  } catch {
+    return [];
+  }
+}
+
+function compactFullLibraryItem(item: JellyfinItem): JellyfinItem {
+  return {
+    Id: item.Id,
+    Name: item.Name,
+    Type: item.Type,
+    MediaType: item.MediaType,
+    Path: item.Path,
+    SeriesName: item.SeriesName,
+    DateCreated: item.DateCreated,
+    RunTimeTicks: item.RunTimeTicks,
+    PrimaryImageAspectRatio: item.PrimaryImageAspectRatio,
+    People: item.People,
+    ImageTags: item.ImageTags,
+    BackdropImageTags: item.BackdropImageTags,
+    UserData: item.UserData,
+    MediaSources: item.MediaSources?.map((source) => ({
+      Id: source.Id,
+      Path: source.Path,
+      RunTimeTicks: source.RunTimeTicks,
+      Size: source.Size,
+    })),
+    MediaStreams: item.MediaStreams?.map((stream) => ({
+      Index: stream.Index,
+      Type: stream.Type,
+      Codec: stream.Codec,
+      Width: stream.Width,
+      Height: stream.Height,
+    })),
+    ManualTags: item.ManualTags,
+    ManualModelName: item.ManualModelName,
+  };
+}
+
+function writeCachedFullLibraryItems(libraryId: string, searchTerm: string, items: JellyfinItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem(FULL_LIBRARY_ITEMS_CACHE_KEY) ?? "{}") as Record<string, JellyfinItem[]>;
+    parsed[getFullLibraryCacheKey(libraryId, searchTerm)] = items.map(compactFullLibraryItem);
+    window.sessionStorage.setItem(FULL_LIBRARY_ITEMS_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Session storage is a convenience cache only.
+  }
 }
 const NON_MODEL_FOLDER_NAMES = new Set(["yes", "other"]);
 
@@ -313,6 +384,66 @@ function getCanonicalModelName(name: string, faceMetadata: FaceOrganizerMetadata
   return getOrganizerModelName(name, faceMetadata) ?? normalizeModelName(name);
 }
 
+function buildModelCatalogAliasMap(
+  modelCatalog: SpiritFlixManualModelSummary[] = [],
+  faceMetadata: FaceOrganizerMetadataResponse | null,
+): Map<string, string> {
+  const aliasMap = new Map<string, string>();
+  modelCatalog.forEach((model) => {
+    const canonicalName = getCanonicalModelName(model.modelName, faceMetadata);
+    [model.modelName, ...(model.aliases ?? [])].forEach((alias) => {
+      const aliasKey = getModelAliasKey(alias);
+      if (aliasKey && !aliasMap.has(aliasKey)) aliasMap.set(aliasKey, canonicalName);
+    });
+  });
+  return aliasMap;
+}
+
+function getItemModelHintTextValues(item: JellyfinItem): string[] {
+  const pathValues = [
+    item.Path,
+    ...(item.MediaSources?.map((source) => source.Path) ?? []),
+  ].filter((value): value is string => Boolean(value));
+  return [
+    item.Name,
+    item.SeriesName,
+    item.Overview,
+    ...pathValues,
+    ...pathValues.flatMap((value) => value.split(/[\\/]+/)),
+  ].filter((value): value is string => Boolean(value));
+}
+
+function findTrustedCatalogModelFromItemHints(
+  item: JellyfinItem,
+  modelCatalog: SpiritFlixManualModelSummary[],
+  faceMetadata: FaceOrganizerMetadataResponse | null,
+): string | null {
+  const aliases = modelCatalog
+    .filter(isTrustedCatalogModel)
+    .flatMap((model) => {
+      const canonicalName = getCanonicalModelName(model.modelName, faceMetadata);
+      const localAliases = Object.entries(MODEL_NAME_ALIASES)
+        .filter(([, aliasTarget]) => getModelAliasKey(aliasTarget) === getModelAliasKey(canonicalName))
+        .map(([alias]) => alias);
+      return [model.modelName, canonicalName, ...(model.aliases ?? []), ...localAliases].map((alias) => ({
+        key: getModelAliasKey(alias),
+        canonicalName,
+      }));
+    })
+    .filter((alias, index, all) =>
+      alias.key.length >= 5 &&
+      all.findIndex((candidate) => candidate.key === alias.key && candidate.canonicalName === alias.canonicalName) === index,
+    )
+    .sort((left, right) => right.key.length - left.key.length);
+
+  const hintKeys = getItemModelHintTextValues(item).map(getModelAliasKey).filter(Boolean);
+  return aliases.find((alias) => hintKeys.some((hintKey) => hintKey.includes(alias.key)))?.canonicalName ?? null;
+}
+
+function getCatalogCanonicalModelName(name: string, faceMetadata: FaceOrganizerMetadataResponse | null, aliasMap: Map<string, string>): string {
+  return aliasMap.get(getModelAliasKey(name)) ?? getCanonicalModelName(name, faceMetadata);
+}
+
 function getLiveSourceCount(name: string, faceMetadata: FaceOrganizerMetadataResponse | null): number | undefined {
   return faceMetadata?.enrolledSources?.[getModelAliasKey(name)]?.candidateVideos;
 }
@@ -340,15 +471,74 @@ function getFaceMatch(item: JellyfinItem, faceMetadata: FaceOrganizerMetadataRes
   return faceMetadata?.videos[item.Id];
 }
 
+function uniqueJellyfinItemsById(items: JellyfinItem[]): JellyfinItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.Id)) return false;
+    seen.add(item.Id);
+    return true;
+  });
+}
+
+function mergeFaceOrganizerMetadata(
+  current: FaceOrganizerMetadataResponse | null,
+  next: FaceOrganizerMetadataResponse,
+): FaceOrganizerMetadataResponse {
+  if (!current) return next;
+  const performerMap = new Map<string, NonNullable<FaceOrganizerMetadataResponse["knownPerformers"]>[number]>();
+  [...(current.knownPerformers ?? []), ...(next.knownPerformers ?? [])].forEach((performer) => {
+    const key = getModelAliasKey(performer.id ?? performer.name ?? "");
+    if (key) performerMap.set(key, performer);
+  });
+  const videos = {
+    ...current.videos,
+    ...next.videos,
+  };
+  return {
+    ...current,
+    ...next,
+    knownPerformers: Array.from(performerMap.values()),
+    enrolledSources: {
+      ...(current.enrolledSources ?? {}),
+      ...(next.enrolledSources ?? {}),
+    },
+    videos,
+    scannedCount: Object.values(videos).filter((video) => video.status !== "unscanned").length,
+    generatedAt: next.generatedAt ?? current.generatedAt,
+  };
+}
+
 function hasIdentifiedFace(match?: FaceOrganizerVideoMatch): boolean {
   return Boolean(match?.primaryPerformer?.name && match.primaryPerformer.name !== "unknown performer" && match.status === "confirmed");
 }
 
-function getDisplayModelName(item: JellyfinItem, faceMetadata: FaceOrganizerMetadataResponse | null): string {
-  if (item.ManualModelName) return getCanonicalModelName(item.ManualModelName, faceMetadata);
+function hasTrustedFaceSignal(match?: FaceOrganizerVideoMatch): boolean {
+  if (!match?.primaryPerformer?.name || match.primaryPerformer.name === "unknown performer") return false;
+  // A confirmed face match is a strong signal on its own — it does NOT need
+  // to also be in the catalog. Requiring catalog membership here was collapsing
+  // confidently-identified videos into Unknown, which is what tanked model counts.
+  if (match.status === "confirmed") return true;
+  return match.status === "needs_review" && (match.confidence ?? match.primaryPerformer.confidence ?? 0) >= HIGH_CONFIDENCE_MODEL_MATCH;
+}
+
+// True when the face match alone is strong enough to assign the video to its
+// resolved model regardless of catalog membership (confirmed face signals).
+function hasStandAloneFaceModelSignal(match?: FaceOrganizerVideoMatch): boolean {
+  if (!match?.primaryPerformer?.name || match.primaryPerformer.name === "unknown performer") return false;
+  return match.status === "confirmed";
+}
+
+function getDisplayModelName(
+  item: JellyfinItem,
+  faceMetadata: FaceOrganizerMetadataResponse | null,
+  catalogAliasMap?: Map<string, string>,
+): string {
+  const toCanonical = (name: string) =>
+    catalogAliasMap ? getCatalogCanonicalModelName(name, faceMetadata, catalogAliasMap) : getCanonicalModelName(name, faceMetadata);
+  if (item.ManualModelName) return toCanonical(item.ManualModelName);
   const faceMatch = getFaceMatch(item, faceMetadata);
-  if (hasIdentifiedFace(faceMatch)) return getCanonicalModelName(faceMatch?.primaryPerformer?.name ?? "Unknown", faceMetadata);
-  return getCanonicalModelName(getModelName(item), faceMetadata);
+  if (hasTrustedFaceSignal(faceMatch)) return toCanonical(faceMatch?.primaryPerformer?.name ?? "Unknown");
+  return toCanonical(getModelName(item));
 }
 
 function getStatusRank(status?: FaceOrganizerStatus): number {
@@ -383,6 +573,19 @@ function getItemCategoryKeys(item: JellyfinItem): string[] {
   return isTwitterSourceItem(item) ? ["twitter"] : [];
 }
 
+function hasManualModelAssignments(catalogEntry?: SpiritFlixManualModelSummary): boolean {
+  return Boolean((catalogEntry?.assignedCount ?? 0) > 0 || (catalogEntry?.source === "manual" && catalogEntry.count > 0));
+}
+
+function isTrustedCatalogModel(catalogEntry?: SpiritFlixManualModelSummary): boolean {
+  if (!catalogEntry) return false;
+  if (hasManualModelAssignments(catalogEntry)) return true;
+  const catalogCount = catalogEntry.catalogCount ?? catalogEntry.count ?? 0;
+  const status = catalogEntry.catalogStatus;
+  if (status === "user-confirmed") return true;
+  return catalogCount >= 2 && (status === "profile-url" || status === "needs-review" || status === "local-auto");
+}
+
 function buildModelGroups(
   items: JellyfinItem[],
   faceMetadata: FaceOrganizerMetadataResponse | null,
@@ -390,16 +593,36 @@ function buildModelGroups(
 ): ModelGroup[] {
   const groups = new Map<string, JellyfinItem[]>();
   const metaByName = new Map<string, { source: ModelGroup["source"]; status: FaceOrganizerStatus; confidence?: number }>();
+  const catalogAliasMap = buildModelCatalogAliasMap(modelCatalog, faceMetadata);
+  const catalogByName = new Map(modelCatalog.map((model) => [getModelAliasKey(getCanonicalModelName(model.modelName, faceMetadata)), model]));
 
   items.filter(isPlayableItem).forEach((item) => {
     const faceMatch = getFaceMatch(item, faceMetadata);
-    const isFaceIdentified = hasIdentifiedFace(faceMatch);
-    const rawModelName = item.ManualModelName ?? (isFaceIdentified ? faceMatch?.primaryPerformer?.name ?? getModelName(item) : getModelName(item));
-    const modelName = getCanonicalModelName(rawModelName, faceMetadata);
+    const isManualAssigned = Boolean(item.ManualModelName);
+    const hasFaceModelSignal = hasTrustedFaceSignal(faceMatch);
+    const standAloneFaceModel = hasStandAloneFaceModelSignal(faceMatch);
+    const filenameModelName = findTrustedCatalogModelFromItemHints(item, modelCatalog, faceMetadata);
+    const rawModelName =
+      item.ManualModelName ??
+      (hasFaceModelSignal ? faceMatch?.primaryPerformer?.name ?? getModelName(item) : filenameModelName ?? getModelName(item));
+    const resolvedModelName = getCatalogCanonicalModelName(rawModelName, faceMetadata, catalogAliasMap);
+    const catalogEntry = catalogByName.get(getModelAliasKey(resolvedModelName));
+    // A confirmed face match is trusted on its own. needs_review(>=0.80) is
+    // trusted only when the resolved name is also in the trusted catalog.
+    const shouldUseResolvedModel =
+      isManualAssigned ||
+      standAloneFaceModel ||
+      (hasFaceModelSignal && isTrustedCatalogModel(catalogEntry)) ||
+      isTrustedCatalogModel(catalogEntry);
+    const modelName = shouldUseResolvedModel
+      ? resolvedModelName
+      : isTwitterSourceItem(item)
+        ? TWITTER_SOURCE_MODEL_NAME
+        : UNKNOWN_MODEL_NAME;
     groups.set(modelName, [...(groups.get(modelName) ?? []), item]);
     const current = metaByName.get(modelName);
     const next = {
-      source: isFaceIdentified ? "face-organizer" : "jellyfin",
+      source: hasFaceModelSignal ? "face-organizer" : "jellyfin",
       status: faceMatch?.status ?? "unscanned",
       confidence: faceMatch?.confidence,
     } as const;
@@ -408,12 +631,11 @@ function buildModelGroups(
     }
   });
 
-  const catalogByName = new Map(modelCatalog.map((model) => [getModelAliasKey(model.modelName), model]));
-  const regularGroups = Array.from(new Set([...Array.from(groups.keys()), ...modelCatalog.map((model) => getCanonicalModelName(model.modelName, faceMetadata))]))
+  const regularGroups = Array.from(groups.keys())
     .map((name) => {
       const modelItems = groups.get(name) ?? [];
       const catalogEntry = catalogByName.get(getModelAliasKey(name));
-      const indexedCount = Math.max(modelItems.length, catalogEntry?.count ?? 0);
+      const indexedCount = modelItems.length;
       const liveSourceCount = getLiveSourceCount(name, faceMetadata);
       return {
         name,
@@ -436,19 +658,11 @@ function buildModelGroups(
         left.name.localeCompare(right.name),
     );
 
-  const twitterItems = items.filter((item) => isPlayableItem(item) && isTwitterSourceItem(item));
-  if (!twitterItems.length) return regularGroups;
+  const twitterGroup = regularGroups.find((group) => isTwitterSourceGroupName(group.name));
+  if (!twitterGroup) return regularGroups;
 
   return [
-    {
-      name: TWITTER_SOURCE_MODEL_NAME,
-      count: twitterItems.length,
-      indexedCount: twitterItems.length,
-      items: twitterItems,
-      representative: twitterItems.find((item) => item.ImageTags?.Primary || item.ImageTags?.Thumb) ?? twitterItems[0],
-      source: "jellyfin",
-      status: "unscanned",
-    },
+    twitterGroup,
     ...regularGroups.filter((group) => !isTwitterSourceGroupName(group.name)),
   ];
 }
@@ -460,17 +674,6 @@ function shuffleItems(items: JellyfinItem[]): JellyfinItem[] {
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
   return shuffled;
-}
-
-function shuffleQueueAfterItem(items: JellyfinItem[], currentItem: JellyfinItem): JellyfinItem[] {
-  const seen = new Set<string>();
-  const playableItems = [currentItem, ...items].filter((item) => {
-    if (!isPlayableItem(item) || seen.has(item.Id)) return false;
-    seen.add(item.Id);
-    return true;
-  });
-  const remainingItems = playableItems.filter((item) => item.Id !== currentItem.Id);
-  return [currentItem, ...shuffleItems(remainingItems)];
 }
 
 function applyManualModelMapToItems(items: JellyfinItem[], manualModelMap: Map<string, string>): JellyfinItem[] {
@@ -895,6 +1098,9 @@ export function SpiritFlixHome({
       ? "all"
       : isOrientationFilter(storedLibraryUiState.orientationFilter) ? storedLibraryUiState.orientationFilter : "all",
   );
+  const [shuffleMode, setShuffleMode] = useState<LibraryShuffleMode>(() =>
+    isLibraryShuffleMode(storedLibraryUiState.shuffleMode) ? storedLibraryUiState.shuffleMode : "all",
+  );
   const [filtersOpen, setFiltersOpen] = useState(() => !isMobileLibraryViewport() && storedLibraryUiState.filtersOpen === true);
   const [selectedModel, setSelectedModel] = useState<string | null>(() => initialModelName ?? (isMobileLibraryViewport() ? null : storedLibraryUiState.selectedModel ?? null));
   const [selectedManualTag, setSelectedManualTag] = useState<string | null>(() => initialManualTag ?? (isMobileLibraryViewport() ? null : storedLibraryUiState.selectedManualTag ?? null));
@@ -920,6 +1126,7 @@ export function SpiritFlixHome({
     return Number.isInteger(storedPageIndex) && storedPageIndex >= 0 ? storedPageIndex : 0;
   });
   const didRunPageResetRef = useRef(false);
+  const clientRef = useRef(client);
   const longPressTimerRef = useRef<number | null>(null);
   const didLongPressShuffleRef = useRef(false);
   const resumeTrackRef = useRef<HTMLDivElement | null>(null);
@@ -948,6 +1155,10 @@ export function SpiritFlixHome({
     : isHomeView
     ? data.featuredItems[0] ?? data.continueWatching[0] ?? data.latestAdded[0] ?? data.libraryItems[0] ?? null
     : data.libraryItems[0] ?? data.latestAdded[0] ?? data.continueWatching[0] ?? null;
+
+  useEffect(() => {
+    clientRef.current = client;
+  }, [client]);
   const manualModelMap = useMemo(() => {
     const map = new Map<string, string>();
     manualModelRecords.forEach((record) => {
@@ -956,10 +1167,14 @@ export function SpiritFlixHome({
     return map;
   }, [manualModelRecords]);
   const libraryModelSourceItems = fullLibraryItems.length ? fullLibraryItems : data.libraryItems;
-  const modelCountsAreCounting = isLibraryDashboardView && isFullLibraryCounting;
+  const modelCountsAreCounting = false;
   const modelAwareLibraryItems = useMemo(
     () => applyManualModelMapToItems(libraryModelSourceItems, manualModelMap),
     [libraryModelSourceItems, manualModelMap],
+  );
+  const modelCatalogAliasMap = useMemo(
+    () => buildModelCatalogAliasMap(manualModelIndex?.models ?? [], faceMetadata),
+    [faceMetadata, manualModelIndex?.models],
   );
   const animeSeriesGroups = useMemo(() => {
     const seriesMap = new Map<string, Map<number, JellyfinItem[]>>();
@@ -1029,17 +1244,6 @@ export function SpiritFlixHome({
   );
   const selectedModelGroup = selectedModel ? modelGroups.find((model) => model.name === selectedModel) : null;
   const playableLibraryItems = useMemo(() => modelAwareLibraryItems.filter(isPlayableItem), [modelAwareLibraryItems]);
-  const orientationCounts = useMemo(() => countItemsByVideoOrientation(playableLibraryItems), [playableLibraryItems]);
-  const categoryFilters = useMemo(
-    () => [
-      {
-        key: "twitter",
-        label: "Twitter / X",
-        count: playableLibraryItems.filter((item) => getItemCategoryKeys(item).includes("twitter")).length,
-      },
-    ],
-    [playableLibraryItems],
-  );
   const excludedCategorySet = useMemo(() => new Set(excludedCategories), [excludedCategories]);
   const manualTagMap = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -1054,6 +1258,29 @@ export function SpiritFlixHome({
         .map((record) => record.itemId),
     );
   }, [manualTagRecords, selectedManualTag]);
+  const filterCountBaseItems = useMemo(
+    () =>
+      (selectedModelGroup?.items ?? playableLibraryItems)
+        .filter((item) => (manualTagItemIds ? manualTagItemIds.has(item.Id) : true)),
+    [manualTagItemIds, playableLibraryItems, selectedModelGroup],
+  );
+  const filterShapeCountItems = useMemo(
+    () => filterCountBaseItems.filter((item) => getItemCategoryKeys(item).every((category) => !excludedCategorySet.has(category))),
+    [excludedCategorySet, filterCountBaseItems],
+  );
+  const orientationCounts = useMemo(() => countItemsByVideoOrientation(filterShapeCountItems), [filterShapeCountItems]);
+  const categoryFilters = useMemo(
+    () => [
+      {
+        key: "twitter",
+        label: "Twitter / X",
+        count: filterCountBaseItems
+          .filter((item) => itemMatchesVideoOrientation(item, orientationFilter))
+          .filter((item) => getItemCategoryKeys(item).includes("twitter")).length,
+      },
+    ],
+    [filterCountBaseItems, orientationFilter],
+  );
   const galleryItems = useMemo(() => galleryData?.items ?? [], [galleryData]);
   const selectedModelGalleryItems = useMemo(
     () => (selectedModelGroup ? galleryItems.filter((item) => galleryItemMatchesModel(item, selectedModelGroup.name)) : []),
@@ -1064,12 +1291,21 @@ export function SpiritFlixHome({
     () => filterItemsByVideoOrientation(selectedModelGroup?.items ?? playableLibraryItems, orientationFilter),
     [orientationFilter, playableLibraryItems, selectedModelGroup],
   );
+  const latestAddedSourceItems = useMemo(
+    () => {
+      if (sortMode !== "dateAdded" || selectedModelGroup || manualTagItemIds || !data.latestAdded.length) {
+        return scopedLibraryItems;
+      }
+      return data.latestAdded.filter(isPlayableItem);
+    },
+    [data.latestAdded, manualTagItemIds, scopedLibraryItems, selectedModelGroup, sortMode],
+  );
   const filteredLibraryItems = useMemo(
     () =>
-      scopedLibraryItems
+      latestAddedSourceItems
         .filter((item) => getItemCategoryKeys(item).every((category) => !excludedCategorySet.has(category)))
         .filter((item) => (manualTagItemIds ? manualTagItemIds.has(item.Id) : true)),
-    [excludedCategorySet, manualTagItemIds, scopedLibraryItems],
+    [excludedCategorySet, latestAddedSourceItems, manualTagItemIds],
   );
   const filteredLibraryItemIds = useMemo(
     () => new Set(filteredLibraryItems.map((item) => item.Id)),
@@ -1100,13 +1336,13 @@ export function SpiritFlixHome({
         return compareOptionalNumber(getDurationTicks(left), getDurationTicks(right), sortDirection) || left.Name.localeCompare(right.Name);
       }
 
-      const modelCompare = getDisplayModelName(left, faceMetadata).localeCompare(getDisplayModelName(right, faceMetadata));
+      const modelCompare = getDisplayModelName(left, faceMetadata, modelCatalogAliasMap).localeCompare(getDisplayModelName(right, faceMetadata, modelCatalogAliasMap));
       if (modelCompare) return direction * modelCompare;
       const leftMatch = getFaceMatch(left, faceMetadata);
       const rightMatch = getFaceMatch(right, faceMetadata);
       return getStatusRank(leftMatch?.status) - getStatusRank(rightMatch?.status) || left.Name.localeCompare(right.Name);
     });
-  }, [faceMetadata, filteredLibraryItems, sortDirection, sortMode]);
+  }, [faceMetadata, filteredLibraryItems, modelCatalogAliasMap, sortDirection, sortMode]);
   const libraryPageCount = Math.max(1, Math.ceil(sortedLibraryItems.length / LIBRARY_PAGE_SIZE));
   const clampedLibraryPageIndex = Math.min(libraryPageIndex, libraryPageCount - 1);
   const visibleLibraryItems = useMemo(() => {
@@ -1437,14 +1673,7 @@ export function SpiritFlixHome({
   }, [isLibraryDashboardView, loadManualModels, loadManualTags, playPrimaryTapOnMobile]);
 
   useEffect(() => {
-    if (!isLibraryDashboardView || !data.selectedLibraryId) {
-      setFullLibraryItems([]);
-      setIsFullLibraryCounting(false);
-      return undefined;
-    }
-    const shouldRunFullLibraryModelScan =
-      !playPrimaryTapOnMobile || viewMode === "models" || Boolean(selectedModel);
-    if (!shouldRunFullLibraryModelScan) {
+    if (!isLibraryDashboardView || !data.selectedLibraryId || loading) {
       setFullLibraryItems([]);
       setIsFullLibraryCounting(false);
       return undefined;
@@ -1452,37 +1681,61 @@ export function SpiritFlixHome({
     const libraryId = data.selectedLibraryId;
     const controller = new AbortController();
     let cancelled = false;
-    setFullLibraryItems([]);
+    setFullLibraryItems(readCachedFullLibraryItems(libraryId, searchTerm));
     setIsFullLibraryCounting(true);
     const cancelDeferredFullLibraryLoad = scheduleDeferredHomeTaskAfter(() => {
-      void client
-        .getAllLibraryItems(libraryId, {
-          searchTerm,
-          fields: "card",
-          pageSize: BACKGROUND_MODEL_GROUP_PAGE_SIZE,
-          maxItems: ENABLE_FULL_LIBRARY_SCAN ? undefined : BACKGROUND_MODEL_GROUP_ITEM_LIMIT,
-          signal: controller.signal,
-        })
-        .then((items) => {
-          if (!cancelled) {
-            setFullLibraryItems(items);
-            setIsFullLibraryCounting(false);
+      void (async () => {
+        let collectedItems: JellyfinItem[] = [];
+        let startIndex = 0;
+        try {
+          for (;;) {
+            const activeClient = clientRef.current;
+            const page = await activeClient.getLibraryItemsPage(libraryId, {
+              searchTerm,
+              fields: "card",
+              limit: BACKGROUND_MODEL_GROUP_PAGE_SIZE,
+              startIndex,
+              signal: controller.signal,
+            });
+            if (cancelled) return;
+            collectedItems = uniqueJellyfinItemsById([...collectedItems, ...page.items]);
+
+            const playablePageItems = page.items.filter(isPlayableItem);
+            if (playablePageItems.length) {
+              void activeClient
+                .getFaceOrganizerMetadata(playablePageItems)
+                .then((metadata) => {
+                  if (cancelled) return;
+                  setFaceMetadata((current) => mergeFaceOrganizerMetadata(current, metadata));
+                })
+                .catch(() => {
+                  if (cancelled) return;
+                  setFaceMetadataError("Face Organizer metadata is unavailable; using Jellyfin model hints.");
+                });
+            }
+
+            if (!page.hasMore || page.items.length === 0) break;
+            startIndex = page.startIndex + page.items.length;
           }
-        })
-        .catch(() => {
           if (!cancelled) {
-            setFullLibraryItems([]);
-            setIsFullLibraryCounting(false);
+            const completedItems = uniqueJellyfinItemsById(collectedItems);
+            setFullLibraryItems(completedItems);
+            writeCachedFullLibraryItems(libraryId, searchTerm, completedItems);
           }
-        });
-    }, playPrimaryTapOnMobile ? 1200 : 16);
+        } catch {
+          if (!cancelled && collectedItems.length === 0) setFullLibraryItems([]);
+        } finally {
+          if (!cancelled) setIsFullLibraryCounting(false);
+        }
+      })();
+    }, 1200);
     return () => {
       cancelled = true;
       cancelDeferredFullLibraryLoad();
       controller.abort();
       setIsFullLibraryCounting(false);
     };
-  }, [client, data.selectedLibraryId, isLibraryDashboardView, playPrimaryTapOnMobile, searchTerm, selectedModel, viewMode]);
+  }, [data.selectedLibraryId, isLibraryDashboardView, loading, searchTerm]);
 
   useEffect(() => {
     const queries = [
@@ -1535,6 +1788,7 @@ export function SpiritFlixHome({
         sortMode,
         sortDirection,
         orientationFilter,
+        shuffleMode,
         filtersOpen,
         pageIndex: clampedLibraryPageIndex,
       } satisfies StoredLibraryUiState),
@@ -1547,6 +1801,7 @@ export function SpiritFlixHome({
     filtersOpen,
     isLibraryDashboardView,
     orientationFilter,
+    shuffleMode,
     selectedManualTag,
     selectedModel,
     sortDirection,
@@ -1644,6 +1899,11 @@ export function SpiritFlixHome({
   );
 
   useEffect(() => {
+    setFaceMetadata(null);
+    setFaceMetadataError("");
+  }, [data.selectedLibraryId, searchTerm]);
+
+  useEffect(() => {
     if (isHomeView || isAnimeView || !visibleFaceMetadataItems.length) {
       setFaceMetadata(null);
       setFaceMetadataError("");
@@ -1656,7 +1916,7 @@ export function SpiritFlixHome({
     const cached = window.localStorage.getItem(cacheKey);
     if (cached) {
       try {
-        setFaceMetadata(JSON.parse(cached) as FaceOrganizerMetadataResponse);
+        setFaceMetadata((current) => mergeFaceOrganizerMetadata(current, JSON.parse(cached) as FaceOrganizerMetadataResponse));
         setFaceMetadataError("");
         onVisibleMetadataReady?.();
         return undefined;
@@ -1669,7 +1929,7 @@ export function SpiritFlixHome({
       .getFaceOrganizerMetadata(visibleFaceMetadataItems)
       .then((metadata) => {
         if (isCancelled) return;
-        setFaceMetadata(metadata);
+        setFaceMetadata((current) => mergeFaceOrganizerMetadata(current, metadata));
         setFaceMetadataError("");
         window.localStorage.setItem(cacheKey, JSON.stringify(metadata));
         onVisibleMetadataReady?.();
@@ -1690,20 +1950,20 @@ export function SpiritFlixHome({
     isAnimeView,
     isHomeView,
     onVisibleMetadataReady,
-    visibleFaceMetadataSignature,
+      visibleFaceMetadataSignature,
   ]);
 
   const filterLibraryShuffleItems = useCallback(
     (items: JellyfinItem[]) => {
       const playableItems = applyManualModelMapToItems(items, manualModelMap).filter(isPlayableItem);
       const scopedItems = selectedModelGroup
-        ? buildModelGroups(playableItems, faceMetadata).find((group) => group.name === selectedModelGroup.name)?.items ?? []
+        ? buildModelGroups(playableItems, faceMetadata, manualModelIndex?.models ?? []).find((group) => group.name === selectedModelGroup.name)?.items ?? []
         : playableItems;
       return filterItemsByVideoOrientation(scopedItems, orientationFilter)
         .filter((item) => getItemCategoryKeys(item).every((category) => !excludedCategorySet.has(category)))
         .filter((item) => (manualTagItemIds ? manualTagItemIds.has(item.Id) : true));
     },
-    [excludedCategorySet, faceMetadata, manualModelMap, manualTagItemIds, orientationFilter, selectedModelGroup],
+    [excludedCategorySet, faceMetadata, manualModelIndex?.models, manualModelMap, manualTagItemIds, orientationFilter, selectedModelGroup],
   );
 
   const playShuffle = async (scope: "library" | "model") => {
@@ -1716,13 +1976,16 @@ export function SpiritFlixHome({
           )
         : filteredLibraryItems;
 
-    if (scope === "library" && data.selectedLibraryId && data.libraryPaging?.hasMore) {
+    // The explicit library shuffle must be whole-library, independent of the
+    // currently visible page or Latest-added sort feed. Fetch the selected
+    // Jellyfin library every time, then apply the active SpiritFlix filters.
+    if (scope === "library" && data.selectedLibraryId) {
       setIsLibraryShuffleLoading(true);
       try {
         sourceItems = filterLibraryShuffleItems(
           await client.getAllLibraryItems(data.selectedLibraryId, {
             searchTerm,
-            fields: "full",
+            fields: "card",
           }),
         );
       } finally {
@@ -1730,47 +1993,14 @@ export function SpiritFlixHome({
       }
     }
 
-    const shuffled = shuffleItems(sourceItems);
+    const shuffled = shuffleItems(shuffleMode === "unexplored" ? sourceItems.filter((item) => !hasWatchActivity(item)) : sourceItems);
     const firstItem = shuffled[0];
     if (firstItem) {
       const sourceTitle = scope === "model" && selectedModelGroup ? selectedModelGroup.name : libraryTitle;
       const orientationLabel = orientationFilter === "all" ? "" : ` / ${getOrientationFilterLabel(orientationFilter)}`;
-      onPlay(firstItem, shuffled, `${sourceTitle}${orientationLabel} Shuffle`);
+      onPlay(firstItem, shuffled, `${sourceTitle}${orientationLabel}${shuffleMode === "unexplored" ? " Unexplored" : ""} Shuffle`);
     }
   };
-
-  const getActiveShuffleSourceTitle = useCallback(() => {
-    const sourceTitle = selectedModelGroup?.name ?? (selectedManualTag ? `${libraryTitle} / ${selectedManualTag}` : libraryTitle);
-    const orientationLabel = orientationFilter === "all" ? "" : ` / ${getOrientationFilterLabel(orientationFilter)}`;
-    return `${sourceTitle}${orientationLabel}`;
-  }, [libraryTitle, orientationFilter, selectedManualTag, selectedModelGroup?.name]);
-
-  const getActiveShuffleItems = useCallback(async () => {
-    if (data.selectedLibraryId && data.libraryPaging?.hasMore) {
-      return filterLibraryShuffleItems(
-        await client.getAllLibraryItems(data.selectedLibraryId, {
-          searchTerm,
-          fields: "full",
-        }),
-      );
-    }
-    return filteredLibraryItems;
-  }, [client, data.libraryPaging?.hasMore, data.selectedLibraryId, filterLibraryShuffleItems, filteredLibraryItems, searchTerm]);
-
-  const playFromActiveShuffle = useCallback(
-    async (item: JellyfinItem, startPositionTicks?: number) => {
-      if (!isPlayableItem(item)) return;
-      setIsLibraryShuffleLoading(true);
-      try {
-        const sourceItems = await getActiveShuffleItems();
-        const queueItems = shuffleQueueAfterItem(sourceItems, item);
-        onPlay(item, queueItems, `${getActiveShuffleSourceTitle()} Shuffle`, startPositionTicks);
-      } finally {
-        setIsLibraryShuffleLoading(false);
-      }
-    },
-    [getActiveShuffleItems, getActiveShuffleSourceTitle, onPlay],
-  );
 
   const goToPreviousLibraryPage = () => {
     setLibraryPageIndex((page) => Math.max(0, page - 1));
@@ -2089,10 +2319,31 @@ export function SpiritFlixHome({
                     </button>
                   </div>
                   <div className="spiritflix-filter-popout__section">
+                    <span>Shuffle mode</span>
+                    <div className="spiritflix-filter-options spiritflix-filter-options--two">
+                      <button
+                        type="button"
+                        className={shuffleMode === "all" ? "is-active" : undefined}
+                        aria-pressed={shuffleMode === "all"}
+                        onClick={() => setShuffleMode("all")}
+                      >
+                        All videos
+                      </button>
+                      <button
+                        type="button"
+                        className={shuffleMode === "unexplored" ? "is-active" : undefined}
+                        aria-pressed={shuffleMode === "unexplored"}
+                        onClick={() => setShuffleMode("unexplored")}
+                      >
+                        Unexplored
+                      </button>
+                    </div>
+                  </div>
+                  <div className="spiritflix-filter-popout__section">
                     <span>Video shape</span>
                     <div className="spiritflix-filter-options spiritflix-filter-options--three">
                       {([
-                        ["all", "All", playableLibraryItems.length],
+                        ["all", "All", filterShapeCountItems.length],
                         ["portrait", "Portrait", orientationCounts.portrait],
                         ["landscape", "Landscape", orientationCounts.landscape],
                       ] as const).map(([value, label, count]) => (
@@ -2296,7 +2547,7 @@ export function SpiritFlixHome({
                         key={item.Id}
                         type="button"
                         className="spiritflix-resume-card"
-                        onClick={() => void playFromActiveShuffle(item, resumeTicks)}
+                        onClick={() => onPlay(item, continueWatchingItems, "Continue Watching", resumeTicks)}
                         whileTap={{ scale: 0.985 }}
                         aria-label={`Resume ${item.Name} at ${getResumeSlotLabel(item)}`}
                       >
@@ -2304,7 +2555,7 @@ export function SpiritFlixHome({
                           <SpiritFlixImage client={client} item={item} type="Thumb" width={420} alt="" />
                         </span>
                         <span className="spiritflix-resume-card__copy">
-                          <strong>{getDisplayModelName(item, faceMetadata)}</strong>
+                          <strong>{getDisplayModelName(item, faceMetadata, modelCatalogAliasMap)}</strong>
                           <small>{item.Name}</small>
                           <span>{getResumeSlotLabel(item)}</span>
                           {timeLeft ? <em>{timeLeft}</em> : null}
@@ -2545,7 +2796,7 @@ export function SpiritFlixHome({
                       </span>
                       <span className="spiritflix-library-row__copy">
                         <strong>{item.Name}</strong>
-                        <small>{getDisplayModelName(item, faceMetadata)}</small>
+                        <small>{getDisplayModelName(item, faceMetadata, modelCatalogAliasMap)}</small>
                         {manualTagMap.get(item.Id)?.filter((tag) => getSpiritFlixManualTagScope(tag) === "video").length ? (
                           <span className="spiritflix-library-row__tags">
                             {manualTagMap.get(item.Id)?.filter((tag) => getSpiritFlixManualTagScope(tag) === "video").slice(0, 5).map((tag) => (
@@ -2594,10 +2845,7 @@ export function SpiritFlixHome({
                       className="spiritflix-library-row spiritflix-library-row--history"
                       onClick={() => {
                         if (isPlayableItem(item)) {
-                          void playFromActiveShuffle(
-                            item,
-                            hasResumeProgress(item) ? getResumePositionTicks(item) : undefined,
-                          );
+                          onPlay(item, historyItems, "Watch History", hasResumeProgress(item) ? getResumePositionTicks(item) : undefined);
                         } else {
                           onOpenDetails(item);
                         }
@@ -2608,7 +2856,7 @@ export function SpiritFlixHome({
                       </span>
                       <span className="spiritflix-library-row__copy">
                         <strong>{item.Name}</strong>
-                        <small>{getDisplayModelName(item, faceMetadata)}</small>
+                        <small>{getDisplayModelName(item, faceMetadata, modelCatalogAliasMap)}</small>
                         <em>{getLastPlayedLabel(item)}</em>
                         <span>
                           {hasResumeProgress(item)
@@ -2621,10 +2869,7 @@ export function SpiritFlixHome({
                           className="spiritflix-library-row__play"
                           onClick={(event) => {
                             event.stopPropagation();
-                            void playFromActiveShuffle(
-                              item,
-                              hasResumeProgress(item) ? getResumePositionTicks(item) : undefined,
-                            );
+                            onPlay(item, historyItems, "Watch History", hasResumeProgress(item) ? getResumePositionTicks(item) : undefined);
                           }}
                         >
                           <Play size={18} fill="currentColor" aria-hidden="true" />
@@ -2712,14 +2957,14 @@ export function SpiritFlixHome({
                 whileTap={{ scale: 0.97 }}
                 aria-label={
                   selectedModelGroup
-                    ? `Shuffle ${libraryTitle} ${getOrientationFilterLabel(orientationFilter)} videos; long press to shuffle ${selectedModelGroup.name}`
-                    : `Shuffle ${libraryTitle} ${getOrientationFilterLabel(orientationFilter)} videos`
+                    ? `Shuffle ${shuffleMode === "unexplored" ? "unexplored " : ""}${libraryTitle} ${getOrientationFilterLabel(orientationFilter)} videos; long press to shuffle ${selectedModelGroup.name}`
+                    : `Shuffle ${shuffleMode === "unexplored" ? "unexplored " : ""}${libraryTitle} ${getOrientationFilterLabel(orientationFilter)} videos`
                 }
               >
                 <Shuffle size={21} aria-hidden="true" />
                 <span>
-                  <strong>Shuffle Gooner Mix</strong>
-                  <small>{selectedModelGroup ? `Hold: ${selectedModelGroup.name}` : getOrientationFilterLabel(orientationFilter)}</small>
+                  <strong>{shuffleMode === "unexplored" ? "Shuffle Unexplored" : "Shuffle Gooner Mix"}</strong>
+                  <small>{selectedModelGroup ? `Hold: ${selectedModelGroup.name}` : shuffleMode === "unexplored" ? "Never started videos" : getOrientationFilterLabel(orientationFilter)}</small>
                 </span>
               </motion.button>
             ) : null}
@@ -2914,21 +3159,6 @@ export function SpiritFlixHome({
               emptyText="No recent videos found."
             />
           </>
-        ) : null}
-        {!isHomeView && !isAnimeView ? (
-          <SpiritFlixRail
-            title="Latest Added"
-            variant="poster"
-            client={client}
-            items={data.latestAdded}
-            playOnPrimaryTap={playPrimaryTapOnMobile}
-            hasMore={Boolean(data.latestAddedPaging?.hasMore)}
-            loadingMore={Boolean(loadingMore.latestAdded)}
-            onLoadMore={onLoadMoreLatestAdded}
-            onOpenDetails={onOpenDetails}
-            onPlay={onPlay}
-            emptyText="No recent videos found."
-          />
         ) : null}
       </div>
       {galleryLightbox ? (

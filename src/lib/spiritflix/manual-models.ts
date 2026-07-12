@@ -23,6 +23,8 @@ export interface SpiritFlixManualModelSummary {
   count: number;
   catalogCount?: number;
   assignedCount?: number;
+  aliases?: string[];
+  catalogStatus?: string;
   source?: "manual" | "registry" | "merged";
 }
 
@@ -82,9 +84,22 @@ interface SpiritFlixKnownModelIndex {
     name?: unknown;
     slug?: unknown;
     aliases?: unknown;
+    status?: unknown;
     profile_handles?: unknown;
     video_count?: unknown;
   }>;
+}
+
+export function shouldUseSpiritFlixKnownModelIndexEntry(model: {
+  status?: unknown;
+  video_count?: unknown;
+}): boolean {
+  const status = typeof model.status === "string" ? model.status : "";
+  const catalogCount = typeof model.video_count === "number" && Number.isFinite(model.video_count)
+    ? Math.max(0, Math.round(model.video_count))
+    : 0;
+  if (status === "user-confirmed") return true;
+  return catalogCount >= 2 && (status === "profile-url" || status === "needs-review" || status === "local-auto");
 }
 
 function addKnownModelAlias(aliasMap: Map<string, string>, alias: unknown, canonicalName: string): void {
@@ -122,6 +137,7 @@ async function getKnownModelSummaries(options: SpiritFlixManualModelStoreOptions
   const modelIndex = modelIndexPath ? await readJsonFile<SpiritFlixKnownModelIndex>(modelIndexPath) : null;
   const summaries = new Map<string, SpiritFlixManualModelSummary>();
   for (const model of modelIndex?.models ?? []) {
+    if (!shouldUseSpiritFlixKnownModelIndexEntry(model)) continue;
     const modelName = canonicalizeSpiritFlixManualModelName(model.name);
     if (!modelName) continue;
     const key = getModelNameKey(modelName);
@@ -130,9 +146,14 @@ async function getKnownModelSummaries(options: SpiritFlixManualModelStoreOptions
       : 0;
     summaries.set(key, {
       modelName,
-      count: catalogCount,
+      count: 0,
       catalogCount,
       assignedCount: 0,
+      aliases: [
+        ...(typeof model.slug === "string" ? [model.slug] : []),
+        ...(Array.isArray(model.aliases) ? model.aliases.filter((alias): alias is string => typeof alias === "string") : []),
+      ],
+      catalogStatus: typeof model.status === "string" ? model.status : undefined,
       source: "registry",
     });
   }
@@ -249,9 +270,11 @@ export async function buildSpiritFlixManualModelIndex(
     const catalogCount = current?.catalogCount ?? 0;
     counts.set(key, {
       modelName: current?.modelName ?? record.modelName,
-      count: Math.max(catalogCount, assignedCount),
+      count: assignedCount,
       catalogCount,
       assignedCount,
+      aliases: current?.aliases,
+      catalogStatus: current?.catalogStatus,
       source: current?.source === "registry" ? "merged" : "manual",
     });
   });

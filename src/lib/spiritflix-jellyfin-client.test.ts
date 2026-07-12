@@ -19,7 +19,7 @@ describe("JellyfinClient playback URLs", () => {
     setViewport(originalViewport.innerWidth, originalViewport.innerHeight, originalViewport.devicePixelRatio);
   });
 
-  it("uses same-origin stream and HLS proxies on HTTPS pages", () => {
+  it("uses direct Jellyfin streams and HLS proxy playlists on private HTTPS pages", () => {
     vi.spyOn(window, "location", "get").mockReturnValue({
       ...window.location,
       protocol: "https:",
@@ -29,10 +29,9 @@ describe("JellyfinClient playback URLs", () => {
     const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
 
     const streamUrl = new URL(client.getStreamUrl("item-1"), "https://100.111.32.31:3000/spiritflix");
-    expect(streamUrl.pathname).toBe("/api/spiritflix/stream");
-    expect(streamUrl.searchParams.get("serverUrl")).toBe("http://100.111.32.31:8096");
-    expect(streamUrl.searchParams.get("itemId")).toBe("item-1");
-    expect(streamUrl.searchParams.get("token")).toBe("token-1");
+    expect(streamUrl.origin).toBe("http://100.111.32.31:8096");
+    expect(streamUrl.pathname).toBe("/Videos/item-1/Stream");
+    expect(streamUrl.searchParams.get("api_key")).toBe("token-1");
     expect(streamUrl.searchParams.get("audioStreamIndex")).toBe(null);
 
     const hlsUrl = new URL(client.getHlsUrl("item-1"), "https://100.111.32.31:3000/spiritflix");
@@ -55,7 +54,7 @@ describe("JellyfinClient playback URLs", () => {
     const streamUrl = new URL(client.getStreamUrl("item-1", { audioStreamIndex: 2 }), "https://10.0.0.186:3000/spiritflix");
     const hlsUrl = new URL(client.getHlsUrl("item-1", { audioStreamIndex: 2 }), "https://10.0.0.186:3000/spiritflix");
 
-    expect(streamUrl.searchParams.get("audioStreamIndex")).toBe("2");
+    expect(streamUrl.searchParams.get("AudioStreamIndex")).toBe("2");
     expect(hlsUrl.searchParams.get("path")).toContain("AudioStreamIndex=2");
   });
 
@@ -121,7 +120,7 @@ describe("JellyfinClient playback URLs", () => {
     const streamUrl = new URL(client.getStreamUrl("item-1"), "https://10.0.0.186:3000/spiritflix");
     const hlsUrl = new URL(client.getHlsUrl("item-1"), "https://10.0.0.186:3000/spiritflix");
 
-    expect(streamUrl.searchParams.get("serverUrl")).toBe("http://10.0.0.186:8096");
+    expect(streamUrl.origin).toBe("http://10.0.0.186:8096");
     expect(hlsUrl.searchParams.get("serverUrl")).toBe("http://10.0.0.186:8096");
   });
 });
@@ -321,6 +320,54 @@ describe("JellyfinClient paged card queries", () => {
     expect(folderPath.pathname).toBe("/Users/user-1/Items");
     expect(folderPath.searchParams.get("Recursive")).toBe("false");
     expect(folderPath.searchParams.get("IncludeItemTypes")).toBe("Folder");
+  });
+
+  it("queries the real media folder for a Home Videos shell latest-added page", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          Items: [
+            {
+              Id: "shell-fixture-id",
+              Name: "Home Videos and Photos",
+              Type: "MediaBrowser.Controller.Entities.CollectionFolder",
+              Path: "/config/root/default/Home Videos and Photos",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          Items: [
+            {
+              Id: "yes-folder",
+              Name: "yes",
+              Type: "Folder",
+              Path: "/media/yes",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          Items: [{ Id: "latest-1", Name: "Latest 1", Type: "Video", MediaType: "Video" }],
+          TotalRecordCount: 1,
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
+
+    await client.getLibraries();
+    const page = await client.getLibraryLatestAddedPage("shell-fixture-id", { limit: 18 });
+
+    const latestCallBody = JSON.parse(fetchMock.mock.calls[2][1]?.body as string) as { path: string };
+    const latestPath = new URL(`http://jellyfin.local${latestCallBody.path}`);
+    expect(latestPath.pathname).toBe("/Users/user-1/Items");
+    expect(latestPath.searchParams.get("ParentId")).toBe("yes-folder");
+    expect(latestPath.searchParams.get("SortBy")).toBe("DateCreated");
+    expect(latestPath.searchParams.get("SortOrder")).toBe("Descending");
+    expect(page.items).toHaveLength(1);
   });
 
   it("keeps the Home Videos shell when Jellyfin exposes it without real folders", async () => {

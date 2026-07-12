@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JellyfinItem } from "./spiritflix-types";
-import { getResumeProgressPercent, hasResumeProgress } from "./spiritflix-resume";
+import { getResumeProgressPercent, hasResumeProgress, hasWatchActivity } from "./spiritflix-resume";
 
 const TICKS_PER_SECOND = 10_000_000;
 
@@ -49,5 +49,11 @@ describe("SpiritFlix resume rules", () => {
         PlayedPercentage: 100,
       },
     }))).toBe(30);
+  });
+
+  it("marks any started or completed video as explored", () => {
+    expect(hasWatchActivity(video())).toBe(true);
+    expect(hasWatchActivity(video({ UserData: { Played: true } }))).toBe(true);
+    expect(hasWatchActivity(video({ UserData: undefined }))).toBe(false);
   });
 });
