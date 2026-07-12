@@ -44,3 +44,8 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 - Commit f64ab7f4 adds an ignored server-side E2E secret contract, redacted preflight, exact opt-in opaque HTTP-only session broker, and proxy substitution path.
 - Preflight result is dedicated_e2e_secret_not_configured; no configured dedicated credential or provisioning API key was found in approved Dell service/config locations.
 - The broker and authenticated browser proof remain fail-closed until a dedicated non-admin Jellyfin identity is provided through the approved secret path or an approved provisioning credential is configured.
+
+2026-07-12 Phase B policy gate:
+- The installed dedicated identity authenticates, is non-admin, and has deletion/server-management permissions disabled.
+- It is rejected because Jellyfin returns EnableAllFolders=false and EnabledFolders=[]; real authenticated loader and Latest Added proof cannot run without explicit library assignment.
+- Broker and preflight now fail closed with dedicated_e2e_identity_no_library_access.
