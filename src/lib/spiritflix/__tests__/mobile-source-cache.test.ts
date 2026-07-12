@@ -41,7 +41,7 @@ describe("JellyfinClient mobile optimized cache", () => {
   });
 
   it("queries only itemId for mobile optimized lookup", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ available: false }), { status: 404 }));
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ available: false }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const client = new JellyfinClient("http://127.0.0.1:8096");

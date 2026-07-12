@@ -57,3 +57,9 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 - Real authenticated desktop and Fold DOM proved loader completion, Latest Added, accessible player entry, attached video, and /coding plus API bridge rendering. Required Jellyfin and coding bridge request families were observed; no page errors occurred.
 - Strict browser zero-console acceptance remains OPEN: the approved SpiritFlix code intentionally requests unavailable mobile-optimized media and receives two /api/spiritflix/mobile-optimized 404 responses. They are classified and non-blocking to live media/player behavior, but count as console errors and were not masked or changed in this candidate.
 - Evidence: docs/architecture/campaign-1-baseline/authenticated-browser-proof.json (sanitized; no cookies, tokens, headers, passwords, session IDs, or media paths).
+
+2026-07-12 authenticated no-reversion gate PASS:
+- The normal "no mobile-optimized derivative" state now returns 200 with {available:false}; the Jellyfin client already consumes this state and preserves direct-media fallback. Focused route/cache characterization passed 6/6.
+- Rebuilt candidate BUILD_ID Qts75774IMdsWljly7uq5 with deterministic .next file-list SHA-256 f6761bc85e0b852cf91a82a0c2753313b7914eb621090cb6b289e6d1e937788a.
+- Rerun on the same SPKI-only Dell Playwright Chromium lane passed authenticated desktop and Fold loader/Latest Added/player proof plus /coding/API bridge, with failed requests=0, console errors=0, page errors=0. Sanitized receipt replaced at docs/architecture/campaign-1-baseline/authenticated-browser-proof.json.
+- Browser gate is complete; next incomplete increment is Phase 0E characterization and Phase 1 P0 authority enforcement.

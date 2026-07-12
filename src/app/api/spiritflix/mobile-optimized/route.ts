@@ -23,7 +23,7 @@ function parseRange(range: string | null, size: number): { start: number; end: n
   return { start, end };
 }
 
-function jsonUnavailable(status = 404) {
+function jsonUnavailable(status = 200) {
   return NextResponse.json({ available: false }, { status });
 }
 

@@ -1,33 +1,20 @@
 {
-  "schema": "spiritos-campaign-1-authenticated-browser-proof/v2",
+  "schema": "spiritos-campaign-1-authenticated-browser-proof/v3",
   "candidate": {
     "worktree": "/home/source/SpiritOS-campaign-1-20260712",
-    "head": "6053b53fcefd56223477df1d9fa1a09c591cc4da",
+    "preCommitHead": "af7fd532",
     "approvedSourceProxyHead": "594d66ef8280953af767a273d7c91be765d1a6eb",
     "approvedSpiritFlixHead": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
-    "buildId": "sGCqWet3V2EeYFhS-QdQA",
-    "artifactPathListSha256": "ce0e32838e7d3b49002919a54832dbea7b6005a6986fe1ca9a24a6d8a7e5252e"
+    "buildId": "Qts75774IMdsWljly7uq5",
+    "artifactPathListSha256": "f6761bc85e0b852cf91a82a0c2753313b7914eb621090cb6b289e6d1e937788a"
   },
   "certificate": {
     "sha256Fingerprint": "AAF476079332A4D3032FAE6989D1B6AD7CE0B744B2C44E3F29C93D73AD8A8CEE",
     "spkiSha256Base64": "dMR8NZsnzNjABlxSAJwd/IyBvxr3kavIAwsr2pw0O9c=",
     "verifiedBeforeBrowserLaunch": true
   },
-  "browser": {
-    "engine": "Playwright Chromium",
-    "spkiAllowlistOnly": true,
-    "ignoreHTTPSErrors": false,
-    "hostTrustModified": false
-  },
-  "authenticatedE2E": {
-    "ready": true,
-    "identityRedacted": true,
-    "administrator": false,
-    "contentDeletion": false,
-    "serverManagement": false,
-    "libraryAccess": true,
-    "rawJellyfinCredentialInBrowser": false
-  },
+  "browser": { "engine": "Playwright Chromium", "spkiAllowlistOnly": true, "ignoreHTTPSErrors": false, "hostTrustModified": false },
+  "authenticatedE2E": { "ready": true, "identityRedacted": true, "administrator": false, "contentDeletion": false, "serverManagement": false, "libraryAccess": true, "rawJellyfinCredentialInBrowser": false },
   "rendered": {
     "desktop": { "latestAdded": true, "loaderCompleted": true, "playerEntry": true, "videoAttached": true, "playButtonCount": 14 },
     "fold": { "latestAdded": true, "loaderCompleted": true, "playerEntry": true, "videoAttached": true, "playButtonCount": 8 },
@@ -35,10 +22,9 @@
   },
   "network": {
     "requiredPathsObserved": ["/api/spiritflix/e2e/session", "/api/spiritflix/jellyfin", "/api/spiritflix/jellyfin-image", "/v1/coding/runs/active", "/v1/coding/runs/recent", "/v1/self/status"],
-    "pageErrors": 0,
-    "consoleErrors": 2,
-    "failedRequests": [{ "path": "/api/spiritflix/mobile-optimized", "status": 404, "count": 2, "classification": "known_optional_asset_absent" }]
+    "failedRequests": 0, "consoleErrors": 0, "pageErrors": 0
   },
-  "verdict": "AUTHENTICATED_RENDERING_PROVEN_STRICT_ZERO_CONSOLE_GATE_OPEN",
+  "mobileOptimizedUnavailableSemantics": { "status": 200, "body": { "available": false }, "fallbackPlaybackPreserved": true },
+  "verdict": "AUTHENTICATED_NO_REVERSION_BROWSER_GATE_PASS",
   "secretRedaction": "pass"
 }

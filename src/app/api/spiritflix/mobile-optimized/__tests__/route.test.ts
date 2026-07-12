@@ -73,7 +73,7 @@ describe("SpiritFlix mobile optimized route", () => {
 
     const { GET } = await loadRoute();
     const response = await GET(new Request("http://localhost/api/spiritflix/mobile-optimized?itemId=item-2") as never);
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ available: false });
   });
 
