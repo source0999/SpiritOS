@@ -3,9 +3,9 @@
 ## Dell/Linux
 
 - Access: `ssh spirit` (user `source`); this is authoritative for `/home/source/**`, worktrees, process CWD, native environments, archives, and Linux tests.
-- Worktrees: Source Proxy `/home/source/SpiritOS-source-proxy-20260711`; SpiritFlix `/home/source/SpiritOS`.
+- Worktrees: Source Proxy `/home/source/SpiritOS-source-proxy-20260711`; SpiritFlix `/home/source/SpiritOS`; temporary live integration `/home/source/SpiritOS-live-integration-20260712`.
 - Verify a service with `lsof -tiTCP:<port> -sTCP:LISTEN`, `readlink -f /proc/<pid>/cwd`, then branch, HEAD, and its health endpoint from that CWD.
-- 2026-07-11 observed: 8787 and 3000 CWDs were the Source Proxy worktree; Next worker 3002 listens on `127.0.0.1` only. Check it with `ss -tlnp | grep 3002`; do not treat 3000 as proof of 3002.
+- 2026-07-11 observed after the live restoration: 8787 CWD is the Source Proxy worktree, while 3000 and its `127.0.0.1` worker 3002 CWDs are the temporary live-integration worktree. Check 3002 with `ss -tlnp | grep 3002`; do not treat 3000 as proof of 3002.
 - Memory is 15 GiB-class with normal cache/swap pressure possible; avoid simultaneous broad builds/harnesses. Archives are under `/home/source/.spiritos-preservation/20260711-full-cleanup/`.
 
 ## Windows/SMB
@@ -20,5 +20,6 @@
 
 ## Service boundary
 
-- Source Proxy owns backend 8787 and HTTPS frontend 3000 from its worktree. Expected Next worker is 3002; it must be live and identity-checked before any test relies on it.
+- Source Proxy owns backend 8787 from its worktree. The temporary integration worktree owns HTTPS frontend 3000 and its expected Next worker 3002; both must be live and identity-checked before any test relies on them.
+- The live-integration worktree is a temporary runtime compromise pending the Step 3 ownership decision. To roll back, stop only `tmux` session `spiritos-live-integration-20260712` and use the exact Source Proxy restart command recorded in `worktree-manifest.md`; never use broad process kills.
 - SpiritFlix has no Source Proxy managed service ownership. Its production/sidecar lanes are checked only when a SpiritFlix task names them.
