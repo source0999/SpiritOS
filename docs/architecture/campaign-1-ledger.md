@@ -39,3 +39,8 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 2026-07-12 stop-state update:
 - Genuine blocker under original condition 5: authenticated SpiritFlix loader/Latest Added proof requires a dedicated private Jellyfin session or credential. Dell service/config inspection found no configured non-secret test credential or session; credentials will not be extracted, reset, or invented.
 - SpiritFlix product checkout now reports borrowed untracked _worktrees/spiritflix-player-repair-20260712/ created before this resume. It was not touched, staged, moved, or cleaned by Campaign 1.
+
+2026-07-12 Phase B contract receipt:
+- Commit f64ab7f4 adds an ignored server-side E2E secret contract, redacted preflight, exact opt-in opaque HTTP-only session broker, and proxy substitution path.
+- Preflight result is dedicated_e2e_secret_not_configured; no configured dedicated credential or provisioning API key was found in approved Dell service/config locations.
+- The broker and authenticated browser proof remain fail-closed until a dedicated non-admin Jellyfin identity is provided through the approved secret path or an approved provisioning credential is configured.
