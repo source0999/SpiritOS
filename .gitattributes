@@ -1,0 +1,31 @@
+# Cross-platform checkout policy. Source and documentation use LF; only native
+# Windows command scripts use CRLF. Binary artifacts must never be normalized.
+* text=auto
+
+# Source, configuration, and documentation
+*.{ts,tsx,js,jsx,mjs,cjs,py,sh,bash,zsh,css,scss,html,htm,xml,svg,md,txt,json,jsonl,yml,yaml,ini,conf,env,properties,gradle} text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+
+# Windows-native command scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=lf
+
+# Captured evidence and fixture payloads retain their original bytes; their
+# line endings can be part of the recorded result or a patch under review.
+docs/evidence/** -text
+tests/ui-agent-trials/fixtures/** -text
+*.patch -text
+*.diff -text
+
+# Images, fonts, archives, databases, and media
+*.{png,jpg,jpeg,gif,webp,avif,ico,icns,bmp,tif,tiff} binary
+*.{ttf,otf,woff,woff2,eot} binary
+*.{zip,7z,rar,tar,gz,bz2,xz,jar,war} binary
+*.{db,sqlite,sqlite3} binary
+*.{mp3,mp4,m4v,mov,mkv,webm,avi,flac,wav,ogg,opus} binary
+*.{pdf,bin,exe,dll,so,dylib} binary
