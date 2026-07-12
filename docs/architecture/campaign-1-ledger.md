@@ -28,3 +28,10 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 - Candidate `npm run build` produced BUILD_ID `1vxzSBRA24QRgZI244mVW1` and served `http://127.0.0.1:3003/spiritflix` with HTTP 200 from this worktree.
 - In-app Browser attempted live HTTPS and candidate HTTP; both are blocked by the browser security/policy surface (`ERR_CERT_AUTHORITY_INVALID` and HTTP-to-HTTPS policy followed by `ERR_SSL_PROTOCOL_ERROR`). No certificate warning was bypassed.
 - Therefore real browser, console, network-request, loader, Latest Added, and mobile/Fold characterization is UNVERIFIED. This blocks any authority or deployment cutover that could regress current SpiritFlix.
+
+2026-07-12 browser unblocking receipt:
+- Candidate HTTPS 3004 certificate SHA-256 fingerprint and SPKI pin were checked before browser launch.
+- Dell-native Playwright Chromium used only --ignore-certificate-errors-spki-list=<exact pin>; ignoreHTTPSErrors=false; no host trust store changed.
+- Real rendered desktop and Fold-sized DOM, requests, console, and screenshots were captured for /spiritflix and /coding.
+- Candidate rejects the stale SpiritFlix snapshot by exact approved merge-parent/source binding and candidate artifact provenance.
+- Authenticated loader and Latest Added remain NOT_PROVEN: no dedicated private Jellyfin browser session or configured credential exists on the Dell lane. Mock fixtures were not accepted as proof.

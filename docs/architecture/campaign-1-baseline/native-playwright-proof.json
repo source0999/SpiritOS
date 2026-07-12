@@ -1,0 +1,32 @@
+{
+  "schema": "spiritos-campaign-1-native-playwright-summary/v1",
+  "candidate": {
+    "worktree": "/home/source/SpiritOS-campaign-1-20260712",
+    "head": "0142892408fcec60b2b58737b9f2bd6b352f7bf7",
+    "approvedSourceProxyHead": "594d66ef8280953af767a273d7c91be765d1a6eb",
+    "approvedSpiritFlixHead": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+    "httpsEndpoint": "https://10.0.0.186:3004",
+    "buildId": "1vxzSBRA24QRgZI244mVW",
+    "artifactSha256": "4734bd5beef4d040b8b03f39563168ff7c73d0886ef2cda2192b72f9c1107713"
+  },
+  "certificate": {
+    "sha256Fingerprint": "AAF476079332A4D3032FAE6989D1B6AD7CE0B744B2C44E3F29C93D73AD8A8CEE",
+    "spkiSha256Base64": "dMR8NZsnzNjABlxSAJwd/IyBvxr3kavIAwsr2pw0O9c=",
+    "verifiedBeforeBrowserLaunch": true
+  },
+  "browser": {
+    "engine": "Playwright Chromium 1.60.0",
+    "spkiAllowlistOnly": true,
+    "ignoreHTTPSErrors": false,
+    "hostTrustModified": false,
+    "consoleErrors": 0,
+    "pageErrors": 0
+  },
+  "rendered": {
+    "spiritflix": { "status": 200, "uiFingerprint": "c3e1b36d3021b0783756d5fb8ceff7577dbce07365df1c659e83dbbcce745bfb", "signInGate": true, "loaderAfterNetworkIdle": false, "latestAddedVisible": false, "screenshotSha256": "5de57e17bcef86e16fc908cab7ee14bf4fd7a42ee269709fe9f6c76ddbfa5b23" },
+    "coding": { "status": 200, "uiFingerprint": "2341a08a772adc42949be1b55bb04727c0116070786c9fc9fbc67df3e575b5a3", "screenshotSha256": "5d22389282c677f065390772a2ec3cbdf61e23bc0f281041fd2eb5464cab3f84" },
+    "foldMobileSpiritflix": { "status": 200, "signInGate": true, "loaderAfterNetworkIdle": false, "latestAddedVisible": false, "screenshotSha256": "06f1648d4c75c51a42df7033f2a94d213819cf5d726b18f54b06d11713994189" }
+  },
+  "requiredRequestsObserved": ["/api/spiritflix/jellyfin", "/v1/coding/runs/active", "/v1/coding/runs/recent", "/v1/coding/trial-fixture-baseline", "/v1/self/status"],
+  "limitation": "Authenticated loader and Latest Added behavior is NOT_PROVEN: no existing dedicated Jellyfin test session or configured non-secret credential was available. Mocked performance fixtures were not used as acceptance evidence."
+}
