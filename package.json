@@ -64,7 +64,8 @@
     "ytmclone:android:build": "cd apps/ytmclone-android && ./gradlew assembleDebug",
     "postinstall": "node ./scripts/postinstall-repomix-shim.mjs",
     "context:all": "bash ./scripts/context/build-llm-context-packs.sh",
-    "context:full-split": "bash ./scripts/context/build-llm-context-packs.sh"
+    "context:full-split": "bash ./scripts/context/build-llm-context-packs.sh",
+    "spiritflix:e2e:preflight": "node ./scripts/spiritflix-e2e-auth-preflight.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",
