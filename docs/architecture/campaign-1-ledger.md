@@ -63,3 +63,8 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 - Rebuilt candidate BUILD_ID Qts75774IMdsWljly7uq5 with deterministic .next file-list SHA-256 f6761bc85e0b852cf91a82a0c2753313b7914eb621090cb6b289e6d1e937788a.
 - Rerun on the same SPKI-only Dell Playwright Chromium lane passed authenticated desktop and Fold loader/Latest Added/player proof plus /coding/API bridge, with failed requests=0, console errors=0, page errors=0. Sanitized receipt replaced at docs/architecture/campaign-1-baseline/authenticated-browser-proof.json.
 - Browser gate is complete; next incomplete increment is Phase 0E characterization and Phase 1 P0 authority enforcement.
+
+2026-07-12 Phase 1 AR-002 duplicate-route increment:
+- Removed the reduced shadow registrations for Cartographer GET/POST /safe-write and GET/POST /verification/run. The earlier canonical routes retain lane identity, approved file checks, and verification receipt summary.
+- Added a production-router registration test requiring exactly one registration for each method/path. Focused command: /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/pytest -q source_proxy/tests/test_cartographer_api.py -k mutation_routes_are_registered_once (1 passed, 261 deselected).
+- This removes a duplicate path only; it does not yet make caller-supplied approvals authoritative. The AR-002 server-owned approval transfer remains the next enforcement increment.
