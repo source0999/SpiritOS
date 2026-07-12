@@ -35,3 +35,7 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 - Real rendered desktop and Fold-sized DOM, requests, console, and screenshots were captured for /spiritflix and /coding.
 - Candidate rejects the stale SpiritFlix snapshot by exact approved merge-parent/source binding and candidate artifact provenance.
 - Authenticated loader and Latest Added remain NOT_PROVEN: no dedicated private Jellyfin browser session or configured credential exists on the Dell lane. Mock fixtures were not accepted as proof.
+
+2026-07-12 stop-state update:
+- Genuine blocker under original condition 5: authenticated SpiritFlix loader/Latest Added proof requires a dedicated private Jellyfin session or credential. Dell service/config inspection found no configured non-secret test credential or session; credentials will not be extracted, reset, or invented.
+- SpiritFlix product checkout now reports borrowed untracked _worktrees/spiritflix-player-repair-20260712/ created before this resume. It was not touched, staged, moved, or cleaned by Campaign 1.
