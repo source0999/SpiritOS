@@ -9,3 +9,6 @@ Before working, identify the requested project and read `docs/dev-setup/worktree
 - Use the project-specific tests and harnesses; do not scan all SpiritOS projects unless the task requires it.
 - Stage explicit paths only. `git add -A` is prohibited.
 - Preserve unknown work. If the implementation target drifts from the requested repository-cleanup objective, stop that implementation path and return to cleanup scope.
+- One feature stream per worktree: do not develop in a checkout serving another project. Before handoff, every active worktree must have an empty `git status --short`.
+- Generated media queues, bulk browser evidence, runtime databases, backups, and Prompt 1 fixture output belong in ignored runtime/archive storage. Commit only named authoritative receipts.
+- Do not leave detached dirty worktrees. Archive or commit scoped WIP, then remove the redundant worktree and run `git worktree prune`.

@@ -1,15 +1,14 @@
 # SpiritOS Worktree Manifest
 
-Snapshot: 2026-07-11 cleanup normalization. Refresh this file whenever a worktree, service owner, or project destination changes.
+Snapshot: 2026-07-11 full cleanup. Refresh this file whenever a worktree, service owner, or project destination changes.
 
 | Stream | Worktree | Branch | HEAD | State | Service role |
 | --- | --- | --- | --- | --- | --- |
-| Source Proxy structural milestone | `/home/source/SpiritOS-source-proxy-20260711` | `codex/source-proxy-structural-milestone-20260711` | `1e6458b82c25bfcdf9f93b625d3a0fd9d45f4d14` | clean committed milestone and repository rules | authoritative integration checkout; backend 8787 and frontend 3000 |
-| SpiritFlix/media holding stream | `/home/source/SpiritOS` (`Z:\`) | `codex/spiritflix-smart-scan-identity-fix` | `b5709cc8c26df3524bf7a3340eec99ee15dec86a` | intentionally dirty; owned groups documented in cleanup report | not an approved Source Proxy test target |
-| Prior Source Proxy Plans 1-3 | Git branch `codex/coding-proxy-plan1-clean-local` | `codex/coding-proxy-plan1-clean-local` | `5f319ad80c9c0c8d5fb0d0b3882964b6beb13adb` | commits preserved; prior linked worktree metadata is stale | inactive historical checkpoint |
-| Lane 2 sparse proxy | `/home/source/SpiritOS-lane2-proxy-sparse` | `lane2-proxy-set-b` | `80c8081caae5f53272c1a4a3421ede2be16c447e` | stale/prunable metadata; do not use until independently repaired | none |
+| Source Proxy structural milestone | `/home/source/SpiritOS-source-proxy-20260711` | `codex/source-proxy-structural-milestone-20260711` | verify live; code checkpoint `6b59214f` | clean | authoritative integration checkout; backend 8787 and frontend 3000 |
+| SpiritFlix smart-scan WIP | `/home/source/SpiritOS` (`Z:\`) | `codex/spiritflix-smart-scan-identity-fix` | verify live; source checkpoint `3d083ed9` | clean WIP checkpoint | no managed services |
+| Count-fix archive | no worktree | `codex/spiritflix-count-fix-archive-20260711` | `76fc2a3d` | retained recovery commit | inactive |
 
-The completed Source Proxy structural milestone is `91c3ab11`, not the mixed SpiritFlix branch. The final LumaCart files in the holding checkout are intentionally retained test output and are not part of that commit.
+The completed Source Proxy structural milestone is `91c3ab11`, not the SpiritFlix branch. The Prompt 1 fixture is generated output and is ignored after a run. Historical Plan 1-3 and Lane 2 content is stored as verified bundles under `/home/source/.spiritos-preservation/20260711-full-cleanup/`; neither has an active worktree.
 
 ## Managed service identity
 

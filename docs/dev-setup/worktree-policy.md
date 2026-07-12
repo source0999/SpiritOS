@@ -17,3 +17,9 @@ Before runtime tests, record the backend and frontend process CWD, command line,
 ## Safe Git operations
 
 Use explicit paths, scoped patches, hashes, and independent checks. Do not run broad reset, restore, clean, force checkout/push, whole-tree stashes, rebases of mixed work, or `git add -A`. Keep unknown work in its current holding worktree until its owner and destination are proven.
+
+## Completion discipline
+
+Before ending a cleanup or feature increment, run `git worktree list --porcelain` and `git status --short` in every retained worktree. Commit verified source, archive bulk generated output outside active worktrees, and remove clean obsolete worktrees with `git worktree remove` followed by `git worktree prune`.
+
+The Prompt 1 dummy storefront is generated lifecycle output. Archive acceptance output when needed, reset it after the run, and do not track generated fixture files. Media scan queues and bulk screenshots follow the same ignored-runtime policy; only a named final receipt may be deliberately added.
