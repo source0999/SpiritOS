@@ -351,10 +351,6 @@ export class JellyfinClient {
   readonly token?: string;
   readonly userId?: string;
   private libraryQueryAliasById = new Map<string, string>();
-  // Ids of the install's default media folders ("yes"/"media"/"other") discovered at runtime.
-  // Used by getLibraryLatestAddedPage to decide whether to use the global DateCreated query
-  // (so the library route matches the homepage) vs. a parent-scoped query.
-  private defaultLibraryIds = new Set<string>();
 
   constructor(serverUrl: string, token?: string, userId?: string) {
     this.serverUrl = normalizeJellyfinServerUrl(serverUrl || SPIRITFLIX_DEFAULT_SERVER);
@@ -458,20 +454,10 @@ export class JellyfinClient {
       );
       const mergedLibraries = withCanonicalSpiritFlixLibraries([...libraries, ...(folderData.Items ?? [])]);
       this.libraryQueryAliasById = getLibraryQueryAliasMap(mergedLibraries);
-      this.defaultLibraryIds = new Set(
-        mergedLibraries
-          .filter((library) => SPIRITFLIX_DEFAULT_LIBRARY_NAMES.has(library.Name.trim().toLowerCase()) && !isHomeVideosCollectionShell(library))
-          .map((library) => library.Id),
-      );
       return mergedLibraries;
     } catch {
       const mergedLibraries = withCanonicalSpiritFlixLibraries(libraries);
       this.libraryQueryAliasById = getLibraryQueryAliasMap(mergedLibraries);
-      this.defaultLibraryIds = new Set(
-        mergedLibraries
-          .filter((library) => SPIRITFLIX_DEFAULT_LIBRARY_NAMES.has(library.Name.trim().toLowerCase()) && !isHomeVideosCollectionShell(library))
-          .map((library) => library.Id),
-      );
       return mergedLibraries;
     }
   }
@@ -706,15 +692,8 @@ export class JellyfinClient {
     if (!this.userId) return emptyItemPage({ startIndex: options.startIndex, limit: options.limit });
     const { limit = 18, startIndex = 0, fields = "card", signal } = options;
     const queryParentId = this.getLibraryQueryParentId(parentId);
-    // When the resolved parent is the install's default media folder ("yes"/"media"/"other"),
-    // it IS the full library — scoping the DateCreated query to it can return items in a
-    // different or stale order than the global query the homepage uses, which is why
-    // "Latest Added" looked right on home but wrong/different on the library route. Use the
-    // same global query in that case so both views agree.
-    const isDefaultFolder = this.defaultLibraryIds.has(queryParentId);
-    if (isDefaultFolder) {
-      return this.getLatestAddedPage(options);
-    }
+    // A Home Videos shell is only a UI container. Query its discovered real-media
+    // folder so the library route stays scoped to the media the user selected.
     const query = toQuery({
       ParentId: queryParentId,
       Recursive: true,
