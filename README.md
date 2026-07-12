@@ -2,6 +2,12 @@
 
 **Sovereign cybernetic extension of the Source** - Next.js 16 App Router frontend (`src/`) + local GPU backend (Ollama, Whisper, Piper TTS).
 
+## Worktree and host orientation
+
+Read [`AGENTS.md`](AGENTS.md) before editing. [`docs/dev-setup/worktree-manifest.md`](docs/dev-setup/worktree-manifest.md) is the authoritative live topology: verify the selected worktree, branch, HEAD, and status instead of relying on this README for a path snapshot.
+
+The SpiritFlix checkout is visible from Linux at `/home/source/SpiritOS` and Windows over SMB as `Z:\`; it does not own managed production services. The authoritative Source Proxy checkout owns backend `8787`, HTTPS frontend `3000`, and its Next worker `3002`. Obtain its current path from the manifest, verify each process CWD and health live, and use SSH to the Dell for Linux-only paths, archives, and process state. See [`cross-platform-repository-verification.md`](docs/dev-setup/cross-platform-repository-verification.md) for the operational commands.
+
 ## Active Plan
 
 The active Source Proxy plan is `docs/source-proxy-production-hardening-plan.md`.
@@ -11,7 +17,7 @@ The active Source Proxy plan is `docs/source-proxy-production-hardening-plan.md`
 
 ChatGPT and other external LLM sessions cannot see this repository directly. When asking for outside review, generate a focused context pack and upload that XML instead of uploading a raw full-repo bundle. Raw full-repo packs can drag in stale plans, receipt sludge, evidence directories, backend volumes, generated artifacts, and media-adjacent noise that make review slower and easier to misread.
 
-Generated XMLs intended for upload are written to the visible repo root at `/home/source/SpiritOS/`. They should remain untracked. The cleanup worktree may also create ignored `repomix-output*.xml` intermediates while building packs; those are verifier/runtime artifacts, not commit targets. The context-generation scripts may use an isolated Repomix CLI fallback for pack export robustness only; this does not change Source Proxy production runtime, decision logic, API behavior, model routing, SpiritFlix, media, or Jellyfin behavior.
+Generated XMLs intended for upload are written to the selected checkout root. They should remain untracked. Context-pack commands may also create ignored `repomix-output*.xml` intermediates; those are verifier/runtime artifacts, not commit targets. The context-generation scripts may use an isolated Repomix CLI fallback for pack export robustness only; this does not change Source Proxy production runtime, decision logic, API behavior, model routing, SpiritFlix, media, or Jellyfin behavior.
 
 Headroom is active only when the generated XML metadata shows both `compressed="true"` and `tokens_saved` greater than `0`. Tree-sitter Repomix compression by itself is usable, but it is not Headroom compression. If Headroom is unreachable, or if it reports zero savings, treat the pack as Tree-sitter-only and do not claim Headroom was active.
 
@@ -29,7 +35,7 @@ Pack names and intended review scope:
 Use these single-pack commands when you only need one review surface:
 
 ```bash
-cd /home/source/SpiritOS-cleanup-20260621
+cd "$(git rev-parse --show-toplevel)"
 
 # quick repo map pack
 npm run context:repo-map
@@ -53,8 +59,8 @@ Use this all-packs command when a secondary reviewer needs several surfaces. It 
 bash -lc '
 set -euo pipefail
 
-WORK="/home/source/SpiritOS-cleanup-20260621"
-OUT="/home/source/SpiritOS"
+WORK="$(git rev-parse --show-toplevel)"
+OUT="$WORK"
 TMP="/tmp/spiritos-repomix-bin-20260623"
 
 cd "$WORK"
@@ -660,10 +666,10 @@ npm run build
 
 ### Source proxy start (`8787`)
 
-The Source proxy is a separate FastAPI/LiteLLM-side process from the visual Next app. Run it in its own terminal:
+The Source proxy is a separate FastAPI/LiteLLM-side process from the visual Next app. Run it in its own terminal from the authoritative Source Proxy checkout named by the worktree manifest (not the SpiritFlix checkout):
 
 ```bash
-cd /home/source/SpiritOS
+cd /home/source/SpiritOS-source-proxy-20260711 # verify this path in the manifest first
 npm run proxy:bootstrap   # first run only, creates .venv-source-proxy
 npm run proxy:https:lan   # HTTPS API on 0.0.0.0:8787
 ```
@@ -793,10 +799,10 @@ If the endpoint returns `503` with an NVIDIA/NVML message, the API is running bu
 
 ### Visual app start (`3000`)
 
-The browser UI is the Next dev server. Run it in a separate terminal from the proxy:
+The browser UI is the Next dev server. Run it in a separate terminal from the proxy, from that same verified authoritative Source Proxy checkout:
 
 ```bash
-cd /home/source/SpiritOS
+cd /home/source/SpiritOS-source-proxy-20260711 # verify this path in the manifest first
 npm run dev:https:lan
 ```
 
