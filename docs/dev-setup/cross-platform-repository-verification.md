@@ -35,8 +35,9 @@ git -C Z:\ status --short --branch --untracked-files=no
 git -C Z:\ branch --show-current
 git -C Z:\ rev-parse HEAD
 $path = 'path/to/file.png'
-Get-FileHash (Join-Path Z:\ $path) -Algorithm SHA256
-git -C Z:\ show "HEAD:$path" | ssh spirit 'sha256sum'
+$working = (Get-FileHash (Join-Path Z:\ $path) -Algorithm SHA256).Hash
+$head = (ssh spirit "git -C /home/source/SpiritOS show HEAD:$path | sha256sum").Split()[0]
+"working=$working head=$head"
 ```
 
 Windows can inspect the SMB-visible SpiritFlix checkout, but it cannot determine whether a Linux-only worktree is registered, prunable, serving a port, or holds preservation archives. SSH to the Dell for those checks. If Windows and cached Linux `git status` disagree, trust the explicit working-file and `HEAD`-blob SHA-256 comparison, refresh the index, and resolve the content before committing.
