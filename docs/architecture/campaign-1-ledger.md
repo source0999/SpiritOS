@@ -49,3 +49,11 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 - The installed dedicated identity authenticates, is non-admin, and has deletion/server-management permissions disabled.
 - It is rejected because Jellyfin returns EnableAllFolders=false and EnabledFolders=[]; real authenticated loader and Latest Added proof cannot run without explicit library assignment.
 - Broker and preflight now fail closed with dedicated_e2e_identity_no_library_access.
+
+2026-07-12 authenticated browser receipt:
+- Dedicated server-managed E2E identity now passes the redacted preflight: non-admin, deletion/server-management disabled, and eight enabled libraries. Browser receives only the opaque broker sentinel and HTTP-only application cookie; no raw Jellyfin credential was emitted to evidence.
+- Candidate HEAD 6053b53fcefd56223477df1d9fa1a09c591cc4da was built as BUILD_ID sGCqWet3V2EeYFhS-QdQA; deterministic .next file-list SHA-256 is ce0e32838e7d3b49002919a54832dbea7b6005a6986fe1ca9a24a6d8a7e5252e.
+- The served certificate SHA-256 is AAF476079332A4D3032FAE6989D1B6AD7CE0B744B2C44E3F29C93D73AD8A8CEE; SPKI SHA-256 is dMR8NZsnzNjABlxSAJwd/IyBvxr3kavIAwsr2pw0O9c=. Dell-native Playwright Chromium used only that per-process SPKI allowlist; ignoreHTTPSErrors=false and no host trust was modified.
+- Real authenticated desktop and Fold DOM proved loader completion, Latest Added, accessible player entry, attached video, and /coding plus API bridge rendering. Required Jellyfin and coding bridge request families were observed; no page errors occurred.
+- Strict browser zero-console acceptance remains OPEN: the approved SpiritFlix code intentionally requests unavailable mobile-optimized media and receives two /api/spiritflix/mobile-optimized 404 responses. They are classified and non-blocking to live media/player behavior, but count as console errors and were not masked or changed in this candidate.
+- Evidence: docs/architecture/campaign-1-baseline/authenticated-browser-proof.json (sanitized; no cookies, tokens, headers, passwords, session IDs, or media paths).
