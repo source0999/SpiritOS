@@ -5,7 +5,7 @@
 - Access: `ssh spirit` (user `source`); this is authoritative for `/home/source/**`, worktrees, process CWD, native environments, archives, and Linux tests.
 - Worktrees: Source Proxy `/home/source/SpiritOS-source-proxy-20260711`; SpiritFlix `/home/source/SpiritOS`.
 - Verify a service with `lsof -tiTCP:<port> -sTCP:LISTEN`, `readlink -f /proc/<pid>/cwd`, then branch, HEAD, and its health endpoint from that CWD.
-- 2026-07-11 observed: 8787 and 3000 CWDs were the Source Proxy worktree; 3002 had no listener. Do not treat 3000 as proof of 3002.
+- 2026-07-11 observed: 8787 and 3000 CWDs were the Source Proxy worktree; Next worker 3002 listens on `127.0.0.1` only. Check it with `ss -tlnp | grep 3002`; do not treat 3000 as proof of 3002.
 - Memory is 15 GiB-class with normal cache/swap pressure possible; avoid simultaneous broad builds/harnesses. Archives are under `/home/source/.spiritos-preservation/20260711-full-cleanup/`.
 
 ## Windows/SMB
