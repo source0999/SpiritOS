@@ -1593,6 +1593,59 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         finally:
             os.chdir(previous_cwd)
 
+    def test_cancelling_task_invalidates_its_server_issued_approval(self) -> None:
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(self._tempdir.name)
+            os.makedirs("src/app/demo", exist_ok=True)
+            with open("src/app/demo/page.tsx", "w", encoding="utf-8") as handle:
+                handle.write("export const value = 'old';\n")
+
+            app = FastAPI()
+            app.include_router(long_running_tasks_router)
+            client = TestClient(app)
+            task_id = client.post(
+                "/v1/tasks/long-running",
+                json={"description": "Cancel durable approval"},
+            ).json()["task"]["id"]
+            diff = "\n".join([
+                "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
+                "--- a/src/app/demo/page.tsx",
+                "+++ b/src/app/demo/page.tsx",
+                "@@ -1 +1 @@",
+                "-export const value = 'old';",
+                "+export const value = 'new';",
+                "",
+            ])
+            approval = client.post(
+                f"/v1/tasks/long-running/{task_id}/approval",
+                json={
+                    "action": "modify file", "approved": True, "approved_diff": diff,
+                    "target": "src/app/demo/page.tsx", "selected_prompt_id": "cancel-test",
+                    "context_hash": "cancel-context",
+                },
+            )
+            approval_id = approval.json()["approval"]["approval_id"]
+            cancelled = client.post(f"/v1/tasks/long-running/{task_id}/cancel")
+            self.assertEqual(cancelled.status_code, 200)
+            self.assertEqual(cancelled.json()["task"]["status"], "cancelled")
+            self.assertEqual(
+                cancelled.json()["task"]["ast_snapshot"]["campaign_1_pending_approval"]["state"],
+                "cancelled",
+            )
+            rejected = client.post(
+                f"/v1/tasks/long-running/{task_id}/execute-approved",
+                json={
+                    "action": "modify file", "approved": True, "approval_id": approval_id,
+                    "approved_diff": diff, "target": "src/app/demo/page.tsx",
+                    "selected_prompt_id": "cancel-test", "context_hash": "cancel-context",
+                },
+            )
+            self.assertEqual(rejected.status_code, 422)
+            self.assertEqual(rejected.json()["detail"]["reason_code"], "approval_cancelled")
+        finally:
+            os.chdir(previous_cwd)
+
     def test_execute_approved_rejects_stale_approval_id(self) -> None:
         previous_cwd = os.getcwd()
         try:

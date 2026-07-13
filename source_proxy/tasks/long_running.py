@@ -43,6 +43,7 @@ from source_proxy.context.obsidian import obsidian_context_diagnostics
 from source_proxy.context.canonical_broker import acknowledge_context_consumer
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
+    cancel_coding_execution_approval,
     consume_coding_execution_approval,
     finalize_coding_execution_approval,
 )
@@ -1185,6 +1186,16 @@ def execute_approved_long_running_task(
         notes=["execute-approved apply path entered"],
     )
     _save_task(task)
+    pending_approval = _ensure_ast_snapshot_dict(task).get("campaign_1_pending_approval")
+    if (
+        isinstance(pending_approval, dict)
+        and str(pending_approval.get("approval_id") or "")
+        and str(pending_approval.get("approval_id")) != approval_id
+    ):
+        raise LongRunningTaskError(
+            "Execution approval does not match the task's server-issued pending approval.",
+            "approval_pending_mismatch",
+        )
     try:
         central_gate_check("apply", run_id=run_id)
     except Exception:
@@ -3218,10 +3229,45 @@ def _initial_post_apply_verification(verification: dict[str, Any]) -> dict[str, 
 def cancel_long_running_task(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
     if task.status not in _terminal_or_waiting_statuses() or task.status == "waiting_for_operator_browser":
+        snapshot = _ensure_ast_snapshot_dict(task)
+        pending_approval = snapshot.get("campaign_1_pending_approval")
+        if isinstance(pending_approval, dict) and str(pending_approval.get("approval_id") or ""):
+            try:
+                cancelled = cancel_coding_execution_approval(
+                    approval_id=str(pending_approval["approval_id"]),
+                )
+            except CampaignApprovalError as error:
+                raise LongRunningTaskError(
+                    "Task cancellation could not invalidate the pending durable approval.",
+                    error.reason_code,
+                ) from error
+            pending_approval["state"] = cancelled["state"]
+            snapshot["campaign_1_pending_approval"] = pending_approval
+            task.ast_snapshot = snapshot
         task.status = "cancelled"
         task.cancelled_at = _now_iso()
         task.updated_at = task.cancelled_at
         _save_task(task)
+    return _task_envelope(task)
+
+
+def record_coding_execution_approval(
+    task_id: str,
+    *,
+    approval_id: str,
+    generation: int,
+) -> dict[str, Any]:
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["campaign_1_pending_approval"] = {
+        "approval_id": approval_id,
+        "generation": generation,
+        "consumer": "coding-executor",
+        "state": "approved",
+    }
+    task.ast_snapshot = snapshot
+    task.updated_at = _now_iso()
+    _save_task(task)
     return _task_envelope(task)
 
 

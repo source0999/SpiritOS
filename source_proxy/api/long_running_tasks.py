@@ -22,6 +22,7 @@ from source_proxy.tasks.long_running import (
     get_long_running_task_snapshot,
     list_long_running_tasks,
     record_post_apply_verification,
+    record_coding_execution_approval,
     reject_long_running_task_plan,
     undo_last_approved_change,
     update_long_running_task,
@@ -288,6 +289,11 @@ async def long_running_task_approval(
             context_hash=request.context_hash,
         )
         approval = issue_coding_execution_approval(preview_id=str(preview["preview_id"]))
+        record_coding_execution_approval(
+            task_id,
+            approval_id=str(approval["approval_id"]),
+            generation=int(approval["generation"]),
+        )
         return {
             "authority": "spiritos-approval-authority",
             "consumer": "coding-executor",

@@ -107,6 +107,15 @@ def issue_coding_execution_approval(*, preview_id: str) -> dict[str, Any]:
     }
 
 
+def cancel_coding_execution_approval(*, approval_id: str) -> dict[str, Any]:
+    approval = _call("lookup", {"approval_id": approval_id})
+    state = str(approval.get("state") or "")
+    if state == "approved":
+        _call("transition", {"approval_id": approval_id, "state": "cancelled"})
+        state = "cancelled"
+    return {"approval_id": approval_id, "generation": int(approval["generation"]), "state": state}
+
+
 def finalize_coding_execution_approval(approval: dict[str, Any], *, result_id: str, evidence: dict[str, Any], status: str) -> dict[str, Any]:
     binding = dict(approval["binding"])
     binding.update({"result_id": result_id, "evidence": canonical_json(evidence), "status": status, "source_head": current_head()})

@@ -11,6 +11,8 @@ REQUIRED = {
         "consume_coding_execution_approval",
         "finalize_coding_execution_approval",
         "validate_coding_approval_evidence",
+        "cancel_coding_execution_approval",
+        "campaign_1_pending_approval",
     ),
     "source_proxy/cartographer/apply.py": ("forbidden_cartographer_mutation",),
     "source_proxy/cartographer/git_approvals.py": ("forbidden_cartographer_mutation",),
@@ -23,6 +25,7 @@ REQUIRED = {
     "source_proxy/api/long_running_tasks.py": (
         "LongRunningTaskApprovalRequest",
         "issue_coding_execution_approval",
+        "record_coding_execution_approval",
         '@router.post("/long-running/{task_id}/approval")',
     ),
     "src/components/coding/CodingAgentInterface.tsx": (
