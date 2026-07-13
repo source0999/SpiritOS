@@ -61,6 +61,8 @@ def consume_coding_execution_approval(*, approval_id: str, task_id: str, action:
         raise CampaignApprovalError("approval_consumer_mismatch")
     if approval.get("operation") != "coding_execution":
         raise CampaignApprovalError("approval_operation_not_permitted")
+    if approval.get("context") != context_hash:
+        raise CampaignApprovalError("approval_context_mismatch")
     plugin = coding_target_plugin(target)
     content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash)
     binding = {
