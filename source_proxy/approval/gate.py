@@ -57,6 +57,8 @@ def execute_approved_action(
     action: str,
     approval_id: str,
     approved_diff: str,
+    selected_prompt_id: str,
+    context_hash: str,
     target: str | None = None,
     approved_by: str = "human",
     test_command: list[str] | None = None,
@@ -73,6 +75,8 @@ def execute_approved_action(
         approval_id=approval_id,
         approved_by=approved_by,
         approved_diff=approved_diff,
+        selected_prompt_id=selected_prompt_id,
+        context_hash=context_hash,
         target=target,
         test_command=test_command,
     )
