@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
+import { persistDesignPreview } from "@/lib/coding/design-approval-authority";
+
 const ACTIONABLE_PROMPTS = [
   "make it modern",
   "make it mobile responsive",
@@ -54,6 +56,10 @@ type DesignStudioPreviewRequest = {
     adapter_name?: string;
     css_text?: string;
     source_url?: string;
+  };
+  writeback_preview?: {
+    content?: unknown;
+    context?: string;
   };
 };
 
@@ -914,6 +920,14 @@ export async function POST(request?: Request) {
   const coderPacketOutcome = buildCoderPacketOutcome(promptOutcome, designDnaOutcome);
   const antiTemplateOriginalityOutcome = buildAntiTemplateOriginalityOutcome(input);
   const designCriticOutcome = buildDesignCriticOutcome(input, antiTemplateOriginalityOutcome);
+  const writebackPreview =
+    input.writeback_preview?.content === undefined
+      ? { state: "not_requested" as const }
+      : await persistDesignPreview({
+          content: input.writeback_preview.content,
+          context: input.writeback_preview.context?.trim() || identity.trace_id,
+          target: promptOutcome.design_packet?.target_surface || input.target_surface?.trim() || "target_surface_required",
+        });
 
   return Response.json({
     advisory_only: true,
@@ -960,6 +974,7 @@ export async function POST(request?: Request) {
         "verified_run_with_explicit_approval_desktop_mobile_originality_critic_and_no_fake_go",
       write_authority: false,
     },
+    approval_preview: writebackPreview,
     preview_packet: {
       consumer_event_id: "blocked_until_packet_acceptance",
       design_packet_id: "preview-shell-local",

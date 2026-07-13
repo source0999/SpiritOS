@@ -2,7 +2,7 @@ import { runDesignStudioApprovedWriteback } from "@/lib/coding/design-studio-app
 
 export async function POST(request: Request) {
   const input = await request.json();
-  const result = runDesignStudioApprovedWriteback(input);
+  const result = await runDesignStudioApprovedWriteback(input);
 
   return Response.json(
     {

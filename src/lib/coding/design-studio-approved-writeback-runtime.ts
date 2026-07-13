@@ -3,6 +3,11 @@ import {
   type ApprovedDesignMemoryWritebackPayload,
   writeApprovedDesignMemoryNote,
 } from "./design-studio-obsidian-writeback";
+import {
+  consumeDesignWritebackApproval,
+  finalizeDesignWritebackApproval,
+  loadDesignWritebackApproval,
+} from "./design-approval-authority";
 
 export type DesignStudioAcceptedRunGate = {
   acceptance_id?: string;
@@ -12,15 +17,17 @@ export type DesignStudioAcceptedRunGate = {
 };
 
 export type DesignStudioApprovedWritebackRequest = {
+  approval_id: string;
   accepted_run: DesignStudioAcceptedRunGate;
   gate: ApprovedDesignMemoryGate;
   payload: ApprovedDesignMemoryWritebackPayload;
-  vault_root: string;
 };
 
 const SAFE_APPROVAL_ID = /^[A-Za-z0-9_-]{6,128}$/;
 
-export function runDesignStudioApprovedWriteback(request: DesignStudioApprovedWritebackRequest) {
+const SERVER_OWNED_VAULT_ROOT = process.env.SPIRITOS_DESIGN_VAULT_ROOT || "/home/source/.local/state/spiritos/design-vault";
+
+export async function runDesignStudioApprovedWriteback(request: DesignStudioApprovedWritebackRequest) {
   if (request.accepted_run.run_status !== "accepted") {
     return {
       reasons: ["accepted_run_required"],
@@ -29,7 +36,7 @@ export function runDesignStudioApprovedWriteback(request: DesignStudioApprovedWr
     };
   }
 
-  if (!request.payload.approval_id.trim()) {
+  if (!request.approval_id?.trim() || request.payload.approval_id !== request.approval_id) {
     return {
       reasons: ["missing_approval_id"],
       status: "rejected" as const,
@@ -69,9 +76,33 @@ export function runDesignStudioApprovedWriteback(request: DesignStudioApprovedWr
     };
   }
 
+  const approval = await loadDesignWritebackApproval(request.approval_id);
+  if (!approval.ok) {
+    return { reasons: [approval.reason], status: "rejected" as const, write_invoked: false };
+  }
+
+  const consumption = await consumeDesignWritebackApproval(approval.value, request.payload);
+  if (!consumption.ok) {
+    return { reasons: [consumption.reason], status: "rejected" as const, write_invoked: false };
+  }
+
   const result = writeApprovedDesignMemoryNote(request.payload, request.gate, {
-    vaultRoot: request.vault_root,
+    vaultRoot: SERVER_OWNED_VAULT_ROOT,
   });
+  const finalized = await finalizeDesignWritebackApproval(approval.value, {
+    evidence: JSON.stringify({
+      acceptance_id: request.accepted_run.acceptance_id,
+      approval_id: request.approval_id,
+      result_status: result.status,
+      target: request.payload.target_surface,
+      trace_id: request.payload.trace_id,
+    }),
+    result_id: result.status === "written" ? result.path : undefined,
+    status: result.status === "written" ? "succeeded" : "failed",
+  });
+  if (!finalized.ok) {
+    return { reasons: [finalized.reason], status: "rejected" as const, write_invoked: true };
+  }
 
   return {
     ...result,
