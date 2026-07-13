@@ -21,6 +21,9 @@ const proxyResponse = (
 ): Awaited<ReturnType<typeof sourceProxyFetch>> =>
   new Response(body, init) as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>;
 
+const durableApprovalResponse = (approvalId = "apr_agent_lab_test"): Awaited<ReturnType<typeof sourceProxyFetch>> =>
+  proxyResponse(JSON.stringify({ approval: { approval_id: approvalId, generation: 1, state: "approved" } }), { status: 200 });
+
 describe("agent-lab-baseline-server", () => {
   it("treats workspace read HTTP 400 as missing when the proxy says the file is gone", async () => {
     mockedSourceProxyFetch.mockResolvedValueOnce(
@@ -48,11 +51,17 @@ describe("agent-lab-baseline-server", () => {
           { status: 200 },
         ),
       )
+      .mockResolvedValueOnce(durableApprovalResponse())
+      .mockResolvedValueOnce(proxyResponse(JSON.stringify({ ok: true }), { status: 200 }))
       .mockResolvedValueOnce(proxyResponse(JSON.stringify({ ok: true }), { status: 200 }));
 
     const result = await sweepAgentLabLeftoverFilesServer(["src/app/agent-lab/cards/page.tsx"]);
     expect(result.removed).toBe(1);
     expect(result.failures).toEqual([]);
+    expect(mockedSourceProxyLongJsonFetch).toHaveBeenCalledWith(
+      "/v1/tasks/long-running/task-cleanup-1/approval",
+      expect.objectContaining({ method: "POST" }),
+    );
     expect(mockedSourceProxyLongJsonFetch).toHaveBeenCalledWith(
       "/v1/tasks/long-running/task-cleanup-1/execute-approved",
       expect.objectContaining({ method: "POST" }),
@@ -99,6 +108,8 @@ describe("agent-lab-baseline-server", () => {
 
     mockedSourceProxyLongJsonFetch
       .mockResolvedValueOnce(proxyResponse(JSON.stringify({ task: { id: "task-cleanup-dummy" } }), { status: 200 }))
+      .mockResolvedValueOnce(durableApprovalResponse())
+      .mockResolvedValueOnce(proxyResponse(JSON.stringify({ ok: true }), { status: 200 }))
       .mockResolvedValueOnce(proxyResponse(JSON.stringify({ ok: true }), { status: 200 }));
 
     const result = await sweepAgentLabLeftoverFilesServer([target]);
@@ -140,6 +151,9 @@ describe("agent-lab-baseline-server", () => {
     mockedSourceProxyLongJsonFetch.mockImplementation(async (path) => {
       if (path === "/v1/tasks/long-running") {
         return proxyResponse(JSON.stringify({ task: { id: "task-cleanup-2" } }), { status: 200 });
+      }
+      if (path === "/v1/tasks/long-running/task-cleanup-2/approval") {
+        return durableApprovalResponse();
       }
       if (path === "/v1/tasks/long-running/task-cleanup-2/execute-approved") {
         fileExists = false;

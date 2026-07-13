@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -90,6 +91,20 @@ def persist_coding_execution_preview(*, task_id: str, action: str, approved_diff
         "target": target, "plugin": coding_target_plugin(target),
         "content_hash": content_hash, "context": context_hash, "source_head": current_head(),
     })
+
+
+def issue_coding_execution_approval(*, preview_id: str) -> dict[str, Any]:
+    issued = _call("issue", {
+        "preview_id": preview_id,
+        "consumer": "coding-executor",
+        "operation": "coding_execution",
+        "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
+    })
+    return {
+        "approval_id": str(issued["approval_id"]),
+        "generation": int(issued["generation"]),
+        "state": str(issued["state"]),
+    }
 
 
 def finalize_coding_execution_approval(approval: dict[str, Any], *, result_id: str, evidence: dict[str, Any], status: str) -> dict[str, Any]:

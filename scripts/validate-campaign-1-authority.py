@@ -18,11 +18,18 @@ REQUIRED = {
         "durable server-issued approval_id",
         "selected_prompt_id",
         "context_hash",
+        "/approval",
+    ),
+    "source_proxy/api/long_running_tasks.py": (
+        "LongRunningTaskApprovalRequest",
+        "issue_coding_execution_approval",
+        '@router.post("/long-running/{task_id}/approval")',
     ),
 }
 FORBIDDEN = {
     "src/app/v1/actions/execute-approved/route.ts": ("approvalIdForApprovedDiff({",),
     "source_proxy/cartographer/apply.py": ("approval_id_for_approved_diff(",),
+    "src/lib/coding/agent-lab-baseline-server.ts": ("approvalIdForApprovedDiff",),
 }
 
 

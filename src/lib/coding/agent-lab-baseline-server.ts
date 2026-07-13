@@ -71,20 +71,6 @@ function diffHashForApprovedDiff(approvedDiff: string) {
   return createHash("sha256").update(normalizeDiffForProvenance(approvedDiff), "utf8").digest("hex");
 }
 
-function approvalIdForApprovedDiff({
-  approvedDiff,
-  target,
-  taskId,
-}: {
-  approvedDiff: string;
-  target: string;
-  taskId: string;
-}) {
-  const diffHash = diffHashForApprovedDiff(approvedDiff);
-  const key = [taskId.trim(), target.trim(), diffHash].join("|");
-  return `approval-${createHash("sha256").update(key).digest("hex").slice(0, 16)}`;
-}
-
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
@@ -296,11 +282,31 @@ async function deleteAgentLabFileOnProxy(target: string): Promise<{ ok: true } |
     };
   }
 
-  const approvalId = approvalIdForApprovedDiff({
-    approvedDiff,
-    target: normalizedTarget,
-    taskId,
-  });
+  const selectedPromptId = "agent-lab-cleanup";
+  const contextHash = createHash("sha256")
+    .update(`${selectedPromptId}|${taskId}|${normalizedTarget}`)
+    .digest("hex");
+  const approvalResponse = await sourceProxyLongJsonFetchWithTimeout(
+    `/v1/tasks/long-running/${encodeURIComponent(taskId)}/approval`,
+    {
+      body: JSON.stringify({
+        action: "revert",
+        approved: true,
+        approved_by: "agent-lab-sweep",
+        approved_diff: approvedDiff,
+        context_hash: contextHash,
+        selected_prompt_id: selectedPromptId,
+        target: normalizedTarget,
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    },
+  );
+  const approvalPayload = approvalResponse.ok ? await approvalResponse.json().catch(() => ({})) : {};
+  const approvalId = stringValue(asRecord(asRecord(approvalPayload).approval).approval_id);
+  if (!approvalResponse.ok || !approvalId?.startsWith("apr_")) {
+    return { ok: false, error: `durable approval issuance failed for ${normalizedTarget}` };
+  }
   const executeResponse = await sourceProxyLongJsonFetchWithTimeout(
     `/v1/tasks/long-running/${encodeURIComponent(taskId)}/execute-approved`,
     {
@@ -315,6 +321,8 @@ async function deleteAgentLabFileOnProxy(target: string): Promise<{ ok: true } |
         diff_hash: diffHashForApprovedDiff(approvedDiff),
         commit_authority: false,
         push_authority: false,
+        selected_prompt_id: selectedPromptId,
+        context_hash: contextHash,
         target: normalizedTarget,
       }),
       headers: { "content-type": "application/json" },

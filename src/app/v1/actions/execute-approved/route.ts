@@ -199,9 +199,9 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   }
-  if (!approvalId.trim()) {
+  if (approvalId.trim() && !approvalId.startsWith("apr_")) {
     return Response.json(
-      { error: "execute-approved requires a durable server-issued approval_id" },
+      { error: "execute-approved rejects a fabricated approval_id" },
       { status: 403 },
     );
   }
@@ -231,13 +231,52 @@ export async function POST(request: Request) {
     );
   }
 
+  const selectedPromptId = trialPromptId || taskId;
+  const contextHash = createHash("sha256").update(`${trialPromptId}|${trialPromptText}|${target}`).digest("hex");
+  let durableApprovalId = approvalId;
+  if (!durableApprovalId) {
+    const approvalResponse = await sourceProxyFetch(
+      `/v1/tasks/long-running/${encodeURIComponent(taskId)}/approval`,
+      {
+        body: JSON.stringify({
+          action,
+          approved: true,
+          approved_by: "coding-ui",
+          approved_diff: approvedDiff,
+          context_hash: contextHash,
+          selected_prompt_id: selectedPromptId,
+          target,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
+    );
+    const approvalPayload = parseJsonObject(String(await approvalResponse.text()));
+    const approval =
+      approvalPayload.approval && typeof approvalPayload.approval === "object" && !Array.isArray(approvalPayload.approval)
+        ? approvalPayload.approval as Record<string, unknown>
+        : {};
+    durableApprovalId = typeof approval.approval_id === "string" ? approval.approval_id : "";
+    const approvalResponseOk = approvalResponse.ok ?? (approvalResponse.status >= 200 && approvalResponse.status < 300);
+    if (!approvalResponseOk || !durableApprovalId.startsWith("apr_")) {
+      return Response.json(
+        {
+          ...approvalPayload,
+          error: "execute-approved could not obtain a durable server-issued approval_id",
+          reason_code: String(approvalPayload.reason_code || "approval_issuance_failed"),
+        },
+        { status: approvalResponse.status >= 400 ? approvalResponse.status : 502 },
+      );
+    }
+  }
+
   const response = await sourceProxyFetch(
     `/v1/tasks/long-running/${encodeURIComponent(taskId)}/execute-approved`,
     {
       body: JSON.stringify({
         action,
         approved: true,
-        approval_id: approvalId,
+        approval_id: durableApprovalId,
         approved_by: "coding-ui",
         approved_diff: approvedDiff,
         allowed_files: allowedFiles,
@@ -249,8 +288,8 @@ export async function POST(request: Request) {
         commit_authority: false,
         push_authority: false,
         target,
-        selected_prompt_id: trialPromptId || taskId,
-        context_hash: createHash("sha256").update(`${trialPromptId}|${trialPromptText}|${target}`).digest("hex"),
+        selected_prompt_id: selectedPromptId,
+        context_hash: contextHash,
       }),
       headers: {
         "content-type": "application/json",

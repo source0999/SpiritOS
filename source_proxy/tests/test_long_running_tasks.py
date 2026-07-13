@@ -1551,11 +1551,27 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 ]
             )
 
+            approval = client.post(
+                f"/v1/tasks/long-running/{task_id}/approval",
+                json={
+                    "action": "modify file",
+                    "approved": True,
+                    "approved_by": "test",
+                    "approved_diff": diff,
+                    "target": "src/app/demo/page.tsx",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
+                },
+            )
+            self.assertEqual(approval.status_code, 200)
+            approval_id = approval.json()["approval"]["approval_id"]
+            self.assertTrue(approval_id.startswith("apr_"))
+
             response = client.post(
                 f"/v1/tasks/long-running/{task_id}/execute-approved",
                 json={
                     "action": "modify file",
-                    "approval_id": _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                    "approval_id": approval_id,
                     "approved": True,
                     "approved_diff": diff,
                     "target": "src/app/demo/page.tsx",

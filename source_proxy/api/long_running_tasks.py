@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from source_proxy.approval.gate import execute_approved_action
-from source_proxy.approval.campaign_authority import CampaignApprovalError, persist_coding_execution_preview
+from source_proxy.approval.campaign_authority import CampaignApprovalError, issue_coding_execution_approval, persist_coding_execution_preview
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
 from source_proxy.tasks.long_running import (
     LongRunningTaskError,
@@ -59,6 +59,11 @@ class LongRunningTaskApprovalPreviewRequest(BaseModel):
     target: str = Field(min_length=1, max_length=1000)
     selected_prompt_id: str = Field(min_length=1, max_length=160)
     context_hash: str = Field(min_length=1, max_length=128)
+
+
+class LongRunningTaskApprovalRequest(LongRunningTaskApprovalPreviewRequest):
+    approved: bool
+    approved_by: str = Field(default="human", min_length=1, max_length=120)
 
 
 class LongRunningTaskVerificationRequest(BaseModel):
@@ -265,6 +270,31 @@ async def long_running_task_approval_preview(
             context_hash=request.context_hash,
         )
         return {"authority": "spiritos-approval-authority", "consumer": "coding-executor", "preview": preview}
+    except CampaignApprovalError as error:
+        raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
+
+
+@router.post("/long-running/{task_id}/approval")
+async def long_running_task_approval(
+    task_id: str,
+    request: LongRunningTaskApprovalRequest,
+) -> dict[str, Any]:
+    if request.approved is not True:
+        raise HTTPException(status_code=403, detail={"reason_code": "approval_not_confirmed"})
+    try:
+        preview = persist_coding_execution_preview(
+            task_id=task_id, action=request.action, approved_diff=request.approved_diff,
+            target=request.target, selected_prompt_id=request.selected_prompt_id,
+            context_hash=request.context_hash,
+        )
+        approval = issue_coding_execution_approval(preview_id=str(preview["preview_id"]))
+        return {
+            "authority": "spiritos-approval-authority",
+            "consumer": "coding-executor",
+            "operation": "coding_execution",
+            "preview": preview,
+            "approval": approval,
+        }
     except CampaignApprovalError as error:
         raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
 
