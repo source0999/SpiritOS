@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -30,6 +31,39 @@ def issue(preview_id: str) -> str:
         check=True,
     )
     return json.loads(result.stdout)["approval_id"]
+
+
+def transition(approval_id: str, state: str) -> None:
+    subprocess.run(
+        ["python3", "scripts/approval-authority.py", "transition"],
+        input=json.dumps({"approval_id": approval_id, "state": state}),
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+
+def coding_preview(*, task_id: str, target: str = "src/app/coding/a.ts", approved_diff: str = "diff --git a/a b/a\n") -> dict[str, object]:
+    return persist_coding_execution_preview(
+        task_id=task_id,
+        action="test action",
+        approved_diff=approved_diff,
+        target=target,
+        selected_prompt_id="prompt-1",
+        context_hash="context-1",
+    )
+
+
+def consume(approval_id: str, *, task_id: str, target: str = "src/app/coding/a.ts", approved_diff: str = "diff --git a/a b/a\n") -> dict[str, object]:
+    return consume_coding_execution_approval(
+        approval_id=approval_id,
+        task_id=task_id,
+        action="test action",
+        approved_diff=approved_diff,
+        target=target,
+        selected_prompt_id="prompt-1",
+        context_hash="context-1",
+    )
 
 
 def test_coding_approval_rejects_changed_target_after_persisted_preview() -> None:
@@ -119,3 +153,66 @@ def test_coding_evidence_requires_identical_approval_generation_for_all_consumer
     with pytest.raises(CampaignApprovalEvidenceError) as caught:
         validate_coding_approval_evidence(receipt)
     assert caught.value.reason_code == "approval_acknowledgement_mismatch:coding-verifier"
+
+
+def test_coding_approval_rejects_fabricated_and_cancelled_ids() -> None:
+    with pytest.raises(CampaignApprovalError) as fabricated:
+        consume("apr_fabricated", task_id="campaign1-test-fabricated")
+    assert fabricated.value.reason_code == "approval_not_found"
+
+    preview = coding_preview(task_id="campaign1-test-cancelled")
+    approval_id = issue(str(preview["preview_id"]))
+    transition(approval_id, "cancelled")
+    with pytest.raises(CampaignApprovalError) as cancelled:
+        consume(approval_id, task_id="campaign1-test-cancelled")
+    assert cancelled.value.reason_code == "approval_cancelled"
+
+
+def test_coding_approval_rejects_wrong_plugin_worktree_and_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plugin_preview = coding_preview(task_id="campaign1-test-plugin")
+    plugin_id = issue(str(plugin_preview["preview_id"]))
+    monkeypatch.setattr(authority, "coding_target_plugin", lambda _target: "dummy-product-site")
+    with pytest.raises(CampaignApprovalError) as plugin:
+        consume(plugin_id, task_id="campaign1-test-plugin")
+    assert plugin.value.reason_code == "approval_plugin_mismatch"
+
+    monkeypatch.undo()
+    worktree_preview = coding_preview(task_id="campaign1-test-worktree")
+    worktree_id = issue(str(worktree_preview["preview_id"]))
+    original_root = authority.ROOT
+    monkeypatch.setattr(authority, "ROOT", "/tmp/fabricated-worktree")
+    monkeypatch.setattr(authority, "current_head", lambda: authority._call("lookup", {"approval_id": worktree_id})["source_head"])
+    with pytest.raises(CampaignApprovalError) as worktree:
+        consume(worktree_id, task_id="campaign1-test-worktree")
+    assert worktree.value.reason_code == "approval_worktree_mismatch"
+    monkeypatch.setattr(authority, "ROOT", original_root)
+
+    content_preview = coding_preview(task_id="campaign1-test-content")
+    content_id = issue(str(content_preview["preview_id"]))
+    with pytest.raises(CampaignApprovalError) as content:
+        consume(content_id, task_id="campaign1-test-content", approved_diff="diff --git a/a b/a\n+stale\n")
+    assert content.value.reason_code == "approval_content_hash_mismatch"
+
+
+def test_coding_approval_consumption_is_transactionally_single_winner() -> None:
+    preview = coding_preview(task_id="campaign1-test-concurrent")
+    approval_id = issue(str(preview["preview_id"]))
+
+    def attempt() -> tuple[str, object]:
+        try:
+            return "consumed", consume(approval_id, task_id="campaign1-test-concurrent")
+        except CampaignApprovalError as error:
+            return "blocked", error.reason_code
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        results = list(workers.map(lambda _index: attempt(), range(2)))
+
+    winners = [value for state, value in results if state == "consumed"]
+    blocked = [value for state, value in results if state == "blocked"]
+    assert len(winners) == 1
+    assert blocked in (["approval_concurrent_consumption"], ["approval_already_consumed"])
+    finalize_coding_execution_approval(
+        winners[0], result_id="campaign1-test-concurrent", evidence={"redacted": True}, status="succeeded"
+    )
