@@ -1236,82 +1236,6 @@ async def cartographer_live_state() -> dict[str, Any]:
     return collect_live_repo_state()
 
 
-@router.get("/approval-token/validate")
-async def cartographer_approval_token_validate_preview() -> dict[str, Any]:
-    validation = validate_approval_token_payload(
-        _self_approval_demo_token(),
-        requested_actor="cartographer-runtime",
-        requested_scope={
-            "type": "phase",
-            "value": "cartographer-daily-driver-plan-2-phase-1",
-        },
-    )
-    return {
-        "runtime": build_approval_token_runtime_status(),
-        "validation": validation.to_dict(),
-    }
-
-
-@router.post("/approval-token/validate")
-async def cartographer_approval_token_validate(
-    request: CartographerApprovalTokenValidateRequest,
-) -> dict[str, Any]:
-    validation = validate_approval_token_payload(
-        request.token,
-        requested_actor=request.requested_actor,
-        requested_scope=request.requested_scope,
-    )
-    return {
-        "runtime": build_approval_token_runtime_status(),
-        "validation": validation.to_dict(),
-    }
-
-
-@router.get("/approval-token/consume-preview")
-async def cartographer_approval_token_consume_preview_demo() -> dict[str, Any]:
-    preview = preview_approval_token_consumption(
-        _self_approval_demo_token(
-            scope_value="cartographer-daily-driver-plan-2-phase-2",
-        ),
-        requested_actor="cartographer-runtime",
-        requested_scope={
-            "type": "phase",
-            "value": "cartographer-daily-driver-plan-2-phase-2",
-        },
-        requested_action_class="docs_receipt_preview",
-        requested_files=["docs/cartographer-example.md"],
-        consumption_context=_demo_consumption_context(),
-        current_head="demo-head",
-        kill_switch_active=True,
-    )
-    return {
-        "runtime": build_approval_token_consumption_status(),
-        "preview": preview.to_dict(),
-    }
-
-
-@router.post("/approval-token/consume-preview")
-async def cartographer_approval_token_consume_preview(
-    request: CartographerApprovalTokenConsumePreviewRequest,
-) -> dict[str, Any]:
-    preview = preview_approval_token_consumption(
-        request.token,
-        requested_actor=request.requested_actor,
-        requested_scope=request.requested_scope,
-        requested_action_class=request.requested_action_class,
-        requested_files=request.requested_files,
-        consumption_context=request.consumption_context,
-        current_head=request.current_head,
-        kill_switch_active=request.kill_switch_active,
-    )
-    return {
-        "runtime": build_approval_token_consumption_status(),
-        "preview": preview.to_dict(),
-    }
-
-
-
-
 @router.get("/queue/run-next")
 async def cartographer_queue_run_next_status() -> dict[str, Any]:
     return {
@@ -1355,46 +1279,6 @@ async def cartographer_queue_run_next(
     return {
         "queue": build_safe_task_queue_model_status(),
         "selection": selection.to_dict(),
-    }
-
-
-def _safe_write_workspace_root() -> Path | None:
-    configured, blocked = parse_project_roots()
-    if blocked or len(configured) != 1:
-        return None
-    return Path(configured[0].path)
-
-
-def _self_approval_demo_token(
-    scope_value: str = "cartographer-daily-driver-plan-2-phase-1",
-) -> dict[str, Any]:
-    issued_at = datetime.now(UTC) - timedelta(minutes=5)
-    expires_at = datetime.now(UTC) + timedelta(minutes=55)
-    return {
-        "schema_version": APPROVAL_TOKEN_SCHEMA_VERSION,
-        "token_id": "validation-preview-self-approval",
-        "issued_at": issued_at.isoformat().replace("+00:00", "Z"),
-        "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
-        "approved_by": "cartographer-runtime",
-        "approved_for_actor": "cartographer-runtime",
-        "scope": {
-            "type": "phase",
-            "value": scope_value,
-        },
-        "reason": "Demonstrate fail-closed self-approval rejection.",
-    }
-
-
-def _demo_consumption_context() -> dict[str, Any]:
-    return {
-        "action_class": "docs_receipt_preview",
-        "trust_tier": "tier-1",
-        "requested_trust_tier": "tier-1",
-        "exact_allowed_files": ["docs/cartographer-example.md"],
-        "exact_forbidden_files": ["source_proxy/cartographer/apply.py"],
-        "expected_head": "demo-head",
-        "rollback": "Manual review only; no runtime write is available.",
-        "verification": "Run focused approval-token consumption tests.",
     }
 
 

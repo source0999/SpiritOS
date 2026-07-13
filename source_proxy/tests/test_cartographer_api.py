@@ -149,6 +149,20 @@ class CartographerApiTests(unittest.TestCase):
             ]
             self.assertEqual(len(matches), 1, f"{method} {path} must have one canonical route")
 
+    def test_approval_preview_routes_are_registered_once(self) -> None:
+        routes = _test_app().routes
+        for path, method in (
+            ("/v1/cartographer/approval-token/validate", "GET"),
+            ("/v1/cartographer/approval-token/validate", "POST"),
+            ("/v1/cartographer/approval-token/consume-preview", "GET"),
+            ("/v1/cartographer/approval-token/consume-preview", "POST"),
+        ):
+            matches = [
+                route for route in routes
+                if getattr(route, "path", None) == path and method in getattr(route, "methods", set())
+            ]
+            self.assertEqual(len(matches), 1, f"{method} {path} must have one canonical route")
+
     def test_status_contract_is_read_only_empty_state(self) -> None:
         with patch.dict(
             os.environ,

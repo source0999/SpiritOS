@@ -68,3 +68,7 @@ Files read: worktree-manifest.md; context-map.md; project-entrypoints.md; test-r
 - Removed the reduced shadow registrations for Cartographer GET/POST /safe-write and GET/POST /verification/run. The earlier canonical routes retain lane identity, approved file checks, and verification receipt summary.
 - Added a production-router registration test requiring exactly one registration for each method/path. Focused command: /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/pytest -q source_proxy/tests/test_cartographer_api.py -k mutation_routes_are_registered_once (1 passed, 261 deselected).
 - This removes a duplicate path only; it does not yet make caller-supplied approvals authoritative. The AR-002 server-owned approval transfer remains the next enforcement increment.
+
+2026-07-12 approval-chain duplicate removal:
+- Removed shadow Cartographer approval-token validation and consumption-preview registrations plus duplicated helper implementations. The production router now has one route per approval preview method/path.
+- Expanded registration regression coverage to approval preview routes. Focused command passed 2 tests (261 deselected). This is duplicate authority removal only; canonical server-owned approval persistence and transfer enforcement remains incomplete.
