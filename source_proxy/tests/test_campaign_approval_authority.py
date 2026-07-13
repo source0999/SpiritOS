@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 import source_proxy.approval.campaign_authority as authority
+from source_proxy.approval.campaign_evidence import CampaignApprovalEvidenceError, validate_coding_approval_evidence
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
     consume_coding_execution_approval,
@@ -103,3 +104,18 @@ def test_coding_approval_rejects_changed_source_head(monkeypatch: pytest.MonkeyP
             target="src/app/coding/a.ts", selected_prompt_id="prompt-1", context_hash="context-1",
         )
     assert caught.value.reason_code == "approval_source_mismatch"
+
+
+def test_coding_evidence_requires_identical_approval_generation_for_all_consumers() -> None:
+    receipt = {
+        "approval_id": "apr_campaign1", "generation": 2,
+        "acknowledgements": {
+            name: {"approval_id": "apr_campaign1", "generation": 2}
+            for name in ("coding-executor", "coding-reviewer", "coding-verifier", "evidence-recorder")
+        },
+    }
+    validate_coding_approval_evidence(receipt)
+    receipt["acknowledgements"]["coding-verifier"]["generation"] = 3
+    with pytest.raises(CampaignApprovalEvidenceError) as caught:
+        validate_coding_approval_evidence(receipt)
+    assert caught.value.reason_code == "approval_acknowledgement_mismatch:coding-verifier"

@@ -46,6 +46,10 @@ from source_proxy.approval.campaign_authority import (
     consume_coding_execution_approval,
     finalize_coding_execution_approval,
 )
+from source_proxy.approval.campaign_evidence import (
+    CampaignApprovalEvidenceError,
+    validate_coding_approval_evidence,
+)
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
     CoderPacket,
@@ -2427,6 +2431,13 @@ def record_post_apply_verification(
         }
         snapshot["campaign_1_approval"] = campaign_approval
         task.ast_snapshot = snapshot
+        try:
+            validate_coding_approval_evidence(campaign_approval)
+        except CampaignApprovalEvidenceError as error:
+            verification["status"] = "verification_failed"
+            verification["commit_proposal_blocked"] = True
+            verification["commit_blockers"] = [error.reason_code]
+            task.status = "verification_failed"
     # Context acknowledgements are part of final verification truth.  Re-sync
     # every decision-bearing copy after that gate so a late context failure
     # cannot leave the open diff claiming `verified` while the task and receipt
