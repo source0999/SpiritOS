@@ -9,6 +9,10 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from source_proxy.cartographer.apply import CartographerApplyError, apply_approved_doc_proposal
+from source_proxy.cartographer.proposal_transfer import (
+    CartographerProposalTransferError,
+    transfer_proposal,
+)
 from source_proxy.cartographer.clutter_proposals import ClutterCleanupError
 from source_proxy.cartographer.git_approvals import (
     CartographerGitApprovalError,
@@ -207,6 +211,11 @@ router = APIRouter(prefix="/v1/cartographer")
 class CartographerApplyApprovedRequest(BaseModel):
     approved: bool
     approved_by: str = Field(default="cartographer-ui", max_length=120)
+
+
+class CartographerProposalTransferRequest(BaseModel):
+    consumer: str = Field(max_length=120)
+    target: str = Field(max_length=500)
 
 
 class CartographerProposalReviewRequest(BaseModel):
@@ -1952,6 +1961,24 @@ async def cartographer_runbook_scribe() -> dict[str, Any]:
 @router.get("/sub-cartographers")
 async def cartographer_sub_cartographers() -> dict[str, Any]:
     return build_cartographer_sub_cartographers()
+
+
+@router.post("/proposals/{proposal_id}/transfer")
+async def cartographer_transfer_proposal(
+    proposal_id: str,
+    request: CartographerProposalTransferRequest,
+) -> dict[str, Any]:
+    try:
+        return transfer_proposal(
+            proposal_id=proposal_id,
+            consumer=request.consumer,
+            target=request.target,
+        )
+    except CartographerProposalTransferError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
 
 
 @router.post("/proposals/{proposal_id}/apply-approved")
