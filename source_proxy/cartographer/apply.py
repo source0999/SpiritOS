@@ -13,7 +13,6 @@ from source_proxy.cartographer.project_discovery import discover_projects
 from source_proxy.cartographer.proposals import list_proposals
 from source_proxy.tasks.long_running import (
     LongRunningTaskError,
-    approval_id_for_approved_diff,
     create_long_running_task,
     execute_approved_long_running_task,
     record_post_apply_verification,
@@ -92,11 +91,7 @@ def apply_approved_doc_proposal(
         applied = execute_approved_long_running_task(
             task_id,
             action=f"apply approved Cartographer proposal {proposal.proposal_id}",
-            approval_id=approval_id_for_approved_diff(
-                task_id=task_id,
-                approved_diff=approved_diff,
-                target=allowed_paths[0],
-            ),
+            approval_id="forbidden_cartographer_mutation",
             approved_by=approved_by,
             approved_diff=approved_diff,
             target=allowed_paths[0],
