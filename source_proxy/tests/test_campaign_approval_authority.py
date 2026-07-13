@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+import source_proxy.approval.campaign_authority as authority
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
     consume_coding_execution_approval,
@@ -83,3 +84,22 @@ def test_coding_approval_rejects_changed_context_and_single_use() -> None:
             selected_prompt_id="prompt-1", context_hash="context-1",
         )
     assert consumed_again.value.reason_code == "approval_already_consumed"
+
+
+def test_coding_approval_rejects_changed_source_head(monkeypatch: pytest.MonkeyPatch) -> None:
+    preview = persist_coding_execution_preview(
+        task_id="campaign1-test-source",
+        action="test action",
+        approved_diff="diff --git a/a b/a\n",
+        target="src/app/coding/a.ts",
+        selected_prompt_id="prompt-1",
+        context_hash="context-1",
+    )
+    monkeypatch.setattr(authority, "current_head", lambda: "0" * 40)
+    with pytest.raises(CampaignApprovalError) as caught:
+        consume_coding_execution_approval(
+            approval_id=issue(preview["preview_id"]), task_id="campaign1-test-source",
+            action="test action", approved_diff="diff --git a/a b/a\n",
+            target="src/app/coding/a.ts", selected_prompt_id="prompt-1", context_hash="context-1",
+        )
+    assert caught.value.reason_code == "approval_source_mismatch"
