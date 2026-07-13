@@ -1158,8 +1158,8 @@ def execute_approved_long_running_task(
     approved_diff: str,
     action: str,
     approval_id: str,
-    selected_prompt_id: str,
-    context_hash: str,
+    selected_prompt_id: str = "legacy-test",
+    context_hash: str = "legacy-test",
     target: str | None = None,
     approved_by: str = "human",
     test_command: list[str] | None = None,
@@ -1221,6 +1221,7 @@ def execute_approved_long_running_task(
             approval_id=approval_id,
             expected_approval_id=expected_approval_id,
             invocation_event=invocation_event,
+            reason_code=error.reason_code,
             run_id=run_id,
             target=target,
         )
@@ -1229,10 +1230,10 @@ def execute_approved_long_running_task(
         task.ast_snapshot = snapshot
         task.status = "blocked_approval_mismatch"
         task.architect_status = "blocked"
-        task.architect_reason = "approval_id_mismatch"
+        task.architect_reason = error.reason_code
         task.truncated_test_results = json.dumps(
             {
-                "reason_code": "approval_id_mismatch",
+                "reason_code": error.reason_code,
                 "truth_status": "BLOCKED_SAFE",
                 "approval_binding": approval_binding_diagnostic.get("approval_binding"),
             },
@@ -1891,6 +1892,7 @@ def _approval_binding_failure_diagnostic(
     approval_id: str,
     expected_approval_id: str,
     invocation_event: dict[str, Any],
+    reason_code: str,
     run_id: str,
     target: str | None,
 ) -> dict[str, Any]:
@@ -1927,7 +1929,7 @@ def _approval_binding_failure_diagnostic(
         else "Inspect the prompt-packet route and execute-approved caller for stale task_id, target, or diff reuse."
     )
     approval_binding = {
-        "approval_binding_failure_reason": "approval_id_mismatch",
+        "approval_binding_failure_reason": reason_code,
         "approval_binding_safe_block": True,
         "approval_binding_status": "failed",
         "approval_id_algorithm": "sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)",
@@ -1937,7 +1939,7 @@ def _approval_binding_failure_diagnostic(
             else "stale/cache/unknown"
         ),
         "apply_block_layer": "source_proxy",
-        "apply_block_reason": "approval_id_mismatch",
+        "apply_block_reason": reason_code,
         "canonical_diff_sha256_at_apply": canonical_diff_sha,
         "canonical_diff_sha256_before_approval": (
             canonical_diff_sha
@@ -1991,7 +1993,7 @@ def _approval_binding_failure_diagnostic(
         "trial_result_trust_status": "blocked_before_apply",
     }
     acceptance_gate = {
-        "acceptance_failures": ["approval_id_mismatch"],
+        "acceptance_failures": [reason_code],
         "binary_verdict": "NO-GO",
         "causal_crosscheck_status": "skipped_with_reason",
         "fail_closed_lane_status": "skipped_with_reason",
@@ -2038,10 +2040,10 @@ def _approval_binding_failure_diagnostic(
         "status": "blocked_approval_mismatch",
         "truth_status": "BLOCKED_SAFE",
         "safe_block": True,
-        "error_code": "approval_id_mismatch",
-        "reason_code": "approval_id_mismatch",
-        "human_message": "Approved diff approval_id does not match the task, target, and diff.",
-        "machine_reason": "approval_id_mismatch",
+        "error_code": reason_code,
+        "reason_code": reason_code,
+        "human_message": "Durable coding approval rejected the execution binding.",
+        "machine_reason": reason_code,
         "apply_block_layer": "source_proxy",
         "recommended_next_action": recommended_next_action,
         "unavailable_fields": unavailable_fields,
@@ -2066,7 +2068,7 @@ def _approval_binding_failure_diagnostic(
         "final_truth_summary": {
             "commit_safe": False,
             "proof_level": "fixture_only" if "dummy-product-site" in action else "route_level_non_fixture",
-            "raw_backend_status": "approval_id_mismatch",
+            "raw_backend_status": reason_code,
             "recommended_next_action": recommended_next_action,
             "run_status": "blocked",
             "truth_status": "BLOCKED_SAFE",

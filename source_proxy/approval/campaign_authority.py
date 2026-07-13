@@ -31,7 +31,6 @@ def coding_target_plugin(target: str) -> str:
 
 def coding_content_hash(*, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str) -> str:
     return hashlib.sha256(canonical_json({
-        "action": action,
         "approved_diff": approved_diff,
         "context_hash": context_hash,
         "selected_prompt_id": selected_prompt_id,

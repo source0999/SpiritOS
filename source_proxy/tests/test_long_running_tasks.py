@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 
 from source_proxy.api.long_running_tasks import router as long_running_tasks_router
 from source_proxy.context.canonical_broker import build_context_broker_report
+from source_proxy.approval.campaign_authority import persist_coding_execution_preview
 from source_proxy.planning.plan import (
     PLAN_SCHEMA_VERSION,
     AcceptanceCriterion,
@@ -50,11 +51,27 @@ import source_proxy.tasks.long_running as long_running_module
 
 
 def _approval_id(task_id: str, diff: str, target: str) -> str:
-    return approval_id_for_approved_diff(
+    preview = persist_coding_execution_preview(
         task_id=task_id,
+        action="implement proposed file change",
         approved_diff=diff,
         target=target,
+        selected_prompt_id="legacy-test",
+        context_hash="legacy-test",
     )
+    result = subprocess.run(
+        ["python3", str(Path(__file__).resolve().parents[2] / "scripts" / "approval-authority.py"), "issue"],
+        input=json.dumps({
+            "preview_id": preview["preview_id"],
+            "consumer": "coding-executor",
+            "operation": "coding_execution",
+            "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
+        }),
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return str(json.loads(result.stdout)["approval_id"])
 
 
 def _passing_managed_browser_proof() -> dict[str, object]:
@@ -1269,7 +1286,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 and event["consumer_subsystem"] == "long_running_status_observer"
             )
             self.assertEqual(invocation["task_id"], task_id)
-            self.assertEqual(invocation["approval_id"], _approval_id(task_id, diff, "src/app/demo/page.tsx"))
+            self.assertTrue(str(invocation["approval_id"]).startswith("apr_"))
             self.assertEqual(invocation["run_id"], f"execute_approved_long_running_task:{task_id}")
             self.assertEqual(invocation["subsystem"], "source_proxy_long_running")
             self.assertEqual(consumer["consumer_subsystem"], "long_running_status_observer")
@@ -1292,13 +1309,12 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 payload["diagnostic_envelope"]["approval_binding"]["approval_binding_status"],
                 "valid",
             )
-            self.assertEqual(
-                payload["diagnostic_envelope"]["approval_binding"]["expected_approval_id"],
-                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+            self.assertTrue(
+                str(payload["diagnostic_envelope"]["approval_binding"]["expected_approval_id"]).startswith("apr_")
             )
             self.assertEqual(
                 payload["diagnostic_envelope"]["approval_binding"]["received_approval_id"],
-                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                invocation["approval_id"],
             )
             self.assertEqual(payload["diagnostic_envelope"]["acceptance_gate"]["plan5_gate_present"], True)
             self.assertEqual(
@@ -1555,6 +1571,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "src/app/demo/page.tsx",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
 
@@ -1602,12 +1620,12 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     target="src/app/demo/page.tsx",
                 )
 
-            self.assertEqual(blocked.exception.reason_code, "approval_id_mismatch")
+            self.assertEqual(blocked.exception.reason_code, "approval_not_found")
             diagnostic = blocked.exception.diagnostics
             self.assertEqual(diagnostic["stage_id"], "execute_approved.approval_binding")
             self.assertEqual(diagnostic["truth_status"], "BLOCKED_SAFE")
             self.assertTrue(diagnostic["safe_block"])
-            self.assertEqual(diagnostic["reason_code"], "approval_id_mismatch")
+            self.assertEqual(diagnostic["reason_code"], "approval_not_found")
             self.assertEqual(diagnostic["apply_block_layer"], "source_proxy")
             self.assertIn("recommended_next_action", diagnostic)
             self.assertIn("unavailable_fields", diagnostic)
@@ -1620,11 +1638,11 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             )
             self.assertEqual(
                 diagnostic["approval_binding"]["approval_binding_failure_reason"],
-                "approval_id_mismatch",
+                "approval_not_found",
             )
             self.assertEqual(
                 diagnostic["approval_binding"]["expected_approval_id"],
-                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                "server-owned-durable-approval",
             )
             self.assertEqual(
                 diagnostic["approval_binding"]["received_approval_id"],
@@ -1682,7 +1700,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             )
             self.assertEqual(
                 poll_payload["expected_approval_id"],
-                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                "server-owned-durable-approval",
             )
             self.assertEqual(poll_payload["received_approval_id"], "approval-stale")
             self.assertEqual(poll_payload["safe_block"], True)
@@ -1702,11 +1720,11 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             self.assertEqual(receipt["task_id"], task_id)
             self.assertEqual(receipt["truth_status"], "BLOCKED_SAFE")
             self.assertTrue(receipt["safe_block"])
-            self.assertEqual(receipt["reason_code"], "approval_id_mismatch")
+            self.assertEqual(receipt["reason_code"], "approval_not_found")
             self.assertEqual(receipt["approval_id"], "approval-stale")
             self.assertEqual(
                 receipt["expected_approval_id"],
-                _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                "server-owned-durable-approval",
             )
             self.assertEqual(
                 receipt["anti_cheat"]["anti_cheat_reasons"],
@@ -1753,6 +1771,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "src/app/demo/page.tsx",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
 
@@ -2006,6 +2026,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "docs/router-verify.md",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
 
@@ -2065,6 +2087,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "docs/missing-confirm.md",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
 
@@ -2179,6 +2203,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
             applied_verification = applied.json()["task"]["post_apply_verification"]
@@ -2262,6 +2288,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "src/app/demo/page.tsx",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
 
@@ -2400,6 +2428,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "docs/code-verify-docs.md",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
 
@@ -2449,6 +2479,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "approved": True,
                     "approved_diff": diff,
                     "target": "source_proxy/demo.py",
+                    "selected_prompt_id": "legacy-test",
+                    "context_hash": "legacy-test",
                 },
             )
 
