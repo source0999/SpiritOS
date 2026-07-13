@@ -219,26 +219,6 @@ export async function POST(request: Request) {
         { status: 422 },
       );
     }
-    try {
-      const applyResult = await applySelectedDummyCoderDiff({
-        action,
-        approvedDiff,
-        approvedDiffSha256: normalizedDiffSha256(approvedDiff),
-        changedFiles,
-        target,
-        taskId,
-      });
-      return Response.json(applyResult);
-    } catch (error) {
-      const payload = selectedDummyApplyErrorPayload(error, {
-        action,
-        approvedDiff,
-        changedFiles,
-        target,
-        taskId,
-      });
-      return Response.json(payload, { status: selectedDummyApplyErrorStatus(error) });
-    }
   }
 
   // Approved real diffs execute through Source proxy's long-running task layer.
