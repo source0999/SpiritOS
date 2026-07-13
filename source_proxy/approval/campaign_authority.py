@@ -1,0 +1,97 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import subprocess
+from pathlib import Path
+from typing import Any
+
+
+ROOT = "/home/source/SpiritOS-campaign-1-20260712"
+REPOSITORY = "SpiritOS"
+SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "approval-authority.py"
+
+
+class CampaignApprovalError(ValueError):
+    def __init__(self, reason_code: str):
+        super().__init__(reason_code)
+        self.reason_code = reason_code
+
+
+def canonical_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def coding_target_plugin(target: str) -> str:
+    normalized = target.replace("\\", "/").strip()
+    if normalized.startswith("tests/ui-agent-trials/fixtures/dummy-product-site/"):
+        return "dummy-product-site"
+    return "coding-shell"
+
+
+def coding_content_hash(*, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str) -> str:
+    return hashlib.sha256(canonical_json({
+        "action": action,
+        "approved_diff": approved_diff,
+        "context_hash": context_hash,
+        "selected_prompt_id": selected_prompt_id,
+        "target": target,
+        "task_id": task_id,
+    }).encode("utf-8")).hexdigest()
+
+
+def current_head() -> str:
+    return subprocess.check_output(["git", "-C", ROOT, "rev-parse", "HEAD"], text=True).strip()
+
+
+def _call(command: str, payload: dict[str, Any]) -> dict[str, Any]:
+    completed = subprocess.run(["python3", str(SCRIPT), command], input=json.dumps(payload), text=True, capture_output=True, check=False)
+    try:
+        response = json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        raise CampaignApprovalError("approval_issuer_unavailable") from error
+    if completed.returncode != 0:
+        raise CampaignApprovalError(str(response.get("reason") or "approval_issuer_unavailable"))
+    return response
+
+
+def consume_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str) -> dict[str, Any]:
+    approval = _call("lookup", {"approval_id": approval_id})
+    if approval.get("consumer") != "coding-executor":
+        raise CampaignApprovalError("approval_consumer_mismatch")
+    if approval.get("operation") != "coding_execution":
+        raise CampaignApprovalError("approval_operation_not_permitted")
+    plugin = coding_target_plugin(target)
+    content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash)
+    binding = {
+        "approval_id": approval_id,
+        "consumer": "coding-executor",
+        "operation": "coding_execution",
+        "repository": REPOSITORY,
+        "worktree": ROOT,
+        "root": ROOT,
+        "target": target,
+        "plugin": plugin,
+        "preview": approval.get("preview"),
+        "content_hash": content_hash,
+        "context": context_hash,
+        "source_head": current_head(),
+        "generation": str(approval.get("generation") or ""),
+    }
+    _call("consume", binding)
+    return {"approval_id": approval_id, "generation": int(approval["generation"]), "plugin": plugin, "binding": binding}
+
+
+def persist_coding_execution_preview(*, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str) -> dict[str, Any]:
+    content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash)
+    return _call("persist-preview", {
+        "repository": REPOSITORY, "worktree": ROOT, "root": ROOT,
+        "target": target, "plugin": coding_target_plugin(target),
+        "content_hash": content_hash, "context": context_hash, "source_head": current_head(),
+    })
+
+
+def finalize_coding_execution_approval(approval: dict[str, Any], *, result_id: str, evidence: dict[str, Any], status: str) -> dict[str, Any]:
+    binding = dict(approval["binding"])
+    binding.update({"result_id": result_id, "evidence": canonical_json(evidence), "status": status, "source_head": current_head()})
+    return _call("finalize", binding)

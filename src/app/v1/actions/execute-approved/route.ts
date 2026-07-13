@@ -199,21 +199,10 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   }
-  const expectedApprovalId = approvalIdForApprovedDiff({
-    approvedDiff,
-    target,
-    taskId,
-  });
-  if (approvalId.trim() && approvalId !== expectedApprovalId) {
+  if (!approvalId.trim()) {
     return Response.json(
-      approvalBindingFailurePayload({
-        approvedDiff,
-        expectedApprovalId,
-        receivedApprovalId: approvalId,
-        target,
-        taskId,
-      }),
-      { status: 409 },
+      { error: "execute-approved requires a durable server-issued approval_id" },
+      { status: 403 },
     );
   }
 
@@ -268,7 +257,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         action,
         approved: true,
-        approval_id: expectedApprovalId,
+        approval_id: approvalId,
         approved_by: "coding-ui",
         approved_diff: approvedDiff,
         allowed_files: allowedFiles,
@@ -280,6 +269,8 @@ export async function POST(request: Request) {
         commit_authority: false,
         push_authority: false,
         target,
+        selected_prompt_id: trialPromptId || taskId,
+        context_hash: createHash("sha256").update(`${trialPromptId}|${trialPromptText}|${target}`).digest("hex"),
       }),
       headers: {
         "content-type": "application/json",

@@ -41,6 +41,11 @@ from source_proxy.routing.ollama_route import (
 )
 from source_proxy.context.obsidian import obsidian_context_diagnostics
 from source_proxy.context.canonical_broker import acknowledge_context_consumer
+from source_proxy.approval.campaign_authority import (
+    CampaignApprovalError,
+    consume_coding_execution_approval,
+    finalize_coding_execution_approval,
+)
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
     CoderPacket,
@@ -1149,6 +1154,8 @@ def execute_approved_long_running_task(
     approved_diff: str,
     action: str,
     approval_id: str,
+    selected_prompt_id: str,
+    context_hash: str,
     target: str | None = None,
     approved_by: str = "human",
     test_command: list[str] | None = None,
@@ -1191,12 +1198,18 @@ def execute_approved_long_running_task(
         )
         _save_task(task)
         raise
-    expected_approval_id = approval_id_for_approved_diff(
-        task_id=task_id,
-        approved_diff=approved_diff,
-        target=target,
-    )
-    if approval_id != expected_approval_id:
+    try:
+        durable_approval = consume_coding_execution_approval(
+            approval_id=approval_id,
+            task_id=task_id,
+            action=action,
+            approved_diff=approved_diff,
+            target=target or "",
+            selected_prompt_id=selected_prompt_id,
+            context_hash=context_hash,
+        )
+    except CampaignApprovalError as error:
+        expected_approval_id = "server-owned-durable-approval"
         approval_binding_diagnostic = _approval_binding_failure_diagnostic(
             task=task,
             action=action,
@@ -1237,7 +1250,7 @@ def execute_approved_long_running_task(
                 "truncated_test_results",
             ],
             notes=[
-                "approval_id_mismatch",
+                error.reason_code,
                 approval_binding_diagnostic["final_truth_summary"]["recommended_next_action"],
             ],
         )
@@ -1249,14 +1262,14 @@ def execute_approved_long_running_task(
                 approved_diff=approved_diff,
                 diagnostics=approval_binding_diagnostic,
                 expected_approval_id=expected_approval_id,
-                reason_code="approval_id_mismatch",
+                reason_code=error.reason_code,
                 target=target,
             )
         )
         _save_task(task)
         raise LongRunningTaskError(
-            "Approved diff approval_id does not match the task, target, and diff.",
-            "approval_id_mismatch",
+            "Durable coding approval rejected this execution binding.",
+            error.reason_code,
             diagnostics=approval_binding_diagnostic,
         )
     from source_proxy.planning.plan import load_plan
@@ -1464,6 +1477,31 @@ def execute_approved_long_running_task(
     }
     task.ast_snapshot = snapshot
     _append_audit_log(audit_record)
+    try:
+        finalize_coding_execution_approval(
+            durable_approval,
+            result_id=f"coding-execution-{task.id}",
+            evidence={
+                "approval_id": approval_id,
+                "generation": durable_approval["generation"],
+                "task_id": task.id,
+                "target": target,
+                "changed_files": audit_record["changed_files"],
+                "receipt": "source_proxy_execute_approved",
+            },
+            status="succeeded",
+        )
+    except CampaignApprovalError as error:
+        raise LongRunningTaskError("Durable coding approval could not be finalized.", error.reason_code) from error
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["campaign_1_approval"] = {
+        "approval_id": approval_id,
+        "generation": durable_approval["generation"],
+        "consumer": "coding-executor",
+        "acknowledgements": ["coding-executor", "coding-reviewer"],
+        "evidence": "redacted_source_proxy_execute_approved_receipt",
+    }
+    task.ast_snapshot = snapshot
 
     before_applied = task.status
     task.status = "applied_needs_verification"
@@ -2375,6 +2413,16 @@ def record_post_apply_verification(
         )
         snapshot["approved_execution_evidence"]["commit_safe"] = task.status == "completed"
     task.ast_snapshot = snapshot
+    campaign_approval = snapshot.get("campaign_1_approval")
+    if task.status == "completed" and isinstance(campaign_approval, dict):
+        campaign_approval["acknowledgements"] = [
+            "coding-executor",
+            "coding-reviewer",
+            "coding-verifier",
+            "evidence-recorder",
+        ]
+        snapshot["campaign_1_approval"] = campaign_approval
+        task.ast_snapshot = snapshot
     # Context acknowledgements are part of final verification truth.  Re-sync
     # every decision-bearing copy after that gate so a late context failure
     # cannot leave the open diff claiming `verified` while the task and receipt

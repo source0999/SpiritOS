@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from source_proxy.approval.gate import execute_approved_action
+from source_proxy.approval.campaign_authority import CampaignApprovalError, persist_coding_execution_preview
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
 from source_proxy.tasks.long_running import (
     LongRunningTaskError,
@@ -46,8 +47,18 @@ class LongRunningTaskExecuteApprovedRequest(BaseModel):
     approval_id: str = Field(min_length=1, max_length=120)
     approved_by: str = Field(default="human", max_length=120)
     approved_diff: str = Field(min_length=1, max_length=200_000)
+    selected_prompt_id: str = Field(min_length=1, max_length=160)
+    context_hash: str = Field(min_length=1, max_length=128)
     target: str | None = Field(default=None, max_length=1000)
     test_command: list[str] | None = None
+
+
+class LongRunningTaskApprovalPreviewRequest(BaseModel):
+    action: str = Field(min_length=1, max_length=1000)
+    approved_diff: str = Field(min_length=1, max_length=200_000)
+    target: str = Field(min_length=1, max_length=1000)
+    selected_prompt_id: str = Field(min_length=1, max_length=160)
+    context_hash: str = Field(min_length=1, max_length=128)
 
 
 class LongRunningTaskVerificationRequest(BaseModel):
@@ -242,6 +253,22 @@ async def long_running_task_advance(
         ) from error
 
 
+@router.post("/long-running/{task_id}/approval-preview")
+async def long_running_task_approval_preview(
+    task_id: str,
+    request: LongRunningTaskApprovalPreviewRequest,
+) -> dict[str, Any]:
+    try:
+        preview = persist_coding_execution_preview(
+            task_id=task_id, action=request.action, approved_diff=request.approved_diff,
+            target=request.target, selected_prompt_id=request.selected_prompt_id,
+            context_hash=request.context_hash,
+        )
+        return {"authority": "spiritos-approval-authority", "consumer": "coding-executor", "preview": preview}
+    except CampaignApprovalError as error:
+        raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
+
+
 @router.post("/long-running/{task_id}/execute-approved")
 async def long_running_task_execute_approved(
     task_id: str,
@@ -259,6 +286,8 @@ async def long_running_task_execute_approved(
             approval_id=request.approval_id,
             approved_by=request.approved_by,
             approved_diff=request.approved_diff,
+            selected_prompt_id=request.selected_prompt_id,
+            context_hash=request.context_hash,
             target=request.target,
             test_command=request.test_command,
         )

@@ -121,7 +121,7 @@ def persist_preview(data):
     exact_campaign_identity(data)
     target = require(data, "target")
     plugin = require(data, "plugin")
-    if plugin != "design-studio":
+    if plugin not in {"design-studio", "coding-shell", "dummy-product-site"}:
         fail("approval_plugin_mismatch")
     content_hash = require(data, "content_hash")
     context_hash = require(data, "context")
