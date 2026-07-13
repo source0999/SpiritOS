@@ -1498,7 +1498,10 @@ def execute_approved_long_running_task(
         "approval_id": approval_id,
         "generation": durable_approval["generation"],
         "consumer": "coding-executor",
-        "acknowledgements": ["coding-executor", "coding-reviewer"],
+        "acknowledgements": {
+            "coding-executor": {"approval_id": approval_id, "generation": durable_approval["generation"]},
+            "coding-reviewer": {"approval_id": approval_id, "generation": durable_approval["generation"]},
+        },
         "evidence": "redacted_source_proxy_execute_approved_receipt",
     }
     task.ast_snapshot = snapshot
@@ -2415,12 +2418,13 @@ def record_post_apply_verification(
     task.ast_snapshot = snapshot
     campaign_approval = snapshot.get("campaign_1_approval")
     if task.status == "completed" and isinstance(campaign_approval, dict):
-        campaign_approval["acknowledgements"] = [
-            "coding-executor",
-            "coding-reviewer",
-            "coding-verifier",
-            "evidence-recorder",
-        ]
+        campaign_approval["acknowledgements"] = {
+            consumer: {
+                "approval_id": campaign_approval["approval_id"],
+                "generation": campaign_approval["generation"],
+            }
+            for consumer in ("coding-executor", "coding-reviewer", "coding-verifier", "evidence-recorder")
+        }
         snapshot["campaign_1_approval"] = campaign_approval
         task.ast_snapshot = snapshot
     # Context acknowledgements are part of final verification truth.  Re-sync
