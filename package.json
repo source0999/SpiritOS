@@ -65,7 +65,8 @@
     "postinstall": "node ./scripts/postinstall-repomix-shim.mjs",
     "context:all": "bash ./scripts/context/build-llm-context-packs.sh",
     "context:full-split": "bash ./scripts/context/build-llm-context-packs.sh",
-    "spiritflix:e2e:preflight": "node ./scripts/spiritflix-e2e-auth-preflight.mjs"
+    "spiritflix:e2e:preflight": "node ./scripts/spiritflix-e2e-auth-preflight.mjs",
+    "approval-authority:preflight": "python3 ./scripts/approval-authority.py preflight"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",
