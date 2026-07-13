@@ -33,6 +33,10 @@ def approve_git_queue_item(
     approved: bool,
     approved_by: str,
 ) -> dict[str, Any]:
+    raise CartographerGitApprovalError(
+        "Cartographer is proposal-only in Campaign 1 and cannot approve, create, commit, or push Git work.",
+        "forbidden_cartographer_mutation",
+    )
     if approved is not True:
         if kind == "branch":
             return _reject_branch_item(item_id=item_id, rejected_by=approved_by)

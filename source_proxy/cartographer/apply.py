@@ -32,6 +32,10 @@ def apply_approved_doc_proposal(
     approved: bool,
     approved_by: str = "cartographer-ui",
 ) -> dict[str, Any]:
+    raise CartographerApplyError(
+        "Cartographer is proposal-only in Campaign 1; transfer the proposal to the design-writeback or coding-executor authority.",
+        "forbidden_cartographer_mutation",
+    )
     central_gate_check("apply", run_id=f"cartographer_apply_approved_doc_proposal:{proposal_id}")
     if approved is not True:
         raise CartographerApplyError(
