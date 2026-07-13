@@ -25,6 +25,9 @@ REQUIRED = {
         "issue_coding_execution_approval",
         '@router.post("/long-running/{task_id}/approval")',
     ),
+    "src/components/coding/CodingAgentInterface.tsx": (
+        "allowed_files: allowedFiles",
+    ),
 }
 FORBIDDEN = {
     "src/app/v1/actions/execute-approved/route.ts": ("approvalIdForApprovedDiff({",),

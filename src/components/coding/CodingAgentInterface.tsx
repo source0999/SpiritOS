@@ -1849,6 +1849,7 @@ export default function CodingAgentInterface({
       }
       const execution = await callApprovedActionExecute({
         action: approvalGate.action,
+        allowedFiles: [approvalGate.target],
         approvedDiff,
         content: approvalGate.content,
         target: approvalGate.target,
@@ -13864,12 +13865,14 @@ function extractFastApiErrorMessage(payload: unknown): string | undefined {
 
 async function callApprovedActionExecute({
   action,
+  allowedFiles,
   approvedDiff,
   content,
   target,
   taskId,
 }: {
   action: string;
+  allowedFiles: string[];
   approvedDiff?: string;
   content?: string;
   target: string;
@@ -13878,6 +13881,7 @@ async function callApprovedActionExecute({
   const response = await fetch("/v1/actions/execute-approved", {
     body: JSON.stringify({
       action,
+      allowed_files: allowedFiles,
       approved: true,
       approved_diff: approvedDiff,
       content,
