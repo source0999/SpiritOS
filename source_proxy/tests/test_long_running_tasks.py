@@ -34,8 +34,8 @@ from source_proxy.planning.plan import (
     save_plan,
 )
 from source_proxy.tasks.long_running import (
+    _canonical_diff_sha256,
     advance_long_running_task,
-    approval_id_for_approved_diff,
     create_long_running_task,
     execute_approved_long_running_task,
     get_long_running_task,
@@ -1458,32 +1458,20 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertNotIn("abcd1234abcd1234abcd1234", json.dumps(event))
         self.assertIn("[REDACTED]", event["notes"][0])
 
-    def test_approval_id_uses_canonical_lf_trailing_newline_diff_hash(self) -> None:
+    def test_diff_hash_uses_canonical_lf_trailing_newline_normalization(self) -> None:
         lf_no_trailing = "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new"
         lf_trailing = f"{lf_no_trailing}\n"
         crlf_trailing = lf_trailing.replace("\n", "\r\n")
 
-        baseline = approval_id_for_approved_diff(
-            task_id="task-123",
-            approved_diff=lf_no_trailing,
-            target="src/demo.ts",
-        )
+        baseline = _canonical_diff_sha256(lf_no_trailing)
 
         self.assertEqual(
             baseline,
-            approval_id_for_approved_diff(
-                task_id="task-123",
-                approved_diff=lf_trailing,
-                target="src/demo.ts",
-            ),
+            _canonical_diff_sha256(lf_trailing),
         )
         self.assertEqual(
             baseline,
-            approval_id_for_approved_diff(
-                task_id="task-123",
-                approved_diff=crlf_trailing,
-                target="src/demo.ts",
-            ),
+            _canonical_diff_sha256(crlf_trailing),
         )
 
     def test_central_gate_failure_creates_failure_event_without_status_advance(self) -> None:

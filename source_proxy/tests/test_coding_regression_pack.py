@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import tempfile
 import unittest
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -46,9 +48,9 @@ from source_proxy.planning.architect import (
     plan_task_deterministically,
 )
 from source_proxy.planning.plan import task_spec_from_plan, save_plan
+from source_proxy.approval.campaign_authority import persist_coding_execution_preview
 from source_proxy.tasks.long_running import (
     _render_coder_prompt_from_packet,
-    approval_id_for_approved_diff,
     create_long_running_task,
     execute_approved_long_running_task,
     propose_coder_agent_diff_payload_from_plan,
@@ -149,6 +151,32 @@ def _standard_doc_diff(literal: str = DOC_LITERAL, target: str = DOC_TARGET) -> 
 def _write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def _issue_coding_approval(*, task_id: str, action: str, approved_diff: str, target: str) -> str:
+    preview = persist_coding_execution_preview(
+        task_id=task_id,
+        action=action,
+        approved_diff=approved_diff,
+        target=target,
+        selected_prompt_id="coding-regression-pack",
+        context_hash="coding-regression-pack",
+    )
+    issued = subprocess.run(
+        ["python3", str(Path(__file__).resolve().parents[2] / "scripts" / "approval-authority.py"), "issue"],
+        input=json.dumps(
+            {
+                "preview_id": preview["preview_id"],
+                "consumer": "coding-executor",
+                "operation": "coding_execution",
+                "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
+            }
+        ),
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return str(json.loads(issued.stdout)["approval_id"])
 
 
 class CodingRegressionPackTests(unittest.TestCase):
@@ -4957,14 +4985,17 @@ export default products;
         payload = execute_approved_long_running_task(
             task_id,
             action="append approved docs sentence",
-            approval_id=approval_id_for_approved_diff(
+            approval_id=_issue_coding_approval(
                 task_id=task_id,
+                action="append approved docs sentence",
                 approved_diff=diff,
                 target=DOC_TARGET,
             ),
             approved_by="test",
             approved_diff=diff,
             target=DOC_TARGET,
+            selected_prompt_id="coding-regression-pack",
+            context_hash="coding-regression-pack",
         )
 
         content = (self.root / DOC_TARGET).read_text(encoding="utf-8")

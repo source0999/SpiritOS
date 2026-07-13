@@ -1447,7 +1447,7 @@ function approvalBindingFailurePayload({
   const canonicalizationChanged = normalizeDiffForProvenance(approvedDiff) !== approvedDiff;
   const changedFiles = changedFilesFromApprovedDiff(approvedDiff);
   const recommendedNextAction =
-    "Inspect src/app/v1/actions/execute-approved/route.ts approvalIdForApprovedDiff and the caller that supplied approval_id; do not apply until task_id, target, and diff hash match.";
+    "Request a fresh server-issued approval for the current prompt, context, target, and source HEAD; do not apply until it is available.";
   const now = new Date().toISOString();
   const envelope: DiagnosticEnvelope & Record<string, unknown> = {
     stage_id: "next.execute_approved.approval_binding_preflight",
@@ -1492,8 +1492,8 @@ function approvalBindingFailurePayload({
       approval_binding_failure_reason: "approval_id_mismatch",
       approval_binding_safe_block: true,
       approval_binding_status: "failed",
-      approval_id_algorithm: "sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)",
-      approval_source: "client/request",
+      approval_id_algorithm: "server_owned_durable_approval_authority_v1",
+      approval_source: "client/request_unverified",
       apply_block_layer: "frontend_bridge",
       apply_block_reason: "approval_id_mismatch",
       canonical_diff_sha256_at_apply: canonicalDiffSha256,

@@ -1849,16 +1849,6 @@ def _is_dummy_product_site_live_trial_spec(task_spec: dict[str, Any] | None) -> 
     )
 
 
-def approval_id_for_approved_diff(
-    *,
-    task_id: str,
-    approved_diff: str,
-    target: str | None,
-) -> str:
-    key = "|".join([task_id.strip(), (target or "").strip(), _canonical_diff_sha256(approved_diff)])
-    return f"approval-{hashlib.sha256(key.encode('utf-8')).hexdigest()[:16]}"
-
-
 def _raw_diff_sha256(approved_diff: str) -> str:
     return hashlib.sha256(approved_diff.encode("utf-8")).hexdigest()
 
@@ -1872,16 +1862,6 @@ def _canonical_diff_sha256(approved_diff: str) -> str:
     return hashlib.sha256(
         _canonicalize_diff_for_provenance(approved_diff).encode("utf-8")
     ).hexdigest()
-
-
-def _approval_id_for_diff_sha256(
-    *,
-    task_id: str,
-    target: str | None,
-    diff_sha256: str,
-) -> str:
-    key = "|".join([task_id.strip(), (target or "").strip(), diff_sha256])
-    return f"approval-{hashlib.sha256(key.encode('utf-8')).hexdigest()[:16]}"
 
 
 def _approval_binding_failure_diagnostic(
@@ -1899,78 +1879,41 @@ def _approval_binding_failure_diagnostic(
     persisted_at = _now_iso()
     raw_diff_sha = _raw_diff_sha256(approved_diff)
     canonical_diff_sha = _canonical_diff_sha256(approved_diff)
-    canonical_approval_id = _approval_id_for_diff_sha256(
-        task_id=task.id,
-        target=target,
-        diff_sha256=canonical_diff_sha,
-    )
     canonicalization_changed = approved_diff != _canonicalize_diff_for_provenance(
         approved_diff
     )
     received_id = approval_id.strip() or "missing"
-    matched_canonical_current_components = received_id == canonical_approval_id
-    match_if_same_components: bool | str = (
-        True if matched_canonical_current_components else "unknown"
-    )
-    diff_hash_match: bool | str = (
-        raw_diff_sha == canonical_diff_sha
-        if matched_canonical_current_components
-        else "unknown"
-    )
-    unavailable_reason = (
-        ""
-        if matched_canonical_current_components
-        else "preview_binding_components_not_recorded"
-    )
+    match_if_same_components: bool | str = "unknown"
+    diff_hash_match: bool | str = "unknown"
+    unavailable_reason = "durable_approval_binding_not_disclosed"
     recommended_next_action = (
-        "Inspect src/app/v1/actions/execute-approved/route.ts approvalIdForApprovedDiff and "
-        "source_proxy/tasks/long_running.py approval_id_for_approved_diff for diff canonicalization drift."
-        if matched_canonical_current_components and canonicalization_changed
+        "Request a fresh server-issued approval for the current prompt, context, target, and source HEAD."
+        if canonicalization_changed
         else "Inspect the prompt-packet route and execute-approved caller for stale task_id, target, or diff reuse."
     )
     approval_binding = {
         "approval_binding_failure_reason": reason_code,
         "approval_binding_safe_block": True,
         "approval_binding_status": "failed",
-        "approval_id_algorithm": "sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)",
-        "approval_source": (
-            "canonicalized_preview"
-            if matched_canonical_current_components
-            else "stale/cache/unknown"
-        ),
+        "approval_id_algorithm": "server_owned_durable_approval_authority_v1",
+        "approval_source": "authority_lookup",
         "apply_block_layer": "source_proxy",
         "apply_block_reason": reason_code,
         "canonical_diff_sha256_at_apply": canonical_diff_sha,
-        "canonical_diff_sha256_before_approval": (
-            canonical_diff_sha
-            if matched_canonical_current_components
-            else "not_recorded: preview_binding_components_not_recorded"
-        ),
+        "canonical_diff_sha256_before_approval": "not_recorded: durable approval binding was rejected",
         "canonicalization_changed": canonicalization_changed,
         "diff_sha256_match": diff_hash_match,
         "diff_sha256_used_for_apply": canonical_diff_sha,
-        "diff_sha256_used_for_preview": (
-            canonical_diff_sha
-            if matched_canonical_current_components
-            else "not_recorded: preview_binding_components_not_recorded"
-        ),
+        "diff_sha256_used_for_preview": "not_recorded: durable approval binding was rejected",
         "expected_approval_id": expected_approval_id,
         "received_approval_id": received_id,
         "safe_block": True,
         "target_match": match_if_same_components,
         "target_used_for_apply": target or "",
-        "target_used_for_preview": (
-            (target or "")
-            if matched_canonical_current_components
-            else "not_recorded: preview_binding_components_not_recorded"
-        ),
+        "target_used_for_preview": "not_recorded: durable approval binding was rejected",
         "task_id_match": match_if_same_components,
         "task_id_used_for_apply": task.id,
-        "task_id_used_for_preview": (
-            task.id
-            if matched_canonical_current_components
-            else "not_recorded: preview_binding_components_not_recorded"
-        ),
+        "task_id_used_for_preview": "not_recorded: durable approval binding was rejected",
         "unavailable_reason": unavailable_reason,
     }
     diff_provenance = {
@@ -4127,8 +4070,8 @@ def _approved_execution_diagnostic_envelope(task: LongRunningTask) -> dict[str, 
             "approval_binding_failure_reason": "not_applicable: approval_binding_valid",
             "approval_binding_safe_block": False,
             "approval_binding_status": "valid",
-            "approval_id_algorithm": "sha256(task_id|target|canonical_lf_trailing_newline_diff_sha256)",
-            "approval_source": "canonicalized_preview",
+            "approval_id_algorithm": "server_owned_durable_approval_authority_v1",
+            "approval_source": "approval_authority",
             "apply_block_layer": "not_applicable: apply_succeeded",
             "apply_block_reason": "not_applicable: approval_binding_valid",
             "block_receipt_path": block_receipt_path or "not_applicable: no backup manifest recorded",

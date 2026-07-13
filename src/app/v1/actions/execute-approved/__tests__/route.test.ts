@@ -35,8 +35,12 @@ const mockedUpsertCodingRunRow = vi.mocked(upsertCodingRunRow);
 const mockedExecFile = vi.mocked(execFile);
 
 function jsonRequest(body: unknown): Request {
+  const approvalBoundBody =
+    body && typeof body === "object" && !Array.isArray(body)
+      ? { approval_id: "apr_test_server_issued", ...(body as Record<string, unknown>) }
+      : body;
   return new Request("http://localhost/v1/actions/execute-approved", {
-    body: JSON.stringify(body),
+    body: JSON.stringify(approvalBoundBody),
     headers: { "content-type": "application/json" },
     method: "POST",
   });
@@ -141,16 +145,18 @@ describe("execute-approved route", () => {
       action: "modify file",
       allowed_files: ["src/demo.ts"],
       approved: true,
-      approval_id: "approval-54865365133e9340",
+      approval_id: "apr_test_server_issued",
       approved_by: "coding-ui",
       approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
       changed_files: ["src/demo.ts"],
       commit_authority: false,
       approved_diff_sha256: "fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe",
       applied_diff_sha256: "fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe",
+      context_hash: "ce95c3fc5cf588a06f64fe467392eafaef0206956dc98679246ed045a5e0943b",
       diff_hash: "fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe",
       provenance_hash_normalization: "lf_trailing_newline_v1",
       push_authority: false,
+      selected_prompt_id: "task-123",
       target: "src/demo.ts",
     });
   });
@@ -178,7 +184,7 @@ describe("execute-approved route", () => {
 
     const [, init] = mockedSourceProxyFetch.mock.calls[0];
     const body = JSON.parse(String(init?.body));
-    expect(body.approval_id).toBe("approval-54865365133e9340");
+    expect(body.approval_id).toBe("apr_test_server_issued");
     expect(body.approved_diff_sha256).toBe("fe27d77ea2ed4d425e08fda5fb202b554aff43e0b591c8477efa7ad86d7889fe");
     expect(body.applied_diff_sha256).toBe(body.approved_diff_sha256);
     expect(body.provenance_hash_normalization).toBe("lf_trailing_newline_v1");
@@ -409,20 +415,13 @@ describe("execute-approved route", () => {
     expect(selectedPrompt3DiffViolations(stylesOnly, renderedPreviewHtml, currentMainJs)).toEqual([]);
   });
 
-  it("uses git apply --recount for selected dummy fixture diffs", async () => {
-    mockedExecFile.mockImplementation((...args: unknown[]) => {
-      const callback = args[args.length - 1];
-      if (typeof callback !== "function") {
-        throw new Error("expected callback");
-      }
-      callback(null, "", "");
-      return {} as ReturnType<typeof execFile>;
-    });
+  it("forwards selected dummy fixture diffs to Source Proxy", async () => {
     mockedSourceProxyFetch.mockResolvedValueOnce(
       {
-        ok: true,
+        headers: new Headers({ "content-type": "application/json" }),
         status: 200,
-        text: async () => JSON.stringify({ ok: true }),
+        statusText: "OK",
+        text: async () => JSON.stringify(executeApprovedContractPayload({ status: "applied" })),
       } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
     );
 
@@ -450,14 +449,12 @@ describe("execute-approved route", () => {
     );
 
     await expect(response.json()).resolves.toMatchObject({
-      checks_run: ["git apply --recount --check"],
+      task: expect.objectContaining({ id: "task-123" }),
       status: "applied",
     });
     expect(response.status).toBe(200);
-    const checkArgs = mockedExecFile.mock.calls[0]?.[1] as string[];
-    const applyArgs = mockedExecFile.mock.calls[1]?.[1] as string[];
-    expect(checkArgs.slice(0, 3)).toEqual(["apply", "--recount", "--check"]);
-    expect(applyArgs.slice(0, 2)).toEqual(["apply", "--recount"]);
+    expect(mockedSourceProxyFetch).toHaveBeenCalledTimes(1);
+    expect(mockedExecFile).not.toHaveBeenCalled();
   });
 
   it("extracts model-authored Prompt 1 create bundle files from a stale create diff", () => {
@@ -530,21 +527,21 @@ describe("execute-approved route", () => {
     expect(replacement.content).not.toContain("Old starter item");
   });
 
-  it("returns structured selected dummy apply diagnostics when git apply check fails", async () => {
-    mockedExecFile.mockImplementation((...args: unknown[]) => {
-      const callback = args[args.length - 1];
-      if (typeof callback !== "function") {
-        throw new Error("expected callback");
-      }
-      const error = Object.assign(new Error("patch does not apply"), {
-        code: 1,
-        cmd: "git apply --recount --check approved.patch",
-        stderr: "error: patch failed: tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js:1",
-        stdout: "",
-      });
-      callback(error, "", error.stderr);
-      return {} as ReturnType<typeof execFile>;
-    });
+  it("preserves Source Proxy selected dummy apply diagnostics", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 409,
+        statusText: "Conflict",
+        text: async () => JSON.stringify({
+          detail: {
+            reason_code: "approval_target_mismatch",
+            safe_block: true,
+            truth_status: "BLOCKED_SAFE",
+          },
+        }),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
 
     const approvedDiff = [
       "diff --git a/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js b/tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
@@ -569,30 +566,16 @@ describe("execute-approved route", () => {
       }),
     );
 
-    await expect(response.json()).resolves.toMatchObject({
-      acceptance_gate: expect.objectContaining({
-        binary_verdict: "NO-GO",
-        phase_verifier_status: "skipped_with_reason",
-      }),
-      anti_cheat: expect.objectContaining({
-        anti_cheat_reasons: ["skipped_due_to_apply_block"],
-        anti_cheat_status: "not_run",
-      }),
-      changed_files: ["tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js"],
-      error: "Selected dummy fixture apply failed during git apply --recount --check.",
-      final_truth_summary: expect.objectContaining({
-        truth_status: "FAILED_INCOMPLETE_DIAG",
-      }),
-      reason_code: "selected_dummy_git_apply_check_failed",
-      route: "/v1/actions/execute-approved",
-      safe_block: true,
-      stage: "git apply --recount --check",
-      stderr: expect.stringContaining("patch failed"),
-      task_id: "task-selected-002",
-      truth_status: "FAILED_INCOMPLETE_DIAG",
+    await expect(response.json()).resolves.toEqual({
+      detail: {
+        reason_code: "approval_target_mismatch",
+        safe_block: true,
+        truth_status: "BLOCKED_SAFE",
+      },
     });
     expect(response.status).toBe(409);
-    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+    expect(mockedSourceProxyFetch).toHaveBeenCalledTimes(1);
+    expect(mockedExecFile).not.toHaveBeenCalled();
   });
 
   it("records suite apply proof server-side before browser post-apply parsing can reload", async () => {
@@ -914,12 +897,26 @@ describe("execute-approved route", () => {
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 
-  it("rejects stale approval ids before forwarding", async () => {
+  it("forwards stale server-shaped approval ids for Source Proxy rejection", async () => {
+    mockedSourceProxyFetch.mockResolvedValueOnce(
+      {
+        headers: new Headers({ "content-type": "application/json" }),
+        status: 409,
+        statusText: "Conflict",
+        text: async () => JSON.stringify({
+          detail: {
+            reason_code: "approval_not_found",
+            safe_block: true,
+            truth_status: "BLOCKED_SAFE",
+          },
+        }),
+      } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
+    );
     const response = await POST(
       jsonRequest({
         action: "modify file",
         allowed_files: ["src/demo.ts"],
-        approval_id: "approval-stale",
+        approval_id: "apr_stale_server_issued",
         approved: true,
         approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
         target: "src/demo.ts",
@@ -927,43 +924,15 @@ describe("execute-approved route", () => {
       }),
     );
 
-    await expect(response.json()).resolves.toMatchObject({
-      apply_block_layer: "frontend_bridge",
-      approval_binding: expect.objectContaining({
-        approval_binding_failure_reason: "approval_id_mismatch",
-        approval_binding_safe_block: true,
-        approval_binding_status: "failed",
-        diff_sha256_match: "unknown",
-        expected_approval_id: "approval-54865365133e9340",
-        received_approval_id: "approval-stale",
+    await expect(response.json()).resolves.toEqual({
+      detail: {
+        reason_code: "approval_not_found",
         safe_block: true,
-        target_match: "unknown",
-        task_id_match: "unknown",
-      }),
-      anti_cheat: expect.objectContaining({
-        anti_cheat_status: "not_run",
-        anti_cheat_reasons: ["skipped_due_to_apply_block"],
-      }),
-      error:
-        "execute-approved approval_id does not match task_id, target, and approved_diff.",
-      final_truth_summary: expect.objectContaining({
         truth_status: "BLOCKED_SAFE",
-        commit_safe: false,
-      }),
-      safe_block: true,
-      stage_id: "next.execute_approved.approval_binding_preflight",
-      truth_status: "BLOCKED_SAFE",
-      unavailable_fields: expect.arrayContaining([
-        expect.objectContaining({ field: "anti_cheat.detector_results" }),
-      ]),
-      expected_approval_id: "approval-54865365133e9340",
-      received_approval_id: "approval-stale",
-      verification: expect.objectContaining({
-        post_apply_verification_status: "skipped_due_to_apply_block",
-      }),
+      },
     });
     expect(response.status).toBe(409);
-    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+    expect(mockedSourceProxyFetch).toHaveBeenCalledTimes(1);
   });
 
   it("fails closed when Source Proxy success lacks the Plan 4 causal contract", async () => {
