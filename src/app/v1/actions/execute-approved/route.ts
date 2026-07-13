@@ -1429,20 +1429,6 @@ function diffHashForApprovedDiff(approvedDiff: string) {
   return normalizedDiffSha256(approvedDiff);
 }
 
-function approvalIdForApprovedDiff({
-  approvedDiff,
-  target,
-  taskId,
-}: {
-  approvedDiff: string;
-  target: string;
-  taskId: string;
-}) {
-  const diffHash = diffHashForApprovedDiff(approvedDiff);
-  const key = [taskId.trim(), target.trim(), diffHash].join("|");
-  return `approval-${createHash("sha256").update(key).digest("hex").slice(0, 16)}`;
-}
-
 function approvalBindingFailurePayload({
   approvedDiff,
   expectedApprovalId,
