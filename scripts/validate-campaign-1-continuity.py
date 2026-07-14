@@ -9,7 +9,7 @@ ROOT = Path(os.environ.get("SPIRITOS_CAMPAIGN1_CONTINUITY_ROOT", Path(__file__).
 PLAN = ROOT / "docs/architecture/campaign-1-plan.md"
 LEDGER = ROOT / "docs/architecture/campaign-1-ledger.md"
 STATE = ROOT / "docs/architecture/campaign-1-state.json"
-REQUIRED_STATE_FIELDS = {"schema", "campaign_id", "plan_path", "ledger_path", "base_commit", "branch", "recorded_head", "current_phase", "current_increment", "completed_gate_ids", "partial_gate_ids", "next_gate_id", "protected_heads", "allowed_mutable_root", "dirty_state_policy", "valid_stop_reasons", "go_eligible", "last_verified_at"}
+REQUIRED_STATE_FIELDS = {"schema", "campaign_id", "plan_path", "ledger_path", "base_commit", "branch", "recorded_head", "checkpoint_commit_policy", "current_phase", "current_increment", "completed_gate_ids", "partial_gate_ids", "next_gate_id", "protected_heads", "allowed_mutable_root", "dirty_state_policy", "valid_stop_reasons", "go_eligible", "last_verified_at"}
 
 
 def git(directory: Path, *args: str) -> str:
@@ -34,7 +34,20 @@ def main() -> int:
     if state.get("campaign_id") != "spiritos-campaign-1" or "spiritos-campaign-1" not in ledger.lower() or "Campaign 1" not in plan: failures.append("campaign_identity_mismatch")
     if state.get("plan_path") != "docs/architecture/campaign-1-plan.md" or state.get("ledger_path") != "docs/architecture/campaign-1-ledger.md" or "campaign-1-plan.md" not in ledger: failures.append("control_plane_link_mismatch")
     if state.get("branch") != branch: failures.append("branch_mismatch")
-    if state.get("recorded_head") != head or head not in ledger: failures.append("recorded_head_mismatch")
+    recorded_head = state.get("recorded_head")
+    try:
+        checkpoint_parent = git(ROOT, "rev-parse", "HEAD^")
+    except subprocess.CalledProcessError:
+        checkpoint_parent = ""
+    checkpoint_files = set(git(ROOT, "diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").splitlines())
+    atomic_checkpoint = {"docs/architecture/campaign-1-ledger.md", "docs/architecture/campaign-1-state.json"}.issubset(checkpoint_files)
+    if recorded_head == head:
+        recorded_head_valid = True
+    elif state.get("checkpoint_commit_policy") == "parent_of_atomic_checkpoint" and recorded_head == checkpoint_parent and atomic_checkpoint:
+        recorded_head_valid = True
+    else:
+        recorded_head_valid = False
+    if not recorded_head_valid or recorded_head not in ledger: failures.append("recorded_head_mismatch")
     if state.get("current_phase") != "Phase 1" or "Phase: **Phase 1**" not in ledger: failures.append("obsolete_phase")
     if state.get("next_gate_id") in state.get("completed_gate_ids", []): failures.append("next_gate_already_complete")
     if state.get("next_gate_id") not in ledger: failures.append("next_gate_not_recorded")
