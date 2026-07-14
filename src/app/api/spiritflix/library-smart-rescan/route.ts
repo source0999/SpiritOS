@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
+import { consumeSpiritFlixAdminApproval, finalizeSpiritFlixAdminApproval } from "@/lib/coding/spiritflix-admin-approval-authority";
 
 export const runtime = "nodejs";
 
@@ -237,6 +238,21 @@ export async function GET() {
   return NextResponse.json(status, { headers: { "Cache-Control": "no-store" } });
 }
 
-export async function POST() {
-  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
+export async function POST(request: Request) {
+  let approvalId = "";
+  try { approvalId = String((await request.json() as { approval_id?: unknown }).approval_id ?? ""); } catch { return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 }); }
+  if (!approvalId) return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 });
+  const action = "index.rebuild";
+  const target = "spiritflix:library-smart-rescan";
+  const plan = { runner: "face-organizer", version: 1 };
+  const consumed = await consumeSpiritFlixAdminApproval(approvalId, action, target, plan);
+  if (!consumed.ok) return NextResponse.json({ reason_code: consumed.reason }, { status: 422 });
+  try {
+    const status = await startSmartRescan();
+    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "succeeded");
+    return NextResponse.json({ ...status, approval: { generation: Number(consumed.value.generation), status: "consumed" } }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "failed");
+    return NextResponse.json({ reason_code: error instanceof Error ? error.message : "spiritflix_admin_execution_failed" }, { status: 500 });
+  }
 }
