@@ -25,6 +25,7 @@ Schema: `spiritos-campaign-1-evidence-index/v1`
 | --- | --- | --- |
 | Cartographer direct execution registration | pass | `source_proxy/api/cartographer.py` has no `/safe-write` or `/verification/run` registration; AST validator rejects duplicate method/path pairs. |
 | Cartographer legacy mutation entry points | pass, fail closed | docs/git/clutter/starter-blueprint compatibility routes return `410 forbidden_cartographer_mutation`; router imports no executor symbols. |
+| Complete Cartographer API regression | fail, expected migration backlog | 36 legacy mutable-route tests failed; 231 passed and 4 subtests passed. No legacy bypass was restored. |
 | Design preview contract tests | pass | 32 tests across preview, authenticated Design approval, and writer guard suites. |
 | Design negative receipt fixtures | pass | 9 malformed receipt cases rejected. |
 | AR-001 ordinary browser session boundary | fail | current client-to-BFF `authorization` compatibility input remains. |

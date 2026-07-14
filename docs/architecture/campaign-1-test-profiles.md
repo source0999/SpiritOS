@@ -7,6 +7,7 @@ All commands run from `/home/source/SpiritOS-campaign-1-20260712`. Profiles inhe
 | Profile | Command / receipt | Environment and secret assumptions | Latest result | Claim ceiling |
 | --- | --- | --- | --- | --- |
 | authority contracts | `PYTHONPATH=. ...pytest source_proxy/tests/test_campaign_approval_authority.py -q` | Campaign Approval Authority state; no credential output | 9 passed | Cartographer/coding authority boundaries only |
+| complete Cartographer API | `PYTHONPATH=. ...pytest source_proxy/tests/test_cartographer_api.py -q` | Source Proxy test app; legacy mutation assertions remain present | **36 failed, 231 passed, 4 subtests passed** | mandatory failure; legacy mutable callers require proposal-only migration |
 | authority dependency enforcement | `npm run campaign-1:validate-authority` | source tree only | pass | static enforcement only |
 | continuity | `npm run campaign-1:validate-continuity` | pinned protected worktrees readable | required after atomic checkpoint | continuity only |
 | Design production route | `npx vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts src/lib/coding/__tests__/design-studio-obsidian-writeback.test.ts src/app/v1/coding/design-studio/preview/__tests__/route.test.ts` | Node/Vitest; mocked route seams for unit coverage | 32 passed | Design unit contract only |

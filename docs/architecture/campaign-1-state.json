@@ -5,7 +5,7 @@
   "ledger_path": "docs/architecture/campaign-1-ledger.md",
   "base_commit": "49e58f2982521c46a1a4fc73ef66461a86643792",
   "branch": "codex/spiritos-campaign-1-foundation-20260712",
-  "recorded_head": "e8e26978bb2bb94fdc3c041672ab9633e6de177e",
+  "recorded_head": "69fdd94418068bffc882ae488edc33a1f0aecafd",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Phase 1",
   "current_increment": "cartographer_execution_containment_and_design_profile_reconciliation",
@@ -17,5 +17,5 @@
   "dirty_state_policy": "Cartographer containment, Design profile reconciliation, and the evidence index are committed in one atomic checkpoint. Any later active files must be explicitly listed in the ledger and are never cleaned by continuity validation.",
   "valid_stop_reasons": ["GO_CAMPAIGN_1_COMPLETE", "verification_failure", "external_critical_blocker"],
   "go_eligible": false,
-  "last_verified_at": "2026-07-14T03:55:00Z"
+  "last_verified_at": "2026-07-14T04:02:00Z"
 }
