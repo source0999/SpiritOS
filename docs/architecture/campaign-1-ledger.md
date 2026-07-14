@@ -2,18 +2,18 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `2c3e17622a7e923d95ca532da9b259607990b7af` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `bfed38169842c4ae6db8178c44f62c327996733e` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **build reliability, truthful test profile, and authority-boundary closeout**.
-- Dirty state at checkpoint: `src/app/coding/__tests__/page.test.tsx`, `src/lib/coding/agent-lab-baseline-server.ts`, `src/lib/coding/design-studio-approved-writeback-runtime.ts`, `src/lib/coding/model-provider-status.ts`, `src/lib/coding/operator-approval-session.ts`, this ledger, state, and the named redacted receipt. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
+- Phase: **Phase 1**; increment: **authenticated cross-product browser regression**.
+- Dirty state at checkpoint: this ledger, state, and [the named redacted browser receipt](campaign-1-evidence/phase1-cross-product-browser-20260714.md). They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`. The former build verification failure is resolved: its first native segfault occurred with a mixed 878 MB dev/build `.next` tree and an active Campaign dev server; the retry cutoff of 124 seconds was below the measured clean-build completion window.
-- GO eligibility: `false`; build reliability and the registered coding profiles now pass, but final AR-001/002/003 acceptance, protected-product browser regressions, canonical-shell completion, Prompt 1 lifecycle proof, and cross-product closeout remain incomplete.
-- Next concrete gate: `phase1_cross_product_browser_regression_and_final_acceptance` - run the mapped authenticated SpiritFlix desktop/Fold and player-entry regressions against verified protected service identity, then reconcile final AR-001/002/003, canonical-shell, Prompt 1, duplicate-authority, and evidence acceptance without modifying protected products.
+- GO eligibility: `false`; build reliability and authenticated desktop/Fold/player/coding shell regressions now pass, but final AR-001/002/003 acceptance, canonical-shell completion, Prompt 1 lifecycle proof, duplicate-authority reconciliation, and evidence acceptance remain incomplete.
+- Next concrete gate: `phase1_final_authority_acceptance_and_canonical_shell_lifecycle` - reconcile the final AR-001/002/003 acceptance matrix and canonical contracts, then execute/verify the Prompt 1 lifecycle and remaining duplicate-authority/evidence gates without modifying protected products.
 
 ## Git-bound gate status
 
@@ -30,10 +30,11 @@
 | Authenticated coding issuance | completed slice | real HTTP route -> persisted preview -> authenticated issuance -> durable task apply -> consume/finalize; all four acknowledgement roles share one ID/generation |
 | Runtime evidence | completed slice | [redacted operator issuance receipt](campaign-1-evidence/operator-issuance-runtime-20260714.md) documents the coding and Design HTTP chains |
 | Build verification | completed | clean `npm run build --webpack` is repeatable after stopping the Campaign-owned dev server and clearing only `.next`: final-source runs passed in 136 s (2,360,220 KB peak RSS) and 138 s (2,277,780 KB peak RSS), both with zero swaps and no orphaned build process |
+| Authenticated cross-product browser regression | completed slice | [redacted browser receipt](campaign-1-evidence/phase1-cross-product-browser-20260714.md): dedicated least-privilege E2E broker, desktop and Fold Latest Added, unique player entry/video attachment, and `/coding` production shell proof on an isolated Campaign production lane; protected live lane identity and no-reversion heads were read-only verified |
 | AR-001 / canonical contracts / evidence / coding shell / Prompt 1 / duplicates / truthful profiles / final closeout | not started or verify | governed by plan |
 
 ## Last verified commands
 
-`git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; two clean `npm run build` runs; `npm run test:coding-regression` (131 passed, 40 subtests); `npm run test:coding-frontend-regression` (269 passed); canonical-context Python suite (101 passed); focused authority/session/Design/frontend suite (27 passed); Python `compileall`; `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; canonical-bypass inventory; redacted changed-file secret scan.
+`git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; two clean `npm run build` runs; `npm run test:coding-regression` (131 passed, 40 subtests); `npm run test:coding-frontend-regression` (269 passed); canonical-context Python suite (101 passed); focused authority/session/Design/frontend suite (27 passed); Python `compileall`; `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; canonical-bypass inventory; redacted changed-file secret scan; verified live protected service identity and dedicated E2E preflight; isolated production Chromium desktop/Fold/player and `/coding` shell proof using SPKI-only certificate allowance.
 
-Last verified: `2026-07-14T01:46:37Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T01:57:20Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
