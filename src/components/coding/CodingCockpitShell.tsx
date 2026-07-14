@@ -8302,6 +8302,46 @@ export function CodingCockpitShell() {
         const verificationPayload = await readJson(verificationResponse);
         const verificationRecord = asRecord(verificationPayload);
         const verificationTask = asRecord(verificationRecord.task);
+        const verificationResultsText = stringValue(verificationTask.truncated_test_results);
+        let verificationResults: Record<string, unknown> = {};
+        if (verificationResultsText?.startsWith("{")) {
+          try {
+            verificationResults = asRecord(JSON.parse(verificationResultsText));
+          } catch {
+            verificationResults = {};
+          }
+        }
+        const verificationCoderDiagnostics = asRecord(verificationResults.coder_diagnostics);
+        const verificationAntiCheat = asRecord(
+          verificationTask.anti_cheat ??
+          verificationRecord.anti_cheat ??
+          verificationResults.anti_cheat ??
+          verificationCoderDiagnostics.anti_cheat,
+        );
+        backendAntiCheatStatus =
+          stringValue(verificationCoderDiagnostics.anti_cheat_status) ??
+          stringValue(verificationResults.anti_cheat_status) ??
+          stringValue(verificationTask.anti_cheat_status) ??
+          stringValue(verificationAntiCheat.anti_cheat_status) ??
+          backendAntiCheatStatus;
+        backendAntiCheatHardFailIds.push(
+          ...arrayOfStrings(verificationCoderDiagnostics.anti_cheat_hard_fail_ids),
+          ...arrayOfStrings(verificationResults.anti_cheat_hard_fail_ids),
+          ...arrayOfStrings(verificationTask.anti_cheat_hard_fail_ids),
+          ...arrayOfStrings(verificationAntiCheat.anti_cheat_hard_fail_ids),
+        );
+        backendAntiCheatAdvisoryIds.push(
+          ...arrayOfStrings(verificationCoderDiagnostics.anti_cheat_advisory_ids),
+          ...arrayOfStrings(verificationResults.anti_cheat_advisory_ids),
+          ...arrayOfStrings(verificationTask.anti_cheat_advisory_ids),
+          ...arrayOfStrings(verificationAntiCheat.anti_cheat_advisory_ids),
+        );
+        backendAntiCheatReasons.push(
+          ...arrayOfStrings(verificationCoderDiagnostics.anti_cheat_reasons),
+          ...arrayOfStrings(verificationResults.anti_cheat_reasons),
+          ...arrayOfStrings(verificationTask.anti_cheat_reasons),
+          ...arrayOfStrings(verificationAntiCheat.anti_cheat_reasons),
+        );
         const verificationTaskEvidence = asRecord(
           asRecord(verificationTask.ast_snapshot).approved_execution_evidence,
         );

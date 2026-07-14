@@ -2,18 +2,18 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `8fa493a92f73d3335e069d90f53f8a425ac78676` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `539d064742e411cfc1ea84c3057dc1da2973e7f9` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **final authority acceptance and canonical shell lifecycle**.
-- Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
-- Critical blocker: `campaign_owned_runtime_lane_unavailable`; the named coding browser harness requires Campaign frontend port `3000`, but that port is owned by `/home/source/SpiritOS-live-integration-20260712`. Replacing or restarting that foreign service would violate Campaign containment; changing the harness port would invalidate its registered proof contract.
-- GO eligibility: `false`; all implementation slices are committed and the static/build matrix passes, but current managed browser/runtime proof is unavailable and the legacy Cartographer API regression profile remains un-migrated.
-- Next concrete gate: `phase1_campaign_owned_runtime_lane_recovery` - after an operator either frees port `3000` for the Campaign-owned frontend or explicitly authorizes a registered harness configuration change, rerun the browser lifecycle and then migrate the legacy Cartographer mutation fixtures to proposal-only expectations.
+- Phase: **Phase 1**; increment: **Cartographer legacy fixture migration**.
+- Dirty state at checkpoint: `src/components/coding/CodingCockpitShell.tsx`, this ledger, state, and [the redacted runtime recovery receipt](campaign-1-evidence/phase1-runtime-lane-recovery-20260714.md). They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
+- Critical blocker: none. The registered `E2E_LOOP_ISOLATED_CANDIDATE=true` loopback-only candidate mode proved the browser lifecycle without touching the foreign port-3000 service.
+- GO eligibility: `false`; the full coding browser lifecycle now passes, but `source_proxy/tests/test_cartographer_api.py` still contains legacy mutable-route expectations that must be migrated to the durable proposal-only contract.
+- Next concrete gate: `phase1_cartographer_legacy_fixture_migration` - migrate the legacy Cartographer mutation fixtures to proposal-only/direct-route-rejection expectations, run the complete Cartographer profile, and then refresh final Phase 1 proof truth.
 
 ## Git-bound gate status
 
@@ -28,7 +28,7 @@
 | Coding durable approval/acknowledgement | substantially implemented | `b4d8e49f` through `540fd3d6` |
 | operator-session foundation | completed | HTTP-only session route plus origin, CSRF, expiry, revocation, role, and audit foundation; focused Vitest proof |
 | Authenticated coding issuance | completed slice | real HTTP route -> persisted preview -> authenticated issuance -> durable task apply -> consume/finalize; all four acknowledgement roles share one ID/generation |
-| Runtime evidence | completed slice | [redacted operator issuance receipt](campaign-1-evidence/operator-issuance-runtime-20260714.md) documents the coding and Design HTTP chains |
+| Runtime evidence | completed slice | [redacted operator issuance receipt](campaign-1-evidence/operator-issuance-runtime-20260714.md) documents the coding and Design HTTP chains; [runtime recovery receipt](campaign-1-evidence/phase1-runtime-lane-recovery-20260714.md) records the passing registered isolated browser lifecycle |
 | Build verification | completed | clean `npm run build --webpack` is repeatable after stopping the Campaign-owned dev server and clearing only `.next`: final-source runs passed in 136 s (2,360,220 KB peak RSS) and 138 s (2,277,780 KB peak RSS), both with zero swaps and no orphaned build process |
 | Authenticated cross-product browser regression | completed slice | [redacted browser receipt](campaign-1-evidence/phase1-cross-product-browser-20260714.md): dedicated least-privilege E2E broker, desktop and Fold Latest Added, unique player entry/video attachment, and `/coding` production shell proof on an isolated Campaign production lane; protected live lane identity and no-reversion heads were read-only verified |
 | Authenticated selected Prompt 1 lifecycle | completed slice | [redacted lifecycle receipt](campaign-1-evidence/prompt1-authority-lifecycle-20260714.md): real browser Prompt 1 -> persisted preview -> authenticated operator issuance -> server-owned approval -> transactional consume/finalize -> planner/coder/reviewer/verifier/final-receipt acknowledgement proof, plus legacy issuance rejection |
@@ -43,6 +43,6 @@
 
 ## Last verified commands
 
-`git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; `PYTHONPATH=. ...pytest source_proxy/tests/test_campaign_approval_authority.py -q` (9 passed); `PYTHONPATH=. ...pytest source_proxy/tests/test_cartographer_api.py -q` (**36 failed, 231 passed, 4 subtests passed** because its legacy mutable-route expectations were intentionally invalidated); focused Design route/writer suite (32 passed); `node scripts/coding/test-validate-design-studio-receipts.mjs` (9 negative fixtures passed); `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; existing redacted browser and build receipts.
+`npm run typecheck` (passed); `npx vitest run src/components/coding/__tests__/coding-cockpit-shell.test.tsx` (**61 passed**, existing React `act` warnings); `npm run build` (**passed, 172.8 s**); registered isolated `run-coding-e2e-loop` (**PASS**: real model generation, visible operator login, durable preview/approval, consume/finalize, acknowledgement, managed Chromium proof, undo/reset/clean rerun). The static acceptance matrix remains: `npm run test:coding-regression` (**131 passed**, 10 existing async-mock warnings); `npm run test:coding-frontend-regression` (**269 passed**, existing React act warnings); Source Proxy Authority/task suite (**83 passed**); BFF/session suite (**33 passed**); Authority and continuity validators; `git diff --check`; tracked-source secret-pattern scan; and protected-head checks all passed.
 
-Last verified: `2026-07-14T20:31:00Z`. Final acceptance static/build profiles: `npm run test:coding-regression` (**131 passed**, 10 existing async-mock warnings); `npm run test:coding-frontend-regression` (**269 passed**, existing React act warnings); Source Proxy Authority/task suite (**83 passed**); BFF/session suite (**33 passed**); `npm run build` (**pass, 166.8 s**); `npm run typecheck`; Authority and continuity validators; `git diff --check`; tracked-source secret-pattern scan; and protected-head checks all passed. The named browser lifecycle harness failed closed because the Campaign-owned frontend lane is unavailable; no fallback or protected-service replacement was attempted. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T21:00:09Z`. The next ledger update must record the full Cartographer profile result, final Phase 1 proof status, protected heads, and validator results.
