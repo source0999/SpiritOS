@@ -1,39 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeJellyfinServerUrl } from "@/lib/spiritflix-jellyfin-client";
-import { e2eCookieName, getE2ESession } from "@/lib/spiritflix/e2e-session";
 
-const allowedHosts = new Set(["spirit.tailb69ea6.ts.net:8096", "100.111.32.31:8096", "127.0.0.1:8096", "localhost:8096"]);
+import {
+  bindSpiritFlixSessionPath,
+  isAllowedSpiritFlixPath,
+  resolveRequestMediaSession,
+  trustedSpiritFlixMediaMutation,
+} from "@/lib/spiritflix/server-session";
+
 const JELLYFIN_LOCAL_ORIGIN = "http://127.0.0.1:8096";
 const JELLYFIN_PROXY_TIMEOUT_MS = 8000;
-interface ProxyBody { serverUrl?: string; path?: string; method?: string; body?: unknown; authorization?: string; }
-function isAllowedServer(serverUrl: string) { try { const parsed = new URL(serverUrl); return (parsed.protocol === "http:" || parsed.protocol === "https:") && allowedHosts.has(parsed.host); } catch { return false; } }
-function getProxyOrigin(serverUrl: string) { const parsed = new URL(serverUrl); if (allowedHosts.has(parsed.host) && parsed.port === "8096") return JELLYFIN_LOCAL_ORIGIN; return parsed.origin; }
+type ProxyBody = { body?: unknown; method?: unknown; path?: unknown };
 
 export async function POST(request: NextRequest) {
   let payload: ProxyBody;
-  try { payload = (await request.json()) as ProxyBody; } catch { return NextResponse.json({ error: "Invalid proxy request." }, { status: 400 }); }
-  const e2e = getE2ESession(request.cookies.get(e2eCookieName())?.value);
-  const serverUrl = normalizeJellyfinServerUrl(e2e?.serverUrl ?? payload.serverUrl ?? "");
-  const path = payload.path ?? "";
+  try { payload = await request.json(); } catch { return NextResponse.json({ reason_code: "spiritflix_request_invalid" }, { status: 400 }); }
+  if (Object.keys(payload).some((key) => !["body", "method", "path"].includes(key)) || typeof payload.path !== "string" || (payload.method !== undefined && typeof payload.method !== "string")) return NextResponse.json({ reason_code: "spiritflix_client_authority_forbidden" }, { status: 400 });
   const method = (payload.method ?? "GET").toUpperCase();
-  if (!isAllowedServer(serverUrl)) return NextResponse.json({ error: "That Jellyfin server is not allowed for SpiritFlix." }, { status: 400 });
-  if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) return NextResponse.json({ error: "Invalid Jellyfin API path." }, { status: 400 });
-  if (!["DELETE", "GET", "POST"].includes(method)) return NextResponse.json({ error: "Unsupported Jellyfin API method." }, { status: 405 });
+  if (!isAllowedSpiritFlixPath(payload.path) || !["DELETE", "GET", "POST"].includes(method)) return NextResponse.json({ reason_code: "spiritflix_request_invalid" }, { status: 400 });
+  const session = resolveRequestMediaSession(request.cookies);
+  const publicInfo = method === "GET" && payload.path === "/System/Info/Public";
+  if (!session && !publicInfo) return NextResponse.json({ reason_code: "spiritflix_session_missing" }, { status: 401 });
+  if (method !== "GET" && !trustedSpiritFlixMediaMutation(request, session)) return NextResponse.json({ reason_code: "spiritflix_mutation_untrusted" }, { status: 403 });
+  const path = session ? bindSpiritFlixSessionPath(payload.path, session) : payload.path;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), JELLYFIN_PROXY_TIMEOUT_MS);
-  let response: Response;
   try {
-    response = await fetch(getProxyOrigin(serverUrl) + path, {
+    const response = await fetch(`${JELLYFIN_LOCAL_ORIGIN}${path}`, {
+      body: method === "POST" ? JSON.stringify(payload.body ?? {}) : undefined,
+      headers: { Accept: "application/json", "Content-Type": "application/json", ...(session ? { "X-Emby-Authorization": session.authorization } : {}) },
       method,
       signal: controller.signal,
-      headers: { Accept: "application/json", "Content-Type": "application/json", ...(e2e ? { "X-Emby-Authorization": e2e.authorization } : payload.authorization ? { "X-Emby-Authorization": payload.authorization } : {}) },
-      body: method === "POST" ? JSON.stringify(payload.body ?? {}) : undefined,
     });
+    if (response.status === 204) return new NextResponse(null, { status: 204 });
+    return new NextResponse(await response.text(), { headers: { "Content-Type": response.headers.get("Content-Type") ?? "application/json" }, status: response.status });
   } catch (error) {
-    const timedOut = error instanceof DOMException && error.name === "AbortError";
-    return NextResponse.json({ error: timedOut ? "Jellyfin request timed out." : "Jellyfin proxy request failed." }, { status: timedOut ? 504 : 502 });
+    return NextResponse.json({ reason_code: error instanceof DOMException && error.name === "AbortError" ? "spiritflix_upstream_timeout" : "spiritflix_upstream_failed" }, { status: error instanceof DOMException && error.name === "AbortError" ? 504 : 502 });
   } finally { clearTimeout(timeout); }
-  if (response.status === 204) return new NextResponse(null, { status: 204, headers: { "Content-Type": response.headers.get("Content-Type") ?? "application/json" } });
-  const text = await response.text();
-  return new NextResponse(text, { status: response.status, headers: { "Content-Type": response.headers.get("Content-Type") ?? "application/json" } });
 }

@@ -1,66 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeJellyfinServerUrl } from "@/lib/spiritflix-jellyfin-client";
 
-const allowedHosts = new Set([
-  "10.0.0.186:8096",
-  "spirit.tailb69ea6.ts.net:8096",
-  "100.111.32.31:8096",
-  "127.0.0.1:8096",
-  "localhost:8096",
-]);
-
-function isAllowedServer(serverUrl: string): boolean {
-  try {
-    const parsed = new URL(serverUrl);
-    return (parsed.protocol === "http:" || parsed.protocol === "https:") && allowedHosts.has(parsed.host);
-  } catch {
-    return false;
-  }
-}
+import { resolveRequestMediaSession } from "@/lib/spiritflix/server-session";
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const serverUrl = normalizeJellyfinServerUrl(searchParams.get("serverUrl") ?? "");
-  const itemId = searchParams.get("itemId") ?? "";
-  const token = searchParams.get("token") ?? "";
-  const audioStreamIndex = searchParams.get("audioStreamIndex");
-
-  if (!isAllowedServer(serverUrl) || !/^[a-fA-F0-9-]+$/.test(itemId) || !token) {
-    return NextResponse.json({ error: "Invalid stream request." }, { status: 400 });
-  }
-  if (audioStreamIndex && !/^\d+$/.test(audioStreamIndex)) {
-    return NextResponse.json({ error: "Invalid audio stream request." }, { status: 400 });
-  }
-
-  const upstream = new URL(`${serverUrl}/Videos/${itemId}/Stream`);
+  if ([...request.nextUrl.searchParams.keys()].some((key) => key !== "audioStreamIndex" && key !== "itemId")) return NextResponse.json({ reason_code: "spiritflix_client_authority_forbidden" }, { status: 400 });
+  const session = resolveRequestMediaSession(request.cookies);
+  const itemId = request.nextUrl.searchParams.get("itemId") ?? "";
+  const audioStreamIndex = request.nextUrl.searchParams.get("audioStreamIndex");
+  if (!session) return NextResponse.json({ reason_code: "spiritflix_session_missing" }, { status: 401 });
+  if (!/^[a-fA-F0-9-]+$/.test(itemId) || (audioStreamIndex && !/^\d+$/.test(audioStreamIndex))) return NextResponse.json({ reason_code: "spiritflix_stream_invalid" }, { status: 400 });
+  const upstream = new URL(`/Videos/${itemId}/Stream`, session.serverUrl);
   upstream.searchParams.set("Static", "true");
-  upstream.searchParams.set("api_key", token);
   upstream.searchParams.set("PlaySessionId", `spiritflix-${itemId}`);
   if (audioStreamIndex) upstream.searchParams.set("AudioStreamIndex", audioStreamIndex);
-
-  const headers: HeadersInit = {};
-  const range = request.headers.get("Range");
-  if (range) headers.Range = range;
-
+  const headers: HeadersInit = { "X-Emby-Authorization": session.authorization };
+  const range = request.headers.get("Range"); if (range) headers.Range = range;
   const response = await fetch(upstream, { headers });
-  if (!response.body) {
-    return NextResponse.json({ error: "Stream unavailable." }, { status: response.status });
-  }
-
-  const passthrough = new Headers();
-  [
-    "Content-Type",
-    "Content-Length",
-    "Content-Range",
-    "Accept-Ranges",
-    "Cache-Control",
-  ].forEach((header) => {
-    const value = response.headers.get(header);
-    if (value) passthrough.set(header, value);
-  });
-
-  return new NextResponse(response.body, {
-    status: response.status,
-    headers: passthrough,
-  });
+  if (!response.body) return NextResponse.json({ reason_code: "spiritflix_stream_unavailable" }, { status: response.status });
+  const passthrough = new Headers(); for (const name of ["Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "Cache-Control"]) { const value = response.headers.get(name); if (value) passthrough.set(name, value); }
+  return new NextResponse(response.body, { headers: passthrough, status: response.status });
 }

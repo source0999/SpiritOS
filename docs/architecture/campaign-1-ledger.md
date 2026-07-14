@@ -13,7 +13,7 @@
 - Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
 - GO eligibility: `false`; `e8e26978` removes the remaining mounted Cartographer execution imports and adds fail-closed route coverage, but AR-001 ordinary browser-session authority remains unaccepted. AR-002 needs durable selection/consumer acknowledgement proof; AR-003 needs its final acknowledgement envelope.
-- Next concrete gate: `phase1_spiritflix_server_owned_session_migration` - migrate ordinary SpiritFlix browser Jellyfin session/token handling into a server-owned authenticated session/BFF boundary, then rerun desktop/Fold/player proof before final AR acceptance.
+- Next concrete gate: `phase1_spiritflix_server_owned_session_migration_admin_mutation_containment` - inventory every SpiritFlix administrative mutation entry point and migrate or fail-close it behind distinct durable operator authority.
 
 ## Git-bound gate status
 
@@ -34,7 +34,8 @@
 | Authenticated selected Prompt 1 lifecycle | completed slice | [redacted lifecycle receipt](campaign-1-evidence/prompt1-authority-lifecycle-20260714.md): real browser Prompt 1 -> persisted preview -> authenticated operator issuance -> server-owned approval -> transactional consume/finalize -> planner/coder/reviewer/verifier/final-receipt acknowledgement proof, plus legacy issuance rejection |
 | Canonical in-shell operator control | completed slice | [redacted shell receipt](campaign-1-evidence/canonical-operator-shell-20260714.md): native prompts removed; one shell control provides session status, credential clearing, authenticated issuance, and revoke/logout; Coder 10’s strict apply/reverse fixture and real Prompt 1 browser lifecycle use that control |
 | Reconciliation index and truthful profiles | completed slice | [evidence index](campaign-1-evidence-index.md), [test profiles](campaign-1-test-profiles.md), `e8e26978` successor checkpoint |
-| AR-001 / canonical contracts / evidence / final closeout | blocked by verification | ordinary SpiritFlix client compatibility authorization path prevents GO |
+| AR-001 ordinary BFF session migration | completed slice | server-owned opaque session/BFF implementation; [redacted receipt](campaign-1-evidence/ar001-server-owned-session-20260714.md); 64 focused tests passed |
+| AR-001 admin mutation containment | active | distinct durable authority remains required; ordinary media session is explicitly insufficient |
 
 ## Last verified commands
 

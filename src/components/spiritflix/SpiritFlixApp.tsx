@@ -628,7 +628,7 @@ export function SpiritFlixApp() {
   }, [loadingHome]);
 
   const client = useMemo(
-    () => new JellyfinClient(session?.serverUrl ?? serverUrl, session?.accessToken, session?.userId),
+    () => new JellyfinClient(session?.serverUrl ?? serverUrl, undefined, session?.userId, session?.csrf),
     [serverUrl, session],
   );
   const modelAwareHomeData = useMemo(
@@ -1103,12 +1103,13 @@ export function SpiritFlixApp() {
     if (window.location.pathname.startsWith("/spiritflix/watch/")) {
       setSpiritFlixBrowseRoute(initialRoute, "replace");
     }
-    const stored = getStoredSession();
-    if (stored) {
-      setSession(stored);
-      setServerUrl(stored.serverUrl);
-    }
-    setIsRestoringSession(false);
+    void Promise.resolve(getStoredSession()).then((stored) => {
+      if (stored) {
+        setSession(stored);
+        setServerUrl(stored.serverUrl);
+      }
+      setIsRestoringSession(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -1122,7 +1123,7 @@ export function SpiritFlixApp() {
       loadedSessionKeyRef.current = null;
       return undefined;
     }
-    const sessionKey = `${session.serverUrl}:${session.userId}:${session.accessToken}`;
+    const sessionKey = `${session.serverUrl}:${session.userId}`;
     if (loadedSessionKeyRef.current === sessionKey) return undefined;
     loadedSessionKeyRef.current = sessionKey;
     void loadHome(initialBrowseRouteRef.current?.libraryId ?? null);
@@ -1198,6 +1199,9 @@ export function SpiritFlixApp() {
   };
 
   const handleLogout = () => {
+    if (session?.csrf) {
+      void fetch("/api/spiritflix/session", { headers: { "x-spiritflix-csrf": session.csrf }, method: "DELETE" });
+    }
     setSpiritFlixBrowseRoute({ libraryId: null, modelName: null, tag: null }, "replace");
     clearStoredSession();
     loadedSessionKeyRef.current = null;

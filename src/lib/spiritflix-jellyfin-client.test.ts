@@ -19,7 +19,7 @@ describe("JellyfinClient playback URLs", () => {
     setViewport(originalViewport.innerWidth, originalViewport.innerHeight, originalViewport.devicePixelRatio);
   });
 
-  it("uses direct Jellyfin streams and HLS proxy playlists on private HTTPS pages", () => {
+  it("uses canonical BFF stream and HLS URLs without browser credentials", () => {
     vi.spyOn(window, "location", "get").mockReturnValue({
       ...window.location,
       protocol: "https:",
@@ -29,15 +29,17 @@ describe("JellyfinClient playback URLs", () => {
     const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
 
     const streamUrl = new URL(client.getStreamUrl("item-1"), "https://100.111.32.31:3000/spiritflix");
-    expect(streamUrl.origin).toBe("http://100.111.32.31:8096");
-    expect(streamUrl.pathname).toBe("/Videos/item-1/Stream");
-    expect(streamUrl.searchParams.get("api_key")).toBe("token-1");
+    expect(streamUrl.origin).toBe("https://100.111.32.31:3000");
+    expect(streamUrl.pathname).toBe("/api/spiritflix/stream");
+    expect(streamUrl.searchParams.get("itemId")).toBe("item-1");
+    expect(streamUrl.searchParams.get("api_key")).toBe(null);
+    expect(streamUrl.searchParams.get("token")).toBe(null);
     expect(streamUrl.searchParams.get("audioStreamIndex")).toBe(null);
 
     const hlsUrl = new URL(client.getHlsUrl("item-1"), "https://100.111.32.31:3000/spiritflix");
     expect(hlsUrl.pathname).toBe("/api/spiritflix/hls");
-    expect(hlsUrl.searchParams.get("serverUrl")).toBe("http://100.111.32.31:8096");
-    expect(hlsUrl.searchParams.get("token")).toBe("token-1");
+    expect(hlsUrl.searchParams.get("serverUrl")).toBe(null);
+    expect(hlsUrl.searchParams.get("token")).toBe(null);
     expect(hlsUrl.searchParams.get("path")).toContain("/Videos/item-1/master.m3u8");
     expect(hlsUrl.searchParams.get("path")).toContain("VideoBitrate=4000000");
   });
@@ -54,7 +56,7 @@ describe("JellyfinClient playback URLs", () => {
     const streamUrl = new URL(client.getStreamUrl("item-1", { audioStreamIndex: 2 }), "https://10.0.0.186:3000/spiritflix");
     const hlsUrl = new URL(client.getHlsUrl("item-1", { audioStreamIndex: 2 }), "https://10.0.0.186:3000/spiritflix");
 
-    expect(streamUrl.searchParams.get("AudioStreamIndex")).toBe("2");
+    expect(streamUrl.searchParams.get("audioStreamIndex")).toBe("2");
     expect(hlsUrl.searchParams.get("path")).toContain("AudioStreamIndex=2");
   });
 
@@ -95,7 +97,7 @@ describe("JellyfinClient playback URLs", () => {
     expect(path).toContain("MaxHeight=720");
   });
 
-  it("keeps direct Jellyfin URLs on HTTP pages", () => {
+  it("keeps BFF playback URLs on HTTP pages", () => {
     vi.spyOn(window, "location", "get").mockReturnValue({
       ...window.location,
       protocol: "http:",
@@ -104,11 +106,11 @@ describe("JellyfinClient playback URLs", () => {
     } as Location);
     const client = new JellyfinClient("http://spirit.tailb69ea6.ts.net:8096", "token-1", "user-1");
 
-    expect(client.getStreamUrl("item-1")).toContain("http://100.111.32.31:8096/Videos/item-1/Stream");
-    expect(client.getHlsUrl("item-1")).toContain("http://100.111.32.31:8096/Videos/item-1/master.m3u8");
+    expect(client.getStreamUrl("item-1")).toBe("/api/spiritflix/stream?itemId=item-1");
+    expect(client.getHlsUrl("item-1")).toContain("/api/spiritflix/hls?path=");
   });
 
-  it("uses the LAN Jellyfin host when the app is opened from the LAN address", () => {
+  it("does not expose the Jellyfin host when the app is opened from the LAN address", () => {
     vi.spyOn(window, "location", "get").mockReturnValue({
       ...window.location,
       protocol: "https:",
@@ -120,8 +122,8 @@ describe("JellyfinClient playback URLs", () => {
     const streamUrl = new URL(client.getStreamUrl("item-1"), "https://10.0.0.186:3000/spiritflix");
     const hlsUrl = new URL(client.getHlsUrl("item-1"), "https://10.0.0.186:3000/spiritflix");
 
-    expect(streamUrl.origin).toBe("http://10.0.0.186:8096");
-    expect(hlsUrl.searchParams.get("serverUrl")).toBe("http://10.0.0.186:8096");
+    expect(streamUrl.origin).toBe("https://10.0.0.186:3000");
+    expect(hlsUrl.searchParams.get("serverUrl")).toBe(null);
   });
 });
 

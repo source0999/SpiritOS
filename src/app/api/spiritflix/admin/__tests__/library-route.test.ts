@@ -1,14 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 import { POST } from "../library/route";
+import { clearSpiritFlixSessionsForTest, createOrdinarySession, SPIRITFLIX_SESSION_COOKIE } from "@/lib/spiritflix/server-session";
 
 describe("SpiritFlix admin library API", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    clearSpiritFlixSessionsForTest();
   });
 
   it("returns stable normalized Jellyfin item records", async () => {
     const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("/Users/AuthenticateByName")) {
+        return Response.json({ AccessToken: "server-only-token", User: { Id: "user-1", Name: "ordinary" } });
+      }
       if (url.includes("/Views")) {
         return Response.json({
           Items: [{ Id: "library-1", Name: "Movies", CollectionType: "movies" }],
@@ -43,19 +49,19 @@ describe("SpiritFlix admin library API", () => {
       });
     });
     vi.stubGlobal("fetch", fetchMock);
+    const created = await createOrdinarySession({ password: "pass", serverUrl: "http://127.0.0.1:8096", username: "ordinary" });
+    if (!created.ok) throw new Error(created.reason);
 
     const response = await POST(
-      new Request("http://localhost/api/spiritflix/admin/library", {
+      new NextRequest("http://localhost/api/spiritflix/admin/library", {
         method: "POST",
+        headers: { cookie: `${SPIRITFLIX_SESSION_COOKIE}=${created.id}`, host: "localhost", origin: "http://localhost" },
         body: JSON.stringify({
-          serverUrl: "http://127.0.0.1:8096",
-          accessToken: "token",
-          userId: "user-1",
           searchTerm: "Admin",
           sortBy: "dateAdded",
           sortOrder: "desc",
         }),
-      }) as never,
+      }),
     );
     const body = await response.json();
 
@@ -77,5 +83,12 @@ describe("SpiritFlix admin library API", () => {
     );
     expect(body.items[0].jellyfinItem).toEqual(expect.objectContaining({ Id: "item-1", ImageTags: { Primary: "tag" } }));
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("SearchTerm=Admin"), expect.any(Object));
+  });
+
+  it("rejects browser supplied credentials and missing sessions", async () => {
+    const missing = await POST(new NextRequest("http://localhost/api/spiritflix/admin/library", { method: "POST", headers: { host: "localhost", origin: "http://localhost" }, body: "{}" }));
+    expect(missing.status).toBe(401);
+    const forbidden = await POST(new NextRequest("http://localhost/api/spiritflix/admin/library", { method: "POST", headers: { host: "localhost", origin: "http://localhost" }, body: JSON.stringify({ accessToken: "forged" }) }));
+    expect(forbidden.status).toBe(401);
   });
 });

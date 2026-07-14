@@ -1,8 +1,10 @@
 export interface SpiritFlixSession {
   serverUrl: string;
-  accessToken: string;
   userId: string;
   username: string;
+  csrf?: string;
+  /** @deprecated Browser-held Jellyfin tokens are ignored by the canonical BFF client. */
+  accessToken?: string;
 }
 
 export interface SpiritFlixServerInfo {

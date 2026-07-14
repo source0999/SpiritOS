@@ -56,10 +56,10 @@ export function SpiritFlixAdminApp() {
   const [smartBatchOpen, setSmartBatchOpen] = useState(false);
 
   useEffect(() => {
-    setSession(getStoredSession());
+    void Promise.resolve(getStoredSession()).then(setSession);
   }, []);
 
-  const jellyfinClient = useMemo(() => (session ? new JellyfinClient(session.serverUrl, session.accessToken, session.userId) : undefined), [session]);
+  const jellyfinClient = useMemo(() => (session ? new JellyfinClient(session.serverUrl, undefined, session.userId) : undefined), [session]);
 
   const loadJellyfinIndex = useCallback(async () => {
     try {
@@ -99,9 +99,6 @@ export function SpiritFlixAdminApp() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          serverUrl: session.serverUrl,
-          accessToken: session.accessToken,
-          userId: session.userId,
           recursive: true,
           sortBy: "title",
           sortOrder: "asc",

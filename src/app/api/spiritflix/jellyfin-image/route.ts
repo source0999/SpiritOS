@@ -1,69 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeJellyfinServerUrl } from "@/lib/spiritflix-jellyfin-client";
 
-const allowedHosts = new Set([
-  "10.0.0.186:8096",
-  "spirit.tailb69ea6.ts.net:8096",
-  "100.111.32.31:8096",
-  "127.0.0.1:8096",
-  "localhost:8096",
-]);
+import { bindSpiritFlixSessionPath, isAllowedSpiritFlixPath, resolveRequestMediaSession } from "@/lib/spiritflix/server-session";
 
-function isAllowedServer(serverUrl: string): boolean {
-  try {
-    const parsed = new URL(serverUrl);
-    return (parsed.protocol === "http:" || parsed.protocol === "https:") && allowedHosts.has(parsed.host);
-  } catch {
-    return false;
-  }
-}
-
-async function proxyImage(payload: {
-    serverUrl?: string;
-    path?: string;
-    authorization?: string;
-    token?: string;
-  }) {
-  const serverUrl = normalizeJellyfinServerUrl(payload.serverUrl ?? "");
-  const path = payload.path ?? "";
-
-  if (!isAllowedServer(serverUrl) || !path.startsWith("/") || path.startsWith("//") || path.includes("://")) {
-    return NextResponse.json({ error: "Invalid image request." }, { status: 400 });
-  }
-
-  const response = await fetch(`${serverUrl}${path}`, {
-    headers: {
-      ...(payload.authorization ? { "X-Emby-Authorization": payload.authorization } : {}),
-      ...(payload.token ? { "X-Emby-Token": payload.token } : {}),
-    },
-  });
-
-  if (!response.ok || !response.body) {
-    return NextResponse.json({ error: "Image unavailable." }, { status: response.status });
-  }
-
-  return new NextResponse(response.body, {
-    status: response.status,
-    headers: {
-      "Content-Type": response.headers.get("Content-Type") ?? "image/jpeg",
-      "Cache-Control": "private, max-age=900, stale-while-revalidate=3600",
-    },
-  });
+async function proxyImage(request: NextRequest, path: string) {
+  const session = resolveRequestMediaSession(request.cookies);
+  if (!session) return NextResponse.json({ reason_code: "spiritflix_session_missing" }, { status: 401 });
+  if (!isAllowedSpiritFlixPath(path)) return NextResponse.json({ reason_code: "spiritflix_image_invalid" }, { status: 400 });
+  const response = await fetch(`${session.serverUrl}${bindSpiritFlixSessionPath(path, session)}`, { headers: { "X-Emby-Authorization": session.authorization } });
+  if (!response.ok || !response.body) return NextResponse.json({ reason_code: "spiritflix_image_unavailable" }, { status: response.status });
+  return new NextResponse(response.body, { headers: { "Cache-Control": "private, max-age=900, stale-while-revalidate=3600", "Content-Type": response.headers.get("Content-Type") ?? "image/jpeg" }, status: response.status });
 }
 
 export async function GET(request: NextRequest) {
-  return proxyImage({
-    serverUrl: request.nextUrl.searchParams.get("serverUrl") ?? undefined,
-    path: request.nextUrl.searchParams.get("path") ?? undefined,
-    token: request.nextUrl.searchParams.get("token") ?? undefined,
-  });
+  if ([...request.nextUrl.searchParams.keys()].some((key) => key !== "path")) return NextResponse.json({ reason_code: "spiritflix_client_authority_forbidden" }, { status: 400 });
+  return proxyImage(request, request.nextUrl.searchParams.get("path") ?? "");
 }
 
 export async function POST(request: NextRequest) {
-  const payload = (await request.json()) as {
-    serverUrl?: string;
-    path?: string;
-    authorization?: string;
-  };
-  return proxyImage(payload);
+  let payload: { path?: unknown };
+  try { payload = await request.json(); } catch { return NextResponse.json({ reason_code: "spiritflix_image_invalid" }, { status: 400 }); }
+  if (Object.keys(payload).some((key) => key !== "path") || typeof payload.path !== "string") return NextResponse.json({ reason_code: "spiritflix_client_authority_forbidden" }, { status: 400 });
+  return proxyImage(request, payload.path);
 }

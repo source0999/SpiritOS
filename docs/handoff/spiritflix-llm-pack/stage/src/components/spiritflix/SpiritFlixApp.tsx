@@ -323,11 +323,12 @@ export function SpiritFlixApp() {
       if (window.location.pathname.startsWith("/spiritflix/watch/")) {
         setSpiritFlixBrowseRoute(initialBrowseRouteRef.current, "replace");
       }
-      const stored = getStoredSession();
-      if (stored) {
-        setSession(stored);
-        setServerUrl(stored.serverUrl);
-      }
+      void getStoredSession().then((stored) => {
+        if (stored) {
+          setSession(stored);
+          setServerUrl(stored.serverUrl);
+        }
+      });
       setIsRestoringSession(false);
     }, 0);
     return () => window.clearTimeout(timer);

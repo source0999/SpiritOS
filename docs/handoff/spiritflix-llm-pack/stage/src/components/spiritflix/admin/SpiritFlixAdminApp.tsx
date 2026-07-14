@@ -56,7 +56,7 @@ export function SpiritFlixAdminApp() {
   const [smartBatchOpen, setSmartBatchOpen] = useState(false);
 
   useEffect(() => {
-    setSession(getStoredSession());
+    void getStoredSession().then(setSession);
   }, []);
 
   const jellyfinClient = useMemo(() => (session ? new JellyfinClient(session.serverUrl, session.accessToken, session.userId) : undefined), [session]);

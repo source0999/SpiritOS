@@ -84,6 +84,9 @@ function yesFolderPayload(path = `${SPIRITFLIX_MEDIA_ROOT}/yes`) {
 function mockAdminFetch(mode: "media" | "yes" = "media") {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.startsWith("/api/spiritflix/session")) {
+      return Response.json({ authenticated: true, session: { serverUrl: "http://127.0.0.1:8096", userId: "__spiritflix_session__", username: "admin" } });
+    }
     if (url.startsWith("/api/spiritflix/admin/jellyfin-index")) {
       return Response.json({ items: [], source: "unconfigured" });
     }

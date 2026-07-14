@@ -28,6 +28,6 @@ Schema: `spiritos-campaign-1-evidence-index/v1`
 | Complete Cartographer API regression | fail, expected migration backlog | 36 legacy mutable-route tests failed; 231 passed and 4 subtests passed. No legacy bypass was restored. |
 | Design preview contract tests | pass | 32 tests across preview, authenticated Design approval, and writer guard suites. |
 | Design negative receipt fixtures | pass | 9 malformed receipt cases rejected. |
-| AR-001 ordinary browser session boundary | fail | current client-to-BFF `authorization` compatibility input remains. |
+| AR-001 ordinary browser session boundary | pass for session slice | [redacted server-owned-session receipt](campaign-1-evidence/ar001-server-owned-session-20260714.md); client credential and target overrides are rejected. Administrative mutation authority remains unaccepted. |
 
 Every entry is redacted by reference: no secret, cookie, approval ID, task ID, media path, or raw payload is repeated here. New evidence must include schema, campaign/run identity, source and protected heads, test profile, result, secret-redaction result, and a claim ceiling.
