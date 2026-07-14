@@ -116,12 +116,32 @@ export async function persistDesignPreview(input: { content: unknown; context: s
   };
 }
 
+export async function resolveDesignWritebackPreview(previewId: string, expectedGeneration: number) {
+  const loaded = await invokeAuthority("lookup-preview", { preview_id: previewId });
+  if (!loaded.ok) return loaded;
+  if (Number(loaded.value.generation) !== expectedGeneration) return { ok: false as const, reason: "approval_generation_mismatch" };
+  if (loaded.value.state !== "previewed") return { ok: false as const, reason: "approval_not_approved" };
+  if (loaded.value.repository !== CAMPAIGN_REPOSITORY || loaded.value.worktree !== CAMPAIGN_ROOT || loaded.value.root !== CAMPAIGN_ROOT || loaded.value.plugin !== DESIGN_PLUGIN) {
+    return { ok: false as const, reason: "approval_worktree_mismatch" };
+  }
+  const source_head = await campaignHead();
+  if (loaded.value.source_head !== source_head) return { ok: false as const, reason: "approval_source_mismatch" };
+  return {
+    ok: true as const,
+    value: {
+      content_hash: String(loaded.value.content_hash), context: String(loaded.value.context), generation: Number(loaded.value.generation),
+      preview_id: String(loaded.value.id), source_head: String(loaded.value.source_head), target: String(loaded.value.target),
+    } satisfies DesignPreviewBinding,
+  };
+}
+
 export async function issueDesignWritebackApproval(preview: DesignPreviewBinding, ttlMinutes = 30) {
   const expires_at = new Date(Date.now() + Math.min(Math.max(ttlMinutes, 1), 60) * 60_000).toISOString();
   const issued = await invokeAuthority("issue", {
     consumer: "design-writeback",
     expires_at,
     operation: "design_writeback",
+    expected_generation: String(preview.generation),
     preview_id: preview.preview_id,
   });
   if (!issued.ok) return issued;
@@ -134,6 +154,10 @@ export async function issueDesignWritebackApproval(preview: DesignPreviewBinding
       operation: "design_writeback" as const,
     } satisfies DesignApprovalBinding,
   };
+}
+
+export async function rejectDesignWritebackPreview(preview: DesignPreviewBinding) {
+  return invokeAuthority("transition-preview", { expected_generation: String(preview.generation), preview_id: preview.preview_id, state: "rejected" });
 }
 
 export async function loadDesignWritebackApproval(approvalId: string) {

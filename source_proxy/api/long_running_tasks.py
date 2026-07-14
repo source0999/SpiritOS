@@ -45,7 +45,6 @@ class LongRunningTaskAdvanceRequest(BaseModel):
 
 class LongRunningTaskExecuteApprovedRequest(BaseModel):
     action: str = Field(min_length=1, max_length=1000)
-    approved: bool
     approval_id: str = Field(min_length=1, max_length=120)
     approved_by: str = Field(default="human", max_length=120)
     approved_diff: str = Field(min_length=1, max_length=200_000)

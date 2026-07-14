@@ -32,13 +32,16 @@ REQUIRED = {
     ),
     "source_proxy/approval/operator_session.py": ("verify_operator_approval_assertion", "operator_session_revoked"),
     "src/app/v1/operator/approval/route.ts": ("requireOperatorSession", "createOperatorApprovalAssertion", "operator_client_authority_binding_forbidden"),
+    "src/lib/coding/design-approval-authority.ts": ("resolveDesignWritebackPreview", "expected_generation", "approval_generation_mismatch"),
+    "src/app/v1/operator/design-approval/route.ts": ("requireOperatorSession", "resolveDesignWritebackPreview", "operator_client_authority_binding_forbidden"),
+    "src/lib/coding/agent-lab-baseline-server.ts": ("operator_issuance_required_for_agent_lab_cleanup",),
     "src/components/coding/CodingAgentInterface.tsx": (
         "allowed_files: allowedFiles",
     ),
 }
 FORBIDDEN = {
     "src/app/v1/actions/execute-approved/route.ts": ("approvalIdForApprovedDiff({", "approved: true"),
-    "source_proxy/api/long_running_tasks.py": ("async def long_running_task_approval(",),
+    "source_proxy/api/long_running_tasks.py": ("async def long_running_task_approval(", "    approved: bool"),
     "source_proxy/cartographer/apply.py": ("approval_id_for_approved_diff(",),
     "src/lib/coding/agent-lab-baseline-server.ts": ("approvalIdForApprovedDiff",),
 }

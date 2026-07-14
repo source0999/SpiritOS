@@ -238,6 +238,8 @@ export async function buildAgentLabBaselineSnapshot(
 }
 
 async function deleteAgentLabFileOnProxy(target: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  return { ok: false, error: "operator_issuance_required_for_agent_lab_cleanup" };
+  /* Campaign 1: this legacy server helper cannot issue or consume approvals directly.
   const normalizedTarget = normalizeRepoPath(target);
   const before = await readWorkspaceFileContent(normalizedTarget);
   if (before.status === "missing") {
@@ -360,7 +362,7 @@ async function deleteAgentLabFileOnProxy(target: string): Promise<{ ok: true } |
       method: "POST",
     },
   ).catch(() => null);
-  return { ok: true };
+  return { ok: true }; */
 }
 
 export async function sweepAgentLabLeftoverFilesServer(

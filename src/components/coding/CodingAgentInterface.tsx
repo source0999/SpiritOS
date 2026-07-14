@@ -13870,6 +13870,7 @@ async function callApprovedActionExecute({
   content,
   target,
   taskId,
+  approvalId,
 }: {
   action: string;
   allowedFiles: string[];
@@ -13877,12 +13878,16 @@ async function callApprovedActionExecute({
   content?: string;
   target: string;
   taskId?: string;
+  approvalId?: string;
 }): Promise<ApprovedActionExecutionResponse> {
+  if (!approvalId?.startsWith("apr_")) {
+    throw new Error("A server-issued operator approval is required before execution.");
+  }
   const response = await fetch("/v1/actions/execute-approved", {
     body: JSON.stringify({
       action,
       allowed_files: allowedFiles,
-      approved: true,
+      approval_id: approvalId,
       approved_diff: approvedDiff,
       content,
       target,
