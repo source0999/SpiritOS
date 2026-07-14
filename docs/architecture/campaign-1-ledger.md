@@ -2,18 +2,18 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `bfa8f156d3ff60010e67d80a17a9b49995537742` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `7d54606cb10b7e3d6fe13e457b73e4dbf16f7f6c` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **SpiritFlix server-owned session migration and admin mutation containment**.
+- Phase: **Phase 1**; increment: **AR-002 Cartographer durable selection/consumer proof**.
 - Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
-- GO eligibility: `false`; the shared Authority now has a SpiritFlix admin preview/issue/consume/finalize contract, but no authenticated HTTP caller or lower-level writer has migrated to it yet.
-- Next concrete gate: `phase1_spiritflix_admin_operator_issuance_and_executor_migration` - add authenticated operator issuance and migrate the first bounded admin writer to the canonical executor.
+- GO eligibility: `false`; all seven SpiritFlix admin mutation routes now use the durable Approval Authority (preview/issue/consume/finalize), but AR-002 (Cartographer durable selection/consumer proof) and AR-003 (Design writeback final acknowledgement envelope) remain incomplete.
+- Next concrete gate: `ar002_cartographer_durable_selection_consumer_proof` - prove Cartographer's durable selection path and consumer acknowledgement through the canonical authority.
 
 ## Git-bound gate status
 
@@ -38,6 +38,8 @@
 | AR-001 admin mutation containment | active | distinct durable authority remains required; ordinary media session is explicitly insufficient |
 | AR-001 direct mutation routes | completed slice | `db6d4c97`, `0ee7b694`, `2961548a`, `af1646ed`, `57f9f9db`: all seven inventoried routes return `410 spiritflix_admin_direct_mutation_forbidden` |
 | AR-001 durable admin authority contract | completed slice | shared Authority supports `spiritflix_admin_mutation` preview, issue, consume, and finalize through `spiritflix-admin-executor` |
+| AR-001 smart-rescan executor migration | completed slice | `6210a333`: authenticated operator preview/approval and Authority consume/finalize now gate the bounded rescan trigger |
+| AR-001 remaining admin writer migration | completed slice | `7d54606c`: admin/actions, smart/analysis, smart/batch, videos/model, videos/tags, videos/face-learning all migrated to the same consume/finalize authority pattern; 16/16 focused tests pass |
 
 ## Last verified commands
 
