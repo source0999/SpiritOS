@@ -1,7 +1,7 @@
 # Campaign 1 authenticated operator issuance runtime receipt
 
 - Recorded: `2026-07-14T00:54:21Z` to `2026-07-14T01:00:00Z` on the isolated Campaign 1 HTTP lane (`127.0.0.1:8788` Source Proxy and `127.0.0.1:3010` Next).
-- Isolation: temporary task, operator-session, gate, and Design-vault runtime state; protected product services and branches were not used. The temporary README patch was explicitly restored after execution proof.
+- Isolation: temporary task, operator-session, and gate runtime state; the canonical Design writeback produced a runtime Design-vault note without touching protected product services or branches. The temporary README patch was explicitly restored after execution proof.
 
 ## Coding chain
 
@@ -22,3 +22,9 @@ No cookies, credentials, approval identifiers, request headers, raw task payload
 ## Verification boundary
 
 Focused backend and frontend route tests plus TypeScript checking passed for this slice. `npm run build` was attempted twice: the first attempt ended in a native segmentation fault during optimized Webpack compilation; the isolated retry timed out after 124 seconds without completion. This receipt does not treat the build as passing.
+
+## Build reliability follow-up
+
+- The original failure was reproduced only as an environmental/generated-state condition: the Campaign-owned Next dev server was active and `.next` contained 878 MB of mixed dev/build output. No Campaign authority module was evaluated as a build-time dependency and no external service wait occurred.
+- After stopping only that Campaign-owned dev process and clearing only generated `.next` output, clean pre-repair builds completed in 145 s and 153 s. After the final profile/authority-boundary repair, two additional clean authoritative `npm run build` runs completed in 136 s (2,360,220 KB peak RSS) and 138 s (2,277,780 KB peak RSS). All four completed with exit `0`; the final pair recorded zero swaps, generated all 133 static pages, and left no build process.
+- The 124-second retry was therefore an insufficient observation window, not evidence of a hung build. This receipt records build verification as complete; it does not claim Campaign 1 GO.

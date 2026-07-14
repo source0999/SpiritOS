@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { mkdir, open, readFile, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";

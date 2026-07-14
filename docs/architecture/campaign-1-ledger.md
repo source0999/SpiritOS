@@ -2,18 +2,18 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `34581ac5c1dfa453d9ac273044050ef8afbc53d6` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `2c3e17622a7e923d95ca532da9b259607990b7af` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **operator issuance runtime and Design integration**.
-- Dirty state at checkpoint: none. The runtime and Design issuance boundary is committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
-- Critical blocker: `none`; build verification failed and is recorded as a verification failure, not an external blocker.
-- GO eligibility: `false`; full Campaign 1 closeout is incomplete and the current build verification has not passed.
-- Next concrete gate: `resolve_campaign_build_verification_failure_and_full_closeout` - reproduce and resolve the campaign-worktree build failure, then resume remaining AR-001/002/003 and closeout gates.
+- Phase: **Phase 1**; increment: **build reliability, truthful test profile, and authority-boundary closeout**.
+- Dirty state at checkpoint: `src/app/coding/__tests__/page.test.tsx`, `src/lib/coding/agent-lab-baseline-server.ts`, `src/lib/coding/design-studio-approved-writeback-runtime.ts`, `src/lib/coding/model-provider-status.ts`, `src/lib/coding/operator-approval-session.ts`, this ledger, state, and the named redacted receipt. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
+- Critical blocker: `none`. The former build verification failure is resolved: its first native segfault occurred with a mixed 878 MB dev/build `.next` tree and an active Campaign dev server; the retry cutoff of 124 seconds was below the measured clean-build completion window.
+- GO eligibility: `false`; build reliability and the registered coding profiles now pass, but final AR-001/002/003 acceptance, protected-product browser regressions, canonical-shell completion, Prompt 1 lifecycle proof, and cross-product closeout remain incomplete.
+- Next concrete gate: `phase1_cross_product_browser_regression_and_final_acceptance` - run the mapped authenticated SpiritFlix desktop/Fold and player-entry regressions against verified protected service identity, then reconcile final AR-001/002/003, canonical-shell, Prompt 1, duplicate-authority, and evidence acceptance without modifying protected products.
 
 ## Git-bound gate status
 
@@ -29,11 +29,11 @@
 | operator-session foundation | completed | HTTP-only session route plus origin, CSRF, expiry, revocation, role, and audit foundation; focused Vitest proof |
 | Authenticated coding issuance | completed slice | real HTTP route -> persisted preview -> authenticated issuance -> durable task apply -> consume/finalize; all four acknowledgement roles share one ID/generation |
 | Runtime evidence | completed slice | [redacted operator issuance receipt](campaign-1-evidence/operator-issuance-runtime-20260714.md) documents the coding and Design HTTP chains |
-| Build verification | verification failure | `npm run build` segfaulted once during optimized compilation and then timed out after 124 seconds; no build GO claim |
+| Build verification | completed | clean `npm run build --webpack` is repeatable after stopping the Campaign-owned dev server and clearing only `.next`: final-source runs passed in 136 s (2,360,220 KB peak RSS) and 138 s (2,277,780 KB peak RSS), both with zero swaps and no orphaned build process |
 | AR-001 / canonical contracts / evidence / coding shell / Prompt 1 / duplicates / truthful profiles / final closeout | not started or verify | governed by plan |
 
 ## Last verified commands
 
-`git status --short`; `git rev-parse HEAD`; `git branch --show-current`; `git log --oneline --decorate -40`; protected product-head `rev-parse` checks; `npm run campaign-1:validate-authority`; 209 backend approval/task tests; 22 execute-approved route tests; `npm run typecheck`.
+`git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; two clean `npm run build` runs; `npm run test:coding-regression` (131 passed, 40 subtests); `npm run test:coding-frontend-regression` (269 passed); canonical-context Python suite (101 passed); focused authority/session/Design/frontend suite (27 passed); Python `compileall`; `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; canonical-bypass inventory; redacted changed-file secret scan.
 
-Last verified: `2026-07-14T01:06:19Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T01:46:37Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.

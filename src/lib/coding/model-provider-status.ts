@@ -350,17 +350,14 @@ export function providerModelTruthFromPayload(
     booleanFromUnknown(nested.providerCallMade) ??
     booleanFromUnknown(record.provider_call_made) ??
     booleanFromUnknown(diagnostics.provider_call_made) ??
+    booleanFromUnknown(diagnostics.router_call_attempted) ??
     fallback.providerCallMade;
   const providerCallAuthorized =
     booleanFromUnknown(nested.providerCallAuthorized) ??
     booleanFromUnknown(record.provider_call_authorized) ??
     providerCallMade;
   const normalizedProvider = (provider ?? fallback.providerId).toLowerCase();
-  const resolvedModel = providerCallMade
-    ? (model ?? fallback.modelId)
-    : (model && (booleanFromUnknown(record.provider_call_made) === false || booleanFromUnknown(diagnostics.provider_call_made) === false)
-        ? "none"
-        : model ?? fallback.modelId);
+  const resolvedModel = model ?? fallback.modelId;
   if (normalizedProvider === "ollama" || normalizedProvider === "local" || normalizedProvider === "local/ollama") {
     return localHermesProviderModelTruth({
       blockedReason: stringFromUnknown(nested.blockedReason) ?? undefined,
