@@ -2,7 +2,7 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `bfed38169842c4ae6db8178c44f62c327996733e` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `7725bddf872da72dc5d38407c5cb1dd06767bbec` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
