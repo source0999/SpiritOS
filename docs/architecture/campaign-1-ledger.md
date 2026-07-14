@@ -2,18 +2,18 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `77d47e6d13f8abed5e12ce34eda28d67640973c8` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `e8e26978bb2bb94fdc3c041672ab9633e6de177e` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **canonical in-shell operator control and Coder 10 migration**.
-- Dirty state at checkpoint: this ledger, state, and [the named redacted browser receipt](campaign-1-evidence/phase1-cross-product-browser-20260714.md). They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
-- Critical blocker: `none`. The former build verification failure is resolved: its first native segfault occurred with a mixed 878 MB dev/build `.next` tree and an active Campaign dev server; the retry cutoff of 124 seconds was below the measured clean-build completion window.
-- GO eligibility: `false`; the canonical `/coding` shell control and Prompt 1 lifecycle pass, but final AR-001/002/003 acceptance, duplicate-authority reconciliation, and evidence acceptance remain incomplete.
-- Next concrete gate: `phase1_final_authority_acceptance_and_canonical_shell_lifecycle` - reconcile the final AR-001/002/003 acceptance matrix, canonical contracts, duplicate paths, and durable evidence without modifying protected products.
+- Phase: **Phase 1**; increment: **Cartographer execution containment and Design profile reconciliation**.
+- Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
+- Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
+- GO eligibility: `false`; `e8e26978` removes the remaining mounted Cartographer execution imports and adds fail-closed route coverage, but AR-001 ordinary browser-session authority remains unaccepted. AR-002 needs durable selection/consumer acknowledgement proof; AR-003 needs its final acknowledgement envelope.
+- Next concrete gate: `phase1_spiritflix_server_owned_session_migration` - migrate ordinary SpiritFlix browser Jellyfin session/token handling into a server-owned authenticated session/BFF boundary, then rerun desktop/Fold/player proof before final AR acceptance.
 
 ## Git-bound gate status
 
@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | Authenticated SpiritFlix no-reversion | accepted baseline | `af7fd532`, `6053b53f`, baseline receipts |
 | Authority inventory | completed | `e1b9966c` |
-| AR-002 duplicate cleanup | completed | `e68d3ba6`, `b9f5fdeb`, `3a01f8d6`, `42ded963` |
+| AR-002 duplicate cleanup | completed slice | `e68d3ba6`, `b9f5fdeb`, `3a01f8d6`, `42ded963`, `e8e26978`; mounted direct execution routes removed, legacy mutation routes fail closed |
 | Approval Authority bootstrap/lifecycle | completed | `b84bf012`, `2cf49fa9`, `b2bae870`, `540fd3d6` |
 | Design Studio writeback | substantially implemented | authenticated operator route resolves persisted Design previews and the canonical writeback consume/finalize chain has real HTTP proof |
 | Cartographer containment/transfer | partial | `3a01f8d6`, `42ded963`; final acceptance remains |
@@ -33,10 +33,11 @@
 | Authenticated cross-product browser regression | completed slice | [redacted browser receipt](campaign-1-evidence/phase1-cross-product-browser-20260714.md): dedicated least-privilege E2E broker, desktop and Fold Latest Added, unique player entry/video attachment, and `/coding` production shell proof on an isolated Campaign production lane; protected live lane identity and no-reversion heads were read-only verified |
 | Authenticated selected Prompt 1 lifecycle | completed slice | [redacted lifecycle receipt](campaign-1-evidence/prompt1-authority-lifecycle-20260714.md): real browser Prompt 1 -> persisted preview -> authenticated operator issuance -> server-owned approval -> transactional consume/finalize -> planner/coder/reviewer/verifier/final-receipt acknowledgement proof, plus legacy issuance rejection |
 | Canonical in-shell operator control | completed slice | [redacted shell receipt](campaign-1-evidence/canonical-operator-shell-20260714.md): native prompts removed; one shell control provides session status, credential clearing, authenticated issuance, and revoke/logout; Coder 10’s strict apply/reverse fixture and real Prompt 1 browser lifecycle use that control |
-| AR-001 / canonical contracts / evidence / coding shell / Prompt 1 / duplicates / truthful profiles / final closeout | not started or verify | governed by plan |
+| Reconciliation index and truthful profiles | completed slice | [evidence index](campaign-1-evidence-index.md), [test profiles](campaign-1-test-profiles.md), `e8e26978` successor checkpoint |
+| AR-001 / canonical contracts / evidence / final closeout | blocked by verification | ordinary SpiritFlix client compatibility authorization path prevents GO |
 
 ## Last verified commands
 
-`git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; two clean `npm run build` runs; `npm run test:coding-regression` (131 passed, 40 subtests); `npm run test:coding-frontend-regression` (269 passed); canonical-context Python suite (101 passed); focused authority/session/Design/frontend suite (27 passed); Python `compileall`; `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; canonical-bypass inventory; redacted changed-file secret scan; verified live protected service identity and dedicated E2E preflight; isolated production Chromium desktop/Fold/player and `/coding` shell proof using SPKI-only certificate allowance.
+`git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; `PYTHONPATH=. ...pytest source_proxy/tests/test_campaign_approval_authority.py -q` (9 passed); focused Design route/writer suite (32 passed); `node scripts/coding/test-validate-design-studio-receipts.mjs` (9 negative fixtures passed); `npm run campaign-1:validate-authority`; `git diff --check`; existing redacted browser and build receipts. The full Cartographer API suite is recorded separately once the active run completes; it cannot elevate the final verdict above the AR-001 failure.
 
-Last verified: `2026-07-14T03:27:00Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T03:55:00Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.

@@ -4,6 +4,18 @@ Schema: `spiritos-campaign-1-authority-inventory/v1`
 Scope: Campaign worktree only; product worktrees are read-only references.
 Evidence basis: production route registration/imports, bounded call-site search, and named tests.
 
+## Reconciliation checkpoint — 2026-07-14
+
+The tables below are the historical discovery inventory, not an acceptance verdict. The current Campaign candidate was reconciled at `e8e26978bb2bb94fdc3c041672ab9633e6de177e` with the protected product heads pinned in the Campaign state.
+
+| AR | Current classification | Action and proof | Acceptance |
+| --- | --- | --- | --- |
+| AR-001 SpiritFlix | actual unresolved client-held session compatibility path | The Campaign E2E broker is server-only and redacted, but the ordinary `src/lib/spiritflix-jellyfin-client.ts` still supplies `authorization` to the BFF. The protected-head browser receipt proves the isolated E2E identity only; it cannot prove that ordinary browser callers lack authoritative Jellyfin session material. | **not accepted** |
+| AR-002 Cartographer | proposal/read-only owner with fail-closed legacy compatibility routes | Removed `/safe-write` and `/verification/run`, removed duplicate registration pairs, and converted remaining docs/git/clutter/starter-blueprint execution entry points to `410 forbidden_cartographer_mutation`. `validate-campaign-1-authority.py` parses registrations and rejects executor imports. The proposal transfer still needs a durable server-owned selection and receiving-consumer acknowledgement before final acceptance. | **partial** |
+| AR-003 Design writeback | canonical candidate, evidence acknowledgement gap | The authenticated operator route resolves a persisted preview; the canonical runtime consumes/finalizes one server-owned approval and the focused suite validates preview/write guards. The existing receipt proves an isolated runtime chain, but does not yet record the required reviewer/verifier acknowledgement envelope for Design. | **partial** |
+
+The historical rows intentionally remain below as the source-discovery record. A final Campaign GO is prohibited until the unresolved entries above are corrected and revalidated.
+
 ## AR-001  SpiritFlix
 
 | Path | Runtime owner / operation | Authority finding | Implementation map |
