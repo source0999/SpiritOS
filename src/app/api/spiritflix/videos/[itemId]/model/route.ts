@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
 import {
   getSpiritFlixManualModelForItem,
   setSpiritFlixManualModelForItem,
 } from "@/lib/spiritflix/manual-models";
 
 export const runtime = "nodejs";
+
+export async function PUT(_request: NextRequest, _context: RouteContext) {
+  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
+}
 
 interface RouteContext {
   params: Promise<{ itemId: string }>;
@@ -27,7 +32,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 }
 
-export async function PUT(request: NextRequest, context: RouteContext) {
+async function legacyPUT(request: NextRequest, context: RouteContext) {
   const { itemId } = await context.params;
 
   let payload: { modelName?: unknown; filePath?: unknown; knownModelNames?: unknown };

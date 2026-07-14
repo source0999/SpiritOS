@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
 import { requestSpiritFlixFaceLearning } from "@/lib/spiritflix/face-learning";
 import type { FaceOrganizerPerformer } from "@/lib/spiritflix-types";
 
 export const runtime = "nodejs";
+
+export async function POST(_request: NextRequest, _context: RouteContext) {
+  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
+}
 
 interface RouteContext {
   params: Promise<{ itemId: string }>;
@@ -35,7 +40,7 @@ function parseRelatedItems(value: unknown): Array<{ itemId: string; filePath?: s
   return relatedItems;
 }
 
-export async function POST(request: NextRequest, context: RouteContext) {
+async function legacyPOST(request: NextRequest, context: RouteContext) {
   const { itemId } = await context.params;
 
   let payload: FaceLearningPayload;
