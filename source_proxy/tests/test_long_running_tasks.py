@@ -1525,7 +1525,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         finally:
             os.chdir(previous_cwd)
 
-    def test_router_executes_approved_diff(self) -> None:
+    def test_router_rejects_legacy_caller_approved_diff(self) -> None:
         previous_cwd = os.getcwd()
         try:
             os.chdir(self._tempdir.name)
@@ -1565,33 +1565,10 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "context_hash": "legacy-test",
                 },
             )
-            self.assertEqual(approval.status_code, 200)
-            approval_id = approval.json()["approval"]["approval_id"]
-            self.assertTrue(approval_id.startswith("apr_"))
-
-            response = client.post(
-                f"/v1/tasks/long-running/{task_id}/execute-approved",
-                json={
-                    "action": "modify file",
-                    "approval_id": approval_id,
-                    "approved": True,
-                    "approved_diff": diff,
-                    "target": "src/app/demo/page.tsx",
-                    "selected_prompt_id": "legacy-test",
-                    "context_hash": "legacy-test",
-                },
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue(response.json()["execution"]["ok"])
-            self.assertEqual(
-                response.json()["task"]["status"],
-                "applied_needs_verification",
-            )
-            self.assertFalse(response.json()["execution"]["commit_created"])
-            self.assertFalse(response.json()["execution"]["push_ran"])
+            self.assertEqual(approval.status_code, 410)
+            self.assertEqual(approval.json()["detail"]["reason_code"], "approval_client_authority_removed")
             with open("src/app/demo/page.tsx", encoding="utf-8") as handle:
-                self.assertIn("'new'", handle.read())
+                self.assertIn("'old'", handle.read())
         finally:
             os.chdir(previous_cwd)
 

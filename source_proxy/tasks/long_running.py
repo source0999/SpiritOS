@@ -15,6 +15,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -2825,6 +2826,35 @@ def _run_code_post_apply_verification(
     return results
 
 
+def _managed_dummy_storefront_origin() -> str:
+    """Return the production origin, or an explicitly isolated E2E candidate origin.
+
+    The candidate override is deliberately unavailable outside the isolated E2E mode and
+    accepts only a loopback HTTPS origin on a non-production port.  It cannot redirect
+    a production task to a caller-selected remote service.
+    """
+
+    production_origin = "https://localhost:3000"
+    candidate_origin = os.environ.get("SPIRITOS_E2E_FRONTEND_ORIGIN", "").strip().rstrip("/")
+    if not candidate_origin:
+        return production_origin
+    if os.environ.get("SPIRITOS_OPERATOR_E2E_MODE") != "true":
+        return production_origin
+    parsed = urlparse(candidate_origin)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname not in {"127.0.0.1", "localhost"}
+        or parsed.port in {None, 3000}
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in {"", "/"}
+        or parsed.query
+        or parsed.fragment
+    ):
+        return production_origin
+    return candidate_origin
+
+
 def _run_managed_dummy_storefront_browser_proof(
     workspace_root: Path,
 ) -> dict[str, Any]:
@@ -2835,7 +2865,8 @@ def _run_managed_dummy_storefront_browser_proof(
     parser or caller-provided boolean cannot satisfy the post-apply browser gate.
     """
 
-    preview_url = "https://localhost:3000/v1/coding/dummy-product-site-preview"
+    managed_origin = _managed_dummy_storefront_origin()
+    preview_url = f"{managed_origin}/v1/coding/dummy-product-site-preview"
     script_path = (workspace_root / "scripts/verify-dummy-storefront-browser.mjs").resolve()
     base: dict[str, Any] = {
         "schema_version": "dummy-storefront-browser-proof/v1",
@@ -2844,7 +2875,7 @@ def _run_managed_dummy_storefront_browser_proof(
         "storefront_runtime_status": "failed",
         "storefront_runtime_engine": "playwright_chromium",
         "real_browser_used": False,
-        "managed_frontend_origin": "https://localhost:3000",
+        "managed_frontend_origin": managed_origin,
         "preview_url": preview_url,
         "reason": "browser_verifier_not_run",
     }
@@ -3091,7 +3122,7 @@ def _run_dummy_product_site_post_apply_verification(
         == "playwright_chromium"
         and browser_evidence.get("real_browser_used") is True
         and browser_evidence.get("managed_frontend_origin")
-        == "https://localhost:3000"
+        == _managed_dummy_storefront_origin()
         and browser_evidence.get("preview_http_status") == 200
         and browser_evidence.get("document_ready_state") == "complete"
         and browser_evidence.get("module_script_loaded") is True

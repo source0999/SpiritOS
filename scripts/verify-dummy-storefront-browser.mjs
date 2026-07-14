@@ -2,7 +2,8 @@
 
 import { chromium } from "@playwright/test";
 
-const MANAGED_ORIGIN = "https://localhost:3000";
+const DEFAULT_MANAGED_ORIGIN = "https://localhost:3000";
+const MANAGED_ORIGIN = managedOrigin();
 const PREVIEW_PATH = "/v1/coding/dummy-product-site-preview";
 const EXPECTED_ASSET_PATHS = [
   PREVIEW_PATH,
@@ -17,6 +18,28 @@ function argValue(name, fallback) {
   if (inline) return inline.slice(prefix.length);
   const index = process.argv.indexOf(`--${name}`);
   return index >= 0 && process.argv[index + 1] ? process.argv[index + 1] : fallback;
+}
+
+function managedOrigin() {
+  const candidate = String(process.env.SPIRITOS_E2E_FRONTEND_ORIGIN ?? "").trim().replace(/\/+$/, "");
+  if (process.env.SPIRITOS_OPERATOR_E2E_MODE !== "true" || !candidate) return DEFAULT_MANAGED_ORIGIN;
+  try {
+    const parsed = new URL(candidate);
+    if (
+      parsed.protocol !== "https:" ||
+      !["127.0.0.1", "localhost"].includes(parsed.hostname) ||
+      !parsed.port ||
+      parsed.port === "3000" ||
+      parsed.username ||
+      parsed.password ||
+      parsed.pathname !== "/" ||
+      parsed.search ||
+      parsed.hash
+    ) return DEFAULT_MANAGED_ORIGIN;
+    return candidate;
+  } catch {
+    return DEFAULT_MANAGED_ORIGIN;
+  }
 }
 
 function managedPreviewUrl() {

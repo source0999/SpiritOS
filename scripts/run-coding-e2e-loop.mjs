@@ -280,7 +280,29 @@ function parseArgs(argv) {
 function validateManagedLane({ frontendBaseUrl, proxyBaseUrl }) {
   const proxy = urlDetails(proxyBaseUrl);
   const frontend = urlDetails(frontendBaseUrl);
+  const isolatedCandidate = process.env.E2E_LOOP_ISOLATED_CANDIDATE === "true";
   const errors = [];
+  if (isolatedCandidate) {
+    if (proxy.protocol !== "https:" || proxy.hostname !== "127.0.0.1" || !proxy.port || proxy.port === "8787") {
+      errors.push({ reason: "isolated_candidate_backend_must_use_nonproduction_loopback_https" });
+    }
+    if (frontend.protocol !== "https:" || !["localhost", "127.0.0.1"].includes(frontend.hostname) || !frontend.port || frontend.port === "3000") {
+      errors.push({ reason: "isolated_candidate_frontend_must_use_nonproduction_loopback_https" });
+    }
+    return {
+      ok: errors.length === 0,
+      errors,
+      expected_backend_port: "nonproduction-loopback",
+      expected_frontend_port: "nonproduction-loopback",
+      expected_repo_root: repoRoot,
+      attempted_backend_url: proxyBaseUrl,
+      attempted_frontend_url: frontendBaseUrl,
+      fallback_backend_port: "none",
+      fallback_frontend_port: "none",
+      fallback_allowed: false,
+      lane_mode: "explicit_isolated_campaign_candidate",
+    };
+  }
   if (proxy.protocol !== "https:" || proxy.hostname !== "127.0.0.1") {
     errors.push({
       expected_backend_origin: "https://127.0.0.1:8787",
@@ -396,7 +418,10 @@ function loadEnvLocal() {
   if (!existsSync(envPath)) return [];
   const loaded = [];
   for (const [key, value] of parseEnvFile(readFileSync(envPath, "utf8"))) {
-    process.env[key] = value;
+    // An explicit invocation is authoritative.  In particular, an isolated
+    // Campaign candidate must not be silently redirected to a protected lane
+    // by a developer-local .env.local value.
+    process.env[key] ??= value;
     if (key === "SPIRIT_CODING_USE_PROXY" || key.startsWith("SOURCE_PROXY_")) {
       loaded.push({ key, value });
     }

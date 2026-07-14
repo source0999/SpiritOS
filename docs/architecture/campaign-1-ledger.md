@@ -9,11 +9,11 @@
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **authenticated cross-product browser regression**.
+- Phase: **Phase 1**; increment: **authenticated selected Prompt 1 authority lifecycle**.
 - Dirty state at checkpoint: this ledger, state, and [the named redacted browser receipt](campaign-1-evidence/phase1-cross-product-browser-20260714.md). They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`. The former build verification failure is resolved: its first native segfault occurred with a mixed 878 MB dev/build `.next` tree and an active Campaign dev server; the retry cutoff of 124 seconds was below the measured clean-build completion window.
-- GO eligibility: `false`; build reliability and authenticated desktop/Fold/player/coding shell regressions now pass, but final AR-001/002/003 acceptance, canonical-shell completion, Prompt 1 lifecycle proof, duplicate-authority reconciliation, and evidence acceptance remain incomplete.
-- Next concrete gate: `phase1_final_authority_acceptance_and_canonical_shell_lifecycle` - reconcile the final AR-001/002/003 acceptance matrix and canonical contracts, then execute/verify the Prompt 1 lifecycle and remaining duplicate-authority/evidence gates without modifying protected products.
+- GO eligibility: `false`; the real Prompt 1 coding lifecycle now passes, but final AR-001/002/003 acceptance, canonical-shell reconciliation, duplicate-authority reconciliation, and evidence acceptance remain incomplete.
+- Next concrete gate: `phase1_final_authority_acceptance_and_canonical_shell_lifecycle` - reconcile the final AR-001/002/003 acceptance matrix and canonical contracts, then complete remaining duplicate-authority/evidence gates without modifying protected products.
 
 ## Git-bound gate status
 
@@ -31,10 +31,11 @@
 | Runtime evidence | completed slice | [redacted operator issuance receipt](campaign-1-evidence/operator-issuance-runtime-20260714.md) documents the coding and Design HTTP chains |
 | Build verification | completed | clean `npm run build --webpack` is repeatable after stopping the Campaign-owned dev server and clearing only `.next`: final-source runs passed in 136 s (2,360,220 KB peak RSS) and 138 s (2,277,780 KB peak RSS), both with zero swaps and no orphaned build process |
 | Authenticated cross-product browser regression | completed slice | [redacted browser receipt](campaign-1-evidence/phase1-cross-product-browser-20260714.md): dedicated least-privilege E2E broker, desktop and Fold Latest Added, unique player entry/video attachment, and `/coding` production shell proof on an isolated Campaign production lane; protected live lane identity and no-reversion heads were read-only verified |
+| Authenticated selected Prompt 1 lifecycle | completed slice | [redacted lifecycle receipt](campaign-1-evidence/prompt1-authority-lifecycle-20260714.md): real browser Prompt 1 -> persisted preview -> authenticated operator issuance -> server-owned approval -> transactional consume/finalize -> planner/coder/reviewer/verifier/final-receipt acknowledgement proof, plus legacy issuance rejection |
 | AR-001 / canonical contracts / evidence / coding shell / Prompt 1 / duplicates / truthful profiles / final closeout | not started or verify | governed by plan |
 
 ## Last verified commands
 
 `git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; two clean `npm run build` runs; `npm run test:coding-regression` (131 passed, 40 subtests); `npm run test:coding-frontend-regression` (269 passed); canonical-context Python suite (101 passed); focused authority/session/Design/frontend suite (27 passed); Python `compileall`; `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; canonical-bypass inventory; redacted changed-file secret scan; verified live protected service identity and dedicated E2E preflight; isolated production Chromium desktop/Fold/player and `/coding` shell proof using SPKI-only certificate allowance.
 
-Last verified: `2026-07-14T01:57:20Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T02:46:00Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.

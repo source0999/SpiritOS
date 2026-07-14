@@ -17,6 +17,7 @@ const fixtureRelativePaths = [
   "src/styles.css",
 ] as const;
 const fixturePaths = fixtureRelativePaths.map((relativePath) => `${fixtureRoot}/${relativePath}`);
+const managedFrontendOrigin = process.env.SPIRITOS_E2E_FRONTEND_ORIGIN ?? "https://localhost:3000";
 const canonicalStageNames = [
   "context",
   "post_apply_verification",
@@ -234,6 +235,11 @@ async function runPrompt1(
   const previousTaskId = diagnosticValue(previousDiagnostics, "selected_prompt_task_id");
   const blockedTaskIds = new Set([previousTaskId, ...disallowedTaskIds].filter(Boolean));
   const startedAtMs = Date.now();
+  const operatorCredential = process.env.SPIRITOS_OPERATOR_E2E_SECRET;
+  if (!operatorCredential) throw new Error("SPIRITOS_OPERATOR_E2E_SECRET is required for authenticated Prompt 1 issuance.");
+  page.once("dialog", async (dialog) => {
+    await dialog.accept(operatorCredential);
+  });
   await page.getByTestId("run-selected-dummy-coder-prompt").click();
 
   await expect
@@ -426,8 +432,8 @@ async function verifyRealStorefrontInBrowser(
       backendEvidence.schema_version === "dummy-storefront-browser-proof/v1" &&
       backendEvidence.storefront_runtime_engine === "playwright_chromium" &&
       backendEvidence.real_browser_used === true &&
-      backendEvidence.managed_frontend_origin === "https://localhost:3000" &&
-      backendPreview?.origin === "https://localhost:3000" &&
+      backendEvidence.managed_frontend_origin === managedFrontendOrigin &&
+      backendPreview?.origin === managedFrontendOrigin &&
       backendPreview?.pathname === previewPath &&
       backendEvidence.task_id === taskId &&
       backendEvidence.approved_diff_sha256 === executionEvidence.approved_diff_sha256 &&
@@ -440,7 +446,7 @@ async function verifyRealStorefrontInBrowser(
   );
   const directBrowserPassed = Boolean(
     navigationStatus === 200 &&
-      new URL(previewPage.url()).origin === "https://localhost:3000" &&
+      new URL(previewPage.url()).origin === managedFrontendOrigin &&
       directProof.document_ready_state === "complete" &&
       directProof.module_script_loaded === true &&
       directProof.stylesheet_loaded === true &&

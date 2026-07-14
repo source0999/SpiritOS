@@ -22,7 +22,9 @@ const server = createServer(
     cert: readFileSync(certPath),
   },
   (clientRequest, clientResponse) => {
-    const headers = { ...clientRequest.headers, host: `127.0.0.1:${targetPort}` };
+    // Keep the browser-visible host intact for upstream same-origin checks;
+    // the connection target remains the loopback host configured below.
+    const headers = { ...clientRequest.headers, host: clientRequest.headers.host ?? `127.0.0.1:${targetPort}` };
     const upstream = request(
       {
         hostname: "127.0.0.1",

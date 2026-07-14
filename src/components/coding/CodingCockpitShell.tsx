@@ -7974,14 +7974,77 @@ export function CodingCockpitShell() {
           status: "running",
           verificationStatus: "diff preview passed",
         }));
+        const approvalAction = `Run selected dummy Coder prompt ${prompt.id}`;
+        const contextHashBytes = await window.crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(`${prompt.id}|${prompt.submittedPrompt}|${responseSelectedTarget}`),
+        );
+        const contextHash = Array.from(new Uint8Array(contextHashBytes))
+          .map((value) => value.toString(16).padStart(2, "0"))
+          .join("");
+        const approvalPreviewResponse = await fetchWithTimeout(
+          `/v1/tasks/long-running/${encodeURIComponent(taskId)}/approval-preview`,
+          {
+            body: JSON.stringify({
+              action: approvalAction,
+              approved_diff: proposedDiff,
+              context_hash: contextHash,
+              selected_prompt_id: prompt.id,
+              target: responseSelectedTarget,
+            }),
+            headers: { "content-type": "application/json" },
+            method: "POST",
+          },
+          TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+        );
+        const approvalPreviewPayload = await readJson(approvalPreviewResponse);
+        if (!approvalPreviewResponse.ok) {
+          throw new PayloadBackedError(
+            messageFromPayload(approvalPreviewPayload, approvalPreviewResponse.status),
+            approvalPreviewPayload,
+            approvalPreviewResponse.status,
+          );
+        }
+        const approvalPreview = asRecord(asRecord(approvalPreviewPayload).preview);
+        const previewId = stringValue(approvalPreview.preview_id);
+        const previewGeneration = numberValue(approvalPreview.generation);
+        if (!previewId || !previewGeneration) throw new Error("approval_preview_missing_server_identity");
+        const credential = window.prompt("Enter the local operator credential to approve this exact preview.") ?? "";
+        if (!credential.trim()) throw new Error("operator_credential_required");
+        const sessionResponse = await fetchWithTimeout("/v1/operator/session", {
+          body: JSON.stringify({ credential }),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+        const sessionPayload = await readJson(sessionResponse);
+        const csrf = stringValue(asRecord(sessionPayload).csrf);
+        if (!sessionResponse.ok || !csrf) {
+          throw new PayloadBackedError(
+            messageFromPayload(sessionPayload, sessionResponse.status), sessionPayload, sessionResponse.status,
+          );
+        }
+        const operatorApprovalResponse = await fetchWithTimeout("/v1/operator/approval", {
+          body: JSON.stringify({ action: "approve", generation: previewGeneration, preview_id: previewId, task_id: taskId }),
+          headers: { "content-type": "application/json", "x-spiritos-csrf": csrf },
+          method: "POST",
+        }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+        const operatorApprovalPayload = await readJson(operatorApprovalResponse);
+        const approvalId = stringValue(asRecord(asRecord(operatorApprovalPayload).approval).approval_id);
+        if (!operatorApprovalResponse.ok || !approvalId) {
+          throw new PayloadBackedError(
+            messageFromPayload(operatorApprovalPayload, operatorApprovalResponse.status), operatorApprovalPayload, operatorApprovalResponse.status,
+          );
+        }
         const applyResponse = await fetchWithTimeout("/v1/actions/execute-approved", {
           body: JSON.stringify({
-            action: `Run selected dummy Coder prompt ${prompt.id}`,
-            approved: true,
+            action: approvalAction,
+            approval_id: approvalId,
             approved_diff: proposedDiff,
             allowed_files: [prompt.allowedWriteRoot],
             target: responseSelectedTarget,
             task_id: taskId,
+            trial_prompt_id: prompt.id,
+            trial_prompt_text: prompt.submittedPrompt,
           }),
           headers: { "content-type": "application/json" },
           method: "POST",
@@ -9567,6 +9630,120 @@ export function CodingCockpitShell() {
       });
     }
 
+    const approvalAction = `Live trial ${prompt.id}`;
+    const contextHashBytes = await window.crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(`${prompt.id}|${prompt.prompt}|${packet.selectedTarget}`),
+    );
+    const contextHash = Array.from(new Uint8Array(contextHashBytes))
+      .map((value) => value.toString(16).padStart(2, "0"))
+      .join("");
+    const approvalPreviewResponse = await fetchWithTimeout(
+      `/v1/tasks/long-running/${encodeURIComponent(taskId)}/approval-preview`,
+      {
+        body: JSON.stringify({
+          action: approvalAction,
+          approved_diff: proposedDiff,
+          context_hash: contextHash,
+          selected_prompt_id: prompt.id,
+          target: packet.selectedTarget,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+        signal: suiteFetchAbortRef.current?.signal ?? undefined,
+      },
+      TRIAL_POST_MODEL_STAGE_TIMEOUT_MS,
+    );
+    const approvalPreviewPayload = await readJson(approvalPreviewResponse);
+    endpointStatuses.push(`/v1/tasks/long-running/${taskId}/approval-preview:${approvalPreviewResponse.status}`);
+    if (!approvalPreviewResponse.ok) {
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(approvalPreviewPayload),
+        failure_reason: messageFromPayload(approvalPreviewPayload, approvalPreviewResponse.status),
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+    const approvalPreview = asRecord(asRecord(approvalPreviewPayload).preview);
+    const previewId = stringValue(approvalPreview.preview_id);
+    const previewGeneration = numberValue(approvalPreview.generation);
+    if (!previewId || !previewGeneration) {
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: "approval_preview_missing_server_identity",
+        failure_reason: "The durable approval preview did not return a server-owned ID and generation.",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+        visible_result_label: "NEEDS FIX",
+      });
+    }
+    const credential = window.prompt("Enter the local operator credential to approve this exact preview.") ?? "";
+    if (!credential.trim()) {
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: "operator_credential_required",
+        failure_reason: "The selected prompt remains preview-only until an authenticated operator approves it.",
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+        visible_result_label: "BLOCKED",
+      });
+    }
+    const sessionResponse = await fetchWithTimeout("/v1/operator/session", {
+      body: JSON.stringify({ credential }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+      signal: suiteFetchAbortRef.current?.signal ?? undefined,
+    }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+    const sessionPayload = await readJson(sessionResponse);
+    endpointStatuses.push(`/v1/operator/session:${sessionResponse.status}`);
+    const csrf = stringValue(asRecord(sessionPayload).csrf);
+    if (!sessionResponse.ok || !csrf) {
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(sessionPayload),
+        failure_reason: messageFromPayload(sessionPayload, sessionResponse.status),
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+        visible_result_label: "BLOCKED",
+      });
+    }
+    const operatorApprovalResponse = await fetchWithTimeout("/v1/operator/approval", {
+      body: JSON.stringify({ action: "approve", generation: previewGeneration, preview_id: previewId, task_id: taskId }),
+      headers: { "content-type": "application/json", "x-spiritos-csrf": csrf },
+      method: "POST",
+      signal: suiteFetchAbortRef.current?.signal ?? undefined,
+    }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+    const operatorApprovalPayload = await readJson(operatorApprovalResponse);
+    endpointStatuses.push(`/v1/operator/approval:${operatorApprovalResponse.status}`);
+    const approvalId = stringValue(asRecord(asRecord(operatorApprovalPayload).approval).approval_id);
+    if (!operatorApprovalResponse.ok || !approvalId) {
+      return baseResult({
+        endpoint_statuses: [...endpointStatuses],
+        error_summary: safePayloadSummary(operatorApprovalPayload),
+        failure_reason: messageFromPayload(operatorApprovalPayload, operatorApprovalResponse.status),
+        model_called_for_generation: modelCalledForGeneration,
+        provider: providerTruth.providerLabel,
+        provider_call_made: true,
+        preview_changed_files: previewChangedFiles,
+        run_id: taskId,
+        visible_result_label: "BLOCKED",
+      });
+    }
+
     onStep?.("Editing files");
     pushProgress(
       {
@@ -9587,8 +9764,8 @@ export function CodingCockpitShell() {
     try {
       applyResponse = await fetchWithTimeout("/v1/actions/execute-approved", {
         body: JSON.stringify({
-          action: `Live trial ${prompt.id}`,
-          approved: true,
+          action: approvalAction,
+          approval_id: approvalId,
           approved_diff: proposedDiff,
           allowed_files: packet.allowedFiles,
           target: packet.selectedTarget,
