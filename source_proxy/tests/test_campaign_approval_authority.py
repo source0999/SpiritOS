@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import json
 import subprocess
+import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 
 import source_proxy.approval.campaign_authority as authority
+from source_proxy.api.cartographer import cartographer_docs_autopilot_apply, router as cartographer_router
 from source_proxy.approval.campaign_evidence import CampaignApprovalEvidenceError, validate_coding_approval_evidence
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
@@ -217,3 +221,36 @@ def test_coding_approval_consumption_is_transactionally_single_winner() -> None:
     finalize_coding_execution_approval(
         winners[0], result_id="campaign1-test-concurrent", evidence={"redacted": True}, status="succeeded"
     )
+
+
+def test_cartographer_router_has_no_execution_authority_or_duplicate_registration() -> None:
+    registrations = [
+        (method.upper(), route.path)
+        for route in cartographer_router.routes
+        for method in route.methods or set()
+        if method not in {"HEAD", "OPTIONS"}
+    ]
+
+    assert len(registrations) == len(set(registrations))
+    assert ("POST", "/v1/cartographer/safe-write") not in registrations
+    assert ("POST", "/v1/cartographer/verification/run") not in registrations
+    assert ("POST", "/v1/cartographer/proposals/{proposal_id}/transfer") in registrations
+
+    source = (Path(__file__).parents[1] / "api" / "cartographer.py").read_text(encoding="utf-8")
+    for forbidden in (
+        "source_proxy.cartographer.safe_write",
+        "source_proxy.cartographer.verification_runner",
+        "approve_git_queue_item",
+        "apply_cartographer_clutter_proposal",
+        "run_cartographer_docs_autopilot_apply",
+        "run_cartographer_level_2_docs_apply",
+        "write_cartographer_starter_blueprints",
+    ):
+        assert forbidden not in source
+
+
+def test_cartographer_legacy_mutation_compatibility_route_fails_closed() -> None:
+    with pytest.raises(HTTPException) as blocked:
+        asyncio.run(cartographer_docs_autopilot_apply())
+    assert blocked.value.status_code == 410
+    assert blocked.value.detail["reason_code"] == "forbidden_cartographer_mutation"

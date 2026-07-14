@@ -43,7 +43,7 @@ describe("coding design studio preview route", () => {
     });
     expect(payload.bounded_coder_packet).toMatchObject({
       blocked_until_human_accepts_design_packet: true,
-      target_files: ["src/components/coding/DesignStudioShell.tsx"],
+      target_files: ["src/app/coding/design-demo/page.tsx"],
     });
   });
 
@@ -62,17 +62,17 @@ describe("coding design studio preview route", () => {
       outcome: "DESIGN_PACKET_PREVIEW",
       reason: "actionable_messy_prompt_with_target",
       design_packet: {
-        design_packet_id: "messy-prompt-preview-local",
         target_surface: "/coding/design-studio",
-        trace_id: "messy-prompt-preview-trace",
         coder_packet: {
           allowed_files: ["src/components/coding/DesignStudioShell.tsx"],
           target_files: ["src/components/coding/DesignStudioShell.tsx"],
         },
       },
     });
-    expect(payload.messy_prompt_result.design_packet.style_family_blend).toContain(
-      "SpiritOS glass console",
+    expect(payload.messy_prompt_result.design_packet.design_packet_id).toMatch(/^design-packet-[0-9a-f]{12}$/);
+    expect(payload.messy_prompt_result.design_packet.trace_id).toBe(payload.trace_id);
+    expect(payload.messy_prompt_result.design_packet.style_family_blend).toEqual(
+      expect.arrayContaining([expect.stringContaining("SpiritOS glass console")]),
     );
   });
 
@@ -268,7 +268,6 @@ describe("coding design studio preview route", () => {
       },
       design_dna: {
         component_density: "workbench_dense",
-        dna_id: "designdna-preview-local",
         layout_rhythm: "three_panel_preview_workbench",
         responsive_behavior: "desktop_mobile_required_before_go",
       },
@@ -280,6 +279,7 @@ describe("coding design studio preview route", () => {
       },
       outcome: "DESIGN_DNA_NORMALIZED_PREVIEW",
     });
+    expect(payload.design_dna_result.design_dna.dna_id).toMatch(/^designdna-[0-9a-f]{12}$/);
     expect(payload.design_dna_result.design_dna.source_refs).toEqual([
       "messy_prompt",
       "reference_upload",
@@ -312,7 +312,6 @@ describe("coding design studio preview route", () => {
         version: 1,
       },
       library_record: {
-        design_dna_id: "designdna-preview-local",
         library_record_id: "design-library-preview-local",
         source_refs: ["messy_prompt"],
         status: "preview_only_not_persisted",
@@ -330,6 +329,7 @@ describe("coding design studio preview route", () => {
         requires_human_approval_for_persistence: true,
       },
     });
+    expect(payload.design_library_result.library_record.design_dna_id).toMatch(/^designdna-[0-9a-f]{12}$/);
     expect(payload.design_library_result.library_record.source_hash).toMatch(/^preview_[0-9a-f]{8}$/);
   });
 
@@ -348,24 +348,22 @@ describe("coding design studio preview route", () => {
       coder_packet: {
         accessibility_rules: ["visible focus states", "semantic headings", "no text overlap"],
         allowed_files: [
-          "src/app/coding/design-studio/page.tsx",
-          "src/components/coding/DesignStudioShell.tsx",
-          "src/app/v1/coding/design-studio/preview/route.ts",
+          "src/app/coding/design-demo/page.tsx",
         ],
         component_rules: [
           "preserve preview-only guardrails",
           "show design and coder packet panels",
         ],
         consumer_event_id: "blocked_until_sandbox_apply_approval",
-        consumer_subsystem: "design_studio_preview_ui",
+        consumer_subsystem: "design_demo_sandbox_apply",
         css_rules: ["use project tokens", "do not copy raw CSS selectors"],
         forbidden_files: ["docs/evidence/**", ".env*", ".spirit-backups/**"],
         responsive_rules: ["desktop and mobile verification required before GO"],
-        target_files: ["src/components/coding/DesignStudioShell.tsx"],
+        target_files: ["src/app/coding/design-demo/page.tsx"],
         visual_pass_criteria: [
-          "design packet visible",
-          "coder packet visible",
-          "apply remains locked",
+          "sandbox page visible at /coding/design-demo",
+          "applied design packet is visible",
+          "production routes remain untouched",
         ],
       },
       fake_go_guard: {

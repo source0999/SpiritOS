@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
@@ -12,11 +11,6 @@ from source_proxy.cartographer.apply import CartographerApplyError, apply_approv
 from source_proxy.cartographer.proposal_transfer import (
     CartographerProposalTransferError,
     transfer_proposal,
-)
-from source_proxy.cartographer.clutter_proposals import ClutterCleanupError
-from source_proxy.cartographer.git_approvals import (
-    CartographerGitApprovalError,
-    approve_git_queue_item,
 )
 from source_proxy.cartographer.approval_token_runtime import (
     APPROVAL_TOKEN_REQUIRED_KILL_SWITCH_STATE,
@@ -85,26 +79,15 @@ from source_proxy.cartographer.trust_tier_decision_gate import (
     build_trust_tier_decision_gate_status,
     validate_trust_tier_decision_gate,
 )
-from source_proxy.cartographer.project_discovery import parse_project_roots
 from source_proxy.cartographer.proposal_reviews import (
     CartographerProposalReviewError,
     review_blueprint_proposal,
-)
-from source_proxy.cartographer.safe_write import (
-    build_safe_write_status,
-    execute_safe_write_request,
 )
 from source_proxy.cartographer.safe_task_queue import (
     build_safe_task_queue_model_status,
     run_first_auto_selected_safe_task,
     select_next_safe_task,
 )
-from source_proxy.cartographer.verification_runner import (
-    build_verification_result_receipt_summary,
-    build_verification_runner_status,
-    run_verification_command,
-)
-from source_proxy.cartographer.starter_blueprints import StarterBlueprintWriteError
 from source_proxy.cartographer.service import (
     build_cartographer_audit_trail,
     build_cartographer_autonomy_promotion,
@@ -197,15 +180,22 @@ from source_proxy.cartographer.service import (
     build_cartographer_v1_proof_recording_proposal,
     build_cartographer_v1_proof_validation,
     build_cartographer_v1_readiness,
-    apply_cartographer_clutter_proposal,
     block_cartographer_level_3_commit_execution,
     block_cartographer_level_4_push_execution,
-    run_cartographer_docs_autopilot_apply,
-    run_cartographer_level_2_docs_apply,
-    write_cartographer_starter_blueprints,
 )
 
 router = APIRouter(prefix="/v1/cartographer")
+
+
+def _forbidden_cartographer_mutation(operation: str) -> dict[str, Any]:
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "message": "Cartographer is proposal-only in Campaign 1; transfer the proposal to a named canonical consumer.",
+            "operation": operation,
+            "reason_code": "forbidden_cartographer_mutation",
+        },
+    )
 
 
 class CartographerApplyApprovedRequest(BaseModel):
@@ -352,31 +342,6 @@ class CartographerApprovalTokenConsumePreviewRequest(BaseModel):
     kill_switch_active: bool = False
 
 
-class CartographerSafeWriteRequest(BaseModel):
-    token: dict[str, Any] | None = None
-    requested_actor: str = Field(default="cartographer-runtime", max_length=120)
-    requested_scope: dict[str, str] = Field(
-        default_factory=lambda: {
-            "type": "phase",
-            "value": "cartographer-integrated-control-plan-5-phase-5-1",
-        },
-    )
-    target_file: str = Field(default="", max_length=500)
-    content: str = Field(default="", max_length=20000)
-    consumption_context: dict[str, Any] | None = None
-    current_head: str | None = Field(default=None, max_length=80)
-    dirty_tree_matches_expected: bool = True
-    kill_switch_active: bool = False
-
-
-class CartographerVerificationRunRequest(BaseModel):
-    argv: list[str] = Field(default_factory=list, max_length=20)
-    approved_test_files: list[str] = Field(default_factory=list, max_length=50)
-    approved_file_checks: list[dict[str, str]] = Field(default_factory=list, max_length=50)
-    cwd_relative: str = Field(default=".", max_length=300)
-    timeout_seconds: int = Field(default=10, ge=1, le=30)
-
-
 class CartographerQueueRunNextRequest(BaseModel):
     queue_records: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
     expected_trust_tier: str = Field(default="tier-1", max_length=40)
@@ -496,77 +461,6 @@ async def cartographer_approval_token_consume_preview(
     return {
         "runtime": build_approval_token_consumption_status(),
         "preview": preview.to_dict(),
-    }
-
-
-@router.get("/safe-write")
-async def cartographer_safe_write_status() -> dict[str, Any]:
-    return build_safe_write_status()
-
-
-@router.post("/safe-write")
-async def cartographer_safe_write(
-    request: CartographerSafeWriteRequest,
-) -> dict[str, Any]:
-    workspace_root = _safe_write_workspace_root()
-    if workspace_root is None:
-        return {
-            "status": "blocked",
-            "written": False,
-            "blocked": True,
-            "reasons": ["missing_configured_workspace_root"],
-            "target_file": request.target_file,
-            "bytes_written": 0,
-            "safe_write": build_safe_write_status(),
-        }
-    result = execute_safe_write_request(
-        request.token,
-        requested_actor=request.requested_actor,
-        requested_scope=request.requested_scope,
-        target_file=request.target_file,
-        content=request.content,
-        consumption_context=request.consumption_context,
-        workspace_root=workspace_root,
-        current_head=request.current_head,
-        dirty_tree_matches_expected=request.dirty_tree_matches_expected,
-        kill_switch_active=request.kill_switch_active,
-    )
-    return {
-        "safe_write": build_safe_write_status(),
-        "result": result.to_dict(),
-    }
-
-
-@router.get("/verification/run")
-async def cartographer_verification_run_status() -> dict[str, Any]:
-    return build_verification_runner_status()
-
-
-@router.post("/verification/run")
-async def cartographer_verification_run(
-    request: CartographerVerificationRunRequest,
-) -> dict[str, Any]:
-    workspace_root = _safe_write_workspace_root()
-    if workspace_root is None:
-        return {
-            "status": "blocked",
-            "executed": False,
-            "blocked": True,
-            "reasons": ["missing_configured_workspace_root"],
-            "verification": build_verification_runner_status(),
-        }
-    result = run_verification_command(
-        request.argv,
-        workspace_root=workspace_root,
-        approved_test_files=request.approved_test_files,
-        approved_file_checks=request.approved_file_checks,
-        cwd_relative=request.cwd_relative,
-        timeout_seconds=request.timeout_seconds,
-    )
-    return {
-        "verification": build_verification_runner_status(),
-        "result": result.to_dict(),
-        "receipt_summary": build_verification_result_receipt_summary(result),
     }
 
 
@@ -901,13 +795,6 @@ async def cartographer_trust_tier_decision_gate_preview() -> dict[str, Any]:
     }
 
 
-def _safe_write_workspace_root() -> Path | None:
-    configured, blocked = parse_project_roots()
-    if blocked or len(configured) != 1:
-        return None
-    return Path(configured[0].path)
-
-
 def _demo_local_commit_proposal() -> LocalCommitProposal:
     return LocalCommitProposal(
         proposal_id="commit-proposal-plan-9-1-demo",
@@ -1240,57 +1127,6 @@ def _demo_consumption_context() -> dict[str, Any]:
     }
 
 
-@router.get("/live-state")
-async def cartographer_live_state() -> dict[str, Any]:
-    return collect_live_repo_state()
-
-
-@router.get("/queue/run-next")
-async def cartographer_queue_run_next_status() -> dict[str, Any]:
-    return {
-        "queue": build_safe_task_queue_model_status(),
-        "run_next": {
-            "status": "available",
-            "method": "POST",
-            "selection_available": True,
-            "execution_available": False,
-            "durable_storage_available": False,
-            "queue_worker_available": False,
-            "background_loop_available": False,
-            "run_selected_task_available": True,
-            "receipt_available": True,
-            "safe_next_action": "POST queue_records with an exact approval token to select or run at most one eligible task.",
-        },
-    }
-
-
-@router.post("/queue/run-next")
-async def cartographer_queue_run_next(
-    request: CartographerQueueRunNextRequest,
-) -> dict[str, Any]:
-    if request.run_selected_task:
-        run = run_first_auto_selected_safe_task(
-            request.queue_records,
-            expected_trust_tier=request.expected_trust_tier,
-            expected_approval_token_id=request.expected_approval_token_id,
-            kill_switch_active=request.kill_switch_active,
-        )
-        return {
-            "queue": build_safe_task_queue_model_status(),
-            "run": run.to_dict(),
-        }
-    selection = select_next_safe_task(
-        request.queue_records,
-        expected_trust_tier=request.expected_trust_tier,
-        expected_approval_token_id=request.expected_approval_token_id,
-        kill_switch_active=request.kill_switch_active,
-    )
-    return {
-        "queue": build_safe_task_queue_model_status(),
-        "selection": selection.to_dict(),
-    }
-
-
 @router.get("/projects")
 async def cartographer_projects() -> dict[str, Any]:
     return build_cartographer_projects()
@@ -1476,18 +1312,14 @@ async def cartographer_docs_autopilot_dry_run() -> dict[str, Any]:
 
 @router.post("/docs-autopilot/apply")
 async def cartographer_docs_autopilot_apply() -> dict[str, Any]:
-    return run_cartographer_docs_autopilot_apply()
+    return _forbidden_cartographer_mutation("docs_autopilot_apply")
 
 
 @router.post("/docs-autopilot/level-2/apply")
 async def cartographer_level_2_docs_apply(
     request: CartographerLevel2ApplyRequest,
 ) -> dict[str, Any]:
-    return run_cartographer_level_2_docs_apply(
-        proposal_id=request.proposal_id,
-        approval_id=request.approval_id,
-        approval_actor=request.approval_actor,
-    )
+    return _forbidden_cartographer_mutation("docs_autopilot_level_2_apply")
 
 
 @router.get("/docs-autopilot/soak")
@@ -1731,18 +1563,7 @@ async def cartographer_approve_branch_recommendation(
     recommendation_id: str,
     request: CartographerGitApprovalRequest,
 ) -> dict[str, Any]:
-    try:
-        return approve_git_queue_item(
-            kind="branch",
-            item_id=recommendation_id,
-            approved=request.approved,
-            approved_by=request.approved_by,
-        )
-    except CartographerGitApprovalError as error:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": str(error), "reason_code": error.reason_code},
-        ) from error
+    return _forbidden_cartographer_mutation("branch_recommendation_approval")
 
 
 @router.get("/commit-proposals")
@@ -1770,17 +1591,7 @@ async def cartographer_approve_clutter_proposal(
     proposal_id: str,
     request: CartographerClutterCleanupRequest,
 ) -> dict[str, Any]:
-    try:
-        return apply_cartographer_clutter_proposal(
-            proposal_id=proposal_id,
-            approved=request.approved,
-            approved_by=request.approved_by,
-        )
-    except ClutterCleanupError as error:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": str(error), "reason_code": error.reason_code},
-        ) from error
+    return _forbidden_cartographer_mutation("clutter_proposal_approval")
 
 
 @router.post("/commit-proposals/{commit_proposal_id}/approve")
@@ -1788,18 +1599,7 @@ async def cartographer_approve_commit_proposal(
     commit_proposal_id: str,
     request: CartographerGitApprovalRequest,
 ) -> dict[str, Any]:
-    try:
-        return approve_git_queue_item(
-            kind="commit",
-            item_id=commit_proposal_id,
-            approved=request.approved,
-            approved_by=request.approved_by,
-        )
-    except CartographerGitApprovalError as error:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": str(error), "reason_code": error.reason_code},
-        ) from error
+    return _forbidden_cartographer_mutation("commit_proposal_approval")
 
 
 @router.get("/push-queue")
@@ -1851,18 +1651,7 @@ async def cartographer_approve_push_queue_item(
     push_id: str,
     request: CartographerGitApprovalRequest,
 ) -> dict[str, Any]:
-    try:
-        return approve_git_queue_item(
-            kind="push",
-            item_id=push_id,
-            approved=request.approved,
-            approved_by=request.approved_by,
-        )
-    except CartographerGitApprovalError as error:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": str(error), "reason_code": error.reason_code},
-        ) from error
+    return _forbidden_cartographer_mutation("push_queue_approval")
 
 
 @router.get("/audit-trail")
@@ -1910,17 +1699,7 @@ async def cartographer_approve_starter_blueprints(
     proposal_id: str,
     request: CartographerStarterBlueprintWriteRequest,
 ) -> dict[str, Any]:
-    try:
-        return write_cartographer_starter_blueprints(
-            proposal_id=proposal_id,
-            approved=request.approved,
-            approved_by=request.approved_by,
-        )
-    except StarterBlueprintWriteError as error:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": str(error), "reason_code": error.reason_code},
-        ) from error
+    return _forbidden_cartographer_mutation("starter_blueprint_approval")
 
 
 @router.post("/proposals/{proposal_id}/review")

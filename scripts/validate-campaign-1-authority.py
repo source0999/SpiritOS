@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fail closed when Campaign 1 authority boundaries drift."""
 
+import ast
 from pathlib import Path
 import sys
 
@@ -38,13 +39,56 @@ REQUIRED = {
     "src/components/coding/CodingAgentInterface.tsx": (
         "allowed_files: allowedFiles",
     ),
+    "source_proxy/cartographer/proposal_transfer.py": (
+        '"authority": "proposal_only"',
+        '"approval_issuer_authority": False',
+        '"git_authority": False',
+        '"queue_authority": False',
+        '"write_authority": False',
+    ),
 }
 FORBIDDEN = {
     "src/app/v1/actions/execute-approved/route.ts": ("approvalIdForApprovedDiff({", "approved: true"),
     "source_proxy/api/long_running_tasks.py": ("async def long_running_task_approval(", "    approved: bool"),
     "source_proxy/cartographer/apply.py": ("approval_id_for_approved_diff(",),
     "src/lib/coding/agent-lab-baseline-server.ts": ("approvalIdForApprovedDiff",),
+    "source_proxy/api/cartographer.py": (
+        '@router.get("/safe-write")',
+        '@router.post("/safe-write")',
+        '@router.get("/verification/run")',
+        '@router.post("/verification/run")',
+        "from source_proxy.cartographer.safe_write import",
+        "from source_proxy.cartographer.verification_runner import",
+        "approve_git_queue_item",
+        "apply_cartographer_clutter_proposal",
+        "run_cartographer_docs_autopilot_apply",
+        "run_cartographer_level_2_docs_apply",
+        "write_cartographer_starter_blueprints",
+    ),
 }
+
+
+def cartographer_registration_failures() -> list[str]:
+    path = ROOT / "source_proxy/api/cartographer.py"
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    registrations: set[tuple[str, str]] = set()
+    failures: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for decorator in node.decorator_list:
+            if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute):
+                continue
+            if decorator.func.attr not in {"get", "post", "put", "delete", "patch"} or not decorator.args:
+                continue
+            argument = decorator.args[0]
+            if not isinstance(argument, ast.Constant) or not isinstance(argument.value, str):
+                continue
+            registration = (decorator.func.attr.upper(), argument.value)
+            if registration in registrations:
+                failures.append(f"duplicate_cartographer_registration:{registration[0]}:{registration[1]}")
+            registrations.add(registration)
+    return failures
 
 
 def main() -> int:
@@ -55,6 +99,7 @@ def main() -> int:
     for relative, markers in FORBIDDEN.items():
         text = (ROOT / relative).read_text(encoding="utf-8")
         failures.extend(f"forbidden:{relative}:{marker}" for marker in markers if marker in text)
+    failures.extend(cartographer_registration_failures())
     if failures:
         print("CAMPAIGN_1_AUTHORITY_INVALID")
         print("\n".join(failures))
