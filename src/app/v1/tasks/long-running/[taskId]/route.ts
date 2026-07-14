@@ -1,4 +1,4 @@
-import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { sourceProxyLongJsonFetch } from "@/lib/source-proxy-origin";
 
 export async function GET(
   _request: Request,
@@ -12,7 +12,7 @@ export async function GET(
   }
 
   const { taskId } = await params;
-  const response = await sourceProxyFetch(
+  const response = await sourceProxyLongJsonFetch(
     `/v1/tasks/long-running/${encodeURIComponent(taskId)}`,
     {
       method: "GET",
@@ -40,7 +40,7 @@ export async function POST(
   }
 
   const { taskId } = await params;
-  const response = await sourceProxyFetch(
+  const response = await sourceProxyLongJsonFetch(
     `/v1/tasks/long-running/${encodeURIComponent(taskId)}/verification`,
     {
       body: await request.text(),

@@ -6,15 +6,15 @@ Evidence basis: production route registration/imports, bounded call-site search,
 
 ## Reconciliation checkpoint — 2026-07-14
 
-The tables below are the historical discovery inventory, not an acceptance verdict. The current Campaign candidate was reconciled at `e8e26978bb2bb94fdc3c041672ab9633e6de177e` with the protected product heads pinned in the Campaign state.
+The tables retain the original discovery context while the top-level classification records current acceptance evidence. The current Campaign candidate is `8f9cfd818479a3494e7123697ef36263cf6d184a`; protected heads remain pinned in the Campaign state.
 
 | AR | Current classification | Action and proof | Acceptance |
 | --- | --- | --- | --- |
-| AR-001 SpiritFlix | ordinary session migrated; administrative mutations remain unresolved | The ordinary client now obtains only an opaque HTTP-only BFF session; upstream authorization and actual user identity stay server-side. The remaining direct admin mutation routes require distinct durable operator authority. | **partial** |
-| AR-002 Cartographer | proposal/read-only owner with fail-closed legacy compatibility routes | Removed `/safe-write` and `/verification/run`, removed duplicate registration pairs, and converted remaining docs/git/clutter/starter-blueprint execution entry points to `410 forbidden_cartographer_mutation`. `validate-campaign-1-authority.py` parses registrations and rejects executor imports. The proposal transfer still needs a durable server-owned selection and receiving-consumer acknowledgement before final acceptance. | **partial** |
-| AR-003 Design writeback | canonical candidate, evidence acknowledgement gap | The authenticated operator route resolves a persisted preview; the canonical runtime consumes/finalizes one server-owned approval and the focused suite validates preview/write guards. The existing receipt proves an isolated runtime chain, but does not yet record the required reviewer/verifier acknowledgement envelope for Design. | **partial** |
+| AR-001 SpiritFlix | ordinary session plus distinct administrative authority | The ordinary client has only an opaque HTTP-only BFF session. A strict authenticated operator route derives persisted bindings for all seven bounded writers, then the canonical writer consumes/finalizes `spiritflix-admin-executor` approval. | **completed** |
+| AR-002 Cartographer | proposal/read-only owner with durable selection transfer | Retired direct routes and helpers fail closed before work; the server-owned proposal selection binds the receiving consumer and records matched consumer/reviewer/verifier/evidence acknowledgement. | **completed** |
+| AR-003 Design writeback | canonical durable writeback with acknowledgement envelope | The authenticated operator route resolves a persisted preview; canonical writeback consumes/finalizes and records matched design-writeback/reviewer/verifier/evidence acknowledgement. | **completed** |
 
-The historical rows intentionally remain below as the source-discovery record. A final Campaign GO is prohibited until the unresolved entries above are corrected and revalidated.
+Historical rows below are retained for discovery provenance. The final profiles, receipts, secret scan, and protected-head checks are reconciled in the Campaign 1 closeout checkpoint.
 
 ## AR-001  SpiritFlix
 
@@ -24,20 +24,20 @@ The following production routes were traced after the ordinary session migration
 
 | Route | Runtime / effect | Current authority and browser control | Verdict |
 | --- | --- | --- | --- |
-| `admin/actions` POST | `handleSpiritFlixAdminAction`; create, move, delete, restore, rename and Jellyfin action dispatch | none; caller controls action and path-bearing request; preview store is not durable approval | migrate first |
-| `admin/smart/analysis` POST | analysis/review sidecar writes and approved metadata export | none; caller controls action and video path | preview-only or migrate |
-| `admin/smart/batch` POST | batch review/run and smart-analysis sidecar writes | none; caller controls action, roots/paths, recursive mode and force | preview-only or migrate |
-| `library-smart-rescan` POST | starts rescan child process | none; direct process start | fail closed pending `index.rebuild` authority |
-| `videos/[itemId]/model` PUT | manual-model sidecar/index write | none; caller controls item/file path/model | migrate `metadata.write` |
-| `videos/[itemId]/tags` PUT | manual-tag sidecar/index write | none; caller controls item/file path/tags | migrate `metadata.write` |
-| `videos/[itemId]/face-learning` POST | performer/face sidecar and related-item updates | none; caller controls paths, model, sidecar and related targets | migrate `face.learn` |
+| `admin/actions` POST | `handleSpiritFlixAdminAction`; create, move, delete, restore, rename and Jellyfin action dispatch | `admin.action` preview/action/mode binding is derived by the authenticated operator route; writer consumes/finalizes exact binding | canonical bounded writer |
+| `admin/smart/analysis` POST | analysis/review sidecar writes and approved metadata export | `smart.analysis` path/action binding is persisted before issuance; writer consumes/finalizes it | canonical bounded writer |
+| `admin/smart/batch` POST | batch review/run and smart-analysis sidecar writes | `smart.batch` target/action binding is persisted before issuance; writer consumes/finalizes it | canonical bounded writer |
+| `library-smart-rescan` POST | starts rescan child process | fixed `index.rebuild` binding, authenticated issuance, transactional consume/finalize | canonical bounded writer |
+| `videos/[itemId]/model` PUT | manual-model sidecar/index write | `metadata.mutation` item/model binding is server-derived and writer consumes/finalizes it | canonical bounded writer |
+| `videos/[itemId]/tags` PUT | manual-tag sidecar/index write | `metadata.mutation` item/tag-count binding is server-derived and writer consumes/finalizes it | canonical bounded writer |
+| `videos/[itemId]/face-learning` POST | performer/face sidecar and related-item updates | `face.learning` item/model binding is server-derived and writer consumes/finalizes it | canonical bounded writer |
 | `admin/library` POST | Jellyfin metadata listing | ordinary BFF session + CSRF/origin; server resolves credential/user/server | canonical read-only |
 | `face-metadata` POST | metadata lookup only | unauthenticated but non-mutating; caller item paths influence lookup | constrain as read-only later |
 | `jellyfin`, image, stream, HLS | ordinary media BFF | server-owned credential/session; write methods require CSRF/origin | canonical media transport, not admin authority |
 
-Containment update: the seven mutation routes above are now direct fail-closed adapters returning `410 spiritflix_admin_direct_mutation_forbidden`. No ordinary media session can reach their mutation runtime. This is containment, not approval-chain acceptance: lower-level writers remain unavailable to production callers until the durable admin preview/approval/executor contract exists.
+Containment and migration update: ordinary media sessions cannot issue administrative approvals. The seven mutation writers reject missing or forged approvals; their preview action/target/plan bindings are server-derived by the authenticated operator route, and consumption/finalization is transactional through `spiritflix-admin-executor`.
 
-Durable contract update: `source_proxy.approval.spiritflix_admin_authority` persists the exact action/target/configured-root/plan hash in the existing Approval Authority, issues only `spiritflix-admin-executor` approvals for `spiritflix_admin_mutation`, transactionally consumes exact bindings, and finalizes a redacted result. HTTP operator issuance and writer-port migration remain required.
+Durable contract update: `source_proxy.approval.spiritflix_admin_authority` persists the exact action/target/configured-root/plan hash in the existing Approval Authority, issues only `spiritflix-admin-executor` approvals for `spiritflix_admin_mutation`, transactionally consumes exact bindings, and finalizes a redacted result. HTTP operator issuance and all seven writer-port migrations are complete.
 
 Lower-level writers include `handleSpiritFlixAdminAction`, `moveSpiritFlixAdminPath`, `writeSmartAnalysis`, `writeApprovedSmartMetadataSidecar`, `setSpiritFlixManualModelForItem`, `setSpiritFlixManualTagsForItem`, and `requestSpiritFlixFaceLearning`. They are directly importable today and therefore require authority context at their canonical execution boundary; route-only checks are insufficient. Rescan, thumbnail, probe, sampler, and smart-processing workers can spawn processes and must retain bound preview/approval/result identities when promoted to execution.
 
