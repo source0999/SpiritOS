@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
 import { SPIRITFLIX_MEDIA_ROOT } from "@/lib/spiritflix/admin/constants";
 import { getSpiritFlixAdminAllowedRoots, isSpiritFlixAdminPathError, resolveSpiritFlixAdminPath } from "@/lib/spiritflix/admin/paths";
 import {
@@ -24,6 +25,10 @@ const FORBIDDEN_EXECUTE_ACTIONS = new Set([
 ]);
 
 export const runtime = "nodejs";
+
+export async function POST(_request: NextRequest) {
+  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
+}
 
 function isSubPath(parent: string, child: string): boolean {
   const relative = path.relative(parent, child);
@@ -98,7 +103,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function legacyPOST(request: NextRequest) {
   let body: { path?: string; action?: string; review?: unknown };
   try {
     body = (await request.json()) as { path?: string; action?: string; review?: unknown };
