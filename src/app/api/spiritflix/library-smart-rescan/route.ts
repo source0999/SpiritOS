@@ -3,6 +3,7 @@ import { closeSync, openSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
 
 export const runtime = "nodejs";
 
@@ -237,11 +238,5 @@ export async function GET() {
 }
 
 export async function POST() {
-  try {
-    const status = await startSmartRescan();
-    return NextResponse.json(status, { headers: { "Cache-Control": "no-store" } });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to start SpiritFlix smart rescan.";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
 }
