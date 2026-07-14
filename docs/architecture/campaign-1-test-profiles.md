@@ -19,6 +19,7 @@ All commands run from `/home/source/SpiritOS-campaign-1-20260712`. Profiles inhe
 | canonical shell | canonical shell/route suites | local operator E2E session | prior receipt: 61 shell + 5 operator/session | shell only |
 | authenticated SpiritFlix desktop/Fold/player | authenticated browser receipts above | dedicated least-privilege E2E identity; SPKI-only browser policy | prior receipt: pass | no-reversion browser behavior only; AR-001 remains blocked |
 | ordinary SpiritFlix server-owned BFF session | session/client/BFF/admin-library/frontend plus admin baseline routes | no real credential output; normal session is opaque | 10 Vitest files, **64 passed** | ordinary-session migration only; no administrative mutation authority |
+| SpiritFlix admin operator issuance | `pytest source_proxy/tests/test_spiritflix_admin_authority.py source_proxy/tests/test_operator_session_assertion.py` plus eight bounded Vitest files | isolated operator-session state; server-owned preview/approval only | **3 Python + 19 Vitest passed** | authenticated admin issuance and writer-bound consumption; committed-HEAD rerun required for final receipt |
 | build | `npm run build` | Campaign `.next`; no protected-service restart | pass in 166.8 s | build only |
 
 Mandatory profile rule: a failed, skipped, stale, or narrower-than-required profile cannot claim Campaign GO. The Cartographer and Design profiles are current; final Campaign GO still requires cross-product evidence reconciliation and protected-head truth at closeout.

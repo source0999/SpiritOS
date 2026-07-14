@@ -150,7 +150,7 @@ export async function createOperatorApprovalAssertion(
   return `${encoded}.${signature}`;
 }
 
-export async function auditOperatorAction(session: Awaited<ReturnType<typeof requireOperatorSession>>, action: "approve" | "reject", previewId: string) {
+export async function auditOperatorAction(session: Awaited<ReturnType<typeof requireOperatorSession>>, action: "preview" | "approve" | "reject", previewId: string) {
   const state = await loadState();
   state.audit.push({ action, at: new Date().toISOString(), operator: session.operator, origin: session.origin, preview_id: previewId, session_fingerprint: fingerprint(session.id) });
   await saveState(state);

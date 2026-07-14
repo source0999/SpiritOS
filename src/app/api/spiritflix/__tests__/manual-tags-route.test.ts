@@ -2,7 +2,13 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { NextRequest } from "next/server";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const approval = vi.hoisted(() => ({ consume: vi.fn(), finalize: vi.fn() }));
+vi.mock("@/lib/coding/spiritflix-admin-approval-authority", () => ({
+  consumeSpiritFlixAdminApproval: approval.consume,
+  finalizeSpiritFlixAdminApproval: approval.finalize,
+}));
 import { GET as getLibraryByTag } from "../library/route";
 import { GET as getTags } from "../tags/route";
 import { PUT as putVideoModel } from "../videos/[itemId]/model/route";
@@ -21,6 +27,8 @@ describe("SpiritFlix manual tag API", () => {
     modelRootDir = await fs.mkdtemp(path.join(os.tmpdir(), "spiritflix-manual-model-api-"));
     process.env.SPIRITFLIX_MANUAL_TAG_ROOT = rootDir;
     process.env.SPIRITFLIX_MANUAL_MODEL_ROOT = modelRootDir;
+    approval.consume.mockResolvedValue({ ok: true, value: { generation: 1 } });
+    approval.finalize.mockResolvedValue({ ok: true, value: {} });
   });
 
   afterEach(async () => {
@@ -45,6 +53,7 @@ describe("SpiritFlix manual tag API", () => {
         body: JSON.stringify({
           filePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
           manualTags: ["Solo"],
+          approval_id: "server-issued-fixture-approval",
         }),
       }),
       { params: Promise.resolve({ itemId: "video-1" }) },
@@ -53,6 +62,12 @@ describe("SpiritFlix manual tag API", () => {
 
     expect(putResponse.status).toBe(200);
     expect(putBody.record.manualTags).toEqual(["solo"]);
+    expect(approval.consume).toHaveBeenCalledWith(
+      "server-issued-fixture-approval",
+      "metadata.mutation",
+      "spiritflix:videos:video-1:tags",
+      { field: "manualTags", count: 1 },
+    );
 
     const getResponse = await getVideoTags(
       new NextRequest("http://localhost/api/spiritflix/videos/video-1/tags"),
@@ -73,7 +88,7 @@ describe("SpiritFlix manual tag API", () => {
     await putVideoModel(
       new NextRequest("http://localhost/api/spiritflix/videos/video-2/model", {
         method: "PUT",
-        body: JSON.stringify({ modelName: "Luna x pearl" }),
+        body: JSON.stringify({ modelName: "Luna x pearl", approval_id: "server-issued-fixture-approval" }),
       }),
       { params: Promise.resolve({ itemId: "video-2" }) },
     );
@@ -82,6 +97,7 @@ describe("SpiritFlix manual tag API", () => {
         method: "PUT",
         body: JSON.stringify({
           manualTags: ["BBW", "curvy", "handjob"],
+          approval_id: "server-issued-fixture-approval",
         }),
       }),
       { params: Promise.resolve({ itemId: "video-2" }) },
@@ -102,6 +118,7 @@ describe("SpiritFlix manual tag API", () => {
         body: JSON.stringify({
           manualTags: ["big ass", "handjob"],
           propagateToModelItems: [{ itemId: "video-2" }, { itemId: "video-3" }],
+          approval_id: "server-issued-fixture-approval",
         }),
       }),
       { params: Promise.resolve({ itemId: "video-1" }) },
