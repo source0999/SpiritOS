@@ -2346,8 +2346,22 @@ def build_cartographer_docs_autopilot_dry_run() -> dict[str, Any]:
     return payload
 
 
+def _forbidden_cartographer_mutation(*, operation: str) -> dict[str, Any]:
+    """Return the terminal Campaign 1 boundary for retired direct writers."""
+    return {
+        "status": "blocked",
+        "reason_code": "forbidden_cartographer_mutation",
+        "operation": operation,
+        "write_actions_enabled": False,
+        "actions_taken": False,
+        "files_written": [],
+        "authority_granted": False,
+        "safety": cartographer_safety_manifest(),
+    }
+
+
 def run_cartographer_docs_autopilot_apply() -> dict[str, Any]:
-    return run_docs_autopilot_apply()
+    return _forbidden_cartographer_mutation(operation="docs_autopilot_apply")
 
 
 def run_cartographer_level_2_docs_apply(
@@ -2356,13 +2370,7 @@ def run_cartographer_level_2_docs_apply(
     approval_id: str | None = None,
     approval_actor: str | None = None,
 ) -> dict[str, Any]:
-    payload = run_level_2_docs_apply(
-        proposal_id=proposal_id,
-        approval_id=approval_id,
-        approval_actor=approval_actor,
-    )
-    payload["safety"] = cartographer_safety_manifest()
-    return payload
+    return _forbidden_cartographer_mutation(operation="level_2_docs_apply")
 
 
 def build_cartographer_docs_autopilot_soak() -> dict[str, Any]:
@@ -2938,11 +2946,7 @@ def write_cartographer_starter_blueprints(
     approved: bool,
     approved_by: str,
 ) -> dict[str, Any]:
-    return write_approved_starter_blueprints(
-        proposal_id=proposal_id,
-        approved=approved,
-        approved_by=approved_by,
-    )
+    return _forbidden_cartographer_mutation(operation="starter_blueprint_write")
 
 
 def build_cartographer_branch_recommendations() -> dict[str, Any]:
@@ -5425,13 +5429,7 @@ def apply_cartographer_clutter_proposal(
     approved: bool,
     approved_by: str,
 ) -> dict[str, Any]:
-    payload = apply_approved_low_risk_deletion_proposal(
-        proposal_id=proposal_id,
-        approved=approved,
-        approved_by=approved_by,
-    )
-    payload["safety"] = cartographer_safety_manifest()
-    return payload
+    return _forbidden_cartographer_mutation(operation="clutter_proposal_apply")
 
 
 def build_cartographer_observation() -> dict[str, Any]:
