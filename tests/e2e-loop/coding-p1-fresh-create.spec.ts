@@ -237,9 +237,13 @@ async function runPrompt1(
   const startedAtMs = Date.now();
   const operatorCredential = process.env.SPIRITOS_OPERATOR_E2E_SECRET;
   if (!operatorCredential) throw new Error("SPIRITOS_OPERATOR_E2E_SECRET is required for authenticated Prompt 1 issuance.");
-  page.once("dialog", async (dialog) => {
-    await dialog.accept(operatorCredential);
-  });
+  const credentialField = page.getByLabel("Operator credential");
+  if (await credentialField.isVisible()) {
+    await credentialField.fill(operatorCredential);
+    await page.getByRole("button", { name: "Authenticate operator" }).click();
+    await expect(page.getByTestId("operator-session-status")).toHaveText("authenticated");
+    await expect(credentialField).not.toBeVisible();
+  }
   await page.getByTestId("run-selected-dummy-coder-prompt").click();
 
   await expect

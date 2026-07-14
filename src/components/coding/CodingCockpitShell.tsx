@@ -4463,6 +4463,9 @@ export function CodingCockpitShell() {
   const [dummyCoderRunState, setDummyCoderRunState] = useState<DummyCoder10RunState>(
     () => defaultDummyCoderRunState(),
   );
+  const [operatorCredential, setOperatorCredential] = useState("");
+  const [operatorCsrf, setOperatorCsrf] = useState("");
+  const [operatorSession, setOperatorSession] = useState<{ expiresAt: string; message: string; status: "unauthenticated" | "authenticating" | "authenticated" | "expiring" | "expired" | "revoked" | "failed" }>({ expiresAt: "", message: "Operator authentication required before approval.", status: "unauthenticated" });
   const [dummyCoderStorageHydrated, setDummyCoderStorageHydrated] = useState(process.env.NODE_ENV === "test");
   const [composerTiming, setComposerTiming] = useState<ComposerTimingState>({
     diffPreviewMs: null,
@@ -4525,6 +4528,46 @@ export function CodingCockpitShell() {
     setHasBrowserMounted(true);
     void refreshAgentLabBaseline();
   }, []);
+
+  async function authenticateOperator() {
+    const credential = operatorCredential;
+    setOperatorCredential("");
+    if (!credential.trim()) {
+      setOperatorSession({ expiresAt: "", message: "Enter the operator credential to authenticate.", status: "failed" });
+      return;
+    }
+    setOperatorSession({ expiresAt: "", message: "Authenticating operator session…", status: "authenticating" });
+    try {
+      const response = await fetchWithTimeout("/v1/operator/session", { body: JSON.stringify({ credential }), headers: { "content-type": "application/json" }, method: "POST" }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+      const payload = asRecord(await readJson(response));
+      const csrf = stringValue(payload.csrf);
+      const expiresAt = stringValue(payload.expires_at) ?? "";
+      if (!response.ok || !csrf || !expiresAt) throw new Error(stringValue(payload.reason_code) ?? "operator_session_failed");
+      setOperatorCsrf(csrf);
+      setOperatorSession({ expiresAt, message: "Authenticated operator session. Approval remains server-bound.", status: "authenticated" });
+    } catch (error) {
+      setOperatorCsrf("");
+      setOperatorSession({ expiresAt: "", message: error instanceof Error ? error.message : "operator_session_failed", status: "failed" });
+    }
+  }
+
+  async function revokeOperator() {
+    if (!operatorCsrf) return;
+    try {
+      const response = await fetchWithTimeout("/v1/operator/session", { headers: { "x-spiritos-csrf": operatorCsrf }, method: "DELETE" }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
+      const payload = asRecord(await readJson(response));
+      if (!response.ok) throw new Error(stringValue(payload.reason_code) ?? "operator_session_revoke_failed");
+      setOperatorCsrf("");
+      setOperatorSession({ expiresAt: "", message: "Operator session revoked.", status: "revoked" });
+    } catch (error) {
+      setOperatorSession((current) => ({ ...current, message: error instanceof Error ? error.message : "operator_session_revoke_failed", status: "failed" }));
+    }
+  }
+
+  function requireOperatorCsrf() {
+    if (operatorSession.status !== "authenticated" || !operatorCsrf) throw new Error("operator_session_required");
+    return operatorCsrf;
+  }
 
   useEffect(() => {
     appliedRunReceiptsRef.current = appliedRunReceipts;
@@ -8009,20 +8052,7 @@ export function CodingCockpitShell() {
         const previewId = stringValue(approvalPreview.preview_id);
         const previewGeneration = numberValue(approvalPreview.generation);
         if (!previewId || !previewGeneration) throw new Error("approval_preview_missing_server_identity");
-        const credential = window.prompt("Enter the local operator credential to approve this exact preview.") ?? "";
-        if (!credential.trim()) throw new Error("operator_credential_required");
-        const sessionResponse = await fetchWithTimeout("/v1/operator/session", {
-          body: JSON.stringify({ credential }),
-          headers: { "content-type": "application/json" },
-          method: "POST",
-        }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
-        const sessionPayload = await readJson(sessionResponse);
-        const csrf = stringValue(asRecord(sessionPayload).csrf);
-        if (!sessionResponse.ok || !csrf) {
-          throw new PayloadBackedError(
-            messageFromPayload(sessionPayload, sessionResponse.status), sessionPayload, sessionResponse.status,
-          );
-        }
+        const csrf = requireOperatorCsrf();
         const operatorApprovalResponse = await fetchWithTimeout("/v1/operator/approval", {
           body: JSON.stringify({ action: "approve", generation: previewGeneration, preview_id: previewId, task_id: taskId }),
           headers: { "content-type": "application/json", "x-spiritos-csrf": csrf },
@@ -9685,34 +9715,12 @@ export function CodingCockpitShell() {
         visible_result_label: "NEEDS FIX",
       });
     }
-    const credential = window.prompt("Enter the local operator credential to approve this exact preview.") ?? "";
-    if (!credential.trim()) {
+    const csrf = operatorSession.status === "authenticated" && operatorCsrf ? operatorCsrf : "";
+    if (!csrf) {
       return baseResult({
         endpoint_statuses: [...endpointStatuses],
-        error_summary: "operator_credential_required",
-        failure_reason: "The selected prompt remains preview-only until an authenticated operator approves it.",
-        model_called_for_generation: modelCalledForGeneration,
-        provider: providerTruth.providerLabel,
-        provider_call_made: true,
-        preview_changed_files: previewChangedFiles,
-        run_id: taskId,
-        visible_result_label: "BLOCKED",
-      });
-    }
-    const sessionResponse = await fetchWithTimeout("/v1/operator/session", {
-      body: JSON.stringify({ credential }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-      signal: suiteFetchAbortRef.current?.signal ?? undefined,
-    }, TRIAL_POST_MODEL_STAGE_TIMEOUT_MS);
-    const sessionPayload = await readJson(sessionResponse);
-    endpointStatuses.push(`/v1/operator/session:${sessionResponse.status}`);
-    const csrf = stringValue(asRecord(sessionPayload).csrf);
-    if (!sessionResponse.ok || !csrf) {
-      return baseResult({
-        endpoint_statuses: [...endpointStatuses],
-        error_summary: safePayloadSummary(sessionPayload),
-        failure_reason: messageFromPayload(sessionPayload, sessionResponse.status),
+        error_summary: "operator_session_required",
+        failure_reason: "The selected prompt remains preview-only until the canonical shell has an authenticated operator session.",
         model_called_for_generation: modelCalledForGeneration,
         provider: providerTruth.providerLabel,
         provider_call_made: true,
@@ -13295,6 +13303,23 @@ export function CodingCockpitShell() {
                   {reversiblePromptsCopyStatus || reversibleSuiteCopyStatus}
                 </p>
               ) : null}
+              <section aria-label="Operator approval session" className="mt-3 rounded-md border border-[var(--ddv4-surface-border-soft)] p-3 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`font-semibold ${commandTextClass}`}>Operator approval session</p>
+                      <span data-testid="operator-session-status" className="rounded-md border border-[var(--ddv4-pill-border)] px-2 py-0.5 font-semibold uppercase">{operatorSession.status}</span>
+                    </div>
+                    <p className={`mt-1 ${commandMutedClass}`}>{operatorSession.message}</p>
+                    {operatorSession.expiresAt ? <p className={`mt-1 ${commandMutedClass}`}>Expires: {operatorSession.expiresAt}</p> : null}
+                    {operatorSession.status === "authenticated" ? (
+                      <button className={`mt-2 min-h-9 rounded-md border border-[var(--ddv4-pill-border)] px-3 font-semibold ${commandFocusClass}`} onClick={() => void revokeOperator()} type="button">Log out and revoke</button>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <input aria-label="Operator credential" autoComplete="off" className={`min-h-9 flex-1 rounded-md border border-[var(--ddv4-surface-border-soft)] bg-[var(--ddv4-surface-fill)] px-2 ${commandControlClass}`} onChange={(event) => setOperatorCredential(event.target.value)} type="password" value={operatorCredential} />
+                        <button className={`min-h-9 rounded-md bg-emerald-300 px-3 font-semibold text-slate-950 ${commandFocusClass}`} disabled={operatorSession.status === "authenticating"} onClick={() => void authenticateOperator()} type="button">Authenticate operator</button>
+                      </div>
+                    )}
+                    <p className={`mt-2 ${commandMutedClass}`}>Approval summary is resolved by the server from the persisted preview; this shell submits only preview ID, generation, action, task ID, and CSRF.</p>
+              </section>
               {trialRunnerMode === "individual" ? (
                 <div className="mt-3 space-y-3">
                   <label className="grid gap-1">

@@ -119,6 +119,17 @@ export async function requireOperatorSession(request: Request, requireCsrf = tru
   return { id, origin, operator: OPERATOR_ID, role: OPERATOR_ROLE };
 }
 
+export async function readOperatorSessionStatus(request: Request) {
+  const id = cookieValue(request, COOKIE_NAME);
+  if (!id) return { status: "unauthenticated" as const };
+  const state = await loadState();
+  const session = state.sessions[id];
+  if (!session) return { status: "unauthenticated" as const };
+  if (session.revoked_at) return { status: "revoked" as const };
+  if (Date.parse(session.expires_at) <= Date.now()) return { status: "expired" as const };
+  return { expires_at: session.expires_at, operator: OPERATOR_ID, role: OPERATOR_ROLE, status: "authenticated" as const };
+}
+
 export async function revokeOperatorSession(session: Awaited<ReturnType<typeof requireOperatorSession>>) {
   const state = await loadState();
   const record = state.sessions[session.id];

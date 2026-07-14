@@ -1399,6 +1399,15 @@ describe("CodingCockpitShell", () => {
             : typeof taskSpec.target === "string"
               ? taskSpec.target
               : targetFile;
+      if (url.includes("/v1/operator/session")) {
+        return jsonResponse({ csrf: "test-csrf", expires_at: "2099-01-01T00:00:00.000Z", operator: "spiritos-local-operator", role: "approval-issuer" });
+      }
+      if (url.includes("/approval-preview")) {
+        return jsonResponse({ preview: { generation: 1, preview_id: "prv_test" } });
+      }
+      if (url.includes("/v1/operator/approval")) {
+        return jsonResponse({ approval: { approval_id: "apr_test" } });
+      }
       if (url.includes("/v1/decisions/prompt-packet")) {
         if (body.expected_outcome && body.expected_outcome !== "edit_reversible") {
           return jsonResponse({
@@ -1460,6 +1469,11 @@ describe("CodingCockpitShell", () => {
     });
 
     render(<CodingCockpitShell />);
+    fireEvent.change(screen.getByLabelText("Trial runner mode"), { target: { value: "individual" } });
+    const credentialField = await screen.findByLabelText("Operator credential");
+    fireEvent.change(credentialField, { target: { value: "fixture-input" } });
+    fireEvent.click(screen.getByRole("button", { name: "Authenticate operator" }));
+    await waitFor(() => expect(screen.getByTestId("operator-session-status")).toHaveTextContent("authenticated"));
     const runButton = screen.getByRole("button", { name: "Run all trials" });
     await waitFor(() => expect(runButton).toBeEnabled());
     fireEvent.click(runButton);
