@@ -3271,6 +3271,42 @@ def record_coding_execution_approval(
     return _task_envelope(task)
 
 
+def record_coding_execution_preview(
+    task_id: str,
+    *,
+    preview_id: str,
+    generation: int,
+) -> dict[str, Any]:
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["campaign_1_pending_preview"] = {
+        "preview_id": preview_id,
+        "generation": generation,
+        "consumer": "coding-executor",
+        "state": "previewed",
+    }
+    task.ast_snapshot = snapshot
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return _task_envelope(task)
+
+
+def assert_coding_execution_preview(
+    task_id: str,
+    *,
+    preview_id: str,
+    generation: int,
+) -> None:
+    task = _lookup_task(task_id)
+    pending_preview = _ensure_ast_snapshot_dict(task).get("campaign_1_pending_preview")
+    if not isinstance(pending_preview, dict):
+        raise LongRunningTaskError("Task has no server-persisted approval preview.", "approval_preview_missing")
+    if str(pending_preview.get("preview_id") or "") != preview_id or int(pending_preview.get("generation") or 0) != generation:
+        raise LongRunningTaskError("Operator approval does not match the task's persisted preview.", "approval_preview_mismatch")
+    if pending_preview.get("state") != "previewed":
+        raise LongRunningTaskError("Operator approval preview is no longer actionable.", "approval_not_approved")
+
+
 def undo_last_approved_change(
     task_id: str,
     *,

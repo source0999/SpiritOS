@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { mkdir, open, readFile, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -124,6 +124,17 @@ export async function revokeOperatorSession(session: Awaited<ReturnType<typeof r
   record.revoked_at = new Date().toISOString();
   state.audit.push({ action: "session_revoked", at: record.revoked_at, operator: session.operator, origin: session.origin, session_fingerprint: fingerprint(session.id) });
   await saveState(state);
+}
+
+export async function createOperatorApprovalAssertion(
+  session: Awaited<ReturnType<typeof requireOperatorSession>>,
+  input: { action: "approve" | "reject"; generation: number; preview_id: string; task_id: string },
+) {
+  const expires_at = new Date(Date.now() + 60_000).toISOString();
+  const payload = JSON.stringify({ action: input.action, expires_at, generation: input.generation, operator: session.operator, preview_id: input.preview_id, role: session.role, session_id: session.id, task_id: input.task_id });
+  const encoded = Buffer.from(payload, "utf8").toString("base64url");
+  const signature = createHmac("sha256", await operatorSecret()).update(encoded).digest("base64url");
+  return `${encoded}.${signature}`;
 }
 
 export async function auditOperatorAction(session: Awaited<ReturnType<typeof requireOperatorSession>>, action: "approve" | "reject", previewId: string) {

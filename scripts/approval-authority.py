@@ -151,24 +151,37 @@ def parse_expiry(value):
 def issue(data):
     database, key = boot()
     preview_id = require(data, "preview_id")
+    expected_generation = require(data, "expected_generation")
     consumer = require(data, "consumer")
     operation = require(data, "operation")
     if CONSUMER_OPERATIONS.get(consumer) != operation:
         fail("approval_operation_not_permitted" if consumer in CONSUMER_OPERATIONS else "approval_consumer_mismatch")
     expiry = parse_expiry(require(data, "expires_at"))
-    preview = database.execute("SELECT * FROM approval_previews_v3 WHERE id=?", (preview_id,)).fetchone()
-    if not preview:
-        fail("approval_not_found")
-    if preview["state"] != "previewed":
-        fail("approval_not_approved")
-    approval_id = f"apr_{secrets.token_urlsafe(18)}"
-    database.execute(
-        """INSERT INTO approval_records_v3 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (approval_id, preview["generation"], "approved", consumer, operation,
-         preview["repository"], preview["worktree"], preview["root"], preview["target"],
-         preview["plugin"], preview_id, preview["content_hash"], preview["context_hash"],
-         preview["source_head"], expiry, None, None, iso()),
-    )
+    database.execute("BEGIN IMMEDIATE")
+    try:
+        preview = database.execute("SELECT * FROM approval_previews_v3 WHERE id=?", (preview_id,)).fetchone()
+        if not preview:
+            fail("approval_not_found")
+        if str(preview["generation"]) != expected_generation:
+            fail("approval_generation_mismatch")
+        if preview["state"] != "previewed":
+            fail("approval_not_approved")
+        if preview["source_head"] != source_head():
+            fail("approval_source_mismatch")
+        approval_id = f"apr_{secrets.token_urlsafe(18)}"
+        database.execute(
+            """INSERT INTO approval_records_v3 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (approval_id, preview["generation"], "approved", consumer, operation,
+             preview["repository"], preview["worktree"], preview["root"], preview["target"],
+             preview["plugin"], preview_id, preview["content_hash"], preview["context_hash"],
+             preview["source_head"], expiry, None, None, iso()),
+        )
+        database.execute("UPDATE approval_previews_v3 SET state='approved' WHERE id=?", (preview_id,))
+        database.execute("COMMIT")
+    except Exception:
+        if database.in_transaction:
+            database.execute("ROLLBACK")
+        raise
     print(json.dumps({"approval_id": approval_id, "generation": preview["generation"], "state": "approved",
                       "reference_mac": hashlib.sha256((approval_id + key).encode()).hexdigest()[:16]}))
 
@@ -232,6 +245,40 @@ def lookup(data):
     print(json.dumps({field: row[field] for field in fields}))
 
 
+def lookup_preview(data):
+    database, _ = boot()
+    preview = database.execute("SELECT * FROM approval_previews_v3 WHERE id=?", (require(data, "preview_id"),)).fetchone()
+    if not preview:
+        fail("approval_not_found")
+    fields = ("id", "generation", "state", "repository", "worktree", "root", "target", "plugin", "content_hash", "context_hash", "source_head", "created_at")
+    print(json.dumps({field: preview[field] for field in fields}))
+
+
+def transition_preview(data):
+    database, _ = boot()
+    preview_id = require(data, "preview_id")
+    expected_generation = require(data, "expected_generation")
+    state = require(data, "state")
+    if state != "rejected":
+        fail("approval_transition_not_permitted")
+    database.execute("BEGIN IMMEDIATE")
+    try:
+        preview = database.execute("SELECT * FROM approval_previews_v3 WHERE id=?", (preview_id,)).fetchone()
+        if not preview:
+            fail("approval_not_found")
+        if str(preview["generation"]) != expected_generation:
+            fail("approval_generation_mismatch")
+        if preview["state"] != "previewed":
+            fail("approval_not_approved")
+        database.execute("UPDATE approval_previews_v3 SET state=? WHERE id=?", (state, preview_id))
+        database.execute("COMMIT")
+    except Exception:
+        if database.in_transaction:
+            database.execute("ROLLBACK")
+        raise
+    print(json.dumps({"preview_id": preview_id, "generation": preview["generation"], "state": state}))
+
+
 def finalize(data):
     database, _ = boot()
     approval_id = require(data, "approval_id")
@@ -286,9 +333,9 @@ def preflight():
 
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else ""
-    data = json.load(sys.stdin) if command in {"persist-preview", "issue", "lookup", "consume", "finalize", "transition"} else {}
+    data = json.load(sys.stdin) if command in {"persist-preview", "issue", "lookup", "lookup-preview", "transition-preview", "consume", "finalize", "transition"} else {}
     commands = {"preflight": preflight, "persist-preview": lambda: persist_preview(data), "issue": lambda: issue(data),
-                "lookup": lambda: lookup(data), "consume": lambda: consume(data), "finalize": lambda: finalize(data), "transition": lambda: transition(data)}
+                "lookup": lambda: lookup(data), "lookup-preview": lambda: lookup_preview(data), "transition-preview": lambda: transition_preview(data), "consume": lambda: consume(data), "finalize": lambda: finalize(data), "transition": lambda: transition(data)}
     if command not in commands:
         fail("approval_command_unknown")
     commands[command]()

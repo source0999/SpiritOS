@@ -67,7 +67,6 @@ export async function POST(request: Request) {
   const record = body as Record<string, unknown>;
   const action = typeof record.action === "string" ? record.action : "";
   const target = typeof record.target === "string" ? record.target : "";
-  const approved = record.approved === true;
   const approvedDiff =
     typeof record.approved_diff === "string"
       ? record.approved_diff
@@ -107,12 +106,6 @@ export async function POST(request: Request) {
         : "";
   const changedFiles = changedFilesFromApprovedDiff(approvedDiff);
 
-  if (!approved) {
-    return Response.json(
-      { error: "approved must be true before execution" },
-      { status: 403 },
-    );
-  }
   if (!action.trim() || !target.trim()) {
     return Response.json(
       { error: "action and target are required" },
@@ -233,41 +226,12 @@ export async function POST(request: Request) {
 
   const selectedPromptId = trialPromptId || taskId;
   const contextHash = createHash("sha256").update(`${trialPromptId}|${trialPromptText}|${target}`).digest("hex");
-  let durableApprovalId = approvalId;
+  const durableApprovalId = approvalId;
   if (!durableApprovalId) {
-    const approvalResponse = await sourceProxyFetch(
-      `/v1/tasks/long-running/${encodeURIComponent(taskId)}/approval`,
-      {
-        body: JSON.stringify({
-          action,
-          approved: true,
-          approved_by: "coding-ui",
-          approved_diff: approvedDiff,
-          context_hash: contextHash,
-          selected_prompt_id: selectedPromptId,
-          target,
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      },
+    return Response.json(
+      { error: "execute-approved requires an operator-issued approval_id", reason_code: "approval_operator_issuance_required" },
+      { status: 403 },
     );
-    const approvalPayload = parseJsonObject(String(await approvalResponse.text()));
-    const approval =
-      approvalPayload.approval && typeof approvalPayload.approval === "object" && !Array.isArray(approvalPayload.approval)
-        ? approvalPayload.approval as Record<string, unknown>
-        : {};
-    durableApprovalId = typeof approval.approval_id === "string" ? approval.approval_id : "";
-    const approvalResponseOk = approvalResponse.ok ?? (approvalResponse.status >= 200 && approvalResponse.status < 300);
-    if (!approvalResponseOk || !durableApprovalId.startsWith("apr_")) {
-      return Response.json(
-        {
-          ...approvalPayload,
-          error: "execute-approved could not obtain a durable server-issued approval_id",
-          reason_code: String(approvalPayload.reason_code || "approval_issuance_failed"),
-        },
-        { status: approvalResponse.status >= 400 ? approvalResponse.status : 502 },
-      );
-    }
   }
 
   const response = await sourceProxyFetch(
@@ -275,7 +239,6 @@ export async function POST(request: Request) {
     {
       body: JSON.stringify({
         action,
-        approved: true,
         approval_id: durableApprovalId,
         approved_by: "coding-ui",
         approved_diff: approvedDiff,

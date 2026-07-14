@@ -43,6 +43,7 @@ from source_proxy.tasks.long_running import (
     list_long_running_tasks,
     LongRunningTaskError,
     record_post_apply_verification,
+    record_coding_execution_approval,
     reject_long_running_task_plan,
     reset_long_running_tasks,
     update_long_running_task,
@@ -63,6 +64,7 @@ def _approval_id(task_id: str, diff: str, target: str) -> str:
         ["python3", str(Path(__file__).resolve().parents[2] / "scripts" / "approval-authority.py"), "issue"],
         input=json.dumps({
             "preview_id": preview["preview_id"],
+            "expected_generation": str(preview["generation"]),
             "consumer": "coding-executor",
             "operation": "coding_execution",
             "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
@@ -1617,15 +1619,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "+export const value = 'new';",
                 "",
             ])
-            approval = client.post(
-                f"/v1/tasks/long-running/{task_id}/approval",
-                json={
-                    "action": "modify file", "approved": True, "approved_diff": diff,
-                    "target": "src/app/demo/page.tsx", "selected_prompt_id": "cancel-test",
-                    "context_hash": "cancel-context",
-                },
-            )
-            approval_id = approval.json()["approval"]["approval_id"]
+            approval_id = _approval_id(task_id, diff, "src/app/demo/page.tsx")
+            record_coding_execution_approval(task_id, approval_id=approval_id, generation=1)
             cancelled = client.post(f"/v1/tasks/long-running/{task_id}/cancel")
             self.assertEqual(cancelled.status_code, 200)
             self.assertEqual(cancelled.json()["task"]["status"], "cancelled")
@@ -1636,9 +1631,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             rejected = client.post(
                 f"/v1/tasks/long-running/{task_id}/execute-approved",
                 json={
-                    "action": "modify file", "approved": True, "approval_id": approval_id,
+                    "action": "implement proposed file change", "approved": True, "approval_id": approval_id,
                     "approved_diff": diff, "target": "src/app/demo/page.tsx",
-                    "selected_prompt_id": "cancel-test", "context_hash": "cancel-context",
+                    "selected_prompt_id": "legacy-test", "context_hash": "legacy-test",
                 },
             )
             self.assertEqual(rejected.status_code, 422)

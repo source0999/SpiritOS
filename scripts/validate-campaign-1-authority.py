@@ -17,23 +17,28 @@ REQUIRED = {
     "source_proxy/cartographer/apply.py": ("forbidden_cartographer_mutation",),
     "source_proxy/cartographer/git_approvals.py": ("forbidden_cartographer_mutation",),
     "src/app/v1/actions/execute-approved/route.ts": (
-        "durable server-issued approval_id",
+        "operator-issued approval_id",
         "selected_prompt_id",
         "context_hash",
-        "/approval",
+        "approval_operator_issuance_required",
     ),
     "source_proxy/api/long_running_tasks.py": (
-        "LongRunningTaskApprovalRequest",
+        "LongRunningTaskOperatorApprovalRequest",
         "issue_coding_execution_approval",
         "record_coding_execution_approval",
-        '@router.post("/long-running/{task_id}/approval")',
+        "verify_operator_approval_assertion",
+        '@router.post("/long-running/{task_id}/operator-approval")',
+        "approval_client_authority_removed",
     ),
+    "source_proxy/approval/operator_session.py": ("verify_operator_approval_assertion", "operator_session_revoked"),
+    "src/app/v1/operator/approval/route.ts": ("requireOperatorSession", "createOperatorApprovalAssertion", "operator_client_authority_binding_forbidden"),
     "src/components/coding/CodingAgentInterface.tsx": (
         "allowed_files: allowedFiles",
     ),
 }
 FORBIDDEN = {
-    "src/app/v1/actions/execute-approved/route.ts": ("approvalIdForApprovedDiff({",),
+    "src/app/v1/actions/execute-approved/route.ts": ("approvalIdForApprovedDiff({", "approved: true"),
+    "source_proxy/api/long_running_tasks.py": ("async def long_running_task_approval(",),
     "source_proxy/cartographer/apply.py": ("approval_id_for_approved_diff(",),
     "src/lib/coding/agent-lab-baseline-server.ts": ("approvalIdForApprovedDiff",),
 }

@@ -93,9 +93,12 @@ def persist_coding_execution_preview(*, task_id: str, action: str, approved_diff
     })
 
 
-def issue_coding_execution_approval(*, preview_id: str) -> dict[str, Any]:
+def issue_coding_execution_approval(*, preview_id: str, expected_generation: int | None = None) -> dict[str, Any]:
+    if expected_generation is None:
+        expected_generation = int(_call("lookup-preview", {"preview_id": preview_id})["generation"])
     issued = _call("issue", {
         "preview_id": preview_id,
+        "expected_generation": str(expected_generation),
         "consumer": "coding-executor",
         "operation": "coding_execution",
         "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
@@ -105,6 +108,24 @@ def issue_coding_execution_approval(*, preview_id: str) -> dict[str, Any]:
         "generation": int(issued["generation"]),
         "state": str(issued["state"]),
     }
+
+
+def resolve_coding_execution_preview(*, preview_id: str, expected_generation: int) -> dict[str, Any]:
+    preview = _call("lookup-preview", {"preview_id": preview_id})
+    if str(preview.get("generation")) != str(expected_generation):
+        raise CampaignApprovalError("approval_generation_mismatch")
+    if preview.get("state") != "previewed":
+        raise CampaignApprovalError("approval_not_approved")
+    if preview.get("repository") != REPOSITORY or preview.get("worktree") != ROOT or preview.get("root") != ROOT:
+        raise CampaignApprovalError("approval_worktree_mismatch")
+    if preview.get("source_head") != current_head():
+        raise CampaignApprovalError("approval_source_mismatch")
+    return preview
+
+
+def reject_coding_execution_preview(*, preview_id: str, expected_generation: int) -> dict[str, Any]:
+    resolve_coding_execution_preview(preview_id=preview_id, expected_generation=expected_generation)
+    return _call("transition-preview", {"preview_id": preview_id, "expected_generation": str(expected_generation), "state": "rejected"})
 
 
 def cancel_coding_execution_approval(*, approval_id: str) -> dict[str, Any]:

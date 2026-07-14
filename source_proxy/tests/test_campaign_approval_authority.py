@@ -22,6 +22,7 @@ def issue(preview_id: str) -> str:
         ["python3", "scripts/approval-authority.py", "issue"],
         input=json.dumps({
             "preview_id": preview_id,
+            "expected_generation": "1",
             "consumer": "coding-executor",
             "operation": "coding_execution",
             "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),

@@ -167,6 +167,7 @@ def _issue_coding_approval(*, task_id: str, action: str, approved_diff: str, tar
         input=json.dumps(
             {
                 "preview_id": preview["preview_id"],
+                "expected_generation": str(preview["generation"]),
                 "consumer": "coding-executor",
                 "operation": "coding_execution",
                 "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),

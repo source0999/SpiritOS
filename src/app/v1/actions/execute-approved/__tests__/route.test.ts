@@ -144,7 +144,6 @@ describe("execute-approved route", () => {
     expect(JSON.parse(String(init?.body))).toEqual({
       action: "modify file",
       allowed_files: ["src/demo.ts"],
-      approved: true,
       approval_id: "apr_test_server_issued",
       approved_by: "coding-ui",
       approved_diff: "--- a/src/demo.ts\n+++ b/src/demo.ts\n@@ -1 +1 @@\n-old\n+new\n",
@@ -161,27 +160,7 @@ describe("execute-approved route", () => {
     });
   });
 
-  it("obtains a server-issued approval before forwarding when the coding caller has none", async () => {
-    mockedSourceProxyFetch
-      .mockResolvedValueOnce(
-        {
-          headers: new Headers({ "content-type": "application/json" }),
-          status: 200,
-          statusText: "OK",
-          text: async () => JSON.stringify({
-            approval: { approval_id: "apr_issued_by_authority", generation: 1, state: "approved" },
-          }),
-        } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
-      )
-      .mockResolvedValueOnce(
-        {
-          headers: new Headers({ "content-type": "application/json" }),
-          status: 200,
-          statusText: "OK",
-          text: async () => JSON.stringify(executeApprovedContractPayload()),
-        } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>,
-      );
-
+  it("rejects a caller without an operator-issued approval instead of issuing one", async () => {
     const response = await POST(
       jsonRequest({
         action: "modify file",
@@ -194,10 +173,9 @@ describe("execute-approved route", () => {
       }),
     );
 
-    expect(response.status).toBe(200);
-    expect(mockedSourceProxyFetch.mock.calls[0]?.[0]).toBe("/v1/tasks/long-running/task-123/approval");
-    const [, executeInit] = mockedSourceProxyFetch.mock.calls[1] ?? [];
-    expect(JSON.parse(String(executeInit?.body))).toMatchObject({ approval_id: "apr_issued_by_authority" });
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({ reason_code: "approval_operator_issuance_required" });
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 
   it("hashes approved diffs with lf trailing newline canonicalization", async () => {

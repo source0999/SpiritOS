@@ -6,12 +6,13 @@ import sqlite3
 import time
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from source_proxy.approval.gate import execute_approved_action
-from source_proxy.approval.campaign_authority import CampaignApprovalError, issue_coding_execution_approval, persist_coding_execution_preview
+from source_proxy.approval.campaign_authority import CampaignApprovalError, issue_coding_execution_approval, persist_coding_execution_preview, reject_coding_execution_preview, resolve_coding_execution_preview
+from source_proxy.approval.operator_session import OperatorSessionError, verify_operator_approval_assertion
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
 from source_proxy.tasks.long_running import (
     LongRunningTaskError,
@@ -22,7 +23,7 @@ from source_proxy.tasks.long_running import (
     get_long_running_task_snapshot,
     list_long_running_tasks,
     record_post_apply_verification,
-    record_coding_execution_approval,
+    assert_coding_execution_preview, record_coding_execution_approval, record_coding_execution_preview,
     reject_long_running_task_plan,
     undo_last_approved_change,
     update_long_running_task,
@@ -62,9 +63,10 @@ class LongRunningTaskApprovalPreviewRequest(BaseModel):
     context_hash: str = Field(min_length=1, max_length=128)
 
 
-class LongRunningTaskApprovalRequest(LongRunningTaskApprovalPreviewRequest):
-    approved: bool
-    approved_by: str = Field(default="human", min_length=1, max_length=120)
+class LongRunningTaskOperatorApprovalRequest(BaseModel):
+    action: str = Field(pattern="^(approve|reject)$")
+    preview_id: str = Field(min_length=1, max_length=120)
+    generation: int = Field(ge=1)
 
 
 class LongRunningTaskVerificationRequest(BaseModel):
@@ -270,25 +272,28 @@ async def long_running_task_approval_preview(
             target=request.target, selected_prompt_id=request.selected_prompt_id,
             context_hash=request.context_hash,
         )
+        record_coding_execution_preview(task_id, preview_id=str(preview["preview_id"]), generation=int(preview["generation"]))
         return {"authority": "spiritos-approval-authority", "consumer": "coding-executor", "preview": preview}
     except CampaignApprovalError as error:
         raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
 
 
-@router.post("/long-running/{task_id}/approval")
-async def long_running_task_approval(
+@router.post("/long-running/{task_id}/operator-approval")
+async def long_running_task_operator_approval(
     task_id: str,
-    request: LongRunningTaskApprovalRequest,
+    request: LongRunningTaskOperatorApprovalRequest,
+    x_spiritos_operator_assertion: str = Header(default=""),
 ) -> dict[str, Any]:
-    if request.approved is not True:
-        raise HTTPException(status_code=403, detail={"reason_code": "approval_not_confirmed"})
     try:
-        preview = persist_coding_execution_preview(
-            task_id=task_id, action=request.action, approved_diff=request.approved_diff,
-            target=request.target, selected_prompt_id=request.selected_prompt_id,
-            context_hash=request.context_hash,
-        )
-        approval = issue_coding_execution_approval(preview_id=str(preview["preview_id"]))
+        assertion = verify_operator_approval_assertion(x_spiritos_operator_assertion)
+        if assertion["task_id"] != task_id or assertion["preview_id"] != request.preview_id or assertion["generation"] != request.generation or assertion["action"] != request.action:
+            raise OperatorSessionError("operator_assertion_mismatch")
+        assert_coding_execution_preview(task_id, preview_id=request.preview_id, generation=request.generation)
+        preview = resolve_coding_execution_preview(preview_id=request.preview_id, expected_generation=request.generation)
+        if request.action == "reject":
+            rejected = reject_coding_execution_preview(preview_id=request.preview_id, expected_generation=request.generation)
+            return {"authority": "spiritos-approval-authority", "consumer": "coding-executor", "preview": preview, "rejected": rejected}
+        approval = issue_coding_execution_approval(preview_id=request.preview_id, expected_generation=request.generation)
         record_coding_execution_approval(
             task_id,
             approval_id=str(approval["approval_id"]),
@@ -301,8 +306,17 @@ async def long_running_task_approval(
             "preview": preview,
             "approval": approval,
         }
+    except OperatorSessionError as error:
+        raise HTTPException(status_code=403, detail={"reason_code": str(error)}) from error
+    except LongRunningTaskError as error:
+        raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
     except CampaignApprovalError as error:
         raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
+
+
+@router.post("/long-running/{task_id}/approval")
+async def long_running_task_approval_removed(task_id: str) -> dict[str, Any]:
+    raise HTTPException(status_code=410, detail={"reason_code": "approval_client_authority_removed", "task_id": task_id})
 
 
 @router.post("/long-running/{task_id}/execute-approved")
@@ -310,11 +324,6 @@ async def long_running_task_execute_approved(
     task_id: str,
     request: LongRunningTaskExecuteApprovedRequest,
 ) -> dict[str, Any]:
-    if request.approved is not True:
-        raise HTTPException(
-            status_code=403,
-            detail={"error": "approved must be true before execution"},
-        )
     try:
         return execute_approved_action(
             task_id=task_id,
