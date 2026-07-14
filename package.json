@@ -57,7 +57,7 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm run build",
     "test": "vitest",
-    "test:coding-regression": "python -m pytest -q source_proxy/tests/test_coding_regression_pack.py",
+    "test:coding-regression": ".venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py",
     "test:coding-frontend-regression": "vitest run src/app/coding/__tests__/page.test.tsx src/components/coding/__tests__/coding-command-center-shell.test.tsx src/lib/coding/__tests__/model-provider-status.test.ts src/lib/coding/__tests__/unified-diff-paths.test.ts src/components/coding/__tests__/approval-gate-binding.test.ts src/lib/coding/__tests__/proxy-route-payload.test.ts src/app/v1/actions/execute-approved/__tests__/route.test.ts src/components/coding/__tests__/coding-workflow-step.test.ts src/components/coding/__tests__/client-fallback.test.ts src/components/coding/__tests__/proxy-safety-smoke.test.ts src/app/v1/coding/self-tests/run/__tests__/route.test.ts",
     "test:ui": "vitest --ui",
     "ytmclone:stats:smoke": "node ./scripts/ytmclone-stats-smoke.mjs",

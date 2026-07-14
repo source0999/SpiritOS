@@ -2,7 +2,7 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `94df90c7fe46cd0aafcc855db3cb7ac55f4bd55f` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `8fa493a92f73d3335e069d90f53f8a425ac78676` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
@@ -11,9 +11,9 @@
 
 - Phase: **Phase 1**; increment: **final authority acceptance and canonical shell lifecycle**.
 - Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
-- Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
-- GO eligibility: `false`; all seven SpiritFlix admin mutation routes, Cartographer selection handoff, and Design writeback final acknowledgement envelope use the durable Approval Authority. Final Phase 1 evidence and acceptance remain incomplete.
-- Next concrete gate: `phase1_final_authority_acceptance_and_canonical_shell_lifecycle` - run the full Phase 1 evidence matrix, reconcile its remaining no-GO defects, and accept only the gates proven by truthful profiles.
+- Critical blocker: `campaign_owned_runtime_lane_unavailable`; the named coding browser harness requires Campaign frontend port `3000`, but that port is owned by `/home/source/SpiritOS-live-integration-20260712`. Replacing or restarting that foreign service would violate Campaign containment; changing the harness port would invalidate its registered proof contract.
+- GO eligibility: `false`; all implementation slices are committed and the static/build matrix passes, but current managed browser/runtime proof is unavailable and the legacy Cartographer API regression profile remains un-migrated.
+- Next concrete gate: `phase1_campaign_owned_runtime_lane_recovery` - after an operator either frees port `3000` for the Campaign-owned frontend or explicitly authorizes a registered harness configuration change, rerun the browser lifecycle and then migrate the legacy Cartographer mutation fixtures to proposal-only expectations.
 
 ## Git-bound gate status
 
@@ -45,4 +45,4 @@
 
 `git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; `PYTHONPATH=. ...pytest source_proxy/tests/test_campaign_approval_authority.py -q` (9 passed); `PYTHONPATH=. ...pytest source_proxy/tests/test_cartographer_api.py -q` (**36 failed, 231 passed, 4 subtests passed** because its legacy mutable-route expectations were intentionally invalidated); focused Design route/writer suite (32 passed); `node scripts/coding/test-validate-design-studio-receipts.mjs` (9 negative fixtures passed); `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; existing redacted browser and build receipts.
 
-Last verified: `2026-07-14T20:22:00Z`. AR-003 focused profile: Design preview/operator/writeback/acknowledgement Vitest suite (**35 passed**); `node scripts/coding/test-validate-design-studio-receipts.mjs` (**9 negative fixtures rejected**); `npm run typecheck`; `npm run campaign-1:validate-authority`; and `git diff --check` all passed. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T20:31:00Z`. Final acceptance static/build profiles: `npm run test:coding-regression` (**131 passed**, 10 existing async-mock warnings); `npm run test:coding-frontend-regression` (**269 passed**, existing React act warnings); Source Proxy Authority/task suite (**83 passed**); BFF/session suite (**33 passed**); `npm run build` (**pass, 166.8 s**); `npm run typecheck`; Authority and continuity validators; `git diff --check`; tracked-source secret-pattern scan; and protected-head checks all passed. The named browser lifecycle harness failed closed because the Campaign-owned frontend lane is unavailable; no fallback or protected-service replacement was attempted. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
