@@ -27,7 +27,7 @@ CONSUMER_OPERATIONS = {
     "spiritflix-admin-executor": "spiritflix_admin_mutation",
     "cartographer-transfer-consumer": "cartographer_selection_transfer",
 }
-ACKNOWLEDGEMENT_CONSUMERS = {"coding-reviewer", "coding-verifier", "spiritflix-admin-reviewer", "spiritflix-admin-verifier", "cartographer-reviewer", "cartographer-verifier", "evidence-recorder"}
+ACKNOWLEDGEMENT_CONSUMERS = {"coding-reviewer", "coding-verifier", "spiritflix-admin-reviewer", "spiritflix-admin-verifier", "cartographer-reviewer", "cartographer-verifier", "design-reviewer", "design-verifier", "evidence-recorder"}
 TERMINAL_REASONS = {
     "consumed": "approval_already_consumed",
     "rejected": "approval_rejected",

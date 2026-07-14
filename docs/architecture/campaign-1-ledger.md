@@ -2,18 +2,18 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `7d54606cb10b7e3d6fe13e457b73e4dbf16f7f6c` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `94df90c7fe46cd0aafcc855db3cb7ac55f4bd55f` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **AR-003 Design writeback final acknowledgement envelope**.
+- Phase: **Phase 1**; increment: **final authority acceptance and canonical shell lifecycle**.
 - Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
-- GO eligibility: `false`; all seven SpiritFlix admin mutation routes and the Cartographer selection handoff use the durable Approval Authority, but AR-003 (Design writeback final acknowledgement envelope) and final Phase 1 evidence remain incomplete.
-- Next concrete gate: `ar003_design_writeback_final_acknowledgement_envelope` - prove Design canonical writeback finalizes one durable approval with matched consumer/reviewer/verifier/evidence acknowledgement and a redacted receipt.
+- GO eligibility: `false`; all seven SpiritFlix admin mutation routes, Cartographer selection handoff, and Design writeback final acknowledgement envelope use the durable Approval Authority. Final Phase 1 evidence and acceptance remain incomplete.
+- Next concrete gate: `phase1_final_authority_acceptance_and_canonical_shell_lifecycle` - run the full Phase 1 evidence matrix, reconcile its remaining no-GO defects, and accept only the gates proven by truthful profiles.
 
 ## Git-bound gate status
 
@@ -23,7 +23,7 @@
 | Authority inventory | completed | `e1b9966c` |
 | AR-002 duplicate cleanup | completed slice | `e68d3ba6`, `b9f5fdeb`, `3a01f8d6`, `42ded963`, `e8e26978`; mounted direct execution routes removed, legacy mutation routes fail closed |
 | Approval Authority bootstrap/lifecycle | completed | `b84bf012`, `2cf49fa9`, `b2bae870`, `540fd3d6` |
-| Design Studio writeback | substantially implemented | authenticated operator route resolves persisted Design previews and the canonical writeback consume/finalize chain has real HTTP proof |
+| Design Studio writeback | completed slice | authenticated operator route resolves persisted previews; canonical writeback now consumes/finalizes with server-assigned design-writeback/reviewer/verifier/evidence acknowledgement envelope and redacted durable receipt |
 | Cartographer containment/transfer | completed slice | durable proposal selection preview -> authenticated operator issuance -> canonical non-mutating transfer consumer -> transactional consume/finalize -> matched acknowledgement receipt; legacy direct transfer fails closed |
 | Coding durable approval/acknowledgement | substantially implemented | `b4d8e49f` through `540fd3d6` |
 | operator-session foundation | completed | HTTP-only session route plus origin, CSRF, expiry, revocation, role, and audit foundation; focused Vitest proof |
@@ -45,4 +45,4 @@
 
 `git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; `PYTHONPATH=. ...pytest source_proxy/tests/test_campaign_approval_authority.py -q` (9 passed); `PYTHONPATH=. ...pytest source_proxy/tests/test_cartographer_api.py -q` (**36 failed, 231 passed, 4 subtests passed** because its legacy mutable-route expectations were intentionally invalidated); focused Design route/writer suite (32 passed); `node scripts/coding/test-validate-design-studio-receipts.mjs` (9 negative fixtures passed); `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; existing redacted browser and build receipts.
 
-Last verified: `2026-07-14T20:15:00Z`. AR-002 focused profile: `PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_campaign_approval_authority.py -q` (**12 passed**); `npx vitest run src/app/v1/operator/cartographer-selection/__tests__/route.test.ts` (**2 passed**); `npm run typecheck`; `npm run campaign-1:validate-authority`; `npm run campaign-1:validate-continuity`; and `git diff --check` all passed. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T20:22:00Z`. AR-003 focused profile: Design preview/operator/writeback/acknowledgement Vitest suite (**35 passed**); `node scripts/coding/test-validate-design-studio-receipts.mjs` (**9 negative fixtures rejected**); `npm run typecheck`; `npm run campaign-1:validate-authority`; and `git diff --check` all passed. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.

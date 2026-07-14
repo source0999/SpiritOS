@@ -92,13 +92,12 @@ export async function runDesignStudioApprovedWriteback(request: DesignStudioAppr
     vaultRoot: SERVER_OWNED_VAULT_ROOT,
   });
   const finalized = await finalizeDesignWritebackApproval(approval.value, {
-    evidence: JSON.stringify({
+    receipt: {
       acceptance_id: request.accepted_run.acceptance_id,
-      approval_id: request.approval_id,
       result_status: result.status,
       target: request.payload.target_surface,
       trace_id: request.payload.trace_id,
-    }),
+    },
     result_id: result.status === "written" ? result.path : undefined,
     status: result.status === "written" ? "succeeded" : "failed",
   });
@@ -110,6 +109,7 @@ export async function runDesignStudioApprovedWriteback(request: DesignStudioAppr
     ...result,
     acceptance_id: request.accepted_run.acceptance_id,
     acceptance_trace_id: request.accepted_run.trace_id,
+    approval_receipt: finalized.value,
     write_invoked: true,
   };
 }

@@ -27,6 +27,18 @@ export type DesignApprovalBinding = DesignPreviewBinding & {
   operation: "design_writeback";
 };
 
+export const DESIGN_ACKNOWLEDGEMENT_CONSUMERS = [
+  "design-writeback",
+  "design-reviewer",
+  "design-verifier",
+  "evidence-recorder",
+] as const;
+
+export type DesignAcknowledgements = Record<(typeof DESIGN_ACKNOWLEDGEMENT_CONSUMERS)[number], {
+  approval_id: string;
+  generation: number;
+}>;
+
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
   if (value && typeof value === "object") {
@@ -197,20 +209,66 @@ export async function consumeDesignWritebackApproval(approval: DesignApprovalBin
   });
 }
 
+export function designWritebackAcknowledgements(approval: DesignApprovalBinding): DesignAcknowledgements {
+  return Object.fromEntries(
+    DESIGN_ACKNOWLEDGEMENT_CONSUMERS.map((consumer) => [consumer, {
+      approval_id: approval.approval_id,
+      generation: approval.generation,
+    }]),
+  ) as DesignAcknowledgements;
+}
+
+export function redactedDesignWritebackEvidence(
+  approval: DesignApprovalBinding,
+  receipt: { acceptance_id: string; result_status: "rejected" | "written"; target: string; trace_id: string },
+) {
+  const acknowledgements = designWritebackAcknowledgements(approval);
+  for (const acknowledgement of Object.values(acknowledgements)) {
+    if (acknowledgement.approval_id !== approval.approval_id || acknowledgement.generation !== approval.generation) {
+      throw new Error("design_acknowledgement_mismatch");
+    }
+  }
+  return {
+    acknowledgement_consumers: DESIGN_ACKNOWLEDGEMENT_CONSUMERS,
+    generation: approval.generation,
+    receipt: {
+      acceptance_hash: hashApprovalContent(receipt.acceptance_id),
+      result_status: receipt.result_status,
+      target_hash: hashApprovalContent(receipt.target),
+      trace_hash: hashApprovalContent(receipt.trace_id),
+    },
+    redacted: true,
+  };
+}
+
 export async function finalizeDesignWritebackApproval(
   approval: DesignApprovalBinding,
-  result: { evidence: string; result_id?: string; status: "failed" | "succeeded" },
+  result: {
+    receipt: { acceptance_id: string; result_status: "rejected" | "written"; target: string; trace_id: string };
+    result_id?: string;
+    status: "failed" | "succeeded";
+  },
 ) {
   const source_head = await campaignHead();
-  return invokeAuthority("finalize", {
+  const finalized = await invokeAuthority("finalize", {
     ...commonBinding({ ...approval, source_head }),
     approval_id: approval.approval_id,
     consumer: approval.consumer,
-    evidence: result.evidence,
+    evidence: stableJson(redactedDesignWritebackEvidence(approval, result.receipt)),
     generation: String(approval.generation),
     operation: approval.operation,
     preview: approval.preview_id,
     result_id: result.result_id ?? `design-writeback-${randomUUID()}`,
     status: result.status,
   });
+  if (!finalized.ok) return finalized;
+  return {
+    ok: true as const,
+    value: {
+      ...finalized.value,
+      acknowledgement_consumers: DESIGN_ACKNOWLEDGEMENT_CONSUMERS,
+      generation: approval.generation,
+      redacted: true,
+    },
+  };
 }
