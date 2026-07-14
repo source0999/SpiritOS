@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
 import { isSpiritFlixAdminPathError } from "@/lib/spiritflix/admin/paths";
 import {
   buildSpiritFlixSmartRenamePlan,
@@ -9,6 +10,10 @@ import {
 } from "@/lib/spiritflix/admin/smart";
 
 export const runtime = "nodejs";
+
+export async function POST(_request: NextRequest) {
+  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
+}
 
 function numberParam(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -44,7 +49,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function legacyPOST(request: NextRequest) {
   let body: {
     path?: string;
     paths?: string[];
