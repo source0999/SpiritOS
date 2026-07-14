@@ -9,11 +9,11 @@
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **AR-002 Cartographer durable selection/consumer proof**.
+- Phase: **Phase 1**; increment: **AR-003 Design writeback final acknowledgement envelope**.
 - Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
-- GO eligibility: `false`; all seven SpiritFlix admin mutation routes now use the durable Approval Authority (preview/issue/consume/finalize), but AR-002 (Cartographer durable selection/consumer proof) and AR-003 (Design writeback final acknowledgement envelope) remain incomplete.
-- Next concrete gate: `ar002_cartographer_durable_selection_consumer_proof` - prove Cartographer's durable selection path and consumer acknowledgement through the canonical authority.
+- GO eligibility: `false`; all seven SpiritFlix admin mutation routes and the Cartographer selection handoff use the durable Approval Authority, but AR-003 (Design writeback final acknowledgement envelope) and final Phase 1 evidence remain incomplete.
+- Next concrete gate: `ar003_design_writeback_final_acknowledgement_envelope` - prove Design canonical writeback finalizes one durable approval with matched consumer/reviewer/verifier/evidence acknowledgement and a redacted receipt.
 
 ## Git-bound gate status
 
@@ -24,7 +24,7 @@
 | AR-002 duplicate cleanup | completed slice | `e68d3ba6`, `b9f5fdeb`, `3a01f8d6`, `42ded963`, `e8e26978`; mounted direct execution routes removed, legacy mutation routes fail closed |
 | Approval Authority bootstrap/lifecycle | completed | `b84bf012`, `2cf49fa9`, `b2bae870`, `540fd3d6` |
 | Design Studio writeback | substantially implemented | authenticated operator route resolves persisted Design previews and the canonical writeback consume/finalize chain has real HTTP proof |
-| Cartographer containment/transfer | partial | `3a01f8d6`, `42ded963`; final acceptance remains |
+| Cartographer containment/transfer | completed slice | durable proposal selection preview -> authenticated operator issuance -> canonical non-mutating transfer consumer -> transactional consume/finalize -> matched acknowledgement receipt; legacy direct transfer fails closed |
 | Coding durable approval/acknowledgement | substantially implemented | `b4d8e49f` through `540fd3d6` |
 | operator-session foundation | completed | HTTP-only session route plus origin, CSRF, expiry, revocation, role, and audit foundation; focused Vitest proof |
 | Authenticated coding issuance | completed slice | real HTTP route -> persisted preview -> authenticated issuance -> durable task apply -> consume/finalize; all four acknowledgement roles share one ID/generation |
@@ -45,4 +45,4 @@
 
 `git status --short`; `git rev-parse HEAD`; protected product-head `rev-parse` checks; `PYTHONPATH=. ...pytest source_proxy/tests/test_campaign_approval_authority.py -q` (9 passed); `PYTHONPATH=. ...pytest source_proxy/tests/test_cartographer_api.py -q` (**36 failed, 231 passed, 4 subtests passed** because its legacy mutable-route expectations were intentionally invalidated); focused Design route/writer suite (32 passed); `node scripts/coding/test-validate-design-studio-receipts.mjs` (9 negative fixtures passed); `npm run typecheck`; `npm run campaign-1:validate-authority`; `git diff --check`; existing redacted browser and build receipts.
 
-Last verified: `2026-07-14T04:02:00Z`. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.
+Last verified: `2026-07-14T20:15:00Z`. AR-002 focused profile: `PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_campaign_approval_authority.py -q` (**12 passed**); `npx vitest run src/app/v1/operator/cartographer-selection/__tests__/route.test.ts` (**2 passed**); `npm run typecheck`; `npm run campaign-1:validate-authority`; `npm run campaign-1:validate-continuity`; and `git diff --check` all passed. The next ledger update is required before a turn ends and must record accepted HEAD, exact dirty files, phase, next gate, product heads, and validator result.

@@ -149,7 +149,7 @@ class CartographerApiTests(unittest.TestCase):
             ]
             self.assertEqual(len(matches), 1, f"{method} {path} must have one canonical route")
 
-    def test_approval_preview_routes_are_registered_once(self) -> None:
+    def test_legacy_approval_token_routes_are_not_registered(self) -> None:
         routes = _test_app().routes
         for path, method in (
             ("/v1/cartographer/approval-token/validate", "GET"),
@@ -161,7 +161,7 @@ class CartographerApiTests(unittest.TestCase):
                 route for route in routes
                 if getattr(route, "path", None) == path and method in getattr(route, "methods", set())
             ]
-            self.assertEqual(len(matches), 1, f"{method} {path} must have one canonical route")
+            self.assertEqual(len(matches), 0, f"{method} {path} must not restore client approval authority")
 
     def test_status_contract_is_read_only_empty_state(self) -> None:
         with patch.dict(
@@ -4550,7 +4550,7 @@ class CartographerApiTests(unittest.TestCase):
         self.assertIn("deletion_enabled remains false", payload["expected_outcome"])
         self.assertFalse(payload["safety"]["write_actions_enabled"])
 
-    def test_approved_low_risk_cleanup_deletes_only_approved_files_and_audits(self) -> None:
+    def test_approved_low_risk_cleanup_route_fails_closed_without_deleting_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             (root / "package.json").write_text("{}", encoding="utf-8")
@@ -4582,34 +4582,14 @@ class CartographerApiTests(unittest.TestCase):
             high_exists = high_path.exists()
             blocked_exists = blocked_path.exists()
 
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        self.assertEqual(body["status"], "cleanup_applied")
-        self.assertTrue(body["write_actions_enabled"])
-        self.assertTrue(body["deletion_enabled"])
-        self.assertTrue(body["cleanup_actions_enabled"])
-        self.assertTrue(body["actions_taken"])
-        self.assertEqual(
-            body["deleted_files"],
-            [
-                "scout/soak-logs/scout-soak-one.json",
-                "scout/soak-logs/scout-soak-two.json",
-            ],
-        )
-        self.assertEqual(body["deleted_file_count"], 2)
-        self.assertFalse(body["committed"])
-        self.assertFalse(body["pushed"])
-        self.assertFalse(low_one_exists)
-        self.assertFalse(low_two_exists)
+        self.assertEqual(response.status_code, 410)
+        self.assertEqual(response.json()["detail"]["reason_code"], "forbidden_cartographer_mutation")
+        self.assertTrue(low_one_exists)
+        self.assertTrue(low_two_exists)
         self.assertTrue(medium_exists)
         self.assertTrue(high_exists)
         self.assertTrue(blocked_exists)
-        self.assertIn("No deletion has occurred", body["rollback_instructions"][0])
-        cleanup_events = [event for event in audit["events"] if event["event"] == "low_risk_cleanup_applied"]
-        self.assertEqual(len(cleanup_events), 1)
-        self.assertEqual(cleanup_events[0]["action"], "delete_low_risk_clutter")
-        self.assertEqual(cleanup_events[0]["actor"], "Britton")
-        self.assertEqual(cleanup_events[0]["changed_files"], body["deleted_files"])
+        self.assertFalse([event for event in audit["events"] if event["event"] == "low_risk_cleanup_applied"])
 
     def test_low_risk_cleanup_rejects_without_approval(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -10887,118 +10867,11 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(proposal["fingerprint"], generated["fingerprint"])
         self.assertFalse(proposal["generated"])
 
-    def test_apply_approved_doc_proposal_applies_and_verifies_blueprint_only_diff(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            _write_minimal_blueprints(root)
-            _write_minimal_blueprint_validator(root)
-            _git(root, "init")
-            _git(root, "config", "user.email", "cartographer@example.test")
-            _git(root, "config", "user.name", "Cartographer Test")
-            _git(root, "add", ".")
-            _git(root, "commit", "-m", "initial commit")
-            diff = "\n".join(
-                [
-                    "diff --git a/_blueprints/current/dashboard_state.md b/_blueprints/current/dashboard_state.md",
-                    "--- a/_blueprints/current/dashboard_state.md",
-                    "+++ b/_blueprints/current/dashboard_state.md",
-                    "@@ -17,3 +17,5 @@ last_verified: 2026-05-15",
-                    " ---",
-                    " # Dashboard State",
-                    "+",
-                    "+Cartographer approved doc apply note.",
-                    "",
-                ]
+    def test_apply_approved_doc_proposal_fails_closed_without_writing(self) -> None:
+        with self.assertRaisesRegex(Exception, "proposal-only"):
+            apply_approved_doc_proposal(
+                proposal_id="bp-20260515-apply", approved=True, approved_by="test",
             )
-            _write_proposal(
-                root,
-                "approved",
-                "bp-20260515-apply",
-                {
-                    "status": "approved",
-                    "type": "blueprint_update",
-                    "component": "dashboard",
-                    "affected_blueprints": ["dashboard-state"],
-                    "changed_files": ["src/components/dashboard/HomelabBlueprintReviewWidget.tsx"],
-                    "proposed_files": ["_blueprints/current/dashboard_state.md"],
-                    "approved_diff": diff,
-                    "transitions": [
-                        {
-                            "status": "approved",
-                            "timestamp": "2026-05-15T10:06:00Z",
-                            "actor": "Britton",
-                        }
-                    ],
-                },
-            )
-
-            with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
-                payload = apply_approved_doc_proposal(
-                    proposal_id="bp-20260515-apply",
-                    approved=True,
-                    approved_by="test",
-                )
-                proposals = build_cartographer_proposals()
-                audit = build_cartographer_audit_trail()
-
-            content = (root / "_blueprints" / "current" / "dashboard_state.md").read_text(
-                encoding="utf-8"
-            )
-            approved_path = root / "_blueprints" / "proposals" / "approved" / "bp-20260515-apply.json"
-            applied_path = root / "_blueprints" / "proposals" / "applied" / "bp-20260515-apply.json"
-            approved_path_exists = approved_path.exists()
-            applied_path_exists = applied_path.exists()
-            backup_root = root / payload["execution"]["backup_root"]
-            backup_manifest = json.loads(
-                (root / payload["execution"]["audit"]["backup_manifest"]).read_text(encoding="utf-8")
-            )
-            approved_diff_copy = (root / payload["execution"]["audit"]["approved_diff_path"]).read_text(
-                encoding="utf-8"
-            )
-            backup_root_exists = backup_root.is_dir()
-
-        self.assertEqual(payload["status"], "applied")
-        self.assertTrue(payload["ok"])
-        self.assertEqual(payload["applied_files"], ["_blueprints/current/dashboard_state.md"])
-        self.assertEqual(payload["changed_files"], ["_blueprints/current/dashboard_state.md"])
-        self.assertFalse(payload["committed"])
-        self.assertFalse(payload["pushed"])
-        self.assertIn("Cartographer approved doc apply note.", content)
-        self.assertTrue(payload["verification"]["allowed_files_passed"])
-        self.assertTrue(payload["verification"]["markdown_validation_passed"])
-        self.assertTrue(payload["verification"]["blueprint_metadata_validation_passed"])
-        self.assertTrue(payload["verification"]["git_diff_check_passed"])
-        self.assertEqual(payload["verification"]["status"], "verified")
-        self.assertFalse(payload["safety"]["commits_enabled"])
-        self.assertFalse(payload["safety"]["pushes_enabled"])
-        self.assertTrue(backup_root_exists)
-        self.assertEqual(approved_diff_copy, diff.strip())
-        self.assertEqual(backup_manifest["stage"], "applied")
-        self.assertEqual(backup_manifest["approved_by"], "test")
-        self.assertEqual(backup_manifest["task_id"], payload["task_id"])
-        self.assertEqual(backup_manifest["audit_record"]["task_id"], payload["task_id"])
-        self.assertEqual(
-            backup_manifest["backed_up_files"][0]["path"],
-            "_blueprints/current/dashboard_state.md",
-        )
-        self.assertIn("rollback", backup_manifest["rollback_hint"].lower())
-        self.assertFalse(approved_path_exists)
-        self.assertTrue(applied_path_exists)
-        proposal = next(
-            item for item in proposals["proposals"] if item["proposal_id"] == "bp-20260515-apply"
-        )
-        self.assertEqual(proposal["status"], "applied")
-        self.assertTrue(proposal["applied"])
-        self.assertTrue(proposal["action_taken"])
-        self.assertEqual(proposal["transitions"][-1]["status"], "applied")
-        self.assertEqual(proposal["transitions"][-1]["actor"], "test")
-        applied_events = [
-            event
-            for event in audit["events"]
-            if event["proposal_id"] == "bp-20260515-apply" and event["event"] == "applied"
-        ]
-        self.assertEqual(len(applied_events), 1)
-        self.assertEqual(applied_events[0]["files"], ["_blueprints/current/dashboard_state.md"])
 
     def test_apply_approved_doc_proposal_rejects_code_files_before_write(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -11039,7 +10912,7 @@ class CartographerApiTests(unittest.TestCase):
             )
 
             with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": str(root)}, clear=False):
-                with self.assertRaisesRegex(Exception, "Markdown files under _blueprints"):
+                with self.assertRaisesRegex(Exception, "proposal-only"):
                     apply_approved_doc_proposal(
                         proposal_id="bp-20260515-code",
                         approved=True,
@@ -11059,7 +10932,7 @@ class CartographerApiTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 422)
-        self.assertEqual(response.json()["detail"]["reason_code"], "approval_required")
+        self.assertEqual(response.json()["detail"]["reason_code"], "forbidden_cartographer_mutation")
 
     def test_dashboard_review_route_approves_without_applying_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

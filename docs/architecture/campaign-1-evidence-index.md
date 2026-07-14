@@ -25,7 +25,8 @@ Schema: `spiritos-campaign-1-evidence-index/v1`
 | --- | --- | --- |
 | Cartographer direct execution registration | pass | `source_proxy/api/cartographer.py` has no `/safe-write` or `/verification/run` registration; AST validator rejects duplicate method/path pairs. |
 | Cartographer legacy mutation entry points | pass, fail closed | docs/git/clutter/starter-blueprint compatibility routes return `410 forbidden_cartographer_mutation`; router imports no executor symbols. |
-| Complete Cartographer API regression | fail, expected migration backlog | 36 legacy mutable-route tests failed; 231 passed and 4 subtests passed. No legacy bypass was restored. |
+| Complete Cartographer API regression | fail, expected migration backlog | legacy mutable-route fixtures still expect now-forbidden `200` writes. No legacy bypass was restored; the AR-002 focused lifecycle profile is authoritative for this slice. |
+| AR-002 durable selection/consumer | pass, focused production path | [redacted receipt](campaign-1-evidence/cartographer-durable-selection-20260714.md): persisted selection -> authenticated operator issuance -> canonical proposal-only transfer consumer -> consume/finalize with one ID/generation acknowledgement envelope. |
 | Design preview contract tests | pass | 32 tests across preview, authenticated Design approval, and writer guard suites. |
 | Design negative receipt fixtures | pass | 9 malformed receipt cases rejected. |
 | AR-001 ordinary browser session boundary | pass for session slice | [redacted server-owned-session receipt](campaign-1-evidence/ar001-server-owned-session-20260714.md); client credential and target overrides are rejected. Administrative mutation authority remains unaccepted. |

@@ -4,14 +4,20 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter
+from fastapi import Header
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from source_proxy.cartographer.apply import CartographerApplyError, apply_approved_doc_proposal
-from source_proxy.cartographer.proposal_transfer import (
-    CartographerProposalTransferError,
-    transfer_proposal,
+from source_proxy.cartographer.cartographer_selection_authority import (
+    CartographerSelectionError,
+    consume_cartographer_selection,
+    finalize_cartographer_selection,
+    issue_cartographer_selection,
+    persist_cartographer_selection,
+    reject_cartographer_selection,
 )
+from source_proxy.approval.operator_session import OperatorSessionError, verify_operator_approval_assertion
 from source_proxy.cartographer.approval_token_runtime import (
     APPROVAL_TOKEN_REQUIRED_KILL_SWITCH_STATE,
     APPROVAL_TOKEN_SCHEMA_VERSION,
@@ -206,6 +212,20 @@ class CartographerApplyApprovedRequest(BaseModel):
 class CartographerProposalTransferRequest(BaseModel):
     consumer: str = Field(max_length=120)
     target: str = Field(max_length=500)
+
+
+class CartographerSelectionPreviewRequest(CartographerProposalTransferRequest):
+    pass
+
+
+class CartographerSelectionOperatorRequest(BaseModel):
+    action: str = Field(max_length=10)
+    generation: int
+    preview_id: str = Field(max_length=200)
+
+
+class CartographerSelectionExecuteRequest(CartographerProposalTransferRequest):
+    approval_id: str = Field(max_length=200)
 
 
 class CartographerProposalReviewRequest(BaseModel):
@@ -1747,17 +1767,84 @@ async def cartographer_transfer_proposal(
     proposal_id: str,
     request: CartographerProposalTransferRequest,
 ) -> dict[str, Any]:
+    raise HTTPException(
+        status_code=410,
+        detail={"reason_code": "cartographer_direct_transfer_forbidden", "proposal_id": proposal_id},
+    )
+
+
+@router.post("/proposals/{proposal_id}/selection-preview")
+async def cartographer_selection_preview(
+    proposal_id: str,
+    request: CartographerSelectionPreviewRequest,
+) -> dict[str, Any]:
     try:
-        return transfer_proposal(
-            proposal_id=proposal_id,
-            consumer=request.consumer,
-            target=request.target,
+        preview = persist_cartographer_selection(
+            proposal_id=proposal_id, consumer=request.consumer, target=request.target,
         )
-    except CartographerProposalTransferError as error:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": str(error), "reason_code": error.reason_code},
-        ) from error
+        return {
+            "authority": "spiritos-approval-authority",
+            "cartographer_identity": "cartographer-proposal-only",
+            "consumer": "cartographer-transfer-consumer",
+            "downstream_consumer": request.consumer,
+            "preview": preview,
+            "write_authority": False,
+            "approval_issuer_authority": False,
+        }
+    except CartographerSelectionError as error:
+        raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
+
+
+@router.post("/proposals/{proposal_id}/operator-selection")
+async def cartographer_operator_selection(
+    proposal_id: str,
+    request: CartographerSelectionOperatorRequest,
+    x_spiritos_operator_assertion: str = Header(default=""),
+) -> dict[str, Any]:
+    try:
+        assertion = verify_operator_approval_assertion(x_spiritos_operator_assertion)
+        if (
+            request.action not in {"approve", "reject"}
+            or assertion["task_id"] != proposal_id
+            or assertion["preview_id"] != request.preview_id
+            or assertion["generation"] != request.generation
+            or assertion["action"] != request.action
+        ):
+            raise OperatorSessionError("operator_assertion_mismatch")
+        if request.action == "reject":
+            return {"authority": "spiritos-approval-authority", "rejected": reject_cartographer_selection(preview_id=request.preview_id, expected_generation=request.generation)}
+        return {"authority": "spiritos-approval-authority", "consumer": "cartographer-transfer-consumer", "approval": issue_cartographer_selection(preview_id=request.preview_id, expected_generation=request.generation)}
+    except OperatorSessionError as error:
+        raise HTTPException(status_code=403, detail={"reason_code": str(error)}) from error
+    except CartographerSelectionError as error:
+        raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
+
+
+@router.post("/proposals/{proposal_id}/selection-transfer")
+async def cartographer_selection_transfer(
+    proposal_id: str,
+    request: CartographerSelectionExecuteRequest,
+) -> dict[str, Any]:
+    try:
+        consumed = consume_cartographer_selection(
+            approval_id=request.approval_id, proposal_id=proposal_id,
+            consumer=request.consumer, target=request.target,
+        )
+        finalized = finalize_cartographer_selection(
+            consumed=consumed, proposal_id=proposal_id,
+            consumer=request.consumer, target=request.target,
+        )
+        return {
+            "authority": "spiritos-approval-authority",
+            "cartographer_identity": "cartographer-proposal-only",
+            "consumer": "cartographer-transfer-consumer",
+            "approval_id": consumed["approval_id"], "generation": consumed["generation"],
+            "acknowledgements": finalized["acknowledgements"],
+            "write_authority": False, "approval_issuer_authority": False,
+            "git_authority": False, "queue_authority": False,
+        }
+    except CartographerSelectionError as error:
+        raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
 
 
 @router.post("/proposals/{proposal_id}/apply-approved")

@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 import source_proxy.approval.campaign_authority as authority
 from source_proxy.api.cartographer import cartographer_docs_autopilot_apply, router as cartographer_router
@@ -19,16 +21,18 @@ from source_proxy.approval.campaign_authority import (
     finalize_coding_execution_approval,
     persist_coding_execution_preview,
 )
+from source_proxy.cartographer import cartographer_selection_authority as cartographer_selection
+from source_proxy.cartographer.proposal_transfer import CartographerProposalTransferError, transfer_proposal
 
 
-def issue(preview_id: str) -> str:
+def issue(preview_id: str, *, consumer: str = "coding-executor", operation: str = "coding_execution") -> str:
     result = subprocess.run(
         ["python3", "scripts/approval-authority.py", "issue"],
         input=json.dumps({
             "preview_id": preview_id,
             "expected_generation": "1",
-            "consumer": "coding-executor",
-            "operation": "coding_execution",
+            "consumer": consumer,
+            "operation": operation,
             "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
         }),
         text=True,
@@ -254,3 +258,88 @@ def test_cartographer_legacy_mutation_compatibility_route_fails_closed() -> None
         asyncio.run(cartographer_docs_autopilot_apply())
     assert blocked.value.status_code == 410
     assert blocked.value.detail["reason_code"] == "forbidden_cartographer_mutation"
+
+
+def test_cartographer_direct_transfer_route_and_helper_fail_closed() -> None:
+    app = FastAPI()
+    app.include_router(cartographer_router)
+    response = TestClient(app).post(
+        "/v1/cartographer/proposals/bp-any/transfer",
+        json={"consumer": "coding-executor", "target": "src/app/page.tsx"},
+    )
+    assert response.status_code == 410
+    assert response.json()["detail"]["reason_code"] == "cartographer_direct_transfer_forbidden"
+    with pytest.raises(CartographerProposalTransferError) as direct:
+        transfer_proposal(proposal_id="bp-any", consumer="coding-executor", target="src/app/page.tsx")
+    assert direct.value.reason_code == "cartographer_direct_transfer_forbidden"
+
+
+def test_cartographer_durable_selection_binds_consumer_target_and_acknowledgements(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Proposal:
+        proposal_id = "bp-campaign1-selection"
+        approved_diff = "diff --git a/blueprint b/blueprint\n+"
+        diff_preview = ""
+        proposed_files = ["_blueprints/current/dashboard.md"]
+        fingerprint = "proposal-fingerprint"
+
+    monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [Proposal()])
+    preview = cartographer_selection.persist_cartographer_selection(
+        proposal_id=Proposal.proposal_id, consumer="design-writeback", target="design:dashboard",
+    )
+    approval_id = issue(
+        str(preview["preview_id"]), consumer="cartographer-transfer-consumer",
+        operation="cartographer_selection_transfer",
+    )
+    consumed = cartographer_selection.consume_cartographer_selection(
+        approval_id=approval_id, proposal_id=Proposal.proposal_id,
+        consumer="design-writeback", target="design:dashboard",
+    )
+    finalized = cartographer_selection.finalize_cartographer_selection(
+        consumed=consumed, proposal_id=Proposal.proposal_id,
+        consumer="design-writeback", target="design:dashboard",
+    )
+    assert finalized["receipt"]["state"] == "consumed"
+    assert set(finalized["acknowledgements"]) == {
+        "cartographer-transfer-consumer", "cartographer-reviewer", "cartographer-verifier", "evidence-recorder",
+    }
+    assert all(value == {"approval_id": approval_id, "generation": 1} for value in finalized["acknowledgements"].values())
+
+    with pytest.raises(CampaignApprovalError) as replay:
+        cartographer_selection.consume_cartographer_selection(
+            approval_id=approval_id, proposal_id=Proposal.proposal_id,
+            consumer="design-writeback", target="design:dashboard",
+        )
+    assert replay.value.reason_code == "approval_already_consumed"
+
+
+def test_cartographer_durable_selection_rejects_wrong_consumer_and_target(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Proposal:
+        proposal_id = "bp-campaign1-selection-reject"
+        approved_diff = "diff --git a/blueprint b/blueprint\n+"
+        diff_preview = ""
+        proposed_files = ["_blueprints/current/dashboard.md"]
+        fingerprint = "proposal-fingerprint"
+
+    monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [Proposal()])
+    preview = cartographer_selection.persist_cartographer_selection(
+        proposal_id=Proposal.proposal_id, consumer="coding-executor", target="src/app/page.tsx",
+    )
+    approval_id = issue(
+        str(preview["preview_id"]), consumer="cartographer-transfer-consumer",
+        operation="cartographer_selection_transfer",
+    )
+    with pytest.raises(CampaignApprovalError) as wrong_target:
+        cartographer_selection.consume_cartographer_selection(
+            approval_id=approval_id, proposal_id=Proposal.proposal_id,
+            consumer="coding-executor", target="src/app/other.tsx",
+        )
+    assert wrong_target.value.reason_code == "approval_target_mismatch"
+    with pytest.raises(CampaignApprovalError) as wrong_consumer:
+        cartographer_selection.persist_cartographer_selection(
+            proposal_id=Proposal.proposal_id, consumer="unregistered-writer", target="src/app/page.tsx",
+        )
+    assert wrong_consumer.value.reason_code == "cartographer_selection_consumer_mismatch"
