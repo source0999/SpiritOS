@@ -24,8 +24,9 @@ SECRET_PATH = SECRET_DIR / "approval-authority.env"
 CONSUMER_OPERATIONS = {
     "design-writeback": "design_writeback",
     "coding-executor": "coding_execution",
+    "spiritflix-admin-executor": "spiritflix_admin_mutation",
 }
-ACKNOWLEDGEMENT_CONSUMERS = {"coding-reviewer", "coding-verifier", "evidence-recorder"}
+ACKNOWLEDGEMENT_CONSUMERS = {"coding-reviewer", "coding-verifier", "spiritflix-admin-reviewer", "spiritflix-admin-verifier", "evidence-recorder"}
 TERMINAL_REASONS = {
     "consumed": "approval_already_consumed",
     "rejected": "approval_rejected",
@@ -121,7 +122,7 @@ def persist_preview(data):
     exact_campaign_identity(data)
     target = require(data, "target")
     plugin = require(data, "plugin")
-    if plugin not in {"design-studio", "coding-shell", "dummy-product-site"}:
+    if plugin not in {"design-studio", "coding-shell", "dummy-product-site", "spiritflix-admin"}:
         fail("approval_plugin_mismatch")
     content_hash = require(data, "content_hash")
     context_hash = require(data, "context")

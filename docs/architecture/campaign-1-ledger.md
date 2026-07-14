@@ -12,8 +12,8 @@
 - Phase: **Phase 1**; increment: **SpiritFlix server-owned session migration and admin mutation containment**.
 - Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
-- GO eligibility: `false`; all seven direct administrative mutation routes fail closed, but their lower-level writers still require distinct durable approval execution and AR-002/AR-003 remain incomplete.
-- Next concrete gate: `phase1_spiritflix_admin_durable_authority_contract` - bind persisted server-owned admin previews to the existing Approval Authority and canonical executor before re-enabling any administrative mutation.
+- GO eligibility: `false`; the shared Authority now has a SpiritFlix admin preview/issue/consume/finalize contract, but no authenticated HTTP caller or lower-level writer has migrated to it yet.
+- Next concrete gate: `phase1_spiritflix_admin_operator_issuance_and_executor_migration` - add authenticated operator issuance and migrate the first bounded admin writer to the canonical executor.
 
 ## Git-bound gate status
 
@@ -37,6 +37,7 @@
 | AR-001 ordinary BFF session migration | completed slice | server-owned opaque session/BFF implementation; [redacted receipt](campaign-1-evidence/ar001-server-owned-session-20260714.md); 64 focused tests passed |
 | AR-001 admin mutation containment | active | distinct durable authority remains required; ordinary media session is explicitly insufficient |
 | AR-001 direct mutation routes | completed slice | `db6d4c97`, `0ee7b694`, `2961548a`, `af1646ed`, `57f9f9db`: all seven inventoried routes return `410 spiritflix_admin_direct_mutation_forbidden` |
+| AR-001 durable admin authority contract | completed slice | shared Authority supports `spiritflix_admin_mutation` preview, issue, consume, and finalize through `spiritflix-admin-executor` |
 
 ## Last verified commands
 

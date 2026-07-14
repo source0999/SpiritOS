@@ -37,6 +37,8 @@ The following production routes were traced after the ordinary session migration
 
 Containment update: the seven mutation routes above are now direct fail-closed adapters returning `410 spiritflix_admin_direct_mutation_forbidden`. No ordinary media session can reach their mutation runtime. This is containment, not approval-chain acceptance: lower-level writers remain unavailable to production callers until the durable admin preview/approval/executor contract exists.
 
+Durable contract update: `source_proxy.approval.spiritflix_admin_authority` persists the exact action/target/configured-root/plan hash in the existing Approval Authority, issues only `spiritflix-admin-executor` approvals for `spiritflix_admin_mutation`, transactionally consumes exact bindings, and finalizes a redacted result. HTTP operator issuance and writer-port migration remain required.
+
 Lower-level writers include `handleSpiritFlixAdminAction`, `moveSpiritFlixAdminPath`, `writeSmartAnalysis`, `writeApprovedSmartMetadataSidecar`, `setSpiritFlixManualModelForItem`, `setSpiritFlixManualTagsForItem`, and `requestSpiritFlixFaceLearning`. They are directly importable today and therefore require authority context at their canonical execution boundary; route-only checks are insufficient. Rescan, thumbnail, probe, sampler, and smart-processing workers can spawn processes and must retain bound preview/approval/result identities when promoted to execution.
 
 | Path | Runtime owner / operation | Authority finding | Implementation map |
