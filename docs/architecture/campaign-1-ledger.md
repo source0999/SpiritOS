@@ -2,17 +2,17 @@
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
-- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `69fdd94418068bffc882ae488edc33a1f0aecafd` (the current commit is accepted only when it atomically updates this ledger and state).
+- Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; accepted checkpoint parent: `08744410a4334148837a61e449038f9d6e04d7df` (the current commit is accepted only when it atomically updates this ledger and state).
 - Branch/worktree: `codex/spiritos-campaign-1-foundation-20260712` / `/home/source/SpiritOS-campaign-1-20260712`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
 - Borrowed worktree: SpiritFlix `_worktrees/` is borrowed and untouched.
 
 ## Current checkpoint
 
-- Phase: **Phase 1**; increment: **Cartographer execution containment and Design profile reconciliation**.
+- Phase: **Phase 1**; increment: **SpiritFlix server-owned session migration and admin mutation containment**.
 - Dirty state at checkpoint: this ledger, state, [the evidence index](campaign-1-evidence-index.md), [the truthful test profiles](campaign-1-test-profiles.md), and the reconciled authority inventory. They are committed atomically with this ledger update; later active files must be named explicitly and are never cleaned by the continuity process.
 - Critical blocker: `none`; this is a verification failure, not an external dependency. The final Campaign verdict is intentionally withheld.
-- GO eligibility: `false`; `e8e26978` removes the remaining mounted Cartographer execution imports and adds fail-closed route coverage, but AR-001 ordinary browser-session authority remains unaccepted. AR-002 needs durable selection/consumer acknowledgement proof; AR-003 needs its final acknowledgement envelope.
+- GO eligibility: `false`; ordinary SpiritFlix media sessions are server-owned at `08744410`, but seven direct administrative mutation routes and their lower-level writers still require distinct durable approval containment. AR-002 needs durable selection/consumer acknowledgement proof; AR-003 needs its final acknowledgement envelope.
 - Next concrete gate: `phase1_spiritflix_server_owned_session_migration_admin_mutation_containment` - inventory every SpiritFlix administrative mutation entry point and migrate or fail-close it behind distinct durable operator authority.
 
 ## Git-bound gate status

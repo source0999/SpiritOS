@@ -18,6 +18,25 @@ The historical rows intentionally remain below as the source-discovery record. A
 
 ## AR-001  SpiritFlix
 
+### Administrative mutation inventory — 2026-07-14
+
+The following production routes were traced after the ordinary session migration. `none` means the route has no authenticated operator, durable approval, CSRF/origin enforcement, or result evidence boundary today; it does not mean the route is safe. Browser-controlled roots, paths, actions, and metadata must be replaced by server-resolved preview bindings before execution.
+
+| Route | Runtime / effect | Current authority and browser control | Verdict |
+| --- | --- | --- | --- |
+| `admin/actions` POST | `handleSpiritFlixAdminAction`; create, move, delete, restore, rename and Jellyfin action dispatch | none; caller controls action and path-bearing request; preview store is not durable approval | migrate first |
+| `admin/smart/analysis` POST | analysis/review sidecar writes and approved metadata export | none; caller controls action and video path | preview-only or migrate |
+| `admin/smart/batch` POST | batch review/run and smart-analysis sidecar writes | none; caller controls action, roots/paths, recursive mode and force | preview-only or migrate |
+| `library-smart-rescan` POST | starts rescan child process | none; direct process start | fail closed pending `index.rebuild` authority |
+| `videos/[itemId]/model` PUT | manual-model sidecar/index write | none; caller controls item/file path/model | migrate `metadata.write` |
+| `videos/[itemId]/tags` PUT | manual-tag sidecar/index write | none; caller controls item/file path/tags | migrate `metadata.write` |
+| `videos/[itemId]/face-learning` POST | performer/face sidecar and related-item updates | none; caller controls paths, model, sidecar and related targets | migrate `face.learn` |
+| `admin/library` POST | Jellyfin metadata listing | ordinary BFF session + CSRF/origin; server resolves credential/user/server | canonical read-only |
+| `face-metadata` POST | metadata lookup only | unauthenticated but non-mutating; caller item paths influence lookup | constrain as read-only later |
+| `jellyfin`, image, stream, HLS | ordinary media BFF | server-owned credential/session; write methods require CSRF/origin | canonical media transport, not admin authority |
+
+Lower-level writers include `handleSpiritFlixAdminAction`, `moveSpiritFlixAdminPath`, `writeSmartAnalysis`, `writeApprovedSmartMetadataSidecar`, `setSpiritFlixManualModelForItem`, `setSpiritFlixManualTagsForItem`, and `requestSpiritFlixFaceLearning`. They are directly importable today and therefore require authority context at their canonical execution boundary; route-only checks are insufficient. Rescan, thumbnail, probe, sampler, and smart-processing workers can spawn processes and must retain bound preview/approval/result identities when promoted to execution.
+
 | Path | Runtime owner / operation | Authority finding | Implementation map |
 | --- | --- | --- | --- |
 | `src/app/api/spiritflix/admin/actions/route.ts` | Next route -> `handleSpiritFlixAdminAction`; filesystem/Jellyfin/process-capable action dispatch | Caller JSON is the only current authority; no identity, origin, CSRF, operation capability, or durable receipt boundary | Canonical owner: new server-only SpiritFlix authority service. Migrate this route first; forbid direct action-handler callers. |
