@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
 import { isSpiritFlixAdminPathError } from "@/lib/spiritflix/admin/paths";
 import {
   buildSpiritFlixSmartRenamePlan,
@@ -8,12 +7,9 @@ import {
   runSpiritFlixSmartBatch,
   type SpiritFlixSmartBatchReviewMode,
 } from "@/lib/spiritflix/admin/smart";
+import { consumeSpiritFlixAdminApproval, finalizeSpiritFlixAdminApproval } from "@/lib/coding/spiritflix-admin-approval-authority";
 
 export const runtime = "nodejs";
-
-export async function POST(_request: NextRequest) {
-  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
-}
 
 function numberParam(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -49,7 +45,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function legacyPOST(request: NextRequest) {
+export async function POST(request: NextRequest) {
   let body: {
     path?: string;
     paths?: string[];
@@ -59,6 +55,7 @@ async function legacyPOST(request: NextRequest) {
     recursive?: boolean;
     maxItems?: number;
     force?: boolean;
+    approval_id?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -66,10 +63,16 @@ async function legacyPOST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const action = body.action?.trim() || "run";
-  if (action !== "preview" && action !== "run" && action !== "review" && action !== "renamePlan") {
+  const approvalId = typeof body.approval_id === "string" ? body.approval_id : "";
+  if (!approvalId) return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 });
+  const actionLabel = body.action?.trim() || "run";
+  if (actionLabel !== "preview" && actionLabel !== "run" && actionLabel !== "review" && actionLabel !== "renamePlan") {
     return NextResponse.json({ error: "Unsupported smart batch action." }, { status: 400 });
   }
+  const target = `spiritflix:smart-batch:${body.path ?? (Array.isArray(body.paths) ? body.paths.join(",") : "")}`;
+  const plan = { action: actionLabel };
+  const consumed = await consumeSpiritFlixAdminApproval(approvalId, "smart.batch", target, plan);
+  if (!consumed.ok) return NextResponse.json({ reason_code: consumed.reason }, { status: 422 });
 
   try {
     const options = {
@@ -79,19 +82,21 @@ async function legacyPOST(request: NextRequest) {
       maxItems: numberParam(body.maxItems),
       force: Boolean(body.force),
     };
-    const payload = action === "preview"
+    const payload = actionLabel === "preview"
       ? await previewSpiritFlixSmartBatch(options)
-      : action === "renamePlan"
+      : actionLabel === "renamePlan"
         ? await buildSpiritFlixSmartRenamePlan(options)
-        : action === "review"
+        : actionLabel === "review"
           ? await reviewSpiritFlixSmartBatch({
               ...options,
               reviewMode: assertReviewMode(body.reviewMode),
               editedFilenameSuggestion: typeof body.editedFilenameSuggestion === "string" ? body.editedFilenameSuggestion : undefined,
             })
           : await runSpiritFlixSmartBatch(options);
+    await finalizeSpiritFlixAdminApproval(approvalId, "smart.batch", target, plan, Number(consumed.value.generation), "succeeded");
     return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    await finalizeSpiritFlixAdminApproval(approvalId, "smart.batch", target, plan, Number(consumed.value.generation), "failed");
     return jsonError(error);
   }
 }

@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
-import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
 import { SPIRITFLIX_MEDIA_ROOT } from "@/lib/spiritflix/admin/constants";
 import { getSpiritFlixAdminAllowedRoots, isSpiritFlixAdminPathError, resolveSpiritFlixAdminPath } from "@/lib/spiritflix/admin/paths";
 import {
@@ -16,6 +15,7 @@ import {
 } from "@/lib/spiritflix/admin/smart";
 import { markSpiritFlixSmartAnalysisReviewed, runSpiritFlixSmartReviewPipeline, saveSpiritFlixSmartAnalysisReview } from "@/lib/spiritflix/admin/smart/review";
 import { assertSpiritFlixSmartReviewPayload } from "@/lib/spiritflix/admin/smart/review-metadata";
+import { consumeSpiritFlixAdminApproval, finalizeSpiritFlixAdminApproval } from "@/lib/coding/spiritflix-admin-approval-authority";
 
 const FORBIDDEN_EXECUTE_ACTIONS = new Set([
   "applyRename",
@@ -25,10 +25,6 @@ const FORBIDDEN_EXECUTE_ACTIONS = new Set([
 ]);
 
 export const runtime = "nodejs";
-
-export async function POST(_request: NextRequest) {
-  return NextResponse.json(spiritFlixAdminMutationDenied(), { status: 410 });
-}
 
 function isSubPath(parent: string, child: string): boolean {
   const relative = path.relative(parent, child);
@@ -103,20 +99,29 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function legacyPOST(request: NextRequest) {
-  let body: { path?: string; action?: string; review?: unknown };
+export async function POST(request: NextRequest) {
+  let body: { path?: string; action?: string; review?: unknown; approval_id?: unknown };
   try {
-    body = (await request.json()) as { path?: string; action?: string; review?: unknown };
+    body = (await request.json()) as { path?: string; action?: string; review?: unknown; approval_id?: unknown };
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
+  const approvalId = typeof body.approval_id === "string" ? body.approval_id : "";
+  if (!approvalId) return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 });
+  const actionLabel = body.action?.trim() || "analyze";
+  const target = `spiritflix:smart-analysis:${body.path ?? ""}`;
+  const plan = { action: actionLabel };
+  const consumed = await consumeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan);
+  if (!consumed.ok) return NextResponse.json({ reason_code: consumed.reason }, { status: 422 });
+
   const videoPath = body.path?.trim() ?? "";
   if (!videoPath) {
+    await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
     return NextResponse.json({ error: "Missing video path." }, { status: 400 });
   }
 
-  const action = body.action?.trim() || "analyze";
+  const action = actionLabel;
 
   try {
     const { realPath } = await resolveSpiritFlixAdminPath(videoPath);
@@ -124,18 +129,20 @@ async function legacyPOST(request: NextRequest) {
     const stat = await fs.stat(realPath);
 
     if (!stat.isFile()) {
+      await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
       return NextResponse.json({ error: "Smart analysis only supports a single video file path." }, { status: 400 });
     }
 
     const extension = path.extname(realPath).toLowerCase();
     if (!isSpiritFlixSmartVideoExtension(extension)) {
+      await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
       return NextResponse.json({ error: "Smart analysis only supports supported video files." }, { status: 400 });
     }
 
     assertSmartVideoPathCandidate(realPath, { mediaRoot });
 
-    // S6: reject all execute actions outright
     if (FORBIDDEN_EXECUTE_ACTIONS.has(action)) {
+      await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
       return NextResponse.json(
         { error: `${action} is not available in smart tagging. File mutations require Level 2 preview → confirm.` },
         { status: 400 },
@@ -153,45 +160,51 @@ async function legacyPOST(request: NextRequest) {
     } else if (action === "analyze") {
       analysis = await runSpiritFlixSmartReviewPipeline(realPath, { mediaRoot });
     } else if (action === "exportMetadata" || action === "confirmMetadata") {
-      // S9: confirm approved metadata to admin metadata sidecar only
       const pathInput = { videoPath: realPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs };
       const loaded = await readSmartAnalysis(pathInput, { mediaRoot });
       if (!loaded) {
+        await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
         return NextResponse.json({ error: "No smart analysis found for this video. Run analyze first." }, { status: 400 });
       }
       if (!loaded.reviewedMetadata || loaded.reviewedMetadata.reviewStatus === "unreviewed") {
+        await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
         return NextResponse.json({ error: "Analysis must be reviewed before exporting metadata." }, { status: 400 });
       }
       const result = await writeApprovedSmartMetadataSidecar(loaded, { mediaRoot });
       const projection = projectApprovedSmartMetadata(loaded);
+      await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "succeeded");
       return NextResponse.json({
         metadataPath: result.path,
         metadata: projection,
         confirmed: true,
       }, { headers: { "Cache-Control": "no-store" } });
     } else if (action === "prepareRenamePreview") {
-      // S6: build rename preview draft — no execute, no Level 2 call
       const pathInput = { videoPath: realPath, fileSizeBytes: stat.size, mtimeMs: stat.mtimeMs };
       const loaded = await readSmartAnalysis(pathInput, { mediaRoot });
       if (!loaded) {
+        await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
         return NextResponse.json({ error: "No smart analysis found for this video. Run analyze first." }, { status: 400 });
       }
       if (!loaded.reviewedMetadata || loaded.reviewedMetadata.reviewStatus === "unreviewed") {
+        await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
         return NextResponse.json({ error: "Analysis must be reviewed before preparing rename preview." }, { status: 400 });
       }
       const projection = projectApprovedSmartMetadata(loaded);
       const filenameSuggestion = projection.filenameSuggestion;
       if (!filenameSuggestion) {
+        await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
         return NextResponse.json({ error: "No filename suggestion available from reviewed metadata." }, { status: 400 });
       }
       const draft = buildSmartRenamePreviewDraft({
         sourcePath: realPath,
         filenameSuggestion,
       });
+      await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "succeeded");
       return NextResponse.json({
         renamePreview: draft,
       }, { headers: { "Cache-Control": "no-store" } });
     } else {
+      await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
       return NextResponse.json({ error: "Unsupported smart analysis action." }, { status: 400 });
     }
 
@@ -200,8 +213,10 @@ async function legacyPOST(request: NextRequest) {
       { mediaRoot },
     );
 
+    await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "succeeded");
     return NextResponse.json({ analysis, sidecarPath }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    await finalizeSpiritFlixAdminApproval(approvalId, "smart.analysis", target, plan, Number(consumed.value.generation), "failed");
     return jsonError(error);
   }
 }
