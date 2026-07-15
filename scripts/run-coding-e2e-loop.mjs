@@ -28,6 +28,16 @@ const tmpRoot = path.join(repoRoot, "tmp", "e2e-loop");
 const evidenceRoot = path.join(repoRoot, "docs", "evidence", "e2e-loop");
 const fixtureRoot = path.join(repoRoot, "tests", "ui-agent-trials", "fixtures", "dummy-product-site");
 const fixtureResetRoute = "/v1/coding/dummy-product-site-preview/reset";
+const promptOneTargetPlugin = {
+  schema_version: "spiritos-target-plugin/v1",
+  id: "lumacart",
+  repository_id: "spiritos-campaign-1",
+  worktree_id: "spiritos-campaign-1-20260712",
+  fixture_root: "tests/ui-agent-trials/fixtures/dummy-product-site/",
+  selected_prompt_id: "coder-001-init-dummy-product-site",
+  selected_context_id: "init-storefront",
+  execution_profile: "coder-10",
+};
 const fixtureRequiredRelativePaths = [
   "README.md",
   "package.json",
@@ -670,6 +680,8 @@ async function resetFixtureThroughProduct(frontendBaseUrl, requestedFixtureState
         fixture_state: "missing",
         reason: "managed_coding_e2e_precondition",
         requested_fixture_state: requestedFixtureState,
+        selected_prompt_id: promptOneTargetPlugin.selected_prompt_id,
+        target_plugin: promptOneTargetPlugin,
       }),
       headers: { "content-type": "application/json" },
       method: "POST",
