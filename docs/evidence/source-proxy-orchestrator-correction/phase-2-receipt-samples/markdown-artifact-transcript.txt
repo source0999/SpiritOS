@@ -1,1 +1,0 @@
-{"action_type": "WriteFile", "target": "release-checklist.md", "arguments": {"content": "# Release Checklist\n\n- Verify Product receipts\n"}, "reason": "Create requested markdown artifact."}

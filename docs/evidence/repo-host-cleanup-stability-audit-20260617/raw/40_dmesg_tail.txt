@@ -1,4 +1,0 @@
-$ dmesg -T | tail -300 || true
-# rc=0
-
-dmesg: read kernel buffer failed: Operation not permitted

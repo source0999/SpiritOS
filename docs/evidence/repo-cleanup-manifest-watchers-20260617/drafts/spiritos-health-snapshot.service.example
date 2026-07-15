@@ -1,7 +1,0 @@
-[Unit]
-Description=SpiritOS health snapshot (safe read-only)
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/spiritos-host-health-snapshot.sh
-ExecStart=/usr/local/bin/spiritos-service-health-snapshot.sh

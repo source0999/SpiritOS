@@ -1,5 +1,0 @@
-# Human Messy Homepage Root Cause
-
-The before smoke called local Qwen directly through `/api/generate` and then used a script-local parser that only understood old `Write`/`Bash` action shapes. The model returned advisory prose with a path-named HTML block, but that output was never routed through Source Proxy Tool Action Runtime v1, never parsed as a `WriteFile`, and never executed by the disposable workspace executor. TaskSpec intake also treated vague implementation prompts without explicit target files as `target_unresolved`, so the product-level safe create case for a disposable homepage had no bridge into the v1 runtime.
-
-Fix: the messy homepage prompt is now narrowly classified as a disposable `index.html` create candidate with transparent allowed files of `index.html` and `styles.css`. The terminal smoke runs the v1 bounded action loop, sends the model the generic Source Proxy action contract, accepts strict JSON actions or path-bound model-authored file blocks, executes only allowed disposable `WriteFile` actions, and scores GO only when the generated `index.html` bytes exactly equal model-authored action content.

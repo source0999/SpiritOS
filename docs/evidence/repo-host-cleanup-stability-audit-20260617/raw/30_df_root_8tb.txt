@@ -1,6 +1,0 @@
-$ df -h / /mnt/spirit-8tb || true
-# rc=0
-
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb2       457G  281G  153G  65% /
-/dev/sda1       7.3T  156G  6.8T   3% /mnt/spirit-8tb

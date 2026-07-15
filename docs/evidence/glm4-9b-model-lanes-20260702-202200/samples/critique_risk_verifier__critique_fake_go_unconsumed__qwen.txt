@@ -1,8 +1,0 @@
-{
-  "verdict": "NO-GO",
-  "fake_go_detected": false,
-  "blockers": ["No evidence provided to confirm that the prompt was fully executed locally without any cloud fallback."],
-  "protected_path_risk": "None",
-  "evidence_required": true,
-  "repair_instructions": "Please provide a detailed receipt or log that confirms all actions were performed locally and no cloud services were accessed."
-}

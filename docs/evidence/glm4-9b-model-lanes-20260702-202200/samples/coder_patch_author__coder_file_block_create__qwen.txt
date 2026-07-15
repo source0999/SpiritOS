@@ -1,5 +1,0 @@
-<file path="source_proxy/benchmarks/fixtures/tiny_product/generated_widget.ts">
-export function benchmarkWidgetLabel(): string {
-    return "Ornith lane benchmark";
-}
-</file>

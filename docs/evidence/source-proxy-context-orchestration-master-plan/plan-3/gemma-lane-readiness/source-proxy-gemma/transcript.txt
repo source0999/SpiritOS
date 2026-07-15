@@ -1,1 +1,0 @@
-Direct Ollama Gemma smoke did not pass.

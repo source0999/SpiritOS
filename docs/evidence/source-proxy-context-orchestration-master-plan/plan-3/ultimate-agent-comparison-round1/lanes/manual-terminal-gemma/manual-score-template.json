@@ -1,6 +1,0 @@
-{
-  "lane": "manual-terminal-gemma",
-  "status": "MANUAL_REQUIRED",
-  "score": null,
-  "notes": "Paste terminal output, then run --score-manual."
-}

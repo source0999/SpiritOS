@@ -1,9 +1,0 @@
-{
-  "adapter": {
-    "actions_seen": 0,
-    "applied": [],
-    "rejected": []
-  },
-  "files_changed": [],
-  "workspace": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-context-orchestration-master-plan\\plan-3\\qwen-after-ollama-cleanup-retest\\lanes\\source-proxy-qwen-after-cleanup\\workspace"
-}

@@ -1,6 +1,0 @@
-
-> spirit-os@0.1.0 typecheck
-> tsc --noEmit
-
-src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx(59,22): error TS2304: Cannot find name 'init'.
-src/components/spiritflix/admin/__tests__/SpiritFlixAdminInteractions.test.tsx(59,53): error TS2304: Cannot find name 'init'.

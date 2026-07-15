@@ -1,7 +1,0 @@
-$ source-proxy source-proxy-gpt4o-mini
-
-STDOUT:
-FallthroughToLLM(reason='no_explicit_target', kind='fallthrough_to_llm')
-
-STDERR:
-

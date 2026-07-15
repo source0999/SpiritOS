@@ -1,8 +1,0 @@
-fatal: detected dubious ownership in repository at '//10.0.0.186/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/qwen-after-ollama-cleanup-retest/lanes/source-proxy-qwen-after-cleanup/workspace'
-'//10.0.0.186/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/qwen-after-ollama-cleanup-retest/lanes/source-proxy-qwen-after-cleanup/workspace' is owned by:
-	(inconvertible) (S-1-5-21-607744833-1370760797-2380844931-1000)
-but the current user is:
-	SPIRIT/smith (S-1-5-21-454355343-3176600638-1622726219-1004)
-To add an exception for this directory, call:
-
-	git config --global --add safe.directory '%(prefix)///10.0.0.186/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/qwen-after-ollama-cleanup-retest/lanes/source-proxy-qwen-after-cleanup/workspace'

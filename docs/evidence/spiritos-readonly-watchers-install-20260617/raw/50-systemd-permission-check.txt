@@ -1,8 +1,0 @@
-$ test -w /etc/systemd/system; echo writable=$?; ls -ld /etc/systemd/system 2>&1
-exit=0
-
-STDOUT:
-writable=1
-drwxr-xr-x 34 root root 4096 Jun  1 20:05 /etc/systemd/system
-
-STDERR:

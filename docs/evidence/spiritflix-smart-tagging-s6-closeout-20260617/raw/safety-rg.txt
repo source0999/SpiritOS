@@ -1,4 +1,0 @@
-$ rg -n "rename\(|unlink\(|rm\(|move|execute|softDelete|restore|jellyfin|sqlite|ocr|vlm|model|ffmpeg|spawn|exec" src/app/api/spiritflix/admin/smart src/components/spiritflix/admin src/lib/spiritflix/admin/smart || true
-/bin/bash: line 1: rg: command not found
-
-[exit 0]

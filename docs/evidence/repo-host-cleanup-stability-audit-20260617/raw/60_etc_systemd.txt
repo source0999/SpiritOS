@@ -1,5 +1,0 @@
-$ ls -la /etc/systemd/system 2>/dev/null | grep -Ei "spirit|proxy|source|backup|watch|monitor|ollama|jellyfin" || true
-# rc=0
-
-drwxr-xr-x  2 root root 4096 Feb  9 19:26 mdmonitor.service.wants
--rw-r--r--  1 root root  513 Apr 16 22:54 ollama.service

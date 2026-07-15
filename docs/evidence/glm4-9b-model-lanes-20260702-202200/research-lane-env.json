@@ -1,6 +1,0 @@
-{
-  "SEARXNG_URL": "http://127.0.0.1:8080",
-  "SOURCE_PROXY_SCOUT_RESEARCH_ENABLED": "",
-  "SOURCE_PROXY_SCOUT_RESEARCH_URL": "",
-  "note": "Benchmark scoring covers query packet quality and provider need detection only; it does not score web content correctness."
-}

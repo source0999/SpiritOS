@@ -1,3 +1,0 @@
-command: source-proxy source-proxy-gpt4o-mini
-elapsed_seconds: 3.835
-exit_code: 0

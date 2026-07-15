@@ -1,4 +1,0 @@
-$ tmux ls || true
-# rc=0
-
-error connecting to /tmp/tmux-1000/default (No such file or directory)

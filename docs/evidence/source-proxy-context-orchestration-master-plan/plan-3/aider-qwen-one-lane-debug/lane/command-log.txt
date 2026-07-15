@@ -1,1 +1,0 @@
-Aider not run because Qwen readiness timed out at 90 seconds.

@@ -1,4 +1,0 @@
-$ sudo -n -u ollama test -w /mnt/spirit-8tb/ollama-models && echo OLLAMA_8TB_WRITE_OK || true
-# rc=0
-
-sudo: a password is required

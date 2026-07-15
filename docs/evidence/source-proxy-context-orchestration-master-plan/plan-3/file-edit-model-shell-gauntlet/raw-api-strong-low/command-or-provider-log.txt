@@ -1,3 +1,0 @@
-openai chat.completions model=gpt-4o
-openai chat.completions model=gpt-4o
-openai chat.completions model=gpt-4o

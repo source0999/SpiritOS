@@ -1,8 +1,0 @@
-{
-  "cwd": "\\\\10.0.0.186\\SpiritOS\\docs\\evidence\\source-proxy-context-orchestration-master-plan\\plan-3\\continue-qwen-single-prompt-debug\\continue-qwen\\workspace",
-  "target_model": "qwen2.5-coder:7b",
-  "continue_command": "",
-  "blocker": "CONTINUE_CLI_NOT_AVAILABLE_IN_THIS_EXECUTION_ENV",
-  "files_changed": [],
-  "real_app_touched": false
-}

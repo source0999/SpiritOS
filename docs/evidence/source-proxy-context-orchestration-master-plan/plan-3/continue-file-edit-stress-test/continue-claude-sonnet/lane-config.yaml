@@ -1,8 +1,0 @@
-schema: v1.5.44
-name: stress-test-claude-sonnet
-version: 1.0.0
-models:
-  - uses: anthropic/claude-sonnet-4-6
-    with:
-      ANTHROPIC_API_KEY: [redacted-anthropic-api-key]
-allowAnonymousTelemetry: false

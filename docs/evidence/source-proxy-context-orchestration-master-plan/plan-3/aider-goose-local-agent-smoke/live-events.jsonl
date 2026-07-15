@@ -1,3 +1,0 @@
-{"event": "run_start", "time": "2026-06-11T00:41:59Z"}
-{"event": "install_attempt", "time": "2026-06-11T00:41:59Z", "tool": "aider"}
-{"event": "run_done", "status": "COMPLETE", "time": "2026-06-11T00:48:07Z"}

@@ -1,4 +1,0 @@
-$ uptime
-# rc=0
-
- 21:44:16 up 37 min,  6 users,  load average: 3.07, 2.58, 1.94

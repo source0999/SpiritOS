@@ -1,8 +1,0 @@
-{
-  "label": "MANUAL_REQUIRED",
-  "total": null,
-  "reason": "hermes4 smoke over 90s or unavailable",
-  "notes": [
-    "hermes4 smoke over 90s or unavailable"
-  ]
-}

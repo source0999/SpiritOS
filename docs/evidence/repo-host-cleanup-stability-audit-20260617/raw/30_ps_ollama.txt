@@ -1,4 +1,0 @@
-$ ps aux | grep -i '[o]llama' || true
-# rc=0
-
-ollama      1448  0.0  0.1 2160960 21212 ?       Ssl  21:08   0:00 /usr/local/bin/ollama serve

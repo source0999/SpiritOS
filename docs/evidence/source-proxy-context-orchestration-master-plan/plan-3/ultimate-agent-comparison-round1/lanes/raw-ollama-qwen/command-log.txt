@@ -1,3 +1,0 @@
-command: ollama-api-generate http://127.0.0.1:11434 qwen2.5-coder:7b
-elapsed_seconds: 15.192
-exit_code: 0

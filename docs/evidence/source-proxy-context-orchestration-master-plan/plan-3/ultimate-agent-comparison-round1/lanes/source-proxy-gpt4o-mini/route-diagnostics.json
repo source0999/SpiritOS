@@ -1,6 +1,0 @@
-{
-  "route_type": "source-proxy-advisory-only",
-  "attempted": true,
-  "status": "BLOCKED",
-  "detail": "planner returned fallthrough"
-}

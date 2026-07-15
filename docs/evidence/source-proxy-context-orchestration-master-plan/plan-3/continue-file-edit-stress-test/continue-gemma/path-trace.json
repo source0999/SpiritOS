@@ -1,9 +1,0 @@
-{
-  "lane_name": "continue-gemma",
-  "execution_shell": "continue",
-  "target_model": "gemma",
-  "errors": [
-    "Ollama model `gemma` is not installed and Continue has no gemma entry in ~/.continue/config.yaml."
-  ],
-  "anti_cheat_status": "clean"
-}

@@ -1,4 +1,0 @@
-$ uptime
- 22:13:55 up  1:06,  9 users,  load average: 2.03, 3.63, 3.71
-
-[exit 0]

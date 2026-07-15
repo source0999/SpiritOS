@@ -1,4 +1,0 @@
-$ who -b || true
-# rc=0
-
-         system boot  2026-06-17 21:07

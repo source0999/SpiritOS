@@ -1,4 +1,0 @@
-$ crontab -l 2>/dev/null || true
-# rc=0
-
-*/10 * * * * cd /home/source/SpiritOS && /usr/bin/python3 services/jellyfin/sync_folder_playlists.py >> /mnt/spirit-8tb/services/jellyfin/cache/sync-folder-playlists.log 2>&1

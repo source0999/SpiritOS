@@ -1,8 +1,0 @@
-$ systemctl show ollama -p MainPID,User,Environment,FragmentPath,DropInPaths || true
-# rc=0
-
-MainPID=1448
-Environment=PATH=/home/source/.cursor-server/bin/linux-x64/3a67af7b780e0bfc8d32aefa96b8ff1cb8817f80/bin/remote-cli:/home/source/.cursor-server/bin/linux-x64/3a67af7b780e0bfc8d32aefa96b8ff1cb8817f80/bin/remote-cli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
-User=ollama
-FragmentPath=/etc/systemd/system/ollama.service
-DropInPaths=

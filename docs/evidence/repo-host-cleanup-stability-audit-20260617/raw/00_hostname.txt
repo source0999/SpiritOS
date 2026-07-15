@@ -1,4 +1,0 @@
-$ hostname
-# rc=0
-
-source-server

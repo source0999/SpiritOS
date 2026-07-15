@@ -1,8 +1,0 @@
-{
-  "label": "BLOCKED",
-  "total": null,
-  "reason": "planner returned fallthrough",
-  "notes": [
-    "planner returned fallthrough"
-  ]
-}

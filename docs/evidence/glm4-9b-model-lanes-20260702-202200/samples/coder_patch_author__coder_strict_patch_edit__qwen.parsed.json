@@ -1,8 +1,0 @@
-{
-  "decision": "NO-GO",
-  "evidence_needed": "A valid git diff showing the change from 'Demo' to 'Demo Bench' in the config.json file.",
-  "forbidden_paths_touched": [],
-  "target_path": "source_proxy/benchmarks/fixtures/tiny_product/config.json",
-  "unified_diff": "",
-  "verification": "The required edit cannot be verified using git apply --check because the file is not being modified."
-}

@@ -1,8 +1,0 @@
-$ hostname
-source-server
-
-$ whoami
-source
-
-$ pwd
-/home/source/SpiritOS

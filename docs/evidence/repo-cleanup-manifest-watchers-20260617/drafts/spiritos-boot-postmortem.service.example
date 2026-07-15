@@ -1,7 +1,0 @@
-[Unit]
-Description=SpiritOS boot postmortem snapshot (safe read-only)
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/spiritos-boot-postmortem.sh

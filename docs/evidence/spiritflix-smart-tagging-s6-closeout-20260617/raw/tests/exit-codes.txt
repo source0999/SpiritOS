@@ -1,3 +1,0 @@
-typecheck=0
-admin_smart=1
-home_player=0

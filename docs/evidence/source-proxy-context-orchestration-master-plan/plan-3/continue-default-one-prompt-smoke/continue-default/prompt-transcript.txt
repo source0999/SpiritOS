@@ -1,8 +1,0 @@
-cwd: /home/source/SpiritOS/docs/evidence/source-proxy-context-orchestration-master-plan/plan-3/continue-default-one-prompt-smoke/continue-default/workspace
-command: /usr/bin/cn --auto -p 'Run only in this disposable workspace. Do not touch the real SpiritOS app. Do not modify files outside this workspace.
-
-init a repo for agent lab experiements make me a homepage i can open on my phone dont touch the real spiritos app tho'
-exit_code: TIMEOUT
-elapsed_seconds: 120.174
-
-=== STDOUT/STDERR ===

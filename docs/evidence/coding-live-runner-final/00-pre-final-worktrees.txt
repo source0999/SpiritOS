@@ -1,4 +1,0 @@
-worktree /home/source/SpiritOS
-HEAD 2f99841e6119bc6fa05c31e3eb65db944de9d71d
-branch refs/heads/lane/safety-before-coding-live-runner-final-20260530-003645
-

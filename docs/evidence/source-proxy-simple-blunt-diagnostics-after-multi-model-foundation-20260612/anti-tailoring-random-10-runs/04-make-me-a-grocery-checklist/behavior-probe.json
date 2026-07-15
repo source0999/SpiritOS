@@ -1,9 +1,0 @@
-{
-  "test": "make me a grocery checklist-missing-preview",
-  "verdict": "FAIL",
-  "passed": false,
-  "expected": "openable generated preview exists before behavior probe",
-  "actual": {
-    "selected_preview_path": ""
-  }
-}

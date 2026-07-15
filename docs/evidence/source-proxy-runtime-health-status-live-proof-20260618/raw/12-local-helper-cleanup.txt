@@ -1,8 +1,0 @@
-=== timed-out evidence helper before cleanup ===
-UID          PID    PPID  C STIME TTY      STAT   TIME CMD
-source   1396185 1396183  0 21:48 ?        Ss     0:00 bash -c cd ~/SpiritOS && { echo '=== candidate files ==='; find . -maxdepth 4 -type f | grep -Ei 'source.*proxy|proxy.*source|runtime|tmux|lan|start|restart|8787|uvicorn' | sort | head -200; echo '=== rg ==='; ~/.local/bin/rg -n -e 'source-proxy|source proxy|uvicorn|8787|tmux|lan|restart|runtime' scripts source_proxy docs/evidence docs README.md package.json 2>/dev/null || true; } | tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/10-run-method-review.txt
-source   1396186 1396185  0 21:48 ?        S      0:00 bash -c cd ~/SpiritOS && { echo '=== candidate files ==='; find . -maxdepth 4 -type f | grep -Ei 'source.*proxy|proxy.*source|runtime|tmux|lan|start|restart|8787|uvicorn' | sort | head -200; echo '=== rg ==='; ~/.local/bin/rg -n -e 'source-proxy|source proxy|uvicorn|8787|tmux|lan|restart|runtime' scripts source_proxy docs/evidence docs README.md package.json 2>/dev/null || true; } | tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/10-run-method-review.txt
-source   1396187 1396185  0 21:48 ?        S      0:00 tee docs/evidence/source-proxy-runtime-health-status-live-proof-20260618/raw/10-run-method-review.txt
-source   1396189 1396186  0 21:48 ?        S      0:00 grep -Ei source.*proxy|proxy.*source|runtime|tmux|lan|start|restart|8787|uvicorn
-=== timed-out evidence helper after cleanup ===
-UID          PID    PPID  C STIME TTY      STAT   TIME CMD

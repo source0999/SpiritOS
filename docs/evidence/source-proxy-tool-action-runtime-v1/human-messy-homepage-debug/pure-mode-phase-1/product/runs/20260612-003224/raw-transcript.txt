@@ -1,1 +1,0 @@
-{"action_type":"WriteFile","target":"index.html","arguments":{"content":"<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Agent Lab</title>\n</head>\n<body>\n    <h1>Welcome to Agent Lab</h1>\n    <p>This is the homepage for your agent lab.</p>\n</body>\n</html>"}}

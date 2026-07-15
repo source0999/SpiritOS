@@ -1,4 +1,0 @@
-$ find docs/evidence -type f 2>/dev/null | wc -l
-# rc=0
-
-24394

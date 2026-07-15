@@ -1,6 +1,0 @@
-{
-  "command_or_provider": "anthropic messages model=claude-3-7-sonnet-20250219",
-  "errors": [
-    "HTTP Error 400: Bad Request"
-  ]
-}
