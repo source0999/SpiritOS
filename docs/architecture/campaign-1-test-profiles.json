@@ -6,6 +6,7 @@
     {"id":"source-proxy-authority","product":"source-proxy","command":"PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_long_running_tasks.py -q","claim_ceiling":"task lifecycle only"},
     {"id":"coding-backend","product":"source-proxy","command":"npm run test:coding-regression","claim_ceiling":"coding backend only"},
     {"id":"coding-frontend","product":"coding","command":"npm run test:coding-frontend-regression","claim_ceiling":"coding frontend only"},
+    {"id":"labs-command-center","product":"labs","command":"npm exec vitest run src/components/coding/__tests__/coding-command-center-shell.test.tsx","claim_ceiling":"labs-only; excluded from Campaign production acceptance"},
     {"id":"prompt1-browser","product":"coding","command":"node scripts/run-coding-e2e-loop.mjs --fixture-state=missing","prerequisites":["isolated HTTPS lane","operator E2E secret"],"claim_ceiling":"Prompt 1 lifecycle only"},
     {"id":"canonical-shell","product":"coding","command":"npm exec vitest run src/components/coding/__tests__/coding-cockpit-shell.test.tsx","claim_ceiling":"canonical shell only"},
     {"id":"cartographer-api","product":"cartographer","command":"PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -q","claim_ceiling":"proposal boundary only"},
