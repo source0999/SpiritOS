@@ -18,7 +18,7 @@ Campaign 1 was originally scoped as Phases 0-3. The Phase 1 closeout at `4e1f849
 | Phase 0 | Neutral truth and characterization | COMPLETED | Baseline characterization, no-reversion constraints, provenance anchors, borrowed-worktree containment, and protected-head policy established. |
 | Phase 1 | P0 authority and deployment enforcement | COMPLETED | Commit range `8d17286d..4e1f849f`; AR-001/002/003 closed with fail-closed proofs and durable authority evidence. |
 | Phase 2 | Shared contracts and enforced boundaries | COMPLETED | Commit `a36c4437`; shared OpenAPI/JSON Schema package, Python/Next schema consumers, ESLint boundaries, and deliberate violation tests pass. |
-| Phase 3 | Context reduction and canonical ownership | BLOCKED | Canonical-shell move requires a product-owner decision because `CodingAgentInterface.tsx` still has two live production callers. |
+| Phase 3 | Context reduction and canonical ownership | IN PROGRESS | Owner decision applied: `CodingCockpitShell` is canonical; legacy shells are labs-only and compatibility surfaces delegate. Remaining gates are Python adapter completion, duplicate-path reconciliation, runtime/browser proof, and closeout. |
 
 ## Phase 0 - Neutral truth and characterization
 
@@ -60,7 +60,7 @@ Phase 2 acceptance is met at `a36c4437`: `packages/contracts/` provides OpenAPI 
 
 ## Phase 3 - Context reduction and canonical ownership
 
-Status: **BLOCKED** pending an explicit canonical-shell ownership decision.
+Status: **IN PROGRESS**. The product-owner decision has been implemented: `/coding` is canonical, `/design-demo/coding` delegates, chat embeds the constrained canonical cockpit, and legacy shells are labs-only.
 
 Purpose: reduce repository/context load, declare canonical ownership surfaces, and quarantine non-production experiments so future agents and humans can reason from the same small set of authoritative paths.
 
@@ -74,14 +74,14 @@ Required deliverables:
 - Remove duplicate routes/helpers that survived Phase 1 because they were not part of the P0 authority enforcement slice.
 - Create a test-profiles registry that truthfully labels unit, source-text, route, production-path, browser, and runtime proof.
 
-Phase 3 must not move a live-mounted shell into `labs/`. The required no-caller check found `src/app/design-demo/coding/page.tsx` and `src/components/chat/SpiritTrinityChatShell.tsx` importing `CodingAgentInterface.tsx`; choosing whether to retire, migrate, or preserve those two product surfaces requires Britton's decision.
+The historic no-caller blocker was resolved by the owner decision and implementation. Remaining acceptance requires the fail-closed Python target adapter across execution/verification/evidence, a classified duplicate-path inventory, final runtime/browser evidence, build, protected-head reconciliation, and the Campaign handoff artifacts.
 
 ## GO, failures, and turn ends
 
 - `GO_PHASE_1_AUTHORITY_COMPLETE`: verified at `4e1f849f`. Phase 1 P0 authority enforcement is genuinely complete and well-tested.
 - `GO_CAMPAIGN_1_COMPLETE`: **not currently valid** for the full campaign. Full Campaign 1 GO requires Phase 2 shared contracts and Phase 3 context reduction/canonical ownership to be implemented, tested, documented, and committed.
 - Any future closeout must distinguish Phase-level GO from full-campaign GO and must not reuse the Phase 1 GO label as full Campaign 1 completion.
-- The next gate is `phase3_canonical_shell_owner_decision`; full Campaign 1 remains NO-GO until the Phase 3 blocker is resolved and its remaining gates are implemented and verified.
+- The next gate is `phase3_python_target_adapter_duplicate_paths_and_test_profiles`; full Campaign 1 remains NO-GO until every remaining Phase 3 and closeout gate is verified.
 - Campaign 2 must not begin from the Phase 1 checkpoint alone.
 
-The next recorded gate is `phase2_shared_contracts_creation`.
+The next recorded gate is `phase3_python_target_adapter_duplicate_paths_and_test_profiles`.

@@ -6,7 +6,7 @@ Evidence basis: production route registration/imports, bounded call-site search,
 
 ## Reconciliation checkpoint — 2026-07-14
 
-The tables retain the original discovery context while the top-level classification records current acceptance evidence. The current Campaign candidate is `8f9cfd818479a3494e7123697ef36263cf6d184a`; protected heads remain pinned in the Campaign state.
+The tables retain the original discovery context while the top-level classification records current acceptance evidence. The current Campaign implementation checkpoint is `2a273e2a2ece744f8c56e5cfa42a49b60ae71cc8`; protected heads remain pinned in the Campaign state and Campaign GO is not yet claimed.
 
 | AR | Current classification | Action and proof | Acceptance |
 | --- | --- | --- | --- |

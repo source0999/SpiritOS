@@ -4,10 +4,10 @@ Schema: `spiritos-campaign-1-evidence-index/v1`
 
 ## Verdict ceiling
 
-- Candidate head: `8f9cfd818479a3494e7123697ef36263cf6d184a`
+- Candidate head: `2a273e2a2ece744f8c56e5cfa42a49b60ae71cc8`
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
-- Verdict: `GO_CAMPAIGN_1_COMPLETE` at the atomic closeout checkpoint.
-- Reason: the final matrix passed with protected heads unchanged. The committed closeout includes the long-lived Source Proxy task-readback dispatcher regression, preventing the real post-apply acknowledgement path from timing out while the isolated worker is busy.
+- Verdict: `NO_GO_CAMPAIGN_1_PHASE3_IN_PROGRESS`.
+- Reason: the Phase 1 closeout evidence remains valid only at its documented claim ceiling. Phase 2 is complete and accepted; Phase 3 has accepted shell, externalization, context, adapter, and test-profile increments but still requires duplicate-path reconciliation, full runtime/browser proof, build, and final closeout evidence.
 
 ## Accepted baseline receipts
 
