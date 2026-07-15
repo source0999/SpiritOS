@@ -1,5 +1,7 @@
 # Campaign 1 Ledger
 
+> 2026-07-15 duplicate-path cleanup: `edf29096` removes three unreachable Python target-mode classifiers; `84271f66` records the classified production, defense-in-depth, compatibility, labs, fixture, and archive paths. Coding regression: 131 passed (existing async-mock warnings). Duplicate-route authority validation remains green.
+
 > 2026-07-15 status reconciliation: `08f99990` removes the obsolete Phase 3 owner-decision blocker and obsolete full-Campaign-GO evidence claim from the plan/index. The campaign remains NO-GO while duplicate-path reconciliation and runtime/browser/build closeout remain unfinished.
 
 > 2026-07-15 Phase 3 checkpoint: owner decision applied. `CodingCockpitShell` is canonical; `/design-demo/coding` delegates to `/coding`; chat embeds the canonical cockpit; old shells are labs-only. `docs/evidence/**` (7,489 paths) and `scripts/media/model_gallery/**` (1,846 paths) are archived under `/mnt/spirit-8tb/migration-evidence/spiritos-campaign-1-20260714/` with SHA-256 manifests, zero byte mismatches, zero unreadable files, zero configured secret matches, and rollback records. Git paths reduced from 12,994 to 3,668 (71.8%). Browser Prompt 1/Coder 10 specs, grader, and fixture probe are now target-plugin-owned; context discovery excludes archived/snapshot docs and authoritative ceiling violations fail visibly. Implementation parent: `893c4b5e`; next gate: Python target adapter, duplicate cleanup, test profiles, then runtime/browser proof. Full GO remains false.
