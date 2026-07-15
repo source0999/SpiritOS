@@ -6,6 +6,8 @@
 
 > 2026-07-15 target-command ownership increment: `489f3737` removes generic decision-route ownership of the Prompt 1–3 command selection and task-spec factories. The resolved adapter now owns target command dispatch, target constraints, and the attached verification identity; the generic route delegates only a previously resolved plugin. Coding regression: 141 passed (existing async-mock warnings). Remaining adapter work: verifier/grader direct-fixture bypass enforcement and runtime/browser lifecycle proof.
 
+> 2026-07-15 test-profile registry increment: `99e2b336` adds the canonical named product registry and a fail-closed validator (`CAMPAIGN_1_TEST_PROFILES_VALID`). Each profile declares a product, command, and claim ceiling; closeout cannot treat the prose table as a substitute.
+
 Next gate ID: `phase3_python_target_adapter_duplicate_paths_and_test_profiles`.
 
 Continuity checkpoint: `893c4b5e` is an ancestor implementation anchor; this atomic ledger/state record preserves that policy.
