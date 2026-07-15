@@ -7925,42 +7925,6 @@ def _trial_path_allowed(target: str, allowed_files: list[str]) -> bool:
     return False
 
 
-def _dummy_product_site_create_mode(request: PromptPacketRequest) -> bool:
-    prompt_id = str(request.selected_prompt_id or request.trial_prompt_id or "").strip()
-    expected_state = str(request.expected_result_state or "").strip()
-    packet = request.dummy_coder_10_packet if isinstance(request.dummy_coder_10_packet, dict) else {}
-    packet_state = str(packet.get("expected_result_state") or "").strip()
-    return (
-        prompt_id == "coder-001-init-dummy-product-site"
-        or expected_state == "PASS_DUMMY_PROJECT_INIT"
-        or packet_state == "PASS_DUMMY_PROJECT_INIT"
-    )
-
-
-def _dummy_product_site_render_cards_mode(request: PromptPacketRequest) -> bool:
-    prompt_id = str(request.selected_prompt_id or request.trial_prompt_id or "").strip()
-    expected_state = str(request.expected_result_state or "").strip()
-    packet = request.dummy_coder_10_packet if isinstance(request.dummy_coder_10_packet, dict) else {}
-    packet_state = str(packet.get("expected_result_state") or "").strip()
-    return (
-        prompt_id == "coder-003-render-product-cards"
-        or expected_state == "PASS_PRODUCTS_RENDERED"
-        or packet_state == "PASS_PRODUCTS_RENDERED"
-    )
-
-
-def _dummy_product_site_product_data_mode(request: PromptPacketRequest) -> bool:
-    prompt_id = str(request.selected_prompt_id or request.trial_prompt_id or "").strip()
-    expected_state = str(request.expected_result_state or "").strip()
-    packet = request.dummy_coder_10_packet if isinstance(request.dummy_coder_10_packet, dict) else {}
-    packet_state = str(packet.get("expected_result_state") or "").strip()
-    return (
-        prompt_id == "coder-002-add-product-data"
-        or expected_state == "PASS_DUMMY_DATA_CHANGE"
-        or packet_state == "PASS_DUMMY_DATA_CHANGE"
-    )
-
-
 def _dummy_product_site_render_cards_plan(
     request: PromptPacketRequest,
     task: str,
