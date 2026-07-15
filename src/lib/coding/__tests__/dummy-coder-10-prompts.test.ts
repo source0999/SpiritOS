@@ -5,7 +5,7 @@ import {
   DUMMY_CODER_10_ALLOWED_WRITE_ROOT,
   DUMMY_CODER_10_FIXTURE_ROOT,
   dummyCoder10Prompts,
-} from "@/lib/coding/dummy-coder-10-prompts";
+} from "@/lib/coding/target-plugins/lumacart/prompts";
 
 describe("dummy Coder 10 prompt bank", () => {
   it("defines exactly the reviewed 10 LumaCart prompts", () => {

@@ -18,7 +18,7 @@ import CodingCockpitShell, {
   selectedPromptTaskDescription,
   shouldClearStaleLocalTrialStateAfterCloudClear,
 } from "@/components/coding/CodingCockpitShell";
-import { dummyCoder10Prompts } from "@/lib/coding/dummy-coder-10-prompts";
+import { dummyCoder10Prompts } from "@/lib/coding/target-plugins/lumacart/prompts";
 
 const navMock = vi.hoisted(() => ({ path: "/coding" }));
 

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 
-import { dummyCoder10Prompts } from "@/lib/coding/dummy-coder-10-prompts";
-import { probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
+import { dummyCoder10Prompts } from "@/lib/coding/target-plugins/lumacart/prompts";
+import { probeDummyStorefront } from "@/lib/coding/target-plugins/lumacart/project-summary";
 import {
   classifyDummyCoder10FileScope,
   classifyDummyCoder10Provenance,
   DUMMY_CODER_10_CRITICAL_FAILURE_RULES,
   gradeDummyCoder10Result,
-} from "@/lib/coding/dummy-coder-10-grader";
+} from "@/lib/coding/target-plugins/lumacart/grader";
 
 const prompt001 = dummyCoder10Prompts[0];
 const prompt002 = dummyCoder10Prompts[1];

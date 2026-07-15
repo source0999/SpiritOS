@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildExistingDummyProjectSummary, probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
+import { buildExistingDummyProjectSummary, probeDummyStorefront } from "@/lib/coding/target-plugins/lumacart/project-summary";
 
 const root = "tests/ui-agent-trials/fixtures/dummy-product-site/";
 

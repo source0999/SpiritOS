@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compress } from "headroom-ai";
+import { assertAuthoritativeFileCeilings } from "./context/authoritative-file-ceilings.mjs";
 
 const repoRoot = resolve(import.meta.dirname, "..");
 const contextOutputRoot = resolve(
@@ -63,6 +64,7 @@ export async function buildRepositoryContextBundle(options = {}) {
     fullOutput,
   } = profilePaths;
 
+  assertAuthoritativeFileCeilings();
   const repomixCli = ensureRepomixCli();
   mkdirSync(contextOutputRoot, { recursive: true });
   const headroomBaseUrl = (process.env.HEADROOM_BASE_URL || DEFAULT_HEADROOM_BASE_URL).replace(/\/$/, "");

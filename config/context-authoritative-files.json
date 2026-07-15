@@ -1,0 +1,10 @@
+{
+  "schema": "spiritos-context-authoritative-files/v1",
+  "files": [
+    { "path": "AGENTS.md", "max_bytes": 524288 },
+    { "path": "docs/architecture/campaign-1-plan.md", "max_bytes": 524288 },
+    { "path": "src/components/coding/CodingCockpitShell.tsx", "max_bytes": 3145728 },
+    { "path": "source_proxy/tasks/long_running.py", "max_bytes": 3145728 },
+    { "path": "packages/contracts/schemas/shared/applied-run-receipt.schema.json", "max_bytes": 262144 }
+  ]
+}

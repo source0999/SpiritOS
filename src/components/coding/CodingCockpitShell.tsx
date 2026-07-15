@@ -67,13 +67,11 @@ import {
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { taskRequestsPreviewOnly } from "@/lib/coding/preview-only-request";
 import {
-  buildDummyCoder10RunnerPacket,
-  dummyCoder10Prompts,
-  formatDummyCoder10ForbiddenSummary,
-  type DummyCoder10Prompt,
-} from "@/lib/coding/dummy-coder-10-prompts";
-import { gradeDummyCoder10Result, type DummyCoder10GradingResult } from "@/lib/coding/dummy-coder-10-grader";
-import { buildExistingDummyProjectSummary, probeDummyStorefront, type DummyStorefrontProbeResult } from "@/lib/coding/dummy-project-summary";
+  codingTargetPlugin,
+  type TargetPluginGradingResult,
+  type TargetPluginPrompt,
+  type TargetPluginStorefrontProbeResult,
+} from "@/lib/coding/target-plugins";
 import {
   mapVisibleResultBadge,
   type VisibleResultBadge,
@@ -352,7 +350,7 @@ type DummyCoder10RunState = {
   provenanceHashNormalization: string | null;
   recommendedNextAction: string | null;
   lastFailureDiagnostics: Record<string, unknown> | null;
-  grader: DummyCoder10GradingResult | null;
+  grader: TargetPluginGradingResult | null;
   packet: unknown | null;
   // Wall-clock production timing for the diagnostics report. startedAt is captured when the run
   // begins (status -> starting); finishedAt when it reaches a terminal applied/complete/error state.
@@ -360,7 +358,7 @@ type DummyCoder10RunState = {
   finishedAt: number | null;
   // Storefront render probe result (coder-001 only). Null on other prompts or when the fixture
   // contents could not be read. Surfaces whether the page renders real storefront content.
-  storefrontProbe: DummyStorefrontProbeResult | null;
+  storefrontProbe: TargetPluginStorefrontProbeResult | null;
   canonicalContextVerdict: string | null;
   canonicalContextReportHash: string | null;
   canonicalContextBlockers: string[];
@@ -418,7 +416,7 @@ export type SelectedPromptAuditDiagnosticsState = Pick<
 >;
 
 export function selectedPromptAuditDiagnosticsLines(input: {
-  grader: DummyCoder10GradingResult | null;
+  grader: TargetPluginGradingResult | null;
   state: SelectedPromptAuditDiagnosticsState;
 }) {
   const { grader, state } = input;
@@ -1431,7 +1429,7 @@ function defaultDummyCoderRunState(
   };
 }
 
-export function selectedPromptTaskDescription(prompt: DummyCoder10Prompt) {
+export function selectedPromptTaskDescription(prompt: TargetPluginPrompt) {
   const selectedTarget = selectedPromptTarget(prompt);
   return [
     prompt.submittedPrompt,
@@ -1441,14 +1439,14 @@ export function selectedPromptTaskDescription(prompt: DummyCoder10Prompt) {
     `Target file: ${selectedTarget}`,
     `Allowed files: ${prompt.allowedWriteRoot}`,
     `Fixture root: ${prompt.fixtureRoot}`,
-    `Forbidden files: ${formatDummyCoder10ForbiddenSummary(prompt)}`,
+    `Forbidden files: ${codingTargetPlugin.formatForbiddenSummary(prompt)}`,
     `Pass expectations: ${prompt.passExpectations.join("; ")}`,
     `Fail conditions: ${prompt.failConditions.join("; ")}`,
     prompt.projectContract,
   ].join("\n");
 }
 
-export function selectedPromptTarget(prompt: DummyCoder10Prompt) {
+export function selectedPromptTarget(prompt: TargetPluginPrompt) {
   if (prompt.id === "coder-003-render-product-cards") {
     return (
       prompt.primaryExpectedTargets.find((target) => target.endsWith("/src/main.js")) ??
@@ -1459,7 +1457,7 @@ export function selectedPromptTarget(prompt: DummyCoder10Prompt) {
   return prompt.primaryExpectedTargets[0] ?? prompt.fixtureRoot;
 }
 
-export function selectedPromptModelTask(prompt: DummyCoder10Prompt) {
+export function selectedPromptModelTask(prompt: TargetPluginPrompt) {
   return [
     prompt.submittedPrompt,
     "",
@@ -1579,7 +1577,7 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
     }
     const selectedPromptId = storedStringOrNull(parsed.selectedPromptId);
     const selectedPromptKnown = selectedPromptId
-      ? dummyCoder10Prompts.some((prompt) => prompt.id === selectedPromptId)
+      ? codingTargetPlugin.prompts.some((prompt) => prompt.id === selectedPromptId)
       : false;
     if (!selectedPromptKnown) return defaultDummyCoderRunState();
     const storedAt = typeof parsed.storedAt === "number" ? parsed.storedAt : null;
@@ -1612,7 +1610,7 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
       generationSource: storedStringOrNull(parsed.generationSource),
       grader:
         parsed.grader && typeof parsed.grader === "object"
-          ? (parsed.grader as DummyCoder10GradingResult)
+          ? (parsed.grader as TargetPluginGradingResult)
           : null,
       message: storedStringOrNull(parsed.message) ?? "Selected prompt state restored after browser refresh.",
       modelOutputClassification: storedStringOrNull(parsed.modelOutputClassification),
@@ -1662,7 +1660,7 @@ function loadStoredDummyCoderRunState(): DummyCoder10RunState {
       stalePatchRecovered: storedBooleanOrNull(parsed.stalePatchRecovered),
       storefrontProbe:
         parsed.storefrontProbe && typeof parsed.storefrontProbe === "object"
-          ? (parsed.storefrontProbe as DummyStorefrontProbeResult)
+          ? (parsed.storefrontProbe as TargetPluginStorefrontProbeResult)
           : null,
       canonicalContextVerdict: storedStringOrNull(parsed.canonicalContextVerdict),
       canonicalContextReportHash: storedStringOrNull(parsed.canonicalContextReportHash),
@@ -3134,7 +3132,7 @@ function selectedRunnerRouteLabel(state: DummyCoder10RunState): string {
 
 function selectedRunnerPreviewState(
   state: DummyCoder10RunState,
-  prompt: DummyCoder10Prompt,
+  prompt: TargetPluginPrompt,
   providerTruth: CodingProviderModelTruth,
 ): PreviewState | null {
   if (state.status === "idle" || state.status === "cleared" || !state.selectedPromptId) {
@@ -3241,7 +3239,7 @@ function selectedRunnerPreviewState(
 
 function selectedRunnerDisplayText(
   state: DummyCoder10RunState,
-  prompt: DummyCoder10Prompt,
+  prompt: TargetPluginPrompt,
 ): { detail: string; title: string } {
   const title = `Coder ${String(prompt.number).padStart(3, "0")} - ${prompt.title}`;
   if (state.status === "starting") {
@@ -3295,7 +3293,7 @@ function buildActiveRunDisplay({
 }: {
   draftReady: boolean;
   previewState: PreviewState;
-  selectedPrompt: DummyCoder10Prompt;
+  selectedPrompt: TargetPluginPrompt;
   selectedRunnerState: DummyCoder10RunState;
   selectedProviderTruth: CodingProviderModelTruth;
 }): ActiveRunDisplay {
@@ -4463,7 +4461,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
     () => defaultReversibleSuiteState(),
   );
   const [reversibleTrialCount, setReversibleTrialCount] = useState<ReversibleTrialCount>(10);
-  const [selectedDummyCoderPromptId, setSelectedDummyCoderPromptId] = useState(dummyCoder10Prompts[0].id);
+  const [selectedDummyCoderPromptId, setSelectedDummyCoderPromptId] = useState(codingTargetPlugin.prompts[0].id);
   const [dummyCoderRunCopyStatus, setDummyCoderRunCopyStatus] = useState("");
   const [dummyCoderRunState, setDummyCoderRunState] = useState<DummyCoder10RunState>(
     () => defaultDummyCoderRunState(),
@@ -4522,7 +4520,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
     const storedDummyCoderRun = loadStoredDummyCoderRunState();
     if (
       storedDummyCoderRun.selectedPromptId &&
-      dummyCoder10Prompts.some((prompt) => prompt.id === storedDummyCoderRun.selectedPromptId)
+      codingTargetPlugin.prompts.some((prompt) => prompt.id === storedDummyCoderRun.selectedPromptId)
     ) {
       setSelectedDummyCoderPromptId(storedDummyCoderRun.selectedPromptId);
     }
@@ -7061,8 +7059,8 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
     }
   }
 
-  const selectedDummyCoderPrompt = useMemo<DummyCoder10Prompt>(
-    () => dummyCoder10Prompts.find((prompt) => prompt.id === selectedDummyCoderPromptId) ?? dummyCoder10Prompts[0],
+  const selectedDummyCoderPrompt = useMemo<TargetPluginPrompt>(
+    () => codingTargetPlugin.prompts.find((prompt) => prompt.id === selectedDummyCoderPromptId) ?? codingTargetPlugin.prompts[0],
     [selectedDummyCoderPromptId],
   );
   const existingDummyProjectSummaryForBaseline = useCallback(
@@ -7084,7 +7082,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
       const appliedDummyFiles = (dummyCoderRunState.changedFiles ?? []).filter((path) =>
         isDummyProductSiteTrialPath(path),
       );
-      return buildExistingDummyProjectSummary({
+      return codingTargetPlugin.buildExistingProjectSummary({
         files: [...probeFiles, ...appliedDummyFiles],
       });
     },
@@ -7095,7 +7093,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
     [agentLabBaselineSnapshot, existingDummyProjectSummaryForBaseline],
   );
   const selectedDummyCoderPacket = useMemo(
-    () => buildDummyCoder10RunnerPacket(selectedDummyCoderPrompt, existingDummyProjectSummary),
+    () => codingTargetPlugin.buildRunnerPacket(selectedDummyCoderPrompt, existingDummyProjectSummary),
     [existingDummyProjectSummary, selectedDummyCoderPrompt],
   );
 
@@ -7329,7 +7327,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
 
   async function handleRunDummyCoder10Prompt() {
     const prompt = selectedDummyCoderPrompt;
-    let packet = buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary);
+    let packet = codingTargetPlugin.buildRunnerPacket(prompt, existingDummyProjectSummary);
     const selectedTarget = selectedPromptTarget(prompt);
     const taskDescription = selectedPromptTaskDescription(prompt);
     const modelTask = selectedPromptModelTask(prompt);
@@ -7538,7 +7536,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
             return;
           }
           const cleanSummary = existingDummyProjectSummaryForBaseline(baselineAfter);
-          packet = buildDummyCoder10RunnerPacket(prompt, cleanSummary);
+          packet = codingTargetPlugin.buildRunnerPacket(prompt, cleanSummary);
           updateDummyCoderRunState((current) => ({
             ...current,
             changedFiles: [],
@@ -8254,7 +8252,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
               }
             }),
           );
-          storefrontProbe = probeDummyStorefront({
+          storefrontProbe = codingTargetPlugin.probeStorefront({
             files: Object.fromEntries(fixtureEntries),
           });
         } catch {
@@ -8470,7 +8468,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
           "Prompt 3 already satisfied: existing LumaCart cards render from product data.";
       }
 
-      const grader = gradeDummyCoder10Result({
+      const grader = codingTargetPlugin.gradeResult({
         blockedReason,
         categoryEvidencePresent: prompt.id === "coder-009-noop-category-proof" ? Boolean(noOpEvidence) : undefined,
         changedFiles: appliedChangedFiles,
@@ -13384,7 +13382,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
                       }}
                       value={selectedDummyCoderPrompt.id}
                     >
-                      {dummyCoder10Prompts.map((prompt) => (
+                      {codingTargetPlugin.prompts.map((prompt) => (
                         <option key={prompt.id} value={prompt.id}>
                           Coder {String(prompt.number).padStart(3, "0")} - {prompt.title}
                         </option>
@@ -13407,7 +13405,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
                         {[
                           ["Fixture root", selectedDummyCoderPrompt.fixtureRoot],
                           ["Allowed write root", selectedDummyCoderPrompt.allowedWriteRoot],
-                          ["Forbidden summary", formatDummyCoder10ForbiddenSummary(selectedDummyCoderPrompt)],
+                          ["Forbidden summary", codingTargetPlugin.formatForbiddenSummary(selectedDummyCoderPrompt)],
                           ["Primary expected targets", formatList(selectedDummyCoderPrompt.primaryExpectedTargets, "none")],
                         ].map(([label, value]) => (
                           <div key={label}>
@@ -15957,17 +15955,17 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
-function storefrontProbeFromPayload(value: unknown): DummyStorefrontProbeResult | null {
+function storefrontProbeFromPayload(value: unknown): TargetPluginStorefrontProbeResult | null {
   const record = asRecord(value);
   const previewStatus = stringValue(record.preview_behavior_status);
   const runtimeStatus = stringValue(record.storefront_runtime_status);
   if (!previewStatus || !runtimeStatus) return null;
-  return record as unknown as DummyStorefrontProbeResult;
+  return record as unknown as TargetPluginStorefrontProbeResult;
 }
 
 function storefrontProbeFromManagedBrowserEvidence(
   value: unknown,
-): DummyStorefrontProbeResult | null {
+): TargetPluginStorefrontProbeResult | null {
   const record = asRecord(value);
   if (stringValue(record.storefront_runtime_engine) !== "playwright_chromium") {
     return null;

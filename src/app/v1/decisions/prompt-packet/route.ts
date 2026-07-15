@@ -1,5 +1,5 @@
 import { mergeRepoFirstResearchSources } from "@/app/v1/decisions/_repo-research";
-import { probeDummyStorefront } from "@/lib/coding/dummy-project-summary";
+import { codingTargetPlugin } from "@/lib/coding/target-plugins";
 import { sourceProxyFetch, sourceProxyLongJsonFetch } from "@/lib/source-proxy-origin";
 
 import { readFile } from "node:fs/promises";
@@ -309,7 +309,7 @@ async function prompt1AlreadySatisfiedPayload(bodyText: string) {
   if (presentFiles.length !== prompt1StarterFiles.length) return null;
 
   const filesByPath = Object.fromEntries(fileContents.map((item) => [item.file, item.content]));
-  const probe = probeDummyStorefront({
+  const probe = codingTargetPlugin.probeStorefront({
     files: {
       "index.html": filesByPath["index.html"] ?? "",
       "src/main.js": filesByPath["src/main.js"] ?? "",
@@ -375,7 +375,7 @@ async function prompt3AlreadySatisfiedPayload(bodyText: string) {
   const context = await readPrompt3FixtureContext();
   const root = path.join(process.cwd(), "tests/ui-agent-trials/fixtures/dummy-product-site");
   const productsJs = await readFixtureContextFile(root, "src/products.js");
-  const probe = probeDummyStorefront({
+  const probe = codingTargetPlugin.probeStorefront({
     files: {
       "index.html": context.indexHtml,
       "src/main.js": context.mainJs,
