@@ -10,7 +10,7 @@ Authority-validator reconciliation: `87c23b3b` verifies the canonical cockpit an
 
 Python target-adapter increment: `af137da5` adds the fail-closed `source_proxy.target_plugins.adapter` identity resolver. The canonical browser packet now declares schema, plugin, repository, worktree, root, selected prompt/context, and execution profile; Prompt Packet resolves and binds the live source head before dispatch. Missing, unsupported, conflicting, stale-head, repository/worktree/root/context/profile, and direct fixture selections block. This is partial: executor, approval, verifier, grader, and evidence acknowledgement migration remains the active gate.
 
-Continuity policy: the Python adapter implementation anchor is retained as an ancestor of this atomic ledger/state checkpoint.
+Continuity policy: `af137da58f64c24a6fe0e50faeb9088622a2de64` is retained as an ancestor implementation anchor of this atomic ledger/state checkpoint.
 
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
