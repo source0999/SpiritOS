@@ -5,6 +5,7 @@ import json
 import sqlite3
 import time
 from typing import Any
+from pathlib import Path
 
 from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -13,6 +14,7 @@ from pydantic import BaseModel, Field
 from source_proxy.approval.gate import execute_approved_action
 from source_proxy.approval.campaign_authority import CampaignApprovalError, issue_coding_execution_approval, persist_coding_execution_preview, reject_coding_execution_preview, resolve_coding_execution_preview
 from source_proxy.approval.operator_session import OperatorSessionError, verify_operator_approval_assertion
+from source_proxy.target_plugins.adapter import TargetPluginResolutionError, resolve_target_plugin
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
 from source_proxy.tasks.long_running import (
     LongRunningTaskError,
@@ -60,6 +62,7 @@ class LongRunningTaskApprovalPreviewRequest(BaseModel):
     target: str = Field(min_length=1, max_length=1000)
     selected_prompt_id: str = Field(min_length=1, max_length=160)
     context_hash: str = Field(min_length=1, max_length=128)
+    target_plugin: dict[str, Any] | None = None
 
 
 class LongRunningTaskOperatorApprovalRequest(BaseModel):
@@ -266,14 +269,20 @@ async def long_running_task_approval_preview(
     request: LongRunningTaskApprovalPreviewRequest,
 ) -> dict[str, Any]:
     try:
+        target_plugin_identity = None
+        if request.target_plugin is not None:
+            target_plugin_identity = resolve_target_plugin(
+                {"target_plugin": request.target_plugin, "selected_prompt_id": request.selected_prompt_id},
+                Path.cwd(),
+            ).evidence_identity()
         preview = persist_coding_execution_preview(
             task_id=task_id, action=request.action, approved_diff=request.approved_diff,
             target=request.target, selected_prompt_id=request.selected_prompt_id,
             context_hash=request.context_hash,
         )
-        record_coding_execution_preview(task_id, preview_id=str(preview["preview_id"]), generation=int(preview["generation"]))
+        record_coding_execution_preview(task_id, preview_id=str(preview["preview_id"]), generation=int(preview["generation"]), target_plugin_identity=target_plugin_identity)
         return {"authority": "spiritos-approval-authority", "consumer": "coding-executor", "preview": preview}
-    except CampaignApprovalError as error:
+    except (CampaignApprovalError, TargetPluginResolutionError) as error:
         raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
 
 

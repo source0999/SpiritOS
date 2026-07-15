@@ -1188,6 +1188,22 @@ def execute_approved_long_running_task(
     )
     _save_task(task)
     pending_approval = _ensure_ast_snapshot_dict(task).get("campaign_1_pending_approval")
+    pending_preview = _ensure_ast_snapshot_dict(task).get("campaign_1_pending_preview")
+    target_plugin_identity = (
+        pending_preview.get("target_plugin_identity")
+        if isinstance(pending_preview, dict)
+        else None
+    )
+    if selected_prompt_id.startswith("coder-00") and not isinstance(target_plugin_identity, dict):
+        raise LongRunningTaskError(
+            "Selected Coder execution requires the server-resolved target-plugin identity.",
+            "target_plugin_direct_fixture_bypass",
+        )
+    if isinstance(target_plugin_identity, dict) and str(target_plugin_identity.get("selected_prompt_id") or "") != selected_prompt_id:
+        raise LongRunningTaskError(
+            "Execution selected prompt does not match the persisted target-plugin identity.",
+            "target_plugin_selected_prompt_mismatch",
+        )
     if (
         isinstance(pending_approval, dict)
         and str(pending_approval.get("approval_id") or "")
@@ -3307,6 +3323,7 @@ def record_coding_execution_preview(
     *,
     preview_id: str,
     generation: int,
+    target_plugin_identity: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     task = _lookup_task(task_id)
     snapshot = _ensure_ast_snapshot_dict(task)
@@ -3315,6 +3332,7 @@ def record_coding_execution_preview(
         "generation": generation,
         "consumer": "coding-executor",
         "state": "previewed",
+        "target_plugin_identity": dict(target_plugin_identity or {}),
     }
     task.ast_snapshot = snapshot
     task.updated_at = _now_iso()

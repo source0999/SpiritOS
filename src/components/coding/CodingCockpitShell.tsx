@@ -8035,6 +8035,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
               action: approvalAction,
               approved_diff: proposedDiff,
               context_hash: contextHash,
+              target_plugin: packet.target_plugin,
               selected_prompt_id: prompt.id,
               target: responseSelectedTarget,
             }),
