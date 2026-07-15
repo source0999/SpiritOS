@@ -279,6 +279,7 @@ async def long_running_task_approval_preview(
             task_id=task_id, action=request.action, approved_diff=request.approved_diff,
             target=request.target, selected_prompt_id=request.selected_prompt_id,
             context_hash=request.context_hash,
+            target_plugin_identity=target_plugin_identity,
         )
         record_coding_execution_preview(task_id, preview_id=str(preview["preview_id"]), generation=int(preview["generation"]), target_plugin_identity=target_plugin_identity)
         return {"authority": "spiritos-approval-authority", "consumer": "coding-executor", "preview": preview}

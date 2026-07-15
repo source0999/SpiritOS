@@ -164,6 +164,21 @@ def test_coding_evidence_requires_identical_approval_generation_for_all_consumer
     assert caught.value.reason_code == "approval_acknowledgement_mismatch:coding-verifier"
 
 
+def test_coding_evidence_requires_identical_target_plugin_identity_for_all_consumers() -> None:
+    identity = {"plugin_id": "lumacart", "selected_prompt_id": "coder-001-init-dummy-product-site"}
+    receipt = {
+        "approval_id": "apr_campaign1", "generation": 2, "target_plugin_identity": identity,
+        "acknowledgements": {
+            name: {"approval_id": "apr_campaign1", "generation": 2, "target_plugin_identity": dict(identity)}
+            for name in ("coding-executor", "coding-reviewer", "coding-verifier", "evidence-recorder")
+        },
+    }
+    receipt["acknowledgements"]["evidence-recorder"]["target_plugin_identity"] = {"plugin_id": "other"}
+    with pytest.raises(CampaignApprovalEvidenceError) as caught:
+        validate_coding_approval_evidence(receipt)
+    assert caught.value.reason_code == "approval_target_plugin_acknowledgement_mismatch:evidence-recorder"
+
+
 def test_coding_approval_rejects_fabricated_and_cancelled_ids() -> None:
     with pytest.raises(CampaignApprovalError) as fabricated:
         consume("apr_fabricated", task_id="campaign1-test-fabricated")
@@ -182,9 +197,21 @@ def test_coding_approval_rejects_wrong_plugin_worktree_and_content(
 ) -> None:
     plugin_preview = coding_preview(task_id="campaign1-test-plugin")
     plugin_id = issue(str(plugin_preview["preview_id"]))
-    monkeypatch.setattr(authority, "coding_target_plugin", lambda _target: "dummy-product-site")
     with pytest.raises(CampaignApprovalError) as plugin:
-        consume(plugin_id, task_id="campaign1-test-plugin")
+        consume_coding_execution_approval(
+            approval_id=plugin_id,
+            task_id="campaign1-test-plugin",
+            action="test action",
+            approved_diff="diff --git a/a b/a\n",
+            target="src/app/coding/a.ts",
+            selected_prompt_id="prompt-1",
+            context_hash="context-1",
+            target_plugin_identity={
+                "plugin_id": "lumacart",
+                "selected_prompt_id": "prompt-1",
+                "source_head": authority.current_head(),
+            },
+        )
     assert plugin.value.reason_code == "approval_plugin_mismatch"
 
     monkeypatch.undo()

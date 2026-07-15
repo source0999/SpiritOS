@@ -1239,6 +1239,7 @@ def execute_approved_long_running_task(
             target=target or "",
             selected_prompt_id=selected_prompt_id,
             context_hash=context_hash,
+            target_plugin_identity=target_plugin_identity if isinstance(target_plugin_identity, dict) else None,
         )
     except CampaignApprovalError as error:
         expected_approval_id = "server-owned-durable-approval"
@@ -1521,6 +1522,7 @@ def execute_approved_long_running_task(
                 "target": target,
                 "changed_files": audit_record["changed_files"],
                 "receipt": "source_proxy_execute_approved",
+                "target_plugin_identity": durable_approval.get("target_plugin_identity", {}),
             },
             status="succeeded",
         )
@@ -1531,9 +1533,10 @@ def execute_approved_long_running_task(
         "approval_id": approval_id,
         "generation": durable_approval["generation"],
         "consumer": "coding-executor",
+        "target_plugin_identity": durable_approval.get("target_plugin_identity", {}),
         "acknowledgements": {
-            "coding-executor": {"approval_id": approval_id, "generation": durable_approval["generation"]},
-            "coding-reviewer": {"approval_id": approval_id, "generation": durable_approval["generation"]},
+            "coding-executor": {"approval_id": approval_id, "generation": durable_approval["generation"], "target_plugin_identity": durable_approval.get("target_plugin_identity", {})},
+            "coding-reviewer": {"approval_id": approval_id, "generation": durable_approval["generation"], "target_plugin_identity": durable_approval.get("target_plugin_identity", {})},
         },
         "evidence": "redacted_source_proxy_execute_approved_receipt",
     }
@@ -2399,6 +2402,7 @@ def record_post_apply_verification(
             consumer: {
                 "approval_id": campaign_approval["approval_id"],
                 "generation": campaign_approval["generation"],
+                "target_plugin_identity": campaign_approval.get("target_plugin_identity", {}),
             }
             for consumer in ("coding-executor", "coding-reviewer", "coding-verifier", "evidence-recorder")
         }
