@@ -17,8 +17,8 @@ Campaign 1 was originally scoped as Phases 0-3. The Phase 1 closeout at `4e1f849
 | --- | --- | --- | --- |
 | Phase 0 | Neutral truth and characterization | COMPLETED | Baseline characterization, no-reversion constraints, provenance anchors, borrowed-worktree containment, and protected-head policy established. |
 | Phase 1 | P0 authority and deployment enforcement | COMPLETED | Commit range `8d17286d..4e1f849f`; AR-001/002/003 closed with fail-closed proofs and durable authority evidence. |
-| Phase 2 | Shared contracts and enforced boundaries | NOT_STARTED | Next gate: `phase2_shared_contracts_creation`. |
-| Phase 3 | Context reduction and canonical ownership | NOT_STARTED | Must follow Phase 2 or a recorded dependency decision. |
+| Phase 2 | Shared contracts and enforced boundaries | COMPLETED | Commit `a36c4437`; shared OpenAPI/JSON Schema package, Python/Next schema consumers, ESLint boundaries, and deliberate violation tests pass. |
+| Phase 3 | Context reduction and canonical ownership | BLOCKED | Canonical-shell move requires a product-owner decision because `CodingAgentInterface.tsx` still has two live production callers. |
 
 ## Phase 0 - Neutral truth and characterization
 
@@ -43,7 +43,7 @@ Phase 1 GO is verified complete. This does not close Phases 2 or 3.
 
 ## Phase 2 - Shared contracts and enforced boundaries
 
-Status: **NOT_STARTED**.
+Status: **COMPLETED** at `a36c4437`.
 
 Purpose: convert duplicated Python/TypeScript boundary knowledge into shared, enforceable contracts that services and tests consume from one source of truth.
 
@@ -56,11 +56,11 @@ Required deliverables:
 - Add violation tests that fail when a route, worker, shell, or helper bypasses the shared contract or drifts from it.
 - Keep Phase 1 authority invariants intact while moving schemas and client/server bindings behind contracts.
 
-Phase 2 acceptance requires committed contracts, generated or contract-backed consumers on both sides of each selected boundary, focused violation tests, and continuity validation. No Phase 2 implementation is present at `4e1f849f`.
+Phase 2 acceptance is met at `a36c4437`: `packages/contracts/` provides OpenAPI and nine JSON Schema surfaces; Python validates task and verification lifecycle payloads, Next maps receipt transport casing then validates the canonical shared schema, and ESLint rejects contract/product/labs/fixture/product-crossing violations. Focused Python and Vitest violation tests and `npm run typecheck` pass.
 
 ## Phase 3 - Context reduction and canonical ownership
 
-Status: **NOT_STARTED**.
+Status: **BLOCKED** pending an explicit canonical-shell ownership decision.
 
 Purpose: reduce repository/context load, declare canonical ownership surfaces, and quarantine non-production experiments so future agents and humans can reason from the same small set of authoritative paths.
 
@@ -74,13 +74,14 @@ Required deliverables:
 - Remove duplicate routes/helpers that survived Phase 1 because they were not part of the P0 authority enforcement slice.
 - Create a test-profiles registry that truthfully labels unit, source-text, route, production-path, browser, and runtime proof.
 
-Phase 3 acceptance requires measurable tracked-path/context reduction, canonical ownership declarations, quarantined alternates, duplicate-removal proof, test-profile enforcement, continuity validation, and evidence-root checks. No Phase 3 implementation is present at `4e1f849f`.
+Phase 3 must not move a live-mounted shell into `labs/`. The required no-caller check found `src/app/design-demo/coding/page.tsx` and `src/components/chat/SpiritTrinityChatShell.tsx` importing `CodingAgentInterface.tsx`; choosing whether to retire, migrate, or preserve those two product surfaces requires Britton's decision.
 
 ## GO, failures, and turn ends
 
 - `GO_PHASE_1_AUTHORITY_COMPLETE`: verified at `4e1f849f`. Phase 1 P0 authority enforcement is genuinely complete and well-tested.
 - `GO_CAMPAIGN_1_COMPLETE`: **not currently valid** for the full campaign. Full Campaign 1 GO requires Phase 2 shared contracts and Phase 3 context reduction/canonical ownership to be implemented, tested, documented, and committed.
 - Any future closeout must distinguish Phase-level GO from full-campaign GO and must not reuse the Phase 1 GO label as full Campaign 1 completion.
+- The next gate is `phase3_canonical_shell_owner_decision`; full Campaign 1 remains NO-GO until the Phase 3 blocker is resolved and its remaining gates are implemented and verified.
 - Campaign 2 must not begin from the Phase 1 checkpoint alone.
 
 The next recorded gate is `phase2_shared_contracts_creation`.

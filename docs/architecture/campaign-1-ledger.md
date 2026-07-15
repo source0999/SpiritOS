@@ -9,13 +9,13 @@
 
 ## Current checkpoint
 
-- Phase: **Phase 1** - P0 authority complete; Campaign 1 full scope open.
-- Increment: **campaign1_full_scope_restored_after_phase1_closeout**.
-- Atomic checkpoint contents: documentation/state correction only. Restores the original Phase 0-3 Campaign 1 scope, records Phase 1 GO as verified, and reopens full-campaign GO until Phase 2 and Phase 3 are complete.
-- Product code changed: none.
-- Critical blocker: none.
-- GO eligibility: `false` for full Campaign 1; `true` only for Phase 1 authority enforcement.
-- Next concrete gate: `phase2_shared_contracts_creation`; Campaign 2 is not started.
+- Phase: **Phase 3** - context reduction and canonical ownership.
+- Increment: **phase2_shared_contracts_complete_phase3_canonical_shell_discovery**.
+- Atomic checkpoint contents: records the Phase 2 implementation commit `a36c4437` and the first Phase 3 gate result; no Phase 3 product or evidence mutation was made.
+- Product code changed: Phase 2 only — schema-backed shared contracts and ESLint import boundaries.
+- Critical blocker: `CodingAgentInterface.tsx` is live-mounted by `src/app/design-demo/coding/page.tsx` and `src/components/chat/SpiritTrinityChatShell.tsx`. Moving it to `labs/` would break both callers; the campaign plan designates this as an owner decision.
+- GO eligibility: `false` for full Campaign 1; Phase 2 only is complete.
+- Next concrete gate: `phase3_canonical_shell_owner_decision`; Campaign 2 is not started.
 
 ## Phase status
 
@@ -23,8 +23,8 @@
 | --- | --- | --- |
 | Phase 0 - Neutral truth and characterization | completed | baseline characterization, provenance, no-reversion constraints, protected-head policy, and borrowed-worktree containment accepted |
 | Phase 1 - P0 authority and deployment enforcement | completed | commit range `8d17286d..4e1f849f`; AR-001/002/003 closed; durable Approval Authority, operator sessions, seven admin writers, Cartographer separation, Design writeback, canonical shell lifecycle, and final browser proof verified |
-| Phase 2 - Shared contracts and enforced boundaries | not_started | no `packages/contracts/`; shared OpenAPI/JSON Schema contracts, generated or contract-backed consumers, one minimum enforcement tool, and violation tests remain future work |
-| Phase 3 - Context reduction and canonical ownership | not_started | evidence externalization, docs/test discovery exclusions, canonical shell declaration, `labs/` quarantine, Prompt 1 target-plugin extraction, duplicate removal, and test-profile registry remain future work |
+| Phase 2 - Shared contracts and enforced boundaries | completed | `a36c4437`; `packages/contracts/` OpenAPI + nine schemas, Python task/retest validation, Next receipt validation, one ESLint enforcement surface, and deliberate violation tests |
+| Phase 3 - Context reduction and canonical ownership | blocked | verified two live `CodingAgentInterface.tsx` production callers; owner decision is required before the required labs move. No Phase 3 mutation has occurred. |
 
 ## Phase 1 verification retained
 
@@ -43,6 +43,6 @@ The Phase 1 checkpoint validation ran `npm run campaign-1:validate-authority`, `
 
 ## Next gate
 
-`phase2_shared_contracts_creation`
+`phase3_canonical_shell_owner_decision`
 
-Required start condition: create the shared contract package and first enforcement slice without modifying protected product branches, borrowed `_worktrees/`, or beginning Campaign 2.
+Required start condition: Britton decides whether `/design-demo/coding` and the embedded Spirit Trinity chat should migrate to the canonical cockpit, be retired, or remain supported. Do not move a live shell to `labs/` before that decision.
