@@ -5,17 +5,49 @@
   "ledger_path": "docs/architecture/campaign-1-ledger.md",
   "base_commit": "49e58f2982521c46a1a4fc73ef66461a86643792",
   "branch": "codex/spiritos-campaign-1-foundation-20260712",
-  "recorded_head": "8f9cfd818479a3494e7123697ef36263cf6d184a",
+  "recorded_head": "4e1f849ff34f0f2c5c0d5e34160e9108d969c92b",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
-  "current_phase": "Campaign 1 complete",
-  "current_increment": "phase1_final_authority_acceptance_and_closeout",
-  "completed_gate_ids": ["phase0_authenticated_no_reversion", "authority_inventory", "ar002_duplicate_cleanup", "approval_authority_lifecycle", "coding_durable_acknowledgements", "operator_session_foundation", "operator_issuance_production_route_and_design_integration", "build_verification", "authenticated_cross_product_browser_regression", "authenticated_selected_prompt1_authority_lifecycle", "canonical_in_shell_operator_control_and_coder10_migration", "spiritflix_admin_smart_rescan_executor_migration", "spiritflix_admin_remaining_writer_executor_migration", "ar001_spiritflix_authority", "ar002_cartographer_durable_selection_consumer_proof", "ar003_design_writeback_final_acknowledgement_envelope", "phase1_campaign_owned_runtime_lane_recovery", "phase1_cartographer_legacy_fixture_migration", "phase1_spiritflix_admin_authenticated_operator_issuance_proof", "phase1_final_authority_acceptance_and_closeout"],
-  "partial_gate_ids": [],
-  "next_gate_id": "campaign1_complete",
-  "protected_heads": {"architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14", "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb", "spiritflix": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196"},
+  "current_phase": "Phase 1",
+  "current_increment": "campaign1_full_scope_restored_after_phase1_closeout",
+  "completed_gate_ids": [
+    "phase0_authenticated_no_reversion",
+    "authority_inventory",
+    "ar002_duplicate_cleanup",
+    "approval_authority_lifecycle",
+    "coding_durable_acknowledgements",
+    "operator_session_foundation",
+    "operator_issuance_production_route_and_design_integration",
+    "build_verification",
+    "authenticated_cross_product_browser_regression",
+    "authenticated_selected_prompt1_authority_lifecycle",
+    "canonical_in_shell_operator_control_and_coder10_migration",
+    "spiritflix_admin_smart_rescan_executor_migration",
+    "spiritflix_admin_remaining_writer_executor_migration",
+    "ar001_spiritflix_authority",
+    "ar002_cartographer_durable_selection_consumer_proof",
+    "ar003_design_writeback_final_acknowledgement_envelope",
+    "phase1_campaign_owned_runtime_lane_recovery",
+    "phase1_cartographer_legacy_fixture_migration",
+    "phase1_spiritflix_admin_authenticated_operator_issuance_proof",
+    "phase1_final_authority_acceptance_and_closeout"
+  ],
+  "partial_gate_ids": [
+    "phase2_contracts",
+    "phase3_context_reduction"
+  ],
+  "next_gate_id": "phase2_shared_contracts_creation",
+  "protected_heads": {
+    "architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14",
+    "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb",
+    "spiritflix": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196"
+  },
   "allowed_mutable_root": "/home/source/SpiritOS-campaign-1-20260712",
-  "dirty_state_policy": "The final atomic checkpoint stages only the named Campaign implementation, tests, ledger/state, and redacted evidence paths. Borrowed and unknown work is never cleaned, restored, or staged.",
-  "valid_stop_reasons": ["GO_CAMPAIGN_1_COMPLETE", "verification_failure", "external_critical_blocker"],
-  "go_eligible": true,
-  "last_verified_at": "2026-07-14T22:44:00Z"
+  "dirty_state_policy": "The Phase 1 closeout checkpoint staged only named Campaign implementation, tests, ledger/state, and redacted evidence paths. Borrowed and unknown work is never cleaned, restored, or staged.",
+  "valid_stop_reasons": [
+    "GO_PHASE_1_AUTHORITY_COMPLETE",
+    "verification_failure",
+    "external_critical_blocker"
+  ],
+  "go_eligible": false,
+  "last_verified_at": "2026-07-15T01:46:49Z"
 }
