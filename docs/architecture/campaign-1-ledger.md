@@ -4,6 +4,8 @@
 
 > 2026-07-15 Python target-adapter fixture-reset increment: `285065b8` extends the canonical contract through every Coder 10 prompt/context, and requires the canonical Prompt 1 packet for the only fixture-reset mutation. The Next reset route is a body-preserving compatibility delegator; Python resolves the declared repository, worktree, root, source head, prompt, context, and profile before reset, and records the resolved identity on the reset receipt. Missing identity and non-Prompt-1 reset packets fail closed. Focused Python contract/reset/regression tests: 146 passed; reset-route/cockpit tests: 65 passed; typecheck passed. Full selected-prompt runtime/browser proof and remaining duplicate-path reconciliation are still required.
 
+> 2026-07-15 target-command ownership increment: `489f3737` removes generic decision-route ownership of the Prompt 1–3 command selection and task-spec factories. The resolved adapter now owns target command dispatch, target constraints, and the attached verification identity; the generic route delegates only a previously resolved plugin. Coding regression: 141 passed (existing async-mock warnings). Remaining adapter work: verifier/grader direct-fixture bypass enforcement and runtime/browser lifecycle proof.
+
 Next gate ID: `phase3_python_target_adapter_duplicate_paths_and_test_profiles`.
 
 Continuity checkpoint: `893c4b5e` is an ancestor implementation anchor; this atomic ledger/state record preserves that policy.
