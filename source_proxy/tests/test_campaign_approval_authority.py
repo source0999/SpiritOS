@@ -149,6 +149,25 @@ def test_coding_approval_rejects_changed_source_head(monkeypatch: pytest.MonkeyP
     assert caught.value.reason_code == "approval_source_mismatch"
 
 
+def test_coding_approval_persists_the_server_resolved_lumacart_plugin() -> None:
+    identity = {
+        "plugin_id": "lumacart",
+        "selected_prompt_id": "coder-001-init-dummy-product-site",
+        "fixture_root": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+        "source_head": authority.current_head(),
+    }
+    preview = persist_coding_execution_preview(
+        task_id="campaign1-test-lumacart-plugin",
+        action="test LumaCart plugin binding",
+        approved_diff="diff --git a/a b/a\n",
+        target="tests/ui-agent-trials/fixtures/dummy-product-site/",
+        selected_prompt_id="coder-001-init-dummy-product-site",
+        context_hash="context-lumacart",
+        target_plugin_identity=identity,
+    )
+    assert str(preview["preview_id"]).startswith("prv_")
+
+
 def test_coding_evidence_requires_identical_approval_generation_for_all_consumers() -> None:
     receipt = {
         "approval_id": "apr_campaign1", "generation": 2,

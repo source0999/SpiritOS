@@ -50,6 +50,7 @@ from source_proxy.planning.architect import (
 from source_proxy.planning.plan import task_spec_from_plan, save_plan
 from source_proxy.approval.campaign_authority import persist_coding_execution_preview
 from source_proxy.tasks.long_running import (
+    _parse_dummy_product_site_file_bundle,
     _render_coder_prompt_from_packet,
     create_long_running_task,
     execute_approved_long_running_task,
@@ -3169,6 +3170,61 @@ class CodingRegressionPackTests(unittest.TestCase):
             "model_authored_diff_proven",
         )
         self.assertFalse((self.root / "tests/ui-agent-trials/fixtures/dummy-product-site").exists())
+
+    def test_dummy_product_site_create_mode_normalizes_narrow_local_bundle_action(self) -> None:
+        files = _dummy_prompt1_valid_files_lines()
+        model_json = json.dumps(
+            {
+                "action": "create_files",
+                "files": [
+                    {
+                        "path": f"tests/ui-agent-trials/fixtures/dummy-product-site/{path}",
+                        "content_lines": lines,
+                    }
+                    for path, lines in files
+                ],
+            }
+        )
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_json,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "dummy_product_site_create_bundle")
+        self.assertTrue(payload["coder_diagnostics"]["generated_diff_by_backend"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_output_mode"], "json_create_file_bundle")
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_file_count"], 6)
+
+    def test_dummy_product_site_create_mode_rejects_non_bundle_action_even_with_file_like_fields(self) -> None:
+        model_json = json.dumps(
+            {
+                "action": "replace_file",
+                "files": [
+                    {
+                        "path": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                        "content": "# LumaCart",
+                    }
+                ],
+            }
+        )
+
+        parsed, parse_error = _parse_dummy_product_site_file_bundle(model_json)
+        self.assertIsNone(parsed)
+        self.assertEqual(parse_error, "JSON action must be create_file_bundle.")
+
+        payload = propose_dummy_product_site_create_diff(
+            task="make LumaCart in the dummy root",
+            workspace_root=self.root,
+            llm_call=lambda _prompt, _alias: model_json,
+            model_alias="coder",
+        )
+
+        self.assertEqual(payload["reason_code"], "coder_file_bundle_validation_failed")
+        self.assertTrue(payload["coder_diagnostics"]["repair_attempted"])
+        self.assertEqual(payload["coder_diagnostics"]["structured_bundle_status"], "malformed")
 
     def test_dummy_product_site_create_mode_reports_already_satisfied_when_rendered_storefront_exists(self) -> None:
         fixture_root = self.root / "tests/ui-agent-trials/fixtures/dummy-product-site"

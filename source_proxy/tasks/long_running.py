@@ -8247,7 +8247,14 @@ def _parse_dummy_product_site_file_bundle(
             last_error = str(error)
     if not isinstance(parsed, dict):
         return None, last_error or "Response was not a JSON object."
-    if parsed.get("action") != "create_file_bundle":
+    # Local coder backends are not equally consistent about the outer action
+    # label.  Normalize only the narrow creation spellings below, and keep the
+    # actual write boundary in the subsequent per-file validation.  In
+    # particular, do not treat arbitrary JSON as a bundle: a destructive
+    # action such as replace_file must still be rejected here.
+    action = parsed.get("action")
+    accepted_actions = {"create_file_bundle", "create_files", "write_files"}
+    if action not in accepted_actions and not (action is None and isinstance(parsed.get("files"), list)):
         return None, "JSON action must be create_file_bundle."
     raw_files = parsed.get("files")
     if not isinstance(raw_files, list) or not raw_files:
@@ -8306,7 +8313,10 @@ def _dummy_product_site_parse_meta(
             parsed = json.loads(candidate)
         except json.JSONDecodeError:
             continue
-        if isinstance(parsed, dict) and parsed.get("action") == "create_file_bundle":
+        if isinstance(parsed, dict) and (
+            parsed.get("action") in {"create_file_bundle", "create_files", "write_files"}
+            or (parsed.get("action") is None and isinstance(parsed.get("files"), list))
+        ):
             return {
                 "structured_output_mode": "json_create_file_bundle",
                 "file_block_repair_source": "",
