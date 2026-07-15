@@ -8,6 +8,8 @@ Continuity checkpoint: `893c4b5e` is an ancestor implementation anchor; this ato
 
 Authority-validator reconciliation: `87c23b3b` verifies the canonical cockpit and labs-only legacy shell through import/mount semantics; the accepted migration no longer causes a stale path failure.
 
+Python target-adapter increment: `af137da5` adds the fail-closed `source_proxy.target_plugins.adapter` identity resolver. The canonical browser packet now declares schema, plugin, repository, worktree, root, selected prompt/context, and execution profile; Prompt Packet resolves and binds the live source head before dispatch. Missing, unsupported, conflicting, stale-head, repository/worktree/root/context/profile, and direct fixture selections block. This is partial: executor, approval, verifier, grader, and evidence acknowledgement migration remains the active gate.
+
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
 - Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; Phase 1 atomic checkpoint parent: `8f9cfd818479a3494e7123697ef36263cf6d184a`; Phase 1 closeout checkpoint: `4e1f849ff34f0f2c5c0d5e34160e9108d969c92b`.
