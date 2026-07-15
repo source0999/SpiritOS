@@ -8,7 +8,7 @@
   "recorded_head": "84271f665ff02f9876968f7447231f9ac0c9be48",
   "checkpoint_commit_policy": "ancestor_of_atomic_checkpoint",
   "current_phase": "Phase 3",
-  "current_increment": "phase3_duplicate_path_cleanup_inventory",
+  "current_increment": "phase3_isolated_runtime_build_partial_browser_proof",
   "completed_gate_ids": [
     "phase0_authenticated_no_reversion",
     "authority_inventory",
@@ -53,5 +53,5 @@
     "two_live_coding_shells_owner_decision"
   ],
   "go_eligible": false,
-  "last_verified_at": "2026-07-15T06:00:00Z"
+  "last_verified_at": "2026-07-15T06:30:00Z"
 }

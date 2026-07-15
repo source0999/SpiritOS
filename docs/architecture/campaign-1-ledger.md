@@ -1,5 +1,7 @@
 # Campaign 1 Ledger
 
+> 2026-07-15 isolated runtime/build increment: Campaign HEAD `2a4e8d84` completed `npm run build` on Dell. A loopback server from that exact artifact served `/coding` (200, canonical shell marker), `/design-demo/coding` (307 to `/coding`), and `/chat` (200). The in-app browser could not reach the Dell loopback lane through the host SSH tunnel because of its network policy; no browser lifecycle claim is made. Full browser/operator lifecycle proof remains open.
+
 > 2026-07-15 duplicate-path cleanup: `edf29096` removes three unreachable Python target-mode classifiers; `84271f66` records the classified production, defense-in-depth, compatibility, labs, fixture, and archive paths. Coding regression: 131 passed (existing async-mock warnings). Duplicate-route authority validation remains green.
 
 > 2026-07-15 status reconciliation: `08f99990` removes the obsolete Phase 3 owner-decision blocker and obsolete full-Campaign-GO evidence claim from the plan/index. The campaign remains NO-GO while duplicate-path reconciliation and runtime/browser/build closeout remain unfinished.
