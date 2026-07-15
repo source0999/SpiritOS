@@ -12,6 +12,8 @@ Python target-adapter increment: `af137da5` adds the fail-closed `source_proxy.t
 
 Continuity policy: `af137da58f64c24a6fe0e50faeb9088622a2de64` is retained as an ancestor implementation anchor of this atomic ledger/state checkpoint.
 
+Preview/execution target-adapter increment: `04b0801f7dc42c048fa5fcb300af4779503ac4c7` carries the canonical browser plugin packet into the approval-preview request, resolves it server-side, persists its identity on the task preview, and blocks selected Coder execution when the persisted identity is absent or names another prompt. Verification remains partial until approval consume/finalize, grader, verifier, and evidence all bind the same identity.
+
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
 - Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; Phase 1 atomic checkpoint parent: `8f9cfd818479a3494e7123697ef36263cf6d184a`; Phase 1 closeout checkpoint: `4e1f849ff34f0f2c5c0d5e34160e9108d969c92b`.
