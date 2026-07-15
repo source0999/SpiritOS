@@ -81,7 +81,7 @@ The historic no-caller blocker was resolved by the owner decision and implementa
 - `GO_PHASE_1_AUTHORITY_COMPLETE`: verified at `4e1f849f`. Phase 1 P0 authority enforcement is genuinely complete and well-tested.
 - `GO_CAMPAIGN_1_COMPLETE`: **not currently valid** for the full campaign. Full Campaign 1 GO requires Phase 2 shared contracts and Phase 3 context reduction/canonical ownership to be implemented, tested, documented, and committed.
 - Any future closeout must distinguish Phase-level GO from full-campaign GO and must not reuse the Phase 1 GO label as full Campaign 1 completion.
-- The next gate is `phase3_python_target_adapter_duplicate_paths_and_test_profiles`; full Campaign 1 remains NO-GO until every remaining Phase 3 and closeout gate is verified.
+- The next gate is `phase3_authenticated_browser_lifecycle_credential_gate`; full Campaign 1 remains NO-GO until every remaining Phase 3 and closeout gate is verified.
 - Campaign 2 must not begin from the Phase 1 checkpoint alone.
 
-The next recorded gate is `phase3_python_target_adapter_duplicate_paths_and_test_profiles`.
+The next recorded gate is `phase3_authenticated_browser_lifecycle_credential_gate`.

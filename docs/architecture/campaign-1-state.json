@@ -38,7 +38,7 @@
   "partial_gate_ids": [
     "phase3_context_reduction"
   ],
-  "next_gate_id": "phase3_python_target_adapter_duplicate_paths_and_test_profiles",
+  "next_gate_id": "phase3_authenticated_browser_lifecycle_credential_gate",
   "protected_heads": {
     "architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14",
     "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb",
@@ -53,5 +53,5 @@
     "two_live_coding_shells_owner_decision"
   ],
   "go_eligible": false,
-  "last_verified_at": "2026-07-15T07:00:00Z"
+  "last_verified_at": "2026-07-15T10:53:38Z"
 }

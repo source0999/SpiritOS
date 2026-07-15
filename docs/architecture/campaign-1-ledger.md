@@ -1,4 +1,5 @@
 # Campaign 1 Ledger
+> 2026-07-15 runtime/browser gate: isolated Campaign proxy/frontend were healthy and /coding rendered, but Playwright failed closed because SPIRITOS_OPERATOR_E2E_SECRET was absent. No credential was read or invented. Evidence: docs/evidence/e2e-loop/2026-07-15T10-53-36-406Z/. Next gate: phase3_authenticated_browser_lifecycle_credential_gate.
 
 > 2026-07-15 isolated authenticated lifecycle attempt: after `67af3061` repaired the harness reset packet, the isolated HTTPS proxy/frontend pair passed exact-worktree health and product-reset checks. Playwright reached the authenticated Prompt 1 UI but failed closed because `SPIRITOS_OPERATOR_E2E_SECRET` was absent. Dell-local approved env sources and proxy process environments were checked without reading values; none supplied the test credential. `7a4af838` adds the GLM handoff and Campaign 2 no-start stub. Campaign remains NO-GO pending the credential-gated browser lifecycle rerun.
 
