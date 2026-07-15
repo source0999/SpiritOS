@@ -56,7 +56,10 @@ def main() -> int:
     if terminal_closeout:
         if "Phase: **Campaign 1 complete**" not in ledger: failures.append("terminal_phase_not_recorded")
     else:
-        if state.get("current_phase") != "Phase 1" or "Phase: **Phase 1**" not in ledger: failures.append("obsolete_phase")
+        active_phases = {"Phase 1", "Phase 2", "Phase 3"}
+        current_phase = state.get("current_phase")
+        if current_phase not in active_phases or f"Phase: **{current_phase}**" not in ledger:
+            failures.append("obsolete_phase")
         if state.get("next_gate_id") in state.get("completed_gate_ids", []): failures.append("next_gate_already_complete")
         if state.get("next_gate_id") not in ledger: failures.append("next_gate_not_recorded")
     if "_worktrees/" not in ledger or "_worktrees/" not in plan or "borrowed" not in ledger.lower(): failures.append("borrowed_worktree_policy_missing")
