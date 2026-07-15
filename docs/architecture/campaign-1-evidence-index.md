@@ -4,10 +4,10 @@ Schema: `spiritos-campaign-1-evidence-index/v1`
 
 ## Verdict ceiling
 
-- Candidate head: `2a273e2a2ece744f8c56e5cfa42a49b60ae71cc8`
+- Candidate head: `007bb4ea8288284fb3c5600ae8fbd189b334ed80` (parent of the atomic closeout control-plane checkpoint).
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
-- Verdict: `NO_GO_CAMPAIGN_1_PHASE3_IN_PROGRESS`.
-- Reason: the Phase 1 closeout evidence remains valid only at its documented claim ceiling. Phase 2 is complete and accepted; Phase 3 has accepted shell, externalization, context, adapter, and test-profile increments but still requires duplicate-path reconciliation, full runtime/browser proof, build, and final closeout evidence.
+- Verdict: `GO_CAMPAIGN_1_COMPLETE`.
+- Reason: Phase 2 and Phase 3 are complete. The final isolated authenticated lifecycle receipt proves real model generation, approval, apply, browser runtime, Undo/reset, and rerun; duplicate ownership, truthful test profiles, mandatory production profiles, build, protected heads, and AR-001/002/003 were reconciled at closeout.
 
 ## Accepted baseline receipts
 
@@ -36,5 +36,8 @@ Schema: `spiritos-campaign-1-evidence-index/v1`
 | Design negative receipt fixtures | pass | 9 malformed receipt cases rejected. |
 | AR-001 ordinary browser session boundary | pass | [redacted server-owned-session receipt](campaign-1-evidence/ar001-server-owned-session-20260714.md); client credential and target overrides are rejected. |
 | AR-001 administrative writer authority | pass, committed-HEAD lifecycle | [redacted admin receipt](campaign-1-evidence/ar001-admin-operator-lifecycle-20260714.md): authenticated session, trusted Origin/Host and CSRF, persisted server-derived preview, server issuance, exact writer consume/finalize, replay rejection, and revocation rejection. |
+| Phase 3 canonical adapter and authenticated lifecycle | pass, authoritative `GO` | Runtime-only redacted receipt `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/`: strict adapter identity, model-authored six-file bundle, durable approval, apply, backend and direct Chromium proof, anti-cheat, manifest-backed Undo/reset, and clean rerun. |
+| Final mandatory profile matrix | pass | authority/task 85; coding backend 133; canonical coding frontend 193; canonical shell 61; Cartographer 263; Design 3; SpiritFlix operator 3; test-profile registry valid; bounded-heap production build passed. |
+| Protected-head reconciliation | pass | Source Proxy `594d66ef`; SpiritFlix `5fde4ae0`; architecture audit `05612d2a` unchanged. |
 
 Every entry is redacted by reference: no secret, cookie, approval ID, task ID, media path, or raw payload is repeated here. New evidence must include schema, campaign/run identity, source and protected heads, test profile, result, secret-redaction result, and a claim ceiling.

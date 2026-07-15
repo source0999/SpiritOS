@@ -1,6 +1,6 @@
 # Campaign 1 GLM Handoff
 
-Status: **Campaign 1 remains open; do not begin Campaign 2.**
+Status: **Campaign 1 complete; do not begin Campaign 2.**
 
 ## Checkout and invariants
 
@@ -18,12 +18,13 @@ Status: **Campaign 1 remains open; do not begin Campaign 2.**
 - Duplicate-path classification and obsolete target-mode helper removal: `edf29096`, `84271f66`.
 - Named product test-profile registry: `99e2b336`.
 
-## Current closeout status
+## Final closeout status
 
-- `npm run campaign-1:validate-continuity`, `npm run campaign-1:validate-authority`, and `npm run campaign-1:validate-test-profiles` pass.
-- Dell isolated Candidate build passed. Its exact `/coding` route is 200 with the canonical shell marker; `/design-demo/coding` redirects to `/coding`; `/chat` is 200.
-- The full isolated Prompt 1 browser harness reached the authenticated operator UI but cannot proceed without `SPIRITOS_OPERATOR_E2E_SECRET`. No secret was found in approved Campaign env sources or running proxy environments. This is not a pass and must be rerun after credential provisioning.
+- Dedicated least-privilege operator credential is provisioned only in the canonical Dell-local gitignored secret store with restrictive permissions; no value is committed or recorded.
+- The isolated Candidate `/coding` lifecycle passed through model-authored diff, durable approval, apply, managed and direct Chromium six-card proof, manifest-backed UI Undo/reset, and clean Prompt 1 rerun. Receipt: `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/` (runtime-only, redacted by reference).
+- Mandatory production profiles passed: Source Proxy authority/task 85, coding backend 133, canonical coding frontend 193, canonical shell 61, Cartographer 263, Design route 3, SpiritFlix operator 3, and bounded-heap `npm run build`.
+- `npm run campaign-1:validate-continuity`, `npm run campaign-1:validate-authority`, and `npm run campaign-1:validate-test-profiles` are final closeout requirements.
 
-## Required next action
+## Terminal state
 
-Provide the test-only operator credential only through the approved Dell-local runtime configuration, rerun the isolated `run-coding-e2e-loop` lifecycle, then perform the full Campaign 1 acceptance matrix and protected-head reconciliation. Do not substitute a source-text, curl, or prior receipt for that browser lifecycle.
+`GO_CAMPAIGN_1_COMPLETE` is the terminal Campaign 1 verdict after the final control-plane validator run and protected-head reconciliation. Preserve the recovery quarantine, protected heads, and borrowed `_worktrees/`; do not push or start Campaign 2.

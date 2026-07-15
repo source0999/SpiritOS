@@ -11,14 +11,14 @@ Status vocabulary: `completed` means committed and verified; `not_started` means
 
 ## Campaign phase map
 
-Campaign 1 was originally scoped as Phases 0-3. The Phase 1 closeout at `4e1f849f` is a verified P0 authority GO, not a full Campaign 1 GO. Full Campaign 1 remains open until Phases 2 and 3 are implemented and verified.
+Campaign 1 was originally scoped as Phases 0-3. The Phase 1 closeout at `4e1f849f` is a verified P0 authority GO, not a full Campaign 1 GO. Phase 2 and Phase 3 are now implemented and verified; this plan records full Campaign 1 closure without starting Campaign 2.
 
 | Phase | Name | Status | Evidence / next gate |
 | --- | --- | --- | --- |
 | Phase 0 | Neutral truth and characterization | COMPLETED | Baseline characterization, no-reversion constraints, provenance anchors, borrowed-worktree containment, and protected-head policy established. |
 | Phase 1 | P0 authority and deployment enforcement | COMPLETED | Commit range `8d17286d..4e1f849f`; AR-001/002/003 closed with fail-closed proofs and durable authority evidence. |
 | Phase 2 | Shared contracts and enforced boundaries | COMPLETED | Commit `a36c4437`; shared OpenAPI/JSON Schema package, Python/Next schema consumers, ESLint boundaries, and deliberate violation tests pass. |
-| Phase 3 | Context reduction and canonical ownership | IN PROGRESS | Owner decision applied: `CodingCockpitShell` is canonical; legacy shells are labs-only and compatibility surfaces delegate. Remaining gates are Python adapter completion, duplicate-path reconciliation, runtime/browser proof, and closeout. |
+| Phase 3 | Context reduction and canonical ownership | COMPLETED | Canonical target adapter, duplicate-path reconciliation, truthful test-profile registry, isolated authenticated browser lifecycle, build, and closeout reconciliation verified. |
 
 ## Phase 0 - Neutral truth and characterization
 
@@ -60,7 +60,7 @@ Phase 2 acceptance is met at `a36c4437`: `packages/contracts/` provides OpenAPI 
 
 ## Phase 3 - Context reduction and canonical ownership
 
-Status: **IN PROGRESS**. The product-owner decision has been implemented: `/coding` is canonical, `/design-demo/coding` delegates, chat embeds the constrained canonical cockpit, and legacy shells are labs-only.
+Status: **COMPLETED**. `/coding` is canonical, `/design-demo/coding` delegates, chat embeds the constrained canonical cockpit, and legacy shells are labs-only.
 
 Purpose: reduce repository/context load, declare canonical ownership surfaces, and quarantine non-production experiments so future agents and humans can reason from the same small set of authoritative paths.
 
@@ -74,14 +74,14 @@ Required deliverables:
 - Remove duplicate routes/helpers that survived Phase 1 because they were not part of the P0 authority enforcement slice.
 - Create a test-profiles registry that truthfully labels unit, source-text, route, production-path, browser, and runtime proof.
 
-The historic no-caller blocker was resolved by the owner decision and implementation. Remaining acceptance requires the fail-closed Python target adapter across execution/verification/evidence, a classified duplicate-path inventory, final runtime/browser evidence, build, protected-head reconciliation, and the Campaign handoff artifacts.
+The historic no-caller blocker was resolved by the owner decision and implementation. Final acceptance proved the fail-closed Python target adapter across execution/verification/evidence, reconciled the classified duplicate inventory, ran the truthful production test profiles, completed the isolated authenticated Prompt 1 browser lifecycle (including undo/reset and clean rerun), passed the build, reconciled protected heads, and refreshed the Campaign handoff artifacts.
 
 ## GO, failures, and turn ends
 
 - `GO_PHASE_1_AUTHORITY_COMPLETE`: verified at `4e1f849f`. Phase 1 P0 authority enforcement is genuinely complete and well-tested.
-- `GO_CAMPAIGN_1_COMPLETE`: **not currently valid** for the full campaign. Full Campaign 1 GO requires Phase 2 shared contracts and Phase 3 context reduction/canonical ownership to be implemented, tested, documented, and committed.
-- Any future closeout must distinguish Phase-level GO from full-campaign GO and must not reuse the Phase 1 GO label as full Campaign 1 completion.
-- The next gate is `phase3_authenticated_browser_lifecycle_credential_gate`; full Campaign 1 remains NO-GO until every remaining Phase 3 and closeout gate is verified.
-- Campaign 2 must not begin from the Phase 1 checkpoint alone.
+- `GO_CAMPAIGN_1_COMPLETE`: **valid**. Phase 2 shared contracts and Phase 3 context reduction/canonical ownership are implemented, tested, documented, committed, and reconciled at the Campaign closeout checkpoint.
+- The Phase 1 GO label remains a narrower historical authority claim; the terminal Campaign 1 verdict is the only full-campaign claim.
+- Terminal gate: `campaign1_complete`. Campaign 2 is not started by this closeout.
+- Do not push or mutate protected product worktrees from this Campaign checkout.
 
-The next recorded gate is `phase3_authenticated_browser_lifecycle_credential_gate`.
+The next recorded gate is `campaign1_complete`.

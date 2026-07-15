@@ -1,4 +1,15 @@
 # Campaign 1 Ledger
+> 2026-07-15 final Campaign 1 closeout: `630b6632` completes the canonical Python target adapter lifecycle by normalizing only narrow local bundle action spellings behind the existing strict file validation, admitting the server-resolved `lumacart` identity to the durable approval authority, and covering both paths. `007bb4ea` makes the test-profile registry truthful: canonical production frontend regression excludes the labs-only Command Center suite, which remains separately named with a labs-only ceiling. The isolated authenticated Candidate receipt `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/` is authoritative `GO` and `commit_safe=true`: real 7B local Coder output, diff preview, server-owned approval, apply, managed and direct Chromium six-card proof, manifest-backed UI Undo/reset, clean baseline, and clean Prompt 1 rerun all passed; anti-cheat passed. The 14B candidate was diagnosed as GPU-memory-exhausting for concurrent Chromium and safely replaced by the already-installed 7B Coder only for this isolated proof lane. Mandatory production profiles passed: authority/task 85, coding backend 133, coding frontend 193, canonical shell 61, Cartographer 263, Design 3, SpiritFlix operator 3, test-profile validator, and bounded-heap production build. AR-001, AR-002, and AR-003 remain accepted; protected heads Source Proxy `594d66ef`, SpiritFlix `5fde4ae0`, and architecture audit `05612d2a` were rechecked unchanged. No push, Campaign 2 start, protected-worktree mutation, borrowed `_worktrees/` mutation, quarantine restore, credential disclosure, or secret commit occurred.
+
+## Final checkpoint
+
+- Phase: **Campaign 1 complete**.
+- Terminal gate: `campaign1_complete`.
+- Verdict: `GO_CAMPAIGN_1_COMPLETE`.
+- Recorded implementation head: `007bb4ea8288284fb3c5600ae8fbd189b334ed80`; this atomic control-plane checkpoint records its parent under `parent_of_atomic_checkpoint` policy.
+- GO eligibility: `true`; partial gates: none; critical Campaign 1 blockers: none.
+- Recovery quarantine remains preserved at `/home/source/SpiritOS-campaign-1-20260712.recovery-quarantine-20260715T021242-0400`; SpiritFlix `_worktrees/` remains borrowed and untouched.
+
 > 2026-07-15 runtime/browser gate: isolated Campaign proxy/frontend were healthy and /coding rendered, but Playwright failed closed because SPIRITOS_OPERATOR_E2E_SECRET was absent. No credential was read or invented. Evidence: docs/evidence/e2e-loop/2026-07-15T10-53-36-406Z/. Next gate: phase3_authenticated_browser_lifecycle_credential_gate.
 
 > 2026-07-15 isolated authenticated lifecycle attempt: after `67af3061` repaired the harness reset packet, the isolated HTTPS proxy/frontend pair passed exact-worktree health and product-reset checks. Playwright reached the authenticated Prompt 1 UI but failed closed because `SPIRITOS_OPERATOR_E2E_SECRET` was absent. Dell-local approved env sources and proxy process environments were checked without reading values; none supplied the test credential. `7a4af838` adds the GLM handoff and Campaign 2 no-start stub. Campaign remains NO-GO pending the credential-gated browser lifecycle rerun.
