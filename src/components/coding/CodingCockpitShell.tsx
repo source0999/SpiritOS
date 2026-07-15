@@ -8719,9 +8719,14 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
   }
 
   async function resetDummyProductSiteViaServer(): Promise<string> {
+    const resetPacket = codingTargetPlugin.buildFixtureResetPacket(existingDummyProjectSummary);
     const response = await fetchWithTimeout(
       "/v1/coding/dummy-product-site-preview/reset",
       {
+        body: JSON.stringify({
+          selected_prompt_id: resetPacket.target_plugin.selected_prompt_id,
+          target_plugin: resetPacket.target_plugin,
+        }),
         headers: { "content-type": "application/json" },
         method: "POST",
       },

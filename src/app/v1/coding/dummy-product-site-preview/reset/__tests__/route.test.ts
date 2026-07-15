@@ -36,7 +36,11 @@ describe("dummy product site preview reset route", () => {
         }),
     } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>);
 
-    const response = await POST();
+    const request = new Request("http://localhost/v1/coding/dummy-product-site-preview/reset", {
+      body: JSON.stringify({ target_plugin: { id: "lumacart" } }),
+      method: "POST",
+    });
+    const response = await POST(request);
 
     await expect(response.json()).resolves.toEqual({
       reset_verified: true,
@@ -49,7 +53,11 @@ describe("dummy product site preview reset route", () => {
     expect(response.status).toBe(200);
     expect(mockedSourceProxyFetch).toHaveBeenCalledWith(
       "/v1/coding/dummy-product-site/reset",
-      { method: "POST" },
+      {
+        body: JSON.stringify({ target_plugin: { id: "lumacart" } }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      },
     );
   });
 
@@ -61,7 +69,7 @@ describe("dummy product site preview reset route", () => {
       text: async () => JSON.stringify({ detail: { reason_code: "unsafe_reset_target" } }),
     } as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>);
 
-    const response = await POST();
+    const response = await POST(new Request("http://localhost/reset", { method: "POST" }));
 
     await expect(response.json()).resolves.toEqual({
       detail: { reason_code: "unsafe_reset_target" },
@@ -72,7 +80,7 @@ describe("dummy product site preview reset route", () => {
   it("reports a Source Proxy connection failure", async () => {
     mockedSourceProxyFetch.mockRejectedValueOnce(new Error("connect ECONNREFUSED 127.0.0.1:8787"));
 
-    const response = await POST();
+    const response = await POST(new Request("http://localhost/reset", { method: "POST" }));
 
     await expect(response.json()).resolves.toEqual({
       error: "Source Proxy dummy product site reset is unavailable",
@@ -85,7 +93,7 @@ describe("dummy product site preview reset route", () => {
   it("stays behind the proxy feature flag", async () => {
     vi.stubEnv("SPIRIT_CODING_USE_PROXY", "false");
 
-    const response = await POST();
+    const response = await POST(new Request("http://localhost/reset", { method: "POST" }));
 
     await expect(response.json()).resolves.toEqual({
       error: "SPIRIT_CODING_USE_PROXY is not true",

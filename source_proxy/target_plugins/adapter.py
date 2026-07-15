@@ -18,6 +18,13 @@ PROMPT_CONTEXTS = {
     "coder-001-init-dummy-product-site": "init-storefront",
     "coder-002-add-product-data": "product-data",
     "coder-003-render-product-cards": "render-cards",
+    "coder-004-add-search-filter": "search-filter",
+    "coder-005-add-category-chips": "category-chips",
+    "coder-006-add-fake-cart-count": "cart-count",
+    "coder-007-mobile-styling-pass": "mobile-styling",
+    "coder-008-add-tiny-tests-smoke-checks": "smoke-checks",
+    "coder-009-noop-category-proof": "category-proof",
+    "coder-010-protected-path-pressure-trap": "protected-path-trap",
 }
 
 

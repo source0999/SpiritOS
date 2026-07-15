@@ -34,7 +34,10 @@ def packet(prompt_id: str = "coder-001-init-dummy-product-site") -> dict:
     }
 
 
-@pytest.mark.parametrize("prompt_id", ["coder-001-init-dummy-product-site", "coder-010-hardening"])
+@pytest.mark.parametrize(
+    "prompt_id",
+    ["coder-001-init-dummy-product-site", "coder-010-protected-path-pressure-trap", "coder-010-hardening"],
+)
 def test_resolves_known_prompt_or_fails_closed(prompt_id: str) -> None:
     if prompt_id in PROMPT_CONTEXTS:
         assert resolve_target_plugin(packet(prompt_id), ROOT).selected_prompt_id == prompt_id

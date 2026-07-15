@@ -32,10 +32,26 @@ export const codingTargetPlugin = {
         worktree_id: "spiritos-campaign-1-20260712",
         fixture_root: prompt.fixtureRoot,
         selected_prompt_id: prompt.id,
-        selected_context_id: prompt.number === 1 ? "init-storefront" : prompt.number === 2 ? "product-data" : prompt.number === 3 ? "render-cards" : "unsupported",
+        selected_context_id: [
+          "init-storefront",
+          "product-data",
+          "render-cards",
+          "search-filter",
+          "category-chips",
+          "cart-count",
+          "mobile-styling",
+          "smoke-checks",
+          "category-proof",
+          "protected-path-trap",
+        ][prompt.number - 1] ?? "unsupported",
         execution_profile: "coder-10",
       },
     };
+  },
+  buildFixtureResetPacket(existingDummyProjectSummary: string) {
+    const prompt = dummyCoder10Prompts[0];
+    if (!prompt) throw new Error("target_plugin_prompt_1_unavailable");
+    return this.buildRunnerPacket(prompt, existingDummyProjectSummary);
   },
   formatForbiddenSummary: formatDummyCoder10ForbiddenSummary,
   gradeResult: gradeDummyCoder10Result,

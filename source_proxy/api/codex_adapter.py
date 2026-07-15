@@ -23,6 +23,7 @@ from source_proxy.safety.paths import (
     unsafe_target_finding,
 )
 from source_proxy.tasks.long_running import generate_unified_diff_from_content
+from source_proxy.target_plugins.adapter import TargetPluginResolutionError, resolve_target_plugin
 from source_proxy.verification.diff import DiffVerificationError, preview_diff_verification
 
 router = APIRouter(prefix="/v1/coding")
@@ -57,6 +58,13 @@ class BoundedDiffPreviewRequest(BaseModel):
     micro_batch: str | None = Field(default=None, max_length=128)
 
 
+class DummyProductSiteResetRequest(BaseModel):
+    """A browser-selected Prompt 1 identity; the server never chooses it."""
+
+    target_plugin: dict[str, Any] | None = None
+    selected_prompt_id: str | None = Field(default=None, max_length=128)
+
+
 @router.post("/codex")
 async def codex_adapter(request: CodexAdapterRequest) -> dict[str, Any]:
     try:
@@ -80,9 +88,31 @@ async def bounded_diff_preview(request: BoundedDiffPreviewRequest) -> dict[str, 
 
 
 @router.post("/dummy-product-site/reset")
-async def reset_dummy_product_site_fixture_endpoint() -> dict[str, Any]:
+async def reset_dummy_product_site_fixture_endpoint(
+    request: DummyProductSiteResetRequest,
+) -> dict[str, Any]:
     try:
-        return reset_dummy_product_site_fixture(Path.cwd())
+        resolved = resolve_target_plugin(
+            {
+                "target_plugin": request.target_plugin,
+                "selected_prompt_id": request.selected_prompt_id,
+            },
+            Path.cwd(),
+        )
+        if resolved.selected_prompt_id != "coder-001-init-dummy-product-site":
+            raise _request_error(
+                "Only the canonical Prompt 1 plugin may reset its fixture.",
+                "target_plugin_reset_prompt_mismatch",
+            )
+        return reset_dummy_product_site_fixture(
+            Path.cwd(),
+            target_plugin_identity=resolved.evidence_identity(),
+        )
+    except TargetPluginResolutionError as error:
+        raise HTTPException(
+            status_code=409,
+            detail=_blocked_error_detail(str(error), str(error)),
+        ) from error
     except ValueError as error:
         raise HTTPException(
             status_code=409,
@@ -101,7 +131,11 @@ async def reset_dummy_product_site_fixture_endpoint() -> dict[str, Any]:
         ) from error
 
 
-def reset_dummy_product_site_fixture(workspace_root: Path) -> dict[str, Any]:
+def reset_dummy_product_site_fixture(
+    workspace_root: Path,
+    *,
+    target_plugin_identity: dict[str, Any],
+) -> dict[str, Any]:
     """Remove only the fixed dummy fixture and persist the verified result."""
 
     expected_root = "tests/ui-agent-trials/fixtures/dummy-product-site"
@@ -165,6 +199,7 @@ def reset_dummy_product_site_fixture(workspace_root: Path) -> dict[str, Any]:
         "removed_paths": removed_paths,
         "clean_verified": clean_verified,
         "reset_receipt_id": reset_receipt_id,
+        "target_plugin_identity": target_plugin_identity,
     }
     _write_dummy_product_site_reset_receipt(
         workspace=workspace,

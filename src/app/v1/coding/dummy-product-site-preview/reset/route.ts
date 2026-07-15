@@ -1,6 +1,6 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 
-export async function POST() {
+export async function POST(request: Request) {
   if (process.env.SPIRIT_CODING_USE_PROXY !== "true") {
     return Response.json(
       {
@@ -13,7 +13,10 @@ export async function POST() {
 
   let response;
   try {
+    const body = await request.text();
     response = await sourceProxyFetch("/v1/coding/dummy-product-site/reset", {
+      body,
+      headers: { "content-type": "application/json" },
       method: "POST",
     });
   } catch (error) {
