@@ -5,10 +5,10 @@
   "ledger_path": "docs/architecture/campaign-1-ledger.md",
   "base_commit": "49e58f2982521c46a1a4fc73ef66461a86643792",
   "branch": "codex/spiritos-campaign-1-foundation-20260712",
-  "recorded_head": "99e2b336ab473a140966f21e92443ba22191cdfa",
+  "recorded_head": "08f99990cc37bf15c8bbe1f1558a883a4382dc88",
   "checkpoint_commit_policy": "ancestor_of_atomic_checkpoint",
   "current_phase": "Phase 3",
-  "current_increment": "phase3_named_product_test_profiles",
+  "current_increment": "phase3_status_and_evidence_reconciliation",
   "completed_gate_ids": [
     "phase0_authenticated_no_reversion",
     "authority_inventory",
@@ -53,5 +53,5 @@
     "two_live_coding_shells_owner_decision"
   ],
   "go_eligible": false,
-  "last_verified_at": "2026-07-15T05:15:00Z"
+  "last_verified_at": "2026-07-15T05:30:00Z"
 }
