@@ -3969,7 +3969,7 @@ function discoverManualTargetCandidates(prompt: string, explicitTarget: string):
     candidates.add("tests/ui-agent-trials/fixtures/dummy-coding-targets/readme-trial.md");
   }
   if (text.includes("codingcommandcentershell")) {
-    candidates.add("src/components/coding/CodingCommandCenterShell.tsx");
+    candidates.add("src/components/coding/CodingCockpitShell.tsx");
   }
   if (text.includes("package json") || text.includes("package.json")) {
     candidates.add("package.json");
@@ -4423,7 +4423,12 @@ function isCombinedTask(task: string) {
   );
 }
 
-export function CodingCockpitShell() {
+export type CodingCockpitShellProps = {
+  /** A constrained host surface may present the canonical lifecycle without its global navigation. */
+  embedded?: boolean;
+};
+
+export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps = {}) {
   const stopReversibleSuiteAfterCurrentRef = useRef(false);
   const suiteFetchAbortRef = useRef<AbortController | null>(null);
   const selectedPromptAbortRef = useRef<AbortController | null>(null);
@@ -13215,7 +13220,11 @@ export function CodingCockpitShell() {
   }
 
   return (
-    <div className="dashboard-demo-v4-route-shell dashboard-demo-v4-root">
+    <div
+      className="dashboard-demo-v4-route-shell dashboard-demo-v4-root"
+      data-coding-shell-id="coding-cockpit-shell"
+      data-coding-shell-mode={embedded ? "embedded" : "full"}
+    >
       <main className="dashboard-demo-v4-route-main min-h-dvh overflow-x-hidden text-[var(--ddv4-fg)]">
         <div className="mx-auto grid min-h-dvh w-full max-w-[min(1500px,100%)] gap-4 px-3 py-4 sm:px-5 lg:px-6 lg:py-6 min-[920px]:grid-cols-[230px_minmax(0,1fr)] min-[1200px]:grid-cols-[248px_minmax(0,1fr)_320px] min-[1440px]:grid-cols-[260px_minmax(0,1fr)_340px]">
           <h1 className="sr-only">Coding</h1>
@@ -14375,7 +14384,7 @@ export function CodingCockpitShell() {
           </aside>
         </div>
       </main>
-      <DashboardDemoV4FloatingNav desktopVariant="full-height" />
+      {embedded ? null : <DashboardDemoV4FloatingNav desktopVariant="full-height" />}
     </div>
   );
 

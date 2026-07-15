@@ -22,14 +22,14 @@ describe("coding workflow type contract", () => {
   });
 
   it("classifies normal frontend work as a coding task", () => {
-    const result = classify("Update src/components/coding/CodingCommandCenterShell.tsx.");
+    const result = classify("Update labs/coding/CodingCommandCenterShell.tsx.");
 
     expect(result.workflowType).toBe("coding_task");
     expect(result.safeNextAction).toBe("scope_review");
   });
 
   it("classifies bugfix language separately", () => {
-    const result = classify("Fix the failing preview state in src/components/coding/CodingCommandCenterShell.tsx.");
+    const result = classify("Fix the failing preview state in labs/coding/CodingCommandCenterShell.tsx.");
 
     expect(result.workflowType).toBe("bugfix");
   });
@@ -41,7 +41,7 @@ describe("coding workflow type contract", () => {
   });
 
   it("keeps review-only analysis non-write-capable", () => {
-    const result = classify("Explain src/components/coding/CodingCommandCenterShell.tsx.");
+    const result = classify("Explain labs/coding/CodingCommandCenterShell.tsx.");
 
     expect(result.workflowType).toBe("review_only_analysis");
     expect(result.safeNextAction).toBe("review_only");

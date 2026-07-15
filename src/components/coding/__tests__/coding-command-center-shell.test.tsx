@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import CodingCommandCenterShell from "@/components/coding/CodingCommandCenterShell";
+import CodingCommandCenterShell from "@labs/coding/CodingCommandCenterShell";
 import {
   PROXY_COMBINED_GAUNTLET_EXPECTED_RECORD_COUNT,
   PROXY_COMBINED_GAUNTLET_PROMPTS,
@@ -1022,7 +1022,7 @@ describe("CodingCommandCenterShell", () => {
             job_type: "source_proxy_context_discovery",
             success: true,
             result: { summary: "Mac searched repo context for task." },
-            candidate_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+            candidate_files: ["labs/coding/CodingCommandCenterShell.tsx"],
             error: null,
           },
           status: {

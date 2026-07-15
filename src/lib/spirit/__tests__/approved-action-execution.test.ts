@@ -29,17 +29,17 @@ describe("approved action execution", () => {
         "create file",
         "src/app/design-demo/coding/page.tsx",
       ),
-    ).toContain("CodingAgentInterface");
+    ).toContain('redirect("/coding")');
   });
 
   it("creates the approved design-demo coding page through file-edit tools", async () => {
     const result = await executeApprovedAction({
       action: "create file",
       content: [
-        'import CodingAgentInterface from "@/components/coding/CodingAgentInterface";',
+        'import { redirect } from "next/navigation";',
         "",
         "export default function DesignDemoCodingPage() {",
-        "  return <CodingAgentInterface />;",
+        '  redirect("/coding");',
         "}",
         "",
       ].join("\n"),
@@ -53,7 +53,7 @@ describe("approved action execution", () => {
       path.join(tmpRoot, "src/app/design-demo/coding/page.tsx"),
       "utf8",
     );
-    expect(written).toContain("CodingAgentInterface");
+    expect(written).toContain('redirect("/coding")');
     expect(result.relativeFilePath).toBe("src/app/design-demo/coding/page.tsx");
   });
 

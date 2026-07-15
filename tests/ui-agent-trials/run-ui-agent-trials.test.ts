@@ -137,7 +137,7 @@ describe("UI agent trial route availability classification", () => {
 
   it("marks provider_call_made=false live claims as disqualified", () => {
     const classification = classifyActualIntelligenceOutcome({
-      changedFiles: ["src/components/coding/CodingCommandCenterShell.tsx"],
+      changedFiles: ["src/components/coding/CodingCockpitShell.tsx"],
       liveClaim: true,
       previewDiffProduced: true,
       providerCallMade: false,

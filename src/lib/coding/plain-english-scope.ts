@@ -263,8 +263,8 @@ function candidateFilesForTask(task: string): string[] {
   const candidates: string[] = [];
   if (normalized.includes("/coding") || normalized.includes("coding agent") || normalized.includes("command center")) {
     candidates.push(
-      "src/components/coding/CodingCommandCenterShell.tsx",
-      "src/components/coding/CodingAgentInterface.tsx",
+      "src/components/coding/CodingCockpitShell.tsx",
+      "src/components/coding/CodingCockpitShell.tsx",
       "src/lib/coding/plain-english-scope.ts",
     );
   }

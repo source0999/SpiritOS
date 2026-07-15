@@ -20,9 +20,8 @@ export type CodingApiRouteRegistryEntry = {
   dormantReason: string | null;
 };
 
-// Owns the /coding shell decision record. Alternate shells can stay available
-// for review, but this registry is the place that prevents experiments from
-// silently becoming canonical or being deleted without approval.
+// Owns the /coding shell decision record. Labs-only alternates cannot become
+// production dependencies or navigation targets.
 export const codingShellRegistry = [
   {
     id: "coding-cockpit-shell",
@@ -36,9 +35,17 @@ export const codingShellRegistry = [
     id: "coding-command-center-shell",
     status: "experimental",
     route: null,
-    component: "src/components/coding/CodingCommandCenterShell.tsx",
-    ownerDecision: "undecided",
-    rollback: "Leave alternate shell unmounted; do not delete without Britton approval.",
+    component: "labs/coding/CodingCommandCenterShell.tsx",
+    ownerDecision: "alternate",
+    rollback: "Restore only as an explicit labs comparison; never remount it in production.",
+  },
+  {
+    id: "coding-agent-interface-lab",
+    status: "experimental",
+    route: null,
+    component: "labs/coding/CodingAgentInterface.tsx",
+    ownerDecision: "alternate",
+    rollback: "Restore only as an explicit labs comparison; never issue or consume production approvals.",
   },
 ] as const satisfies readonly CodingShellRegistryEntry[];
 

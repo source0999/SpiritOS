@@ -48,7 +48,7 @@ import CodingAgentInterface, {
   TaskCompletionStatus,
   VerificationSummary,
   workflowStep,
-} from "@/components/coding/CodingAgentInterface";
+} from "@labs/coding/CodingAgentInterface";
 
 type WorkflowStepArgs = Parameters<typeof workflowStep>[0];
 
@@ -939,7 +939,7 @@ describe("ProposalCreationPanel", () => {
     fireEvent.click(proposalDraftButton());
 
     expect(onDraft).toHaveBeenCalledTimes(1);
-    const drafted = onDraft.mock.calls[0]?.[0] as import("@/components/coding/CodingAgentInterface").ProposalDraftResult;
+    const drafted = onDraft.mock.calls[0]?.[0] as import("@labs/coding/CodingAgentInterface").ProposalDraftResult;
     expect(drafted.text).toContain('"mode": "proposal"');
     expect(drafted.text).toContain('"target_file": "src/app/proxy-backend/page.tsx"');
     expect(drafted.text).toContain('"allowed_files": [');
@@ -3776,14 +3776,14 @@ describe("coding diff quality gates", () => {
         ...baseArgs().approvalGate,
         action: "modify file",
         proposedDiff: DOCS_APPEND_STANDARD_UNIFIED_DIFF,
-        target: "src/components/coding/CodingAgentInterface.tsx",
+        target: "labs/coding/CodingAgentInterface.tsx",
       },
-      resolvedTargetPath: "src/components/coding/CodingAgentInterface.tsx",
+      resolvedTargetPath: "labs/coding/CodingAgentInterface.tsx",
     });
 
     expect(checks).toContainEqual(
       expect.objectContaining({
-        detail: "Diff does not touch src/components/coding/CodingAgentInterface.tsx.",
+        detail: "Diff does not touch labs/coding/CodingAgentInterface.tsx.",
         label: "Target Match",
         required: true,
         status: "fail",

@@ -9,7 +9,7 @@ const diagnosticTasks = [
     id: "ui-task",
     lane: "ui",
     result: "preview_ready",
-    target_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+    target_files: ["src/components/coding/CodingCockpitShell.tsx"],
   },
   {
     id: "backend-route-schema-task",
@@ -21,7 +21,7 @@ const diagnosticTasks = [
     id: "design-packet-intake",
     lane: "design",
     result: "context_attached",
-    target_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+    target_files: ["src/components/coding/CodingCockpitShell.tsx"],
   },
   {
     id: "search-scout-context",

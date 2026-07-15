@@ -56,7 +56,7 @@ describe("derivePlainEnglishScopeDraft", () => {
     expect(draft.clarificationPrompt).toContain("I need one target file or allowed-file scope before preview.");
     expect(draft.candidateFiles).toEqual(
       expect.arrayContaining([
-        "src/components/coding/CodingCommandCenterShell.tsx",
+        "labs/coding/CodingCommandCenterShell.tsx",
         "src/lib/coding/plain-english-scope.ts",
       ]),
     );

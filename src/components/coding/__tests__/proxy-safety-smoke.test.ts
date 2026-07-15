@@ -3,7 +3,7 @@
 import {
   proxySafetySmokePassed,
   proxySafetySmokeSummary,
-} from "@/components/coding/CodingAgentInterface";
+} from "@labs/coding/CodingAgentInterface";
 
 const passingPayload = {
   applied_anything: false,

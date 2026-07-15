@@ -2,7 +2,7 @@
 
 import {
   buildQualityGateChecks,
-} from "@/components/coding/CodingAgentInterface";
+} from "@labs/coding/CodingAgentInterface";
 
 const DOCS_APPEND_STANDARD_UNIFIED_DIFF = [
   "--- a/docs/phase-8-manual-check.md",

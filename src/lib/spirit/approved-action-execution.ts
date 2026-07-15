@@ -128,10 +128,10 @@ export function approvedFileContentFor(
       normalizedAction.includes("file"))
   ) {
     return [
-      'import CodingAgentInterface from "@/components/coding/CodingAgentInterface";',
+      'import { redirect } from "next/navigation";',
       "",
       "export default function DesignDemoCodingPage() {",
-      "  return <CodingAgentInterface />;",
+      '  redirect("/coding");',
       "}",
       "",
     ].join("\n");

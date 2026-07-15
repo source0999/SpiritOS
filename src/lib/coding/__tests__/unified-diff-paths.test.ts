@@ -63,7 +63,7 @@ describe("unified diff path extraction", () => {
     expect(
       diffTouchesExplicitTarget(
         DOCS_APPEND_STANDARD_UNIFIED_DIFF,
-        "src/components/coding/CodingAgentInterface.tsx",
+        "labs/coding/CodingAgentInterface.tsx",
       ),
     ).toBe(false);
   });

@@ -11,7 +11,7 @@ const maxRepoSourceBytes = 200_000;
 
 const repoResearchPaths = [
   "src/app/coding/page.tsx",
-  "src/components/coding/CodingAgentInterface.tsx",
+  "src/components/coding/CodingCockpitShell.tsx",
   "masterProxyPlan.md",
   "refinedProxy.md",
   "source_proxy/decision/research.py",

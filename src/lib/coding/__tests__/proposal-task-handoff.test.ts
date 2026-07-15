@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deriveProposalDraft } from "@/components/coding/CodingAgentInterface";
+import { deriveProposalDraft } from "@labs/coding/CodingAgentInterface";
 import {
   buildWorkflowTaskFromProposal,
   effectivePlanningTaskText,

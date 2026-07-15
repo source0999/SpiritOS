@@ -3,9 +3,9 @@
 // -- SpiritTrinityChatShell - dashboard v4 chrome around the real SpiritChat runtime --
 import { useEffect, useState } from "react";
 
-import CodingAgentInterface from "@/components/coding/CodingAgentInterface";
 import { SpiritChat } from "@/components/chat/SpiritChat";
 import type { SpiritChatProps } from "@/components/chat/SpiritChat";
+import CodingCockpitShell from "@/components/coding/CodingCockpitShell";
 import { DashboardDemoV4FloatingNav } from "@/components/dashboard/demo-v4/DashboardDemoV4FloatingNav";
 
 type TrinityWorkspaceSurface = "chat" | "coding";
@@ -36,7 +36,7 @@ export default function SpiritTrinityChatShell() {
       </div>
 
       <main className="spirit-trinity-live-chat flex min-h-0 min-w-0 flex-1 flex-col">
-        {/* ── Phase 7.1: coding agent shares one shell with Trinity chat (refinedProxy.md) ── */}
+        {/* Chat owns presentation only; coding lifecycle stays in the canonical cockpit. */}
         <div
           className="flex shrink-0 flex-wrap gap-2 border-b border-white/[0.08] px-3 py-2"
           role="tablist"
@@ -82,8 +82,8 @@ export default function SpiritTrinityChatShell() {
               shellClassName="h-full min-h-0"
             />
           ) : (
-            <div className="h-full min-h-0 overflow-auto">
-              <CodingAgentInterface embedded />
+            <div className="h-full min-h-0 overflow-auto" data-testid="trinity-canonical-cockpit">
+              <CodingCockpitShell embedded />
             </div>
           )}
         </div>

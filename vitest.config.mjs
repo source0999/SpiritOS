@@ -22,6 +22,7 @@ export default defineConfig({
     include: ["**/*.{test,spec}.{ts,tsx}"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@labs": path.resolve(__dirname, "./labs"),
       "server-only": path.resolve(__dirname, "./src/test/shims/server-only.ts"),
     },
   },

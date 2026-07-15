@@ -32,16 +32,16 @@ describe("coding design vault preview route", () => {
 
     expect(payload.route_component_css_map).toEqual([
       {
-        component: "src/components/coding/CodingCommandCenterShell.tsx",
+        component: "src/components/coding/CodingCockpitShell.tsx",
         css: "src/styles/dashboard-demo-v4.css",
         css_mutation_authority: false,
         route: "/coding",
       },
     ]);
     expect(payload.bounded_coding_task_draft).toMatchObject({
-      allowed_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+      allowed_files: ["src/components/coding/CodingCockpitShell.tsx"],
       blocked_until_human_accepts_design_packet: true,
-      target_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+      target_files: ["src/components/coding/CodingCockpitShell.tsx"],
     });
     expect(payload.drift_map).toMatchObject({
       component_drift: "review_required",

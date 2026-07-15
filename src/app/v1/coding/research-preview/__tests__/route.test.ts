@@ -14,7 +14,7 @@ describe("coding research preview route", () => {
   it("normalizes an advisory research packet without granting authority", async () => {
     const response = await POST(
       jsonRequest({
-        allowed_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+        allowed_files: ["labs/coding/CodingCommandCenterShell.tsx"],
         prompt: "Attach Scout context to the coding cockpit.",
         research_sources: [
           {
@@ -24,7 +24,7 @@ describe("coding research preview route", () => {
             url: "https://example.test/result",
           },
         ],
-        target_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+        target_files: ["labs/coding/CodingCommandCenterShell.tsx"],
         task_id: "PLAN-4",
       }),
     );
@@ -32,7 +32,7 @@ describe("coding research preview route", () => {
     await expect(response.json()).resolves.toMatchObject({
       accepted_research_to_coding_handoff: true,
       advisory_only: true,
-      allowed_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+      allowed_files: ["labs/coding/CodingCommandCenterShell.tsx"],
       apply_authority: false,
       commit_authority: false,
       hidden_execution_started: false,
@@ -64,7 +64,7 @@ describe("coding research preview route", () => {
         status: "blocked",
       },
       shell_command_started: false,
-      target_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+      target_files: ["labs/coding/CodingCommandCenterShell.tsx"],
     });
     expect(response.status).toBe(200);
     expect(response.headers.get("x-spiritos-plan4-route-status")).toBe("dormant");

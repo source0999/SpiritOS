@@ -1249,7 +1249,7 @@ function specificTrialBlockerReason(trial: ProxyTrialPrompt, rawReason: string) 
   }
   const isFrontendWidgetTrial =
     trial.category === "frontend_productive_preview" &&
-    trial.targetFile === "src/components/coding/CodingCommandCenterShell.tsx";
+    trial.targetFile === "labs/coding/CodingCommandCenterShell.tsx";
   if (!isFrontendWidgetTrial) {
     return rawReason;
   }
@@ -1261,7 +1261,7 @@ function specificTrialBlockerReason(trial: ProxyTrialPrompt, rawReason: string) 
   }
   return [
     "Preview blocked: frontend_preview_route_gap.",
-    `${trial.id} targets src/components/coding/CodingCommandCenterShell.tsx, but the browser preview route returned no productive diff and no recognized blocker.`,
+    `${trial.id} targets labs/coding/CodingCommandCenterShell.tsx, but the browser preview route returned no productive diff and no recognized blocker.`,
     "Next: improve frontend UI-copy preview diagnostics or fallback before promoting to 25 previews.",
     "No files changed.",
   ].join(" ");
@@ -2578,8 +2578,8 @@ export default function CodingCommandCenterShell() {
     taskPacket.candidateFiles.length > 0
       ? taskPacket.candidateFiles
       : [
-          "src/components/coding/CodingCommandCenterShell.tsx",
-          "src/components/coding/CodingAgentInterface.tsx",
+          "labs/coding/CodingCommandCenterShell.tsx",
+          "labs/coding/CodingAgentInterface.tsx",
           "src/lib/coding/plain-english-scope.ts",
         ];
   const receiptTargetScopeText = taskPacket.targetFile
@@ -5362,7 +5362,7 @@ export default function CodingCommandCenterShell() {
               if (unexpected.length > 0) {
                 const frontendWidgetTrial =
                   trial.category === "frontend_productive_preview" &&
-                  trial.targetFile === "src/components/coding/CodingCommandCenterShell.tsx";
+                  trial.targetFile === "labs/coding/CodingCommandCenterShell.tsx";
                 if (frontendWidgetTrial) {
                   status = "blocked";
                   reason = [
@@ -5399,7 +5399,7 @@ export default function CodingCommandCenterShell() {
       let reasonCode = reasonTaxonomyFromRaw(reason).code;
       const isFrontendWidgetTrial =
         trial.category === "frontend_productive_preview" &&
-        trial.targetFile === "src/components/coding/CodingCommandCenterShell.tsx";
+        trial.targetFile === "labs/coding/CodingCommandCenterShell.tsx";
       const isTargetUnresolvedTrial =
         trial.category === "generic_blocker_regression" &&
         (trial.targetFile.includes("not-real") ||

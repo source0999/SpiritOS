@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { ReactNode } from "react";
 
@@ -50,6 +50,12 @@ vi.mock("@/components/chat/SpiritChat", () => ({
   ),
 }));
 
+vi.mock("@/components/coding/CodingCockpitShell", () => ({
+  default: ({ embedded }: { embedded?: boolean }) => (
+    <div data-testid="canonical-coding-cockpit" data-embedded={String(embedded)} />
+  ),
+}));
+
 const shellPath = resolve(process.cwd(), "src/components/chat/SpiritTrinityChatShell.tsx");
 const chatPath = resolve(process.cwd(), "src/components/chat/SpiritChat.tsx");
 const messagePath = resolve(process.cwd(), "src/components/chat/SpiritMessage.tsx");
@@ -89,6 +95,13 @@ describe("SpiritTrinityChatShell dashboard v4 visual integration", () => {
       "data-chrome-variant",
       "trinity",
     );
+  });
+
+  it("mounts the canonical cockpit in the coding tab instead of a second coding shell", () => {
+    render(<SpiritTrinityChatShell />);
+    fireEvent.click(screen.getByRole("tab", { name: /source coding agent/i }));
+    expect(screen.getByTestId("canonical-coding-cockpit")).toHaveAttribute("data-embedded", "true");
+    expect(readFileSync(shellPath, "utf8")).not.toContain("CodingAgentInterface");
   });
 
   it("uses dashboard v4 nav links and marks Chat active", () => {

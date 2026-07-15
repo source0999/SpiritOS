@@ -5,9 +5,9 @@ export async function POST() {
     apply_authority: false,
     approval_authority: false,
     bounded_coding_task_draft: {
-      allowed_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+      allowed_files: ["src/components/coding/CodingCockpitShell.tsx"],
       blocked_until_human_accepts_design_packet: true,
-      target_files: ["src/components/coding/CodingCommandCenterShell.tsx"],
+      target_files: ["src/components/coding/CodingCockpitShell.tsx"],
       task: "Convert an accepted design packet into an exact bounded coding task draft.",
     },
     commit_authority: false,
@@ -43,7 +43,7 @@ export async function POST() {
     },
     route_component_css_map: [
       {
-        component: "src/components/coding/CodingCommandCenterShell.tsx",
+        component: "src/components/coding/CodingCockpitShell.tsx",
         css: "src/styles/dashboard-demo-v4.css",
         css_mutation_authority: false,
         route: "/coding",

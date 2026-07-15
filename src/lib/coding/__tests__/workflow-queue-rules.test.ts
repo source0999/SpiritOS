@@ -81,7 +81,7 @@ describe("workflow queue rules", () => {
       action: "start",
       candidate: {
         id: "task-shell",
-        scopeKey: "src/components/coding/CodingCommandCenterShell.tsx",
+        scopeKey: "labs/coding/CodingCommandCenterShell.tsx",
         status: "queued",
         workflowType: "coding_task",
       },

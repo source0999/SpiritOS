@@ -6,7 +6,7 @@ import { collectPathsFromUnifiedDiff, diffTouchesExplicitTarget } from "@/lib/co
 describe("approval pipeline helpers", () => {
   it("parses the last Target file line when multiple appear", () => {
     const text = [
-      "Target file: src/components/coding/CodingAgentInterface.tsx",
+      "Target file: labs/coding/CodingAgentInterface.tsx",
       "",
       "Target file: src/app/coding/design-demo/page.tsx",
     ].join("\n");
@@ -27,9 +27,9 @@ describe("approval pipeline helpers", () => {
 
   it("detects when a diff does not touch the explicit target", () => {
     const diff = [
-      "diff --git a/src/components/coding/CodingAgentInterface.tsx b/src/components/coding/CodingAgentInterface.tsx",
-      "--- a/src/components/coding/CodingAgentInterface.tsx",
-      "+++ b/src/components/coding/CodingAgentInterface.tsx",
+      "diff --git a/labs/coding/CodingAgentInterface.tsx b/labs/coding/CodingAgentInterface.tsx",
+      "--- a/labs/coding/CodingAgentInterface.tsx",
+      "+++ b/labs/coding/CodingAgentInterface.tsx",
       "@@ -1 +1 @@",
       "-a",
       "+b",

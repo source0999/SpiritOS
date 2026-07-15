@@ -437,7 +437,7 @@ describe("agent trials UI helpers", () => {
     expect(
       classifyAgentTrialActualIntelligence({
         actualBehavior: "productive_preview",
-        changedFiles: ["src/components/coding/CodingCommandCenterShell.tsx"],
+        changedFiles: ["labs/coding/CodingCommandCenterShell.tsx"],
         liveClaim: true,
         previewDiffProduced: true,
         providerCallMade: false,

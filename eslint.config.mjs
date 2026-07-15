@@ -4,7 +4,7 @@ import nextTs from "eslint-config-next/typescript";
 
 const productionBoundaryRestrictions = [
   { group: ["source_proxy/**"], message: "Production TypeScript must cross Source Proxy through shared contracts or an HTTP boundary." },
-  { group: ["@/labs/**", "**/labs/**"], message: "Production code cannot import labs; move the dependency back to a canonical surface." },
+  { group: ["@/labs/**", "@labs/**", "**/labs/**"], message: "Production code cannot import labs; move the dependency back to a canonical surface." },
   { group: ["@/tests/**", "@/fixtures/**", "**/fixtures/**"], message: "Production code cannot depend on tests or fixtures." },
 ];
 
@@ -39,10 +39,12 @@ const eslintConfig = defineConfig([
   ]),
   {
     files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
     rules: { "no-restricted-imports": ["error", { patterns: productionBoundaryRestrictions }] },
   },
   {
     files: ["src/{app,components,lib}/coding/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [
         ...productionBoundaryRestrictions,
@@ -52,6 +54,7 @@ const eslintConfig = defineConfig([
   },
   {
     files: ["src/{app,components,lib}/spiritflix/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [
         ...productionBoundaryRestrictions,

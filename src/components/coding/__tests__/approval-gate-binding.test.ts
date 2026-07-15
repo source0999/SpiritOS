@@ -109,8 +109,8 @@ describe("approval gate binding", () => {
 
   it("binds proposed_diff from the packet when prompt_text is a coder stub", () => {
     const patch = [
-      "--- a/src/components/coding/CodingAgentInterface.tsx",
-      "+++ b/src/components/coding/CodingAgentInterface.tsx",
+      "--- a/labs/coding/CodingAgentInterface.tsx",
+      "+++ b/labs/coding/CodingAgentInterface.tsx",
       "@@ -1,3 +1,4 @@",
       " alpha",
       "-beta",
@@ -126,13 +126,13 @@ describe("approval gate binding", () => {
       },
       {
         prompt_text:
-          "Coder Agent produced a unified diff for the approval gate (target: src/components/coding/CodingAgentInterface.tsx).",
+          "Coder Agent produced a unified diff for the approval gate (target: labs/coding/CodingAgentInterface.tsx).",
         proposed_diff: patch,
-        target: "src/components/coding/CodingAgentInterface.tsx",
+        target: "labs/coding/CodingAgentInterface.tsx",
       },
     );
 
-    expect(proposal?.target).toBe("src/components/coding/CodingAgentInterface.tsx");
+    expect(proposal?.target).toBe("labs/coding/CodingAgentInterface.tsx");
     expect(proposal?.proposedDiff).toContain("@@");
     expect(proposal?.proposedDiff).toContain("beta-fixed");
   });
@@ -173,7 +173,7 @@ describe("approval gate binding", () => {
         reason_codes: ["implementation_requested"],
         resolved_target: {
           exists: true,
-          path: "src/components/coding/CodingAgentInterface.tsx",
+          path: "labs/coding/CodingAgentInterface.tsx",
           source: "explicit_line",
         },
         task_classification: "implementation",
@@ -184,8 +184,8 @@ describe("approval gate binding", () => {
         target: "docs/phase-8-manual-check.md",
       },
       {
-        currentTaskText: "Target file: src/components/coding/CodingAgentInterface.tsx",
-        resolvedTargetPath: "src/components/coding/CodingAgentInterface.tsx",
+        currentTaskText: "Target file: labs/coding/CodingAgentInterface.tsx",
+        resolvedTargetPath: "labs/coding/CodingAgentInterface.tsx",
       },
     );
 
@@ -260,9 +260,9 @@ describe("approval gate binding", () => {
 
   it("does not arm approval when current task Target file only has a stale packet diff", () => {
     const patch = [
-      "diff --git a/src/components/coding/CodingAgentInterface.tsx b/src/components/coding/CodingAgentInterface.tsx",
-      "--- a/src/components/coding/CodingAgentInterface.tsx",
-      "+++ b/src/components/coding/CodingAgentInterface.tsx",
+      "diff --git a/labs/coding/CodingAgentInterface.tsx b/labs/coding/CodingAgentInterface.tsx",
+      "--- a/labs/coding/CodingAgentInterface.tsx",
+      "+++ b/labs/coding/CodingAgentInterface.tsx",
       "@@ -1,3 +1,4 @@",
       " alpha",
       "-beta",
@@ -278,9 +278,9 @@ describe("approval gate binding", () => {
       },
       {
         prompt_text:
-          "Coder Agent produced a unified diff for the approval gate (target: src/components/coding/CodingAgentInterface.tsx).",
+          "Coder Agent produced a unified diff for the approval gate (target: labs/coding/CodingAgentInterface.tsx).",
         proposed_diff: patch,
-        target: "src/components/coding/CodingAgentInterface.tsx",
+        target: "labs/coding/CodingAgentInterface.tsx",
       },
       {
         currentTaskText: [
