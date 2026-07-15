@@ -45,9 +45,14 @@ def main() -> int:
         recorded_head_valid = True
     elif state.get("checkpoint_commit_policy") == "parent_of_atomic_checkpoint" and recorded_head == checkpoint_parent and atomic_checkpoint:
         recorded_head_valid = True
+    elif state.get("checkpoint_commit_policy") == "ancestor_of_atomic_checkpoint" and atomic_checkpoint:
+        recorded_head_valid = subprocess.run(
+            ["git", "-C", str(ROOT), "merge-base", "--is-ancestor", str(recorded_head), head],
+            check=False,
+        ).returncode == 0
     else:
         recorded_head_valid = False
-    if not recorded_head_valid or recorded_head not in ledger: failures.append("recorded_head_mismatch")
+    if not recorded_head_valid or not isinstance(recorded_head, str) or recorded_head not in ledger: failures.append("recorded_head_mismatch")
     terminal_closeout = (
         state.get("current_phase") == "Campaign 1 complete"
         and state.get("next_gate_id") == "campaign1_complete"
