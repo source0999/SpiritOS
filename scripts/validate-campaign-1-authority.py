@@ -3,6 +3,7 @@
 
 import ast
 from pathlib import Path
+import re
 import sys
 
 
@@ -49,7 +50,10 @@ REQUIRED = {
         "face-learning",
     ),
     "src/lib/coding/agent-lab-baseline-server.ts": ("operator_issuance_required_for_agent_lab_cleanup",),
-    "src/components/coding/CodingAgentInterface.tsx": (
+    "src/components/coding/CodingCockpitShell.tsx": (
+        'data-coding-shell-id="coding-cockpit-shell"',
+    ),
+    "labs/coding/CodingAgentInterface.tsx": (
         "allowed_files: allowedFiles",
     ),
     "source_proxy/cartographer/proposal_transfer.py": (
@@ -104,6 +108,24 @@ def cartographer_registration_failures() -> list[str]:
     return failures
 
 
+def canonical_shell_failures() -> list[str]:
+    failures: list[str] = []
+    legacy_path = ROOT / "src/components/coding/CodingAgentInterface.tsx"
+    labs_path = ROOT / "labs/coding/CodingAgentInterface.tsx"
+    if legacy_path.exists():
+        failures.append("legacy_coding_agent_interface_in_production")
+    if not labs_path.exists():
+        failures.append("labs_coding_agent_interface_missing")
+    for root in (ROOT / "src/app", ROOT / "src/components", ROOT / "src/lib"):
+        for path in root.rglob("*.ts*"):
+            if "__tests__" in path.parts or path.name.endswith((".test.ts", ".test.tsx", ".spec.ts", ".spec.tsx")):
+                continue
+            text = path.read_text(encoding="utf-8")
+            if re.search(r"(?:from|import)\s*\(?\s*[\"'][^\"']*(?:CodingAgentInterface|@labs/coding)", text):
+                failures.append(f"production_legacy_shell_reference:{path.relative_to(ROOT)}")
+    return failures
+
+
 def main() -> int:
     failures: list[str] = []
     for relative, markers in REQUIRED.items():
@@ -113,6 +135,7 @@ def main() -> int:
         text = (ROOT / relative).read_text(encoding="utf-8")
         failures.extend(f"forbidden:{relative}:{marker}" for marker in markers if marker in text)
     failures.extend(cartographer_registration_failures())
+    failures.extend(canonical_shell_failures())
     if failures:
         print("CAMPAIGN_1_AUTHORITY_INVALID")
         print("\n".join(failures))
