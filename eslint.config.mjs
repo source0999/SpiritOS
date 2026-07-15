@@ -2,6 +2,12 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
+const productionBoundaryRestrictions = [
+  { group: ["source_proxy/**"], message: "Production TypeScript must cross Source Proxy through shared contracts or an HTTP boundary." },
+  { group: ["@/labs/**", "**/labs/**"], message: "Production code cannot import labs; move the dependency back to a canonical surface." },
+  { group: ["@/tests/**", "@/fixtures/**", "**/fixtures/**"], message: "Production code cannot depend on tests or fixtures." },
+];
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -31,6 +37,36 @@ const eslintConfig = defineConfig([
     "oldSpiritOS.xml",
     "*.log",
   ]),
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: { "no-restricted-imports": ["error", { patterns: productionBoundaryRestrictions }] },
+  },
+  {
+    files: ["src/{app,components,lib}/coding/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [
+        ...productionBoundaryRestrictions,
+        { group: ["@/app/spiritflix/**", "@/components/spiritflix/**", "@/lib/spiritflix/**"], message: "Coding cannot import SpiritFlix product code; use a shared contract." },
+      ] }],
+    },
+  },
+  {
+    files: ["src/{app,components,lib}/spiritflix/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [
+        ...productionBoundaryRestrictions,
+        { group: ["@/app/coding/**", "@/components/coding/**", "@/lib/coding/**"], message: "SpiritFlix cannot import Coding product code; use a shared contract." },
+      ] }],
+    },
+  },
+  {
+    files: ["packages/contracts/**/*.{ts,tsx,js,mjs}"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [
+        { group: ["@/**", "src/**", "source_proxy/**", "scout/**"], message: "Contracts cannot import product runtime code." },
+      ] }],
+    },
+  },
 ]);
 
 export default eslintConfig;

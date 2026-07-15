@@ -1,0 +1,15 @@
+openapi: 3.1.0
+info:
+  title: SpiritOS cross-process contracts
+  version: 1.0.0
+  description: Transport contracts only. Lifecycle authority remains in Python.
+tags: [{ name: source-proxy }, { name: spiritflix }, { name: scout }, { name: cartographer }, { name: mac-worker }, { name: design }, { name: verification }, { name: deployment }]
+paths:
+  /v1/contracts/source-proxy/tasks: { post: { tags: [source-proxy], responses: { '202': { description: Accepted } } } }
+  /v1/contracts/spiritflix/admin-receipts: { post: { tags: [spiritflix], responses: { '201': { description: Persisted } } } }
+  /v1/contracts/scout/packets: { post: { tags: [scout], responses: { '202': { description: Accepted } } } }
+  /v1/contracts/cartographer/proposals: { post: { tags: [cartographer], responses: { '202': { description: Observed } } } }
+  /v1/contracts/mac-worker/jobs: { post: { tags: [mac-worker], responses: { '202': { description: Accepted } } } }
+  /v1/contracts/design/approvals: { post: { tags: [design], responses: { '202': { description: Authority-issued } } } }
+  /v1/contracts/verification/verdicts: { post: { tags: [verification], responses: { '200': { description: Recorded } } } }
+  /v1/contracts/deployment/provenance: { post: { tags: [deployment], responses: { '200': { description: Recorded } } } }

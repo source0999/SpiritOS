@@ -1,3 +1,5 @@
+import { isSharedAppliedRunReceipt } from "@/lib/contracts/contract-validator";
+
 /** Normalize client-stored applied-run receipts from JSON (camelCase or snake_case). */
 export type NormalizedAppliedRunReceipt = {
   allowedFiles: string[];
@@ -68,13 +70,27 @@ export function normalizeAppliedRunReceiptFromJson(
   const id = stringField(item, "id");
   const diff = stringField(item, "diff");
   const reverseDiff = stringField(item, "reverseDiff", "reverse_diff");
-  if (!id || !diff || !reverseDiff) return null;
+  const taskId = stringField(item, "taskId", "task_id");
+  const target = stringField(item, "target");
+  const appliedAt = stringField(item, "appliedAt", "applied_at");
+  const allowedFiles = stringList(item, "allowedFiles", "allowed_files");
+  const changedFiles = stringList(item, "changedFiles", "changed_files");
+  if (!isSharedAppliedRunReceipt({
+    allowed_files: allowedFiles,
+    applied_at: appliedAt,
+    changed_files: changedFiles,
+    diff,
+    id,
+    reverse_diff: reverseDiff,
+    target,
+    task_id: taskId,
+  })) return null;
 
   return {
-    allowedFiles: stringList(item, "allowedFiles", "allowed_files"),
-    appliedAt: stringField(item, "appliedAt", "applied_at"),
+    allowedFiles,
+    appliedAt,
     backupManifest: nullableString(item, "backupManifest", "backup_manifest"),
-    changedFiles: stringList(item, "changedFiles", "changed_files"),
+    changedFiles,
     diff,
     finalTruthStatus: nullableString(item, "finalTruthStatus", "final_truth_status"),
     hermesUsedForThisRun: nullableBoolean(item, "hermesUsedForThisRun", "hermes_used_for_this_run"),
@@ -96,8 +112,8 @@ export function normalizeAppliedRunReceiptFromJson(
     ),
     reverseDiff,
     staleResolvedAt: nullableString(item, "staleResolvedAt", "stale_resolved_at"),
-    target: stringField(item, "target"),
-    taskId: stringField(item, "taskId", "task_id"),
+    target,
+    taskId,
     undoReceiptId: nullableString(item, "undoReceiptId", "undo_receipt_id"),
     undoReceiptPath: nullableString(item, "undoReceiptPath", "undo_receipt_path"),
     postApplyVerificationStatus: nullableString(

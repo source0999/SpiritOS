@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from source_proxy.contracts.validation import validate_contract
 from source_proxy.safety.paths import normalize_repo_path_candidate, unsafe_target_finding
 
 DEFAULT_CODEX_MANUAL_CHECKS = (
@@ -80,7 +81,7 @@ def build_codex_task_packet(
         source_task_id=source_task_id,
         source_thread_id=source_thread_id,
     )
-    return {
+    packet = {
         "packet_version": "codex_task_packet.v1",
         "worker": "codex_cli",
         "task_id": resolved_task_id,
@@ -110,6 +111,7 @@ def build_codex_task_packet(
         "commit_authority": False,
         "push_authority": False,
     }
+    return validate_contract("source-proxy/task", packet)
 
 
 def _source_labels(

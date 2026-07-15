@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from source_proxy.contracts.validation import validate_contract
 from source_proxy.decision.artifact_final_verdict import normalize_artifact_final_verdict
 
 
@@ -32,7 +33,7 @@ def build_artifact_retest_result(
         reason_codes=reason_codes,
     )
 
-    return {
+    result = {
         "result_version": RETEST_RESULT_VERSION,
         "repair_status": repair_status,
         "artifact_ready": artifact_ready,
@@ -55,6 +56,7 @@ def build_artifact_retest_result(
         "handoff_required": final["label"] == "HANDOFF",
         "handoff_reason": str(repair_result.get("handoff_reason") or ""),
     }
+    return validate_contract("verification/retest-result", result)
 
 
 def _reason_codes(repair_result: dict[str, Any], behavior: dict[str, Any], artifact_ready: bool) -> list[str]:
