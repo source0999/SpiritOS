@@ -56,6 +56,114 @@ class ResolvedTargetPlugin:
         return asdict(self)
 
 
+_PROMPT_COMMANDS = {
+    "coder-001-init-dummy-product-site": "create_storefront",
+    "coder-002-add-product-data": "add_product_data",
+    "coder-003-render-product-cards": "render_product_cards",
+}
+
+_COMMON_FORBIDDEN_FILES = [
+    "src/app/**",
+    "src/components/**",
+    "src/lib/**",
+    "source_proxy/**",
+    "docs/**",
+    ".env*",
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+]
+
+
+def target_plugin_command(plugin: ResolvedTargetPlugin) -> str | None:
+    """Return the only Python implementation command for a resolved plugin prompt."""
+    return _PROMPT_COMMANDS.get(plugin.selected_prompt_id)
+
+
+def target_plugin_task_spec(plugin: ResolvedTargetPlugin) -> dict[str, Any] | None:
+    """Target-owned task constraints, including the same evidence identity used by verification."""
+    command = target_plugin_command(plugin)
+    if command == "create_storefront":
+        spec: dict[str, Any] = {
+            "schema_version": 1,
+            "task_type": "create_file_bundle",
+            "target": FIXTURE_ROOT,
+            "allowed_files": [f"{FIXTURE_ROOT}**"],
+            "forbidden_files": _COMMON_FORBIDDEN_FILES,
+            "literal_requirements": ["LumaCart"],
+            "verification": ["git diff --check"],
+            "risk_tier": "low",
+            "source": "target-plugin:lumacart:coder-001",
+        }
+    elif command == "add_product_data":
+        spec = {
+            "schema_version": 1,
+            "task_type": "modify_existing_file",
+            "target": f"{FIXTURE_ROOT}src/products.js",
+            "allowed_files": [f"{FIXTURE_ROOT}src/products.js"],
+            "forbidden_files": _COMMON_FORBIDDEN_FILES,
+            "literal_requirements": [
+                "at least 6 products", "id", "name", "price", "category", "description", "export default products",
+            ],
+            "verification": ["git apply --check", "product data field validation"],
+            "risk_tier": "low",
+            "source": "target-plugin:lumacart:coder-002",
+        }
+    elif command == "render_product_cards":
+        spec = {
+            "schema_version": 1,
+            "task_type": "create_file_bundle",
+            "target": FIXTURE_ROOT,
+            "allowed_files": [
+                f"{FIXTURE_ROOT}index.html", f"{FIXTURE_ROOT}src/main.js", f"{FIXTURE_ROOT}src/styles.css",
+            ],
+            "forbidden_files": [f"{FIXTURE_ROOT}src/products.js", *_COMMON_FORBIDDEN_FILES],
+            "literal_requirements": [
+                '<script type="module" src="src/main.js"></script>', "import products from './products.js';",
+                "product-card", "product.name", "product.category", "product.description", "product.price",
+            ],
+            "verification": ["git apply --check", "prompt3 option-a wiring validation"],
+            "risk_tier": "low",
+            "source": "target-plugin:lumacart:coder-003",
+        }
+    else:
+        return None
+    spec["target_plugin_identity"] = plugin.evidence_identity()
+    return spec
+
+
+def execute_target_plugin_command(
+    plugin: ResolvedTargetPlugin,
+    *,
+    task: str,
+    workspace_root: Path,
+    canonical_context: dict[str, Any],
+    canonical_context_text: str,
+) -> dict[str, Any]:
+    """The generic route delegates target-specific execution; it cannot choose a target."""
+    from source_proxy.tasks.long_running import (
+        propose_dummy_product_site_create_diff,
+        propose_dummy_product_site_product_data_diff,
+        propose_dummy_product_site_render_cards_diff,
+    )
+
+    command = target_plugin_command(plugin)
+    kwargs = {
+        "task": task,
+        "workspace_root": workspace_root,
+        "canonical_context": canonical_context,
+        "canonical_context_text": canonical_context_text,
+    }
+    if command == "create_storefront":
+        return propose_dummy_product_site_create_diff(**kwargs)
+    if command == "add_product_data":
+        return propose_dummy_product_site_product_data_diff(**kwargs)
+    if command == "render_product_cards":
+        return propose_dummy_product_site_render_cards_diff(**kwargs)
+    raise TargetPluginResolutionError("target_plugin_command_unsupported")
+
+
 def _require(packet: dict[str, Any], key: str) -> str:
     value = str(packet.get(key) or "").strip()
     if not value:

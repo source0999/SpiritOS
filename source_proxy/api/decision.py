@@ -59,16 +59,16 @@ from source_proxy.tasks.long_running import (
     derive_context_mode,
     forbidden_paths_for_context_mode,
     generate_unified_diff_from_content,
-    propose_dummy_product_site_create_diff,
-    propose_dummy_product_site_product_data_diff,
-    propose_dummy_product_site_render_cards_diff,
     propose_coder_agent_diff_payload_from_plan,
     reset_coder_timing_diagnostics,
     snapshot_coder_timing_diagnostics,
 )
 from source_proxy.target_plugins.adapter import (
     TargetPluginResolutionError,
+    execute_target_plugin_command,
     resolve_target_plugin,
+    target_plugin_command,
+    target_plugin_task_spec,
 )
 from source_proxy.verification.contracts import (
     SUBJECTIVE_IMPROVEMENT_REQUIRES_DIFF_REASON_CODE,
@@ -6922,7 +6922,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         reset_request,
         explicit_target,
     )
-    dummy_product_site_create = bool(target_plugin and target_plugin.selected_prompt_id == "coder-001-init-dummy-product-site")
+    target_plugin_command_name = target_plugin_command(target_plugin) if target_plugin else None
+    dummy_product_site_create = target_plugin_command_name == "create_storefront"
     target_gate_blocked = bool(
         hard_target_reason
         or "target_unresolved" in route_reasons
@@ -6931,8 +6932,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             and not allowed_create_target
         )
     )
-    dummy_product_site_render_cards = bool(target_plugin and target_plugin.selected_prompt_id == "coder-003-render-product-cards")
-    dummy_product_site_product_data = bool(target_plugin and target_plugin.selected_prompt_id == "coder-002-add-product-data")
+    dummy_product_site_render_cards = target_plugin_command_name == "render_product_cards"
+    dummy_product_site_product_data = target_plugin_command_name == "add_product_data"
     fip3_model_packet = (
         {}
         if (
@@ -7081,36 +7082,13 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             canonical_context=canonical_context_broker,
                             canonical_context_text=canonical_context_prompt,
                         )
-                elif dummy_product_site_create:
+                elif target_plugin_command_name and target_plugin:
                     architect_plan = None
                     coder = await asyncio.get_running_loop().run_in_executor(
                         None,
                         functools.partial(
-                            propose_dummy_product_site_create_diff,
-                            task=trial_task,
-                            workspace_root=_workspace_root(),
-                            canonical_context=canonical_context_broker,
-                            canonical_context_text=canonical_context_prompt,
-                        ),
-                    )
-                elif dummy_product_site_product_data:
-                    architect_plan = None
-                    coder = await asyncio.get_running_loop().run_in_executor(
-                        None,
-                        functools.partial(
-                            propose_dummy_product_site_product_data_diff,
-                            task=trial_task,
-                            workspace_root=_workspace_root(),
-                            canonical_context=canonical_context_broker,
-                            canonical_context_text=canonical_context_prompt,
-                        ),
-                    )
-                elif dummy_product_site_render_cards:
-                    architect_plan = None
-                    coder = await asyncio.get_running_loop().run_in_executor(
-                        None,
-                        functools.partial(
-                            propose_dummy_product_site_render_cards_diff,
+                            execute_target_plugin_command,
+                            target_plugin,
                             task=trial_task,
                             workspace_root=_workspace_root(),
                             canonical_context=canonical_context_broker,
@@ -7407,12 +7385,9 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         )
         verification_plan_payload = _verification_plan_payload_for_response(architect_plan)
         task_spec_payload = _task_spec_payload_for_response(architect_plan, coder_packet_payload)
-        if dummy_product_site_create:
-            task_spec_payload = _dummy_product_site_create_task_spec()
-        elif dummy_product_site_product_data:
-            task_spec_payload = _dummy_product_site_product_data_task_spec()
-        elif dummy_product_site_render_cards:
-            task_spec_payload = _dummy_product_site_render_cards_task_spec()
+        target_plugin_spec = target_plugin_task_spec(target_plugin) if target_plugin else None
+        if target_plugin_spec is not None:
+            task_spec_payload = target_plugin_spec
         if reason_code in TARGET_HARD_BLOCK_REASON_CODES or reason_code == "target_unresolved":
             task_spec_payload = intake_as_legacy_task_spec(intake)
         manual_browser_prompt = _coder_agent_manual_browser_prompt_text(
@@ -8152,102 +8127,6 @@ def _dummy_product_site_render_cards_source_task(
         ]
         if item
     )
-
-
-def _dummy_product_site_create_task_spec() -> dict[str, Any]:
-    return {
-        "schema_version": 1,
-        "task_type": "create_file_bundle",
-        "target": "tests/ui-agent-trials/fixtures/dummy-product-site/",
-        "allowed_files": ["tests/ui-agent-trials/fixtures/dummy-product-site/**"],
-        "forbidden_files": [
-            "src/app/**",
-            "src/components/**",
-            "src/lib/**",
-            "source_proxy/**",
-            "docs/**",
-            ".env*",
-            "package.json",
-            "package-lock.json",
-            "pnpm-lock.yaml",
-            "yarn.lock",
-        ],
-        "literal_requirements": ["LumaCart"],
-        "verification": ["git diff --check"],
-        "risk_tier": "low",
-        "source": "dummy-coder-001-create-mode",
-    }
-
-
-def _dummy_product_site_product_data_task_spec() -> dict[str, Any]:
-    return {
-        "schema_version": 1,
-        "task_type": "modify_existing_file",
-        "target": "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
-        "allowed_files": [
-            "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
-        ],
-        "forbidden_files": [
-            "src/app/**",
-            "src/components/**",
-            "src/lib/**",
-            "source_proxy/**",
-            "docs/**",
-            ".env*",
-            "package.json",
-            "package-lock.json",
-            "pnpm-lock.yaml",
-            "yarn.lock",
-        ],
-        "literal_requirements": [
-            "at least 6 products",
-            "id",
-            "name",
-            "price",
-            "category",
-            "description",
-            "export default products",
-        ],
-        "verification": ["git apply --check", "product data field validation"],
-        "risk_tier": "low",
-        "source": "dummy-coder-002-product-data",
-    }
-
-
-def _dummy_product_site_render_cards_task_spec() -> dict[str, Any]:
-    return {
-        "schema_version": 1,
-        "task_type": "create_file_bundle",
-        "target": "tests/ui-agent-trials/fixtures/dummy-product-site/",
-        "allowed_files": [
-            "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
-            "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
-            "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
-        ],
-        "forbidden_files": [
-            "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
-            "src/app/**",
-            "src/components/**",
-            "src/lib/**",
-            "source_proxy/**",
-            "docs/**",
-            ".env*",
-            "package.json",
-            "package-lock.json",
-        ],
-        "literal_requirements": [
-            '<script type="module" src="src/main.js"></script>',
-            "import products from './products.js';",
-            "product-card",
-            "product.name",
-            "product.category",
-            "product.description",
-            "product.price",
-        ],
-        "verification": ["git apply --check", "prompt3 option-a wiring validation"],
-        "risk_tier": "low",
-        "source": "dummy-coder-003-option-a-render-cards",
-    }
 
 
 def _coder_prompt_packet_status(
