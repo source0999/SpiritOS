@@ -16,6 +16,7 @@
 - Critical blocker: `CodingAgentInterface.tsx` is live-mounted by `src/app/design-demo/coding/page.tsx` and `src/components/chat/SpiritTrinityChatShell.tsx`. Moving it to `labs/` would break both callers; the campaign plan designates this as an owner decision.
 - GO eligibility: `false` for full Campaign 1; Phase 2 only is complete.
 - Next concrete gate: `phase3_canonical_shell_owner_decision`; Campaign 2 is not started.
+- Continuity repair: active-phase validation accepts a documented ancestor implementation checkpoint only from an atomic ledger/state checkpoint; this checkpoint revalidates `a36c4437` as the Phase 2 implementation anchor.
 
 ## Phase status
 
