@@ -5,10 +5,10 @@
   "ledger_path": "docs/architecture/campaign-1-ledger.md",
   "base_commit": "49e58f2982521c46a1a4fc73ef66461a86643792",
   "branch": "codex/spiritos-campaign-1-foundation-20260712",
-  "recorded_head": "a36c44377b3cc8a0c6bc49884946cf6a23d6fff8",
-  "checkpoint_commit_policy": "ancestor_of_atomic_checkpoint",
+  "recorded_head": "893c4b5e88a3b71c5c36213d7808703365f75c68",
+  "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Phase 3",
-  "current_increment": "phase2_shared_contracts_complete_phase3_canonical_shell_discovery",
+  "current_increment": "phase3_canonical_shell_context_archive_and_browser_target_adapter",
   "completed_gate_ids": [
     "phase0_authenticated_no_reversion",
     "authority_inventory",
@@ -29,13 +29,16 @@
     "phase1_campaign_owned_runtime_lane_recovery",
     "phase1_cartographer_legacy_fixture_migration",
     "phase1_spiritflix_admin_authenticated_operator_issuance_proof",
-    "phase1_final_authority_acceptance_and_closeout"
-    ,"phase2_shared_contracts_and_boundary_enforcement"
+    "phase1_final_authority_acceptance_and_closeout",
+    "phase2_shared_contracts_and_boundary_enforcement",
+    "phase3_canonical_shell_migration",
+    "phase3_evidence_and_gallery_externalization",
+    "phase3_context_discovery_exclusions"
   ],
   "partial_gate_ids": [
     "phase3_context_reduction"
   ],
-  "next_gate_id": "phase3_canonical_shell_owner_decision",
+  "next_gate_id": "phase3_python_target_adapter_duplicate_paths_and_test_profiles",
   "protected_heads": {
     "architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14",
     "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb",
@@ -50,5 +53,5 @@
     "two_live_coding_shells_owner_decision"
   ],
   "go_eligible": false,
-  "last_verified_at": "2026-07-15T02:15:00Z"
+  "last_verified_at": "2026-07-15T02:42:00Z"
 }

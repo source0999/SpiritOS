@@ -1,5 +1,7 @@
 # Campaign 1 Ledger
 
+> 2026-07-15 Phase 3 checkpoint: owner decision applied. `CodingCockpitShell` is canonical; `/design-demo/coding` delegates to `/coding`; chat embeds the canonical cockpit; old shells are labs-only. `docs/evidence/**` (7,489 paths) and `scripts/media/model_gallery/**` (1,846 paths) are archived under `/mnt/spirit-8tb/migration-evidence/spiritos-campaign-1-20260714/` with SHA-256 manifests, zero byte mismatches, zero unreadable files, zero configured secret matches, and rollback records. Git paths reduced from 12,994 to 3,668 (71.8%). Browser Prompt 1/Coder 10 specs, grader, and fixture probe are now target-plugin-owned; context discovery excludes archived/snapshot docs and authoritative ceiling violations fail visibly. Implementation parent: `893c4b5e`; next gate: Python target adapter, duplicate cleanup, test profiles, then runtime/browser proof. Full GO remains false.
+
 - Schema: `spiritos-campaign-1-ledger/v2`
 - Campaign: `spiritos-campaign-1`; plan: [campaign-1-plan.md](campaign-1-plan.md); state: [campaign-1-state.json](campaign-1-state.json)
 - Base: `49e58f2982521c46a1a4fc73ef66461a86643792`; Phase 1 atomic checkpoint parent: `8f9cfd818479a3494e7123697ef36263cf6d184a`; Phase 1 closeout checkpoint: `4e1f849ff34f0f2c5c0d5e34160e9108d969c92b`.
