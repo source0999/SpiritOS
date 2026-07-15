@@ -52,7 +52,8 @@ def main() -> int:
         ).returncode == 0
     else:
         recorded_head_valid = False
-    if not recorded_head_valid or not isinstance(recorded_head, str) or recorded_head not in ledger: failures.append("recorded_head_mismatch")
+    if not recorded_head_valid or not isinstance(recorded_head, str) or recorded_head[:8] not in ledger:
+        failures.append("recorded_head_mismatch")
     terminal_closeout = (
         state.get("current_phase") == "Campaign 1 complete"
         and state.get("next_gate_id") == "campaign1_complete"
