@@ -68,6 +68,46 @@ DOC_BASE = (
     "Approved diffs should require post-apply verification before completion.\n"
 )
 DOC_LITERAL = "Phase 1A backend regression pack confirms approval safe docs edits."
+
+
+def _target_plugin_packet(prompt_id: str) -> dict[str, object]:
+    contexts = {
+        "coder-001-init-dummy-product-site": "init-storefront",
+        "coder-002-add-product-data": "product-data",
+        "coder-003-render-product-cards": "render-cards",
+    }
+    return {
+        "target_plugin": {
+            "schema_version": "spiritos-target-plugin/v1",
+            "id": "lumacart",
+            "repository_id": "spiritos-campaign-1",
+            "worktree_id": "spiritos-campaign-1-20260712",
+            "fixture_root": "tests/ui-agent-trials/fixtures/dummy-product-site/",
+            "selected_prompt_id": prompt_id,
+            "selected_context_id": contexts[prompt_id],
+            "execution_profile": "coder-10",
+        }
+    }
+
+
+class TargetPluginAwareTestClient(TestClient):
+    def post(self, url: str, *args: object, json: object = None, **kwargs: object):  # type: ignore[override]
+        if url == "/v1/decisions/prompt-packet" and isinstance(json, dict):
+            prompt_id = str(json.get("selected_prompt_id") or json.get("trial_prompt_id") or "")
+            if prompt_id in {
+                "coder-001-init-dummy-product-site",
+                "coder-002-add-product-data",
+                "coder-003-render-product-cards",
+            } and "dummy_coder_10_packet" not in json:
+                workspace = Path(os.environ["SPIRIT_PROJECT_PATH"])
+                if not (workspace / ".git").exists():
+                    subprocess.run(["git", "init", "-q", str(workspace)], check=True)
+                    subprocess.run(["git", "-C", str(workspace), "config", "user.email", "campaign-test@local"], check=True)
+                    subprocess.run(["git", "-C", str(workspace), "config", "user.name", "Campaign Test"], check=True)
+                    subprocess.run(["git", "-C", str(workspace), "add", "."], check=True)
+                    subprocess.run(["git", "-C", str(workspace), "commit", "-qm", "target plugin baseline"], check=True)
+                json = {**json, "dummy_coder_10_packet": _target_plugin_packet(prompt_id)}
+        return super().post(url, *args, json=json, **kwargs)
 A_PLUS_FINAL_LABELS = {
     "pass_productive",
     "pass_blocked_safely",
@@ -244,7 +284,7 @@ class CodingRegressionPackTests(unittest.TestCase):
     def _decision_client(self) -> TestClient:
         app = FastAPI()
         app.include_router(decision_router)
-        return TestClient(app)
+        return TargetPluginAwareTestClient(app)
 
     def test_simple_docs_edit_reaches_safe_preview_without_writing(self) -> None:
         task = _doc_append_task()

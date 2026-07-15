@@ -22,7 +22,21 @@ import {
 export const codingTargetPlugin = {
   id: "lumacart",
   prompts: dummyCoder10Prompts,
-  buildRunnerPacket: buildDummyCoder10RunnerPacket,
+  buildRunnerPacket(prompt: DummyCoder10Prompt, existingDummyProjectSummary: string) {
+    return {
+      ...buildDummyCoder10RunnerPacket(prompt, existingDummyProjectSummary),
+      target_plugin: {
+        schema_version: "spiritos-target-plugin/v1",
+        id: "lumacart",
+        repository_id: "spiritos-campaign-1",
+        worktree_id: "spiritos-campaign-1-20260712",
+        fixture_root: prompt.fixtureRoot,
+        selected_prompt_id: prompt.id,
+        selected_context_id: prompt.number === 1 ? "init-storefront" : prompt.number === 2 ? "product-data" : prompt.number === 3 ? "render-cards" : "unsupported",
+        execution_profile: "coder-10",
+      },
+    };
+  },
   formatForbiddenSummary: formatDummyCoder10ForbiddenSummary,
   gradeResult: gradeDummyCoder10Result,
   buildExistingProjectSummary: buildExistingDummyProjectSummary,

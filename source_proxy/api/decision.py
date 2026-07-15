@@ -66,6 +66,10 @@ from source_proxy.tasks.long_running import (
     reset_coder_timing_diagnostics,
     snapshot_coder_timing_diagnostics,
 )
+from source_proxy.target_plugins.adapter import (
+    TargetPluginResolutionError,
+    resolve_target_plugin,
+)
 from source_proxy.verification.contracts import (
     SUBJECTIVE_IMPROVEMENT_REQUIRES_DIFF_REASON_CODE,
     VISUAL_IMPROVEMENT_DIFF_TOO_SHALLOW_REASON_CODE,
@@ -6822,6 +6826,24 @@ async def fip0_receipt_trace_by_run_id(
 @router.post("/prompt-packet")
 async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     reset_request = _request_with_cleared_file_focus(request)
+    target_plugin = None
+    selected_prompt = str(reset_request.selected_prompt_id or reset_request.trial_prompt_id or "").strip()
+    plugin_requested = selected_prompt.startswith("coder-00") or isinstance(
+        (reset_request.dummy_coder_10_packet or {}).get("target_plugin"), dict
+    )
+    if plugin_requested:
+        try:
+            target_plugin = resolve_target_plugin(
+                reset_request.dummy_coder_10_packet or {}, _workspace_root()
+            )
+        except TargetPluginResolutionError as error:
+            return {
+                "target": "",
+                "coder_blocked": True,
+                "reason_code": str(error),
+                "selected_prompt_id": selected_prompt,
+                "target_plugin": {"status": "blocked", "failure_reason": str(error)},
+            }
     intake = build_task_spec_intake(
         reset_request.task,
         workspace_root=_workspace_root(),
@@ -6900,7 +6922,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         reset_request,
         explicit_target,
     )
-    dummy_product_site_create = _dummy_product_site_create_mode(reset_request)
+    dummy_product_site_create = bool(target_plugin and target_plugin.selected_prompt_id == "coder-001-init-dummy-product-site")
     target_gate_blocked = bool(
         hard_target_reason
         or "target_unresolved" in route_reasons
@@ -6909,8 +6931,8 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             and not allowed_create_target
         )
     )
-    dummy_product_site_render_cards = _dummy_product_site_render_cards_mode(reset_request)
-    dummy_product_site_product_data = _dummy_product_site_product_data_mode(reset_request)
+    dummy_product_site_render_cards = bool(target_plugin and target_plugin.selected_prompt_id == "coder-003-render-product-cards")
+    dummy_product_site_product_data = bool(target_plugin and target_plugin.selected_prompt_id == "coder-002-add-product-data")
     fip3_model_packet = (
         {}
         if (
@@ -7385,7 +7407,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         )
         verification_plan_payload = _verification_plan_payload_for_response(architect_plan)
         task_spec_payload = _task_spec_payload_for_response(architect_plan, coder_packet_payload)
-        if _dummy_product_site_create_mode(reset_request):
+        if dummy_product_site_create:
             task_spec_payload = _dummy_product_site_create_task_spec()
         elif dummy_product_site_product_data:
             task_spec_payload = _dummy_product_site_product_data_task_spec()
@@ -7429,14 +7451,14 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 2
                 if dummy_product_site_product_data
                 else 3
-                if _dummy_product_site_render_cards_mode(reset_request)
+                if dummy_product_site_render_cards
                 else None
             ),
             "selectedPromptNumber": (
                 2
                 if dummy_product_site_product_data
                 else 3
-                if _dummy_product_site_render_cards_mode(reset_request)
+                if dummy_product_site_render_cards
                 else None
             ),
             "relevant_context": "\n".join(context_lines),
