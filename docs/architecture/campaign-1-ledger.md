@@ -1,5 +1,7 @@
 # Campaign 1 Ledger
 
+> 2026-07-15 isolated authenticated lifecycle attempt: after `67af3061` repaired the harness reset packet, the isolated HTTPS proxy/frontend pair passed exact-worktree health and product-reset checks. Playwright reached the authenticated Prompt 1 UI but failed closed because `SPIRITOS_OPERATOR_E2E_SECRET` was absent. Dell-local approved env sources and proxy process environments were checked without reading values; none supplied the test credential. `7a4af838` adds the GLM handoff and Campaign 2 no-start stub. Campaign remains NO-GO pending the credential-gated browser lifecycle rerun.
+
 > 2026-07-15 isolated runtime/build increment: Campaign HEAD `2a4e8d84` completed `npm run build` on Dell. A loopback server from that exact artifact served `/coding` (200, canonical shell marker), `/design-demo/coding` (307 to `/coding`), and `/chat` (200). The in-app browser could not reach the Dell loopback lane through the host SSH tunnel because of its network policy; no browser lifecycle claim is made. Full browser/operator lifecycle proof remains open.
 
 > 2026-07-15 duplicate-path cleanup: `edf29096` removes three unreachable Python target-mode classifiers; `84271f66` records the classified production, defense-in-depth, compatibility, labs, fixture, and archive paths. Coding regression: 131 passed (existing async-mock warnings). Duplicate-route authority validation remains green.
