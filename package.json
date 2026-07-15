@@ -69,7 +69,8 @@
     "approval-authority:preflight": "python3 ./scripts/approval-authority.py preflight",
     "campaign-1:validate-authority": "python3 ./scripts/validate-campaign-1-authority.py",
     "campaign-1:validate-continuity": "python3 ./scripts/validate-campaign-1-continuity.py",
-    "campaign-1:test-continuity": "python3 ./scripts/test-campaign-1-continuity.py"
+    "campaign-1:test-continuity": "python3 ./scripts/test-campaign-1-continuity.py",
+    "campaign-1:validate-test-profiles": "python3 ./scripts/validate-campaign-1-test-profiles.py"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",

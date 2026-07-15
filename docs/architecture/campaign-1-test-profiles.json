@@ -1,0 +1,16 @@
+{
+  "schema": "spiritos-campaign-1-test-profiles/v1",
+  "profiles": [
+    {"id":"continuity","product":"campaign","command":"npm run campaign-1:validate-continuity","claim_ceiling":"continuity only"},
+    {"id":"authority","product":"campaign","command":"npm run campaign-1:validate-authority","claim_ceiling":"static authority only"},
+    {"id":"source-proxy-authority","product":"source-proxy","command":"PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_long_running_tasks.py -q","claim_ceiling":"task lifecycle only"},
+    {"id":"coding-backend","product":"source-proxy","command":"npm run test:coding-regression","claim_ceiling":"coding backend only"},
+    {"id":"coding-frontend","product":"coding","command":"npm run test:coding-frontend-regression","claim_ceiling":"coding frontend only"},
+    {"id":"prompt1-browser","product":"coding","command":"node scripts/run-coding-e2e-loop.mjs --fixture-state=missing","prerequisites":["isolated HTTPS lane","operator E2E secret"],"claim_ceiling":"Prompt 1 lifecycle only"},
+    {"id":"canonical-shell","product":"coding","command":"npm exec vitest run src/components/coding/__tests__/coding-cockpit-shell.test.tsx","claim_ceiling":"canonical shell only"},
+    {"id":"cartographer-api","product":"cartographer","command":"PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -q","claim_ceiling":"proposal boundary only"},
+    {"id":"design-route","product":"design","command":"npm exec vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts","claim_ceiling":"Design route only"},
+    {"id":"spiritflix-operator","product":"spiritflix","command":"PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_spiritflix_admin_authority.py source_proxy/tests/test_operator_session_assertion.py -q","claim_ceiling":"admin issuance only"},
+    {"id":"build","product":"campaign","command":"npm run build","claim_ceiling":"build only"}
+  ]
+}

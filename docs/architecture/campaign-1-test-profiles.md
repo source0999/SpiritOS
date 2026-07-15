@@ -2,6 +2,8 @@
 
 Schema: `spiritos-campaign-1-test-profiles/v1`
 
+The canonical machine-readable registry is [`campaign-1-test-profiles.json`](campaign-1-test-profiles.json). Validate it with `npm run campaign-1:validate-test-profiles`; this table is its human-readable receipt, not a substitute for the registry.
+
 All commands run from `/home/source/SpiritOS-campaign-1-20260712`. Profiles inherit the Campaign-only mutable-root rule and never write protected product worktrees.
 
 | Profile | Command / receipt | Environment and secret assumptions | Latest result | Claim ceiling |
