@@ -72,7 +72,12 @@
     "campaign-1:test-continuity": "python3 ./scripts/test-campaign-1-continuity.py",
     "campaign-1:validate-test-profiles": "python3 ./scripts/validate-campaign-1-test-profiles.py",
     "campaign-1:validate-evidence": "python3 ./scripts/validate-campaign-1-evidence.py",
-    "campaign-1:test-autoloop": "python3 ./scripts/test-campaign1-autoloop-completion.py"
+    "campaign-1:test-autoloop": "python3 ./scripts/test-campaign1-autoloop-completion.py",
+    "campaign-2:check-complete": "python3 ./scripts/campaign2-autoloop-completion.py --state docs/architecture/campaign-2-state.json --ledger docs/architecture/campaign-2-ledger.md",
+    "campaign-2:test-autoloop": "python3 ./scripts/test-campaign2-autoloop-completion.py",
+    "campaign-2:validate-continuity": "python3 ./scripts/validate-campaign-2-continuity.py",
+    "campaign-2:validate-authority": "python3 ./scripts/validate-campaign-2-authority.py",
+    "campaign-2:validate-test-profiles": "python3 ./scripts/validate-campaign-2-test-profiles.py"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",
