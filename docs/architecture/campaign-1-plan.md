@@ -80,6 +80,7 @@ The historic no-caller blocker was resolved by the owner decision and implementa
 
 - `GO_PHASE_1_AUTHORITY_COMPLETE`: verified at `4e1f849f`. Phase 1 P0 authority enforcement is genuinely complete and well-tested.
 - `GO_CAMPAIGN_1_COMPLETE`: **valid**. Phase 2 shared contracts and Phase 3 context reduction/canonical ownership are implemented, tested, documented, committed, and reconciled at the Campaign closeout checkpoint.
+- Closeout integrity is fail-closed: the live Campaign autoloop reads only the strict JSON terminal state, requires every mandatory phase/gate and AR acceptance plus `commit_safe`, and cannot be reopened by superseded Markdown history.
 - The Phase 1 GO label remains a narrower historical authority claim; the terminal Campaign 1 verdict is the only full-campaign claim.
 - Terminal gate: `campaign1_complete`. Campaign 2 is not started by this closeout.
 - Do not push or mutate protected product worktrees from this Campaign checkout.

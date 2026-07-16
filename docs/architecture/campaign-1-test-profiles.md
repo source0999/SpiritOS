@@ -25,4 +25,4 @@ The canonical registry is [campaign-1-test-profiles.json](campaign-1-test-profil
 | `undo-reset-rerun` | accepted E2E manifest Undo/reset, clean baseline, and clean rerun stages | pass | `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/result.json` | 2026-07-15T23:36:28Z | lifecycle recovery only |
 | `labs-command-center` | `npm exec vitest run src/components/coding/__tests__/coding-command-center-shell.test.tsx` | not an acceptance gate | source `007bb4ea` | 2026-07-15 | labs-only; excluded from Campaign production acceptance |
 
-Historical counts of 83, 131, 258, and Design 32 are superseded runs and are not current acceptance claims. A failed, skipped, stale, or narrower-than-required mandatory profile cannot claim Campaign GO.
+Historical counts of 83, 131, 258, and Design 32 are superseded runs and are not current acceptance claims. A failed, skipped, stale, or narrower-than-required mandatory profile cannot claim Campaign GO. The accepted `GO_CAMPAIGN_1_COMPLETE` verdict does not start Campaign 2; Campaign 2 is not started.

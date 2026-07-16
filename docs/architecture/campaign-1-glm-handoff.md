@@ -1,8 +1,9 @@
 # Campaign 1 GLM Handoff
 
-Status: **Campaign 1 complete. Do not begin Campaign 2.**
+Status: **Campaign 1 complete. Do not begin Campaign 2. Campaign 2 is not started.**
 
 - Worktree / branch: `/home/source/SpiritOS-campaign-1-20260712` / `codex/spiritos-campaign-1-foundation-20260712`.
+- Closeout-control-plane parent: `38a8b5a017f357eef1ece29d8904b849ce8b7990` under `parent_of_atomic_checkpoint` policy.
 - Verdict: `GO_CAMPAIGN_1_COMPLETE`; all Phase 0-3 gates and AR-001/002/003 are accepted; GO eligible and commit-safe are true; critical blocker is none.
 - Final authenticated browser receipt: `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/result.json` (authoritative GO, redacted by reference).
 - Mandatory profile matrix: 85 source-proxy authority/task, 133 coding backend, 193 canonical coding frontend, 61 canonical shell, 263 Cartographer, 3 Design, 3 SpiritFlix operator; build and named validators accepted.
