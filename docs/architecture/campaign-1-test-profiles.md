@@ -2,27 +2,27 @@
 
 Schema: `spiritos-campaign-1-test-profiles/v1`
 
-The canonical machine-readable registry is [`campaign-1-test-profiles.json`](campaign-1-test-profiles.json). Validate it with `npm run campaign-1:validate-test-profiles`; this table is its human-readable receipt, not a substitute for the registry.
+The canonical registry is [campaign-1-test-profiles.json](campaign-1-test-profiles.json). The table reconciles its profile IDs to the accepted receipt; it does not expand any profile's claim ceiling. All paths are redacted references and contain no credential values.
 
-All commands run from `/home/source/SpiritOS-campaign-1-20260712`. Profiles inherit the Campaign-only mutable-root rule and never write protected product worktrees.
+| Profile ID | Command / suite | Latest result | Source / receipt | Freshness | Claim ceiling |
+| --- | --- | --- | --- | --- | --- |
+| `source-proxy-authority` | `PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_long_running_tasks.py -q` | **85 passed** | source `e35f8a11`; final closeout receipt | 2026-07-15 | task lifecycle only |
+| `coding-backend` | `npm run test:coding-regression` | **133 passed** | source `e35f8a11`; final closeout receipt | 2026-07-15 | coding backend only |
+| `coding-frontend` | `npm run test:coding-frontend-regression` | **193 passed** | source `e35f8a11`; final closeout receipt | 2026-07-15 | canonical production coding frontend only |
+| `canonical-shell` | `npm exec vitest run src/components/coding/__tests__/coding-cockpit-shell.test.tsx` | **61 passed** | source `e35f8a11`; final closeout receipt | 2026-07-15 | canonical shell only |
+| `cartographer-api` | `PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_cartographer_api.py -q` | **263 passed** | source `e35f8a11`; final closeout receipt | 2026-07-15 | proposal boundary only |
+| `design-route` | `npm exec vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts` | **3 passed** | source `e35f8a11`; final closeout receipt | 2026-07-15 | Design route only |
+| `spiritflix-operator` | `PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_spiritflix_admin_authority.py source_proxy/tests/test_operator_session_assertion.py -q` | **3 passed** | source `e35f8a11`; final closeout receipt | 2026-07-15 | admin issuance only |
+| `build` | `NODE_OPTIONS=--max-old-space-size=4096 npm run build` | pass | source `e35f8a11`; final closeout receipt | 2026-07-15 | build only |
+| `continuity` | `npm run campaign-1:validate-continuity` | pass | source `e35f8a11`; final closeout receipt | 2026-07-15 | continuity only |
+| `authority` | `npm run campaign-1:validate-authority` | pass | source `e35f8a11`; final closeout receipt | 2026-07-15 | static authority only |
+| `test-profile-registry` | `npm run campaign-1:validate-test-profiles` | pass | source `e35f8a11`; final closeout receipt | 2026-07-15 | registry only |
+| `target-adapter` | focused target-adapter parser and authority tests | pass | `630b6632`; final closeout receipt | 2026-07-15 | canonical target identity only |
+| `evidence-validator` | `python3 scripts/validate-campaign-1-evidence.py` | pass | final closeout receipt | 2026-07-15 | redacted evidence index only |
+| `secret-scan` | scoped changed-file secret scan | pass | final closeout receipt | 2026-07-15 | disclosure detection only |
+| `prompt1-browser` | `node scripts/run-coding-e2e-loop.mjs --fixture-state=missing` | pass / authoritative GO | `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/result.json` | 2026-07-15T23:36:28Z | authenticated Prompt 1 lifecycle only |
+| `anti-cheat` | accepted E2E anti-cheat stage | pass | `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/result.json` | 2026-07-15T23:36:28Z | harness integrity only |
+| `undo-reset-rerun` | accepted E2E manifest Undo/reset, clean baseline, and clean rerun stages | pass | `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/result.json` | 2026-07-15T23:36:28Z | lifecycle recovery only |
+| `labs-command-center` | `npm exec vitest run src/components/coding/__tests__/coding-command-center-shell.test.tsx` | not an acceptance gate | source `007bb4ea` | 2026-07-15 | labs-only; excluded from Campaign production acceptance |
 
-| Profile | Command / receipt | Environment and secret assumptions | Latest result | Claim ceiling |
-| --- | --- | --- | --- | --- |
-| authority contracts | `PYTHONPATH=. ...pytest source_proxy/tests/test_campaign_approval_authority.py -q` | Campaign Approval Authority state; no credential output | 12 passed | Cartographer/coding authority boundaries only |
-| complete Cartographer API | `PYTHONPATH=. ...pytest source_proxy/tests/test_cartographer_api.py -q` | Source Proxy test app; direct legacy writer fixtures must fail closed and canonical selection routes remain singular | **263 passed**, 3 existing deprecation warnings | route/helper boundary and proposal-only profile; no browser claim |
-| authority dependency enforcement | `npm run campaign-1:validate-authority` | source tree only | pass | static enforcement only |
-| continuity | `npm run campaign-1:validate-continuity` | pinned protected worktrees readable | required after atomic checkpoint | continuity only |
-| Design production route | `npx vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts src/lib/coding/__tests__/design-studio-obsidian-writeback.test.ts src/app/v1/coding/design-studio/preview/__tests__/route.test.ts` | Node/Vitest; mocked route seams for unit coverage | **32 passed** | Design unit contract only |
-| Design evidence negatives | `node scripts/coding/test-validate-design-studio-receipts.mjs` | static fixtures only | 9 rejected fixtures passed | validator-negative coverage only |
-| coding backend regression | `npm run test:coding-regression` | Campaign `.venv-campaign1`; 10 existing async-mock warnings | 131 passed | coding regression only |
-| coding frontend regression | `npm run test:coding-frontend-regression` | Canonical production coding surfaces only; existing React act warnings | 258 passed | coding frontend only |
-| labs command-center regression | `npm exec vitest run src/components/coding/__tests__/coding-command-center-shell.test.tsx` | Labs-only shell, deliberately excluded from the production profile | not a Campaign production acceptance gate | labs-only; no production or Campaign-GO claim |
-| Source Proxy authority/task | `PYTHONPATH=. .venv-campaign1/bin/python -m pytest source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_long_running_tasks.py -q` | Campaign isolated Authority state | **83 passed**, 1 existing deprecation warning | source task lifecycle only |
-| Prompt 1 browser lifecycle | `node scripts/run-coding-e2e-loop.mjs --fixture-state=missing` | isolated HTTPS lane, operator E2E secret read server-side only | prior receipt: PASS | Prompt 1 only |
-| canonical shell | canonical shell/route suites | local operator E2E session | prior receipt: 61 shell + 5 operator/session | shell only |
-| authenticated SpiritFlix desktop/Fold/player | authenticated browser receipts above | dedicated least-privilege E2E identity; SPKI-only browser policy | prior receipt: pass | no-reversion browser behavior only; AR-001 remains blocked |
-| ordinary SpiritFlix server-owned BFF session | session/client/BFF/admin-library/frontend plus admin baseline routes | no real credential output; normal session is opaque | 10 Vitest files, **64 passed** | ordinary-session migration only; no administrative mutation authority |
-| SpiritFlix admin operator issuance | `pytest source_proxy/tests/test_spiritflix_admin_authority.py source_proxy/tests/test_operator_session_assertion.py` plus eight bounded Vitest files | isolated operator-session state; server-owned preview/approval only | **3 Python + 19 Vitest passed** | authenticated admin issuance and writer-bound consumption; committed-HEAD rerun required for final receipt |
-| build | `npm run build` | Campaign `.next`; no protected-service restart | pass in 166.8 s | build only |
-
-Mandatory profile rule: a failed, skipped, stale, or narrower-than-required profile cannot claim Campaign GO. The Cartographer and Design profiles are current; final Campaign GO still requires cross-product evidence reconciliation and protected-head truth at closeout.
+Historical counts of 83, 131, 258, and Design 32 are superseded runs and are not current acceptance claims. A failed, skipped, stale, or narrower-than-required mandatory profile cannot claim Campaign GO.

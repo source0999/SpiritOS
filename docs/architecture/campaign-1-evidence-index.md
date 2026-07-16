@@ -1,43 +1,26 @@
 # Campaign 1 Evidence Index
 
-Schema: `spiritos-campaign-1-evidence-index/v1`
+Schema: `spiritos-campaign-1-evidence-index/v2`
 
-## Verdict ceiling
+## Current verdict
 
-- Candidate head: `007bb4ea8288284fb3c5600ae8fbd189b334ed80` (parent of the atomic closeout control-plane checkpoint).
+- Campaign: `spiritos-campaign-1`; phase: **Campaign 1 complete**; verdict: `GO_CAMPAIGN_1_COMPLETE`; `commit_safe=true`; critical blocker: `none`; Campaign 2 started: `false`.
+- Candidate implementation head: `007bb4ea8288284fb3c5600ae8fbd189b334ed80` under the atomic control-plane checkpoint policy.
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
-- Verdict: `GO_CAMPAIGN_1_COMPLETE`.
-- Reason: Phase 2 and Phase 3 are complete. The final isolated authenticated lifecycle receipt proves real model generation, approval, apply, browser runtime, Undo/reset, and rerun; duplicate ownership, truthful test profiles, mandatory production profiles, build, protected heads, and AR-001/002/003 were reconciled at closeout.
 
-## Accepted baseline receipts
+## Accepted receipts
 
-| Receipt | Scope | Redaction / provenance | Claim ceiling |
-| --- | --- | --- | --- |
-| `campaign-1-baseline/authenticated-browser-proof.json` | authenticated isolated desktop, Fold, player, and `/coding` rendering | schema v3; protected heads, build identity, certificate policy, opaque E2E session; secret redaction pass | no-reversion browser regression only |
-| `campaign-1-evidence/phase1-cross-product-browser-20260714.md` | isolated production browser regression | dedicated least-privilege E2E identity, SPKI-only policy, immutable protected heads | completed browser slice, not AR-001 acceptance |
-| `campaign-1-evidence/operator-issuance-runtime-20260714.md` | coding and Design HTTP authority chains | redacted response hashes and server-owned lifecycle | runtime slice, not final evidence acceptance |
-| `campaign-1-evidence/prompt1-authority-lifecycle-20260714.md` | Prompt 1 selected target-plugin lifecycle | shared approval ID/generation acknowledgement and legacy rejection | Prompt 1 only |
-| `campaign-1-evidence/canonical-operator-shell-20260714.md` | canonical shell and Coder 10 lifecycle | no credential/session/approval identifiers committed | canonical shell slice |
-| `campaign-1-evidence/ar001-admin-operator-lifecycle-20260714.md` | authenticated admin writer issuance and exact consume/finalize | isolated test-only operator state; no cookie, credential, approval ID, or media path recorded | AR-001 administrative authority slice |
-
-## Current reconciliation evidence
-
-| Item | Result | Proof |
+| Receipt | Result | Claim ceiling |
 | --- | --- | --- |
-| Cartographer direct execution registration | pass | `source_proxy/api/cartographer.py` has no `/safe-write` or `/verification/run` registration; AST validator rejects duplicate method/path pairs. |
-| Cartographer legacy mutation entry points | pass, fail closed | docs/git/clutter/starter-blueprint compatibility routes return `410 forbidden_cartographer_mutation`; router imports no executor symbols. |
-| Complete Cartographer API regression | pass | `263 passed`; legacy mutable expectations now assert fail-closed routes/helpers and singular canonical selection registration. |
-| AR-002 durable selection/consumer | pass, focused production path | [redacted receipt](campaign-1-evidence/cartographer-durable-selection-20260714.md): persisted selection -> authenticated operator issuance -> canonical proposal-only transfer consumer -> consume/finalize with one ID/generation acknowledgement envelope. |
-| AR-003 final acknowledgement envelope | pass, focused production path | [redacted receipt](campaign-1-evidence/design-writeback-acknowledgement-20260714.md): persisted Design preview -> authenticated operator issuance -> canonical writeback consume/finalize -> server-built matched acknowledgement envelope. |
-| Current BFF/session boundary | pass, focused | 33 tests across the opaque session, BFF route, browser client, and admin client confirm browser-supplied authorization is rejected and server-only authorization is never reflected. |
-| Current browser lifecycle harness | pass | [runtime recovery receipt](campaign-1-evidence/phase1-runtime-lane-recovery-20260714.md) records the registered isolated loopback candidate, real model run, browser proof, transactional approval lifecycle, undo/reset, and clean rerun. |
-| Final isolated production lifecycle | pass, authoritative `GO` | [final closeout receipt](campaign-1-evidence/phase1-final-closeout-20260714.md): real operator shell session, persisted task/preview, server-issued approval, canonical apply, matched acknowledgements, managed Chromium six-card proof, undo/reset, and clean rerun. |
-| Design preview contract tests | pass | 32 tests across preview, authenticated Design approval, and writer guard suites. |
-| Design negative receipt fixtures | pass | 9 malformed receipt cases rejected. |
-| AR-001 ordinary browser session boundary | pass | [redacted server-owned-session receipt](campaign-1-evidence/ar001-server-owned-session-20260714.md); client credential and target overrides are rejected. |
-| AR-001 administrative writer authority | pass, committed-HEAD lifecycle | [redacted admin receipt](campaign-1-evidence/ar001-admin-operator-lifecycle-20260714.md): authenticated session, trusted Origin/Host and CSRF, persisted server-derived preview, server issuance, exact writer consume/finalize, replay rejection, and revocation rejection. |
-| Phase 3 canonical adapter and authenticated lifecycle | pass, authoritative `GO` | Runtime-only redacted receipt `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/`: strict adapter identity, model-authored six-file bundle, durable approval, apply, backend and direct Chromium proof, anti-cheat, manifest-backed Undo/reset, and clean rerun. |
-| Final mandatory profile matrix | pass | authority/task 85; coding backend 133; canonical coding frontend 193; canonical shell 61; Cartographer 263; Design 3; SpiritFlix operator 3; test-profile registry valid; bounded-heap production build passed. |
-| Protected-head reconciliation | pass | Source Proxy `594d66ef`; SpiritFlix `5fde4ae0`; architecture audit `05612d2a` unchanged. |
+| `campaign-1-baseline/authenticated-browser-proof.json` | pass, redacted baseline | no-reversion browser regression only |
+| `campaign-1-evidence/ar001-admin-operator-lifecycle-20260714.md` | AR-001 pass | administrative authority lifecycle |
+| `campaign-1-evidence/cartographer-durable-selection-20260714.md` | AR-002 pass | durable selection/consumer boundary |
+| `campaign-1-evidence/design-writeback-acknowledgement-20260714.md` | AR-003 pass | Design acknowledgement boundary |
+| `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/result.json` | authoritative `truth_status=GO`, `commit_safe=true`, all required stages evidence-complete; model diff, approval/apply, managed/direct Chromium, anti-cheat, Undo/reset, clean baseline/rerun | isolated authenticated Prompt 1 lifecycle |
+| [campaign-1-test-profiles.md](campaign-1-test-profiles.md) | mandatory matrix accepted: 85/133/193/61/263/3/3 plus validators and build | each named profile only |
 
-Every entry is redacted by reference: no secret, cookie, approval ID, task ID, media path, or raw payload is repeated here. New evidence must include schema, campaign/run identity, source and protected heads, test profile, result, secret-redaction result, and a claim ceiling.
+Every receipt is redacted by reference. No secret, cookie, approval ID, task ID, raw model output, or media path is repeated in this index.
+
+## Historical evidence — non-current
+
+Earlier partial runtime receipts and narrower profile counts are preserved for provenance only. They neither reduce the authoritative final receipt nor reopen a completed gate.
