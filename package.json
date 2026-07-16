@@ -70,7 +70,9 @@
     "campaign-1:validate-authority": "python3 ./scripts/validate-campaign-1-authority.py",
     "campaign-1:validate-continuity": "python3 ./scripts/validate-campaign-1-continuity.py",
     "campaign-1:test-continuity": "python3 ./scripts/test-campaign-1-continuity.py",
-    "campaign-1:validate-test-profiles": "python3 ./scripts/validate-campaign-1-test-profiles.py"
+    "campaign-1:validate-test-profiles": "python3 ./scripts/validate-campaign-1-test-profiles.py",
+    "campaign-1:validate-evidence": "python3 ./scripts/validate-campaign-1-evidence.py",
+    "campaign-1:test-autoloop": "python3 ./scripts/test-campaign1-autoloop-completion.py"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",

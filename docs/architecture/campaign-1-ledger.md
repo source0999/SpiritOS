@@ -13,7 +13,7 @@ Schema: `spiritos-campaign-1-ledger/v3`
 - Accepted phases: Phase 0, Phase 1, Phase 2, and Phase 3.
 - Accepted authority requirements: AR-001, AR-002, and AR-003.
 - Campaign 2 started: `false`. Campaign 2 remains a guarded no-start stub only.
-- Candidate implementation head: `007bb4ea8288284fb3c5600ae8fbd189b334ed80`; the current atomic control-plane checkpoint records its parent under `parent_of_atomic_checkpoint` policy.
+- Candidate implementation head: `007bb4ea8288284fb3c5600ae8fbd189b334ed80`; prior closeout-control-plane head: `f42f935c` (the current atomic control-plane checkpoint records its parent under `parent_of_atomic_checkpoint` policy).
 - Authoritative authenticated lifecycle receipt: `docs/evidence/e2e-loop/2026-07-15T23-36-28-866Z/result.json`; `truth_status=GO`, `commit_safe=true`, all required stages `evidence_complete=true`, and no failed requirements.
 - Mandatory accepted profile counts: Source Proxy authority/task 85; coding backend 133; canonical coding frontend 193; canonical shell 61; Cartographer 263; Design route 3; SpiritFlix operator 3. The bounded-heap production build, continuity, authority, test-profile registry, target-adapter, evidence, secret-scan, authenticated lifecycle, anti-cheat, Undo/reset, and clean-rerun checks passed within their stated ceilings.
 - Protected heads: Source Proxy `594d66ef8280953af767a273d7c91be765d1a6eb`; SpiritFlix `5fde4ae064d471e1133e00d6bf25fb5aecb5d196`; architecture audit `05612d2ae358bc01b6ef997243137649f8d65f14`.
