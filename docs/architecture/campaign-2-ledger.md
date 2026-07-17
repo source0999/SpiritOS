@@ -8,7 +8,7 @@ Schema: `spiritos-campaign-2-ledger/v1`
 - Worktree / branch: `/home/source/SpiritOS-campaign-2-20260716` / `codex/spiritos-campaign-2-core-coding-os-20260716`.
 - Phase: **Campaign 2 in progress**.
 - Base commit: `8a20473c2260bc132e595c64230d3fdfc9fef97f` (Campaign 1 terminal tip).
-- Current gate: `gate_2_7_reviewer_verifier_anticheat_evidence_identity_binding`; completed gates: 2.1 through 2.6.
+- Current gate: `gate_2_8_cartographer_core_discovery_proposal_integration`; completed gates: 2.1 through 2.7.
 - GO eligibility: `false`. This campaign is not terminal.
 - Critical blocker: `none`. Partial gates: `none`.
 - Terminal verdict target: `CAMPAIGN_2_CORE_CODING_OS_STABLE` after Gate 2.11 passes from a clean isolated baseline.
@@ -33,7 +33,7 @@ All four Campaign 1 entry conditions were verified before authoring this campaig
 | 2.4 Source Proxy routing, health, fallback truthfulness | completed | EXTEND | `2cab5321`, `ec21cf32`, `f95a9ec5`: explicit async fallback receipts, request-explicit dual spend preflight, selected-provider evidence, and a silent-substitution falsification test; 19 focused tests + typecheck pass |
 | 2.5 TS and Python target-plugin adapter reconciliation | completed | ADOPT + reconcile | `e1e08f5a`: TS gateway, Python resolver, e2e harness, current Campaign 2 worktree identity, prompt/context/profile, and server-resolved source head reconcile; 11 focused tests + typecheck pass |
 | 2.6 Canonical executor and lane-scoped authority | completed | ADOPT + BUILD | `17ee097c`: Campaign 2 authority namespace and `coding-executor:coder` durable lane binding; executor forwards lane identity; mismatch rejection test and typecheck pass |
-| 2.7 Reviewer, verifier, anti-cheat, evidence identity binding | not_started | ADOPT | all four exist; confirm orchestrator routes through them |
+| 2.7 Reviewer, verifier, anti-cheat, evidence identity binding | completed | ADOPT | reviewer, verifier, 15-detector anti-cheat, and evidence identity binding retained; 44 focused tests + typecheck pass under Campaign 2 lane authority |
 | 2.8 Cartographer core discovery/proposal integration | not_started | ADOPT + BUILD | wire selection into executor; preserve proposal-only invariant |
 | 2.9 Task lifecycle reliability and recovery | not_started | EXTEND | adopt per-task SM; extend to lane-level recovery |
 | 2.10 Canonical shell observability | not_started | EXTEND | extend status endpoints to canonical observability |

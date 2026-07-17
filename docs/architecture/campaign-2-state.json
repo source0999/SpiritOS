@@ -5,20 +5,21 @@
   "ledger_path": "docs/architecture/campaign-2-ledger.md",
   "base_commit": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
   "branch": "codex/spiritos-campaign-2-core-coding-os-20260716",
-  "recorded_head": "17ee097ccafd94e0bd06b92768085d07228e4405",
+  "recorded_head": "d1dbaabf3182f04da34b025f6fe6208cabe212a1",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Campaign 2 in progress",
-  "current_increment": "gate_2_7_reviewer_verifier_anticheat_evidence_identity_binding",
+  "current_increment": "gate_2_8_cartographer_core_discovery_proposal_integration",
   "completed_gate_ids": [
     "gate_2_1_versioned_lane_registry_and_contracts",
     "gate_2_2_canonical_orchestrator_and_lane_state_machine",
     "gate_2_3_canonical_context_broker_consumption_acknowledgement",
     "gate_2_4_source_proxy_routing_health_fallback_truthfulness",
     "gate_2_5_typescript_python_target_plugin_reconciliation",
-    "gate_2_6_canonical_executor_and_lane_scoped_authority"
+    "gate_2_6_canonical_executor_and_lane_scoped_authority",
+    "gate_2_7_reviewer_verifier_anticheat_evidence_identity_binding"
   ],
   "partial_gate_ids": [],
-  "next_gate_id": "gate_2_7_reviewer_verifier_anticheat_evidence_identity_binding",
+  "next_gate_id": "gate_2_8_cartographer_core_discovery_proposal_integration",
   "terminal_gate_id": "campaign2_complete",
   "gate_dependency_order": [
     "gate_2_1_versioned_lane_registry_and_contracts",
