@@ -5,10 +5,10 @@
   "ledger_path": "docs/architecture/campaign-2-ledger.md",
   "base_commit": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
   "branch": "codex/spiritos-campaign-2-core-coding-os-20260716",
-  "recorded_head": "e582e7a2c46ed12e887014f2f261a2b7ebc8b98c",
+  "recorded_head": "cf51cbdaef7d6b89e0a69eeb50c9f91edebd938f",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
-  "current_phase": "Campaign 2 in progress",
-  "current_increment": "gate_2_11_core_proving_task_and_final_acceptance",
+  "current_phase": "Campaign 2 complete",
+  "current_increment": "campaign2_complete",
   "completed_gate_ids": [
     "gate_2_1_versioned_lane_registry_and_contracts",
     "gate_2_2_canonical_orchestrator_and_lane_state_machine",
@@ -19,12 +19,12 @@
     "gate_2_7_reviewer_verifier_anticheat_evidence_identity_binding",
     "gate_2_8_cartographer_core_discovery_proposal_integration",
     "gate_2_9_task_lifecycle_reliability_and_recovery",
-    "gate_2_10_canonical_shell_observability"
+    "gate_2_10_canonical_shell_observability",
+    "gate_2_11_core_proving_task_and_final_acceptance",
+    "campaign2_complete"
   ],
-  "partial_gate_ids": [
-    "gate_2_11_core_proving_task_and_final_acceptance"
-  ],
-  "next_gate_id": "gate_2_11_core_proving_task_and_final_acceptance",
+  "partial_gate_ids": [],
+  "next_gate_id": "none",
   "terminal_gate_id": "campaign2_complete",
   "gate_dependency_order": [
     "gate_2_1_versioned_lane_registry_and_contracts",
@@ -58,15 +58,15 @@
     "external_critical_blocker",
     "entry_condition_contradicted"
   ],
-  "go_eligible": false,
-  "last_verified_at": "2026-07-17T02:00:00Z",
+  "go_eligible": true,
+  "last_verified_at": "2026-07-17T03:44:00Z",
   "closeout": {
-    "verdict": null,
-    "status": "in_progress",
-    "core_proving_task_passed_from_clean_baseline": false,
-    "controlled_failure_injected_and_recovered": false,
-    "clean_rerun_passed": false,
-    "critical_blocker": "SPIRITOS_OPERATOR_E2E_SECRET is unavailable to the isolated Campaign 2 browser runner; live proving receipt docs/evidence/e2e-loop/2026-07-17T02-02-53-379Z/result.json stopped before authenticated Prompt 1 issuance.",
+    "verdict": "CAMPAIGN_2_CORE_CODING_OS_STABLE",
+    "status": "complete",
+    "core_proving_task_passed_from_clean_baseline": true,
+    "controlled_failure_injected_and_recovered": true,
+    "clean_rerun_passed": true,
+    "critical_blocker": null,
     "campaign3_started": false
   }
 }

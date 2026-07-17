@@ -6,12 +6,12 @@ Schema: `spiritos-campaign-2-ledger/v1`
 
 - Campaign: `spiritos-campaign-2`; plan: [campaign-2-plan.md](campaign-2-plan.md); state: [campaign-2-state.json](campaign-2-state.json).
 - Worktree / branch: `/home/source/SpiritOS-campaign-2-20260716` / `codex/spiritos-campaign-2-core-coding-os-20260716`.
-- Phase: **Campaign 2 in progress**.
+- Phase: **Campaign 2 complete**.
 - Base commit: `8a20473c2260bc132e595c64230d3fdfc9fef97f` (Campaign 1 terminal tip).
-- Current gate: `gate_2_11_core_proving_task_and_final_acceptance`; completed gates: 2.1 through 2.10.
-- GO eligibility: `false`. This campaign is not terminal.
-- Critical blocker: `SPIRITOS_OPERATOR_E2E_SECRET` is unavailable to the isolated Campaign 2 browser runner. Partial gates: `gate_2_11_core_proving_task_and_final_acceptance`.
-- Terminal verdict target: `CAMPAIGN_2_CORE_CODING_OS_STABLE` after Gate 2.11 passes from a clean isolated baseline.
+- Current gate: `campaign2_complete`; all gates 2.1 through 2.11 are completed.
+- GO eligibility: `true`.
+- Critical blocker: none. The prior secret-environment stop was recovered through canonical server-side loading and child-only runner injection.
+- Terminal verdict: `CAMPAIGN_2_CORE_CODING_OS_STABLE`, proven by the clean isolated Gate 2.11 receipt `docs/evidence/e2e-loop/2026-07-17T03-42-37-924Z/result.json`.
 - Campaign 3 is not started (`false`).
 
 ## Entry-condition revalidation (recorded at branch-off)
@@ -37,7 +37,7 @@ All four Campaign 1 entry conditions were verified before authoring this campaig
 | 2.8 Cartographer core discovery/proposal integration | completed | ADOPT + BUILD | `617e369e`: the canonical orchestrator consumes a Cartographer proposal selection only as `coding-executor:coder` before starting; the focused handoff and existing durable-selection authority tests pass with typecheck |
 | 2.9 Task lifecycle reliability and recovery | completed | EXTEND | `49768ffa`: interrupted persisted lane state is restored; only an explicit successful recovery action can complete it, while missing or failed action is persisted as a truthful degraded/blocked result; 15 recovery-focused tests + typecheck pass |
 | 2.10 Canonical shell observability | completed | EXTEND | `605f3e7b`: read-only `/v1/coding/tasks/{task_id}/observability` exposes persisted lane participation, orchestrator receipt, Campaign 2 lane authority, and target-plugin identity; factual absence or binding mismatch is pending/degraded, never a success claim; 50 focused tests + typecheck pass |
-| 2.11 Core proving task and final acceptance | blocked | BUILD execution | `e582e7a2` adds the final fail-closed validators; isolated Campaign 2 proxy (:8890) and frontend (:3104) passed identity and clean-product-reset checks, but the authenticated Prompt 1 browser run stopped before issuance because `SPIRITOS_OPERATOR_E2E_SECRET` is unavailable; truthful NO_GO receipt: `docs/evidence/e2e-loop/2026-07-17T02-02-53-379Z/result.json` |
+| 2.11 Core proving task and final acceptance | completed | BUILD execution | `b5fbe4a4`, `d46676e3`, `c8a86ec2`, `cf51cbda`: canonical server-side secret loading with child-only injection, live route preflight, isolated browser-origin binding, controlled local-model timeout and validation failures recovered through explicit Qwen 14B primary selection, and clean isolated proof GO at `docs/evidence/e2e-loop/2026-07-17T03-42-37-924Z/result.json`; model-authored create, approval/apply, verifier, managed Chromium, undo/reset, and clean rerun all passed. |
 
 ## Discovery classification log
 
@@ -46,7 +46,9 @@ Every newly discovered item during Campaign 2 must be classified here as exactly
 | Discovered item | Classification | Reasoning | Date |
 | --- | --- | --- | --- |
 | Post-apply durable authority snapshot retains `campaign_1_approval` and unscoped `coding-executor` labels after Campaign 2 lane-scoped consumption | mandatory-c2 | Repaired in `2061c7db`: durable approval, preview, and evidence acknowledgement names now preserve Campaign 2 / `coding-executor:coder`; 91 focused authority/task tests pass | 2026-07-16 |
-| Authenticated final proving task cannot issue Prompt 1 | mandatory-c2 | The isolated Campaign 2 services were healthy and matched their own worktree, but the required `SPIRITOS_OPERATOR_E2E_SECRET` is absent from the runner environment and approved local configuration locations; no receipt can claim the proving task without it | 2026-07-16 |
+| Authenticated final proving task cannot issue Prompt 1 | mandatory-c2 | Recovered in `b5fbe4a4` and `d46676e3`: canonical `0600` secret loading is server-side and forwarded only to the Playwright child; the live trusted-origin route is preflighted without a credential. | 2026-07-17 |
+| Isolated approval session, central gate, and managed-browser verifier retained production defaults | mandatory-c2 | Recovered by isolated `0700` operator state, explicit Gate 2.11 state, and loopback-only `SPIRITOS_E2E_FRONTEND_ORIGIN`; the source verifier proved the same isolated `:3105` browser route rather than silently using `:3000`. | 2026-07-17 |
+| Local primary model exceeded the initial 45-second proving budget and a non-coder model emitted an invalid storefront bundle | mandatory-c2 | Controlled fail-closed proving failures were retained as NO_GO receipts; the isolated declared Qwen 14B coding primary recovered them and produced a verifier-approved, model-authored diff. | 2026-07-17 |
 
 ## Designer boundary log
 
