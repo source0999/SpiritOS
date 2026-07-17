@@ -13,6 +13,7 @@ The single canonical Campaign 2 goal is the evidence-grounded **"Campaign goal a
 - Base: `8a20473c` (Campaign 1 terminal tip — do not mutate the Campaign 1 worktree)
 - Next gate: `gate_2_11_core_proving_task_and_final_acceptance`
 - Completed gates: 2.1 through 2.10, including Cartographer’s authority-bound canonical handoff (`617e369e`), durable interrupted-lane recovery (`49768ffa`), and shell observability (`605f3e7b`)
+- Current real blocker: the isolated authenticated proving run requires `SPIRITOS_OPERATOR_E2E_SECRET`; its truthful NO_GO receipt is `docs/evidence/e2e-loop/2026-07-17T02-02-53-379Z/result.json`.
 - Check completion anytime: `python3 scripts/campaign2-autoloop-completion.py --state docs/architecture/campaign-2-state.json --ledger docs/architecture/campaign-2-ledger.md`
 
 ## The gates, in order (do not skip ahead)

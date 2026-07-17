@@ -5,7 +5,7 @@
   "ledger_path": "docs/architecture/campaign-2-ledger.md",
   "base_commit": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
   "branch": "codex/spiritos-campaign-2-core-coding-os-20260716",
-  "recorded_head": "605f3e7b8ff63fc0e2f310487399f584941bd480",
+  "recorded_head": "e582e7a2c46ed12e887014f2f261a2b7ebc8b98c",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Campaign 2 in progress",
   "current_increment": "gate_2_11_core_proving_task_and_final_acceptance",
@@ -21,7 +21,9 @@
     "gate_2_9_task_lifecycle_reliability_and_recovery",
     "gate_2_10_canonical_shell_observability"
   ],
-  "partial_gate_ids": [],
+  "partial_gate_ids": [
+    "gate_2_11_core_proving_task_and_final_acceptance"
+  ],
   "next_gate_id": "gate_2_11_core_proving_task_and_final_acceptance",
   "terminal_gate_id": "campaign2_complete",
   "gate_dependency_order": [
@@ -64,7 +66,7 @@
     "core_proving_task_passed_from_clean_baseline": false,
     "controlled_failure_injected_and_recovered": false,
     "clean_rerun_passed": false,
-    "critical_blocker": null,
+    "critical_blocker": "SPIRITOS_OPERATOR_E2E_SECRET is unavailable to the isolated Campaign 2 browser runner; live proving receipt docs/evidence/e2e-loop/2026-07-17T02-02-53-379Z/result.json stopped before authenticated Prompt 1 issuance.",
     "campaign3_started": false
   }
 }
