@@ -25,7 +25,7 @@ from source_proxy.cartographer import cartographer_selection_authority as cartog
 from source_proxy.cartographer.proposal_transfer import CartographerProposalTransferError, transfer_proposal
 
 
-def issue(preview_id: str, *, consumer: str = "coding-executor", operation: str = "coding_execution") -> str:
+def issue(preview_id: str, *, consumer: str = "coding-executor:coder", operation: str = "coding_execution") -> str:
     result = subprocess.run(
         ["python3", "scripts/approval-authority.py", "issue"],
         input=json.dumps({
@@ -95,6 +95,17 @@ def test_coding_approval_rejects_changed_target_after_persisted_preview() -> Non
             context_hash="context-1",
         )
     assert caught.value.reason_code == "approval_target_mismatch"
+
+
+def test_coding_approval_rejects_lane_mismatched_approval() -> None:
+    preview = coding_preview(task_id="campaign2-lane-mismatch")
+    approval_id = issue(str(preview["preview_id"]), consumer="coding-executor:coder")
+    with pytest.raises(CampaignApprovalError, match="approval_lane_not_permitted"):
+        consume_coding_execution_approval(
+            approval_id=approval_id, task_id="campaign2-lane-mismatch", action="test action",
+            approved_diff="diff --git a/a b/a\n", target="src/app/coding/a.ts",
+            selected_prompt_id="legacy-test", context_hash="test-context", lane_id="reviewer",
+        )
 
 
 def test_coding_approval_rejects_changed_context_and_single_use() -> None:

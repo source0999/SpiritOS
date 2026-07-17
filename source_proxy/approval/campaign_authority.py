@@ -8,8 +8,15 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = "/home/source/SpiritOS-campaign-1-20260712"
+ROOT = "/home/source/SpiritOS-campaign-2-20260716"
 REPOSITORY = "SpiritOS"
+CODING_EXECUTOR_LANE = "coder"
+
+
+def coding_executor_consumer(lane_id: str) -> str:
+    if lane_id != CODING_EXECUTOR_LANE:
+        raise CampaignApprovalError("approval_lane_not_permitted")
+    return f"coding-executor:{lane_id}"
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "approval-authority.py"
 
 
@@ -69,9 +76,10 @@ def _call(command: str, payload: dict[str, Any]) -> dict[str, Any]:
     return response
 
 
-def consume_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
+def consume_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
     approval = _call("lookup", {"approval_id": approval_id})
-    if approval.get("consumer") != "coding-executor":
+    consumer = coding_executor_consumer(lane_id)
+    if approval.get("consumer") != consumer:
         raise CampaignApprovalError("approval_consumer_mismatch")
     if approval.get("operation") != "coding_execution":
         raise CampaignApprovalError("approval_operation_not_permitted")
@@ -81,7 +89,8 @@ def consume_coding_execution_approval(*, approval_id: str, task_id: str, action:
     content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash)
     binding = {
         "approval_id": approval_id,
-        "consumer": "coding-executor",
+        "consumer": consumer,
+        "lane_id": lane_id,
         "operation": "coding_execution",
         "repository": REPOSITORY,
         "worktree": ROOT,
@@ -110,13 +119,13 @@ def persist_coding_execution_preview(*, task_id: str, action: str, approved_diff
     })
 
 
-def issue_coding_execution_approval(*, preview_id: str, expected_generation: int | None = None) -> dict[str, Any]:
+def issue_coding_execution_approval(*, preview_id: str, expected_generation: int | None = None, lane_id: str = CODING_EXECUTOR_LANE) -> dict[str, Any]:
     if expected_generation is None:
         expected_generation = int(_call("lookup-preview", {"preview_id": preview_id})["generation"])
     issued = _call("issue", {
         "preview_id": preview_id,
         "expected_generation": str(expected_generation),
-        "consumer": "coding-executor",
+        "consumer": coding_executor_consumer(lane_id),
         "operation": "coding_execution",
         "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
     })

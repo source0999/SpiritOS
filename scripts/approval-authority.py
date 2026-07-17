@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Campaign 1 durable, server-owned approval authority."""
+"""Campaign 2 durable, server-owned approval authority."""
 
 import hashlib
 import json
@@ -13,17 +13,17 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 AUTHORITY_ID = "spiritos-approval-authority"
-ISSUER_ID = "spiritos-approval-authority/campaign-1"
-ROOT = "/home/source/SpiritOS-campaign-1-20260712"
+ISSUER_ID = "spiritos-approval-authority/campaign-2"
+ROOT = "/home/source/SpiritOS-campaign-2-20260716"
 REPOSITORY = "SpiritOS"
 WORKTREE = ROOT
-STATE_DIR = Path("/home/source/.local/state/spiritos/approvals")
+STATE_DIR = Path("/home/source/.local/state/spiritos/campaign-2-approvals")
 DB_PATH = STATE_DIR / "approvals.sqlite3"
 SECRET_DIR = Path("/home/source/.config/spiritos/secrets")
 SECRET_PATH = SECRET_DIR / "approval-authority.env"
 CONSUMER_OPERATIONS = {
     "design-writeback": "design_writeback",
-    "coding-executor": "coding_execution",
+    "coding-executor:coder": "coding_execution",
     "spiritflix-admin-executor": "spiritflix_admin_mutation",
     "cartographer-transfer-consumer": "cartographer_selection_transfer",
 }

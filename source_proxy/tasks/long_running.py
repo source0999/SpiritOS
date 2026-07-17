@@ -1165,6 +1165,7 @@ def execute_approved_long_running_task(
     target: str | None = None,
     approved_by: str = "human",
     test_command: list[str] | None = None,
+    lane_id: str = "coder",
 ) -> dict[str, Any]:
     """Apply a user-approved diff after the same read-only safety preview passes.
 
@@ -1239,6 +1240,7 @@ def execute_approved_long_running_task(
             target=target or "",
             selected_prompt_id=selected_prompt_id,
             context_hash=context_hash,
+            lane_id=lane_id,
             target_plugin_identity=target_plugin_identity if isinstance(target_plugin_identity, dict) else None,
         )
     except CampaignApprovalError as error:
