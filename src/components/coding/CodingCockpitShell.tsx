@@ -13361,7 +13361,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
                       <p className={`font-semibold ${commandTextClass}`}>Operator approval session</p>
                       <span data-testid="operator-session-status" className="rounded-md border border-[var(--ddv4-pill-border)] px-2 py-0.5 font-semibold uppercase">{operatorSession.status}</span>
                     </div>
-                    <p className={`mt-1 ${commandMutedClass}`}>{operatorSession.message}</p>
+                    <p className={`mt-1 ${commandMutedClass}`} data-testid="operator-session-message">{operatorSession.message}</p>
                     {operatorSession.expiresAt ? <p className={`mt-1 ${commandMutedClass}`}>Expires: {operatorSession.expiresAt}</p> : null}
                     {operatorSession.status === "authenticated" ? (
                       <button className={`mt-2 min-h-9 rounded-md border border-[var(--ddv4-pill-border)] px-3 font-semibold ${commandFocusClass}`} onClick={() => void revokeOperator()} type="button">Log out and revoke</button>

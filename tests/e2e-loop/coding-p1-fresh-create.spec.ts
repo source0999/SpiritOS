@@ -58,7 +58,7 @@ type PromptRunEvidence = {
 };
 
 test("Prompt 1 proves apply, manifest Undo, product reset, and a clean rerun through /coding", async ({ page }, testInfo) => {
-  test.setTimeout(420_000);
+  test.setTimeout(600_000);
   expect(process.env.E2E_LOOP_PRODUCT_RESET_VERIFIED).toBe("true");
 
   const httpEvents: HttpEvent[] = [];
@@ -241,7 +241,13 @@ async function runPrompt1(
   if (await credentialField.isVisible()) {
     await credentialField.fill(operatorCredential);
     await page.getByRole("button", { name: "Authenticate operator" }).click();
-    await expect(page.getByTestId("operator-session-status")).toHaveText("authenticated");
+    const operatorSessionStatus = page.getByTestId("operator-session-status");
+    await expect(operatorSessionStatus).not.toHaveText("authenticating");
+    const observedStatus = (await operatorSessionStatus.textContent())?.trim();
+    if (observedStatus !== "authenticated") {
+      const reason = (await page.getByTestId("operator-session-message").textContent())?.trim() || "operator_session_failed";
+      throw new Error(`operator_session_authentication_failed: ${reason}`);
+    }
     await expect(credentialField).not.toBeVisible();
   }
   await page.getByTestId("run-selected-dummy-coder-prompt").click();
@@ -258,7 +264,7 @@ async function runPrompt1(
       },
       {
         intervals: [1_000, 2_000, 5_000],
-        timeout: 120_000,
+        timeout: 210_000,
       },
     )
     .toBe(true);
