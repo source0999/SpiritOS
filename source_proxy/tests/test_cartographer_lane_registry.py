@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from source_proxy.cartographer.lane_registry import (
+    AUTHORITY_CLASSES,
+    CORE_CODING_LANE_IDS,
     DEFAULT_LANE_IDS,
     DIRTY_OVERLAP_STATUSES,
     FALSE_LANE_AUTHORITY,
@@ -13,6 +15,7 @@ from source_proxy.cartographer.lane_registry import (
     LaneRegistryRecord,
     OwnershipLockProposal,
     build_default_lane_registry,
+    build_canonical_coding_lane_registry,
     build_lane_registry_model_status,
     build_ownership_lock_proposal_status,
     classify_lane_dirty_overlap,
@@ -21,20 +24,21 @@ from source_proxy.cartographer.lane_registry import (
 )
 
 
-def test_lane_registry_model_status_is_data_only() -> None:
+def test_lane_registry_status_is_authority_bearing_but_not_an_approval() -> None:
     status = build_lane_registry_model_status()
 
     assert status["phase"] == LANE_REGISTRY_MODEL_PHASE
-    assert status["status"] == "model-only"
+    assert status["status"] == "authority-bearing"
     assert status["lane_ids"] == DEFAULT_LANE_IDS
     assert status["lane_record_statuses"] == LANE_RECORD_STATUSES
     assert status["dirty_overlap_statuses"] == DIRTY_OVERLAP_STATUSES
     assert status["required_lane_record_fields"] == REQUIRED_LANE_RECORD_FIELDS
-    assert status["proposal_only"] is True
-    assert status["advisory_only"] is True
+    assert status["authority_classes"] == AUTHORITY_CLASSES
+    assert status["proposal_only"] is False
+    assert status["advisory_only"] is False
     assert status["authority"] == FALSE_LANE_AUTHORITY
     assert all(value is False for value in status["authority"].values())
-    assert "enforcing locks" in status["safe_next_action"]
+    assert "task-scoped approval" in status["safe_next_action"]
 
 
 def test_default_registry_has_one_active_cartographer_lane() -> None:
@@ -108,8 +112,10 @@ def test_lane_vocabulary_active_state_and_path_rules_fail_closed() -> None:
             },
             "allowed_forbidden_path_overlap",
         ),
-        ({"proposal_only": False}, "lane_record_must_be_proposal_only"),
-        ({"advisory_only": False}, "lane_record_must_be_advisory_only"),
+        ({"contract_name": ""}, "missing_lane_contract_name"),
+        ({"contract_version": ""}, "missing_lane_contract_version"),
+        ({"authority_class": "unbounded"}, "unknown_lane_authority_class"),
+        ({"compatible_consumer_versions": ()}, "missing_compatible_consumer_versions"),
         ({"authority_granted": True}, "authority_must_be_false:authority_granted"),
         ({"can_mutate": True}, "authority_must_be_false:can_mutate"),
     ]
@@ -133,6 +139,20 @@ def test_alternate_active_lane_is_explicit_and_one_at_a_time() -> None:
     assert cartographer_lane.status == "inactive"
     assert validate_lane_registry_record(docs_lane).accepted is True
     assert validate_lane_registry_record(cartographer_lane).accepted is True
+
+
+def test_canonical_coding_registry_binds_every_contract_without_granting_authority() -> None:
+    registry = build_canonical_coding_lane_registry()
+
+    assert tuple(lane.lane_id for lane in registry) == CORE_CODING_LANE_IDS
+    assert all(lane.active and lane.status == "active" for lane in registry)
+    assert all(lane.contract_name == "coding/lane-contract" for lane in registry)
+    assert all(lane.contract_version == "coding.lane-contract/v1.0.0" for lane in registry)
+    assert all(lane.authority_class in AUTHORITY_CLASSES for lane in registry)
+    assert all(lane.compatible_consumer_versions for lane in registry)
+    assert all(lane.proposal_only is False and lane.advisory_only is False for lane in registry)
+    assert all(validate_lane_registry_record(lane).accepted for lane in registry)
+    assert all(lane.can_mutate is False and lane.authority_granted is False for lane in registry)
 
 
 def test_ownership_lock_proposal_status_is_data_only() -> None:

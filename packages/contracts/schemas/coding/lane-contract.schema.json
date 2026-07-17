@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "spiritos://contracts/coding/lane-contract/v1",
+  "title": "Canonical coding lane contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lane_id",
+    "contract_version",
+    "owner",
+    "authority_class",
+    "input_schema",
+    "output_schema",
+    "failure_schema",
+    "acknowledgement_schema",
+    "evidence_schema",
+    "compatible_consumer_versions",
+    "deprecation_state"
+  ],
+  "properties": {
+    "lane_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+    "contract_version": {"type": "string", "pattern": "^coding\\.lane-contract/v[1-9][0-9]*\\.[0-9]+\\.[0-9]+$"},
+    "owner": {"type": "string", "minLength": 1},
+    "authority_class": {"enum": ["context-read", "planning", "coding-execution", "review", "verification", "repair", "evidence-recording"]},
+    "input_schema": {"$ref": "#/$defs/payload_schema"},
+    "output_schema": {"$ref": "#/$defs/payload_schema"},
+    "failure_schema": {"$ref": "#/$defs/payload_schema"},
+    "acknowledgement_schema": {"$ref": "#/$defs/payload_schema"},
+    "evidence_schema": {"$ref": "#/$defs/payload_schema"},
+    "compatible_consumer_versions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9-]*/v[1-9][0-9]*$"}
+    },
+    "deprecation_state": {"enum": ["active", "deprecated", "retired"]}
+  },
+  "$defs": {
+    "payload_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "properties", "required", "additionalProperties"],
+      "properties": {
+        "type": {"const": "object"},
+        "properties": {"type": "object"},
+        "required": {"type": "array", "items": {"type": "string"}},
+        "additionalProperties": {"const": false}
+      }
+    }
+  }
+}

@@ -4,8 +4,12 @@ import dataclasses
 from datetime import datetime, timezone
 from typing import Any, Mapping, Sequence
 
+from source_proxy.contracts.coding_lane_contracts import (
+    CORE_CODING_LANE_IDS,
+    canonical_coding_lane_contracts,
+)
 
-LANE_REGISTRY_SCHEMA_VERSION = "cartographer.lane-registry.v0.1"
+LANE_REGISTRY_SCHEMA_VERSION = "coding.lane-registry.v1"
 LANE_REGISTRY_PLAN = "Cartographer Auto Roadmap Plan 3"
 LANE_REGISTRY_MODEL_PHASE = "Plan 3 Phase 3.1: Lane vocabulary and registry model"
 OWNERSHIP_LOCK_PROPOSAL_PHASE = "Plan 3 Phase 3.2: Ownership locks as data"
@@ -45,6 +49,19 @@ DEFAULT_LANE_IDS: tuple[str, ...] = (
     "generated_cache",
 )
 
+AUTHORITY_CLASSES: tuple[str, ...] = (
+    "path-ownership",
+    "context-read",
+    "planning",
+    "coding-execution",
+    "review",
+    "verification",
+    "repair",
+    "evidence-recording",
+)
+
+DEPRECATION_STATES: tuple[str, ...] = ("active", "deprecated", "retired")
+
 REQUIRED_LANE_RECORD_FIELDS: tuple[str, ...] = (
     "lane_id",
     "owner",
@@ -54,6 +71,11 @@ REQUIRED_LANE_RECORD_FIELDS: tuple[str, ...] = (
     "status",
     "active",
     "created_at",
+    "contract_name",
+    "contract_version",
+    "authority_class",
+    "compatible_consumer_versions",
+    "deprecation_state",
 )
 
 REQUIRED_OWNERSHIP_LOCK_PROPOSAL_FIELDS: tuple[str, ...] = (
@@ -93,6 +115,11 @@ class LaneRegistryRecord:
     active: bool
     created_at: str
     description: str = ""
+    contract_name: str = ""
+    contract_version: str = ""
+    authority_class: str = "path-ownership"
+    compatible_consumer_versions: tuple[str, ...] = ()
+    deprecation_state: str = "active"
     proposal_only: bool = True
     advisory_only: bool = True
     authority_granted: bool = False
@@ -202,19 +229,66 @@ def build_lane_registry_model_status() -> dict[str, Any]:
         "schema_version": LANE_REGISTRY_SCHEMA_VERSION,
         "plan": LANE_REGISTRY_PLAN,
         "phase": LANE_REGISTRY_MODEL_PHASE,
-        "status": "model-only",
+        "status": "authority-bearing",
         "lane_ids": DEFAULT_LANE_IDS,
         "lane_record_statuses": LANE_RECORD_STATUSES,
         "dirty_overlap_statuses": DIRTY_OVERLAP_STATUSES,
         "required_lane_record_fields": REQUIRED_LANE_RECORD_FIELDS,
-        "proposal_only": True,
-        "advisory_only": True,
+        "authority_classes": AUTHORITY_CLASSES,
+        "deprecation_states": DEPRECATION_STATES,
+        "proposal_only": False,
+        "advisory_only": False,
         "authority": dict(FALSE_LANE_AUTHORITY),
         "safe_next_action": (
-            "Use lane records for display and proposal checks only; require a "
-            "later approved plan before enforcing locks or mutating state."
+            "Use a lane record's contract and authority class to select a "
+            "participant; task-scoped approval remains mandatory for mutation."
         ),
     }
+
+
+def build_canonical_coding_lane_registry(
+    *,
+    created_at: str = "2026-07-16T00:00:00Z",
+) -> tuple[LaneRegistryRecord, ...]:
+    """Produce authority-bearing records for every mandatory core participant.
+
+    The registry declares what a participant may do; it never grants an
+    execution approval. Gate 2.6 binds task-scoped approvals to these records.
+    """
+    contracts = canonical_coding_lane_contracts()
+    path_scopes = {
+        "context-broker": ("source_proxy/context/",),
+        "planner": ("source_proxy/planning/",),
+        "coder": ("source_proxy/tasks/", "source_proxy/target_plugins/"),
+        "reviewer": ("source_proxy/planning/", "source_proxy/verification/"),
+        "verifier": ("source_proxy/verification/", "source_proxy/decision/"),
+        "repair": ("source_proxy/tasks/",),
+        "evidence-recorder": ("source_proxy/approval/",),
+    }
+    records: list[LaneRegistryRecord] = []
+    for lane_id in CORE_CODING_LANE_IDS:
+        contract = contracts[lane_id]
+        records.append(
+            LaneRegistryRecord(
+                lane_id=lane_id,
+                owner=str(contract["owner"]),
+                allowed_path_prefixes=path_scopes[lane_id],
+                forbidden_path_prefixes=("src/app/coding/", "public/media/"),
+                protected_path_prefixes=("package.json", "next.config.ts"),
+                status="active",
+                active=True,
+                created_at=created_at,
+                description=f"Mandatory canonical coding participant: {lane_id}.",
+                contract_name="coding/lane-contract",
+                contract_version=str(contract["contract_version"]),
+                authority_class=str(contract["authority_class"]),
+                compatible_consumer_versions=tuple(contract["compatible_consumer_versions"]),
+                deprecation_state=str(contract["deprecation_state"]),
+                proposal_only=False,
+                advisory_only=False,
+            )
+        )
+    return tuple(records)
 
 
 def build_ownership_lock_proposal_status() -> dict[str, Any]:
@@ -651,8 +725,13 @@ def validate_lane_registry_record(record: LaneRegistryRecord | Mapping[str, Any]
     protected = _string_tuple(payload.get("protected_path_prefixes"))
     status = _string_value(payload.get("status"))
     active = payload.get("active")
+    contract_name = _string_value(payload.get("contract_name"))
+    contract_version = _string_value(payload.get("contract_version"))
+    authority_class = _string_value(payload.get("authority_class"))
+    compatible_consumer_versions = _string_tuple(payload.get("compatible_consumer_versions"))
+    deprecation_state = _string_value(payload.get("deprecation_state"))
 
-    if lane_id not in DEFAULT_LANE_IDS:
+    if lane_id not in (*DEFAULT_LANE_IDS, *CORE_CODING_LANE_IDS):
         reasons.append("unknown_lane_id")
     if owner is None:
         reasons.append("missing_lane_owner")
@@ -667,6 +746,16 @@ def validate_lane_registry_record(record: LaneRegistryRecord | Mapping[str, Any]
         reasons.append("active_status_requires_active_true")
     if active_bool and status != "active":
         reasons.append("active_true_requires_active_status")
+    if contract_name is None:
+        reasons.append("missing_lane_contract_name")
+    if contract_version is None:
+        reasons.append("missing_lane_contract_version")
+    if authority_class not in AUTHORITY_CLASSES:
+        reasons.append("unknown_lane_authority_class")
+    if not compatible_consumer_versions:
+        reasons.append("missing_compatible_consumer_versions")
+    if deprecation_state not in DEPRECATION_STATES:
+        reasons.append("unknown_lane_deprecation_state")
 
     _validate_prefixes("allowed_path_prefixes", allowed, reasons)
     _validate_prefixes("forbidden_path_prefixes", forbidden, reasons)
@@ -679,10 +768,6 @@ def validate_lane_registry_record(record: LaneRegistryRecord | Mapping[str, Any]
         reasons.append("missing_protected_path_prefixes")
     if _prefix_sets_intersect(allowed, forbidden):
         reasons.append("allowed_forbidden_path_overlap")
-    if payload.get("proposal_only") is False:
-        reasons.append("lane_record_must_be_proposal_only")
-    if payload.get("advisory_only") is False:
-        reasons.append("lane_record_must_be_advisory_only")
     for authority_name in FALSE_LANE_AUTHORITY:
         if payload.get(authority_name) is True:
             reasons.append(f"authority_must_be_false:{authority_name}")
@@ -706,6 +791,11 @@ def _lane(
     active_lane_id: str,
     created_at: str,
     description: str,
+    contract_name: str | None = None,
+    contract_version: str | None = None,
+    authority_class: str = "path-ownership",
+    compatible_consumer_versions: Sequence[str] = ("cartographer/v1",),
+    deprecation_state: str = "active",
 ) -> LaneRegistryRecord:
     active = lane_id == active_lane_id
     return LaneRegistryRecord(
@@ -718,6 +808,11 @@ def _lane(
         active=active,
         created_at=created_at,
         description=description,
+        contract_name=contract_name or f"cartographer/{lane_id}-ownership",
+        contract_version=contract_version or LANE_REGISTRY_SCHEMA_VERSION,
+        authority_class=authority_class,
+        compatible_consumer_versions=tuple(compatible_consumer_versions),
+        deprecation_state=deprecation_state,
     )
 
 

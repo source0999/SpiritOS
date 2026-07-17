@@ -1,0 +1,93 @@
+[
+  {
+    "lane_id": "context-broker",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-context",
+    "authority_class": "context-read",
+    "input_schema": {"type": "object", "properties": {"task_id": {"type": "string"}, "sources": {"type": "array"}}, "required": ["task_id", "sources"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"context_hash": {"type": "string"}, "verdict": {"type": "string"}}, "required": ["context_hash", "verdict"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"consumer": {"type": "string"}, "context_hash": {"type": "string"}}, "required": ["consumer", "context_hash"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"report_hash": {"type": "string"}}, "required": ["report_hash"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1"],
+    "deprecation_state": "active"
+  },
+  {
+    "lane_id": "planner",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-planning",
+    "authority_class": "planning",
+    "input_schema": {"type": "object", "properties": {"task_id": {"type": "string"}, "context_hash": {"type": "string"}}, "required": ["task_id", "context_hash"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"plan_id": {"type": "string"}, "task_spec": {"type": "object"}}, "required": ["plan_id", "task_spec"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"context_hash": {"type": "string"}}, "required": ["context_hash"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"plan_hash": {"type": "string"}}, "required": ["plan_hash"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1", "coding-executor/v1"],
+    "deprecation_state": "active"
+  },
+  {
+    "lane_id": "coder",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-coding",
+    "authority_class": "coding-execution",
+    "input_schema": {"type": "object", "properties": {"task_id": {"type": "string"}, "target_plugin_identity": {"type": "object"}}, "required": ["task_id", "target_plugin_identity"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"approved_diff": {"type": "string"}, "changed_files": {"type": "array"}}, "required": ["approved_diff", "changed_files"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"approval_id": {"type": "string"}, "generation": {"type": "integer"}}, "required": ["approval_id", "generation"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"diff_hash": {"type": "string"}, "target_identity": {"type": "object"}}, "required": ["diff_hash", "target_identity"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1", "coding-executor/v1"],
+    "deprecation_state": "active"
+  },
+  {
+    "lane_id": "reviewer",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-review",
+    "authority_class": "review",
+    "input_schema": {"type": "object", "properties": {"plan_id": {"type": "string"}, "diff_hash": {"type": "string"}}, "required": ["plan_id", "diff_hash"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"passed": {"type": "boolean"}, "findings": {"type": "array"}}, "required": ["passed", "findings"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"approval_id": {"type": "string"}, "generation": {"type": "integer"}}, "required": ["approval_id", "generation"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"review_hash": {"type": "string"}}, "required": ["review_hash"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1", "coding-reviewer/v1"],
+    "deprecation_state": "active"
+  },
+  {
+    "lane_id": "verifier",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-verification",
+    "authority_class": "verification",
+    "input_schema": {"type": "object", "properties": {"task_id": {"type": "string"}, "verification_target": {"type": "string"}}, "required": ["task_id", "verification_target"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"verdict": {"type": "string"}, "checks": {"type": "array"}}, "required": ["verdict", "checks"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"approval_id": {"type": "string"}, "generation": {"type": "integer"}}, "required": ["approval_id", "generation"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"verification_hash": {"type": "string"}, "anticheat": {"type": "object"}}, "required": ["verification_hash", "anticheat"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1", "coding-verifier/v1"],
+    "deprecation_state": "active"
+  },
+  {
+    "lane_id": "repair",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-coding",
+    "authority_class": "repair",
+    "input_schema": {"type": "object", "properties": {"task_id": {"type": "string"}, "findings": {"type": "array"}}, "required": ["task_id", "findings"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"repair_status": {"type": "string"}, "diff_hash": {"type": "string"}}, "required": ["repair_status", "diff_hash"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"context_hash": {"type": "string"}}, "required": ["context_hash"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"repair_attempt": {"type": "integer"}, "repair_hash": {"type": "string"}}, "required": ["repair_attempt", "repair_hash"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1", "coding-executor/v1"],
+    "deprecation_state": "active"
+  },
+  {
+    "lane_id": "evidence-recorder",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-approval",
+    "authority_class": "evidence-recording",
+    "input_schema": {"type": "object", "properties": {"approval_id": {"type": "string"}, "lane_receipts": {"type": "array"}}, "required": ["approval_id", "lane_receipts"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"receipt_id": {"type": "string"}, "truth_status": {"type": "string"}}, "required": ["receipt_id", "truth_status"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"approval_id": {"type": "string"}, "generation": {"type": "integer"}}, "required": ["approval_id", "generation"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"receipt_hash": {"type": "string"}, "target_identity": {"type": "object"}}, "required": ["receipt_hash", "target_identity"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1", "evidence-recorder/v1"],
+    "deprecation_state": "active"
+  }
+]

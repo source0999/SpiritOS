@@ -24,6 +24,7 @@ _SCHEMAS = {
     "scout/packet": "scout/packet.schema.json",
     "cartographer/proposal": "cartographer/proposal.schema.json",
     "mac-worker/job": "mac-worker/job.schema.json",
+    "coding/lane-contract": "coding/lane-contract.schema.json",
 }
 
 
