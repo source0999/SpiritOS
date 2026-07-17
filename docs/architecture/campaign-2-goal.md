@@ -11,8 +11,8 @@ The single canonical Campaign 2 goal is the evidence-grounded **"Campaign goal a
 - Worktree: `/home/source/SpiritOS-campaign-2-20260716`
 - Branch: `codex/spiritos-campaign-2-core-coding-os-20260716`
 - Base: `8a20473c` (Campaign 1 terminal tip — do not mutate the Campaign 1 worktree)
-- Next gate: `gate_2_9_task_lifecycle_reliability_and_recovery`
-- Completed gates: 2.1 through 2.8, including Cartographer’s authority-bound canonical handoff (`617e369e`)
+- Next gate: `gate_2_10_canonical_shell_observability`
+- Completed gates: 2.1 through 2.9, including Cartographer’s authority-bound canonical handoff (`617e369e`) and durable interrupted-lane recovery (`49768ffa`)
 - Check completion anytime: `python3 scripts/campaign2-autoloop-completion.py --state docs/architecture/campaign-2-state.json --ledger docs/architecture/campaign-2-ledger.md`
 
 ## The gates, in order (do not skip ahead)

@@ -8,7 +8,7 @@ Schema: `spiritos-campaign-2-ledger/v1`
 - Worktree / branch: `/home/source/SpiritOS-campaign-2-20260716` / `codex/spiritos-campaign-2-core-coding-os-20260716`.
 - Phase: **Campaign 2 in progress**.
 - Base commit: `8a20473c2260bc132e595c64230d3fdfc9fef97f` (Campaign 1 terminal tip).
-- Current gate: `gate_2_9_task_lifecycle_reliability_and_recovery`; completed gates: 2.1 through 2.8.
+- Current gate: `gate_2_10_canonical_shell_observability`; completed gates: 2.1 through 2.9.
 - GO eligibility: `false`. This campaign is not terminal.
 - Critical blocker: `none`. Partial gates: `none`.
 - Terminal verdict target: `CAMPAIGN_2_CORE_CODING_OS_STABLE` after Gate 2.11 passes from a clean isolated baseline.
@@ -35,7 +35,7 @@ All four Campaign 1 entry conditions were verified before authoring this campaig
 | 2.6 Canonical executor and lane-scoped authority | completed | ADOPT + BUILD | `17ee097c`: Campaign 2 authority namespace and `coding-executor:coder` durable lane binding; executor forwards lane identity; mismatch rejection test and typecheck pass |
 | 2.7 Reviewer, verifier, anti-cheat, evidence identity binding | completed | ADOPT | reviewer, verifier, 15-detector anti-cheat, and evidence identity binding retained; 44 focused tests + typecheck pass under Campaign 2 lane authority |
 | 2.8 Cartographer core discovery/proposal integration | completed | ADOPT + BUILD | `617e369e`: the canonical orchestrator consumes a Cartographer proposal selection only as `coding-executor:coder` before starting; the focused handoff and existing durable-selection authority tests pass with typecheck |
-| 2.9 Task lifecycle reliability and recovery | not_started | EXTEND | adopt per-task SM; extend to lane-level recovery |
+| 2.9 Task lifecycle reliability and recovery | completed | EXTEND | `49768ffa`: interrupted persisted lane state is restored; only an explicit successful recovery action can complete it, while missing or failed action is persisted as a truthful degraded/blocked result; 15 recovery-focused tests + typecheck pass |
 | 2.10 Canonical shell observability | not_started | EXTEND | extend status endpoints to canonical observability |
 | 2.11 Core proving task and final acceptance | not_started | BUILD execution | ADOPT LumaCart battery; prove every lane; controlled failure + clean rerun |
 
