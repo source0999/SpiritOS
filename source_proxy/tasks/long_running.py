@@ -1188,8 +1188,8 @@ def execute_approved_long_running_task(
         notes=["execute-approved apply path entered"],
     )
     _save_task(task)
-    pending_approval = _ensure_ast_snapshot_dict(task).get("campaign_1_pending_approval")
-    pending_preview = _ensure_ast_snapshot_dict(task).get("campaign_1_pending_preview")
+    pending_approval = _ensure_ast_snapshot_dict(task).get("campaign_2_pending_approval")
+    pending_preview = _ensure_ast_snapshot_dict(task).get("campaign_2_pending_preview")
     target_plugin_identity = (
         pending_preview.get("target_plugin_identity")
         if isinstance(pending_preview, dict)
@@ -1531,13 +1531,13 @@ def execute_approved_long_running_task(
     except CampaignApprovalError as error:
         raise LongRunningTaskError("Durable coding approval could not be finalized.", error.reason_code) from error
     snapshot = _ensure_ast_snapshot_dict(task)
-    snapshot["campaign_1_approval"] = {
+    snapshot["campaign_2_approval"] = {
         "approval_id": approval_id,
         "generation": durable_approval["generation"],
-        "consumer": "coding-executor",
+        "consumer": "coding-executor:coder",
         "target_plugin_identity": durable_approval.get("target_plugin_identity", {}),
         "acknowledgements": {
-            "coding-executor": {"approval_id": approval_id, "generation": durable_approval["generation"], "target_plugin_identity": durable_approval.get("target_plugin_identity", {})},
+            "coding-executor:coder": {"approval_id": approval_id, "generation": durable_approval["generation"], "target_plugin_identity": durable_approval.get("target_plugin_identity", {})},
             "coding-reviewer": {"approval_id": approval_id, "generation": durable_approval["generation"], "target_plugin_identity": durable_approval.get("target_plugin_identity", {})},
         },
         "evidence": "redacted_source_proxy_execute_approved_receipt",
@@ -2398,7 +2398,7 @@ def record_post_apply_verification(
         )
         snapshot["approved_execution_evidence"]["commit_safe"] = task.status == "completed"
     task.ast_snapshot = snapshot
-    campaign_approval = snapshot.get("campaign_1_approval")
+    campaign_approval = snapshot.get("campaign_2_approval")
     if task.status == "completed" and isinstance(campaign_approval, dict):
         campaign_approval["acknowledgements"] = {
             consumer: {
@@ -2406,9 +2406,9 @@ def record_post_apply_verification(
                 "generation": campaign_approval["generation"],
                 "target_plugin_identity": campaign_approval.get("target_plugin_identity", {}),
             }
-            for consumer in ("coding-executor", "coding-reviewer", "coding-verifier", "evidence-recorder")
+            for consumer in ("coding-executor:coder", "coding-reviewer", "coding-verifier", "evidence-recorder")
         }
-        snapshot["campaign_1_approval"] = campaign_approval
+        snapshot["campaign_2_approval"] = campaign_approval
         task.ast_snapshot = snapshot
         try:
             validate_coding_approval_evidence(campaign_approval)
@@ -3283,7 +3283,7 @@ def cancel_long_running_task(task_id: str) -> dict[str, Any]:
     task = _lookup_task(task_id)
     if task.status not in _terminal_or_waiting_statuses() or task.status == "waiting_for_operator_browser":
         snapshot = _ensure_ast_snapshot_dict(task)
-        pending_approval = snapshot.get("campaign_1_pending_approval")
+        pending_approval = snapshot.get("campaign_2_pending_approval")
         if isinstance(pending_approval, dict) and str(pending_approval.get("approval_id") or ""):
             try:
                 cancelled = cancel_coding_execution_approval(
@@ -3295,7 +3295,7 @@ def cancel_long_running_task(task_id: str) -> dict[str, Any]:
                     error.reason_code,
                 ) from error
             pending_approval["state"] = cancelled["state"]
-            snapshot["campaign_1_pending_approval"] = pending_approval
+            snapshot["campaign_2_pending_approval"] = pending_approval
             task.ast_snapshot = snapshot
         task.status = "cancelled"
         task.cancelled_at = _now_iso()
@@ -3312,10 +3312,10 @@ def record_coding_execution_approval(
 ) -> dict[str, Any]:
     task = _lookup_task(task_id)
     snapshot = _ensure_ast_snapshot_dict(task)
-    snapshot["campaign_1_pending_approval"] = {
+    snapshot["campaign_2_pending_approval"] = {
         "approval_id": approval_id,
         "generation": generation,
-        "consumer": "coding-executor",
+        "consumer": "coding-executor:coder",
         "state": "approved",
     }
     task.ast_snapshot = snapshot
@@ -3333,10 +3333,10 @@ def record_coding_execution_preview(
 ) -> dict[str, Any]:
     task = _lookup_task(task_id)
     snapshot = _ensure_ast_snapshot_dict(task)
-    snapshot["campaign_1_pending_preview"] = {
+    snapshot["campaign_2_pending_preview"] = {
         "preview_id": preview_id,
         "generation": generation,
-        "consumer": "coding-executor",
+        "consumer": "coding-executor:coder",
         "state": "previewed",
         "target_plugin_identity": dict(target_plugin_identity or {}),
     }
@@ -3353,7 +3353,7 @@ def assert_coding_execution_preview(
     generation: int,
 ) -> None:
     task = _lookup_task(task_id)
-    pending_preview = _ensure_ast_snapshot_dict(task).get("campaign_1_pending_preview")
+    pending_preview = _ensure_ast_snapshot_dict(task).get("campaign_2_pending_preview")
     if not isinstance(pending_preview, dict):
         raise LongRunningTaskError("Task has no server-persisted approval preview.", "approval_preview_missing")
     if str(pending_preview.get("preview_id") or "") != preview_id or int(pending_preview.get("generation") or 0) != generation:

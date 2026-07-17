@@ -184,7 +184,7 @@ def test_coding_evidence_requires_identical_approval_generation_for_all_consumer
         "approval_id": "apr_campaign1", "generation": 2,
         "acknowledgements": {
             name: {"approval_id": "apr_campaign1", "generation": 2}
-            for name in ("coding-executor", "coding-reviewer", "coding-verifier", "evidence-recorder")
+            for name in ("coding-executor:coder", "coding-reviewer", "coding-verifier", "evidence-recorder")
         },
     }
     validate_coding_approval_evidence(receipt)
@@ -200,7 +200,7 @@ def test_coding_evidence_requires_identical_target_plugin_identity_for_all_consu
         "approval_id": "apr_campaign1", "generation": 2, "target_plugin_identity": identity,
         "acknowledgements": {
             name: {"approval_id": "apr_campaign1", "generation": 2, "target_plugin_identity": dict(identity)}
-            for name in ("coding-executor", "coding-reviewer", "coding-verifier", "evidence-recorder")
+            for name in ("coding-executor:coder", "coding-reviewer", "coding-verifier", "evidence-recorder")
         },
     }
     receipt["acknowledgements"]["evidence-recorder"]["target_plugin_identity"] = {"plugin_id": "other"}

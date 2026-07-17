@@ -4,7 +4,7 @@ from typing import Any
 
 
 REQUIRED_CONSUMERS = (
-    "coding-executor",
+    "coding-executor:coder",
     "coding-reviewer",
     "coding-verifier",
     "evidence-recorder",

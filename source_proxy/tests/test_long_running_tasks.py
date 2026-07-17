@@ -65,7 +65,7 @@ def _approval_id(task_id: str, diff: str, target: str) -> str:
         input=json.dumps({
             "preview_id": preview["preview_id"],
             "expected_generation": str(preview["generation"]),
-            "consumer": "coding-executor",
+            "consumer": "coding-executor:coder",
             "operation": "coding_execution",
             "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
         }),
@@ -1602,7 +1602,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             self.assertEqual(cancelled.status_code, 200)
             self.assertEqual(cancelled.json()["task"]["status"], "cancelled")
             self.assertEqual(
-                cancelled.json()["task"]["ast_snapshot"]["campaign_1_pending_approval"]["state"],
+                cancelled.json()["task"]["ast_snapshot"]["campaign_2_pending_approval"]["state"],
                 "cancelled",
             )
             rejected = client.post(
