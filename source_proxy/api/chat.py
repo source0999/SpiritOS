@@ -25,6 +25,7 @@ from source_proxy.routing.litellm_router import (
     route_provider_for_alias,
     routing_status,
 )
+from source_proxy.routing.fallback import FallbackPolicy, RouteFallbackError, invoke_async_with_truthful_fallback
 
 router = APIRouter(prefix="/v1")
 
@@ -45,6 +46,7 @@ class ChatCompletionRequest(BaseModel):
     temperature: float | None = None
     max_tokens: int | None = None
     stream: bool = False
+    fallback_model: str | None = None
 
 
 @router.get("/models")
@@ -81,6 +83,10 @@ async def chat_completions(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Model alias {request.model!r} is not enabled.",
         )
+    if request.fallback_model and request.fallback_model not in available_model_aliases():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Fallback model alias {request.fallback_model!r} is not enabled.")
+    if request.fallback_model == request.model:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Fallback model must differ from the primary model.")
 
     kwargs: dict[str, Any] = {}
     if request.temperature is not None:
@@ -124,32 +130,31 @@ async def chat_completions(
                 "provider request was not sent."
             ),
         ) from estimation_error
+    if request.fallback_model:
+        fallback_routed_model = route_model_for_alias(request.fallback_model)
+        fallback_provider = route_provider_for_alias(request.fallback_model)
+        if fallback_routed_model is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fallback model is not enabled.")
+        try:
+            await async_pre_call_hook(model_alias=request.fallback_model, routed_model=fallback_routed_model, provider=fallback_provider, messages=request_messages, max_completion_tokens=request.max_tokens or 0, approval=request.approval)
+        except SpendApprovalRequired as approval_error:
+            raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail={"message": "Spend approval required before fallback provider request.", "spend_before_send": approval_error.breakdown.as_payload()}) from approval_error
 
     started = time.perf_counter()
+    async def complete(alias: str) -> Any:
+        return await asyncio.wait_for(get_router().acompletion(model=alias, messages=request_messages, stream=False, **kwargs), timeout=_read_request_timeout_seconds() + 5)
     try:
-        completion = await asyncio.wait_for(
-            get_router().acompletion(
-                model=request.model,
-                messages=request_messages,
-                stream=False,
-                **kwargs,
-            ),
-            timeout=_read_request_timeout_seconds() + 5,
+        completion, fallback_receipt = await invoke_async_with_truthful_fallback(
+            FallbackPolicy(request.model, request.fallback_model, allow_fallback=bool(request.fallback_model)),
+            primary=lambda: complete(request.model),
+            secondary=(lambda: complete(request.fallback_model or "")) if request.fallback_model else None,
         )
-    except TimeoutError as error:
+    except RouteFallbackError as error:
         elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
         response.headers["x-source-proxy-response-ms"] = str(elapsed_ms)
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail=(
-                "LiteLLM route timed out. Check Ollama model availability, "
-                "model load time, and SOURCE_PROXY_REQUEST_TIMEOUT_SECONDS."
-            ),
-        ) from error
-    except Exception as error:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"LiteLLM route failed: {error}",
+            detail={"message": "LiteLLM route failed without a successful fallback.", "route_fallback": error.receipt},
         ) from error
 
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
@@ -160,8 +165,8 @@ async def chat_completions(
     )
     expenditure_record = build_expenditure_record(
         completion_payload=payload,
-        model_alias=request.model,
-        provider=route_provider_for_alias(request.model),
+        model_alias=request.fallback_model if fallback_receipt["fallback_used"] else request.model,
+        provider=fallback_receipt["selected_provider"],
         user_id=request.user_id
         or os.getenv("SOURCE_PROXY_DEFAULT_USER_ID", "source"),
         project_id=request.project_id
@@ -172,6 +177,7 @@ async def chat_completions(
         "model_alias": request.model,
         "response_ms": elapsed_ms,
         "spend_before_send": spend_breakdown.as_payload(),
+        "route_fallback": fallback_receipt,
     }
     background_tasks.add_task(
         log_completion_expenditure,

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
-from source_proxy.routing.fallback import FallbackPolicy, RouteFallbackError, invoke_with_truthful_fallback
+from source_proxy.routing.fallback import FallbackPolicy, RouteFallbackError, invoke_async_with_truthful_fallback, invoke_with_truthful_fallback
 
 
 def test_primary_success_cannot_claim_a_fallback() -> None:
@@ -35,3 +37,21 @@ def test_primary_failure_without_explicit_fallback_fails_closed() -> None:
         )
     assert error.value.reason_code == "primary_route_failed_no_fallback"
     assert error.value.receipt["fallback_used"] is False
+
+
+def test_async_fallback_records_the_secondary_provider() -> None:
+    value, receipt = asyncio.run(invoke_async_with_truthful_fallback(
+        FallbackPolicy("primary", "secondary", allow_fallback=True),
+        primary=lambda: _async_failure(), secondary=lambda: _async_value("secondary-result"),
+    ))
+    assert value == "secondary-result"
+    assert receipt["primary_success"] is False
+    assert receipt["selected_provider"] == "secondary"
+
+
+async def _async_failure() -> str:
+    raise TimeoutError()
+
+
+async def _async_value(value: str) -> str:
+    return value
