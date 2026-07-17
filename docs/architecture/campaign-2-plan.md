@@ -22,9 +22,32 @@ If any of these is contradicted by runtime evidence during Campaign 2, halt and 
 
 ## Campaign goal and terminal verdict
 
-Goal: stabilize the core coding operating system behind a single versioned, authoritative lane contract and a canonical orchestrator that sequences every mandatory core lane through context-broker-acknowledged, authority-enforced execution, proven by a deterministic core proving task with controlled failure injection from a clean isolated baseline.
+### The problem
 
-Terminal verdict: `CAMPAIGN_2_CORE_CODING_OS_STABLE`. Campaign 2 may not return this verdict until the core proving task passes from a clean isolated baseline and all mandatory gates are accepted. Campaign 3 is not started by this closeout.
+The core coding OS already has real guarded capabilities, but an operator cannot yet rely on one **canonical, repeatable coding run** to carry a change safely from discovered work through execution, review, verification, and durable evidence. Today those capabilities are strong local protections rather than one enforced end-to-end reliability property:
+
+- The long-running executor applies only an approved diff and re-checks the durable approval binding (`source_proxy/tasks/long_running.py:1157`); the approval authority persists and consumes identity-bound approvals (`scripts/approval-authority.py:92-220`). Those protections are real, but neither defines a single mandatory sequence for every core participant.
+- The canonical context broker can produce and acknowledge context consumption (`source_proxy/context/canonical_broker.py:12-381`), and task helpers can record an acknowledgement (`source_proxy/tasks/long_running.py:3676-3728`). A caller can still enter other task and decision paths without a common run-level record that every applicable participant consumed the same context.
+- Review, functional verification, anti-cheat, and evidence validation exist (`source_proxy/planning/reviewer.py:40-136`, `source_proxy/decision/verifier_lane.py:15-233`, `source_proxy/verification/anticheat/detectors.py:143`, and `source_proxy/approval/campaign_evidence.py:6-37`). They are invoked by particular verification, specialist, or task paths rather than being required and sequenced by one core-run contract.
+- TypeScript chooses a LumaCart target packet and Python resolves it fail-closed (`src/lib/coding/target-plugins/index.ts:18-42`; `source_proxy/target_plugins/adapter.py:183-224`). Cartographer can discover projects and produce an approval-bound selection (`source_proxy/cartographer/project_discovery.py:112-175`; `source_proxy/cartographer/cartographer_selection_authority.py:1-120`), but the selection handoff is not a canonical coding-task entry. The existing lane registry is expressly `model-only` and advisory (`source_proxy/cartographer/lane_registry.py:8-10, 85-235`).
+- The durable task machine recovers the lifecycle of one task (`source_proxy/tasks/durable_execution.py:19-93`), not the participation, failure, and recovery state of every core participant. Consequently, a partial run can leave an operator with subsystem-specific receipts rather than one truthful answer to: which required work happened, which authority and context bound it, what failed, what recovered, and whether the final result is safe to trust.
+
+The operator-visible gap is therefore not a missing named component. It is the absence of a single accountable coding-run outcome: a supported coding task cannot yet be run repeatedly with a complete, non-bypassable chain of context, authority, execution, review, verification, recovery, and evidence, then be judged from one coherent receipt.
+
+### Canonical goal
+
+Campaign 2 makes a core coding task **operationally dependable**: from one supported entry point, the system must either produce a truthful, identity-bound receipt showing that every applicable mandatory participant performed meaningful work under the same current context and approved authority, or stop/degrade with the exact failing participant, reason, and recoverable state. An operator must be able to repeat that task from a clean isolated baseline without hidden state or a silently substituted model/provider changing the claim.
+
+A skeptic can observe the goal is met only when all of the following are true:
+
+1. A supported core coding task has one versioned, fail-closed definition of who may participate, what each participant accepts and returns, what failure and acknowledgement mean, and which evidence proves it; incompatible or unversioned callers cannot quietly enter the run.
+2. The same task has one accountable run record from discovery/context through approved execution, review, verification, bounded repair when needed, and evidence. Each applicable participant is recorded as genuinely performed, skipped with a documented reason, failed, or recovered; no component may be counted by a no-op, isolated helper, or stale identity.
+3. Authority, target identity, context acknowledgement, provider/fallback outcome, and final evidence remain mutually consistent throughout the run. A mismatch, missing acknowledgement, stale target, or hidden fallback fails closed or reports degradation rather than producing a success claim.
+4. If an expected, controlled fault occurs, the run exposes the fault and its recovery/degraded outcome. A fresh clean rerun thereafter completes with a non-empty, reversible, verified result and no inherited success state.
+
+Every gate in this plan directly serves that goal: 2.1 establishes the versioned participant contract; 2.2 sequences and records the run; 2.3 makes context consumption accountable; 2.4 makes routing/fallback claims truthful; 2.5 preserves target identity across the wire; 2.6 binds execution authority to the participant; 2.7 makes review, verification, anti-cheat, and evidence part of the accountable outcome; 2.8 supplies a safe discovered-work entry; 2.9 recovers participant-level interruption; 2.10 exposes the run truth to the operator; and 2.11 demonstrates the complete reliability property. No gate is retained merely because it names an implementation mechanism.
+
+Terminal verdict: `CAMPAIGN_2_CORE_CODING_OS_STABLE`. It is valid only after every mandatory gate is accepted and the core proving task passes from a clean isolated baseline, a controlled failure has been injected and recovered truthfully, and a subsequent clean rerun passes. Campaign 3 is not started by this closeout.
 
 ## Critical: Campaign 2 is NOT greenfield
 

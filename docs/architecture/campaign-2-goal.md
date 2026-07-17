@@ -2,11 +2,9 @@
 
 This is the first file to read when resuming Campaign 2. Full scope, gate anchors, and rules are in [campaign-2-plan.md](campaign-2-plan.md). Machine-readable state is in [campaign-2-state.json](campaign-2-state.json).
 
-## Goal
+## Canonical goal
 
-Stabilize the core coding operating system behind a single versioned, authoritative lane contract and a canonical orchestrator that sequences every mandatory core lane through context-broker-acknowledged, authority-enforced execution — proven by a deterministic core proving task with controlled failure injection from a clean isolated baseline.
-
-Return `CAMPAIGN_2_CORE_CODING_OS_STABLE` only after Gate 2.11 passes from a clean isolated baseline.
+The single canonical Campaign 2 goal is the evidence-grounded **"Campaign goal and terminal verdict"** section in [campaign-2-plan.md](campaign-2-plan.md). This resume artifact deliberately links to that statement instead of restating an abbreviated mechanism. It defines the operator-visible reliability gap, measurable end state, gate traceability, and the sole terminal condition: `CAMPAIGN_2_CORE_CODING_OS_STABLE` only after the clean-baseline proving task, controlled failure injection-and-recovery, and a clean rerun all pass.
 
 ## Where things stand
 
