@@ -19,7 +19,7 @@ import {
   buildAuthoritativeFinalTruth,
   repoRootsMatch,
 } from "./coding-e2e-loop-contract.mjs";
-import { buildOperatorE2ERunnerEnv, loadOperatorE2ESecret, operatorE2EPreflight } from "./operator-e2e-secret.mjs";
+import { buildOperatorE2ERunnerEnv, loadOperatorE2ESecret, operatorE2EPreflight, operatorE2ESessionRoutePreflight } from "./operator-e2e-secret.mjs";
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -191,6 +191,13 @@ async function runOnce() {
     stepResults.push(step("operator_e2e_preflight", operatorPreflight.ready === true, operatorPreflight));
     if (!runnerEnvironment.ok || operatorPreflight.ready !== true) {
       const result = immediateFailureResult({ evidenceDir, fixtureState: args.fixtureState, reason: runnerEnvironment.reason ?? operatorPreflight.reason, startedAt, details: operatorPreflight, frontend: frontendHealth, proxy: proxyHealth, steps: stepResults });
+      printRunSummary(result, "");
+      return result;
+    }
+    const operatorSessionRoutePreflight = await operatorE2ESessionRoutePreflight({ origin: frontendHealth.baseUrl });
+    stepResults.push(step("operator_session_route_preflight", operatorSessionRoutePreflight.ready === true, operatorSessionRoutePreflight));
+    if (operatorSessionRoutePreflight.ready !== true) {
+      const result = immediateFailureResult({ evidenceDir, fixtureState: args.fixtureState, reason: operatorSessionRoutePreflight.reason, startedAt, details: operatorSessionRoutePreflight, frontend: frontendHealth, proxy: proxyHealth, steps: stepResults });
       printRunSummary(result, "");
       return result;
     }
@@ -858,8 +865,8 @@ function runPlaywright({ capturePath, diagnosticsPath, frontendBaseUrl, proxyBas
   const command = process.env.PLAYWRIGHT_CLI || "npx";
   const commandArgs =
     command === "npx"
-      ? ["playwright", "test", spec, "--project=chromium", "--reporter=json"]
-      : ["test", spec, "--project=chromium", "--reporter=json"];
+      ? ["playwright", "test", spec, "--project=chromium", "--reporter=json", "--trace=off"]
+      : ["test", spec, "--project=chromium", "--reporter=json", "--trace=off"];
   return spawnSync(
     command,
     commandArgs,

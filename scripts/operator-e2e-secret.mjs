@@ -83,3 +83,38 @@ export function operatorE2EPreflight({ secretFile = OPERATOR_E2E_SECRET_FILE, or
     target_browser_profile: "playwright-chromium",
   };
 }
+
+/**
+ * Prove that the live server accepts the isolated trusted origin without ever
+ * sending the credential. The expected rejection is credential-invalid: that
+ * means origin validation and canonical secret-file loading both succeeded.
+ */
+export async function operatorE2ESessionRoutePreflight({ fetchImpl = fetch, origin = "" } = {}) {
+  if (!safeOrigin(origin)) {
+    return { schema: "spiritos-operator-e2e-session-route-preflight/v1", ready: false, reason: "operator_e2e_origin_untrusted" };
+  }
+  let response;
+  try {
+    response = await fetchImpl(`${origin}/v1/operator/session`, {
+      body: JSON.stringify({}),
+      headers: { "content-type": "application/json", origin },
+      method: "POST",
+    });
+  } catch {
+    return { schema: "spiritos-operator-e2e-session-route-preflight/v1", ready: false, reason: "operator_session_route_unreachable" };
+  }
+  let payload = {};
+  try { payload = await response.json(); } catch { /* non-JSON response is not a valid route proof */ }
+  const reason = typeof payload.reason_code === "string" ? payload.reason_code : "operator_session_route_invalid_response";
+  if (response.status !== 403 || reason !== "operator_credential_invalid") {
+    return { schema: "spiritos-operator-e2e-session-route-preflight/v1", ready: false, reason: "operator_session_route_not_ready", response_status: response.status, route_reason: reason };
+  }
+  return {
+    schema: "spiritos-operator-e2e-session-route-preflight/v1",
+    ready: true,
+    credential_transmitted: false,
+    expected_reason: reason,
+    response_status: response.status,
+    trusted_origin: origin,
+  };
+}

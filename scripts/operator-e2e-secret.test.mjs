@@ -3,7 +3,7 @@ import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { buildOperatorE2ERunnerEnv, loadOperatorE2ESecret, operatorE2EPreflight } from "./operator-e2e-secret.mjs";
+import { buildOperatorE2ERunnerEnv, loadOperatorE2ESecret, operatorE2EPreflight, operatorE2ESessionRoutePreflight } from "./operator-e2e-secret.mjs";
 
 function fixture(mode = 0o600) {
   const file = path.join(mkdtempSync(path.join(os.tmpdir(), "operator-e2e-secret-")), "operator.env");
@@ -35,4 +35,19 @@ test("preflight is redacted and does not expose the credential", () => {
   assert.equal(receipt.ready, true);
   assert.equal(JSON.stringify(receipt).includes("test-only-secret"), false);
   assert.equal(receipt.secret_fingerprint.length, 16);
+});
+
+test("live-route preflight proves trusted origin and never transmits a credential", async () => {
+  let request;
+  const receipt = await operatorE2ESessionRoutePreflight({
+    origin: "https://localhost:3104",
+    fetchImpl: async (_url, input) => {
+      request = input;
+      return { status: 403, json: async () => ({ reason_code: "operator_credential_invalid" }) };
+    },
+  });
+  assert.equal(receipt.ready, true);
+  assert.equal(receipt.credential_transmitted, false);
+  assert.equal(request.headers.origin, "https://localhost:3104");
+  assert.equal(request.body, "{}");
 });
