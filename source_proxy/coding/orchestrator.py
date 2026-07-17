@@ -15,6 +15,7 @@ from source_proxy.cartographer.lane_registry import (
     build_canonical_coding_lane_registry,
     validate_lane_registry_record,
 )
+from source_proxy.cartographer.cartographer_selection_authority import consume_cartographer_selection
 from source_proxy.context.canonical_broker import (
     acknowledge_context_consumer,
     build_context_broker_report,
@@ -127,6 +128,26 @@ class CodingOrchestrator:
         run.transition("context-broker", "running", reason="canonical_context_report_persisted")
         self._runs[task_id] = run
         return self._persist(run, "coding run initialized; planner context acknowledgement required")
+
+    def start_from_cartographer_selection(
+        self,
+        task_id: str,
+        *,
+        selection_approval_id: str,
+        proposal_id: str,
+        target: str,
+        sources: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Consume a proposal-only selection before it may enter coding execution."""
+        selection = consume_cartographer_selection(
+            approval_id=selection_approval_id,
+            proposal_id=proposal_id,
+            consumer="coding-executor:coder",
+            target=target,
+        )
+        receipt = self.start(task_id, sources=sources)
+        receipt["cartographer_selection"] = selection
+        return receipt
 
     def acknowledge_planner(self, task_id: str) -> dict[str, Any]:
         run = self._run(task_id)

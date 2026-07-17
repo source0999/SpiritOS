@@ -383,7 +383,7 @@ def test_cartographer_durable_selection_rejects_wrong_consumer_and_target(
 
     monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [Proposal()])
     preview = cartographer_selection.persist_cartographer_selection(
-        proposal_id=Proposal.proposal_id, consumer="coding-executor", target="src/app/page.tsx",
+        proposal_id=Proposal.proposal_id, consumer="coding-executor:coder", target="src/app/page.tsx",
     )
     approval_id = issue(
         str(preview["preview_id"]), consumer="cartographer-transfer-consumer",
@@ -392,7 +392,7 @@ def test_cartographer_durable_selection_rejects_wrong_consumer_and_target(
     with pytest.raises(CampaignApprovalError) as wrong_target:
         cartographer_selection.consume_cartographer_selection(
             approval_id=approval_id, proposal_id=Proposal.proposal_id,
-            consumer="coding-executor", target="src/app/other.tsx",
+                consumer="coding-executor:coder", target="src/app/other.tsx",
         )
     assert wrong_target.value.reason_code == "approval_target_mismatch"
     with pytest.raises(CampaignApprovalError) as wrong_consumer:

@@ -23,7 +23,7 @@ from source_proxy.cartographer.proposals import list_proposals
 CONSUMER = "cartographer-transfer-consumer"
 OPERATION = "cartographer_selection_transfer"
 PLUGIN = "cartographer-transfer"
-ALLOWED_DOWNSTREAM_CONSUMERS = {"design-writeback", "coding-executor"}
+ALLOWED_DOWNSTREAM_CONSUMERS = {"design-writeback", "coding-executor:coder"}
 
 
 class CartographerSelectionError(CampaignApprovalError):
