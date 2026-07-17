@@ -5,15 +5,17 @@
   "ledger_path": "docs/architecture/campaign-2-ledger.md",
   "base_commit": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
   "branch": "codex/spiritos-campaign-2-core-coding-os-20260716",
-  "recorded_head": "6f0281b5e3a658115fdcf6f884cfda2468a3383c",
+  "recorded_head": "15e71a984d93eb40bfad01277111c7db4f3f69cf",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Campaign 2 in progress",
-  "current_increment": "gate_2_2_canonical_orchestrator_and_lane_state_machine",
+  "current_increment": "gate_2_4_source_proxy_routing_health_fallback_truthfulness",
   "completed_gate_ids": [
-    "gate_2_1_versioned_lane_registry_and_contracts"
+    "gate_2_1_versioned_lane_registry_and_contracts",
+    "gate_2_2_canonical_orchestrator_and_lane_state_machine",
+    "gate_2_3_canonical_context_broker_consumption_acknowledgement"
   ],
   "partial_gate_ids": [],
-  "next_gate_id": "gate_2_2_canonical_orchestrator_and_lane_state_machine",
+  "next_gate_id": "gate_2_4_source_proxy_routing_health_fallback_truthfulness",
   "terminal_gate_id": "campaign2_complete",
   "gate_dependency_order": [
     "gate_2_1_versioned_lane_registry_and_contracts",
@@ -48,7 +50,7 @@
     "entry_condition_contradicted"
   ],
   "go_eligible": false,
-  "last_verified_at": "2026-07-17T01:32:47Z",
+  "last_verified_at": "2026-07-17T01:41:00Z",
   "closeout": {
     "verdict": null,
     "status": "in_progress",
