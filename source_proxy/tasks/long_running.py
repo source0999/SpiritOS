@@ -3718,6 +3718,67 @@ def acknowledge_task_context_consumer(
     return updated
 
 
+def record_canonical_context_broker_for_task(
+    task_id: str,
+    *,
+    report: dict[str, Any],
+    orchestrator_run_id: str,
+) -> dict[str, Any]:
+    """Persist the broker's own report before any coding-lane acknowledgement.
+
+    This intentionally accepts the canonical broker output verbatim.  It does
+    not synthesize context, acknowledgements, or a GO verdict.
+    """
+    if report.get("canonical") is not True or "canonical_report_hash" not in report:
+        raise LongRunningTaskError(
+            "Coding orchestration requires a canonical context broker report.",
+            "canonical_context_report_invalid",
+        )
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["canonical_context_broker"] = dict(report)
+    snapshot["canonical_context_report_hash"] = str(report["canonical_report_hash"])
+    task.ast_snapshot = snapshot
+    _append_causal_event(
+        task,
+        event_type="context",
+        subsystem="canonical_context_broker",
+        run_id=orchestrator_run_id,
+        status_after=task.status,
+        changed_state_fields=[
+            "ast_snapshot.canonical_context_broker",
+            "ast_snapshot.canonical_context_report_hash",
+        ],
+        notes=["canonical context report persisted for coding orchestration"],
+    )
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return report
+
+
+def record_coding_orchestrator_state(
+    task_id: str,
+    *,
+    state: Mapping[str, Any],
+) -> None:
+    """Persist a non-authoritative lane-state receipt alongside the task."""
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    snapshot["coding_orchestrator"] = dict(state)
+    task.ast_snapshot = snapshot
+    _append_causal_event(
+        task,
+        event_type="orchestration",
+        subsystem="coding_orchestrator",
+        run_id=str(state.get("run_id") or "coding_orchestrator"),
+        status_after=task.status,
+        changed_state_fields=["ast_snapshot.coding_orchestrator"],
+        notes=[str(state.get("summary") or "coding lane state recorded")],
+    )
+    task.updated_at = _now_iso()
+    _save_task(task)
+
+
 def canonical_context_broker_for_task(task_id: str) -> dict[str, Any] | None:
     task = _lookup_task(task_id)
     snapshot = _ensure_ast_snapshot_dict(task)
