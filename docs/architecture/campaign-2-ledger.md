@@ -8,7 +8,7 @@ Schema: `spiritos-campaign-2-ledger/v1`
 - Worktree / branch: `/home/source/SpiritOS-campaign-2-20260716` / `codex/spiritos-campaign-2-core-coding-os-20260716`.
 - Phase: **Campaign 2 in progress**.
 - Base commit: `8a20473c2260bc132e595c64230d3fdfc9fef97f` (Campaign 1 terminal tip).
-- Current gate: `gate_2_5_typescript_python_target_plugin_reconciliation`; completed gates: 2.1 through 2.4.
+- Current gate: `gate_2_6_canonical_executor_and_lane_scoped_authority`; completed gates: 2.1 through 2.5.
 - GO eligibility: `false`. This campaign is not terminal.
 - Critical blocker: `none`. Partial gates: `none`.
 - Terminal verdict target: `CAMPAIGN_2_CORE_CODING_OS_STABLE` after Gate 2.11 passes from a clean isolated baseline.
@@ -31,7 +31,7 @@ All four Campaign 1 entry conditions were verified before authoring this campaig
 | 2.2 Canonical orchestrator and lane-state machine | completed | BUILD | `f529dff5`, `15e71a98`: `coding/orchestrator.py` persists lane state, has explicit tested transitions, and delegates writes to `execute_approved_long_running_task()` |
 | 2.3 Canonical context broker and consumption acknowledgement | completed | ADOPT | broker behavior unchanged; `f529dff5` persists `build_context_broker_report()` then uses `acknowledge_task_context_consumer()` through the canonical broker; focused broker tests pass |
 | 2.4 Source Proxy routing, health, fallback truthfulness | completed | EXTEND | `2cab5321`, `ec21cf32`, `f95a9ec5`: explicit async fallback receipts, request-explicit dual spend preflight, selected-provider evidence, and a silent-substitution falsification test; 19 focused tests + typecheck pass |
-| 2.5 TS and Python target-plugin adapter reconciliation | not_started | ADOPT + reconcile | both sides built; reconcile any drift |
+| 2.5 TS and Python target-plugin adapter reconciliation | completed | ADOPT + reconcile | `e1e08f5a`: TS gateway, Python resolver, e2e harness, current Campaign 2 worktree identity, prompt/context/profile, and server-resolved source head reconcile; 11 focused tests + typecheck pass |
 | 2.6 Canonical executor and lane-scoped authority | not_started | ADOPT + BUILD | executor adopted; build lane-scoped authority |
 | 2.7 Reviewer, verifier, anti-cheat, evidence identity binding | not_started | ADOPT | all four exist; confirm orchestrator routes through them |
 | 2.8 Cartographer core discovery/proposal integration | not_started | ADOPT + BUILD | wire selection into executor; preserve proposal-only invariant |

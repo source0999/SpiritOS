@@ -5,18 +5,19 @@
   "ledger_path": "docs/architecture/campaign-2-ledger.md",
   "base_commit": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
   "branch": "codex/spiritos-campaign-2-core-coding-os-20260716",
-  "recorded_head": "f95a9ec5297954fe1fa70ae28cce38d7fe578dc5",
+  "recorded_head": "e1e08f5a7215f2727db34c9c87fcc2f680a901fb",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Campaign 2 in progress",
-  "current_increment": "gate_2_5_typescript_python_target_plugin_reconciliation",
+  "current_increment": "gate_2_6_canonical_executor_and_lane_scoped_authority",
   "completed_gate_ids": [
     "gate_2_1_versioned_lane_registry_and_contracts",
     "gate_2_2_canonical_orchestrator_and_lane_state_machine",
     "gate_2_3_canonical_context_broker_consumption_acknowledgement",
-    "gate_2_4_source_proxy_routing_health_fallback_truthfulness"
+    "gate_2_4_source_proxy_routing_health_fallback_truthfulness",
+    "gate_2_5_typescript_python_target_plugin_reconciliation"
   ],
   "partial_gate_ids": [],
-  "next_gate_id": "gate_2_5_typescript_python_target_plugin_reconciliation",
+  "next_gate_id": "gate_2_6_canonical_executor_and_lane_scoped_authority",
   "terminal_gate_id": "campaign2_complete",
   "gate_dependency_order": [
     "gate_2_1_versioned_lane_registry_and_contracts",
