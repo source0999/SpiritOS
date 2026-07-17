@@ -38,6 +38,44 @@ def test_orchestrator_delegates_execution_to_the_existing_executor_by_default() 
     assert orchestrator._executor is execute_approved_long_running_task
 
 
+def test_interrupted_persisted_lane_requires_explicit_recovery_or_degrades(monkeypatch: pytest.MonkeyPatch) -> None:
+    persisted: list[dict[str, object]] = []
+    state = CodingLaneStateMachine(task_id="task-1", run_id="run-1")
+    state.transition("coder", "running")
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(state),
+    )
+
+    receipt = CodingOrchestrator(state_loader=lambda _task_id: state.receipt(summary="interrupted")).recover_interrupted_lane(
+        "task-1", lane_id="coder"
+    )
+
+    assert receipt["lane_states"]["coder"] == "blocked"
+    assert receipt["recovery"] == {"lane_id": "coder", "outcome": "degraded", "recovered": False}
+    assert persisted[-1]["lane_reasons"]["coder"] == "recovery_action_required"
+
+
+def test_interrupted_persisted_lane_records_only_a_successful_explicit_recovery(monkeypatch: pytest.MonkeyPatch) -> None:
+    persisted: list[dict[str, object]] = []
+    state = CodingLaneStateMachine(task_id="task-1", run_id="run-1")
+    state.transition("coder", "running")
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(state),
+    )
+
+    receipt = CodingOrchestrator(state_loader=lambda _task_id: state.receipt(summary="interrupted")).recover_interrupted_lane(
+        "task-1", lane_id="coder", recovery=lambda: True
+    )
+
+    assert receipt["lane_states"]["coder"] == "completed"
+    assert receipt["recovery"] == {"lane_id": "coder", "outcome": "recovered", "recovered": True}
+    assert persisted[-1]["lane_reasons"]["coder"] == "explicit_lane_recovery_completed"
+
+
 def test_start_persists_the_canonical_broker_report_before_any_lane_runs(monkeypatch: pytest.MonkeyPatch) -> None:
     persisted: list[dict[str, object]] = []
     monkeypatch.setattr(

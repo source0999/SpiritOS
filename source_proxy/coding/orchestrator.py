@@ -24,6 +24,7 @@ from source_proxy.planning.plan import load_plan
 from source_proxy.tasks.long_running import (
     acknowledge_task_context_consumer,
     canonical_context_broker_for_task,
+    coding_orchestrator_state_for_task,
     execute_approved_long_running_task,
     record_canonical_context_broker_for_task,
     record_coding_orchestrator_state,
@@ -102,10 +103,12 @@ class CodingOrchestrator:
         executor: Callable[..., dict[str, Any]] = execute_approved_long_running_task,
         planner_loader: Callable[[str], Any] = load_plan,
         post_apply_verifier: Callable[..., dict[str, Any]] = record_post_apply_verification,
+        state_loader: Callable[[str], dict[str, Any] | None] = coding_orchestrator_state_for_task,
     ) -> None:
         self._executor = executor
         self._planner_loader = planner_loader
         self._post_apply_verifier = post_apply_verifier
+        self._state_loader = state_loader
         self._runs: dict[str, CodingLaneStateMachine] = {}
 
     def start(self, task_id: str, *, sources: list[dict[str, Any]]) -> dict[str, Any]:
@@ -258,11 +261,73 @@ class CodingOrchestrator:
         receipt["verification"] = result
         return receipt
 
+    def recover_interrupted_lane(
+        self,
+        task_id: str,
+        *,
+        lane_id: str,
+        recovery: Callable[[], bool] | None = None,
+    ) -> dict[str, Any]:
+        """Recover a persisted interrupted lane or expose its degraded state.
+
+        A callback is intentionally required to claim recovery.  Reloading a
+        process cannot turn an interrupted executor into a successful one.
+        """
+
+        run = self._restore(task_id)
+        if lane_id not in LANE_SEQUENCE:
+            raise CodingOrchestratorError("unknown_coding_lane")
+        current = run.lane_states[lane_id]
+        if current == "running":
+            run.transition(lane_id, "failed", reason="interrupted_before_lane_completion")
+        elif current != "failed":
+            raise CodingOrchestratorError(f"lane_not_recoverable:{lane_id}:{current}")
+        run.transition(lane_id, "recovering", reason="durable_lane_recovery_started")
+        if recovery is None:
+            run.transition(lane_id, "blocked", reason="recovery_action_required")
+            receipt = self._persist(run, "interrupted lane degraded: explicit recovery action required")
+            receipt["recovery"] = {"lane_id": lane_id, "outcome": "degraded", "recovered": False}
+            return receipt
+        try:
+            recovered = recovery() is True
+        except Exception:
+            recovered = False
+        if recovered:
+            run.transition(lane_id, "completed", reason="explicit_lane_recovery_completed")
+            receipt = self._persist(run, "interrupted lane recovered by explicit action")
+            receipt["recovery"] = {"lane_id": lane_id, "outcome": "recovered", "recovered": True}
+            return receipt
+        run.transition(lane_id, "blocked", reason="explicit_lane_recovery_failed")
+        receipt = self._persist(run, "interrupted lane degraded: explicit recovery failed")
+        receipt["recovery"] = {"lane_id": lane_id, "outcome": "degraded", "recovered": False}
+        return receipt
+
     def _run(self, task_id: str) -> CodingLaneStateMachine:
         try:
             return self._runs[task_id]
         except KeyError as error:
             raise CodingOrchestratorError("coding_run_not_started") from error
+
+    def _restore(self, task_id: str) -> CodingLaneStateMachine:
+        state = self._state_loader(task_id)
+        if not isinstance(state, Mapping) or state.get("schema_version") != "coding-orchestrator/v1":
+            raise CodingOrchestratorError("coding_orchestrator_state_missing")
+        lane_states = state.get("lane_states")
+        lane_reasons = state.get("lane_reasons")
+        if not isinstance(lane_states, Mapping) or set(lane_states) != set(LANE_SEQUENCE):
+            raise CodingOrchestratorError("coding_orchestrator_state_invalid")
+        if any(value not in LANE_STATES for value in lane_states.values()):
+            raise CodingOrchestratorError("coding_orchestrator_state_invalid")
+        run = CodingLaneStateMachine(
+            task_id=task_id,
+            run_id=str(state.get("run_id") or ""),
+            lane_states={lane_id: str(lane_states[lane_id]) for lane_id in LANE_SEQUENCE},
+            lane_reasons=dict(lane_reasons) if isinstance(lane_reasons, Mapping) else {},
+        )
+        if not run.run_id:
+            raise CodingOrchestratorError("coding_orchestrator_state_invalid")
+        self._runs[task_id] = run
+        return run
 
     @staticmethod
     def _persist(run: CodingLaneStateMachine, summary: str) -> dict[str, Any]:

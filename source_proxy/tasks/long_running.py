@@ -3781,6 +3781,15 @@ def record_coding_orchestrator_state(
     _save_task(task)
 
 
+def coding_orchestrator_state_for_task(task_id: str) -> dict[str, Any] | None:
+    """Return the durable coding-lane receipt without fabricating run state."""
+
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    state = snapshot.get("coding_orchestrator")
+    return dict(state) if isinstance(state, Mapping) else None
+
+
 def canonical_context_broker_for_task(task_id: str) -> dict[str, Any] | None:
     task = _lookup_task(task_id)
     snapshot = _ensure_ast_snapshot_dict(task)
