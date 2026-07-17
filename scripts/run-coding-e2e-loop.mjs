@@ -19,6 +19,7 @@ import {
   buildAuthoritativeFinalTruth,
   repoRootsMatch,
 } from "./coding-e2e-loop-contract.mjs";
+import { buildOperatorE2ERunnerEnv, loadOperatorE2ESecret, operatorE2EPreflight } from "./operator-e2e-secret.mjs";
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -179,6 +180,20 @@ async function runOnce() {
       }));
     }
 
+    const operatorSecret = loadOperatorE2ESecret();
+    if (!operatorSecret.ok) {
+      const result = immediateFailureResult({ evidenceDir, fixtureState: args.fixtureState, reason: operatorSecret.reason, startedAt, details: { secret_source: "canonical_secret_file" }, frontend: frontendHealth, proxy: proxyHealth, steps: stepResults });
+      printRunSummary(result, "");
+      return result;
+    }
+    const runnerEnvironment = buildOperatorE2ERunnerEnv({ secret: operatorSecret.secret });
+    const operatorPreflight = operatorE2EPreflight({ origin: frontendHealth.baseUrl, runnerEnv: runnerEnvironment.env });
+    stepResults.push(step("operator_e2e_preflight", operatorPreflight.ready === true, operatorPreflight));
+    if (!runnerEnvironment.ok || operatorPreflight.ready !== true) {
+      const result = immediateFailureResult({ evidenceDir, fixtureState: args.fixtureState, reason: runnerEnvironment.reason ?? operatorPreflight.reason, startedAt, details: operatorPreflight, frontend: frontendHealth, proxy: proxyHealth, steps: stepResults });
+      printRunSummary(result, "");
+      return result;
+    }
     const diagnosticsPath = path.join(evidenceDir, "diagnostics.txt");
     const capturePath = path.join(evidenceDir, "capture.json");
     const playwrightReportPath = path.join(evidenceDir, "playwright-report.json");
@@ -189,6 +204,7 @@ async function runOnce() {
       frontendBaseUrl: frontendHealth.baseUrl,
       proxyBaseUrl: proxyHealth.baseUrl ?? proxyBasesToUse[0],
       spec: args.spec,
+      runnerEnvironment: runnerEnvironment.env,
     });
     writeFileSync(playwrightReportPath, play.stdout ?? "", "utf8");
     writeFileSync(playwrightStderrPath, play.stderr ?? String(play.error?.message ?? ""), "utf8");
@@ -472,19 +488,6 @@ function logLoadedEnv(entries) {
 
 function maskEnvValue(key, value) {
   return /KEY|TOKEN|SECRET/u.test(key) ? "[masked]" : value;
-}
-
-function childEnv(extra = {}) {
-  const env = {
-    ...process.env,
-    NODE_TLS_REJECT_UNAUTHORIZED: "0",
-    SPIRIT_CODING_USE_PROXY: "true",
-    ...extra,
-  };
-  for (const [key, value] of Object.entries(process.env)) {
-    if (key.startsWith("SOURCE_PROXY_")) env[key] = value;
-  }
-  return env;
 }
 
 function startChild(label, command, commandArgs, logPath, extraEnv = {}) {
@@ -850,7 +853,7 @@ function stylesCss() {
   ].join("\n");
 }
 
-function runPlaywright({ capturePath, diagnosticsPath, frontendBaseUrl, proxyBaseUrl, spec }) {
+function runPlaywright({ capturePath, diagnosticsPath, frontendBaseUrl, proxyBaseUrl, spec, runnerEnvironment }) {
   console.log(`Running Playwright spec: ${spec}`);
   const command = process.env.PLAYWRIGHT_CLI || "npx";
   const commandArgs =
@@ -863,7 +866,8 @@ function runPlaywright({ capturePath, diagnosticsPath, frontendBaseUrl, proxyBas
     {
       cwd: repoRoot,
       encoding: "utf8",
-      env: childEnv({
+      env: {
+        ...runnerEnvironment,
         E2E_LOOP_CAPTURE_PATH: capturePath,
         E2E_LOOP_DIAGNOSTICS_PATH: diagnosticsPath,
         E2E_LOOP_FIXTURE_STATE: args.fixtureState,
@@ -872,7 +876,7 @@ function runPlaywright({ capturePath, diagnosticsPath, frontendBaseUrl, proxyBas
         PLAYWRIGHT_BASE_URL: frontendBaseUrl,
         SOURCE_PROXY_ORIGIN: proxyBaseUrl,
         SOURCE_PROXY_PORT: new URL(proxyBaseUrl).port,
-      }),
+      },
       maxBuffer: 1024 * 1024 * 100,
       shell: process.platform === "win32",
     },

@@ -78,6 +78,7 @@
     "campaign-2:validate-continuity": "python3 ./scripts/validate-campaign-2-continuity.py",
     "campaign-2:validate-authority": "python3 ./scripts/validate-campaign-2-authority.py",
     "campaign-2:validate-test-profiles": "python3 ./scripts/validate-campaign-2-test-profiles.py"
+    ,"campaign-2:operator-e2e-preflight": "node ./scripts/campaign-2-operator-e2e-preflight.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",
