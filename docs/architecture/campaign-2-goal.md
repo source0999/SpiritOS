@@ -11,7 +11,7 @@ The single canonical Campaign 2 goal is the evidence-grounded **"Campaign goal a
 - Worktree: `/home/source/SpiritOS-campaign-2-20260716`
 - Branch: `codex/spiritos-campaign-2-core-coding-os-20260716`
 - Base: `8a20473c` (Campaign 1 terminal tip — do not mutate the Campaign 1 worktree)
-- Next gate: `gate_2_6_canonical_executor_and_lane_scoped_authority`
+- Next gate: `gate_2_7_reviewer_verifier_anticheat_evidence_identity_binding`
 - Completed gates: 2.1 (`6f0281b5`), 2.2 (`f529dff5`, `15e71a98`), 2.3 (broker adopted unchanged and wired by 2.2), and 2.4 (`2cab5321`, `ec21cf32`, `f95a9ec5`)
 - Check completion anytime: `python3 scripts/campaign2-autoloop-completion.py --state docs/architecture/campaign-2-state.json --ledger docs/architecture/campaign-2-ledger.md`
 
