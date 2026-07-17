@@ -71,3 +71,16 @@ def test_rejects_missing_plugin_and_stale_head() -> None:
     stale["target_plugin"]["source_head"] = "0" * 40
     with pytest.raises(TargetPluginResolutionError, match="source_head_mismatch"):
         resolve_target_plugin(stale, ROOT)
+
+
+def test_typescript_selection_and_python_identity_bind_campaign_2_and_source_head() -> None:
+    typescript_gateway = (ROOT / "src/lib/coding/target-plugins/index.ts").read_text(encoding="utf-8")
+    resolved = resolve_target_plugin(packet(), ROOT)
+
+    assert 'repository_id: "spiritos-campaign-2"' in typescript_gateway
+    assert 'worktree_id: "spiritos-campaign-2-20260716"' in typescript_gateway
+    identity = resolved.evidence_identity()
+    assert identity["repository_id"] == "spiritos-campaign-2"
+    assert identity["worktree_id"] == "spiritos-campaign-2-20260716"
+    assert identity["source_head"]
+    assert identity["selected_prompt_id"] == packet()["target_plugin"]["selected_prompt_id"]

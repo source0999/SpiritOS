@@ -1,4 +1,4 @@
-"""Fail-closed target-plugin identity for Campaign 1 coding execution."""
+"""Fail-closed target-plugin identity for Campaign 2 coding execution."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from typing import Any
 
 TARGET_PLUGIN_SCHEMA_VERSION = "spiritos-target-plugin/v1"
 LUMACART_PLUGIN_ID = "lumacart"
-CAMPAIGN_REPOSITORY_ID = "spiritos-campaign-1"
-CAMPAIGN_WORKTREE_ID = "spiritos-campaign-1-20260712"
+CAMPAIGN_REPOSITORY_ID = "spiritos-campaign-2"
+CAMPAIGN_WORKTREE_ID = "spiritos-campaign-2-20260716"
 FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
 EXECUTION_PROFILE = "coder-10"
 PROMPT_CONTEXTS = {

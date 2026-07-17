@@ -31,8 +31,8 @@ const fixtureResetRoute = "/v1/coding/dummy-product-site-preview/reset";
 const promptOneTargetPlugin = {
   schema_version: "spiritos-target-plugin/v1",
   id: "lumacart",
-  repository_id: "spiritos-campaign-1",
-  worktree_id: "spiritos-campaign-1-20260712",
+  repository_id: "spiritos-campaign-2",
+  worktree_id: "spiritos-campaign-2-20260716",
   fixture_root: "tests/ui-agent-trials/fixtures/dummy-product-site/",
   selected_prompt_id: "coder-001-init-dummy-product-site",
   selected_context_id: "init-storefront",
