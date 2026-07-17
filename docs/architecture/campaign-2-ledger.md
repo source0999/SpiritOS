@@ -8,7 +8,7 @@ Schema: `spiritos-campaign-2-ledger/v1`
 - Worktree / branch: `/home/source/SpiritOS-campaign-2-20260716` / `codex/spiritos-campaign-2-core-coding-os-20260716`.
 - Phase: **Campaign 2 in progress**.
 - Base commit: `8a20473c2260bc132e595c64230d3fdfc9fef97f` (Campaign 1 terminal tip).
-- Current gate: `gate_2_1_versioned_lane_registry_and_contracts`; completed gates: none yet.
+- Current gate: `gate_2_2_canonical_orchestrator_and_lane_state_machine`; completed gates: `gate_2_1_versioned_lane_registry_and_contracts`.
 - GO eligibility: `false`. This campaign is not terminal.
 - Critical blocker: `none`. Partial gates: `none`.
 - Terminal verdict target: `CAMPAIGN_2_CORE_CODING_OS_STABLE` after Gate 2.11 passes from a clean isolated baseline.
@@ -27,7 +27,7 @@ All four Campaign 1 entry conditions were verified before authoring this campaig
 
 | Gate | Status | Verdict (adopt/extend/build) | Evidence / next |
 | --- | --- | --- | --- |
-| 2.1 Versioned canonical lane registry and contracts | not_started | EXTEND + BUILD | promote `cartographer/lane_registry.py`; build lane contract schema in `packages/contracts/schemas/` |
+| 2.1 Versioned canonical lane registry and contracts | completed | EXTEND + BUILD | `6f0281b5`: authority-bearing `cartographer/lane_registry.py`, versioned seven-participant contract catalog, focused contract/shared-contract tests, `campaign-2:validate-authority`, and typecheck pass |
 | 2.2 Canonical orchestrator and lane-state machine | not_started | BUILD | net-new; route through existing executor `long_running.py:1157` |
 | 2.3 Canonical context broker and consumption acknowledgement | not_started | ADOPT | wire orchestrator to `context/canonical_broker.py`; do not rebuild |
 | 2.4 Source Proxy routing, health, fallback truthfulness | not_started | EXTEND | health + routes exist; build explicit fallback layer; truthful fallback evidence |
