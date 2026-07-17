@@ -45,7 +45,7 @@ Every newly discovered item during Campaign 2 must be classified here as exactly
 
 | Discovered item | Classification | Reasoning | Date |
 | --- | --- | --- | --- |
-| _(none yet)_ | | | |
+| Post-apply durable authority snapshot retains `campaign_1_approval` and unscoped `coding-executor` labels after Campaign 2 lane-scoped consumption | mandatory-c2 | The authority consumption is correctly Campaign 2 / `coding-executor:coder`, but the persisted evidence would otherwise conceal that binding from recovery and observability; repair before accepting later gates | 2026-07-16 |
 
 ## Designer boundary log
 
