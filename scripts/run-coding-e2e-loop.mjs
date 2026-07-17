@@ -881,6 +881,7 @@ function runPlaywright({ capturePath, diagnosticsPath, frontendBaseUrl, proxyBas
         E2E_LOOP_PRODUCT_RESET_VERIFIED: "true",
         E2E_LOOP_SCHEMA_VERSION,
         PLAYWRIGHT_BASE_URL: frontendBaseUrl,
+        SPIRITOS_E2E_FRONTEND_ORIGIN: frontendBaseUrl,
         SOURCE_PROXY_ORIGIN: proxyBaseUrl,
         SOURCE_PROXY_PORT: new URL(proxyBaseUrl).port,
       },
