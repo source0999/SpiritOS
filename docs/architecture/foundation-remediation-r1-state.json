@@ -1,0 +1,109 @@
+{
+  "schema": "spiritos-foundation-remediation-r1-state/v1",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "goal_path": "docs/architecture/foundation-remediation-r1-goal.md",
+  "plan_path": "docs/architecture/foundation-remediation-r1-plan.md",
+  "ledger_path": "docs/architecture/foundation-remediation-r1-ledger.md",
+  "authority_inventory_path": "docs/architecture/foundation-remediation-r1-authority-inventory.md",
+  "evidence_index_path": "docs/architecture/foundation-remediation-r1-evidence-index.md",
+  "test_profiles_path": "docs/architecture/foundation-remediation-r1-test-profiles.json",
+  "base_commit": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
+  "branch": "codex/spiritos-foundation-remediation-r1-20260717",
+  "worktree": "/home/source/SpiritOS-foundation-remediation-r1-20260717",
+  "recorded_head": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
+  "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
+  "current_phase": "Phase 1 - canonical authority repair",
+  "current_increment": "r1_1_portable_authority",
+  "completed_gate_ids": [
+    "r1_0_control_plane"
+  ],
+  "partial_gate_ids": [
+    "r1_1_portable_authority"
+  ],
+  "next_gate_id": "r1_1_portable_authority",
+  "terminal_gate_id": "r1_complete",
+  "gate_dependency_order": [
+    "r1_0_control_plane",
+    "r1_1_portable_authority",
+    "r1_2_cartographer_authority",
+    "r1_3_spiritflix_authority",
+    "r1_4_design_security",
+    "r1_5_coding_lifecycle",
+    "r1_6_target_adapters_1_10",
+    "r1_7_production_orchestrator",
+    "r1_8_runtime_contracts_and_cartographer_transfer",
+    "r1_9_backend_state_and_recovery",
+    "r1_10_immutable_evidence",
+    "r1_11_clean_proving_task",
+    "r1_12_closeout",
+    "r1_complete"
+  ],
+  "protected_heads": {
+    "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb",
+    "spiritflix": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+    "architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14",
+    "campaign_1_terminal": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
+    "campaign_2_engineering_terminal": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
+    "campaign_3_design_terminal": "4aec510409e8bb82386190af9fa8f666efcbc63e"
+  },
+  "protected_ref_tips_at_r1_start": {
+    "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb",
+    "spiritflix": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+    "architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14",
+    "campaign_1_terminal": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
+    "campaign_2_engineering_branch": "39de31bb73cb4a910281705259b35a6d42a0726c",
+    "campaign_3_design_terminal": "4aec510409e8bb82386190af9fa8f666efcbc63e"
+  },
+  "historical_claims": {
+    "campaign_1": "rejected_pending_r1_production_authority_proof",
+    "campaign_2": "rejected_pending_r1_production_orchestrator_proof",
+    "campaign_3": "CAMPAIGN_3_SCOPE_DIVERGED_TO_DESIGN"
+  },
+  "confirmed_defect_groups": [
+    "cartographer_client_authoritative_review_writer",
+    "spiritflix_incomplete_binding_and_issuer",
+    "design_and_spiritflix_nontransactional_finalization",
+    "coding_success_before_verification",
+    "synthesized_participant_acknowledgements",
+    "hard_coded_campaign_roots",
+    "target_adapter_identity_without_prompts_4_10_behavior",
+    "production_orchestrator_bypass",
+    "static_not_runtime_lane_contracts",
+    "parallel_next_and_source_proxy_state",
+    "mutable_unbound_terminal_evidence",
+    "completion_regression_contradiction"
+  ],
+  "validator_status": {
+    "authority_call_graph": "expected_fail_until_repairs",
+    "continuity": "configured_for_atomic_checkpoint_verification",
+    "evidence_provenance": "expected_fail_until_terminal_evidence",
+    "test_profiles": "pass_registry_coherence_only",
+    "completion": "not_complete"
+  },
+  "terminal_evidence": null,
+  "valid_stop_reasons": [
+    "SPIRITOS_FOUNDATION_REMEDIATION_COMPLETE",
+    "external_critical_blocker"
+  ],
+  "go_eligible": false,
+  "closeout": {
+    "status": "in_progress",
+    "verdict": null,
+    "production_call_graph_passed": false,
+    "authority_boundaries_passed": false,
+    "independent_participants_passed": false,
+    "runtime_contracts_passed": false,
+    "backend_state_owner_passed": false,
+    "target_adapters_1_10_passed": false,
+    "clean_proving_task_passed": false,
+    "controlled_failure_recovered_in_lineage": false,
+    "undo_reset_clean_rerun_passed": false,
+    "immutable_evidence_anchored": false,
+    "temporary_authority_revoked": false,
+    "protected_heads_verified": true,
+    "campaign_3_started": false,
+    "campaign_4_started": false,
+    "push_performed": false,
+    "critical_blocker": null
+  }
+}

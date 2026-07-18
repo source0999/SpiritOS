@@ -77,8 +77,14 @@
     "campaign-2:test-autoloop": "python3 ./scripts/test-campaign2-autoloop-completion.py",
     "campaign-2:validate-continuity": "python3 ./scripts/validate-campaign-2-continuity.py",
     "campaign-2:validate-authority": "python3 ./scripts/validate-campaign-2-authority.py",
-    "campaign-2:validate-test-profiles": "python3 ./scripts/validate-campaign-2-test-profiles.py"
-    ,"campaign-2:operator-e2e-preflight": "node ./scripts/campaign-2-operator-e2e-preflight.mjs"
+    "campaign-2:validate-test-profiles": "python3 ./scripts/validate-campaign-2-test-profiles.py",
+    "campaign-2:operator-e2e-preflight": "node ./scripts/campaign-2-operator-e2e-preflight.mjs",
+    "foundation-r1:check-complete": "python3 ./scripts/foundation-remediation-r1-completion.py",
+    "foundation-r1:test-completion": "python3 ./scripts/test-foundation-remediation-r1-completion.py",
+    "foundation-r1:validate-authority": "python3 ./scripts/validate-foundation-remediation-r1-authority.py",
+    "foundation-r1:validate-continuity": "python3 ./scripts/validate-foundation-remediation-r1-continuity.py",
+    "foundation-r1:validate-evidence": "python3 ./scripts/validate-foundation-remediation-r1-evidence.py",
+    "foundation-r1:validate-test-profiles": "python3 ./scripts/validate-foundation-remediation-r1-test-profiles.py"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",

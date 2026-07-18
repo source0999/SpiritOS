@@ -1,0 +1,27 @@
+{
+  "schema": "spiritos-foundation-remediation-r1-test-profiles/v1",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "profiles": [
+    {"id":"continuity","product":"shared","command":"python3 scripts/validate-foundation-remediation-r1-continuity.py","claim_ceiling":"R1 control-plane, branch, base, and protected-head continuity only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"authority-callgraph","product":"shared","command":"python3 scripts/validate-foundation-remediation-r1-authority.py","claim_ceiling":"static production import graph and authority invariants only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"evidence-provenance","product":"shared","command":"python3 scripts/validate-foundation-remediation-r1-evidence.py","claim_ceiling":"terminal receipt provenance, hashes, tag, and recovery anchor only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"test-profiles","product":"shared","command":"python3 scripts/validate-foundation-remediation-r1-test-profiles.py","claim_ceiling":"test-profile registry coherence only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"completion-regression","product":"shared","command":"python3 scripts/test-foundation-remediation-r1-completion.py","claim_ceiling":"fail-closed completion semantics only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"portable-authority","product":"shared","command":"focused runtime identity and approval authority tests","claim_ceiling":"registered-root and approval state-machine behavior only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"cartographer-authority","product":"cartographer","command":"focused production proposal review and selection transfer tests","claim_ceiling":"Cartographer proposal-only authority and transfer only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"spiritflix-authority","product":"spiritflix","command":"focused SpiritFlix admin routes and authority tests","claim_ceiling":"bound transactional administrative mutation behavior only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"design-security","product":"design","command":"focused Design approval/writeback security tests","claim_ceiling":"existing Design writeback security preservation only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"coding-lifecycle","product":"source-proxy","command":"focused coding authority lifecycle and participant tests","claim_ceiling":"late finalization and independent participant behavior only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"target-adapters-1-10","product":"source-proxy","command":"source_proxy/tests/test_target_plugin_adapter.py plus prompt 1-10 execution matrix","claim_ceiling":"target-owned specifications and executable behavior only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"production-orchestrator","product":"source-proxy","command":"focused orchestrator and production long-running route tests","claim_ceiling":"live importer, state machine, and route ownership only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"runtime-contracts","product":"source-proxy","command":"focused runtime lane boundary tests","claim_ceiling":"live version/schema/output/consumption enforcement only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"backend-state","product":"shared","command":"focused Source Proxy truth and Next bounded-view tests","claim_ceiling":"single decision-bearing backend state owner only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"recovery-fallback","product":"source-proxy","command":"focused same-lineage failure/retry/fallback tests","claim_ceiling":"accountable orchestrator recovery only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"source-proxy-regression","product":"source-proxy","command":"complete authority, orchestrator, long-running route, contract, participant, adapter, recovery, and state suites","claim_ceiling":"Source Proxy backend regression only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"typecheck","product":"shared","command":"npm run typecheck","claim_ceiling":"TypeScript static correctness only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"production-build","product":"shared","command":"npm run build","claim_ceiling":"production compilation only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"clean-proving-task","product":"shared","command":"isolated real HTTP R1 proving task","claim_ceiling":"R1 terminal production baseline only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"secret-scan","product":"shared","command":"tracked diff and terminal receipt secret scan","claim_ceiling":"scanned tracked R1 changes only","mandatory":true,"status":"pending","latest_accepted":null},
+    {"id":"git-integrity","product":"shared","command":"git diff --check; git fsck --full --strict --no-progress --no-dangling; protected-head verification","claim_ceiling":"Git object/diff/ref integrity only","mandatory":true,"status":"pending","latest_accepted":null}
+  ]
+}
