@@ -72,3 +72,8 @@ No Mac job, placeholder, or `not applicable` response was counted. Gate 3.4
 requires restoration of network reachability to this configured host (or an
 authorized replacement host registration) before it can produce the required
 source-bound macOS build/WebKit/platform-verification result.
+
+The Gate 3.4 dispatch boundary is implemented and tested: it rejects unbound
+commits and unsafe commands, records a result hash, denies write authority, and
+does not count a timeout or source mismatch as platform verification. Live proof
+remains pending the external route restoration.
