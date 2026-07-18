@@ -1847,7 +1847,7 @@ def _run_one_proving_task(
             {
                 "research_query": "Python official documentation asyncio cancellation",
                 "context_query": "SpiritOS Campaign 3 canonical Cartographer selection transfer coding verification",
-                "model": "gemma3n:e4b",
+                "model": "qwen2.5-coder:14b",
                 "allow_degraded_research": True,
             },
         )

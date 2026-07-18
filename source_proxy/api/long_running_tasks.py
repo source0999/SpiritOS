@@ -78,7 +78,7 @@ class LongRunningTaskCreateRequest(BaseModel):
 class LongRunningTaskExtendedLanesRequest(BaseModel):
     research_query: str = Field(min_length=8, max_length=500)
     context_query: str = Field(min_length=8, max_length=500)
-    model: str = Field(default="gemma3n:e4b", min_length=3, max_length=200)
+    model: str = Field(default="qwen2.5-coder:14b", min_length=3, max_length=200)
     allow_degraded_research: bool = False
 
 

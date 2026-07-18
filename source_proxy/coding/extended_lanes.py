@@ -76,14 +76,14 @@ async def _ollama(prompt: str, *, model: str, timeout_seconds: float) -> dict[st
     return {"status":"used" if text else "blocked","reason":"context_model_output_observed" if text else "context_model_empty_output","model":model,"response_sha256":_hash(text),"response_chars":len(text),"endpoint":base}
 
 
-async def invoke_context_model(task_id: str, *, task: str, model: str = "phi4-mini:latest", required: bool = True) -> dict[str, Any]:
-    result=await _ollama("Provide a concise read-only implementation risk assessment for this coding task:\n"+task, model=model, timeout_seconds=30)
+async def invoke_context_model(task_id: str, *, task: str, model: str = "qwen2.5-coder:14b", required: bool = True) -> dict[str, Any]:
+    result=await _ollama("Provide a concise read-only implementation risk assessment for this coding task:\n"+task, model=model, timeout_seconds=180)
     status="INTEGRATED_LIVE" if result["status"] == "used" else ("BLOCKED_ENV" if required else "DEGRADED")
     return _persist(task_id,lane_id="extended.context-model",consumer="canonical_context_broker",upstream={"task_id":task_id,"task_hash":_hash(task),"model":model,"required":required},output={"summary":result["reason"],"model_receipt":result},status=status)
 
 
-async def invoke_subagent(task_id: str, *, task: str, model: str = "phi4-mini:latest", required: bool = True) -> dict[str, Any]:
-    result=await _ollama("Act as the retained safety reviewer. Return a concise advisory-only safety finding for:\n"+task, model=model, timeout_seconds=45)
+async def invoke_subagent(task_id: str, *, task: str, model: str = "qwen2.5-coder:14b", required: bool = True) -> dict[str, Any]:
+    result=await _ollama("Act as the retained safety reviewer. Return a concise advisory-only safety finding for:\n"+task, model=model, timeout_seconds=180)
     packet={"packet_id":"campaign3-safety-"+hashlib.sha256(task_id.encode()).hexdigest()[:16],"packet_type":"safety_review","role":"safety_reviewer","summary":result.get("reason","subagent unavailable"),"findings":["model_output_sha256="+str(result.get("response_sha256") or "unavailable")],"requested_actions":[]}
     validation=validate_subagent_advisory_packet(packet).to_dict()
     advisory=build_advisory_context_packet([validate_subagent_advisory_packet(packet)])
