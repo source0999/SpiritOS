@@ -11,6 +11,7 @@
     {"id": "campaign-3-completion-regression", "mandatory": true, "command": "python3 ./scripts/test-campaign-3-completion.py", "status": "passed", "claim_ceiling": "completion_evaluator_contract_only"}
     ,{"id": "extended-lane-contracts", "mandatory": true, "command": "python3 -m pytest -q source_proxy/tests/test_extended_lane_registry.py", "status": "passed", "claim_ceiling": "gate_3_1_contract_and_selection_boundary_only"}
     ,{"id": "scout-research-provenance", "mandatory": true, "command": "python3 -m pytest -q source_proxy/tests/test_campaign_3_scout_research.py", "status": "passed", "claim_ceiling": "gate_3_2_task_bound_research_provenance_only"}
+    ,{"id": "obsidian-read-write-conflict", "mandatory": true, "command": "python3 -m pytest -q source_proxy/tests/test_campaign_3_obsidian_context.py source_proxy/tests/test_obsidian_context.py", "status": "passed", "claim_ceiling": "gate_3_3_bounded_context_and_write_plan_only"}
   ],
   "terminal_profiles_required_later": [
     "extended-lane-contracts",

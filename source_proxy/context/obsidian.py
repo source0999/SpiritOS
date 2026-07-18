@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import re
+import hashlib
+from datetime import UTC, datetime
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
@@ -12,6 +14,7 @@ DEFAULT_INCLUDE_GLOBS = "*.md"
 DEFAULT_EXCLUDE_GLOBS = ".obsidian/**, private/**, secrets/**, archive/**"
 DEFAULT_MAX_NOTES = 8
 DEFAULT_MAX_CHARS_PER_NOTE = 1200
+DEFAULT_MAX_NOTE_AGE_SECONDS = 60 * 60 * 24 * 30
 DEFAULT_LOCAL_VAULT = Path("data") / "design-vault"
 
 
@@ -23,6 +26,7 @@ class ObsidianContextConfig:
     exclude_globs: tuple[str, ...]
     max_notes: int
     max_chars_per_note: int
+    max_note_age_seconds: int = DEFAULT_MAX_NOTE_AGE_SECONDS
 
 
 def obsidian_context_config_from_env() -> ObsidianContextConfig:
@@ -43,6 +47,12 @@ def obsidian_context_config_from_env() -> ObsidianContextConfig:
             DEFAULT_MAX_CHARS_PER_NOTE,
             200,
             8000,
+        ),
+        max_note_age_seconds=_bounded_int(
+            os.getenv("OBSIDIAN_MAX_NOTE_AGE_SECONDS", ""),
+            DEFAULT_MAX_NOTE_AGE_SECONDS,
+            60,
+            60 * 60 * 24 * 365,
         ),
     )
 
@@ -74,6 +84,7 @@ def obsidian_context_diagnostics(
         "obsidian_exclude_globs": list(cfg.exclude_globs),
         "obsidian_max_notes": cfg.max_notes,
         "obsidian_max_chars_per_note": cfg.max_chars_per_note,
+        "obsidian_max_note_age_seconds": cfg.max_note_age_seconds,
         "obsidian_read_only": True,
     }
 
@@ -113,11 +124,13 @@ def query_obsidian_context(
         if note["score"] > 0
     ][: cfg.max_notes]
 
-    diagnostics["obsidian_context_used"] = bool(selected)
+    stale = [note for note in selected if note["stale"]]
+    diagnostics["obsidian_context_used"] = bool(selected) and not stale
     diagnostics["obsidian_notes_selected"] = len(selected)
-    diagnostics["obsidian_context_chars"] = sum(len(str(note["safe_excerpt"])) for note in selected)
+    diagnostics["obsidian_context_chars"] = sum(len(str(note["safe_excerpt"])) for note in selected if not note["stale"])
     diagnostics["obsidian_context_paths"] = [str(note["path"]) for note in selected]
-    diagnostics["obsidian_status"] = "used" if selected else "no_relevant_notes"
+    diagnostics["obsidian_stale_note_count"] = len(stale)
+    diagnostics["obsidian_status"] = "stale_notes_detected" if stale else "used" if selected else "no_relevant_notes"
 
     public_notes = [
         {
@@ -126,7 +139,11 @@ def query_obsidian_context(
             "safe_excerpt": note["safe_excerpt"],
             "why_matched": note["why_matched"],
             "char_estimate": len(str(note["safe_excerpt"])),
-            "used_in_prompt_context": bool(selected),
+            "used_in_prompt_context": bool(selected) and not note["stale"],
+            "note_identity": note["note_identity"],
+            "freshness": note["freshness"],
+            "stale": note["stale"],
+            "repository_conflict": note["repository_conflict"],
         }
         for note in selected
     ]
@@ -194,12 +211,20 @@ def _scored_note(
     terms = _query_terms(task)
     haystack = f"{rel}\n{text}".lower()
     matches = [term for term in terms if term in haystack]
+    mtime = path.stat().st_mtime
+    age_seconds = max(0, int(datetime.now(UTC).timestamp() - mtime))
+    stale = age_seconds > 0 and age_seconds > int(max(1, os.getenv("OBSIDIAN_MAX_NOTE_AGE_SECONDS", str(DEFAULT_MAX_NOTE_AGE_SECONDS))))
+    repository_conflict = _note_conflicts_with_repository(text)
     return {
         "title": _note_title(path, text),
         "path": rel,
         "safe_excerpt": _safe_excerpt(text, terms, max_chars_per_note),
         "score": len(matches),
         "why_matched": f"Matched: {', '.join(matches[:8])}" if matches else "No query term match.",
+        "note_identity": "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "freshness": {"modified_at": datetime.fromtimestamp(mtime, UTC).isoformat().replace("+00:00", "Z"), "age_seconds": age_seconds},
+        "stale": stale,
+        "repository_conflict": repository_conflict,
     }
 
 
@@ -249,3 +274,53 @@ def _safe_excerpt(text: str, terms: list[str], max_chars: int) -> str:
             break
     excerpt = cleaned[start : start + max_chars].strip()
     return " ".join(excerpt.split())
+
+
+def _note_conflicts_with_repository(text: str) -> bool:
+    """Require an explicit conflict path instead of letting notes outrank code."""
+    lowered = text.lower()
+    return (
+        "repository-conflict:" in lowered
+        or "repository conflict:" in lowered
+        or ("repository truth:" in lowered and "conflicts" in lowered)
+    )
+
+
+def build_obsidian_write_plan(
+    *,
+    config: ObsidianContextConfig,
+    relative_path: str,
+    content: str,
+    task_id: str,
+) -> dict[str, Any]:
+    """Create a server-owned write proposal; this function never writes a note.
+
+    A caller must bind this plan to the canonical approval/executor path and
+    record verification plus compensating restoration.  Rejecting traversal here
+    prevents a context source from becoming unrestricted filesystem authority.
+    """
+    normalized = relative_path.replace("\\", "/").strip("/")
+    if not config.enabled or not config.vault_path:
+        raise ValueError("obsidian_write_vault_not_registered")
+    if not normalized or normalized.startswith("../") or "/../" in normalized or not normalized.endswith(".md"):
+        raise ValueError("obsidian_write_path_invalid")
+    if not task_id.strip() or not content.strip():
+        raise ValueError("obsidian_write_binding_missing")
+    vault = Path(config.vault_path).expanduser().resolve()
+    target = (vault / normalized).resolve()
+    if vault not in target.parents:
+        raise ValueError("obsidian_write_path_escapes_registered_vault")
+    return {
+        "schema_version": "campaign-3/obsidian-write-plan/v1",
+        "task_id": task_id,
+        "vault_identity": "sha256:" + hashlib.sha256(str(vault).encode("utf-8")).hexdigest(),
+        "vault_root": str(vault),
+        "relative_path": normalized,
+        "target_path": str(target),
+        "content_sha256": "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        "requires_canonical_approval": True,
+        "requires_canonical_executor": True,
+        "requires_result_verification": True,
+        "requires_compensating_restoration": True,
+        "write_performed": False,
+    }

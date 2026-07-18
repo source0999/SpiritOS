@@ -148,6 +148,10 @@ def build_obsidian_context_packet(
                     "safe_excerpt": _safe_context_excerpt(str(note.get("safe_excerpt") or "")),
                     "why_matched": str(note.get("why_matched") or ""),
                     "char_estimate": int(note.get("char_estimate") or 0),
+                    "note_identity": str(note.get("note_identity") or ""),
+                    "freshness": dict(note.get("freshness") or {}),
+                    "stale": note.get("stale") is True,
+                    "repository_conflict": note.get("repository_conflict") is True,
                 }
                 for note in notes
             ],

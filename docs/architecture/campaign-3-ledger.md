@@ -2,14 +2,14 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_2_scout_coding_research_complete`
+Checkpoint ID: `campaign_3_gate_3_3_obsidian_coding_knowledge_complete`
 
-Verdict: `GATE_3_2_SCOUT_CODING_RESEARCH_COMPLETE`
+Verdict: `GATE_3_3_OBSIDIAN_CODING_KNOWLEDGE_COMPLETE`
 
 State:
 
-- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`
-- next gate: `gate_3_3_obsidian_coding_knowledge_integration`
+- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`
+- next gate: `gate_3_4_mac_worker_and_mac_coding_frameworks`
 - Campaign 3 GO: false
 - Campaign 4 started: false
 - implementation gates started: true
@@ -41,6 +41,8 @@ Gate 3.1 and 3.2 runtime-backed inventory and research:
 - `source_proxy/decision/scout_research.py`
 - `source_proxy/context/source_readiness.py`
 - `source_proxy/tests/test_campaign_3_scout_research.py`
+- `source_proxy/context/obsidian.py`
+- `source_proxy/tests/test_campaign_3_obsidian_context.py`
 
 The registry has exactly eight retained, selectable production lanes. Scout
 providers, preview-only helpers, the Mac advisory route, and all prompt-only or
@@ -53,4 +55,12 @@ Stop line:
 
 Scout owns the task-bound query, provider chain, bounded source selection, primary-source preference, fetch hashes, freshness, citations, failure status, and claim ceiling. SearXNG and fetch cannot be independently selected or counted. The context adapter carries the exact receipt to the canonical broker for downstream acknowledgement.
 
-Gate 3.2 is complete. The next authorized task resumes at `gate_3_3_obsidian_coding_knowledge_integration`.
+Gate 3.2 was completed before the bounded Obsidian integration recorded below.
+
+Obsidian reads are bounded to the registered root and include exact note hashes,
+freshness, stale-note status, and repository-conflict flags. Repository truth still
+outranks notes. A write request only yields a root/path-bound server-owned plan;
+it cannot write until canonical approval, executor, verification, evidence, and
+compensating restoration bind it.
+
+Gate 3.3 is complete. The next authorized task resumes at `gate_3_4_mac_worker_and_mac_coding_frameworks`.
