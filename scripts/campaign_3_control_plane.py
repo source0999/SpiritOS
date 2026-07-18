@@ -112,8 +112,14 @@ def validate_continuity(root: Path) -> list[str]:
     expected_next = ALL_GATES[len(completed)] if len(completed) < len(ALL_GATES) else "none"
     if data.get("next_gate_id") != expected_next:
         failures.append("next_gate_mismatch")
-    if data.get("go_eligible") is not False or data.get("campaign4_started") is not False:
-        failures.append("premature_go_or_campaign4")
+    terminal = completed == ALL_GATES
+    if data.get("campaign4_started") is not False:
+        failures.append("campaign4_started")
+    if terminal:
+        if data.get("go_eligible") is not True:
+            failures.append("terminal_go_not_true")
+    elif data.get("go_eligible") is not False:
+        failures.append("premature_go")
     if data.get("base", {}).get("accepted_closeout_commit") != R1_TERMINAL:
         failures.append("r1_terminal_commit_mismatch")
     if data.get("base", {}).get("source_implementation_commit") != R1_SOURCE:

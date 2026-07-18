@@ -74,3 +74,11 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 | --- | --- | --- |
 | Backend contract receipt | `docs/architecture/evidence/campaign-3-gate-3-10-coding-readiness.json` | passed; read-only, no Campaign 4 UI wiring |
 | Hash sidecar | `docs/architecture/evidence/campaign-3-gate-3-10-coding-readiness.sha256` | recorded |
+
+## Gate 3.11 Terminal Acceptance
+
+| Evidence | Path | Status |
+| --- | --- | --- |
+| Terminal acceptance manifest | `docs/architecture/evidence/campaign-3-terminal-acceptance.json` | passed |
+| Hash sidecar | `docs/architecture/evidence/campaign-3-terminal-acceptance.sha256` | recorded |
+| Recovery anchor | annotated tag and Git bundle created after final acceptance commit | pending final anchor command |

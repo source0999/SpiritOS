@@ -80,11 +80,12 @@
     "gate_3_7_extended_observability_and_diagnosis_backend",
     "gate_3_8_degradation_fallback_and_resumability",
     "gate_3_9_genuine_all_lane_proving_task",
-    "gate_3_10_coding_ui_campaign_readiness"
+    "gate_3_10_coding_ui_campaign_readiness",
+    "gate_3_11_final_acceptance_and_closeout"
   ],
   "partial_gate_ids": [],
-  "next_gate_id": "gate_3_11_final_acceptance_and_closeout",
-  "current_phase": "gate_3_10_complete",
+  "next_gate_id": "none",
+  "current_phase": "gate_3_11_complete",
   "controlled_failure_requirements": {
     "minimum_extended_lane_failures": 2,
     "external_host_failure_required": true,
@@ -135,7 +136,7 @@
     "hashes_required": true,
     "terminal_tag_required": true,
     "bundle_required": true,
-    "current_terminal_evidence_complete": false
+    "current_terminal_evidence_complete": true
   },
   "lane_consumption_requirements": {
     "all_retained_mandatory_outputs_consumed": true,
@@ -149,9 +150,9 @@
     "participation_consumption": "passed_for_gate_3_9",
     "evidence_provenance": "passed_for_gate_3_9",
     "test_profiles": "passed",
-    "completion": "not_complete"
+    "completion": "passed"
   },
-  "go_eligible": false,
+  "go_eligible": true,
   "campaign4_started": false,
   "terminal_verdict_token": "CAMPAIGN_3_EXTENDED_CODING_LANES_INTEGRATED",
   "not_complete_verdict_token": "CAMPAIGN_3_NOT_COMPLETE",

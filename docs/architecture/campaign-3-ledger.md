@@ -2,13 +2,13 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_10_complete`
+Checkpoint ID: `campaign_3_terminal_complete`
 
-Verdict: `GATE_3_10_COMPLETE`
+Verdict: `CAMPAIGN_3_EXTENDED_CODING_LANES_INTEGRATED`
 
 State:
 
-- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`, `gate_3_5_retained_coding_sub_agents`, `gate_3_6_cross_lane_conflict_resolution`, `gate_3_7_extended_observability_and_diagnosis_backend`, `gate_3_8_degradation_fallback_and_resumability`, `gate_3_11_final_acceptance_and_closeout`
+- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`, `gate_3_5_retained_coding_sub_agents`, `gate_3_6_cross_lane_conflict_resolution`, `gate_3_7_extended_observability_and_diagnosis_backend`, `gate_3_8_degradation_fallback_and_resumability`, `none`
 - next gate: `gate_3_9_genuine_all_lane_proving_task`
 - Campaign 3 GO: false
 - Campaign 4 started: false
@@ -139,3 +139,9 @@ Evidence: `docs/evidence-manifests/campaign-3/gate-3-8-recovery.json`.
 
 - Read-only Campaign 3 readiness envelope expands authoritative task/run, observability, cancel/recovery, undo/reset, browser-fixture, and receipt-reconciliation contracts without granting UI mutation authority.
 - Evidence: `docs/architecture/evidence/campaign-3-gate-3-10-coding-readiness.json`; focused backend suite passed 12 tests.
+
+## Gate 3.11 Final Acceptance
+
+- Terminal acceptance manifest: `docs/architecture/evidence/campaign-3-terminal-acceptance.json`.
+- Gate 3.9 immutable receipt, Gate 3.10 backend-only contract receipt, all validators, targeted regression suites, TypeScript, and scoped production build passed.
+- Campaign 4 remains unstarted; no push, Coder 10 run, or full coding-UI wiring was performed.
