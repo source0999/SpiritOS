@@ -8,7 +8,8 @@ Remediation: `spiritos-foundation-remediation-r1`
 
 - Worktree: `/home/source/SpiritOS-foundation-remediation-r1-20260717`
 - Branch: `codex/spiritos-foundation-remediation-r1-20260717`
-- Base and recorded source head: `2b8ead66578d7f7053c01cb987e011b763c1c03d`
+- Base: `2b8ead66578d7f7053c01cb987e011b763c1c03d`
+- Recorded source head: `32905e349d62a9bde101e8e6168567404faad679`
 - Current phase/gate: Phase 1 / `r1_1_portable_authority`
 - GO eligibility: `false`
 - Terminal verdict: not available
@@ -77,7 +78,7 @@ These are defect confirmations, not accepted completion evidence.
 | R1.5 coding lifecycle | pending | late finalization and independent consumers |
 | R1.6 target adapters 1-10 | pending | executable target-owned behavior |
 | R1.7 production orchestrator | pending | live importer and persisted owner |
-| R1.8 runtime contracts/transfer | pending | enforce live boundaries and real Cartographer lineage |
+| R1.8 runtime contracts/transfer | partial | immutable version/schema/output/acknowledgement/consumption boundary is tested; live orchestrator integration and Cartographer lineage remain pending |
 | R1.9 backend state/recovery | pending | Source Proxy truth and one-run recovery |
 | R1.10 immutable evidence | pending | implement source-bound schema/generator and profile evidence model; terminal receipt waits for proof |
 | R1.11 clean proving task | pending | real HTTP/model/approval/apply/participants/recovery/undo/rerun |
@@ -98,7 +99,7 @@ NEXT_GATE: validate and checkpoint portable registered-root authority
 SERVICES: no R1 service started
 TESTS_REQUIRED: registered R1 profiles
 OPEN_BLOCKERS: none; expected validator failures are repair gates
-LAST_VERIFIED_HEAD: 2b8ead66578d7f7053c01cb987e011b763c1c03d
+LAST_VERIFIED_HEAD: 32905e349d62a9bde101e8e6168567404faad679
 ```
 
 ## R1.0 checkpoint evidence
@@ -111,6 +112,17 @@ LAST_VERIFIED_HEAD: 2b8ead66578d7f7053c01cb987e011b763c1c03d
 - The authority validator still rejects the inherited live call graph. The evidence
   validator still rejects nonterminal state and missing terminal evidence. These are
   required fail-closed results, not waived gates.
+
+## Runtime-contract boundary checkpoint
+
+- Added an immutable runtime lane boundary that compiles the canonical embedded
+  schemas and rejects missing/incompatible versions, malformed output, same-invocation
+  acknowledgements, unknown output, mismatched acknowledgement, replayed consumption,
+  and required-but-unconsumed output.
+- `25 passed` across the new boundary suite plus canonical contracts, orchestrator,
+  Cartographer handoff, and observability regression tests.
+- Claim ceiling: library boundary only. Production integration remains an explicit
+  R1.8 partial gate and cannot satisfy the authority validator yet.
 
 ## Closeout rule
 

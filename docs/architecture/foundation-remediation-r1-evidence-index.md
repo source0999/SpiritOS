@@ -23,6 +23,7 @@ and self-declared `GO` fields are not accepted terminal evidence.
 | `r1-baseline-c2-completion-regression` | inherited suite | 6 pass / 1 fail | contradiction proof only | diagnostic only |
 | `r1-control-completion-regression` | `scripts/test-foundation-remediation-r1-completion.py` | 6/6 pass | fail-closed evaluator semantics only | checkpoint observation; terminal manifest pending |
 | `r1-control-test-profile-validator` | `scripts/validate-foundation-remediation-r1-test-profiles.py` | pass | registry coherence only | checkpoint observation; terminal manifest pending |
+| `r1-runtime-contract-boundary` | focused runtime boundary/contracts/orchestrator/Cartographer/observability suites | 25 pass | immutable library boundary only; no live-call claim | checkpoint observation; live proof and terminal manifest pending |
 
 ## Required terminal evidence
 

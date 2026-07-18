@@ -10,7 +10,7 @@
   "base_commit": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
   "branch": "codex/spiritos-foundation-remediation-r1-20260717",
   "worktree": "/home/source/SpiritOS-foundation-remediation-r1-20260717",
-  "recorded_head": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
+  "recorded_head": "32905e349d62a9bde101e8e6168567404faad679",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Phase 1 - canonical authority repair",
   "current_increment": "r1_1_portable_authority",
@@ -18,7 +18,8 @@
     "r1_0_control_plane"
   ],
   "partial_gate_ids": [
-    "r1_1_portable_authority"
+    "r1_1_portable_authority",
+    "r1_8_runtime_contracts_and_cartographer_transfer"
   ],
   "next_gate_id": "r1_1_portable_authority",
   "terminal_gate_id": "r1_complete",
@@ -78,6 +79,7 @@
     "continuity": "configured_for_atomic_checkpoint_verification",
     "evidence_provenance": "expected_fail_until_terminal_evidence",
     "test_profiles": "pass_registry_coherence_only",
+    "runtime_contract_boundary": "pass_library_boundary_only_live_integration_pending",
     "completion": "not_complete"
   },
   "terminal_evidence": null,
