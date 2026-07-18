@@ -51,7 +51,7 @@
   "partial_gate_ids": [],
   "next_gate_id": "gate_3_9_genuine_all_lane_proving_task",
   "current_phase": "gate_3_8_complete",
-  "controlled_failure_requirements": {"minimum_extended_lane_failures": 2, "external_host_failure_required": true, "proven_failures": ["scout_provider_unreachable", "obsidian_vault_unavailable", "mac_worker_timeout", "retained_subagent_provider_timeout", "conflicting_claim"]},
+  "controlled_failure_requirements": {"minimum_extended_lane_failures": 2, "external_host_failure_required": true, "proven_failures": []},
   "entry_checks": {
     "r1_terminal_tag_verified": true,
     "r1_terminal_commit_verified": true,
