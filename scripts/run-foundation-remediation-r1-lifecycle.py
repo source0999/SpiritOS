@@ -1275,12 +1275,16 @@ def _run_logged(
                 _scope_command(scope_unit, command, cwd=cwd),
                 cwd=cwd,
                 env=dict(environment),
-                stdin=subprocess.DEVNULL,
+                # Next's webpack worker crashes under this host's systemd scope
+                # when stdin is /dev/null. Close a private pipe instead.
+                stdin=subprocess.PIPE,
                 stdout=stdout,
                 stderr=stderr,
                 # systemd-run owns this short-lived scope. A second session
                 # boundary causes Next's webpack worker to segfault on Dell.
             )
+            if process.stdin is not None:
+                process.stdin.close()
             try:
                 cgroup_path = _wait_scope_control_group(
                     scope_unit,
