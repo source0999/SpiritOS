@@ -2,9 +2,9 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_4_mac_worker_external_network_blocked`
+Checkpoint ID: `campaign_3_gate_3_4_mac_live_proof_partial`
 
-Verdict: `GATE_3_3_COMPLETE_GATE_3_4_EXTERNAL_HOST_BLOCKED`
+Verdict: `GATE_3_3_COMPLETE_GATE_3_4_LIVE_PROOF_PARTIAL`
 
 State:
 
