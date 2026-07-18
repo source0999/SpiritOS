@@ -58,8 +58,8 @@ R1_REPOSITORY_ID = "SpiritOS"
 HEALTH_REQUEST_TIMEOUT_SECONDS = 5
 # The Dell host's scoped Webpack worker crashes at a 256 MiB semi-space. This
 # empirically bounded value completes the isolated production build while
-# retaining the 4 GiB old-space ceiling.
-R1_NODE_OPTIONS = "--max-old-space-size=4096 --max-semi-space-size=16"
+# retaining a conservative 2 GiB old-space ceiling.
+R1_NODE_OPTIONS = "--max-old-space-size=2048 --max-semi-space-size=16"
 PROVING_FIXTURE_RELATIVE = Path(
     "tests/ui-agent-trials/fixtures/dummy-product-site"
 )
