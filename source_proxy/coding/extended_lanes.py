@@ -60,7 +60,7 @@ def invoke_mac(task_id: str, *, source_commit: str, source_worktree: str, timeou
     result = run_bound_mac_verification_for_task(task_id, source_commit=source_commit, source_worktree=source_worktree, timeout_seconds=timeout_seconds)
     # The Mac integration itself persists a causal record; this wrapper supplies
     # the registry's explicit verifier-consumption record.
-    return _persist(task_id, lane_id="extended.mac-worker", consumer="platform_verifier", upstream={"task_id": task_id, "source_commit": source_commit, "source_worktree": source_worktree}, output={"summary": result["status"], "mac": result}, status="INTEGRATED_LIVE" if result["status"] == "INTEGRATED_LIVE" else "BLOCKED_ENV")
+    return _persist(task_id, lane_id="extended.mac-worker", consumer="platform_verifier", upstream={"task_id": task_id, "source_commit": source_commit, "source_worktree": source_worktree}, output={"summary": result["status"], "mac": {"status": result.get("status"), "receipt": result.get("receipt")}}, status="INTEGRATED_LIVE" if result["status"] == "INTEGRATED_LIVE" else "BLOCKED_ENV")
 
 
 async def _ollama(prompt: str, *, model: str, timeout_seconds: float) -> dict[str, Any]:
