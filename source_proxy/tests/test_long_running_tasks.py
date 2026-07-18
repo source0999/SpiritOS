@@ -265,12 +265,16 @@ def _passing_managed_browser_proof() -> dict[str, object]:
 
 def _dummy_product_site_lifecycle_diff(
     readme_before: str,
+    *,
+    package_json_content: str | None = None,
 ) -> tuple[str, dict[str, str]]:
     root = "tests/ui-agent-trials/fixtures/dummy-product-site"
     applied_contents = {
         f"{root}/README.md": "# LumaCart\n\nA model-authored demo storefront.\n",
         f"{root}/package.json": (
-            '{"name":"lumacart-lifecycle-test","private":true,"type":"module"}\n'
+            package_json_content
+            if package_json_content is not None
+            else '{"name":"lumacart-lifecycle-test","private":true,"type":"module"}\n'
         ),
         f"{root}/index.html": (
             "<!doctype html><html><body><main id=\"products\"></main>"
@@ -3030,6 +3034,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         managed_browser_proof: dict[str, object] | None = None,
         *,
         tamper_manifest_before_postapply: bool = False,
+        package_json_content: str | None = None,
     ) -> dict[str, object]:
         workspace = Path(self._tempdir.name).resolve()
         fixture = workspace / "tests/ui-agent-trials/fixtures/dummy-product-site"
@@ -3039,7 +3044,10 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         sentinel = workspace / "unrelated-sentinel.txt"
         sentinel.write_text("unrelated user state\n", encoding="utf-8")
 
-        diff, applied_contents = _dummy_product_site_lifecycle_diff(readme_before)
+        diff, applied_contents = _dummy_product_site_lifecycle_diff(
+            readme_before,
+            package_json_content=package_json_content,
+        )
         created = create_long_running_task(
             "Target file: tests/ui-agent-trials/fixtures/dummy-product-site/\n"
             "Run selected dummy coder prompt 1."
@@ -3343,6 +3351,28 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertIn(
             "post_apply_verification_failed",
             verification["commit_blockers"],
+        )
+
+    def test_dummy_postapply_rejects_whitespace_only_package_name(self) -> None:
+        lifecycle = self._apply_and_verify_manifest_backed_dummy_fixture(
+            package_json_content='{"name":"   ","private":true}\n',
+        )
+        verified = lifecycle["verified"]
+        assert isinstance(verified, dict)
+        task = verified["task"]
+        verification = task["post_apply_verification"]
+        checks = {
+            check["id"]: check
+            for check in verification["checks"]
+            if isinstance(check, dict)
+        }
+
+        self.assertEqual(task["status"], "verification_failed")
+        self.assertEqual(verification["status"], "verification_failed")
+        self.assertEqual(checks["package_json"]["status"], "failed")
+        self.assertEqual(
+            verification["snapshot_verification"]["package_json_issue"],
+            "prompt1_package_name_missing",
         )
 
     def test_dummy_manifest_undo_hash_drift_fails_before_touching_any_file(self) -> None:

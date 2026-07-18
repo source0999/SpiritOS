@@ -252,6 +252,29 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   and the owning `nodejs 20.20.2-1nodesource1` package establish the current
   `/usr/bin/node` SHA-256 as
   `6295488653f0d93b0a157841746fef7e72cc4328cfb60c4bbe0ca2668a836ffd`.
+- At source `5466242f69763a33a8ae14e308c8202e2e1ea898`, the production lifecycle
+  reached final post-apply verification, where the model-authored fixture
+  `package.json` contained only `{}`. The post-apply verifier correctly rejected
+  that artifact and left the task nonterminal, so neither an inner proving receipt
+  nor an outer lifecycle receipt was published. Service scopes, ports, operator
+  authority, and temporary approval authority were revoked, but lifecycle teardown
+  then detected the ignored generated fixture still present and failed closed with
+  `lifecycle_teardown_failed_after_proving_failure`.
+- That attempt exposed two production-boundary defects rather than a proving
+  exception: Prompt 1 pre-apply validation had not enforced the post-apply package
+  identity rule, and teardown did not own the exact ignored proving-fixture path.
+  Prompt 1 now uses one shared rule before and after apply: fixture `package.json`
+  must be a JSON object with a non-empty string `name`. The target contract, initial
+  model prompt, and repair prompt declare the same invariant. Lifecycle teardown
+  now refuses tracked content or symlinked ancestors, removes only the exact proving
+  fixture without following symlinks, revalidates the complete linked-worktree
+  identity, and exposes mandatory receipt fields for that cleanup. Focused
+  observations after repair: Prompt 1 and post-apply boundary matrix `5/5`, target
+  contract matrix `11/11`, lifecycle `25/25`, and evidence `13/13`. No terminal
+  success is claimed. Broader changed-surface observations also pass: coding
+  regression pack `135/135`, long-running task suite `72/72`, and target-adapter
+  suite `38/38`. A new clean source checkpoint and full two-run production proving
+  lifecycle remain required.
 
 ## Broad-suite diagnostic attribution
 

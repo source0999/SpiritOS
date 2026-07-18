@@ -50,6 +50,9 @@ R1_FAILED_PROVIDER = "model-router"
 R1_FALLBACK_PROVIDER = "ollama"
 R1_FALLBACK_MODEL = f"ollama_chat/{R1_CODER_MODEL}"
 R1_REPOSITORY_ID = "SpiritOS"
+PROVING_FIXTURE_RELATIVE = Path(
+    "tests/ui-agent-trials/fixtures/dummy-product-site"
+)
 APPROVAL_SECRET_PATH = Path("/home/source/.config/spiritos/secrets/approval-authority.env")
 GIT_OID_RE = re.compile(r"^[0-9a-f]{40}$")
 WORKTREE_ID_RE = re.compile(r"^[0-9a-f]{24}$")
@@ -1973,6 +1976,44 @@ def _clean_data_source_proxy(root: Path) -> None:
             _fail("lifecycle_tracked_runtime_baseline_changed")
 
 
+def _remove_owned_proving_fixture(root: Path) -> bool:
+    relative = PROVING_FIXTURE_RELATIVE.as_posix()
+    tracked_raw = _git(
+        root,
+        "ls-files",
+        "-z",
+        "--",
+        f":(literal){relative}",
+        f":(glob){relative}/**",
+    )
+    if any(value for value in tracked_raw.split("\0") if value):
+        _fail("lifecycle_proving_fixture_contains_tracked_paths")
+
+    target = root / PROVING_FIXTURE_RELATIVE
+    if not target.exists() and not target.is_symlink():
+        return False
+
+    ancestor = root
+    for component in PROVING_FIXTURE_RELATIVE.parts[:-1]:
+        ancestor = ancestor / component
+        if ancestor.is_symlink():
+            _fail("lifecycle_proving_fixture_ancestor_symlink_forbidden")
+        if not ancestor.is_dir():
+            _fail("lifecycle_proving_fixture_ancestor_invalid")
+
+    if target.is_symlink():
+        target.unlink()
+    elif target.is_dir():
+        if not getattr(shutil.rmtree, "avoids_symlink_attacks", False):
+            _fail("lifecycle_proving_fixture_symlink_safety_unavailable")
+        shutil.rmtree(target)
+    else:
+        _fail("lifecycle_proving_fixture_cleanup_target_unsupported")
+    if target.exists() or target.is_symlink():
+        _fail("lifecycle_proving_fixture_cleanup_failed")
+    return True
+
+
 def _cleanup_worktree_runtime(
     identity: WorktreeIdentity,
     *,
@@ -1987,6 +2028,7 @@ def _cleanup_worktree_runtime(
     _remove_owned_top_level(root, ".next")
     _remove_owned_top_level(root, ".spirit-backups")
     _clean_data_source_proxy(root)
+    proving_fixture_was_present = _remove_owned_proving_fixture(root)
     status = _git(root, "status", "--porcelain=v1", "--untracked-files=all")
     if status:
         _fail("lifecycle_worktree_not_clean_after_teardown")
@@ -2009,6 +2051,10 @@ def _cleanup_worktree_runtime(
         "next_build_removed": True,
         "backup_state_removed": True,
         "runtime_receipts_removed": True,
+        "proving_fixture_removed": True,
+        "proving_fixture_was_present": proving_fixture_was_present,
+        "proving_fixture_tracked_paths_absent": True,
+        "proving_fixture_symlinks_not_followed": True,
         "tracked_status_clean": True,
         "ignored_status_restored": True,
         "source_head_unchanged": True,

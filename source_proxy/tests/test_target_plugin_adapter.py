@@ -181,6 +181,26 @@ def test_prompt_three_preserves_the_existing_task_spec_contract() -> None:
     assert f"{FIXTURE_ROOT}src/products.js" in spec["forbidden_files"]
 
 
+def test_prompt_one_declares_the_package_and_rendering_invariants() -> None:
+    spec = target_plugin_task_spec(
+        resolve_target_plugin(packet("coder-001-init-dummy-product-site"), ROOT)
+    )
+
+    assert spec is not None
+    assert (
+        "Fixture package.json must be a JSON object with a non-empty string name."
+        in spec["behavior_requirements"]
+    )
+    assert any(
+        "at least six products" in requirement
+        for requirement in spec["behavior_requirements"]
+    )
+    assert any(
+        "dynamically render product cards" in requirement
+        for requirement in spec["behavior_requirements"]
+    )
+
+
 @pytest.mark.parametrize(
     ("prompt_id", "function_name"),
     [

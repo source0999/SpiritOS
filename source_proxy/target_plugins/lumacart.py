@@ -67,6 +67,9 @@ LUMACART_PROMPT_CONTRACTS: dict[str, LumaCartPromptContract] = {
         requirements=(
             "Create a coherent isolated static storefront named LumaCart.",
             "Create the six starter files without changing root package files.",
+            "Fixture package.json must be a JSON object with a non-empty string name.",
+            "Define at least six products with id, name, price, category, and description.",
+            "Load src/main.js as a module, import src/products.js, and dynamically render product cards with every visible product field.",
         ),
         verification=("git diff --check",),
         expected_result_states=("PASS_DUMMY_PROJECT_INIT",),

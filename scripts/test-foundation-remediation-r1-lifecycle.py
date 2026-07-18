@@ -61,7 +61,10 @@ class TemporaryLinkedWorktree(unittest.TestCase):
         run("git", "config", "user.email", "lifecycle@example.invalid", cwd=cls.repository)
         run("git", "config", "user.name", "Lifecycle Test", cwd=cls.repository)
         files = {
-            ".gitignore": ".env.local\n",
+            ".gitignore": (
+                ".env.local\n"
+                "tests/ui-agent-trials/fixtures/dummy-product-site/\n"
+            ),
             "source_proxy/marker.py": "VALUE = 1\n",
             "source_proxy/api/decision.py": (
                 "def _agent_debug_log(**values):\n"
@@ -455,6 +458,64 @@ class TemporaryLinkedWorktree(unittest.TestCase):
         self.assertFalse(runtime.exists())
         self.assertFalse(nested.exists())
         self.assertFalse(nested.parent.exists())
+
+    def test_runtime_cleanup_removes_only_the_owned_ignored_proving_fixture(self) -> None:
+        config = self.config()
+        identity = LIFECYCLE._verify_clean_linked_worktree(config)
+        fixture = self.proof / LIFECYCLE.PROVING_FIXTURE_RELATIVE
+        sentinel = self.base / "proving-fixture-external-sentinel.txt"
+        sentinel.write_text("must survive cleanup\n", encoding="utf-8")
+        (fixture / "src").mkdir(parents=True)
+        (fixture / "package.json").write_text("{}\n", encoding="utf-8")
+        (fixture / "src" / "external-sentinel-link").symlink_to(sentinel)
+
+        try:
+            cleanup = LIFECYCLE._cleanup_worktree_runtime(
+                identity,
+                config=config,
+                dependency_link=None,
+            )
+            self.assertFalse(fixture.exists())
+            self.assertFalse(fixture.is_symlink())
+            self.assertEqual(
+                sentinel.read_text(encoding="utf-8"),
+                "must survive cleanup\n",
+            )
+            self.assertTrue(cleanup["proving_fixture_removed"])
+            self.assertTrue(cleanup["proving_fixture_was_present"])
+            self.assertTrue(cleanup["proving_fixture_tracked_paths_absent"])
+            self.assertTrue(cleanup["proving_fixture_symlinks_not_followed"])
+            self.assertEqual(
+                LIFECYCLE._verify_clean_linked_worktree(config),
+                identity,
+            )
+        finally:
+            if fixture.exists() or fixture.is_symlink():
+                if fixture.is_symlink():
+                    fixture.unlink()
+                else:
+                    shutil.rmtree(fixture)
+            sentinel.unlink(missing_ok=True)
+
+    def test_owned_proving_fixture_cleanup_refuses_tracked_paths(self) -> None:
+        fixture = self.proof / LIFECYCLE.PROVING_FIXTURE_RELATIVE
+        tracked = fixture / "tracked.txt"
+        tracked.parent.mkdir(parents=True)
+        tracked.write_text("preserve\n", encoding="utf-8")
+        relative = tracked.relative_to(self.proof).as_posix()
+
+        try:
+            with (
+                mock.patch.object(LIFECYCLE, "_git", return_value=f"{relative}\0"),
+                self.assertRaisesRegex(
+                    LIFECYCLE.LifecycleError,
+                    "lifecycle_proving_fixture_contains_tracked_paths",
+                ),
+            ):
+                LIFECYCLE._remove_owned_proving_fixture(self.proof)
+            self.assertEqual(tracked.read_text(encoding="utf-8"), "preserve\n")
+        finally:
+            shutil.rmtree(fixture)
 
     def test_runtime_cleanup_revalidates_the_complete_worktree_identity(self) -> None:
         config = self.config()

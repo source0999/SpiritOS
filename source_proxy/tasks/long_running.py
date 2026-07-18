@@ -3699,12 +3699,14 @@ def _run_dummy_product_site_post_apply_verification(
     )
 
     package_path = workspace_root / f"{dummy_root}package.json"
-    package_ok = False
+    package_json_issue = "prompt1_package_json_unreadable"
     try:
-        package_payload = json.loads(package_path.read_text(encoding="utf-8"))
-        package_ok = isinstance(package_payload, dict) and bool(package_payload.get("name"))
-    except (OSError, json.JSONDecodeError):
-        package_ok = False
+        package_json_issue = _dummy_product_site_package_json_issue(
+            package_path.read_text(encoding="utf-8")
+        )
+    except OSError:
+        pass
+    package_ok = package_json_issue is None
 
     js_results: list[dict[str, Any]] = []
     for rel_path in paths:
@@ -3822,7 +3824,11 @@ def _run_dummy_product_site_post_apply_verification(
         _post_apply_profile_check("dummy_scope", scope_ok, "Only dummy fixture paths changed."),
         _post_apply_profile_check("backup_manifest", manifest_ok, "Backup manifest and approved diff hashes match."),
         _post_apply_profile_check("snapshot_hashes", snapshots_ok, "Every changed file matches its recorded post-apply hash."),
-        _post_apply_profile_check("package_json", package_ok, "Dummy package.json parses with a package name."),
+        _post_apply_profile_check(
+            "package_json",
+            package_ok,
+            "Dummy package.json is a JSON object with a non-empty string name.",
+        ),
         _post_apply_profile_check("javascript_syntax", js_ok, "Dummy JavaScript passes node --check."),
         _post_apply_profile_check("web_assets", web_assets_ok, "HTML/CSS/JSON/README assets exist and are non-empty."),
         _post_apply_profile_check("browser_storefront", browser_verified, "Browser rendered at least six product cards."),
@@ -3835,6 +3841,7 @@ def _run_dummy_product_site_post_apply_verification(
         "browser_verified": browser_verified,
         "browser_evidence": browser_evidence,
         "browser_evidence_sha256": browser_evidence_sha256,
+        "package_json_issue": package_json_issue,
         "client_browser_evidence_decision_bearing": False,
         "client_browser_evidence_ignored": bool(client_browser_evidence),
         "post_apply_rediff_sha256": rediff_hash,
@@ -6851,6 +6858,7 @@ DUMMY_PRODUCT_SITE_BLACKLIST_KEYWORDS = (
 )
 DUMMY_PRODUCT_SITE_REPAIR_MIN_VARIANCE = 0.02
 DUMMY_PRODUCT_SITE_INDEX = f"{DUMMY_PRODUCT_SITE_ROOT}index.html"
+DUMMY_PRODUCT_SITE_PACKAGE = f"{DUMMY_PRODUCT_SITE_ROOT}package.json"
 DUMMY_PRODUCT_SITE_MAIN = f"{DUMMY_PRODUCT_SITE_ROOT}src/main.js"
 DUMMY_PRODUCT_SITE_PRODUCTS = f"{DUMMY_PRODUCT_SITE_ROOT}src/products.js"
 DUMMY_PRODUCT_SITE_STYLES = f"{DUMMY_PRODUCT_SITE_ROOT}src/styles.css"
@@ -8941,6 +8949,7 @@ def _render_dummy_product_site_create_prompt(
             f"Caps: max {DUMMY_PRODUCT_SITE_MAX_FILES} files, max {DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE} lines per file, max {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES} total lines.",
             "Do not edit root package.json, Source Proxy, src/app, src/components, src/lib, docs, .env, or lock files.",
             "Content must be model-authored, small, static, and coherent for a fake product storefront named LumaCart.",
+            "Fixture package.json must be a JSON object with a non-empty string name, such as lumacart-dummy.",
             "src/products.js must define at least 6 fake products.",
             "Every product must include id, name, price, category, and description.",
             "index.html must load src/main.js as a module script.",
@@ -8975,6 +8984,7 @@ def _render_dummy_product_site_create_repair_prompt(
             "Create these starter files: " + ", ".join(expected_paths) + ".",
             f"Caps: max {DUMMY_PRODUCT_SITE_MAX_FILES} files, max {DUMMY_PRODUCT_SITE_MAX_LINES_PER_FILE} lines per file, max {DUMMY_PRODUCT_SITE_MAX_TOTAL_LINES} total lines.",
             "The fake product site must be named LumaCart.",
+            "Fixture package.json must be a JSON object with a non-empty string name, such as lumacart-dummy.",
             "src/products.js must define at least 6 fake products with id, name, price, category, and description.",
             "index.html must load src/main.js as a module script.",
             "src/main.js must import products from './products.js' and render product cards dynamically with name, price, category, and description.",
@@ -9260,6 +9270,19 @@ def _dummy_product_site_honesty_gate(files: list[dict[str, str]], *, task: str) 
     }
 
 
+def _dummy_product_site_package_json_issue(content: str) -> str | None:
+    try:
+        payload = json.loads(content)
+    except (TypeError, json.JSONDecodeError):
+        return "prompt1_package_json_invalid"
+    if not isinstance(payload, dict):
+        return "prompt1_package_json_not_object"
+    name = payload.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return "prompt1_package_name_missing"
+    return None
+
+
 def _validate_dummy_product_site_file_bundle(files: list[dict[str, str]]) -> dict[str, Any]:
     missing: list[str] = []
     paths = [file["path"] for file in files]
@@ -9305,6 +9328,12 @@ def _validate_dummy_product_site_file_bundle(files: list[dict[str, str]]) -> dic
         file["path"].replace("\\", "/").lstrip("./"): file["content"]
         for file in files
     }
+    if DUMMY_PRODUCT_SITE_PACKAGE in by_path:
+        package_json_issue = _dummy_product_site_package_json_issue(
+            by_path[DUMMY_PRODUCT_SITE_PACKAGE]
+        )
+        if package_json_issue is not None:
+            missing.append(package_json_issue)
     index_html = by_path.get(DUMMY_PRODUCT_SITE_INDEX, "")
     main_js = by_path.get(DUMMY_PRODUCT_SITE_MAIN, "")
     products_js = by_path.get(DUMMY_PRODUCT_SITE_PRODUCTS, "")

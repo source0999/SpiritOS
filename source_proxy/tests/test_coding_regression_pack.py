@@ -52,6 +52,8 @@ from source_proxy.approval.campaign_authority import persist_coding_execution_pr
 from source_proxy.tasks.long_running import (
     _parse_dummy_product_site_file_bundle,
     _render_coder_prompt_from_packet,
+    _render_dummy_product_site_create_prompt,
+    _render_dummy_product_site_create_repair_prompt,
     create_long_running_task,
     execute_approved_long_running_task,
     propose_coder_agent_diff_payload_from_plan,
@@ -3171,6 +3173,79 @@ class CodingRegressionPackTests(unittest.TestCase):
             "model_authored_diff_proven",
         )
         self.assertFalse((self.root / "tests/ui-agent-trials/fixtures/dummy-product-site").exists())
+
+    def test_dummy_product_site_create_mode_rejects_invalid_package_identity_before_diff(self) -> None:
+        cases = (
+            ("{not-json", "prompt1_package_json_invalid"),
+            ("[]", "prompt1_package_json_not_object"),
+            ("{}", "prompt1_package_name_missing"),
+            ('{"name":""}', "prompt1_package_name_missing"),
+            ('{"name":"   "}', "prompt1_package_name_missing"),
+            ('{"name":7}', "prompt1_package_name_missing"),
+        )
+        for package_json, expected_issue in cases:
+            with self.subTest(package_json=package_json):
+                contents = _dummy_prompt1_valid_file_contents()
+                contents["package.json"] = package_json
+                model_json = json.dumps(
+                    {
+                        "action": "create_file_bundle",
+                        "files": [
+                            {
+                                "path": (
+                                    "tests/ui-agent-trials/fixtures/"
+                                    f"dummy-product-site/{path}"
+                                ),
+                                "content": content,
+                            }
+                            for path, content in contents.items()
+                        ],
+                    }
+                )
+
+                payload = propose_dummy_product_site_create_diff(
+                    task="make LumaCart in the dummy root",
+                    workspace_root=self.root,
+                    llm_call=lambda _prompt, _alias, response=model_json: response,
+                    model_alias="coder",
+                )
+
+                self.assertTrue(payload["coder_blocked"])
+                self.assertEqual(
+                    payload["reason_code"],
+                    "coder_file_bundle_validation_failed",
+                )
+                self.assertEqual(payload["proposed_diff"], "")
+                diagnostics = payload["coder_diagnostics"]
+                self.assertIn(
+                    expected_issue,
+                    diagnostics["content_validation"]["missing"],
+                )
+                self.assertEqual(
+                    diagnostics["diff_generation_status"],
+                    "blocked_no_diff",
+                )
+                self.assertEqual(
+                    diagnostics["patch_verification_status"],
+                    "not_run",
+                )
+
+    def test_dummy_product_site_create_prompts_declare_package_identity(self) -> None:
+        expected = (
+            "Fixture package.json must be a JSON object with a non-empty string name"
+        )
+        self.assertIn(
+            expected,
+            _render_dummy_product_site_create_prompt("make LumaCart"),
+        )
+        self.assertIn(
+            expected,
+            _render_dummy_product_site_create_repair_prompt(
+                "make LumaCart",
+                parse_error="invalid bundle",
+                raw_response="{}",
+            ),
+        )
 
     def test_dummy_product_site_create_mode_normalizes_narrow_local_bundle_action(self) -> None:
         files = _dummy_prompt1_valid_files_lines()
