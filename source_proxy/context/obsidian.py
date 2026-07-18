@@ -115,7 +115,7 @@ def query_obsidian_context(
     candidates = list(_iter_candidate_notes(resolved_vault, cfg))
     diagnostics["obsidian_notes_considered"] = len(candidates)
     scored = [
-        _scored_note(path, resolved_vault, task, cfg.max_chars_per_note)
+        _scored_note(path, resolved_vault, task, cfg.max_chars_per_note, cfg.max_note_age_seconds)
         for path in candidates
     ]
     selected = [
@@ -205,6 +205,7 @@ def _scored_note(
     vault: Path,
     task: str,
     max_chars_per_note: int,
+    max_note_age_seconds: int,
 ) -> dict[str, Any]:
     rel = path.relative_to(vault).as_posix()
     text = path.read_text(encoding="utf-8", errors="replace")
@@ -213,7 +214,7 @@ def _scored_note(
     matches = [term for term in terms if term in haystack]
     mtime = path.stat().st_mtime
     age_seconds = max(0, int(datetime.now(UTC).timestamp() - mtime))
-    stale = age_seconds > 0 and age_seconds > int(max(1, os.getenv("OBSIDIAN_MAX_NOTE_AGE_SECONDS", str(DEFAULT_MAX_NOTE_AGE_SECONDS))))
+    stale = age_seconds > 0 and age_seconds > max(1, max_note_age_seconds)
     repository_conflict = _note_conflicts_with_repository(text)
     return {
         "title": _note_title(path, text),
