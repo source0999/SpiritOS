@@ -785,11 +785,11 @@ class TemporaryLinkedWorktree(unittest.TestCase):
                 "schema_version": "spiritos-production-http-run-attestation/v1",
                 "transcript_sha256": "sha256:" + "a" * 64,
                 "binding_sha256": "sha256:" + "b" * 64,
-                "exchange_count": 27,
+                "exchange_count": 28,
                 "client_verified": True,
             },
             "http_exchanges": [
-                {"ordinal": ordinal} for ordinal in range(1, 28)
+                {"ordinal": ordinal} for ordinal in range(1, 29)
             ],
             "runs": [
                 {"task_id": "task-1", "orchestrator_run_id": "run-1"},

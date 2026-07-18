@@ -819,7 +819,7 @@ class FoundationR1ProvingTests(unittest.TestCase):
                     schema_version="spiritos-production-http-run-attestation/v1",
                     transcript_sha256="sha256:" + "1" * 64,
                     binding_sha256="sha256:" + "2" * 64,
-                    exchange_count=27,
+                    exchange_count=28,
                     _attestation_mac="3" * 64,
                 ),
             ):

@@ -1875,19 +1875,19 @@ def _validate_inner_receipt(
     if (
         attestation.get("schema_version")
         != "spiritos-production-http-run-attestation/v1"
-        or attestation.get("exchange_count") != 27
+        or attestation.get("exchange_count") != 28
         or attestation.get("client_verified") is not True
     ):
         _fail("lifecycle_inner_run_attestation_invalid")
     exchanges = receipt.get("http_exchanges")
     if (
         not isinstance(exchanges, list)
-        or len(exchanges) != 27
+        or len(exchanges) != 28
         or [
             item.get("ordinal") if isinstance(item, Mapping) else None
             for item in exchanges
         ]
-        != list(range(1, 28))
+        != list(range(1, 29))
     ):
         _fail("lifecycle_inner_http_transcript_invalid")
     return {
@@ -1897,7 +1897,7 @@ def _validate_inner_receipt(
         "claim_ceiling": _text(receipt.get("claim_ceiling"), "lifecycle_inner_claim_ceiling_missing"),
         "terminal_proof_eligible": True,
         "run_count": 2,
-        "http_exchange_count": 27,
+        "http_exchange_count": 28,
         "run_attestation_sha256": _sha256_json(attestation),
         "run_identity_sha256": _sha256_json(
             [
