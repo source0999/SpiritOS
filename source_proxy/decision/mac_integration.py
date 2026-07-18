@@ -22,6 +22,14 @@ def _remote_repo() -> str:
     return os.environ.get("SPIRIT_MACMINI_REPO_PATH", DEFAULT_MAC_REPO).strip() or DEFAULT_MAC_REPO
 
 
+def _tailscale_host() -> str:
+    return os.environ.get("SPIRIT_MACMINI_TAILSCALE_HOST", "").strip()
+
+
+def _known_host_alias() -> str:
+    return os.environ.get("SPIRIT_MACMINI_HOSTKEY_ALIAS", "10.0.0.147").strip()
+
+
 def _run_mac_worker_job(job: dict[str, Any], timeout_seconds: int = 45) -> dict[str, Any]:
     if timeout_seconds <= 0:
         raise ValueError("mac_worker_timeout_invalid")
@@ -32,9 +40,15 @@ def _run_mac_worker_job(job: dict[str, Any], timeout_seconds: int = 45) -> dict[
         "BatchMode=yes",
         "-o",
         "ConnectTimeout=8",
+        "-o",
+        "HostKeyAlias=" + _known_host_alias(),
+    ]
+    if _tailscale_host():
+        command.extend(["-o", "HostName=" + _tailscale_host()])
+    command.extend([
         _ssh_alias(),
         f"cd {shlex.quote(remote_repo)} && python3 scripts/mac-worker/spirit_mac_worker.py",
-    ]
+    ])
     started = time.monotonic()
     try:
         completed = subprocess.run(

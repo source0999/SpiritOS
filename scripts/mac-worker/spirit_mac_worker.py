@@ -442,8 +442,19 @@ def run_safe_check(job):
     )
     if completed.returncode != 0:
         raise RuntimeError(completed.stderr or completed.stdout or f"{command} failed")
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(repo_root(input_data)),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=8,
+        check=False,
+    )
+    if head.returncode != 0:
+        raise RuntimeError(head.stderr or "source_commit_unavailable")
     return {
-        "result": {"summary": f"{command} completed", "command": command},
+        "result": {"summary": f"{command} completed", "command": command, "head": head.stdout.strip()},
         "stdout": completed.stdout,
         "stderr": completed.stderr,
         "candidate_files": [],
