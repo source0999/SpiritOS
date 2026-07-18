@@ -53,3 +53,9 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 | --- | --- | --- |
 | Read-only diagnosis envelope | `task_93b719cfd8d0` | extended lifecycle, claim ceiling, and redaction verdict returned |
 | Receipt | `docs/evidence-manifests/campaign-3/gate-3-7-diagnosis-envelope.json` | recorded; no UI wiring |
+
+## Gate 3.8 Recovery Evidence
+
+| Evidence | Path Or Command | Status |
+| --- | --- | --- |
+| Recovery policy and failure receipts | `docs/evidence-manifests/campaign-3/gate-3-8-recovery.json` | Scout, Obsidian, Mac, model, and conflict cases recorded |

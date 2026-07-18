@@ -2,14 +2,14 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_7_complete`
+Checkpoint ID: `campaign_3_gate_3_8_complete`
 
-Verdict: `GATE_3_7_COMPLETE`
+Verdict: `GATE_3_8_COMPLETE`
 
 State:
 
 - completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`, `gate_3_5_retained_coding_sub_agents`
-- next gate: `gate_3_8_degradation_fallback_and_resumability`
+- next gate: `gate_3_9_genuine_all_lane_proving_task`
 - Campaign 3 GO: false
 - Campaign 4 started: false
 - implementation gates started: true
@@ -122,3 +122,9 @@ observability API. It exposes extended lane lifecycle, output/evidence identity,
 consumption, acknowledgement, conflict claim ceiling, recovery availability, and
 redaction status without starting any coding UI work. Evidence:
 `docs/evidence-manifests/campaign-3/gate-3-7-diagnosis-envelope.json`.
+
+Gate 3.8 completed with persisted Scout-provider and Obsidian-vault failures,
+the prior real Mac timeout, retained-sub-agent timeout/recovery, and conflict
+claim-ceiling evidence. The recovery policy makes required-lane failure block
+full success and keeps a replacement below the full-success claim ceiling.
+Evidence: `docs/evidence-manifests/campaign-3/gate-3-8-recovery.json`.
