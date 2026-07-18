@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from source_proxy.api.long_running_tasks import router as long_running_tasks_router
+import source_proxy.api.long_running_tasks as long_running_api_module
 from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.approval.campaign_authority import (
     finalize_coding_execution_approval,
@@ -2345,6 +2346,59 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(
             response.json()["detail"]["reason_code"],
             "coder_and_reviewer_must_complete_before_verification",
+        )
+
+    def test_router_verify_exposes_only_bounded_production_proof_reason_codes(self) -> None:
+        class FailingOrchestrator:
+            @staticmethod
+            def complete_post_apply(*_args, **_kwargs):
+                raise LongRunningTaskError(
+                    "Canonical production coding proof is not terminally eligible.",
+                    "coding_production_proof_not_terminal",
+                    diagnostics={
+                        "production_proof_failures": [
+                            "runtime_lane_boundary_invalid",
+                            "anti_cheat_model_authorship_proof_invalid",
+                            "runtime_lane_boundary_invalid",
+                        ],
+                        "response_body": "must not cross the API boundary",
+                    },
+                )
+
+        app = FastAPI()
+        app.include_router(long_running_tasks_router)
+        client = TestClient(app)
+        with mock.patch.object(
+            long_running_api_module,
+            "get_coding_orchestrator",
+            return_value=FailingOrchestrator(),
+        ):
+            response = client.post(
+                "/v1/tasks/long-running/task-proof/verify",
+                json={},
+            )
+
+        self.assertEqual(response.status_code, 422)
+        detail = response.json()["detail"]
+        self.assertEqual(
+            detail["production_proof_failures"],
+            [
+                "anti_cheat_model_authorship_proof_invalid",
+                "runtime_lane_boundary_invalid",
+            ],
+        )
+        self.assertNotIn("response_body", detail)
+
+        unsafe = LongRunningTaskError(
+            "unsafe diagnostics",
+            "coding_production_proof_not_terminal",
+            diagnostics={"production_proof_failures": ["reason code with spaces"]},
+        )
+        self.assertEqual(
+            long_running_api_module._bounded_production_proof_failure_diagnostics(
+                unsafe
+            ),
+            {},
         )
 
     def test_router_code_verify_rejects_unapplied_task(self) -> None:

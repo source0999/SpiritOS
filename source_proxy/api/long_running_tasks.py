@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import sqlite3
 import time
 from typing import Any
@@ -33,6 +34,29 @@ from source_proxy.tasks.long_running import (
 )
 
 router = APIRouter(prefix="/v1/tasks")
+_PRODUCTION_PROOF_REASON_RE = re.compile(r"^[A-Za-z0-9._:-]{1,200}$")
+
+
+def _bounded_production_proof_failure_diagnostics(
+    error: LongRunningTaskError | CodingOrchestratorError,
+) -> dict[str, Any]:
+    if (
+        not isinstance(error, LongRunningTaskError)
+        or error.reason_code != "coding_production_proof_not_terminal"
+    ):
+        return {}
+    raw = error.diagnostics.get("production_proof_failures")
+    if not isinstance(raw, list) or not raw or len(raw) > 32:
+        return {}
+    failures: list[str] = []
+    for value in raw:
+        if (
+            not isinstance(value, str)
+            or _PRODUCTION_PROOF_REASON_RE.fullmatch(value) is None
+        ):
+            return {}
+        failures.append(value)
+    return {"production_proof_failures": sorted(set(failures))}
 
 
 class CartographerSelectionRequest(BaseModel):
@@ -636,9 +660,11 @@ async def long_running_task_verification(
             verification_note=request.verification_note,
         )
     except (LongRunningTaskError, CodingOrchestratorError) as error:
+        detail = {"error": str(error), "reason_code": error.reason_code}
+        detail.update(_bounded_production_proof_failure_diagnostics(error))
         raise HTTPException(
             status_code=422,
-            detail={"error": str(error), "reason_code": error.reason_code},
+            detail=detail,
         ) from error
 
 

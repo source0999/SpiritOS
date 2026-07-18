@@ -319,6 +319,24 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   identify and repair the exact proof predicate; the terminal gate remains pending.
   Regression observations: proving `17/17`, lifecycle `25/25`, evidence `13/13`,
   secret scan valid, static authority valid, and `git diff --check` clean.
+- At source `4038826839f1ddb0d9863530c9494689b743154e`, the real run again
+  passed authority preflight, production build, service startup, Cartographer
+  selection, canonical fallback model execution, diff preview, operator approval,
+  approved apply, and independent participants before final proof derivation rejected
+  `coding_production_proof_not_terminal`. Teardown was clean and published no
+  receipt. The new stderr path correctly inspected the HTTP error, but the `/verify`
+  route had already discarded `LongRunningTaskError.diagnostics`, so no bounded
+  reason list reached the client.
+- The verification API now exposes only the deduplicated, sorted
+  `production_proof_failures` list when the exact failure is
+  `coding_production_proof_not_terminal`. Every value must match the bounded reason-
+  code grammar, the list must be nonempty and at most 32 entries, and any malformed
+  value suppresses the entire field. Other internal diagnostics—including a tested
+  `response_body` sentinel—do not cross the API boundary. All other error types keep
+  their existing response shape. A further clean lifecycle is still required to
+  identify the failed proof predicate and no terminal claim is made. Regression
+  observations: long-running/API suite `73/73`, coding proof `9/9`, proving `17/17`,
+  secret scan valid, static authority valid, and `git diff --check` clean.
 
 ## Broad-suite diagnostic attribution
 
