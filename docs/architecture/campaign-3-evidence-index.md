@@ -39,3 +39,10 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 | Initial real local-provider run | `task_69d9705ebc74` | Gemma, Qwen, and verifier consumed; Hermes timeout recorded |
 | Hermes recovery run | `task_5720249daa51` | local fallback output consumed |
 | Invocation, identities, hashes, decommission | `docs/evidence-manifests/campaign-3/gate-3-5-retained-sub-agents.json` | recorded |
+
+## Gate 3.6 Conflict Evidence
+
+| Evidence | Path Or Command | Status |
+| --- | --- | --- |
+| Stale-context precedence and consumption | `task_93b719cfd8d0` | current repository truth selected; product PASS ceiling withheld |
+| Conflict receipt | `docs/evidence-manifests/campaign-3/gate-3-6-conflict-resolution.json` | recorded |
