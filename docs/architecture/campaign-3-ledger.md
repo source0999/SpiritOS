@@ -77,3 +77,7 @@ The Gate 3.4 dispatch boundary is implemented and tested: it rejects unbound
 commits and unsafe commands, records a result hash, denies write authority, and
 does not count a timeout or source mismatch as platform verification. Live proof
 remains pending the external route restoration.
+
+Repeated recovery verification: the current host also reports TCP port 22 failed
+and `DestinationHostUnreachable` for `10.0.0.147`. This confirms that neither
+the Dell hop nor the configured local path can reach the registered Mac worker.
