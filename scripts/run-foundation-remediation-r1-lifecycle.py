@@ -1278,7 +1278,8 @@ def _run_logged(
                 stdin=subprocess.DEVNULL,
                 stdout=stdout,
                 stderr=stderr,
-                start_new_session=True,
+                # systemd-run owns this short-lived scope. A second session
+                # boundary causes Next's webpack worker to segfault on Dell.
             )
             try:
                 cgroup_path = _wait_scope_control_group(
