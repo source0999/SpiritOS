@@ -84,7 +84,15 @@
     "foundation-r1:validate-authority": "python3 ./scripts/validate-foundation-remediation-r1-authority.py",
     "foundation-r1:validate-continuity": "python3 ./scripts/validate-foundation-remediation-r1-continuity.py",
     "foundation-r1:validate-evidence": "python3 ./scripts/validate-foundation-remediation-r1-evidence.py",
-    "foundation-r1:validate-test-profiles": "python3 ./scripts/validate-foundation-remediation-r1-test-profiles.py"
+    "foundation-r1:validate-test-profiles": "python3 ./scripts/validate-foundation-remediation-r1-test-profiles.py",
+    "campaign-3:validate-continuity": "python3 ./scripts/validate-campaign-3-continuity.py",
+    "campaign-3:validate-authority": "python3 ./scripts/validate-campaign-3-authority.py",
+    "campaign-3:validate-lane-registry": "python3 ./scripts/validate-campaign-3-lane-registry.py",
+    "campaign-3:validate-participation": "python3 ./scripts/validate-campaign-3-participation.py",
+    "campaign-3:validate-evidence": "python3 ./scripts/validate-campaign-3-evidence.py",
+    "campaign-3:validate-test-profiles": "python3 ./scripts/validate-campaign-3-test-profiles.py",
+    "campaign-3:check-complete": "python3 ./scripts/campaign-3-completion.py",
+    "campaign-3:test-completion": "python3 ./scripts/test-campaign-3-completion.py"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.58",
