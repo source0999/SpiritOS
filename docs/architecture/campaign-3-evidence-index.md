@@ -46,3 +46,10 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 | --- | --- | --- |
 | Stale-context precedence and consumption | `task_93b719cfd8d0` | current repository truth selected; product PASS ceiling withheld |
 | Conflict receipt | `docs/evidence-manifests/campaign-3/gate-3-6-conflict-resolution.json` | recorded |
+
+## Gate 3.7 Diagnosis Evidence
+
+| Evidence | Path Or Command | Status |
+| --- | --- | --- |
+| Read-only diagnosis envelope | `task_93b719cfd8d0` | extended lifecycle, claim ceiling, and redaction verdict returned |
+| Receipt | `docs/evidence-manifests/campaign-3/gate-3-7-diagnosis-envelope.json` | recorded; no UI wiring |

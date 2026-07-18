@@ -25,6 +25,8 @@ def build_coding_shell_observability(task_id: str) -> dict[str, Any]:
     lane_states = lane_states if isinstance(lane_states, Mapping) else {}
     lane_reasons = orchestrator.get("lane_reasons")
     lane_reasons = lane_reasons if isinstance(lane_reasons, Mapping) else {}
+    integrations = snapshot.get("plan_2_subsystem_integrations")
+    integrations = integrations if isinstance(integrations, Mapping) else {}
     expected_consumer = coding_executor_consumer("coder")
     actual_consumer = str(authority.get("consumer") or "")
     identity = authority.get("target_plugin_identity")
@@ -58,6 +60,14 @@ def build_coding_shell_observability(task_id: str) -> dict[str, Any]:
             "generation": authority.get("generation"),
         },
         "evidence_identity": identity,
+        "extended_lane_lifecycle": [_extended_lifecycle(lane_id, record) for lane_id, record in sorted(integrations.items()) if isinstance(record, Mapping)],
+        "diagnosis": {
+            "schema_version": "campaign-3/diagnosis-envelope/v1",
+            "read_only": True,
+            "conflict_claim_ceiling": _conflict_claim_ceiling(snapshot),
+            "redaction_verdict": "not_rendered_read_only_metadata_only",
+            "recovery_available": any(str(record.get("status") or "").startswith("BLOCKED") for record in integrations.values() if isinstance(record, Mapping)),
+        },
         "verdict": _observability_verdict(
             orchestrator_recorded=orchestrator_recorded,
             authority_recorded=bool(authority),
@@ -83,3 +93,27 @@ def _observability_verdict(
     if identity is None:
         return "PENDING: target_plugin_identity_not_recorded"
     return "RECORDED: canonical_coding_run_facts_available"
+
+
+def _extended_lifecycle(lane_id: Any, record: Mapping[str, Any]) -> dict[str, Any]:
+    status = str(record.get("status") or "not_recorded")
+    failed = status in {"BLOCKED_ENV", "BLOCKED", "NEEDS_FIX", "FAILED", "DEGRADED"}
+    return {
+        "lane_id": str(lane_id), "applicable": True, "requested": True,
+        "selected": True, "invoked": bool(record.get("invocation_event_id")),
+        "active": False, "completed": not failed, "failed": failed,
+        "timed_out": "timeout" in str(record.get("failure_reason") or "").lower(),
+        "retried": False, "fallback": False, "status": status,
+        "output_identity": str(record.get("output_hash") or "") or None,
+        "consumed": bool(record.get("consumer_event_id")),
+        "acknowledged": bool(record.get("consumer_subsystem")),
+        "evidence_identity": str(record.get("output_hash") or "") or None,
+        "failure_reason": str(record.get("failure_reason") or "") or None,
+    }
+
+
+def _conflict_claim_ceiling(snapshot: Mapping[str, Any]) -> str:
+    last = snapshot.get("plan_2_last_subsystem_output")
+    output = last.get("output") if isinstance(last, Mapping) and isinstance(last.get("output"), Mapping) else {}
+    receipt = output.get("conflict_receipt") if isinstance(output.get("conflict_receipt"), Mapping) else {}
+    return str(receipt.get("claim_ceiling") or "not_recorded")

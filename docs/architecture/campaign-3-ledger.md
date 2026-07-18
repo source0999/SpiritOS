@@ -2,14 +2,14 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_6_complete`
+Checkpoint ID: `campaign_3_gate_3_7_complete`
 
-Verdict: `GATE_3_6_COMPLETE`
+Verdict: `GATE_3_7_COMPLETE`
 
 State:
 
 - completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`, `gate_3_5_retained_coding_sub_agents`
-- next gate: `gate_3_7_extended_observability_and_diagnosis_backend`
+- next gate: `gate_3_8_degradation_fallback_and_resumability`
 - Campaign 3 GO: false
 - Campaign 4 started: false
 - implementation gates started: true
@@ -116,3 +116,9 @@ repository/Mac source truth outranked a stale operational claim, the verifier
 consumed the result, and the resolver imposed `resolved_conflict_no_product_pass`.
 Equal-precedence disagreement fails closed. Evidence:
 `docs/evidence-manifests/campaign-3/gate-3-6-conflict-resolution.json`.
+
+Gate 3.7 adds a backend-only diagnosis envelope to the existing read-only task
+observability API. It exposes extended lane lifecycle, output/evidence identity,
+consumption, acknowledgement, conflict claim ceiling, recovery availability, and
+redaction status without starting any coding UI work. Evidence:
+`docs/evidence-manifests/campaign-3/gate-3-7-diagnosis-envelope.json`.

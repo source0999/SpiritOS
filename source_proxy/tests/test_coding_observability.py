@@ -27,6 +27,9 @@ def _persisted_task() -> dict[str, object]:
                     "approval_id": "apr_c2", "generation": 4, "consumer": "coding-executor:coder",
                     "target_plugin_identity": {"plugin_id": "lumacart", "selected_prompt_id": "coder-001"},
                 },
+                "plan_2_subsystem_integrations": {
+                    "campaign_3_mac_worker": {"status": "INTEGRATED_LIVE", "invocation_event_id": "inv_1", "consumer_event_id": "consumer_1", "consumer_subsystem": "verifier", "output_hash": "abc"}
+                },
             },
         }
     }
@@ -41,6 +44,8 @@ def test_observability_surfaces_persisted_lane_authority_and_evidence(monkeypatc
     assert payload["authority"]["lane_binding_valid"] is True
     assert payload["evidence_identity"] == {"plugin_id": "lumacart", "selected_prompt_id": "coder-001"}
     assert payload["lane_participation"][2] == {"lane_id": "coder", "state": "completed", "reason": ""}
+    assert payload["extended_lane_lifecycle"][0]["consumed"] is True
+    assert payload["diagnosis"]["redaction_verdict"] == "not_rendered_read_only_metadata_only"
 
 
 def test_observability_reports_missing_or_unbound_facts_without_success_claim(monkeypatch) -> None:
