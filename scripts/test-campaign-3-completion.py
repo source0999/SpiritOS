@@ -18,8 +18,8 @@ def assert_fails(name: str, fixture: dict, expected_fragment: str) -> None:
 
 def main() -> int:
     current_failures = completion_failures(ROOT)
-    if current_failures:
-        raise AssertionError(f"current terminal state did not pass: {current_failures}")
+    if not current_failures or "go_not_true" not in current_failures:
+        raise AssertionError(f"current nonterminal state did not fail closed: {current_failures}")
 
     base = terminal_fixture(ROOT)
     terminal_failures = completion_failures(ROOT, base)

@@ -81,4 +81,4 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 | --- | --- | --- |
 | Terminal acceptance manifest | `docs/architecture/evidence/campaign-3-terminal-acceptance.json` | passed |
 | Hash sidecar | `docs/architecture/evidence/campaign-3-terminal-acceptance.sha256` | recorded |
-| Recovery anchor | `campaign-3-extended-coding-lanes-integrated-20260718T214644Z` and `/home/source/SpiritOS-campaign-3-terminal-anchor-20260718T214644Z/` | provisional recovery artifact; strict shared Git fsck failed |
+| Recovery anchor | `/home/source/SpiritOS-campaign-3-terminal-anchor-20260718T214644Z/` (untagged provisional bundle) | provisional recovery artifact; strict shared Git fsck failed |
