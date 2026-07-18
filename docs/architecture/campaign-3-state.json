@@ -79,11 +79,12 @@
     "gate_3_6_cross_lane_conflict_resolution",
     "gate_3_7_extended_observability_and_diagnosis_backend",
     "gate_3_8_degradation_fallback_and_resumability",
-    "gate_3_9_genuine_all_lane_proving_task"
+    "gate_3_9_genuine_all_lane_proving_task",
+    "gate_3_10_coding_ui_campaign_readiness"
   ],
   "partial_gate_ids": [],
-  "next_gate_id": "gate_3_10_coding_ui_campaign_readiness",
-  "current_phase": "gate_3_9_complete",
+  "next_gate_id": "gate_3_11_final_acceptance_and_closeout",
+  "current_phase": "gate_3_10_complete",
   "controlled_failure_requirements": {
     "minimum_extended_lane_failures": 2,
     "external_host_failure_required": true,

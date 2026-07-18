@@ -2,13 +2,13 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_9_complete`
+Checkpoint ID: `campaign_3_gate_3_10_complete`
 
-Verdict: `GATE_3_9_COMPLETE`
+Verdict: `GATE_3_10_COMPLETE`
 
 State:
 
-- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`, `gate_3_5_retained_coding_sub_agents`, `gate_3_6_cross_lane_conflict_resolution`, `gate_3_7_extended_observability_and_diagnosis_backend`, `gate_3_8_degradation_fallback_and_resumability`, `gate_3_10_coding_ui_campaign_readiness`
+- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`, `gate_3_5_retained_coding_sub_agents`, `gate_3_6_cross_lane_conflict_resolution`, `gate_3_7_extended_observability_and_diagnosis_backend`, `gate_3_8_degradation_fallback_and_resumability`, `gate_3_11_final_acceptance_and_closeout`
 - next gate: `gate_3_9_genuine_all_lane_proving_task`
 - Campaign 3 GO: false
 - Campaign 4 started: false
@@ -134,3 +134,8 @@ Evidence: `docs/evidence-manifests/campaign-3/gate-3-8-recovery.json`.
 - Isolated all-lane lifecycle receipt: `docs/architecture/evidence/campaign-3-gate-3-9-all-lane-r1-receipt-813912ce.json`.
 - Receipt SHA-256: `6df55c4d66223a7ad6e5670594c853e9956d184e2bdec5614f48a01a12beb406`.
 - Source-bound commit: `813912cef6ace07fcd170f519d518bd755c9d9f8`; all required extended lanes were live, two controlled recoveries were recorded (including Mac external-host failure), and undo/reset, clean rerun, operator-session revocation, and isolated-service teardown passed.
+
+## Gate 3.10 Backend Readiness
+
+- Read-only Campaign 3 readiness envelope expands authoritative task/run, observability, cancel/recovery, undo/reset, browser-fixture, and receipt-reconciliation contracts without granting UI mutation authority.
+- Evidence: `docs/architecture/evidence/campaign-3-gate-3-10-coding-readiness.json`; focused backend suite passed 12 tests.

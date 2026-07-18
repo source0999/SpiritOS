@@ -16,3 +16,7 @@ def test_readiness_is_backend_only_and_reconciles_existing_contracts(monkeypatch
     assert payload["reconciliation"]["ui_state_authoritative"] is False
     assert payload["reconciliation"]["campaign_4_ui_wiring_started"] is False
     assert payload["contracts"]["cancel"].endswith("/cancel")
+    assert payload["contracts"]["retry_recovery"].endswith("/advance")
+    assert payload["contracts"]["evidence_reconciliation"].endswith("trial-receipt-reconcile")
+    assert payload["reconciliation"]["mutation_projection_forbidden"] is True
+    assert payload["reconciliation"]["retry_requires_existing_authority_boundary"] is True

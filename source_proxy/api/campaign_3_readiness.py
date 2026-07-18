@@ -24,11 +24,15 @@ async def campaign_readiness(task_id: str) -> dict[str, object]:
         "diagnosis": diagnosis,
         "contracts": {
             "task": "/v1/tasks/long-running/{task_id}",
+            "runs": "/v1/coding/runs",
             "lane_state": "/v1/coding/tasks/{task_id}/observability",
             "diagnosis": "/v1/coding/tasks/{task_id}/campaign-readiness",
             "cancel": "/v1/tasks/long-running/{task_id}/cancel",
+            "retry_recovery": "/v1/tasks/long-running/{task_id}/advance",
             "undo": "/v1/tasks/long-running/{task_id}/undo",
             "reset": "/v1/coding/dummy-product-site/reset",
+            "browser_fixture": "/v1/coding/dummy-product-site-preview",
+            "evidence_reconciliation": "/v1/coding/trial-receipt-reconcile",
             "self_test": "/v1/coding/self-tests/run",
         },
         "reconciliation": {
@@ -36,5 +40,7 @@ async def campaign_readiness(task_id: str) -> dict[str, object]:
             "evidence_boundary": "lane evidence is sourced from persisted task state only",
             "ui_state_authoritative": False,
             "campaign_4_ui_wiring_started": False,
+            "mutation_projection_forbidden": True,
+            "retry_requires_existing_authority_boundary": True,
         },
     }

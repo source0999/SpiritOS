@@ -1,0 +1,24 @@
+{
+  "schema": "spiritos-campaign-3-gate-3-10-readiness/v1",
+  "status": "passed",
+  "backend_only": true,
+  "ui_wiring_started": false,
+  "contracts": [
+    "/v1/coding/runs",
+    "/v1/tasks/long-running/{task_id}",
+    "/v1/coding/tasks/{task_id}/observability",
+    "/v1/coding/tasks/{task_id}/campaign-readiness",
+    "/v1/tasks/long-running/{task_id}/cancel",
+    "/v1/tasks/long-running/{task_id}/advance",
+    "/v1/tasks/long-running/{task_id}/undo",
+    "/v1/coding/dummy-product-site/reset",
+    "/v1/coding/dummy-product-site-preview",
+    "/v1/coding/trial-receipt-reconcile"
+  ],
+  "tests": [
+    "source_proxy/tests/test_campaign_3_readiness.py",
+    "source_proxy/tests/test_coding_observability.py",
+    "source_proxy/tests/test_dummy_product_site_reset.py"
+  ],
+  "test_result": "12 passed"
+}
