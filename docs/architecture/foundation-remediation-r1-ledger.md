@@ -300,6 +300,25 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   invariant. Regression observations after repair: participant suite `18/18`,
   orchestrator/proof/approval matrix `45/45`, lifecycle `25/25`, proving `16/16`,
   static authority valid, and `git diff --check` clean.
+- At source `1555c9ee1941b4543384063817fb4732bece5b67`, the lifecycle passed
+  runtime/dependency identity, authority preflight, the production build, all service
+  startups, Cartographer selection, task creation, model execution, and the
+  independent-participant boundary before finalization rejected the derived proof
+  with `coding_production_proof_not_terminal`. The bytecode repair was effective:
+  teardown restored a worktree clean even when ignored paths were included, removed
+  the generated fixture, revoked all temporary authority and services, and surfaced
+  `lifecycle_inner_client_failed` rather than a teardown failure. No inner or outer
+  receipt was published.
+- The backend response includes an allowlisted list of production-proof reason codes,
+  but the black-box client previously retained only the top-level reason and discarded
+  those safe diagnostics before fail-closed teardown removed the transient state.
+  The client now emits only validated reason-code identifiers from that one field to
+  stderr. It still records no response body, task text, diff, cookie, credential, or
+  other diagnostic value, and malformed, mixed-type, empty, oversized, or non-identity
+  values are suppressed. The next clean lifecycle must use that bounded signal to
+  identify and repair the exact proof predicate; the terminal gate remains pending.
+  Regression observations: proving `17/17`, lifecycle `25/25`, evidence `13/13`,
+  secret scan valid, static authority valid, and `git diff --check` clean.
 
 ## Broad-suite diagnostic attribution
 

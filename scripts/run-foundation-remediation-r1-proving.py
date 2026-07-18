@@ -502,6 +502,14 @@ class ProductionHttpClient:
             _fail("http_response_object_required", step=f"{method} {path}")
         if not 200 <= status < 300:
             reason = _safe_reason_code(payload) or f"http_status_{status}"
+            diagnostic_codes = _safe_diagnostic_reason_codes(payload)
+            if diagnostic_codes:
+                print(
+                    "FOUNDATION_R1_PROVING_DIAGNOSTIC:"
+                    + ",".join(diagnostic_codes),
+                    file=sys.stderr,
+                    flush=True,
+                )
             _fail(reason, step=f"{method} {path}")
         return payload
 
@@ -625,6 +633,24 @@ def _safe_reason_code(payload: Mapping[str, Any]) -> str | None:
             if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,160}", value):
                 return value
     return None
+
+
+def _safe_diagnostic_reason_codes(payload: Mapping[str, Any]) -> list[str]:
+    for candidate in (payload, payload.get("detail")):
+        if not isinstance(candidate, Mapping):
+            continue
+        raw = candidate.get("production_proof_failures")
+        if raw is None:
+            continue
+        if not isinstance(raw, list) or not raw or len(raw) > 32:
+            return []
+        codes: list[str] = []
+        for value in raw:
+            if not isinstance(value, str) or IDENTITY_RE.fullmatch(value) is None:
+                return []
+            codes.append(value)
+        return sorted(set(codes))
+    return []
 
 
 def _validate_plugin_identity(identity: Any, source_head: str | None = None) -> dict[str, Any]:

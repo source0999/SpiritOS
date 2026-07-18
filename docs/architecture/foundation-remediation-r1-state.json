@@ -10,7 +10,7 @@
   "base_commit": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
   "branch": "codex/spiritos-foundation-remediation-r1-20260717",
   "worktree": "/home/source/SpiritOS-foundation-remediation-r1-20260717",
-  "recorded_head": "46951d7220b8a4c0eddde7fcb1ea33c036df7e46",
+  "recorded_head": "1555c9ee1941b4543384063817fb4732bece5b67",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
   "current_phase": "Phase 4 - clean isolated proving task",
   "current_increment": "r1_11_clean_proving_task",

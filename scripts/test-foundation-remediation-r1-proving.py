@@ -364,6 +364,38 @@ def runtime_boundary_payload() -> dict:
 
 
 class FoundationR1ProvingTests(unittest.TestCase):
+    def test_failure_diagnostics_emit_only_allowlisted_reason_codes(self) -> None:
+        self.assertEqual(
+            PROVER._safe_diagnostic_reason_codes(
+                {
+                    "detail": {
+                        "production_proof_failures": [
+                            "runtime_lane_boundary_invalid",
+                            "anti_cheat_model_authorship_proof_invalid",
+                            "runtime_lane_boundary_invalid",
+                        ]
+                    }
+                }
+            ),
+            [
+                "anti_cheat_model_authorship_proof_invalid",
+                "runtime_lane_boundary_invalid",
+            ],
+        )
+        for unsafe in (
+            ["reason code with spaces"],
+            ["safe_code", {"response_body": "forbidden"}],
+            "runtime_lane_boundary_invalid",
+            [],
+        ):
+            with self.subTest(unsafe=unsafe):
+                self.assertEqual(
+                    PROVER._safe_diagnostic_reason_codes(
+                        {"detail": {"production_proof_failures": unsafe}}
+                    ),
+                    [],
+                )
+
     def test_production_script_has_no_application_test_or_process_imports(self) -> None:
         source = SCRIPT.read_text(encoding="utf-8")
         for forbidden in (
