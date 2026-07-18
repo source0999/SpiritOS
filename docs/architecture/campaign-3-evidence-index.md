@@ -31,3 +31,11 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 | Source-bound Mac diff validation | `task_3040562f14be` | consumed, `INTEGRATED_LIVE` |
 | Controlled cancellation | `task_5a4baf10aca3` | persisted `BLOCKED_ENV` on `mac_worker_timeout` |
 | Receipt, hashes, and cleanup | `docs/evidence-manifests/campaign-3/gate-3-4-mac-verification.json` | recorded |
+
+## Gate 3.5 Retained Sub-Agent Evidence
+
+| Evidence | Path Or Command | Status |
+| --- | --- | --- |
+| Initial real local-provider run | `task_69d9705ebc74` | Gemma, Qwen, and verifier consumed; Hermes timeout recorded |
+| Hermes recovery run | `task_5720249daa51` | local fallback output consumed |
+| Invocation, identities, hashes, decommission | `docs/evidence-manifests/campaign-3/gate-3-5-retained-sub-agents.json` | recorded |

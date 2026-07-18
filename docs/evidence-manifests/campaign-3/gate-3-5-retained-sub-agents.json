@@ -1,0 +1,29 @@
+{
+  "schema_version": "campaign-3/retained-sub-agents-evidence/v1",
+  "source_commit": "c467954fa72324250a9a6fddb682aecceb0b01de",
+  "scope": "bounded JSON-only local-model invocation; no full Coder 10 workflow and no repository edit",
+  "initial_invocation": {
+    "task_id": "task_69d9705ebc74",
+    "packet_hash": "4498eef1c5f6da601981857f97098144954f41faea0c8eca43039ab7436aecf6",
+    "consumer": "cartographer_specialist_packet_consumer",
+    "gemma": {"model": "gemma3n:e4b", "output_hash": "21d3c52a5f8a38caf19861ab13a1b24cc407ea67f4a168e9da52d75babb6e163", "consumer_event_id": "consumer_3849873ce9124811", "status": "INTEGRATED_LIVE"},
+    "qwen": {"model": "qwen2.5-coder:7b", "output_hash": "97face11367971f111cd954252d52415be119651fd416517d9d6f016989a9410", "consumer_event_id": "consumer_7cc84ce6084d4b2f", "status": "INTEGRATED_LIVE", "write_authority": false},
+    "functional_verifier": {"consumer_event_id": "consumer_69164277a5414c9f", "status": "INTEGRATED_LIVE"},
+    "hermes_failure": {"model": "hermes4:latest", "reason": "local_ollama_model_timeout", "classification": "RESOURCE_PRESSURE", "consumer_event_id": "consumer_d129370f5311416b", "status": "NEEDS_FIX"}
+  },
+  "recovery": {
+    "task_id": "task_5720249daa51",
+    "recovery_of": "task_69d9705ebc74",
+    "model": "hermes3:8b-abliterated",
+    "output_hash": "73fa702b0037beaa98fda86c1bf82e5a5f472ece3d3ae868c594e2c52e035592",
+    "packet_hash": "d11c25f79e2bfc15df786814234710bf1e0b4931e95619b00d73d9d9a8d50656",
+    "consumer_event_id": "consumer_140ef02944e14d8e",
+    "status": "INTEGRATED_LIVE"
+  },
+  "decommission": {
+    "prompt_only_helpers": "nonselectable",
+    "duplicate_or_callerless_aliases": "disabled",
+    "coder_10": "deferred and not executed"
+  },
+  "verdict_effect": "The initial Hermes timeout persisted a blocked outcome; the declared local fallback produced a schema-valid, consumed recovery output. Unconsumed, canned, providerless, duplicate, or malformed output is not accepted."
+}

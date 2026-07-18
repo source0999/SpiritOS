@@ -2,14 +2,14 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_4_complete`
+Checkpoint ID: `campaign_3_gate_3_5_complete`
 
-Verdict: `GATE_3_4_COMPLETE`
+Verdict: `GATE_3_5_COMPLETE`
 
 State:
 
-- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`
-- next gate: `gate_3_5_retained_coding_sub_agents`
+- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`, `gate_3_5_retained_coding_sub_agents`
+- next gate: `gate_3_6_cross_lane_conflict_resolution`
 - Campaign 3 GO: false
 - Campaign 4 started: false
 - implementation gates started: true
@@ -102,3 +102,11 @@ bounded no-write cancellation probe persisted `BLOCKED_ENV` on timeout, then a
 fresh source-bound preflight recovered to `INTEGRATED_LIVE`. See
 `docs/evidence-manifests/campaign-3/gate-3-4-mac-verification.json` for hashes,
 task identities, and cleanup confirmation. The next authorized task is Gate 3.5.
+
+Gate 3.5 completed with real, bounded local-provider output. Gemma, Qwen, and
+the functional verifier produced consumed outputs; Hermes 14B timed out and
+persisted its resource-pressure failure before the declared local Hermes fallback
+produced a distinct consumed recovery output. This was JSON-only no-write work,
+not a full Coder 10 execution. The invocation, output, consumer, failure, and
+recovery receipts are recorded in
+`docs/evidence-manifests/campaign-3/gate-3-5-retained-sub-agents.json`.
