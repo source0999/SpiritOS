@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/backend-state.artifact.json",
+  "artifact_sha256": "683d34efbb72a2b1cfbcd34c3f2f878ac1500f4f0bb68dc5fc4aae73475bd9ae",
+  "claim_ceiling": "single decision-bearing backend state owner only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_long_running_tasks.py && npm exec vitest run src/app/v1/coding/runs/__tests__/route.test.ts src/lib/coding/__tests__/durable-run-store.test.ts src/lib/coding/__tests__/durable-run-invariants.test.ts",
+  "completed_at": "2026-07-18T10:08:53.227142+00:00",
+  "passed": true,
+  "profile_id": "backend-state",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ce854e613d748581938137b20b79163ec85eca5d"
+}

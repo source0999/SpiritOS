@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "TypeScript static correctness only",
+  "command": "npm run typecheck",
+  "completed_at": "2026-07-18T10:17:43.957982+00:00",
+  "passed": true,
+  "profile_id": "typecheck",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ce854e613d748581938137b20b79163ec85eca5d",
+  "started_at": "2026-07-18T10:17:39.434177+00:00",
+  "stderr": "",
+  "stdout": "\n> spirit-os@0.1.0 typecheck\n> tsc --noEmit\n\n"
+}

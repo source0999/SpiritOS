@@ -1,0 +1,133 @@
+{
+  "source_commit": "ce854e613d748581938137b20b79163ec85eca5d",
+  "repository_identity": {
+    "repository_id": "SpiritOS",
+    "worktree_id": "2ad28b45204bff87d65524ae",
+    "worktree_realpath": "/home/source/SpiritOS-foundation-remediation-r1-20260717"
+  },
+  "protected_heads": {
+    "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb",
+    "spiritflix": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+    "architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14",
+    "campaign_1_terminal": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
+    "campaign_2_engineering_terminal": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
+    "campaign_3_design_terminal": "4aec510409e8bb82386190af9fa8f666efcbc63e"
+  },
+  "shell_build_identity": {
+    "build_id": "6292b90c3d1695c1e4956d2e8e04208de39fefb0e318f41551c28932acefc682",
+    "source_commit": "ce854e613d748581938137b20b79163ec85eca5d"
+  },
+  "backend_build_identity": {
+    "build_id": "58c570b0f9010abd28f973e9e7659a3a292ec38c",
+    "source_commit": "ce854e613d748581938137b20b79163ec85eca5d"
+  },
+  "target_plugin_identity": {
+    "plugin_id": "lumacart",
+    "source_head": "ce854e613d748581938137b20b79163ec85eca5d"
+  },
+  "prompt_identity": {
+    "id": "coder-001-init-dummy-product-site",
+    "sha256": "351b9cefeba5f663fdfa3a1d559320dd43ed5fc49deacc2b4785ff9ca838a23f"
+  },
+  "context_identity": {
+    "id": "init-storefront",
+    "sha256": "541558aebddc0c72045bb061227a04afc5123bdfcb4916d8e6eabb08db9a362b"
+  },
+  "task_id": "task_79b01d3ed0d4",
+  "orchestrator_run_id": "coding-run-a4e2fb54e73648fabe43e3cb054975e5",
+  "orchestrator_attempt_id": "coding-attempt-d9ca2b3dbadf4a9f870f6746beb699f9",
+  "target": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+  "participants": {
+    "executor": {
+      "status": "succeeded",
+      "invocation_id": "coding-executor-invocation-9f643c51de834b21984ea48a9a5951a5",
+      "output_id": "coding-executor-output-cc0af13e7e9642819fb952e7bdca4dd4",
+      "output_sha256": "cf7968a2df7ac26d547462d896cb8376573c5f2cbc7ceb3beb969c4f5fe7200b",
+      "consumer_acknowledgement_id": "coding-executor-ack-c9c87ee8299d42c99d5a3a4f2f6257a2",
+      "artifact_sha256": "e5e06f6a3eedead7bd7a988e8e76af0054e169cffda4027b8acb4f22f00cb080"
+    },
+    "reviewer": {
+      "status": "passed",
+      "invocation_id": "coding-reviewer-invocation-a712954cdef9418c945f0f22feb31613",
+      "output_id": "coding-reviewer-output-2bd605271c3e4b688d88e2404ab0541b",
+      "output_sha256": "d661d1803cd8395e8b3087b1dd8c6c4781159a27cb9f9dd71b565f95065c49bf",
+      "consumer_acknowledgement_id": "coding-reviewer-ack-247d74d1a9a94a8fb1d03ecafb844e1f",
+      "artifact_sha256": "e5e06f6a3eedead7bd7a988e8e76af0054e169cffda4027b8acb4f22f00cb080"
+    },
+    "verifier": {
+      "status": "passed",
+      "invocation_id": "coding-verifier-invocation-dc5e0ce472c74315aabf834eb687298c",
+      "output_id": "coding-verifier-output-b97b64cdd718411c968f65f24ce52c71",
+      "output_sha256": "0ac6ac07eab51749dd50d74938fed5c3c5e1d0e0217637e83971eac1a7fe192c",
+      "consumer_acknowledgement_id": "coding-verifier-ack-d3aeafd54e714a3e80a8baa4d4bbc77e",
+      "artifact_sha256": "e5e06f6a3eedead7bd7a988e8e76af0054e169cffda4027b8acb4f22f00cb080"
+    },
+    "anti_cheat": {
+      "status": "passed",
+      "invocation_id": "coding-anti-cheat-invocation-c66913f48b344add85034332d6977229",
+      "output_id": "coding-anti-cheat-output-35363531827743ae8f65fe41c2ff3abc",
+      "output_sha256": "ee698e218330c4680b77c4901c65c10d6aaa80a4ca8181c7fa9430daad489388",
+      "consumer_acknowledgement_id": "coding-anti-cheat-ack-ed7a7144ffc74df49ac14b2b9d8f94dc",
+      "artifact_sha256": "e5e06f6a3eedead7bd7a988e8e76af0054e169cffda4027b8acb4f22f00cb080"
+    },
+    "evidence_recorder": {
+      "status": "passed",
+      "invocation_id": "evidence-recorder-invocation-aa8a4747594c4512b3bdaf57064ea3b4",
+      "output_id": "evidence-recorder-output-c503c50270464767ab02d25c7f268b78",
+      "output_sha256": "c51b2f2fa0d13dfb3f22e897efe6abe1a64ef95877c810f0bb53924d59c81682",
+      "consumer_acknowledgement_id": "evidence-recorder-ack-a085022880ce424289ad3b452d5a0927",
+      "artifact_sha256": "e5e06f6a3eedead7bd7a988e8e76af0054e169cffda4027b8acb4f22f00cb080"
+    }
+  },
+  "approval": {
+    "approval_id": "apr_9Tivlf7yv8NchYaMA7TdIMuG",
+    "generation": 1,
+    "state": "consumed",
+    "artifact_sha256": "e5e06f6a3eedead7bd7a988e8e76af0054e169cffda4027b8acb4f22f00cb080",
+    "orchestrator_run_id": "coding-run-a4e2fb54e73648fabe43e3cb054975e5"
+  },
+  "artifact_sha256": "e5e06f6a3eedead7bd7a988e8e76af0054e169cffda4027b8acb4f22f00cb080",
+  "applied_diff_sha256": "f07884593adaf562892ca04f2d05864daae36727828551ec825d045b0367a1ba",
+  "result_sha256": "a99e50422a0eb832e794d3806993a7db6d28e753cb141dc09b1593a8d15d8bf6",
+  "production_proof": {
+    "proof_sha256": "0e17653b9c8f9e80c896dba4c8746b55396b78c88f7cd82e68472331841cf422",
+    "terminal_proof_eligible": true,
+    "claim_ceiling": "recovered_via_declared_fallback_only",
+    "recovery_id": "coding-recovery-0a6eb54a905f4362b6a21bad6a044c45"
+  },
+  "production_proving_receipt": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/production-proving-receipt.json",
+    "sha256": "c3445a898f5480a68ae9126b69ef675d2d452efd8b6db9d8ab64a387d4428eb9"
+  },
+  "lifecycle_receipt": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/lifecycle-receipt.json",
+    "sha256": "efb52298d5cc65ebcad7f15cc071132a4a2b9237ccc5cb46f0f975dff5808864"
+  },
+  "reviewer_result": {
+    "status": "passed",
+    "invocation_id": "coding-reviewer-invocation-a712954cdef9418c945f0f22feb31613"
+  },
+  "verifier_result": {
+    "status": "passed",
+    "invocation_id": "coding-verifier-invocation-dc5e0ce472c74315aabf834eb687298c"
+  },
+  "anti_cheat_result": {
+    "status": "passed",
+    "invocation_id": "coding-anti-cheat-invocation-c66913f48b344add85034332d6977229"
+  },
+  "authority_validation": {
+    "source_commit": "ce854e613d748581938137b20b79163ec85eca5d",
+    "tag_name": "foundation-remediation-r1-terminal-20260718T102845Z",
+    "validator_path": "scripts/validate-foundation-remediation-r1-authority.py",
+    "validator_sha256": "347201d4f033c7d80b94a67177eb4c686ecb2989cbc2c83c85d3874a2e157c65",
+    "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/authority-callgraph.artifact.json",
+    "artifact_sha256": "d9b3abc7e5b1316d7290ac06cc35680aa453a97fbec03e7c029730084267c871",
+    "result": "pass",
+    "passed": true
+  },
+  "redaction_verdict": {
+    "verdict": "passed",
+    "scanner": "foundation-remediation-r1-secret-scan-profile"
+  },
+  "claim_ceiling": "recovered_via_declared_fallback_only"
+}

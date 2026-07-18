@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "Git object/diff/ref integrity only",
+  "command": "git diff --check && git fsck --full --strict --no-progress --no-dangling && /home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py",
+  "completed_at": "2026-07-18T10:35:07.724401+00:00",
+  "passed": true,
+  "profile_id": "git-integrity",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ce854e613d748581938137b20b79163ec85eca5d",
+  "started_at": "2026-07-18T10:32:45.420791+00:00",
+  "stderr": "",
+  "stdout": "FOUNDATION_REMEDIATION_R1_CONTINUITY_VALID\n"
+}

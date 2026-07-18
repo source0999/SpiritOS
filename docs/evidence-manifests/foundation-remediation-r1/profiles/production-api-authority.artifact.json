@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "active prompt proposal, execute-approved, authenticated reset, and exact production identity wiring only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_decision_target_plugin_orchestrator.py source_proxy/tests/test_dummy_product_site_reset.py && npm exec vitest run src/app/v1/actions/execute-approved/__tests__/route.test.ts src/app/v1/coding/dummy-product-site-preview/reset/__tests__/route.test.ts",
+  "completed_at": "2026-07-18T10:09:12.220004+00:00",
+  "passed": true,
+  "profile_id": "production-api-authority",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ce854e613d748581938137b20b79163ec85eca5d",
+  "started_at": "2026-07-18T10:08:58.550008+00:00",
+  "stderr": "",
+  "stdout": "........                                                                 [100%]\n=============================== warnings summary ===============================\nsource_proxy/main.py:55\n  /home/source/SpiritOS-foundation-remediation-r1-20260717/source_proxy/main.py:55: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    @app.on_event(\"startup\")\n\n../SpiritOS/.venv/lib/python3.12/site-packages/fastapi/applications.py:4598\n  /home/source/SpiritOS/.venv/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    return self.router.on_event(event_type)  # ty: ignore[deprecated]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n8 passed, 2 warnings in 11.06s\n\n\u001b[1m\u001b[30m\u001b[46m RUN \u001b[49m\u001b[39m\u001b[22m \u001b[36mv4.1.5 \u001b[39m\u001b[90m/home/source/SpiritOS-foundation-remediation-r1-20260717\u001b[39m\n\n \u001b[32m✓\u001b[39m src/app/v1/actions/execute-approved/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m22 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 36\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/app/v1/coding/dummy-product-site-preview/reset/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m5 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 15\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m2 passed\u001b[39m\u001b[22m\u001b[90m (2)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m27 passed\u001b[39m\u001b[22m\u001b[90m (27)\u001b[39m\n\u001b[2m   Start at \u001b[22m 06:09:10\n\u001b[2m   Duration \u001b[22m 1.35s\u001b[2m (transform 177ms, setup 104ms, import 194ms, tests 51ms, environment 716ms)\u001b[22m\n\n"
+}

@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "registered-root and approval state-machine behavior only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_approval_runtime_identity.py source_proxy/tests/test_campaign_approval_authority.py",
+  "completed_at": "2026-07-18T09:49:09.387454+00:00",
+  "passed": true,
+  "profile_id": "portable-authority",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ce854e613d748581938137b20b79163ec85eca5d",
+  "started_at": "2026-07-18T09:47:56.542527+00:00",
+  "stderr": "",
+  "stdout": "......................                                                   [100%]\n22 passed in 53.89s\n"
+}

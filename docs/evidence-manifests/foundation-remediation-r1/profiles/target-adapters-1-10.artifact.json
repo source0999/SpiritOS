@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "target-owned specifications and executable behavior only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_target_plugin_adapter.py",
+  "completed_at": "2026-07-18T09:55:20.971718+00:00",
+  "passed": true,
+  "profile_id": "target-adapters-1-10",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ce854e613d748581938137b20b79163ec85eca5d",
+  "started_at": "2026-07-18T09:55:15.444931+00:00",
+  "stderr": "",
+  "stdout": "......................................                                   [100%]\n38 passed in 0.98s\n"
+}
