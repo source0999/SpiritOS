@@ -175,6 +175,7 @@ export interface SpiritFlixAdminActionResponse {
   previewId: string;
   allowed: boolean;
   message: string;
+  mutationApplied?: boolean;
   riskLevel?: SpiritFlixAdminActionRiskLevel;
   receipt?: SpiritFlixAdminReceipt;
   preview?: {

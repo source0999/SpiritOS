@@ -48,3 +48,18 @@ def finalize_spiritflix_admin_execution(consumed: dict[str, Any], *, result_id: 
     binding = dict(consumed["binding"])
     binding.update({"result_id": result_id, "status": status, "evidence": canonical_json({"redacted": True, "operation": OPERATION}), "source_head": current_head()})
     return _call("finalize", binding)
+
+
+def compensate_spiritflix_admin_execution(
+    consumed: dict[str, Any],
+    *,
+    result_hash: str,
+    evidence: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    binding = dict(consumed["binding"])
+    binding.update({
+        "result_hash": result_hash,
+        "evidence": canonical_json(evidence or {"compensation": True, "redacted": True, "operation": OPERATION}),
+        "source_head": current_head(),
+    })
+    return _call("compensate", binding)

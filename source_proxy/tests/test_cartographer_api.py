@@ -233,26 +233,14 @@ class CartographerApiTests(unittest.TestCase):
         self.assertFalse(consumption["approval_event_preview"]["token_consumed_for_real"])
         self.assertFalse(consumption["authority_granted"])
 
-    def test_approval_token_validate_get_rejects_self_approval_preview_only(self) -> None:
+    def test_approval_token_validate_get_is_not_a_client_authority_route(self) -> None:
         client = TestClient(_test_app())
 
         response = client.get("/v1/cartographer/approval-token/validate")
 
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        validation = payload["validation"]
-        runtime = payload["runtime"]
-        self.assertEqual(validation["status"], "rejected")
-        self.assertIn("self_approval_rejected", validation["reasons"])
-        self.assertTrue(validation["validation_only"])
-        self.assertTrue(validation["no_go_default"])
-        self.assertFalse(validation["go"])
-        self.assertFalse(validation["authority_granted"])
-        self.assertFalse(runtime["token_issuance_available"])
-        self.assertFalse(runtime["token_storage_available"])
-        self.assertFalse(runtime["self_approval_allowed"])
+        self.assertEqual(response.status_code, 404)
 
-    def test_approval_token_validate_post_accepts_human_token_without_authority(self) -> None:
+    def test_approval_token_validate_post_is_not_a_client_authority_route(self) -> None:
         client = TestClient(_test_app())
 
         response = client.post(
@@ -260,22 +248,9 @@ class CartographerApiTests(unittest.TestCase):
             json=self._approval_token_validation_request(),
         )
 
-        self.assertEqual(response.status_code, 200)
-        validation = response.json()["validation"]
-        self.assertEqual(validation["status"], "accepted")
-        self.assertEqual(validation["reasons"], [])
-        self.assertEqual(validation["approver_id"], "Britton")
-        self.assertEqual(validation["operator_id"], "cartographer-runtime")
-        self.assertFalse(validation["go"])
-        self.assertTrue(validation["no_go_default"])
-        self.assertFalse(validation["authority_granted"])
-        self.assertFalse(validation["write_authority_granted"])
-        self.assertFalse(validation["command_authority_granted"])
-        self.assertFalse(validation["workflow_authority_granted"])
-        self.assertFalse(validation["queue_authority_granted"])
-        self.assertFalse(validation["git_authority_granted"])
+        self.assertEqual(response.status_code, 404)
 
-    def test_approval_token_consume_preview_post_never_consumes_or_executes(self) -> None:
+    def test_approval_token_consume_preview_post_is_not_a_client_authority_route(self) -> None:
         client = TestClient(_test_app())
 
         response = client.post(
@@ -283,22 +258,7 @@ class CartographerApiTests(unittest.TestCase):
             json=self._approval_token_consumption_request(),
         )
 
-        self.assertEqual(response.status_code, 200)
-        preview = response.json()["preview"]
-        event = preview["approval_event_preview"]
-        self.assertEqual(preview["status"], "eligible")
-        self.assertTrue(preview["preview_only"])
-        self.assertFalse(preview["go"])
-        self.assertTrue(preview["no_go_default"])
-        self.assertEqual(event["event_type"], "approval_consumed_preview")
-        self.assertTrue(event["preview_only"])
-        self.assertFalse(event["token_consumed_for_real"])
-        self.assertFalse(preview["authority_granted"])
-        self.assertFalse(preview["write_authority_granted"])
-        self.assertFalse(preview["command_authority_granted"])
-        self.assertFalse(preview["workflow_authority_granted"])
-        self.assertFalse(preview["queue_authority_granted"])
-        self.assertFalse(preview["git_authority_granted"])
+        self.assertEqual(response.status_code, 404)
 
     def test_docs_autopilot_kill_switch_blocks_requested_configuration(self) -> None:
         with patch.dict(
@@ -10325,7 +10285,7 @@ class CartographerApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertEqual(response.json()["detail"]["reason_code"], "forbidden_cartographer_mutation")
 
-    def test_dashboard_review_route_approves_without_applying_files(self) -> None:
+    def test_dashboard_review_route_rejects_legacy_caller_actor_on_approve(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             _write_minimal_blueprints(root)
@@ -10373,23 +10333,17 @@ class CartographerApiTests(unittest.TestCase):
                 encoding="utf-8"
             )
 
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        self.assertEqual(body["status"], "review_recorded")
-        self.assertEqual(body["decision"], "approve")
-        self.assertFalse(body["actions_taken"])
-        self.assertFalse(body["apply_ran"])
-        self.assertFalse(body["commit_ran"])
-        self.assertFalse(body["push_ran"])
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("actor", response.text)
         proposal = payload["proposals"][0]
-        self.assertEqual(proposal["status"], "approved")
-        self.assertEqual(proposal["transitions"][-1]["actor"], "Britton")
-        self.assertEqual(proposal["transitions"][-1]["status"], "approved")
-        self.assertFalse(pending_path_exists)
-        self.assertTrue(approved_path_exists)
+        self.assertEqual(proposal["status"], "pending_review")
+        self.assertEqual(proposal["transitions"][-1]["actor"], "cartographer")
+        self.assertEqual(proposal["transitions"][-1]["status"], "pending_review")
+        self.assertTrue(pending_path_exists)
+        self.assertFalse(approved_path_exists)
         self.assertEqual(before, after)
 
-    def test_dashboard_review_route_rejects_with_reason(self) -> None:
+    def test_dashboard_review_route_rejects_legacy_caller_actor_on_reject(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             _write_minimal_blueprints(root)
@@ -10427,15 +10381,16 @@ class CartographerApiTests(unittest.TestCase):
                 pending_path_exists = pending_path.exists()
                 rejected_path_exists = rejected_path.exists()
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("actor", response.text)
         proposal = payload["proposals"][0]
-        self.assertEqual(proposal["status"], "rejected")
-        self.assertEqual(proposal["rejection_reason"], "Needs a smaller proposal.")
-        self.assertEqual(proposal["transitions"][-1]["actor"], "Britton")
-        self.assertFalse(pending_path_exists)
-        self.assertTrue(rejected_path_exists)
+        self.assertEqual(proposal["status"], "pending_review")
+        self.assertIsNone(proposal["rejection_reason"])
+        self.assertEqual(proposal["transitions"][-1]["actor"], "cartographer")
+        self.assertTrue(pending_path_exists)
+        self.assertFalse(rejected_path_exists)
 
-    def test_dashboard_review_route_defers_and_marks_stale_without_applying_files(self) -> None:
+    def test_dashboard_review_route_rejects_caller_actor_for_defer_and_stale(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             _write_minimal_blueprints(root)
@@ -10485,19 +10440,21 @@ class CartographerApiTests(unittest.TestCase):
 
             after = blueprint.read_text(encoding="utf-8")
 
-        self.assertEqual(deferred.status_code, 200)
-        self.assertEqual(stale.status_code, 200)
+        self.assertEqual(deferred.status_code, 422)
+        self.assertEqual(stale.status_code, 422)
+        self.assertIn("actor", deferred.text)
+        self.assertIn("actor", stale.text)
         self.assertEqual(before, after)
         proposals = {proposal["proposal_id"]: proposal for proposal in payload["proposals"]}
-        self.assertEqual(proposals["bp-20260515-defer"]["status"], "deferred")
-        self.assertEqual(proposals["bp-20260515-defer"]["review_note"], "Wait for design review.")
-        self.assertEqual(proposals["bp-20260515-stale"]["status"], "stale")
-        self.assertEqual(proposals["bp-20260515-stale"]["review_note"], "Superseded by newer drift.")
+        self.assertEqual(proposals["bp-20260515-defer"]["status"], "pending_review")
+        self.assertIsNone(proposals["bp-20260515-defer"]["review_note"])
+        self.assertEqual(proposals["bp-20260515-stale"]["status"], "pending_review")
+        self.assertIsNone(proposals["bp-20260515-stale"]["review_note"])
         self.assertFalse(proposals["bp-20260515-defer"]["applied"])
         self.assertFalse(proposals["bp-20260515-stale"]["action_taken"])
-        self.assertEqual(payload["pending_proposals"], 0)
+        self.assertEqual(payload["pending_proposals"], 2)
 
-    def test_dashboard_review_route_records_generated_draft_snapshot(self) -> None:
+    def test_dashboard_review_route_rejects_caller_authored_generated_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             _write_minimal_blueprints(root)
@@ -10535,21 +10492,16 @@ class CartographerApiTests(unittest.TestCase):
 
             after = sorted(path.relative_to(root).as_posix() for path in root.rglob("*"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "review_recorded")
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("proposal", response.text)
         proposal_files = [
             path for path in after if path.startswith("_blueprints/proposals/rejected/")
         ]
-        self.assertEqual(len(proposal_files), 1)
-        self.assertIn("_blueprints/proposals/rejected/bp-generated-scout.json", proposal_files)
-        self.assertNotEqual(before, after)
-        proposal = next(
-            item for item in payload["proposals"] if item["proposal_id"] == "bp-generated-scout"
+        self.assertEqual(proposal_files, [])
+        self.assertEqual(before, after)
+        self.assertFalse(
+            any(item["proposal_id"] == "bp-generated-scout" for item in payload["proposals"])
         )
-        self.assertEqual(proposal["status"], "rejected")
-        self.assertEqual(proposal["rejection_reason"], "Needs a smaller proposal.")
-        self.assertFalse(proposal["applied"])
-        self.assertFalse(proposal["action_taken"])
 
     def test_change_scribe_summarizes_code_change_with_evidence_and_uncertainty(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

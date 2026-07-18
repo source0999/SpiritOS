@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  captureSpiritFlixManualTagsMutation,
   getSpiritFlixManualTagsForItem,
+  restoreSpiritFlixManualTagsMutation,
   setSpiritFlixManualTagsForItem,
 } from "@/lib/spiritflix/manual-tags";
-import { consumeSpiritFlixAdminApproval, finalizeSpiritFlixAdminApproval } from "@/lib/coding/spiritflix-admin-approval-authority";
+import { resolveSpiritFlixAdminApprovalBinding } from "@/lib/coding/spiritflix-admin-approval-binding";
+import { runApprovedSpiritFlixAdminMutation, SpiritFlixAdminTransactionError } from "@/lib/coding/spiritflix-admin-transaction";
 
 export const runtime = "nodejs";
 
@@ -31,9 +34,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PUT(request: NextRequest, context: RouteContext) {
   const { itemId } = await context.params;
 
-  let payload: { manualTags?: unknown; filePath?: unknown; approval_id?: unknown };
+  let payload: { itemId?: unknown; manualTags?: unknown; filePath?: unknown; approval_id?: unknown };
   try {
-    payload = (await request.json()) as { manualTags?: unknown; filePath?: unknown; approval_id?: unknown };
+    payload = (await request.json()) as { itemId?: unknown; manualTags?: unknown; filePath?: unknown; approval_id?: unknown };
   } catch {
     return NextResponse.json({ error: "Invalid SpiritFlix manual tag request." }, { status: 400 });
   }
@@ -45,21 +48,42 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const approvalId = typeof payload.approval_id === "string" ? payload.approval_id : "";
   if (!approvalId) return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 });
   const decodedItemId = decodeURIComponent(itemId);
-  const action = "metadata.mutation";
-  const target = `spiritflix:videos:${decodedItemId}:tags`;
-  const plan = { field: "manualTags", count: payload.manualTags.length };
-  const consumed = await consumeSpiritFlixAdminApproval(approvalId, action, target, plan);
-  if (!consumed.ok) return NextResponse.json({ reason_code: consumed.reason }, { status: 422 });
+  if (payload.itemId !== decodedItemId) return NextResponse.json({ reason_code: "spiritflix_admin_item_id_mismatch" }, { status: 400 });
+  const filePath = typeof payload.filePath === "string" ? payload.filePath : undefined;
 
   try {
-    const result = await setSpiritFlixManualTagsForItem({
+    const binding = await resolveSpiritFlixAdminApprovalBinding("manual-tags", {
       itemId: decodedItemId,
-      filePath: typeof payload.filePath === "string" ? payload.filePath : undefined,
+      filePath,
       manualTags: payload.manualTags,
     });
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "succeeded");
+    const completed = await runApprovedSpiritFlixAdminMutation({
+      approvalId,
+      binding,
+      capture: () => captureSpiritFlixManualTagsMutation(decodedItemId),
+      mutate: () => setSpiritFlixManualTagsForItem({
+        itemId: decodedItemId,
+        filePath,
+        manualTags: payload.manualTags as string[],
+      }),
+      rollback: (snapshot) => restoreSpiritFlixManualTagsMutation(snapshot),
+      verify: async (result) => {
+        const stored = await getSpiritFlixManualTagsForItem(decodedItemId, { lookupFilePath: filePath });
+        if (stored.manualTags.join("\u0000") !== result.record.manualTags.join("\u0000")) {
+          throw new Error("spiritflix_admin_tags_verification_failed");
+        }
+        return {
+          schema: "spiritflix-admin-manual-tags-result/v1",
+          state: { filePath: stored.filePath ?? null, itemId: stored.itemId, manualTags: stored.manualTags },
+        };
+      },
+    });
     return NextResponse.json({
-      ...result,
+      ...completed.result,
+      authority: {
+        participant_invocation_ids: completed.evidence.participant_invocations.map((item) => item.invocation_id),
+        result_hash: completed.evidence.result_hash,
+      },
       propagated: {
         tags: [],
         itemIds: [],
@@ -68,10 +92,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "failed");
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "SpiritFlix manual video tag update failed." },
-      { status: 400 },
+      error instanceof SpiritFlixAdminTransactionError
+        ? { reason_code: error.reasonCode }
+        : { error: error instanceof Error ? error.message : "SpiritFlix manual video tag update failed." },
+      { status: error instanceof SpiritFlixAdminTransactionError ? error.status : 400 },
     );
   }
 }

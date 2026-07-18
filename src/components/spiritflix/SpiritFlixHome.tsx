@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { formatRuntime, isPlayableItem, type JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import { getSpiritFlixManualTagScope } from "@/lib/spiritflix/manual-tag-scope";
+import { fetchApprovedSpiritFlixAdminMutation } from "@/lib/spiritflix/admin/approved-mutation-client";
 import {
   getResumePositionTicks,
   getResumeProgressPercent,
@@ -1610,10 +1611,12 @@ export function SpiritFlixHome({
     setSmartRescanError("");
     setSmartRescan((current) => ({ ...current, status: "running" }));
     try {
-      const response = await fetch("/api/spiritflix/library-smart-rescan", {
-        method: "POST",
-        cache: "no-store",
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "library-smart-rescan",
+        "/api/spiritflix/library-smart-rescan",
+        {},
+        { cache: "no-store" },
+      );
       const rawBody = await response.json();
       const body = normalizeSmartRescanState(rawBody);
       if (!response.ok) throw new Error((rawBody as { error?: string })?.error || "Smart rescan could not start.");

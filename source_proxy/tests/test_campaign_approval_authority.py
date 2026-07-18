@@ -14,7 +14,11 @@ from fastapi.testclient import TestClient
 
 import source_proxy.approval.campaign_authority as authority
 from source_proxy.api.cartographer import cartographer_docs_autopilot_apply, router as cartographer_router
-from source_proxy.approval.campaign_evidence import CampaignApprovalEvidenceError, validate_coding_approval_evidence
+from source_proxy.approval.campaign_evidence import (
+    REQUIRED_CONSUMERS,
+    CampaignApprovalEvidenceError,
+    validate_coding_approval_evidence,
+)
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
     consume_coding_execution_approval,
@@ -180,11 +184,21 @@ def test_coding_approval_persists_the_server_resolved_lumacart_plugin() -> None:
 
 
 def test_coding_evidence_requires_identical_approval_generation_for_all_consumers() -> None:
+    artifact_sha256 = "sha256:" + "a" * 64
     receipt = {
-        "approval_id": "apr_campaign1", "generation": 2,
+        "approval_id": "apr_campaign1",
+        "generation": 2,
+        "artifact_sha256": artifact_sha256,
         "acknowledgements": {
-            name: {"approval_id": "apr_campaign1", "generation": 2}
-            for name in ("coding-executor:coder", "coding-reviewer", "coding-verifier", "evidence-recorder")
+            name: {
+                "approval_id": "apr_campaign1",
+                "generation": 2,
+                "artifact_sha256": artifact_sha256,
+                "invocation_id": f"invocation-{index}",
+                "output_id": f"output-{index}",
+                "consumer_acknowledgement_id": f"acknowledgement-{index}",
+            }
+            for index, name in enumerate(REQUIRED_CONSUMERS)
         },
     }
     validate_coding_approval_evidence(receipt)
@@ -196,11 +210,23 @@ def test_coding_evidence_requires_identical_approval_generation_for_all_consumer
 
 def test_coding_evidence_requires_identical_target_plugin_identity_for_all_consumers() -> None:
     identity = {"plugin_id": "lumacart", "selected_prompt_id": "coder-001-init-dummy-product-site"}
+    artifact_sha256 = "sha256:" + "b" * 64
     receipt = {
-        "approval_id": "apr_campaign1", "generation": 2, "target_plugin_identity": identity,
+        "approval_id": "apr_campaign1",
+        "generation": 2,
+        "target_plugin_identity": identity,
+        "artifact_sha256": artifact_sha256,
         "acknowledgements": {
-            name: {"approval_id": "apr_campaign1", "generation": 2, "target_plugin_identity": dict(identity)}
-            for name in ("coding-executor:coder", "coding-reviewer", "coding-verifier", "evidence-recorder")
+            name: {
+                "approval_id": "apr_campaign1",
+                "generation": 2,
+                "artifact_sha256": artifact_sha256,
+                "invocation_id": f"invocation-{index}",
+                "output_id": f"output-{index}",
+                "consumer_acknowledgement_id": f"acknowledgement-{index}",
+                "target_plugin_identity": dict(identity),
+            }
+            for index, name in enumerate(REQUIRED_CONSUMERS)
         },
     }
     receipt["acknowledgements"]["evidence-recorder"]["target_plugin_identity"] = {"plugin_id": "other"}
@@ -252,7 +278,7 @@ def test_coding_approval_rejects_wrong_plugin_worktree_and_content(
     monkeypatch.setattr(authority, "current_head", lambda: authority._call("lookup", {"approval_id": worktree_id})["source_head"])
     with pytest.raises(CampaignApprovalError) as worktree:
         consume(worktree_id, task_id="campaign1-test-worktree")
-    assert worktree.value.reason_code == "approval_worktree_mismatch"
+    assert worktree.value.reason_code == "approval_root_unavailable"
     monkeypatch.setattr(authority, "ROOT", original_root)
 
     content_preview = coding_preview(task_id="campaign1-test-content")

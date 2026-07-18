@@ -38,6 +38,7 @@ describe("SpiritFlix manual model API", () => {
       new NextRequest("http://localhost/api/spiritflix/videos/video-1/model", {
         method: "PUT",
         body: JSON.stringify({
+          itemId: "video-1",
           filePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
           modelName: "sava schultz",
           knownModelNames: ["Sava Schultz"],
@@ -54,7 +55,18 @@ describe("SpiritFlix manual model API", () => {
       "server-issued-fixture-approval",
       "metadata.mutation",
       "spiritflix:videos:video-1:model",
-      { field: "modelName", value: "sava schultz" },
+      expect.objectContaining({
+        schema: "spiritflix-admin-mutation-plan/v2",
+        writer: "manual-model",
+        mutation: {
+          itemId: "video-1",
+          filePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
+          modelName: "sava schultz",
+          knownModelNames: ["Sava Schultz"],
+        },
+        expected_current_state_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        expected_result_contract_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
     );
 
     const getResponse = await getVideoModel(
@@ -73,7 +85,7 @@ describe("SpiritFlix manual model API", () => {
     const emptyResponse = await putVideoModel(
       new NextRequest("http://localhost/api/spiritflix/videos/video-1/model", {
         method: "PUT",
-        body: JSON.stringify({ modelName: " " }),
+        body: JSON.stringify({ itemId: "video-1", modelName: " " }),
       }),
       { params: Promise.resolve({ itemId: "video-1" }) },
     );

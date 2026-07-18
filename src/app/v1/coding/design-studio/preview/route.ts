@@ -59,7 +59,6 @@ type DesignStudioPreviewRequest = {
   };
   writeback_preview?: {
     content?: unknown;
-    context?: string;
   };
 };
 
@@ -925,8 +924,6 @@ export async function POST(request?: Request) {
       ? { state: "not_requested" as const }
       : await persistDesignPreview({
           content: input.writeback_preview.content,
-          context: input.writeback_preview.context?.trim() || identity.trace_id,
-          target: promptOutcome.design_packet?.target_surface || input.target_surface?.trim() || "target_surface_required",
         });
 
   return Response.json({

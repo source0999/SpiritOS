@@ -4,6 +4,20 @@ import { getInferredModelName, getSmartFillScale, getTitleMatchedModelItems, Spi
 import type { JellyfinClient } from "@/lib/spiritflix-jellyfin-client";
 import type { JellyfinItem } from "@/lib/spiritflix-types";
 
+vi.mock("@/lib/spiritflix/admin/approved-mutation-client", () => ({
+  fetchApprovedSpiritFlixAdminMutation: async (
+    _writer: string,
+    url: string,
+    mutation: Record<string, unknown>,
+    init: RequestInit = {},
+  ) => fetch(url, {
+    ...init,
+    body: JSON.stringify({ ...mutation, approval_id: "approval-component-test" }),
+    headers: { "Content-Type": "application/json", ...init.headers },
+    method: init.method ?? "POST",
+  }),
+}));
+
 const item: JellyfinItem = {
   Id: "video-1",
   Name: "Fold Tap Test",

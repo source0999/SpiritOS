@@ -11,7 +11,7 @@ const mockedSession = vi.mocked(requireOperatorSession);
 const mockedIssue = vi.mocked(issueDesignWritebackApproval);
 const mockedPreview = vi.mocked(resolveDesignWritebackPreview);
 const request = (body: unknown) => new Request("https://operator.spirit.test/v1/operator/design-approval", { body: JSON.stringify(body), headers: { "content-type": "application/json", cookie: "spiritos_operator_approval=session-1", host: "operator.spirit.test", origin: "https://operator.spirit.test", "x-spiritos-csrf": "csrf" }, method: "POST" });
-const preview = { content_hash: "content", context: "context", generation: 1, preview_id: "prv_design", source_head: "source", target: "/coding/design-studio" };
+const preview = { artifact_id: "design-writeback-content", content_hash: "content", context: "context", generation: 1, preview_id: "prv_design", source_head: "source", target: "design-memory/2026-07-01/design_run.md" };
 
 describe("operator Design approval route", () => {
   beforeEach(() => {

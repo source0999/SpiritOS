@@ -28,8 +28,6 @@ export const codingTargetPlugin = {
       target_plugin: {
         schema_version: "spiritos-target-plugin/v1",
         id: "lumacart",
-        repository_id: "spiritos-campaign-2",
-        worktree_id: "spiritos-campaign-2-20260716",
         fixture_root: prompt.fixtureRoot,
         selected_prompt_id: prompt.id,
         selected_context_id: [

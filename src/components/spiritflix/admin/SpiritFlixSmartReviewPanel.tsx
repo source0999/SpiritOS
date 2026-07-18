@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchApprovedSpiritFlixAdminMutation } from "@/lib/spiritflix/admin/approved-mutation-client";
 import { createPortal } from "react-dom";
 import { Sparkles, X } from "lucide-react";
 import type { SpiritFlixSmartAnalysis, SpiritFlixSmartReviewInput } from "@/lib/spiritflix/admin/smart/types";
@@ -145,11 +146,11 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
     setAnalyzing(true);
     setError("");
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/analysis", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: item.path, action: "analyze" }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-analysis",
+        "/api/spiritflix/admin/smart/analysis",
+        { path: item.path, action: "analyze" },
+      );
       const payload = (await response.json()) as SmartAnalysisResponse & { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Smart analysis failed.");
       setAnalysis(payload.analysis);
@@ -167,11 +168,11 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
     setMarking(true);
     setError("");
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/analysis", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: item.path, action: "markReviewed" }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-analysis",
+        "/api/spiritflix/admin/smart/analysis",
+        { path: item.path, action: "markReviewed" },
+      );
       const payload = (await response.json()) as SmartAnalysisResponse & { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Failed to mark reviewed.");
       setAnalysis(payload.analysis);
@@ -197,11 +198,11 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
         editedCategory: draft.editedCategory?.trim() || undefined,
         notes: draft.notes?.trim() || undefined,
       };
-      const response = await fetch("/api/spiritflix/admin/smart/analysis", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: item.path, action: "saveReview", review: payloadReview }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-analysis",
+        "/api/spiritflix/admin/smart/analysis",
+        { path: item.path, action: "saveReview", review: payloadReview as unknown as Record<string, unknown> },
+      );
       const payload = (await response.json()) as SmartAnalysisResponse & { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Failed to save review.");
       setAnalysis(payload.analysis);
@@ -221,11 +222,11 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
     setError("");
     setExportResult(null);
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/analysis", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: item.path, action: "confirmMetadata" }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-analysis",
+        "/api/spiritflix/admin/smart/analysis",
+        { path: item.path, action: "confirmMetadata" },
+      );
       const payload = (await response.json()) as ExportMetadataResponse;
       if (!response.ok) throw new Error(payload.error ?? "Failed to confirm metadata.");
       setExportResult(payload.metadata ?? null);
@@ -243,11 +244,11 @@ export function SpiritFlixSmartReviewPanel({ item, open, onClose }: SpiritFlixSm
     setError("");
     setRenamePreview(null);
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/analysis", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: item.path, action: "prepareRenamePreview" }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-analysis",
+        "/api/spiritflix/admin/smart/analysis",
+        { path: item.path, action: "prepareRenamePreview" },
+      );
       const payload = (await response.json()) as PrepareRenameResponse;
       if (!response.ok) throw new Error(payload.error ?? "Failed to prepare rename preview.");
       setRenamePreview(payload.renamePreview ?? null);

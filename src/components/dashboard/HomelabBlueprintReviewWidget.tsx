@@ -260,10 +260,8 @@ export function HomelabBlueprintReviewWidget() {
         `/v1/cartographer/proposals/${encodeURIComponent(activeProposal.proposal_id)}/review`,
         {
           body: JSON.stringify({
-            actor: "dashboard-blueprint-review",
             decision:
               status === "approved" ? "approve" : status === "rejected" ? "reject" : "request_edit",
-            proposal: activeProposal,
             reason: reason || undefined,
           }),
           headers: {

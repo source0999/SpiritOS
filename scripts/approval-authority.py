@@ -12,12 +12,33 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
+from source_proxy.approval.runtime_identity import (  # noqa: E402
+    AuthorityRuntimeIdentityError,
+    resolve_authority_runtime_identity,
+)
+
 AUTHORITY_ID = "spiritos-approval-authority"
-ISSUER_ID = "spiritos-approval-authority/campaign-2"
-ROOT = "/home/source/SpiritOS-campaign-2-20260716"
-REPOSITORY = "SpiritOS"
-WORKTREE = ROOT
-STATE_DIR = Path("/home/source/.local/state/spiritos/campaign-2-approvals")
+ISSUER_ID = "spiritos-approval-authority/foundation-remediation-r1"
+try:
+    RUNTIME_IDENTITY = resolve_authority_runtime_identity(
+        os.environ.get("SPIRITOS_APPROVAL_ROOT", "").strip() or REPOSITORY_ROOT
+    )
+    RUNTIME_IDENTITY_ERROR = None
+    ROOT = str(RUNTIME_IDENTITY.root)
+    REPOSITORY = RUNTIME_IDENTITY.repository
+    WORKTREE = RUNTIME_IDENTITY.worktree
+    STATE_DIR = RUNTIME_IDENTITY.state_directory()
+except AuthorityRuntimeIdentityError as error:
+    RUNTIME_IDENTITY = None
+    RUNTIME_IDENTITY_ERROR = error.reason_code
+    ROOT = ""
+    REPOSITORY = ""
+    WORKTREE = ""
+    STATE_DIR = Path("/nonexistent/spiritos-approval-authority-invalid")
 DB_PATH = STATE_DIR / "approvals.sqlite3"
 SECRET_DIR = Path("/home/source/.config/spiritos/secrets")
 SECRET_PATH = SECRET_DIR / "approval-authority.env"
@@ -69,6 +90,8 @@ def source_head():
 
 
 def boot():
+    if RUNTIME_IDENTITY_ERROR is not None:
+        fail(RUNTIME_IDENTITY_ERROR)
     ensure_directory(SECRET_DIR)
     ensure_directory(STATE_DIR)
     if SECRET_PATH.exists():
@@ -102,6 +125,11 @@ def boot():
         plugin TEXT NOT NULL, preview TEXT NOT NULL, content_hash TEXT NOT NULL,
         context TEXT NOT NULL, source_head TEXT NOT NULL, expires_at TEXT NOT NULL,
         result_id TEXT, evidence TEXT, created_at TEXT NOT NULL)"""
+    )
+    database.execute(
+        """CREATE TABLE IF NOT EXISTS spiritflix_approval_compensations_v1 (
+        approval_id TEXT PRIMARY KEY, generation INTEGER NOT NULL,
+        result_hash TEXT NOT NULL, evidence TEXT NOT NULL, created_at TEXT NOT NULL)"""
     )
     os.chmod(DB_PATH, 0o600)
     if stat.S_IMODE(DB_PATH.stat().st_mode) != 0o600:
@@ -294,13 +322,68 @@ def finalize(data):
         if row["state"] != "consuming":
             fail(TERMINAL_REASONS.get(row["state"], "approval_not_approved"))
         state = "consumed" if succeeded else "invalidated"
-        database.execute("UPDATE approval_records_v3 SET state=?, result_id=?, evidence=? WHERE id=?", (state, result_id, evidence[:512], approval_id))
+        database.execute("UPDATE approval_records_v3 SET state=?, result_id=?, evidence=? WHERE id=?", (state, result_id, evidence, approval_id))
         database.execute("COMMIT")
     except Exception:
         if database.in_transaction:
             database.execute("ROLLBACK")
         raise
     print(json.dumps({"approval_id": approval_id, "generation": row["generation"], "state": state, "result_id": result_id}))
+
+
+def compensate(data):
+    """Invalidate a SpiritFlix success after its exact mutation was rolled back.
+
+    This is intentionally not a general approval transition. Only the registered
+    SpiritFlix executor may compensate, the original binding must still match,
+    and the approval must have reached consuming or consumed first. Repeating
+    the same generation/result hash is idempotent; changing either is rejected.
+    """
+    database, _ = boot()
+    approval_id = require(data, "approval_id")
+    consumer = require(data, "consumer")
+    operation = require(data, "operation")
+    result_hash = require(data, "result_hash")
+    evidence = require(data, "evidence")
+    if consumer != "spiritflix-admin-executor" or operation != "spiritflix_admin_mutation":
+        fail("approval_compensation_not_permitted")
+    if len(result_hash) != 64 or any(character not in "0123456789abcdef" for character in result_hash):
+        fail("approval_result_hash_invalid")
+
+    database.execute("BEGIN IMMEDIATE")
+    try:
+        row = approval_row(database, approval_id)
+        if row["consumer"] != consumer or row["operation"] != operation:
+            fail("approval_compensation_not_permitted")
+        validate_binding(data, row)
+        existing = database.execute(
+            "SELECT * FROM spiritflix_approval_compensations_v1 WHERE approval_id=?",
+            (approval_id,),
+        ).fetchone()
+        if existing:
+            if str(existing["generation"]) != str(data.get("generation", "")) or existing["result_hash"] != result_hash:
+                fail("approval_compensation_mismatch")
+            database.execute("COMMIT")
+            print(json.dumps({"approval_id": approval_id, "generation": row["generation"],
+                              "state": "invalidated", "result_hash": result_hash, "idempotent": True}))
+            return
+        if row["state"] not in {"consuming", "consumed"}:
+            fail("approval_compensation_state_invalid")
+        database.execute(
+            "INSERT INTO spiritflix_approval_compensations_v1 VALUES(?,?,?,?,?)",
+            (approval_id, row["generation"], result_hash, evidence, iso()),
+        )
+        database.execute(
+            "UPDATE approval_records_v3 SET state='invalidated', result_id=?, evidence=? WHERE id=?",
+            (f"compensated:{result_hash[:16]}", evidence, approval_id),
+        )
+        database.execute("COMMIT")
+    except Exception:
+        if database.in_transaction:
+            database.execute("ROLLBACK")
+        raise
+    print(json.dumps({"approval_id": approval_id, "generation": row["generation"],
+                      "state": "invalidated", "result_hash": result_hash, "idempotent": False}))
 
 
 def transition(data):
@@ -330,14 +413,18 @@ def preflight():
                       "signingKeyFingerprint": hashlib.sha256(key.encode()).hexdigest()[:16],
                       "registeredRoots": [ROOT], "consumers": sorted(CONSUMER_OPERATIONS),
                       "acknowledgementConsumers": sorted(ACKNOWLEDGEMENT_CONSUMERS),
-                      "operations": sorted(CONSUMER_OPERATIONS.values()), "secretExposed": False}))
+                      "operations": sorted(CONSUMER_OPERATIONS.values()), "secretExposed": False,
+                      "branch": RUNTIME_IDENTITY.branch,
+                      "sourceHead": RUNTIME_IDENTITY.source_head,
+                      "commonGitDir": str(RUNTIME_IDENTITY.common_git_dir),
+                      "stateNamespace": RUNTIME_IDENTITY.state_namespace}))
 
 
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else ""
-    data = json.load(sys.stdin) if command in {"persist-preview", "issue", "lookup", "lookup-preview", "transition-preview", "consume", "finalize", "transition"} else {}
+    data = json.load(sys.stdin) if command in {"persist-preview", "issue", "lookup", "lookup-preview", "transition-preview", "consume", "finalize", "compensate", "transition"} else {}
     commands = {"preflight": preflight, "persist-preview": lambda: persist_preview(data), "issue": lambda: issue(data),
-                "lookup": lambda: lookup(data), "lookup-preview": lambda: lookup_preview(data), "transition-preview": lambda: transition_preview(data), "consume": lambda: consume(data), "finalize": lambda: finalize(data), "transition": lambda: transition(data)}
+                "lookup": lambda: lookup(data), "lookup-preview": lambda: lookup_preview(data), "transition-preview": lambda: transition_preview(data), "consume": lambda: consume(data), "finalize": lambda: finalize(data), "compensate": lambda: compensate(data), "transition": lambda: transition(data)}
     if command not in commands:
         fail("approval_command_unknown")
     commands[command]()

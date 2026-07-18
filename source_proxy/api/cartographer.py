@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi import Header
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from source_proxy.cartographer.apply import CartographerApplyError, apply_approved_doc_proposal
 from source_proxy.cartographer.cartographer_selection_authority import (
@@ -85,9 +85,11 @@ from source_proxy.cartographer.trust_tier_decision_gate import (
     build_trust_tier_decision_gate_status,
     validate_trust_tier_decision_gate,
 )
-from source_proxy.cartographer.proposal_reviews import (
+from source_proxy.cartographer.proposal_review_authority import (
     CartographerProposalReviewError,
-    review_blueprint_proposal,
+    execute_cartographer_proposal_review,
+    operator_action_for_decision,
+    persist_cartographer_proposal_review_preview,
 )
 from source_proxy.cartographer.safe_task_queue import (
     build_safe_task_queue_model_status,
@@ -228,11 +230,16 @@ class CartographerSelectionExecuteRequest(CartographerProposalTransferRequest):
     approval_id: str = Field(max_length=200)
 
 
-class CartographerProposalReviewRequest(BaseModel):
+class CartographerProposalReviewPreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     decision: str = Field(max_length=40)
-    actor: str = Field(default="dashboard-blueprint-review", max_length=120)
     reason: str | None = Field(default=None, max_length=500)
-    proposal: dict[str, Any] | None = None
+
+
+class CartographerProposalReviewRequest(CartographerProposalReviewPreviewRequest):
+    preview_id: str = Field(min_length=1, max_length=200)
+    generation: int = Field(ge=1)
 
 
 class CartographerGitApprovalRequest(BaseModel):
@@ -393,7 +400,6 @@ async def cartographer_live_state() -> dict[str, Any]:
     return collect_live_repo_state()
 
 
-@router.get("/approval-token/validate")
 async def cartographer_approval_token_validate_preview() -> dict[str, Any]:
     validation = validate_approval_token_payload(
         _self_approval_demo_token(),
@@ -415,7 +421,6 @@ async def cartographer_approval_token_validate_preview() -> dict[str, Any]:
     }
 
 
-@router.post("/approval-token/validate")
 async def cartographer_approval_token_validate(
     request: CartographerApprovalTokenValidateRequest,
 ) -> dict[str, Any]:
@@ -437,7 +442,6 @@ async def cartographer_approval_token_validate(
     }
 
 
-@router.get("/approval-token/consume-preview")
 async def cartographer_approval_token_consume_preview_demo() -> dict[str, Any]:
     preview = preview_approval_token_consumption(
         _self_approval_demo_token(
@@ -462,7 +466,6 @@ async def cartographer_approval_token_consume_preview_demo() -> dict[str, Any]:
     }
 
 
-@router.post("/approval-token/consume-preview")
 async def cartographer_approval_token_consume_preview(
     request: CartographerApprovalTokenConsumePreviewRequest,
 ) -> dict[str, Any]:
@@ -1726,14 +1729,47 @@ async def cartographer_approve_starter_blueprints(
 async def cartographer_review_proposal(
     proposal_id: str,
     request: CartographerProposalReviewRequest,
+    x_spiritos_operator_assertion: str = Header(default=""),
 ) -> dict[str, Any]:
     try:
-        return review_blueprint_proposal(
+        assertion = verify_operator_approval_assertion(x_spiritos_operator_assertion)
+        if (
+            assertion["task_id"] != proposal_id
+            or assertion["preview_id"] != request.preview_id
+            or assertion["generation"] != request.generation
+            or assertion["action"] != operator_action_for_decision(request.decision)
+        ):
+            raise OperatorSessionError("operator_assertion_mismatch")
+        return execute_cartographer_proposal_review(
             proposal_id=proposal_id,
             decision=request.decision,  # type: ignore[arg-type]
-            actor=request.actor,
+            preview_id=request.preview_id,
+            generation=request.generation,
+            operator=str(assertion["operator"]),
             reason=request.reason,
-            proposal_snapshot=request.proposal,
+        )
+    except OperatorSessionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail={"reason_code": str(error)},
+        ) from error
+    except CartographerProposalReviewError as error:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": str(error), "reason_code": error.reason_code},
+        ) from error
+
+
+@router.post("/proposals/{proposal_id}/review-preview")
+async def cartographer_review_proposal_preview(
+    proposal_id: str,
+    request: CartographerProposalReviewPreviewRequest,
+) -> dict[str, Any]:
+    try:
+        return persist_cartographer_proposal_review_preview(
+            proposal_id=proposal_id,
+            decision=request.decision,  # type: ignore[arg-type]
+            reason=request.reason,
         )
     except CartographerProposalReviewError as error:
         raise HTTPException(

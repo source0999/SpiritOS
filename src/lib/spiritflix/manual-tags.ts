@@ -118,6 +118,49 @@ async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
   await fs.writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+export type SpiritFlixManualTagsMutationSnapshot = {
+  files: Array<{ content: string | null; path: string }>;
+};
+
+async function snapshotTextFile(filePath: string): Promise<{ content: string | null; path: string }> {
+  try {
+    return { content: await fs.readFile(filePath, "utf8"), path: filePath };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { content: null, path: filePath };
+    throw error;
+  }
+}
+
+export async function captureSpiritFlixManualTagsMutation(
+  itemId: string,
+  options: SpiritFlixManualTagStoreOptions = {},
+): Promise<SpiritFlixManualTagsMutationSnapshot> {
+  const normalizedItemId = assertManualTagItemId(itemId);
+  return {
+    files: await Promise.all([
+      snapshotTextFile(getManualTagRecordPath(normalizedItemId, options)),
+      snapshotTextFile(getManualTagIndexPath(options)),
+    ]),
+  };
+}
+
+export async function restoreSpiritFlixManualTagsMutation(
+  snapshot: SpiritFlixManualTagsMutationSnapshot,
+): Promise<void> {
+  for (const file of snapshot.files) {
+    if (file.content === null) {
+      await fs.unlink(file.path).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== "ENOENT") throw error;
+      });
+      continue;
+    }
+    await fs.mkdir(path.dirname(file.path), { recursive: true });
+    const temporary = `${file.path}.rollback-${process.pid}-${Date.now()}`;
+    await fs.writeFile(temporary, file.content, "utf8");
+    await fs.rename(temporary, file.path);
+  }
+}
+
 function mergeStarterTags(records: SpiritFlixManualTagRecord[]): SpiritFlixManualTagIndex {
   const counts = new Map<string, number>();
   const attributeCounts = new Map<string, number>();

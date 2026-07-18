@@ -3,16 +3,19 @@ import "server-only";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
-import { promisify } from "node:util";
-import { execFile } from "node:child_process";
+import {
+  type AuthorityRuntimeIdentity,
+  resolveAuthorityRuntimeIdentity,
+} from "@/lib/coding/authority-runtime-identity";
+import {
+  buildDesignWritebackArtifact,
+  type DesignWritebackArtifact,
+} from "@/lib/coding/design-writeback-contract";
 
-const execFileAsync = promisify(execFile);
-const authorityScript = join(process.cwd(), "scripts", "approval-authority.py");
-export const CAMPAIGN_REPOSITORY = "SpiritOS";
-export const CAMPAIGN_ROOT = "/home/source/SpiritOS-campaign-1-20260712";
 const DESIGN_PLUGIN = "design-studio";
 
 export type DesignPreviewBinding = {
+  artifact_id: string;
   content_hash: string;
   context: string;
   generation: number;
@@ -27,17 +30,24 @@ export type DesignApprovalBinding = DesignPreviewBinding & {
   operation: "design_writeback";
 };
 
-export const DESIGN_ACKNOWLEDGEMENT_CONSUMERS = [
-  "design-writeback",
+export const DESIGN_PARTICIPANTS = [
   "design-reviewer",
   "design-verifier",
   "evidence-recorder",
 ] as const;
 
-export type DesignAcknowledgements = Record<(typeof DESIGN_ACKNOWLEDGEMENT_CONSUMERS)[number], {
-  approval_id: string;
-  generation: number;
-}>;
+export type DesignParticipantRecord = {
+  artifact_hash: string;
+  checks: string[];
+  invocation_id: string;
+  invoked_at: string;
+  output_hash: string;
+  output_id: string;
+  participant: (typeof DESIGN_PARTICIPANTS)[number];
+  status: "accepted" | "recorded" | "rejected" | "verified";
+};
+
+export type DesignParticipantOutput = Omit<DesignParticipantRecord, "output_hash">;
 
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
@@ -66,19 +76,37 @@ export function hashApprovalContent(value: unknown) {
   return createHash("sha256").update(stableJson(withoutApprovalId(value)), "utf8").digest("hex");
 }
 
-async function campaignHead() {
-  const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: CAMPAIGN_ROOT });
-  return stdout.trim();
+export function hashDesignParticipantOutput(output: DesignParticipantOutput) {
+  return hashApprovalContent(output);
 }
 
-async function invokeAuthority(command: string, input: Record<string, unknown>) {
+async function invokeAuthority(
+  identity: AuthorityRuntimeIdentity,
+  command: string,
+  input: Record<string, unknown>,
+) {
+  const authorityScript = join(identity.root, "scripts", "approval-authority.py");
   const result = await new Promise<{ code: number; text: string }>((resolve) => {
     const child = spawn("python3", [authorityScript, command], {
+      cwd: identity.root,
+      env: { ...process.env, SPIRITOS_APPROVAL_ROOT: identity.root },
       stdio: ["pipe", "pipe", "ignore"],
     });
     let text = "";
     child.stdout.on("data", (chunk) => (text += chunk));
-    child.on("close", (code) => resolve({ code: code ?? 1, text }));
+    let settled = false;
+    child.on("error", () => {
+      if (!settled) {
+        settled = true;
+        resolve({ code: 1, text: "" });
+      }
+    });
+    child.on("close", (code) => {
+      if (!settled) {
+        settled = true;
+        resolve({ code: code ?? 1, text });
+      }
+    });
     child.stdin.end(JSON.stringify(input));
   });
   try {
@@ -91,56 +119,65 @@ async function invokeAuthority(command: string, input: Record<string, unknown>) 
   }
 }
 
-function commonBinding(binding: Pick<DesignPreviewBinding, "content_hash" | "context" | "source_head" | "target">) {
+function commonBinding(
+  identity: AuthorityRuntimeIdentity,
+  binding: Pick<DesignPreviewBinding, "content_hash" | "context" | "source_head" | "target">,
+) {
   return {
     content_hash: binding.content_hash,
     context: binding.context,
     plugin: DESIGN_PLUGIN,
-    repository: CAMPAIGN_REPOSITORY,
-    root: CAMPAIGN_ROOT,
+    repository: identity.repository,
+    root: identity.root,
     source_head: binding.source_head,
     target: binding.target,
-    worktree: CAMPAIGN_ROOT,
+    worktree: identity.worktree,
   };
 }
 
-export async function persistDesignPreview(input: { content: unknown; context: string; target: string }) {
-  const source_head = await campaignHead();
-  const persisted = await invokeAuthority("persist-preview", {
-    ...commonBinding({
-      content_hash: hashApprovalContent(input.content),
-      context: input.context,
+export async function persistDesignPreview(input: { content: unknown }) {
+  const artifact = buildDesignWritebackArtifact(input.content);
+  if (!artifact.ok) return artifact;
+  const identity = await resolveAuthorityRuntimeIdentity();
+  const source_head = identity.sourceHead;
+  const persisted = await invokeAuthority(identity, "persist-preview", {
+    ...commonBinding(identity, {
+      content_hash: artifact.value.artifact_hash,
+      context: artifact.value.context,
       source_head,
-      target: input.target,
+      target: artifact.value.target,
     }),
   });
   if (!persisted.ok) return persisted;
   return {
     ok: true as const,
     value: {
-      content_hash: hashApprovalContent(input.content),
-      context: input.context,
+      artifact_id: artifact.value.artifact_id,
+      content_hash: artifact.value.artifact_hash,
+      context: artifact.value.context,
       generation: Number(persisted.value.generation),
       preview_id: String(persisted.value.preview_id),
       source_head,
-      target: input.target,
+      target: artifact.value.target,
     } satisfies DesignPreviewBinding,
   };
 }
 
 export async function resolveDesignWritebackPreview(previewId: string, expectedGeneration: number) {
-  const loaded = await invokeAuthority("lookup-preview", { preview_id: previewId });
+  const identity = await resolveAuthorityRuntimeIdentity();
+  const loaded = await invokeAuthority(identity, "lookup-preview", { preview_id: previewId });
   if (!loaded.ok) return loaded;
   if (Number(loaded.value.generation) !== expectedGeneration) return { ok: false as const, reason: "approval_generation_mismatch" };
   if (loaded.value.state !== "previewed") return { ok: false as const, reason: "approval_not_approved" };
-  if (loaded.value.repository !== CAMPAIGN_REPOSITORY || loaded.value.worktree !== CAMPAIGN_ROOT || loaded.value.root !== CAMPAIGN_ROOT || loaded.value.plugin !== DESIGN_PLUGIN) {
+  if (loaded.value.repository !== identity.repository || loaded.value.worktree !== identity.worktree || loaded.value.root !== identity.root || loaded.value.plugin !== DESIGN_PLUGIN) {
     return { ok: false as const, reason: "approval_worktree_mismatch" };
   }
-  const source_head = await campaignHead();
+  const source_head = identity.sourceHead;
   if (loaded.value.source_head !== source_head) return { ok: false as const, reason: "approval_source_mismatch" };
   return {
     ok: true as const,
     value: {
+      artifact_id: `design-writeback-${String(loaded.value.content_hash)}`,
       content_hash: String(loaded.value.content_hash), context: String(loaded.value.context), generation: Number(loaded.value.generation),
       preview_id: String(loaded.value.id), source_head: String(loaded.value.source_head), target: String(loaded.value.target),
     } satisfies DesignPreviewBinding,
@@ -148,8 +185,15 @@ export async function resolveDesignWritebackPreview(previewId: string, expectedG
 }
 
 export async function issueDesignWritebackApproval(preview: DesignPreviewBinding, ttlMinutes = 30) {
+  const identity = await resolveAuthorityRuntimeIdentity();
+  if (
+    preview.artifact_id !== `design-writeback-${preview.content_hash}` ||
+    preview.source_head !== identity.sourceHead
+  ) {
+    return { ok: false as const, reason: "approval_artifact_binding_mismatch" };
+  }
   const expires_at = new Date(Date.now() + Math.min(Math.max(ttlMinutes, 1), 60) * 60_000).toISOString();
-  const issued = await invokeAuthority("issue", {
+  const issued = await invokeAuthority(identity, "issue", {
     consumer: "design-writeback",
     expires_at,
     operation: "design_writeback",
@@ -169,19 +213,36 @@ export async function issueDesignWritebackApproval(preview: DesignPreviewBinding
 }
 
 export async function rejectDesignWritebackPreview(preview: DesignPreviewBinding) {
-  return invokeAuthority("transition-preview", { expected_generation: String(preview.generation), preview_id: preview.preview_id, state: "rejected" });
+  const identity = await resolveAuthorityRuntimeIdentity();
+  return invokeAuthority(identity, "transition-preview", { expected_generation: String(preview.generation), preview_id: preview.preview_id, state: "rejected" });
 }
 
 export async function loadDesignWritebackApproval(approvalId: string) {
-  const loaded = await invokeAuthority("lookup", { approval_id: approvalId });
+  const identity = await resolveAuthorityRuntimeIdentity();
+  const loaded = await invokeAuthority(identity, "lookup", { approval_id: approvalId });
   if (!loaded.ok) return loaded;
   if (loaded.value.consumer !== "design-writeback" || loaded.value.operation !== "design_writeback") {
     return { ok: false as const, reason: "approval_consumer_mismatch" };
+  }
+  if (
+    loaded.value.repository !== identity.repository ||
+    loaded.value.worktree !== identity.worktree ||
+    loaded.value.root !== identity.root ||
+    loaded.value.plugin !== DESIGN_PLUGIN
+  ) {
+    return { ok: false as const, reason: "approval_worktree_mismatch" };
+  }
+  if (loaded.value.source_head !== identity.sourceHead) {
+    return { ok: false as const, reason: "approval_source_mismatch" };
+  }
+  if (loaded.value.state !== "approved") {
+    return { ok: false as const, reason: "approval_not_approved" };
   }
   return {
     ok: true as const,
     value: {
       approval_id: String(loaded.value.id),
+      artifact_id: `design-writeback-${String(loaded.value.content_hash)}`,
       consumer: "design-writeback" as const,
       content_hash: String(loaded.value.content_hash),
       context: String(loaded.value.context),
@@ -194,13 +255,26 @@ export async function loadDesignWritebackApproval(approvalId: string) {
   };
 }
 
-export async function consumeDesignWritebackApproval(approval: DesignApprovalBinding, content: unknown) {
-  if (hashApprovalContent(content) !== approval.content_hash) {
+export async function consumeDesignWritebackApproval(
+  approval: DesignApprovalBinding,
+  artifact: DesignWritebackArtifact,
+) {
+  if (
+    artifact.artifact_hash !== approval.content_hash ||
+    artifact.artifact_id !== approval.artifact_id
+  ) {
     return { ok: false as const, reason: "approval_content_hash_mismatch" };
   }
-  const source_head = await campaignHead();
-  return invokeAuthority("consume", {
-    ...commonBinding({ ...approval, source_head }),
+  if (artifact.context !== approval.context) {
+    return { ok: false as const, reason: "approval_context_mismatch" };
+  }
+  if (artifact.target !== approval.target) {
+    return { ok: false as const, reason: "approval_target_mismatch" };
+  }
+  const identity = await resolveAuthorityRuntimeIdentity();
+  const source_head = identity.sourceHead;
+  return invokeAuthority(identity, "consume", {
+    ...commonBinding(identity, { ...approval, source_head }),
     approval_id: approval.approval_id,
     consumer: approval.consumer,
     generation: String(approval.generation),
@@ -209,33 +283,61 @@ export async function consumeDesignWritebackApproval(approval: DesignApprovalBin
   });
 }
 
-export function designWritebackAcknowledgements(approval: DesignApprovalBinding): DesignAcknowledgements {
-  return Object.fromEntries(
-    DESIGN_ACKNOWLEDGEMENT_CONSUMERS.map((consumer) => [consumer, {
-      approval_id: approval.approval_id,
-      generation: approval.generation,
-    }]),
-  ) as DesignAcknowledgements;
-}
-
 export function redactedDesignWritebackEvidence(
   approval: DesignApprovalBinding,
-  receipt: { acceptance_id: string; result_status: "rejected" | "written"; target: string; trace_id: string },
+  input: {
+    artifact_hash: string;
+    participant_records: DesignParticipantRecord[];
+    receipt: {
+      acceptance_id: string;
+      content_hash: string;
+      expected_state: "absent";
+      result_state: "rejected" | "written_verified";
+      target: string;
+      trace_id: string;
+    };
+  },
 ) {
-  const acknowledgements = designWritebackAcknowledgements(approval);
-  for (const acknowledgement of Object.values(acknowledgements)) {
-    if (acknowledgement.approval_id !== approval.approval_id || acknowledgement.generation !== approval.generation) {
-      throw new Error("design_acknowledgement_mismatch");
-    }
+  const participants = input.participant_records.map((record) => record.participant);
+  const invocationIds = new Set(input.participant_records.map((record) => record.invocation_id));
+  const outputIds = new Set(input.participant_records.map((record) => record.output_id));
+  if (
+    input.artifact_hash !== approval.content_hash ||
+    input.receipt.target !== approval.target ||
+    input.receipt.trace_id !== approval.context ||
+    participants.length !== DESIGN_PARTICIPANTS.length ||
+    !DESIGN_PARTICIPANTS.every((participant) => participants.includes(participant)) ||
+    invocationIds.size !== DESIGN_PARTICIPANTS.length ||
+    outputIds.size !== DESIGN_PARTICIPANTS.length ||
+    input.participant_records.some(
+      (record) =>
+        record.artifact_hash !== input.artifact_hash ||
+        !/^[0-9a-f]{64}$/.test(record.output_hash) ||
+        record.output_hash !== hashDesignParticipantOutput({
+          artifact_hash: record.artifact_hash,
+          checks: record.checks,
+          invocation_id: record.invocation_id,
+          invoked_at: record.invoked_at,
+          output_id: record.output_id,
+          participant: record.participant,
+          status: record.status,
+        }) ||
+        record.checks.length === 0,
+    )
+  ) {
+    throw new Error("design_participant_evidence_mismatch");
   }
   return {
-    acknowledgement_consumers: DESIGN_ACKNOWLEDGEMENT_CONSUMERS,
+    artifact_hash: input.artifact_hash,
     generation: approval.generation,
+    participant_records: input.participant_records,
     receipt: {
-      acceptance_hash: hashApprovalContent(receipt.acceptance_id),
-      result_status: receipt.result_status,
-      target_hash: hashApprovalContent(receipt.target),
-      trace_hash: hashApprovalContent(receipt.trace_id),
+      acceptance_hash: hashApprovalContent(input.receipt.acceptance_id),
+      content_hash: input.receipt.content_hash,
+      expected_state: input.receipt.expected_state,
+      result_state: input.receipt.result_state,
+      target_hash: hashApprovalContent(input.receipt.target),
+      trace_hash: hashApprovalContent(input.receipt.trace_id),
     },
     redacted: true,
   };
@@ -244,17 +346,71 @@ export function redactedDesignWritebackEvidence(
 export async function finalizeDesignWritebackApproval(
   approval: DesignApprovalBinding,
   result: {
-    receipt: { acceptance_id: string; result_status: "rejected" | "written"; target: string; trace_id: string };
+    artifact: DesignWritebackArtifact;
+    participant_records: DesignParticipantRecord[];
+    receipt: {
+      acceptance_id: string;
+      content_hash: string;
+      expected_state: "absent";
+      result_state: "rejected" | "written_verified";
+      target: string;
+      trace_id: string;
+    };
     result_id?: string;
     status: "failed" | "succeeded";
   },
 ) {
-  const source_head = await campaignHead();
-  const finalized = await invokeAuthority("finalize", {
-    ...commonBinding({ ...approval, source_head }),
+  if (
+    result.artifact.artifact_hash !== approval.content_hash ||
+    result.artifact.artifact_hash !== hashApprovalContent(result.artifact.binding) ||
+    result.artifact.artifact_id !== approval.artifact_id ||
+    result.artifact.context !== approval.context ||
+    result.artifact.target !== approval.target ||
+    result.artifact.note_content_hash !==
+      result.artifact.binding.write_contract.result_state.content_hash ||
+    result.receipt.content_hash !== result.artifact.note_content_hash ||
+    result.receipt.expected_state !==
+      result.artifact.binding.write_contract.expected_state.target ||
+    JSON.stringify(result.artifact.binding).includes('"approval_id"')
+  ) {
+    return { ok: false as const, reason: "approval_artifact_binding_mismatch" };
+  }
+  let evidence: ReturnType<typeof redactedDesignWritebackEvidence>;
+  try {
+    evidence = redactedDesignWritebackEvidence(approval, {
+      artifact_hash: result.artifact.artifact_hash,
+      participant_records: result.participant_records,
+      receipt: result.receipt,
+    });
+  } catch (error) {
+    return {
+      ok: false as const,
+      reason: error instanceof Error ? error.message : "design_participant_evidence_mismatch",
+    };
+  }
+  const successfulStatuses = new Map(
+    result.participant_records.map((record) => [record.participant, record.status]),
+  );
+  if (
+    result.status === "succeeded" &&
+    (result.receipt.result_state !== "written_verified" ||
+      !/^[0-9a-f]{64}$/.test(result.receipt.content_hash) ||
+      successfulStatuses.get("design-reviewer") !== "accepted" ||
+      successfulStatuses.get("design-verifier") !== "verified" ||
+      successfulStatuses.get("evidence-recorder") !== "recorded")
+  ) {
+    return { ok: false as const, reason: "design_success_evidence_incomplete" };
+  }
+  if (result.status === "failed" && result.receipt.result_state !== "rejected") {
+    return { ok: false as const, reason: "design_failure_evidence_inconsistent" };
+  }
+  const identity = await resolveAuthorityRuntimeIdentity();
+  const source_head = identity.sourceHead;
+  const finalized = await invokeAuthority(identity, "finalize", {
+    ...commonBinding(identity, { ...approval, source_head }),
     approval_id: approval.approval_id,
     consumer: approval.consumer,
-    evidence: stableJson(redactedDesignWritebackEvidence(approval, result.receipt)),
+    evidence: stableJson(evidence),
     generation: String(approval.generation),
     operation: approval.operation,
     preview: approval.preview_id,
@@ -265,10 +421,12 @@ export async function finalizeDesignWritebackApproval(
   return {
     ok: true as const,
     value: {
-      ...finalized.value,
-      acknowledgement_consumers: DESIGN_ACKNOWLEDGEMENT_CONSUMERS,
+      artifact_hash: result.artifact.artifact_hash,
       generation: approval.generation,
+      participant_records: result.participant_records,
       redacted: true,
+      result_id_hash: hashApprovalContent(String(finalized.value.result_id)),
+      state: String(finalized.value.state),
     },
   };
 }

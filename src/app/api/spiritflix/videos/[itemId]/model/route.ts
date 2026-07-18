@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  captureSpiritFlixManualModelMutation,
   getSpiritFlixManualModelForItem,
+  restoreSpiritFlixManualModelMutation,
   setSpiritFlixManualModelForItem,
 } from "@/lib/spiritflix/manual-models";
-import { consumeSpiritFlixAdminApproval, finalizeSpiritFlixAdminApproval } from "@/lib/coding/spiritflix-admin-approval-authority";
+import { resolveSpiritFlixAdminApprovalBinding } from "@/lib/coding/spiritflix-admin-approval-binding";
+import { runApprovedSpiritFlixAdminMutation, SpiritFlixAdminTransactionError } from "@/lib/coding/spiritflix-admin-transaction";
 
 export const runtime = "nodejs";
 
@@ -31,9 +34,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PUT(request: NextRequest, context: RouteContext) {
   const { itemId } = await context.params;
 
-  let payload: { modelName?: unknown; filePath?: unknown; knownModelNames?: unknown; approval_id?: unknown };
+  let payload: { itemId?: unknown; modelName?: unknown; filePath?: unknown; knownModelNames?: unknown; approval_id?: unknown };
   try {
-    payload = (await request.json()) as { modelName?: unknown; filePath?: unknown; knownModelNames?: unknown; approval_id?: unknown };
+    payload = (await request.json()) as { itemId?: unknown; modelName?: unknown; filePath?: unknown; knownModelNames?: unknown; approval_id?: unknown };
   } catch {
     return NextResponse.json({ error: "Invalid SpiritFlix manual model request." }, { status: 400 });
   }
@@ -44,28 +47,57 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const approvalId = typeof payload.approval_id === "string" ? payload.approval_id : "";
   if (!approvalId) return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 });
-  const action = "metadata.mutation";
-  const target = `spiritflix:videos:${decodeURIComponent(itemId)}:model`;
-  const plan = { field: "modelName", value: payload.modelName };
-  const consumed = await consumeSpiritFlixAdminApproval(approvalId, action, target, plan);
-  if (!consumed.ok) return NextResponse.json({ reason_code: consumed.reason }, { status: 422 });
+  const decodedItemId = decodeURIComponent(itemId);
+  if (payload.itemId !== decodedItemId) return NextResponse.json({ reason_code: "spiritflix_admin_item_id_mismatch" }, { status: 400 });
+  const filePath = typeof payload.filePath === "string" ? payload.filePath : undefined;
+  const knownModelNames = Array.isArray(payload.knownModelNames)
+    ? payload.knownModelNames.filter((name): name is string => typeof name === "string")
+    : undefined;
 
   try {
-    const result = await setSpiritFlixManualModelForItem({
-      itemId: decodeURIComponent(itemId),
-      filePath: typeof payload.filePath === "string" ? payload.filePath : undefined,
+    const binding = await resolveSpiritFlixAdminApprovalBinding("manual-model", {
+      itemId: decodedItemId,
+      filePath,
       modelName: payload.modelName,
-      knownModelNames: Array.isArray(payload.knownModelNames) ? payload.knownModelNames.filter((name): name is string => typeof name === "string") : undefined,
+      knownModelNames,
     });
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "succeeded");
-    return NextResponse.json(result, {
+    const completed = await runApprovedSpiritFlixAdminMutation({
+      approvalId,
+      binding,
+      capture: () => captureSpiritFlixManualModelMutation(decodedItemId),
+      mutate: () => setSpiritFlixManualModelForItem({
+        itemId: decodedItemId,
+        filePath,
+        modelName: payload.modelName as string,
+        knownModelNames,
+      }),
+      rollback: (snapshot) => restoreSpiritFlixManualModelMutation(snapshot),
+      verify: async (result) => {
+        const stored = await getSpiritFlixManualModelForItem(decodedItemId, { lookupFilePath: filePath });
+        if (stored.modelName !== result.record.modelName) {
+          throw new Error("spiritflix_admin_model_verification_failed");
+        }
+        return {
+          schema: "spiritflix-admin-manual-model-result/v1",
+          state: { filePath: stored.filePath ?? null, itemId: stored.itemId, modelName: stored.modelName },
+        };
+      },
+    });
+    return NextResponse.json({
+      ...completed.result,
+      authority: {
+        participant_invocation_ids: completed.evidence.participant_invocations.map((item) => item.invocation_id),
+        result_hash: completed.evidence.result_hash,
+      },
+    }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "failed");
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "SpiritFlix manual video model update failed." },
-      { status: 400 },
+      error instanceof SpiritFlixAdminTransactionError
+        ? { reason_code: error.reasonCode }
+        : { error: error instanceof Error ? error.message : "SpiritFlix manual video model update failed." },
+      { status: error instanceof SpiritFlixAdminTransactionError ? error.status : 400 },
     );
   }
 }

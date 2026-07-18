@@ -44,6 +44,119 @@ const previewStore = new Map<
   { action: SpiritFlixAdminActionName; payload: SpiritFlixAdminActionRequest; receipt: SpiritFlixAdminReceipt }
 >();
 
+export type SpiritFlixAdminActionApprovalSnapshot = {
+  action: SpiritFlixAdminActionName;
+  payload: SpiritFlixAdminActionRequest;
+  previewId: string;
+  receipt: SpiritFlixAdminReceipt;
+};
+
+/**
+ * Returns the immutable server-held payload behind an action preview. Approval
+ * issuance and execution both call this function so a browser cannot replace
+ * paths, metadata, order content, or rescan inputs after preview.
+ */
+export function getSpiritFlixAdminActionApprovalSnapshot(
+  previewId: string,
+): SpiritFlixAdminActionApprovalSnapshot | null {
+  const cached = previewStore.get(previewId);
+  if (!cached) return null;
+  return {
+    action: cached.action,
+    payload: structuredClone(cached.payload),
+    previewId,
+    receipt: structuredClone(cached.receipt),
+  };
+}
+
+export type SpiritFlixAdminActionMutationSnapshot = {
+  approval: SpiritFlixAdminActionApprovalSnapshot;
+  targetContent: string | null;
+};
+
+export async function captureSpiritFlixAdminActionMutation(
+  previewId: string,
+): Promise<SpiritFlixAdminActionMutationSnapshot> {
+  const approval = getSpiritFlixAdminActionApprovalSnapshot(previewId);
+  if (!approval) throw new Error("spiritflix_admin_preview_not_found");
+  const target = approval.receipt.targetPath;
+  let targetContent: string | null = null;
+  if (target && (approval.action === "writeMetadata" || approval.action === "saveOrder")) {
+    try {
+      targetContent = await fs.readFile(target, "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+  return { approval, targetContent };
+}
+
+export async function verifySpiritFlixAdminActionMutation(
+  result: SpiritFlixAdminActionResponse,
+): Promise<Record<string, unknown>> {
+  if (!result.allowed || result.phase !== "execute" || result.receipt?.status !== "executed") {
+    throw new Error("spiritflix_admin_action_verification_failed");
+  }
+  const receipt = result.receipt;
+  const paths = await Promise.all(receipt.affectedPaths.map(async (candidate) => {
+    try {
+      const details = await fs.lstat(candidate);
+      if (details.isSymbolicLink()) throw new Error("spiritflix_admin_action_symlink_forbidden");
+      return { exists: true, isDirectory: details.isDirectory(), path: candidate, size: details.size };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return { exists: false, path: candidate };
+      throw error;
+    }
+  }));
+  if (receipt.targetPath && result.action !== "requestJellyfinRescan") {
+    const target = paths.find((entry) => entry.path === receipt.targetPath);
+    if (!target?.exists) throw new Error("spiritflix_admin_action_target_missing");
+  }
+  if (receipt.sourcePath && ["move", "rename", "restore", "softDelete"].includes(result.action)) {
+    const source = paths.find((entry) => entry.path === receipt.sourcePath);
+    if (source?.exists) throw new Error("spiritflix_admin_action_source_still_exists");
+  }
+  return {
+    action: result.action,
+    affectedPaths: paths,
+    previewId: result.previewId,
+    receiptId: receipt.id,
+    status: receipt.status,
+  };
+}
+
+export async function rollbackSpiritFlixAdminActionMutation(
+  snapshot: SpiritFlixAdminActionMutationSnapshot,
+  result: SpiritFlixAdminActionResponse | undefined,
+): Promise<void> {
+  const receipt = result?.receipt ?? snapshot.approval.receipt;
+  const action = snapshot.approval.action;
+  if (result?.allowed || result?.mutationApplied) {
+    if (action === "createFolder" && receipt.targetPath) {
+      await fs.rmdir(receipt.targetPath);
+    } else if (["rename", "move", "softDelete", "restore"].includes(action) && receipt.sourcePath && receipt.targetPath) {
+      await fs.mkdir(path.dirname(receipt.sourcePath), { recursive: true });
+      await moveSpiritFlixAdminPath(receipt.targetPath, receipt.sourcePath);
+    } else if ((action === "writeMetadata" || action === "saveOrder") && receipt.targetPath) {
+      if (snapshot.targetContent === null) {
+        await fs.unlink(receipt.targetPath).catch((error: NodeJS.ErrnoException) => {
+          if (error.code !== "ENOENT") throw error;
+        });
+      } else {
+        await atomicWriteFile(receipt.targetPath, snapshot.targetContent);
+      }
+    }
+  }
+  await writeSpiritFlixAdminReceipt({
+    ...receipt,
+    id: randomUUID(),
+    status: "rolled_back",
+    reason: result?.allowed
+      ? "Authority finalization or result verification failed; mutation was compensated."
+      : "Execution did not produce an authoritative success.",
+  });
+}
+
 export function normalizeSpiritFlixAdminActionRequest(request: SpiritFlixAdminActionRequest): SpiritFlixAdminActionRequest {
   const phase = request.mode ?? request.phase ?? "preview";
   const previewId = request.confirmToken ?? request.previewId;
@@ -531,19 +644,28 @@ async function previewRescan(request: SpiritFlixAdminActionRequest, previewId: s
   });
 }
 
+function assertExactPlannedPath(actual: string, expected: string | undefined): void {
+  if (!expected || path.resolve(actual) !== path.resolve(expected)) {
+    throw new Error("SpiritFlix admin preview path changed before execution.");
+  }
+}
+
 async function executeAction(
   action: SpiritFlixAdminActionName,
   request: SpiritFlixAdminActionRequest,
   previewId: string,
   planned: SpiritFlixAdminReceipt,
 ): Promise<SpiritFlixAdminActionResponse> {
+  let mutationApplied = false;
   try {
     switch (action) {
       case "createFolder": {
         const parentPath = await assertParentExists(request.targetPath ?? SPIRITFLIX_MEDIA_ROOT);
         const folderName = sanitizeName(request.folderName ?? "");
         const targetPath = path.join(parentPath, folderName);
+        assertExactPlannedPath(targetPath, planned.targetPath);
         await fs.mkdir(targetPath, { recursive: false });
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -553,14 +675,18 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Folder created.", {
           receipt,
+          mutationApplied,
           preview: { targetPath, affectedPaths: [targetPath], warnings: [] },
         });
       }
       case "rename": {
         const sourcePath = await assertAllowedPath(request.sourcePath ?? "");
+        assertExactPlannedPath(sourcePath, planned.sourcePath);
         assertWritableSpiritFlixAdminPath(sourcePath, "rename");
         const targetPath = path.join(path.dirname(sourcePath), resolveRenameTarget(sourcePath, request.newName ?? ""));
+        assertExactPlannedPath(targetPath, planned.targetPath);
         await moveSpiritFlixAdminPath(sourcePath, targetPath);
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -571,15 +697,19 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Rename complete.", {
           receipt,
+          mutationApplied,
           preview: { sourcePath, targetPath, affectedPaths: [sourcePath, targetPath], warnings: [] },
         });
       }
       case "move": {
         const sourcePath = await assertAllowedPath(request.sourcePath ?? "");
+        assertExactPlannedPath(sourcePath, planned.sourcePath);
         assertWritableSpiritFlixAdminPath(sourcePath, "move");
         const targetParent = await assertParentExists(request.targetPath ?? request.parentPath ?? "");
         const targetPath = path.join(targetParent, path.basename(sourcePath));
+        assertExactPlannedPath(targetPath, planned.targetPath);
         await moveSpiritFlixAdminPath(sourcePath, targetPath);
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -590,17 +720,21 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Move complete.", {
           receipt,
+          mutationApplied,
           preview: { sourcePath, targetPath, affectedPaths: [sourcePath, targetPath], warnings: [] },
         });
       }
       case "softDelete": {
         const sourcePath = await assertAllowedPath(request.sourcePath ?? "");
+        assertExactPlannedPath(sourcePath, planned.sourcePath);
         assertWritableSpiritFlixAdminPath(sourcePath, "soft delete");
         const relative = path.relative(SPIRITFLIX_MEDIA_ROOT, sourcePath);
         const trashDay = new Date().toISOString().slice(0, 10).replace(/-/g, "");
         const targetPath = await uniqueTrashPath(path.join(TRASH_ROOT, trashDay, relative));
+        assertExactPlannedPath(targetPath, planned.targetPath);
         await fs.mkdir(path.dirname(targetPath), { recursive: true });
         await moveSpiritFlixAdminPath(sourcePath, targetPath);
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -611,14 +745,17 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Moved to trash.", {
           receipt,
+          mutationApplied,
           preview: { sourcePath, targetPath, affectedPaths: [sourcePath, targetPath], warnings: [] },
         });
       }
       case "restore": {
         const trashPath = await assertAllowedPath(request.sourcePath ?? "");
+        assertExactPlannedPath(trashPath, planned.sourcePath);
         const targetPath = request.targetPath
           ? await validateSpiritFlixAdminPathCandidate(request.targetPath)
           : await validateSpiritFlixAdminPathCandidate(restoreTargetFromTrash(trashPath));
+        assertExactPlannedPath(targetPath, planned.targetPath);
         await fs.access(targetPath).then(() => {
           throw new Error("Restore target already exists.");
         }).catch((error: NodeJS.ErrnoException) => {
@@ -626,6 +763,7 @@ async function executeAction(
         });
         await fs.mkdir(path.dirname(targetPath), { recursive: true });
         await moveSpiritFlixAdminPath(trashPath, targetPath);
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -636,16 +774,20 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Restore complete.", {
           receipt,
+          mutationApplied,
           preview: { sourcePath: trashPath, targetPath, affectedPaths: [trashPath, targetPath], warnings: [] },
         });
       }
       case "writeMetadata": {
         const sourcePath = await assertAllowedPath(request.sourcePath ?? "");
+        assertExactPlannedPath(sourcePath, planned.sourcePath);
         const metadata = validateMetadata(request.metadata ?? {});
         const hash = createHash("sha256").update(sourcePath.replace(/\\/g, "/").toLowerCase()).digest("hex");
         const targetPath = path.join(METADATA_ROOT, `${hash}.json`);
+        assertExactPlannedPath(targetPath, planned.targetPath);
         await fs.mkdir(METADATA_ROOT, { recursive: true });
         await atomicWriteFile(targetPath, JSON.stringify({ sourcePath, ...metadata }, null, 2));
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -656,10 +798,12 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Metadata saved.", {
           receipt,
+          mutationApplied,
           preview: { sourcePath, targetPath, affectedPaths: [targetPath], warnings: [] },
         });
       }
       case "saveOrder": {
+        assertExactPlannedPath(ORDER_FILE, planned.targetPath);
         await fs.mkdir(path.dirname(ORDER_FILE), { recursive: true });
         const order: SpiritFlixAdminOrderFile = {
           ...(request.order as SpiritFlixAdminOrderFile),
@@ -667,6 +811,7 @@ async function executeAction(
           updatedAt: new Date().toISOString(),
         };
         await atomicWriteFile(ORDER_FILE, JSON.stringify(order, null, 2));
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -676,6 +821,7 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Custom order saved.", {
           receipt,
+          mutationApplied,
           preview: { targetPath: ORDER_FILE, affectedPaths: [ORDER_FILE], warnings: [] },
         });
       }
@@ -685,10 +831,13 @@ async function executeAction(
           throw new Error("Rescan action is not active yet because safe Jellyfin admin auth is unavailable.");
         }
         const targetPath = await assertAllowedPath(request.rescanPath ?? SPIRITFLIX_MEDIA_ROOT);
-        await fetch(`${credentials.serverUrl}/Library/Refresh`, {
+        assertExactPlannedPath(targetPath, planned.targetPath);
+        const refresh = await fetch(`${credentials.serverUrl}/Library/Refresh`, {
           method: "POST",
           headers: { "X-Emby-Token": credentials.accessToken },
         });
+        if (!refresh.ok) throw new Error(`Jellyfin rescan request failed (HTTP ${refresh.status}).`);
+        mutationApplied = true;
         const receipt = await writeSpiritFlixAdminReceipt({
           ...planned,
           status: "executed",
@@ -699,6 +848,7 @@ async function executeAction(
         });
         return response(action, "execute", previewId, true, "Jellyfin rescan requested.", {
           receipt,
+          mutationApplied,
           preview: { targetPath, affectedPaths: [targetPath], warnings: [] },
         });
       }
@@ -706,15 +856,16 @@ async function executeAction(
         return response(action, "execute", previewId, false, "Unknown action.");
     }
   } catch (error) {
-    const receipt = await writeSpiritFlixAdminReceipt({
+    const failedReceipt: SpiritFlixAdminReceipt = {
       ...planned,
       id: randomUUID(),
       status: "failed",
       reason: error instanceof Error ? error.message : "Action failed.",
       affectedPaths: planned.affectedPaths,
       previewId,
-    });
-    return response(action, "execute", previewId, false, receipt.reason ?? "Action failed.", { receipt });
+    };
+    const receipt = await writeSpiritFlixAdminReceipt(failedReceipt).catch(() => failedReceipt);
+    return response(action, "execute", previewId, false, receipt.reason ?? "Action failed.", { mutationApplied, receipt });
   }
 }
 

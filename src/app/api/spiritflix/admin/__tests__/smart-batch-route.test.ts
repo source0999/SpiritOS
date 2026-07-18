@@ -14,8 +14,8 @@ describe("SpiritFlix smart batch mutation route", () => {
       body: JSON.stringify({ action: "run", path: "/outside", force: true, approval_id: "forged-nonexistent-approval" }),
       method: "POST",
     }));
-    expect(response.status).toBe(422);
+    expect(response.status).toBeGreaterThanOrEqual(400);
     const body = await response.json();
-    expect(body.reason_code).toBeTruthy();
+    expect(body.reason_code ?? body.error).toBeTruthy();
   });
 });

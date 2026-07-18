@@ -68,6 +68,52 @@ function indexPath(options: FaceLearningStoreOptions = {}): string {
   return path.join(getFaceLearningRoot(options), "index.json");
 }
 
+export type SpiritFlixFaceLearningMutationSnapshot = {
+  files: Array<{ content: string | null; path: string }>;
+};
+
+async function snapshotTextFile(filePath: string): Promise<{ content: string | null; path: string }> {
+  try {
+    return { content: await fs.readFile(filePath, "utf8"), path: filePath };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { content: null, path: filePath };
+    throw error;
+  }
+}
+
+export async function captureSpiritFlixFaceLearningMutation(
+  itemId: string,
+  sidecarPath?: string,
+  options: FaceLearningStoreOptions = {},
+): Promise<SpiritFlixFaceLearningMutationSnapshot> {
+  const paths = [requestPath(itemId, options), indexPath(options), ...(sidecarPath ? [sidecarPath] : [])];
+  return { files: await Promise.all([...new Set(paths)].map(snapshotTextFile)) };
+}
+
+export async function restoreSpiritFlixFaceLearningMutation(
+  snapshot: SpiritFlixFaceLearningMutationSnapshot,
+): Promise<void> {
+  for (const file of snapshot.files) {
+    if (file.content === null) {
+      await fs.unlink(file.path).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== "ENOENT") throw error;
+      });
+      continue;
+    }
+    await fs.mkdir(path.dirname(file.path), { recursive: true });
+    const temporary = `${file.path}.rollback-${process.pid}-${Date.now()}`;
+    await fs.writeFile(temporary, file.content, "utf8");
+    await fs.rename(temporary, file.path);
+  }
+}
+
+export async function getSpiritFlixFaceLearningRequest(
+  itemId: string,
+  options: FaceLearningStoreOptions = {},
+): Promise<SpiritFlixFaceLearningRecord | null> {
+  return readJsonFile<SpiritFlixFaceLearningRecord>(requestPath(itemId, options));
+}
+
 function isAllowedSidecarPath(sidecarPath?: string): boolean {
   if (!sidecarPath) return false;
   const normalized = path.normalize(sidecarPath).replaceAll("\\", "/");

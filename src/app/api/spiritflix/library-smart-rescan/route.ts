@@ -3,8 +3,9 @@ import { closeSync, openSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { spiritFlixAdminMutationDenied } from "@/lib/spiritflix/admin-authority";
-import { consumeSpiritFlixAdminApproval, finalizeSpiritFlixAdminApproval } from "@/lib/coding/spiritflix-admin-approval-authority";
+import { captureSpiritFlixFiles, restoreSpiritFlixFiles } from "@/lib/spiritflix/admin/file-mutation-snapshot";
+import { resolveSpiritFlixAdminApprovalBinding } from "@/lib/coding/spiritflix-admin-approval-binding";
+import { runApprovedSpiritFlixAdminMutation, SpiritFlixAdminTransactionError } from "@/lib/coding/spiritflix-admin-transaction";
 
 export const runtime = "nodejs";
 
@@ -242,17 +243,53 @@ export async function POST(request: Request) {
   let approvalId = "";
   try { approvalId = String((await request.json() as { approval_id?: unknown }).approval_id ?? ""); } catch { return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 }); }
   if (!approvalId) return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 });
-  const action = "index.rebuild";
-  const target = "spiritflix:library-smart-rescan";
-  const plan = { runner: "face-organizer", version: 1 };
-  const consumed = await consumeSpiritFlixAdminApproval(approvalId, action, target, plan);
-  if (!consumed.ok) return NextResponse.json({ reason_code: consumed.reason }, { status: 422 });
   try {
-    const status = await startSmartRescan();
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "succeeded");
-    return NextResponse.json({ ...status, approval: { generation: Number(consumed.value.generation), status: "consumed" } }, { headers: { "Cache-Control": "no-store" } });
+    const binding = await resolveSpiritFlixAdminApprovalBinding("library-smart-rescan", {});
+    const completed = await runApprovedSpiritFlixAdminMutation({
+      approvalId,
+      binding,
+      capture: () => captureSpiritFlixFiles([STATUS_PATH, SUMMARY_PATH, LOG_PATH]),
+      mutate: () => startSmartRescan(),
+      rollback: async (snapshot, status) => {
+        if (status?.pid && isProbablyRunning(status.pid)) {
+          try {
+            process.kill(process.platform === "linux" ? -status.pid : status.pid, "SIGTERM");
+          } catch {
+            process.kill(status.pid, "SIGTERM");
+          }
+        }
+        await restoreSpiritFlixFiles(snapshot);
+      },
+      verify: async (status) => {
+        const persisted = await readStatus();
+        if (persisted.status !== "running" && persisted.status !== "completed") {
+          throw new Error("spiritflix_admin_rescan_verification_failed");
+        }
+        if (persisted.status === "running" && (!persisted.pid || !isProbablyRunning(persisted.pid))) {
+          throw new Error("spiritflix_admin_rescan_process_missing");
+        }
+        return {
+          schema: "spiritflix-admin-library-rescan-result/v1",
+          state: {
+            pid: persisted.pid ?? null,
+            startedAt: persisted.startedAt ?? null,
+            status: persisted.status,
+          },
+        };
+      },
+    });
+    return NextResponse.json({
+      ...completed.result,
+      authority: {
+        participant_invocation_ids: completed.evidence.participant_invocations.map((item) => item.invocation_id),
+        result_hash: completed.evidence.result_hash,
+      },
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "failed");
-    return NextResponse.json({ reason_code: error instanceof Error ? error.message : "spiritflix_admin_execution_failed" }, { status: 500 });
+    return NextResponse.json({
+      reason_code: error instanceof SpiritFlixAdminTransactionError
+        ? error.reasonCode
+        : error instanceof Error ? error.message : "spiritflix_admin_execution_failed",
+    }, { status: error instanceof SpiritFlixAdminTransactionError ? error.status : 500 });
   }
 }

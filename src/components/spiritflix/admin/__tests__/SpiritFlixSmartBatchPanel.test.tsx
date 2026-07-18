@@ -3,6 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SpiritFlixSmartBatchPanel } from "../SpiritFlixSmartBatchPanel";
 import type { SpiritFlixSmartBatchItem, SpiritFlixSmartBatchPreview, SpiritFlixSmartRenamePlan } from "@/lib/spiritflix/admin/smart";
 
+vi.mock("@/lib/spiritflix/admin/approved-mutation-client", () => ({
+  fetchApprovedSpiritFlixAdminMutation: async (
+    _writer: string,
+    url: string,
+    mutation: Record<string, unknown>,
+    init: RequestInit = {},
+  ) => fetch(url, {
+    ...init,
+    body: JSON.stringify({ ...mutation, approval_id: "approval-component-test" }),
+    headers: { "Content-Type": "application/json", ...init.headers },
+    method: init.method ?? "POST",
+  }),
+}));
+
 const longName = "A Very Long Clip Name With Many Words That Should Stay Readable Instead Of Collapsing Into One Letter Columns 2026 Final Cut.mp4";
 
 function item(overrides: Partial<SpiritFlixSmartBatchItem>): SpiritFlixSmartBatchItem {

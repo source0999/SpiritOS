@@ -65,6 +65,7 @@ import {
   type SpiritFlixVideoOrientation,
 } from "@/lib/spiritflix-orientation";
 import { getSpiritFlixManualTagScope } from "@/lib/spiritflix/manual-tag-scope";
+import { fetchApprovedSpiritFlixAdminMutation } from "@/lib/spiritflix/admin/approved-mutation-client";
 import type {
   FaceOrganizerMetadataResponse,
   FaceOrganizerVideoMatch,
@@ -1950,14 +1951,17 @@ export function SpiritFlixPlayer({
     setManualTagsSaving(true);
     setManualTagsError("");
     try {
-      const response = await fetchManualMetadata(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/tags`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filePath: sourcePath || undefined,
-          manualTags: nextManualTags,
-        }),
-      });
+      const mutation = {
+        itemId: item.Id,
+        filePath: sourcePath || undefined,
+        manualTags: nextManualTags,
+      };
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "manual-tags",
+        `/api/spiritflix/videos/${encodeURIComponent(item.Id)}/tags`,
+        mutation,
+        { method: "PUT" },
+      );
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(body?.error ?? "Manual tags could not be saved.");
@@ -2072,17 +2076,18 @@ export function SpiritFlixPlayer({
     async (modelName: string, faceMatch?: FaceOrganizerVideoMatch, relatedItems = relatedModelTagItems) => {
       setFaceLearningError("");
       try {
-        const response = await fetch(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/face-learning`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const response = await fetchApprovedSpiritFlixAdminMutation(
+          "face-learning",
+          `/api/spiritflix/videos/${encodeURIComponent(item.Id)}/face-learning`,
+          {
+            itemId: item.Id,
             filePath: sourcePath || undefined,
             modelName,
             sidecarPath: faceMatch?.sidecarPath,
             faceGuess: faceMatch?.primaryPerformer,
             relatedItems,
-          }),
-        });
+          },
+        );
         const body = (await response.json().catch(() => null)) as { record?: SpiritFlixFaceLearningRecord; error?: string } | null;
         if (!response.ok || !body?.record) throw new Error(body?.error ?? "Face learning could not be queued.");
         setFaceLearningRecord(body.record);
@@ -2157,15 +2162,17 @@ export function SpiritFlixPlayer({
     setManualModelSaving(true);
     setManualModelError("");
     try {
-      const response = await fetchManualMetadata(`/api/spiritflix/videos/${encodeURIComponent(item.Id)}/model`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "manual-model",
+        `/api/spiritflix/videos/${encodeURIComponent(item.Id)}/model`,
+        {
+          itemId: item.Id,
           filePath: sourcePath || undefined,
           modelName,
           knownModelNames: knownModelOptions,
-        }),
-      });
+        },
+        { method: "PUT" },
+      );
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(body?.error ?? "Manual model could not be saved.");
@@ -2183,15 +2190,17 @@ export function SpiritFlixPlayer({
       if (titleMatchedItems.length) {
         void Promise.allSettled(
           titleMatchedItems.map(async (matchedItem) => {
-            const matchedResponse = await fetchManualMetadata(`/api/spiritflix/videos/${encodeURIComponent(matchedItem.Id)}/model`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
+            const matchedResponse = await fetchApprovedSpiritFlixAdminMutation(
+              "manual-model",
+              `/api/spiritflix/videos/${encodeURIComponent(matchedItem.Id)}/model`,
+              {
+                itemId: matchedItem.Id,
                 filePath: getItemSourcePath(matchedItem) || undefined,
                 modelName: body.record.modelName,
                 knownModelNames: knownModelOptions,
-              }),
-            });
+              },
+              { method: "PUT" },
+            );
             if (!matchedResponse.ok) throw new Error("Title-matched model could not be saved.");
             window.dispatchEvent(
               new CustomEvent(MANUAL_MODEL_CHANGED_EVENT, {
@@ -2300,15 +2309,15 @@ export function SpiritFlixPlayer({
     setDeleteExecuting(true);
     setDeleteError("");
     try {
-      const response = await fetch("/api/spiritflix/admin/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "admin-action",
+        "/api/spiritflix/admin/actions",
+        {
           action: "softDelete",
           mode: "execute",
           confirmToken: deletePreview.previewId,
-        }),
-      });
+        },
+      );
       const body = (await response.json()) as SpiritFlixDeletePreview | { error?: string };
       if (!response.ok || !("allowed" in body) || !body.allowed) {
         throw new Error("error" in body && body.error ? body.error : "Delete was blocked.");

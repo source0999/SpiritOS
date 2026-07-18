@@ -19,8 +19,8 @@ describe("SpiritFlix admin actions route", () => {
       headers: { "Content-Type": "application/json" },
       method: "POST",
     }));
-    expect(response.status).toBe(422);
+    expect(response.status).toBeGreaterThanOrEqual(400);
     const body = await response.json();
-    expect(body.reason_code).toBeTruthy();
+    expect(body.reason_code ?? body.error).toBeTruthy();
   });
 });

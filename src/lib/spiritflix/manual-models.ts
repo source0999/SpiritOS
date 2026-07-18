@@ -193,6 +193,49 @@ async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
   await fs.writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+export type SpiritFlixManualModelMutationSnapshot = {
+  files: Array<{ content: string | null; path: string }>;
+};
+
+async function snapshotTextFile(filePath: string): Promise<{ content: string | null; path: string }> {
+  try {
+    return { content: await fs.readFile(filePath, "utf8"), path: filePath };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { content: null, path: filePath };
+    throw error;
+  }
+}
+
+export async function captureSpiritFlixManualModelMutation(
+  itemId: string,
+  options: SpiritFlixManualModelStoreOptions = {},
+): Promise<SpiritFlixManualModelMutationSnapshot> {
+  const normalizedItemId = assertManualModelItemId(itemId);
+  return {
+    files: await Promise.all([
+      snapshotTextFile(getManualModelRecordPath(normalizedItemId, options)),
+      snapshotTextFile(getManualModelIndexPath(options)),
+    ]),
+  };
+}
+
+export async function restoreSpiritFlixManualModelMutation(
+  snapshot: SpiritFlixManualModelMutationSnapshot,
+): Promise<void> {
+  for (const file of snapshot.files) {
+    if (file.content === null) {
+      await fs.unlink(file.path).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== "ENOENT") throw error;
+      });
+      continue;
+    }
+    await fs.mkdir(path.dirname(file.path), { recursive: true });
+    const temporary = `${file.path}.rollback-${process.pid}-${Date.now()}`;
+    await fs.writeFile(temporary, file.content, "utf8");
+    await fs.rename(temporary, file.path);
+  }
+}
+
 export async function getSpiritFlixManualModelForItem(
   itemId: string,
   options: SpiritFlixManualModelStoreOptions = {},

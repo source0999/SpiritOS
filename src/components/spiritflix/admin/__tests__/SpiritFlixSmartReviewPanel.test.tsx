@@ -3,6 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SpiritFlixAdminItem } from "@/lib/spiritflix/admin/types";
 import { SpiritFlixSmartReviewPanel } from "../SpiritFlixSmartReviewPanel";
 
+vi.mock("@/lib/spiritflix/admin/approved-mutation-client", () => ({
+  fetchApprovedSpiritFlixAdminMutation: async (
+    _writer: string,
+    url: string,
+    mutation: Record<string, unknown>,
+    init: RequestInit = {},
+  ) => fetch(url, {
+    ...init,
+    body: JSON.stringify({ ...mutation, approval_id: "approval-component-test" }),
+    headers: { "Content-Type": "application/json", ...init.headers },
+    method: init.method ?? "POST",
+  }),
+}));
+
 const video: SpiritFlixAdminItem = {
   id: "file:clip",
   name: "Beta Clip.mp4",

@@ -187,6 +187,33 @@ describe("SpiritFlix admin actions", () => {
     await expect(fs.stat(restoreTarget)).resolves.toBeTruthy();
   });
 
+  it("fails closed when a previewed soft-delete destination changes before execution", async () => {
+    const filePath = path.join(smokeRoot, "trash-conflict.txt");
+    await fs.writeFile(filePath, "source");
+    const preview = await handleSpiritFlixAdminAction({
+      action: "softDelete",
+      mode: "preview",
+      sourcePath: filePath,
+    });
+    expect(preview.allowed).toBe(true);
+    const previewedTarget = preview.preview?.targetPath as string;
+    await fs.mkdir(path.dirname(previewedTarget), { recursive: true });
+    await fs.writeFile(previewedTarget, "conflict");
+
+    const executed = await handleSpiritFlixAdminAction({
+      action: "softDelete",
+      mode: "execute",
+      confirmToken: preview.previewId,
+      sourcePath: filePath,
+    });
+
+    expect(executed.allowed).toBe(false);
+    expect(executed.message).toMatch(/preview path changed/i);
+    await expect(fs.readFile(filePath, "utf8")).resolves.toBe("source");
+    await expect(fs.readFile(previewedTarget, "utf8")).resolves.toBe("conflict");
+    await fs.rm(previewedTarget);
+  });
+
   it("moveSpiritFlixAdminPath copies then deletes when rename hits EXDEV", async () => {
     const sourcePath = path.join(smokeRoot, "exdev-source.txt");
     const targetPath = path.join(smokeRoot, "nested", "exdev-target.txt");

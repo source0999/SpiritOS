@@ -4,9 +4,10 @@ from typing import Any
 
 
 REQUIRED_CONSUMERS = (
-    "coding-executor:coder",
+    "coding-executor",
     "coding-reviewer",
     "coding-verifier",
+    "coding-anti-cheat",
     "evidence-recorder",
 )
 
@@ -36,5 +37,27 @@ def validate_coding_approval_evidence(value: dict[str, Any]) -> None:
             raise CampaignApprovalEvidenceError(f"approval_acknowledgement_missing:{consumer}")
         if acknowledgement.get("approval_id") != approval_id or acknowledgement.get("generation") != generation:
             raise CampaignApprovalEvidenceError(f"approval_acknowledgement_mismatch:{consumer}")
+        for field in (
+            "artifact_sha256",
+            "invocation_id",
+            "output_id",
+            "consumer_acknowledgement_id",
+        ):
+            if not isinstance(acknowledgement.get(field), str) or not acknowledgement[field]:
+                raise CampaignApprovalEvidenceError(
+                    f"approval_acknowledgement_provenance_missing:{consumer}:{field}"
+                )
         if isinstance(target_plugin_identity, dict) and acknowledgement.get("target_plugin_identity") != target_plugin_identity:
             raise CampaignApprovalEvidenceError(f"approval_target_plugin_acknowledgement_mismatch:{consumer}")
+    artifact_hashes = {
+        str(acknowledgements[consumer]["artifact_sha256"])
+        for consumer in REQUIRED_CONSUMERS
+    }
+    if len(artifact_hashes) != 1 or artifact_hashes != {str(value.get("artifact_sha256") or "")}:
+        raise CampaignApprovalEvidenceError("approval_participant_artifact_mismatch")
+    for field in ("invocation_id", "output_id", "consumer_acknowledgement_id"):
+        identities = [str(acknowledgements[consumer][field]) for consumer in REQUIRED_CONSUMERS]
+        if len(set(identities)) != len(identities):
+            raise CampaignApprovalEvidenceError(
+                f"approval_participant_identity_not_distinct:{field}"
+            )

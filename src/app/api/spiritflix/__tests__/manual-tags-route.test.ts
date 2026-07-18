@@ -51,6 +51,7 @@ describe("SpiritFlix manual tag API", () => {
       new NextRequest("http://localhost/api/spiritflix/videos/video-1/tags", {
         method: "PUT",
         body: JSON.stringify({
+          itemId: "video-1",
           filePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
           manualTags: ["Solo"],
           approval_id: "server-issued-fixture-approval",
@@ -66,7 +67,17 @@ describe("SpiritFlix manual tag API", () => {
       "server-issued-fixture-approval",
       "metadata.mutation",
       "spiritflix:videos:video-1:tags",
-      { field: "manualTags", count: 1 },
+      expect.objectContaining({
+        schema: "spiritflix-admin-mutation-plan/v2",
+        writer: "manual-tags",
+        mutation: {
+          itemId: "video-1",
+          filePath: "/mnt/spirit-8tb/media/yes/model/video.mkv",
+          manualTags: ["Solo"],
+        },
+        expected_current_state_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        expected_result_contract_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
     );
 
     const getResponse = await getVideoTags(
@@ -88,7 +99,7 @@ describe("SpiritFlix manual tag API", () => {
     await putVideoModel(
       new NextRequest("http://localhost/api/spiritflix/videos/video-2/model", {
         method: "PUT",
-        body: JSON.stringify({ modelName: "Luna x pearl", approval_id: "server-issued-fixture-approval" }),
+        body: JSON.stringify({ itemId: "video-2", modelName: "Luna x pearl", approval_id: "server-issued-fixture-approval" }),
       }),
       { params: Promise.resolve({ itemId: "video-2" }) },
     );
@@ -96,6 +107,7 @@ describe("SpiritFlix manual tag API", () => {
       new NextRequest("http://localhost/api/spiritflix/videos/video-2/tags", {
         method: "PUT",
         body: JSON.stringify({
+          itemId: "video-2",
           manualTags: ["BBW", "curvy", "handjob"],
           approval_id: "server-issued-fixture-approval",
         }),
@@ -116,6 +128,7 @@ describe("SpiritFlix manual tag API", () => {
       new NextRequest("http://localhost/api/spiritflix/videos/video-1/tags", {
         method: "PUT",
         body: JSON.stringify({
+          itemId: "video-1",
           manualTags: ["big ass", "handjob"],
           propagateToModelItems: [{ itemId: "video-2" }, { itemId: "video-3" }],
           approval_id: "server-issued-fixture-approval",
@@ -139,7 +152,7 @@ describe("SpiritFlix manual tag API", () => {
     const emptyResponse = await putVideoTags(
       new NextRequest("http://localhost/api/spiritflix/videos/video-1/tags", {
         method: "PUT",
-        body: JSON.stringify({ manualTags: [" "] }),
+        body: JSON.stringify({ itemId: "video-1", manualTags: [" "] }),
       }),
       { params: Promise.resolve({ itemId: "video-1" }) },
     );
@@ -148,7 +161,7 @@ describe("SpiritFlix manual tag API", () => {
     const duplicateResponse = await putVideoTags(
       new NextRequest("http://localhost/api/spiritflix/videos/video-1/tags", {
         method: "PUT",
-        body: JSON.stringify({ manualTags: ["busty", " Busty "] }),
+        body: JSON.stringify({ itemId: "video-1", manualTags: ["busty", " Busty "] }),
       }),
       { params: Promise.resolve({ itemId: "video-1" }) },
     );

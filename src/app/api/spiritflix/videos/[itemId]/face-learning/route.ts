@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requestSpiritFlixFaceLearning } from "@/lib/spiritflix/face-learning";
+import {
+  captureSpiritFlixFaceLearningMutation,
+  getSpiritFlixFaceLearningRequest,
+  requestSpiritFlixFaceLearning,
+  restoreSpiritFlixFaceLearningMutation,
+} from "@/lib/spiritflix/face-learning";
 import type { FaceOrganizerPerformer } from "@/lib/spiritflix-types";
-import { consumeSpiritFlixAdminApproval, finalizeSpiritFlixAdminApproval } from "@/lib/coding/spiritflix-admin-approval-authority";
+import { resolveSpiritFlixAdminApprovalBinding } from "@/lib/coding/spiritflix-admin-approval-binding";
+import { runApprovedSpiritFlixAdminMutation, SpiritFlixAdminTransactionError } from "@/lib/coding/spiritflix-admin-transaction";
 
 export const runtime = "nodejs";
 
@@ -10,6 +16,7 @@ interface RouteContext {
 }
 
 interface FaceLearningPayload {
+  itemId?: unknown;
   filePath?: unknown;
   modelName?: unknown;
   sidecarPath?: unknown;
@@ -54,28 +61,66 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const approvalId = typeof payload.approval_id === "string" ? payload.approval_id : "";
   if (!approvalId) return NextResponse.json({ reason_code: "spiritflix_admin_approval_missing" }, { status: 400 });
   const decodedItemId = decodeURIComponent(itemId);
-  const action = "face.learning";
-  const target = `spiritflix:videos:${decodedItemId}:face-learning`;
-  const plan = { modelName: payload.modelName };
-  const consumed = await consumeSpiritFlixAdminApproval(approvalId, action, target, plan);
-  if (!consumed.ok) return NextResponse.json({ reason_code: consumed.reason }, { status: 422 });
+  if (payload.itemId !== decodedItemId) return NextResponse.json({ reason_code: "spiritflix_admin_item_id_mismatch" }, { status: 400 });
+  const filePath = typeof payload.filePath === "string" ? payload.filePath : undefined;
+  const sidecarPath = typeof payload.sidecarPath === "string" ? payload.sidecarPath : undefined;
+  const faceGuess = isFaceGuess(payload.faceGuess) ? payload.faceGuess : undefined;
+  const relatedItems = parseRelatedItems(payload.relatedItems);
 
   try {
-    const record = await requestSpiritFlixFaceLearning({
+    const binding = await resolveSpiritFlixAdminApprovalBinding("face-learning", {
       itemId: decodedItemId,
-      filePath: typeof payload.filePath === "string" ? payload.filePath : undefined,
+      filePath,
       modelName: payload.modelName,
-      sidecarPath: typeof payload.sidecarPath === "string" ? payload.sidecarPath : undefined,
-      faceGuess: isFaceGuess(payload.faceGuess) ? payload.faceGuess : undefined,
-      relatedItems: parseRelatedItems(payload.relatedItems),
+      sidecarPath,
+      faceGuess,
+      relatedItems,
     });
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "succeeded");
-    return NextResponse.json({ record }, { headers: { "Cache-Control": "no-store" } });
+    const completed = await runApprovedSpiritFlixAdminMutation({
+      approvalId,
+      binding,
+      capture: () => captureSpiritFlixFaceLearningMutation(decodedItemId, sidecarPath),
+      mutate: () => requestSpiritFlixFaceLearning({
+        itemId: decodedItemId,
+        filePath,
+        modelName: payload.modelName as string,
+        sidecarPath,
+        faceGuess,
+        relatedItems,
+      }),
+      rollback: (snapshot) => restoreSpiritFlixFaceLearningMutation(snapshot),
+      verify: async (record) => {
+        const stored = await getSpiritFlixFaceLearningRequest(decodedItemId);
+        if (!stored || stored.modelName !== record.modelName || stored.itemId !== decodedItemId) {
+          throw new Error("spiritflix_admin_face_learning_verification_failed");
+        }
+        return {
+          schema: "spiritflix-admin-face-learning-result/v1",
+          state: {
+            actions: stored.actions,
+            filePath: stored.filePath ?? null,
+            itemId: stored.itemId,
+            modelName: stored.modelName,
+            relatedItems: stored.relatedItems,
+            sidecarPath: stored.sidecarPath ?? null,
+            status: stored.status,
+          },
+        };
+      },
+    });
+    return NextResponse.json({
+      record: completed.result,
+      authority: {
+        participant_invocation_ids: completed.evidence.participant_invocations.map((item) => item.invocation_id),
+        result_hash: completed.evidence.result_hash,
+      },
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    await finalizeSpiritFlixAdminApproval(approvalId, action, target, plan, Number(consumed.value.generation), "failed");
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "SpiritFlix face learning request failed." },
-      { status: 400 },
+      error instanceof SpiritFlixAdminTransactionError
+        ? { reason_code: error.reasonCode }
+        : { error: error instanceof Error ? error.message : "SpiritFlix face learning request failed." },
+      { status: error instanceof SpiritFlixAdminTransactionError ? error.status : 400 },
     );
   }
 }

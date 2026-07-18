@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { fetchApprovedSpiritFlixAdminMutation } from "@/lib/spiritflix/admin/approved-mutation-client";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Download, FolderSearch, RotateCw, ShieldAlert, X } from "lucide-react";
 import type {
@@ -101,11 +102,11 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
     setRunning(true);
     setError("");
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/batch", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: currentPath, action, maxItems: 12 }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-batch",
+        "/api/spiritflix/admin/smart/batch",
+        { path: currentPath, action, maxItems: 12 },
+      );
       const payload = (await response.json()) as BatchResponse;
       if (!response.ok) throw new Error(payload.error ?? "Smart batch request failed.");
       setResult(payload);
@@ -124,11 +125,11 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
     setRunning(true);
     setError("");
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/batch", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: currentPath, paths, action: "review", reviewMode, editedFilenameSuggestion, maxItems: 50 }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-batch",
+        "/api/spiritflix/admin/smart/batch",
+        { path: currentPath, paths, action: "review", reviewMode, editedFilenameSuggestion, maxItems: 50 },
+      );
       const payload = (await response.json()) as BatchResponse;
       if (!response.ok) throw new Error(payload.error ?? "Smart batch review failed.");
       setResult(payload);
@@ -143,11 +144,11 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
     setRunning(true);
     setError("");
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/batch", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: currentPath, paths: [path], action: "run", force: true, maxItems: 1 }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-batch",
+        "/api/spiritflix/admin/smart/batch",
+        { path: currentPath, paths: [path], action: "run", force: true, maxItems: 1 },
+      );
       const payload = (await response.json()) as BatchResponse;
       if (!response.ok) throw new Error(payload.error ?? "Smart item refresh failed.");
       setResult(payload);
@@ -162,11 +163,11 @@ export function SpiritFlixSmartBatchPanel({ currentPath, open, onClose }: Spirit
     setRunning(true);
     setError("");
     try {
-      const response = await fetch("/api/spiritflix/admin/smart/batch", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ path: currentPath, action: "renamePlan", maxItems: 50 }),
-      });
+      const response = await fetchApprovedSpiritFlixAdminMutation(
+        "smart-batch",
+        "/api/spiritflix/admin/smart/batch",
+        { path: currentPath, action: "renamePlan", maxItems: 50 },
+      );
       const payload = (await response.json()) as RenamePlanResponse;
       if (!response.ok) throw new Error(payload.error ?? "Smart rename plan failed.");
       setRenamePlan(payload);

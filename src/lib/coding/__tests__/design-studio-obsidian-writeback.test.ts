@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -8,6 +8,7 @@ import {
   approvedDesignMemoryDestination,
   approvedDesignMemoryRejectReasons,
   buildApprovedDesignMemoryNote,
+  rollbackApprovedDesignMemoryNote,
   writeApprovedDesignMemoryNote,
   type ApprovedDesignMemoryGate,
   type ApprovedDesignMemoryWritebackPayload,
@@ -80,6 +81,13 @@ describe("Design Studio Obsidian writeback", () => {
       expect(note).toContain("## Why this design was approved");
       expect(note).toContain("- Raw CSS copied: no");
       expect(note).toContain("- Mobile proof passed: yes");
+      expect(note).not.toContain(payload.approval_id);
+      expect(result).toMatchObject({
+        content_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        expected_state: "absent",
+        result_state: "written_verified",
+        verified: true,
+      });
     } finally {
       rmSync(vaultRoot, { force: true, recursive: true });
     }
@@ -208,6 +216,51 @@ describe("Design Studio Obsidian writeback", () => {
       });
     } finally {
       rmSync(vaultRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("rolls back only the exact verified file created by the write receipt", () => {
+    const vaultRoot = mkdtempSync(join(tmpdir(), "design-memory-vault-"));
+    try {
+      const result = writeApprovedDesignMemoryNote(payload, gate, { vaultRoot });
+      expect(result.status).toBe("written");
+      if (result.status !== "written") throw new Error(result.reasons.join(", "));
+      expect(rollbackApprovedDesignMemoryNote(result)).toEqual({ status: "rolled_back" });
+      expect(existsSync(result.path)).toBe(false);
+    } finally {
+      rmSync(vaultRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("does not delete a target changed after the write receipt was issued", () => {
+    const vaultRoot = mkdtempSync(join(tmpdir(), "design-memory-vault-"));
+    try {
+      const result = writeApprovedDesignMemoryNote(payload, gate, { vaultRoot });
+      expect(result.status).toBe("written");
+      if (result.status !== "written") throw new Error(result.reasons.join(", "));
+      writeFileSync(result.path, "changed by another actor", "utf8");
+      expect(rollbackApprovedDesignMemoryNote(result)).toEqual({
+        reason: "rollback_content_hash_mismatch",
+        status: "rollback_failed",
+      });
+      expect(readFileSync(result.path, "utf8")).toBe("changed by another actor");
+    } finally {
+      rmSync(vaultRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("refuses a symlinked destination parent", () => {
+    const vaultRoot = mkdtempSync(join(tmpdir(), "design-memory-vault-"));
+    const outside = mkdtempSync(join(tmpdir(), "design-memory-outside-"));
+    try {
+      symlinkSync(outside, join(vaultRoot, "design-memory"), "dir");
+      expect(writeApprovedDesignMemoryNote(payload, gate, { vaultRoot })).toEqual({
+        reasons: ["destination_parent_symlink_forbidden"],
+        status: "rejected",
+      });
+    } finally {
+      rmSync(vaultRoot, { force: true, recursive: true });
+      rmSync(outside, { force: true, recursive: true });
     }
   });
 

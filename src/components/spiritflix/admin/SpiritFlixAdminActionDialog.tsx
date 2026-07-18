@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { isSpiritFlixAdminTrashPath } from "@/lib/spiritflix/admin/path-rules";
+import { fetchApprovedSpiritFlixAdminMutation } from "@/lib/spiritflix/admin/approved-mutation-client";
 import type {
   SpiritFlixAdminActionName,
   SpiritFlixAdminActionResponse,
@@ -34,11 +35,13 @@ const AUTO_PREVIEW_ACTIONS = new Set<SpiritFlixAdminActionName>([
 ]);
 
 async function runAction(body: Record<string, unknown>): Promise<SpiritFlixAdminActionResponse> {
-  const response = await fetch("/api/spiritflix/admin/actions", {
-    method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const response = body.mode === "execute"
+    ? await fetchApprovedSpiritFlixAdminMutation("admin-action", "/api/spiritflix/admin/actions", body)
+    : await fetch("/api/spiritflix/admin/actions", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
   let payload: SpiritFlixAdminActionResponse & { error?: string };
   try {
     payload = (await response.json()) as SpiritFlixAdminActionResponse & { error?: string };

@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from source_proxy.approval.runtime_identity import resolve_authority_runtime_identity
 
-ROOT = "/home/source/SpiritOS-campaign-2-20260716"
-REPOSITORY = "SpiritOS"
+
+_RUNTIME_IDENTITY = resolve_authority_runtime_identity()
+ROOT = str(_RUNTIME_IDENTITY.root)
+REPOSITORY = _RUNTIME_IDENTITY.repository
 CODING_EXECUTOR_LANE = "coder"
 
 
@@ -66,7 +70,16 @@ def current_head() -> str:
 
 
 def _call(command: str, payload: dict[str, Any]) -> dict[str, Any]:
-    completed = subprocess.run(["python3", str(SCRIPT), command], input=json.dumps(payload), text=True, capture_output=True, check=False)
+    environment = os.environ.copy()
+    environment["SPIRITOS_APPROVAL_ROOT"] = ROOT
+    completed = subprocess.run(
+        ["python3", str(SCRIPT), command],
+        input=json.dumps(payload),
+        text=True,
+        capture_output=True,
+        check=False,
+        env=environment,
+    )
     try:
         response = json.loads(completed.stdout)
     except json.JSONDecodeError as error:
@@ -76,7 +89,8 @@ def _call(command: str, payload: dict[str, Any]) -> dict[str, Any]:
     return response
 
 
-def consume_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
+def validate_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Validate an exact approval binding without entering the consuming state."""
     approval = _call("lookup", {"approval_id": approval_id})
     consumer = coding_executor_consumer(lane_id)
     if approval.get("consumer") != consumer:
@@ -104,8 +118,31 @@ def consume_coding_execution_approval(*, approval_id: str, task_id: str, action:
         "generation": str(approval.get("generation") or ""),
         "target_plugin_identity": canonical_json(identity),
     }
-    _call("consume", binding)
     return {"approval_id": approval_id, "generation": int(approval["generation"]), "plugin": plugin, "target_plugin_identity": identity, "binding": binding}
+
+
+def enter_coding_execution_consuming(approval: dict[str, Any]) -> dict[str, Any]:
+    """Atomically enter consuming only after every non-mutating preflight passes."""
+    binding = approval.get("binding")
+    if not isinstance(binding, dict):
+        raise CampaignApprovalError("approval_binding_missing")
+    transition = _call("consume", binding)
+    return {**approval, "state": str(transition.get("state") or "consuming")}
+
+
+def consume_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
+    approval = validate_coding_execution_approval(
+        approval_id=approval_id,
+        task_id=task_id,
+        action=action,
+        approved_diff=approved_diff,
+        target=target,
+        selected_prompt_id=selected_prompt_id,
+        context_hash=context_hash,
+        lane_id=lane_id,
+        target_plugin_identity=target_plugin_identity,
+    )
+    return enter_coding_execution_consuming(approval)
 
 
 def persist_coding_execution_preview(*, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:

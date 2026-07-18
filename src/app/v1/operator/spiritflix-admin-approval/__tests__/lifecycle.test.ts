@@ -51,7 +51,6 @@ describe("SpiritFlix admin authenticated operator lifecycle", () => {
         cookie: `spiritos_operator_approval=${sessionState.id}`,
         host: "operator.campaign.test",
         origin: ORIGIN,
-        "x-spiritos-csrf": sessionState.csrf,
       },
       method: "POST",
     });
@@ -60,7 +59,8 @@ describe("SpiritFlix admin authenticated operator lifecycle", () => {
   it("uses one authenticated server-issued approval for preview, writer consumption, and replay rejection", async () => {
     const current = await session();
     const previewResponse = await issueAdminApproval(operatorRequest(current, {
-      action: "preview", item_id: "video-1", model_name: "Sava Schultz", writer: "manual-model",
+      action: "preview", writer: "manual-model",
+      mutation: { itemId: "video-1", modelName: "Sava Schultz" },
     }));
     expect(previewResponse.status).toBe(200);
     const preview = await previewResponse.json() as { preview: { generation: number; preview_id: string } };
@@ -72,12 +72,12 @@ describe("SpiritFlix admin authenticated operator lifecycle", () => {
     const issued = await approvalResponse.json() as { approval: { value: { approval_id: string } } };
 
     const writerResponse = await putVideoModel(new NextRequest("http://localhost/api/spiritflix/videos/video-1/model", {
-      body: JSON.stringify({ approval_id: issued.approval.value.approval_id, modelName: "Sava Schultz" }), method: "PUT",
+      body: JSON.stringify({ approval_id: issued.approval.value.approval_id, itemId: "video-1", modelName: "Sava Schultz" }), method: "PUT",
     }), { params: Promise.resolve({ itemId: "video-1" }) });
     expect(writerResponse.status).toBe(200);
 
     const replay = await putVideoModel(new NextRequest("http://localhost/api/spiritflix/videos/video-1/model", {
-      body: JSON.stringify({ approval_id: issued.approval.value.approval_id, modelName: "Sava Schultz" }), method: "PUT",
+      body: JSON.stringify({ approval_id: issued.approval.value.approval_id, itemId: "video-1", modelName: "Sava Schultz" }), method: "PUT",
     }), { params: Promise.resolve({ itemId: "video-1" }) });
     expect(replay.status).toBe(422);
   });
@@ -86,7 +86,8 @@ describe("SpiritFlix admin authenticated operator lifecycle", () => {
     const current = await session();
     await revokeOperatorSession({ id: current.id, operator: current.operator, origin: ORIGIN, role: current.role });
     const response = await issueAdminApproval(operatorRequest(current, {
-      action: "preview", item_id: "video-1", model_name: "Sava Schultz", writer: "manual-model",
+      action: "preview", writer: "manual-model",
+      mutation: { itemId: "video-1", modelName: "Sava Schultz" },
     }));
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ reason_code: "operator_session_revoked" });

@@ -9,8 +9,8 @@ Remediation: `spiritos-foundation-remediation-r1`
 - Worktree: `/home/source/SpiritOS-foundation-remediation-r1-20260717`
 - Branch: `codex/spiritos-foundation-remediation-r1-20260717`
 - Base: `2b8ead66578d7f7053c01cb987e011b763c1c03d`
-- Recorded source head: `32905e349d62a9bde101e8e6168567404faad679`
-- Current phase/gate: Phase 1 / `r1_1_portable_authority`
+- Recorded source head: `790835cfb8e4857fe7d99264ad1386e9775c0276`
+- Current phase/gate: Phase 2 / `r1_5_coding_lifecycle`
 - GO eligibility: `false`
 - Terminal verdict: not available
 - Campaign 3 started: `false`; Campaign 4 started: `false`; push: `false`
@@ -71,11 +71,11 @@ These are defect confirmations, not accepted completion evidence.
 | Gate | Status | Evidence / next truth |
 | --- | --- | --- |
 | R1.0 control plane | complete | seven control documents, four validators, strict evaluator, and 6/6 fail-closed regression tests are present; authority/evidence remain deliberately nonterminal |
-| R1.1 portable authority | in progress | remove configured-root hard-coding and validate registered roots |
-| R1.2 Cartographer authority | pending | replace direct writer path |
-| R1.3 SpiritFlix authority | pending | complete bindings and transactional helper |
-| R1.4 Design security | pending | preservation-only authority correction |
-| R1.5 coding lifecycle | pending | late finalization and independent consumers |
+| R1.1 portable authority | complete | registered top-level worktree identity, root namespace isolation, and symlink/subdirectory/stale-root rejection are covered in Python and TypeScript |
+| R1.2 Cartographer authority | complete | legacy client authority routes are absent; persisted proposal review uses server-owned identity, exact bindings, consume-before-write, independent checks, and rollback |
+| R1.3 SpiritFlix authority | complete | production writers use authenticated, complete mutation bindings and a verify/finalize-or-compensate transaction |
+| R1.4 Design security | complete | existing writeback only; exact artifact binding, production issuer/consumer, independent disk verification, late finalization, and rollback |
+| R1.5 coding lifecycle | partial | participant evidence contract is repaired; production orchestrator checkpoint remains pending |
 | R1.6 target adapters 1-10 | pending | executable target-owned behavior |
 | R1.7 production orchestrator | pending | live importer and persisted owner |
 | R1.8 runtime contracts/transfer | partial | immutable version/schema/output/acknowledgement/consumption boundary is tested; live orchestrator integration and Cartographer lineage remain pending |
@@ -93,14 +93,29 @@ ACTIVE_WORKTREE: /home/source/SpiritOS-foundation-remediation-r1-20260717
 ACTIVE_BRANCH: codex/spiritos-foundation-remediation-r1-20260717
 ALLOWED_PATHS: source_proxy/, src/app/api/spiritflix/, src/app/v1/cartographer/, src/lib/coding/, packages/contracts/, scripts/, docs/architecture/
 FORBIDDEN_DETOURS: Campaign 3 implementation, Campaign 4, Scout/Mac/Obsidian/retained agents, Designer expansion, push
-CURRENT_PHASE: R1.1
-COMPLETED_GATES: R1.0
-NEXT_GATE: validate and checkpoint portable registered-root authority
+CURRENT_PHASE: R1.5
+COMPLETED_GATES: R1.0, R1.1, R1.2, R1.3, R1.4
+NEXT_GATE: checkpoint late coding finalization and the production orchestrator
 SERVICES: no R1 service started
 TESTS_REQUIRED: registered R1 profiles
 OPEN_BLOCKERS: none; expected validator failures are repair gates
-LAST_VERIFIED_HEAD: 32905e349d62a9bde101e8e6168567404faad679
+LAST_VERIFIED_HEAD: 790835cfb8e4857fe7d99264ad1386e9775c0276
 ```
+
+## Authority repair checkpoint
+
+- Portable authority rejects relative, unregistered, symlinked, subdirectory,
+  detached, and stale-source identities while isolating state by canonical Git
+  worktree identity.
+- Cartographer proposal review no longer accepts caller-owned actor or snapshot
+  authority and no legacy approval-token validation/consumption route is registered.
+- SpiritFlix administrative mutations and Design writeback both consume complete,
+  server-derived bindings before mutation, independently verify the written result,
+  and roll back or compensate before returning a non-success result.
+- Focused observations: portable/adapter/authority matrix `76 passed`; full
+  Cartographer API `263 passed`; Design security `50 passed`; SpiritFlix `419 passed`;
+  TypeScript typecheck passed. These are checkpoint observations only until the
+  immutable terminal manifest binds commands, artifacts, and the tested source.
 
 ## R1.0 checkpoint evidence
 

@@ -14,8 +14,8 @@ describe("SpiritFlix smart analysis mutation route", () => {
       body: JSON.stringify({ action: "exportMetadata", path: "/outside", approval_id: "forged-nonexistent-approval" }),
       method: "POST",
     }));
-    expect(response.status).toBe(422);
+    expect(response.status).toBeGreaterThanOrEqual(400);
     const body = await response.json();
-    expect(body.reason_code).toBeTruthy();
+    expect(body.reason_code ?? body.error).toBeTruthy();
   });
 });

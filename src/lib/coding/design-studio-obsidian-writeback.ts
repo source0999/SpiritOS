@@ -1,4 +1,16 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  closeSync,
+  existsSync,
+  fsyncSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 export type ApprovedDesignMemoryWritebackPayload = {
@@ -44,9 +56,13 @@ export type ApprovedDesignMemoryGate = {
 
 export type ApprovedDesignMemoryWriteResult =
   | {
+      content_hash: string;
+      expected_state: "absent";
       note: string;
       path: string;
+      result_state: "written_verified";
       status: "written";
+      verified: true;
     }
   | {
       reasons: string[];
@@ -54,6 +70,14 @@ export type ApprovedDesignMemoryWriteResult =
     };
 
 const SAFE_ID = /^[A-Za-z0-9_-]+$/;
+
+export type ApprovedDesignMemoryRollbackResult =
+  | { status: "rolled_back" }
+  | { reason: string; status: "rollback_failed" };
+
+export type ApprovedDesignMemoryVerificationResult =
+  | { content_hash: string; status: "verified" }
+  | { reason: string; status: "rejected" };
 
 export function approvedDesignMemoryRejectReasons(
   payload: ApprovedDesignMemoryWritebackPayload,
@@ -172,7 +196,11 @@ export function buildApprovedDesignMemoryNote(payload: ApprovedDesignMemoryWrite
   const contextRefs = payload.obsidian_context_refs.map((item) => `- ${item}`).join("\n") || "- none";
   const referenceRefs = payload.reference_dna_refs.map((item) => `- ${item}`).join("\n") || "- none";
 
-  return `---\ntype: design-memory\ndesign_run_id: ${yamlScalar(payload.design_run_id)}\ntrace_id: ${yamlScalar(payload.trace_id)}\napproval_id: ${yamlScalar(payload.approval_id)}\ntarget_surface: ${yamlScalar(payload.target_surface)}\nstyle_family_blend:\n${styleList}\ncritic_verdict: ${yamlScalar(payload.critic_verdict)}\nrepair_count: ${payload.repair_count}\ncreated_at: ${yamlScalar(payload.created_at)}\n---\n\n# Design Memory: ${payload.target_surface}\n\n## Summary\n${payload.prompt_summary}\n\n## Why this design was approved\nThe run was verified, explicitly approved, checked on desktop and mobile, passed anti-template/originality review, and ended with critic verdict ${payload.critic_verdict}.\n\n## Reusable pattern\n${patternNotes}\n\n## Style DNA\n- Style family blend: ${payload.style_family_blend.join(", ")}\n- Project motif: ${payload.project_specific_motif}\n- Obsidian context refs:\n${contextRefs}\n- Reference DNA refs:\n${referenceRefs}\n\n## Evidence\n- Design run: ${payload.design_run_id}\n- Trace: ${payload.trace_id}\n- Approval: ${payload.approval_id}\n- Screenshots:\n${screenshotList}\n- Files changed:\n${fileList}\n\n## Guardrails\n- Raw CSS copied: no\n- Website cloned: no\n- Generic template accepted: no\n- Mobile proof passed: yes\n`;
+  return `---\ntype: design-memory\ndesign_run_id: ${yamlScalar(payload.design_run_id)}\ntrace_id: ${yamlScalar(payload.trace_id)}\ntarget_surface: ${yamlScalar(payload.target_surface)}\nstyle_family_blend:\n${styleList}\ncritic_verdict: ${yamlScalar(payload.critic_verdict)}\nrepair_count: ${payload.repair_count}\ncreated_at: ${yamlScalar(payload.created_at)}\n---\n\n# Design Memory: ${payload.target_surface}\n\n## Summary\n${payload.prompt_summary}\n\n## Why this design was approved\nThe run was verified, explicitly approved, checked on desktop and mobile, passed anti-template/originality review, and ended with critic verdict ${payload.critic_verdict}.\n\n## Reusable pattern\n${patternNotes}\n\n## Style DNA\n- Style family blend: ${payload.style_family_blend.join(", ")}\n- Project motif: ${payload.project_specific_motif}\n- Obsidian context refs:\n${contextRefs}\n- Reference DNA refs:\n${referenceRefs}\n\n## Evidence\n- Design run: ${payload.design_run_id}\n- Trace: ${payload.trace_id}\n- Screenshots:\n${screenshotList}\n- Files changed:\n${fileList}\n\n## Guardrails\n- Raw CSS copied: no\n- Website cloned: no\n- Generic template accepted: no\n- Mobile proof passed: yes\n`;
+}
+
+export function designMemoryNoteContentHash(note: string) {
+  return createHash("sha256").update(note, "utf8").digest("hex");
 }
 
 export function writeApprovedDesignMemoryNote(
@@ -197,9 +225,147 @@ export function writeApprovedDesignMemoryNote(
   }
 
   const note = buildApprovedDesignMemoryNote(payload);
-  mkdirSync(dirname(destination.path), { recursive: true });
-  writeFileSync(destination.path, note, { encoding: "utf8", flag: "wx" });
-  return { note, path: destination.path, status: "written" };
+  const contentHash = designMemoryNoteContentHash(note);
+  const safeParent = ensureSafeDestinationParent(options.vaultRoot, destination.path);
+  if (!safeParent.ok) {
+    return { reasons: [safeParent.reason], status: "rejected" };
+  }
+
+  let descriptor: number | undefined;
+  try {
+    descriptor = openSync(destination.path, "wx", 0o600);
+    writeFileSync(descriptor, note, { encoding: "utf8" });
+    fsyncSync(descriptor);
+  } catch (error) {
+    if (descriptor !== undefined) {
+      closeSync(descriptor);
+      descriptor = undefined;
+    }
+    if (existsSync(destination.path)) {
+      try {
+        unlinkSync(destination.path);
+      } catch {
+        return { reasons: ["write_failed_rollback_failed"], status: "rejected" };
+      }
+    }
+    return {
+      reasons: [(error as NodeJS.ErrnoException).code === "EEXIST" ? "destination_exists" : "write_failed"],
+      status: "rejected",
+    };
+  } finally {
+    if (descriptor !== undefined) closeSync(descriptor);
+  }
+
+  const verification = verifyApprovedDesignMemoryNote({
+    content_hash: contentHash,
+    path: destination.path,
+  });
+  if (verification.status !== "verified") {
+    const rollback = rollbackOwnedDestination(destination.path);
+    return {
+      reasons: [
+        verification.reason,
+        ...(rollback.status === "rollback_failed" ? [rollback.reason] : []),
+      ],
+      status: "rejected",
+    };
+  }
+
+  return {
+    content_hash: contentHash,
+    expected_state: "absent",
+    note,
+    path: destination.path,
+    result_state: "written_verified",
+    status: "written",
+    verified: true,
+  };
+}
+
+export function verifyApprovedDesignMemoryNote(
+  receipt: { content_hash: string; path: string },
+): ApprovedDesignMemoryVerificationResult {
+  try {
+    const stat = lstatSync(receipt.path);
+    if (!stat.isFile() || stat.isSymbolicLink()) {
+      return { reason: "post_write_target_invalid", status: "rejected" };
+    }
+    const observedHash = designMemoryNoteContentHash(readFileSync(receipt.path, "utf8"));
+    return observedHash === receipt.content_hash
+      ? { content_hash: observedHash, status: "verified" }
+      : { reason: "post_write_content_hash_mismatch", status: "rejected" };
+  } catch {
+    return { reason: "post_write_verification_failed", status: "rejected" };
+  }
+}
+
+export function rollbackApprovedDesignMemoryNote(
+  receipt: Pick<Extract<ApprovedDesignMemoryWriteResult, { status: "written" }>, "content_hash" | "path">,
+): ApprovedDesignMemoryRollbackResult {
+  try {
+    const stat = lstatSync(receipt.path);
+    if (!stat.isFile() || stat.isSymbolicLink()) {
+      return { reason: "rollback_target_invalid", status: "rollback_failed" };
+    }
+    const observedHash = designMemoryNoteContentHash(readFileSync(receipt.path, "utf8"));
+    if (observedHash !== receipt.content_hash) {
+      return { reason: "rollback_content_hash_mismatch", status: "rollback_failed" };
+    }
+    unlinkSync(receipt.path);
+    return existsSync(receipt.path)
+      ? { reason: "rollback_target_still_present", status: "rollback_failed" }
+      : { status: "rolled_back" };
+  } catch (error) {
+    return {
+      reason: (error as NodeJS.ErrnoException).code === "ENOENT" ? "rollback_target_missing" : "rollback_failed",
+      status: "rollback_failed",
+    };
+  }
+}
+
+function rollbackOwnedDestination(path: string): ApprovedDesignMemoryRollbackResult {
+  try {
+    unlinkSync(path);
+    return existsSync(path)
+      ? { reason: "rollback_target_still_present", status: "rollback_failed" }
+      : { status: "rolled_back" };
+  } catch {
+    return { reason: "rollback_failed", status: "rollback_failed" };
+  }
+}
+
+function ensureSafeDestinationParent(vaultRoot: string, destinationPath: string) {
+  const root = resolve(vaultRoot);
+  try {
+    mkdirSync(root, { mode: 0o700, recursive: true });
+    const rootStat = lstatSync(root);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink() || realpathSync(root) !== root) {
+      return { ok: false as const, reason: "vault_root_not_canonical_directory" };
+    }
+
+    const parent = dirname(destinationPath);
+    const relativeParent = relative(root, parent);
+    if (
+      relativeParent === ".." ||
+      relativeParent.startsWith(`..\\`) ||
+      relativeParent.startsWith("../") ||
+      isAbsolute(relativeParent)
+    ) {
+      return { ok: false as const, reason: "destination_escape" };
+    }
+    let current = root;
+    for (const segment of relativeParent.split(/[\\/]/).filter(Boolean)) {
+      current = resolve(current, segment);
+      if (!existsSync(current)) mkdirSync(current, { mode: 0o700 });
+      const stat = lstatSync(current);
+      if (!stat.isDirectory() || stat.isSymbolicLink()) {
+        return { ok: false as const, reason: "destination_parent_symlink_forbidden" };
+      }
+    }
+    return { ok: true as const };
+  } catch {
+    return { ok: false as const, reason: "destination_parent_unavailable" };
+  }
 }
 
 function yamlScalar(value: string) {

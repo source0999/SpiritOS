@@ -39,10 +39,23 @@ function yesFolderPayload() {
 }
 
 function mockAdminFetch() {
+  let approvalSequence = 0;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
+      if (url === "/v1/operator/spiritflix-admin-approval") {
+        const body = init?.body ? JSON.parse(String(init.body)) as { action?: string } : {};
+        if (body.action === "preview") {
+          approvalSequence += 1;
+          return Response.json({
+            preview: { generation: 1, preview_id: `preview-authority-${approvalSequence}` },
+          });
+        }
+        return Response.json({
+          approval: { value: { approval_id: `approval-authority-${approvalSequence}` } },
+        });
+      }
       if (url.startsWith("/api/spiritflix/admin/jellyfin-index")) {
         return Response.json({ items: [], source: "unconfigured" });
       }

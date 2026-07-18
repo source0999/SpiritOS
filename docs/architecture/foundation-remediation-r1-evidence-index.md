@@ -24,6 +24,10 @@ and self-declared `GO` fields are not accepted terminal evidence.
 | `r1-control-completion-regression` | `scripts/test-foundation-remediation-r1-completion.py` | 6/6 pass | fail-closed evaluator semantics only | checkpoint observation; terminal manifest pending |
 | `r1-control-test-profile-validator` | `scripts/validate-foundation-remediation-r1-test-profiles.py` | pass | registry coherence only | checkpoint observation; terminal manifest pending |
 | `r1-runtime-contract-boundary` | focused runtime boundary/contracts/orchestrator/Cartographer/observability suites | 25 pass | immutable library boundary only; no live-call claim | checkpoint observation; live proof and terminal manifest pending |
+| `r1-portable-authority-checkpoint` | Python/TypeScript registered-root and campaign authority suites | pass | portable identity and isolated authority state only | checkpoint observation; terminal manifest pending |
+| `r1-cartographer-authority-checkpoint` | full Cartographer API plus proposal-review authority suites | 263 + 7 pass | production proposal review authority and removed client-authority routes | checkpoint observation; terminal manifest pending |
+| `r1-design-security-checkpoint` | focused Design authority/writeback suites | 50 pass | existing Design writeback security only | checkpoint observation; terminal manifest pending |
+| `r1-spiritflix-authority-checkpoint` | broad SpiritFlix route/transaction suite plus Python authority | 419 + 4 pass | SpiritFlix administrative mutation authority only | checkpoint observation; terminal manifest pending |
 
 ## Required terminal evidence
 

@@ -10,18 +10,22 @@
   "base_commit": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
   "branch": "codex/spiritos-foundation-remediation-r1-20260717",
   "worktree": "/home/source/SpiritOS-foundation-remediation-r1-20260717",
-  "recorded_head": "32905e349d62a9bde101e8e6168567404faad679",
+  "recorded_head": "790835cfb8e4857fe7d99264ad1386e9775c0276",
   "checkpoint_commit_policy": "parent_of_atomic_checkpoint",
-  "current_phase": "Phase 1 - canonical authority repair",
-  "current_increment": "r1_1_portable_authority",
+  "current_phase": "Phase 2 - coding lifecycle and production ownership",
+  "current_increment": "r1_5_coding_lifecycle",
   "completed_gate_ids": [
-    "r1_0_control_plane"
+    "r1_0_control_plane",
+    "r1_1_portable_authority",
+    "r1_2_cartographer_authority",
+    "r1_3_spiritflix_authority",
+    "r1_4_design_security"
   ],
   "partial_gate_ids": [
-    "r1_1_portable_authority",
+    "r1_5_coding_lifecycle",
     "r1_8_runtime_contracts_and_cartographer_transfer"
   ],
-  "next_gate_id": "r1_1_portable_authority",
+  "next_gate_id": "r1_5_coding_lifecycle",
   "terminal_gate_id": "r1_complete",
   "gate_dependency_order": [
     "r1_0_control_plane",
@@ -75,7 +79,7 @@
     "completion_regression_contradiction"
   ],
   "validator_status": {
-    "authority_call_graph": "expected_fail_until_repairs",
+    "authority_call_graph": "authority_surfaces_repaired_live_orchestrator_checkpoint_pending",
     "continuity": "configured_for_atomic_checkpoint_verification",
     "evidence_provenance": "expected_fail_until_terminal_evidence",
     "test_profiles": "pass_registry_coherence_only",

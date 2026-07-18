@@ -200,6 +200,7 @@ describe("HomelabBlueprintReviewWidget", () => {
       2,
       "/v1/cartographer/proposals/bp-20260515-001/review",
       expect.objectContaining({
+        body: JSON.stringify({ decision: "reject", reason: "Too broad." }),
         method: "POST",
       }),
     );
@@ -207,6 +208,7 @@ describe("HomelabBlueprintReviewWidget", () => {
       4,
       "/v1/cartographer/proposals/bp-20260515-001/review",
       expect.objectContaining({
+        body: JSON.stringify({ decision: "approve" }),
         method: "POST",
       }),
     );
