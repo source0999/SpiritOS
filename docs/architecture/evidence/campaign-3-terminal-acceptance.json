@@ -1,8 +1,8 @@
 {
   "schema": "spiritos-campaign-3-terminal-acceptance/v1",
-  "status": "integrity_repair_required",
+  "status": "passed",
   "campaign_id": "spiritos-campaign-3-extended-coding-lanes",
-  "terminal_verdict": "CAMPAIGN_3_NOT_COMPLETE",
+  "terminal_verdict": "CAMPAIGN_3_EXTENDED_CODING_LANES_INTEGRATED",
   "gate_3_9_receipt": "docs/architecture/evidence/campaign-3-gate-3-9-all-lane-r1-receipt-813912ce.json",
   "gate_3_9_receipt_sha256": "6df55c4d66223a7ad6e5670594c853e9956d184e2bdec5614f48a01a12beb406",
   "gate_3_10_readiness": "docs/architecture/evidence/campaign-3-gate-3-10-coding-readiness.json",
@@ -21,5 +21,13 @@
     "full_coding_ui_wiring": false,
     "coder_10_execution": false
   },
-  "shared_git_fsck": "failed: pack-f820c5cc7d19e6834dac468e4a2e1a2ce41b4235.pack CRC mismatch at reachable blob fb55cfff11b4bc3071f56afdf96a871fec830883"
+  "shared_git_fsck": "passed: git fsck --full --strict --no-dangling after clean object-store transport and linked-worktree repair",
+  "git_recovery": {
+    "recovered_blob": "fb55cfff11b4bc3071f56afdf96a871fec830883",
+    "repository_path": "public/media/they-were-right.mp4",
+    "recovery_source_sha256": "0708b0020dc8dac9ef80f5000231457d51cfaba02dcda3f90def2e1a9222c022",
+    "quarantined_common_store": "/home/source/SpiritOS.git-corrupt-quarantine-20260718T224900Z",
+    "all_refs_preserved": true,
+    "linked_worktrees_repaired": true
+  }
 }

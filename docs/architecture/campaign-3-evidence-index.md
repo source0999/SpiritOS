@@ -79,6 +79,6 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 
 | Evidence | Path | Status |
 | --- | --- | --- |
-| Terminal acceptance manifest | `docs/architecture/evidence/campaign-3-terminal-acceptance.json` | passed |
+| Terminal acceptance manifest | `docs/architecture/evidence/campaign-3-terminal-acceptance.json` | passed after verified reachable-blob recovery |
 | Hash sidecar | `docs/architecture/evidence/campaign-3-terminal-acceptance.sha256` | recorded |
-| Recovery anchor | `/home/source/SpiritOS-campaign-3-terminal-anchor-20260718T214644Z/` (untagged provisional bundle) | provisional recovery artifact; strict shared Git fsck failed |
+| Git recovery directory | `/home/source/SpiritOS-campaign-3-git-recovery-20260718T221354Z/` | recovered blob, SHA-256, ref manifests, transport logs, and strict-fsck receipts preserved |
