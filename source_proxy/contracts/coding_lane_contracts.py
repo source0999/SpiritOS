@@ -21,6 +21,7 @@ CORE_CODING_LANE_IDS = (
 )
 _ROOT = Path(__file__).resolve().parents[2]
 _CATALOG = _ROOT / "packages" / "contracts" / "schemas" / "coding" / "core-lane-contracts.v1.json"
+_EXTENDED_CATALOG = _ROOT / "packages" / "contracts" / "schemas" / "coding" / "extended-lane-contracts.v1.json"
 
 
 @lru_cache(maxsize=1)
@@ -45,4 +46,35 @@ def canonical_coding_lane_contracts() -> dict[str, dict[str, Any]]:
 
     if tuple(contracts) != CORE_CODING_LANE_IDS:
         raise ContractValidationError("coding lane contract catalog does not match mandatory lane order")
+    return contracts
+
+
+@lru_cache(maxsize=1)
+def canonical_extended_coding_lane_contracts() -> dict[str, dict[str, Any]]:
+    """Return active Campaign 3 contracts without changing the R1 core catalog.
+
+    Extended lanes deliberately have their own catalog: adding them to the R1
+    core sequence would incorrectly make an external or conditionally applicable
+    participant a replacement for a mandatory core lifecycle participant.
+    """
+    try:
+        value = json.loads(_EXTENDED_CATALOG.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ContractValidationError("extended coding lane contract catalog unavailable") from error
+    if not isinstance(value, list):
+        raise ContractValidationError("extended coding lane contract catalog must be a list")
+
+    contracts: dict[str, dict[str, Any]] = {}
+    for contract in value:
+        if not isinstance(contract, dict):
+            raise ContractValidationError("extended coding lane contract entry must be an object")
+        validate_contract("coding/lane-contract", contract)
+        lane_id = str(contract.get("lane_id") or "")
+        if not lane_id.startswith("extended-"):
+            raise ContractValidationError(f"extended coding lane id invalid:{lane_id}")
+        if lane_id in contracts:
+            raise ContractValidationError(f"duplicate extended coding lane contract:{lane_id}")
+        contracts[lane_id] = contract
+    if not contracts:
+        raise ContractValidationError("extended coding lane contract catalog empty")
     return contracts

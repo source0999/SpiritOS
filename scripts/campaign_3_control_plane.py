@@ -101,11 +101,13 @@ def validate_continuity(root: Path) -> list[str]:
         failures.append("campaign_id_mismatch")
     if data.get("gate_dependency_order") != ALL_GATES:
         failures.append("gate_dependency_order_mismatch")
-    if data.get("completed_gate_ids") != [GATE_3_0]:
-        failures.append("completed_gates_not_control_plane_only")
+    completed = data.get("completed_gate_ids")
+    if not isinstance(completed, list) or completed != ALL_GATES[: len(completed)]:
+        failures.append("completed_gates_not_dependency_prefix")
     if data.get("partial_gate_ids") != []:
         failures.append("partial_gates_present")
-    if data.get("next_gate_id") != NEXT_GATE:
+    expected_next = ALL_GATES[len(completed)] if len(completed) < len(ALL_GATES) else "none"
+    if data.get("next_gate_id") != expected_next:
         failures.append("next_gate_mismatch")
     if data.get("go_eligible") is not False or data.get("campaign4_started") is not False:
         failures.append("premature_go_or_campaign4")
@@ -125,7 +127,7 @@ def validate_continuity(root: Path) -> list[str]:
     ledger = read_text(root, "docs/architecture/campaign-3-ledger.md")
     if ledger.count("## Current Checkpoint") != 1:
         failures.append("ledger_current_checkpoint_count_invalid")
-    if NEXT_GATE not in ledger:
+    if expected_next not in ledger:
         failures.append("ledger_next_gate_missing")
     return failures
 
@@ -147,7 +149,6 @@ def validate_authority(root: Path) -> list[str]:
         "Campaign 3 extends R1. It does not replace it.",
         "They may not create parallel",
         "Every mutation-capable extended lane must use",
-        "Do not implement Gate 3.1",
         "Do not fully wire the UI yet.",
     ):
         if phrase not in combined:
@@ -187,6 +188,26 @@ def validate_lane_registry(root: Path) -> list[str]:
     for field in ("input schema", "output schema", "failure schema", "timeout", "retry", "fallback", "acknowledgement", "evidence"):
         if field not in inventory:
             failures.append(f"lane_required_field_missing:{field}")
+    for rel in (
+        "source_proxy/coding/extended_lane_registry.py",
+        "source_proxy/tests/test_extended_lane_registry.py",
+        "packages/contracts/schemas/coding/extended-lane-contracts.v1.json",
+    ):
+        if not (root / rel).exists():
+            failures.append(f"extended_lane_runtime_path_missing:{rel}")
+    registry_source = read_text(root, "source_proxy/coding/extended_lane_registry.py")
+    for lane in (
+        "extended.scout-research",
+        "extended.obsidian-knowledge",
+        "extended.mac-worker",
+        "extended.retained-sub-agent",
+        "extended.conflict-resolver",
+        "extended.diagnosis-envelope",
+    ):
+        if lane not in registry_source:
+            failures.append(f"runtime_lane_missing:{lane}")
+    if "nonselectable_extended_lane" not in registry_source:
+        failures.append("nonselectable_lane_rejection_missing")
     for phrase in ("Historical design Campaign 3", "preview-only", "SearXNG standalone authority", "Full `/coding` UI wiring", "CAMPAIGN_3_SCOPE_DIVERGED_TO_DESIGN"):
         if phrase not in decommission:
             failures.append(f"decommission_entry_missing:{phrase}")

@@ -2,17 +2,17 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_control_plane_authored`
+Checkpoint ID: `campaign_3_gate_3_1_extended_lane_inventory_complete`
 
-Verdict: `CORRECTED_CAMPAIGN_3_PLAN_AUTHORED`
+Verdict: `GATE_3_1_EXTENDED_LANE_INVENTORY_COMPLETE`
 
 State:
 
-- completed gate: `gate_3_0_entry_verification_and_control_plane`
-- next gate: `gate_3_1_extended_lane_inventory_and_classification`
+- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`
+- next gate: `gate_3_2_scout_and_coding_research_integration`
 - Campaign 3 GO: false
 - Campaign 4 started: false
-- implementation gates started: false
+- implementation gates started: true
 
 Entry verification:
 
@@ -23,7 +23,7 @@ Entry verification:
 - Shared Git object integrity passed `git fsck --strict --no-progress` with only dangling objects reported.
 - Historical design Campaign 3 remains `4aec510409e8bb82386190af9fa8f666efcbc63e` and remains classified as `CAMPAIGN_3_SCOPE_DIVERGED_TO_DESIGN`.
 
-Control-plane files authored:
+Gate 3.1 runtime-backed inventory:
 
 - `docs/architecture/campaign-3-goal.md`
 - `docs/architecture/campaign-3-plan.md`
@@ -33,18 +33,19 @@ Control-plane files authored:
 - `docs/architecture/campaign-3-decommission-registry.md`
 - `docs/architecture/campaign-3-evidence-index.md`
 - `docs/architecture/campaign-3-test-profiles.json`
-- `docs/architecture/campaign-4-stub.md`
-- `scripts/campaign_3_control_plane.py`
-- `scripts/validate-campaign-3-continuity.py`
-- `scripts/validate-campaign-3-authority.py`
-- `scripts/validate-campaign-3-lane-registry.py`
-- `scripts/validate-campaign-3-participation.py`
-- `scripts/validate-campaign-3-evidence.py`
-- `scripts/validate-campaign-3-test-profiles.py`
-- `scripts/campaign-3-completion.py`
-- `scripts/test-campaign-3-completion.py`
+- `source_proxy/contracts/coding_lane_contracts.py`
+- `packages/contracts/schemas/coding/extended-lane-contracts.v1.json`
+- `source_proxy/coding/extended_lane_registry.py`
+- `source_proxy/coding/runtime_lane_boundary.py`
+- `source_proxy/tests/test_extended_lane_registry.py`
+
+The registry has exactly eight retained, selectable production lanes. Scout
+providers, preview-only helpers, the Mac advisory route, and all prompt-only or
+callerless aliases are non-selectable. Every retained lane binds its producer,
+consumer, timeout, fallback, authority class, contract, and immutable-evidence
+obligation. The runtime boundary rejects output lacking downstream acknowledgement
+and consumption.
 
 Stop line:
 
-Do not implement Gate 3.1 or later from this checkpoint. The next authorized task resumes at `gate_3_1_extended_lane_inventory_and_classification`.
-
+Gate 3.1 is complete. The next authorized task resumes at `gate_3_2_scout_and_coding_research_integration`.

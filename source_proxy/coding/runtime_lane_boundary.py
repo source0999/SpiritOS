@@ -140,8 +140,11 @@ class RuntimeLaneBoundary:
     persist the serializable records with the authoritative task state.
     """
 
-    def __init__(self) -> None:
-        self._contracts = deepcopy(canonical_coding_lane_contracts())
+    def __init__(self, *, contracts: Mapping[str, Mapping[str, Any]] | None = None) -> None:
+        # The default remains exactly the accepted R1 core contract catalog.
+        # Campaign-specific callers must pass their explicit catalog rather than
+        # silently widening the core boundary.
+        self._contracts = deepcopy(dict(contracts or canonical_coding_lane_contracts()))
         self._validators: dict[tuple[str, str], Draft202012Validator] = {}
         for lane_id, contract in self._contracts.items():
             for schema_name in (
@@ -172,10 +175,11 @@ class RuntimeLaneBoundary:
         outputs: Iterable[Mapping[str, Any]] = (),
         acknowledgements: Iterable[Mapping[str, Any]] = (),
         consumptions: Iterable[Mapping[str, Any]] = (),
+        contracts: Mapping[str, Mapping[str, Any]] | None = None,
     ) -> "RuntimeLaneBoundary":
         """Rehydrate only records that still satisfy every canonical binding."""
 
-        boundary = cls()
+        boundary = cls(contracts=contracts)
         for payload in outputs:
             boundary.restore_output(payload)
         for payload in acknowledgements:
