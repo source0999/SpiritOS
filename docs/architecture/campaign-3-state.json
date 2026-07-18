@@ -43,7 +43,7 @@
     },
     "campaign_2_historical_engineering_terminal": {
       "ref": "refs/heads/codex/spiritos-campaign-2-core-coding-os-20260716",
-      "commit": "2b8ead66578d7f7053c01cb987e011b763c1c03d"
+      "commit": "39de31bb73cb4a910281705259b35a6d42a0726c"
     },
     "historical_design_campaign_3": {
       "ref": "refs/heads/codex/spiritos-campaign-3-core-design-lane-20260717",
