@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "existing Design writeback authority and acknowledgement security preservation only",
+  "command": "npm exec vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts src/app/v1/coding/design-studio/approved-writeback/__tests__/route.test.ts src/lib/coding/__tests__/design-approval-authority.test.ts src/lib/coding/__tests__/design-studio-approved-writeback-runtime.test.ts src/lib/coding/__tests__/design-writeback-production-lifecycle.integration.test.ts",
+  "completed_at": "2026-07-18T11:30:55.982847+00:00",
+  "passed": true,
+  "profile_id": "design-security",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:30:46.686901+00:00",
+  "stderr": "",
+  "stdout": "\n\u001b[1m\u001b[30m\u001b[46m RUN \u001b[49m\u001b[39m\u001b[22m \u001b[36mv4.1.5 \u001b[39m\u001b[90m/home/source/SpiritOS-foundation-remediation-r1-20260717\u001b[39m\n\n \u001b[32m✓\u001b[39m src/lib/coding/__tests__/design-studio-approved-writeback-runtime.test.ts \u001b[2m(\u001b[22m\u001b[2m5 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 14\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/lib/coding/__tests__/design-writeback-production-lifecycle.integration.test.ts \u001b[2m(\u001b[22m\u001b[2m1 test\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 5579\u001b[2mms\u001b[22m\u001b[39m\n     \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m persists, issues, consumes, verifies, writes, and finalizes through the production modules \u001b[33m 5578\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/lib/coding/__tests__/design-approval-authority.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/app/v1/operator/design-approval/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 13\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/app/v1/coding/design-studio/approved-writeback/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 10\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m5 passed\u001b[39m\u001b[22m\u001b[90m (5)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m14 passed\u001b[39m\u001b[22m\u001b[90m (14)\u001b[39m\n\u001b[2m   Start at \u001b[22m 07:30:47\n\u001b[2m   Duration \u001b[22m 8.50s\u001b[2m (transform 152ms, setup 245ms, import 214ms, tests 5.62s, environment 1.77s)\u001b[22m\n\n"
+}

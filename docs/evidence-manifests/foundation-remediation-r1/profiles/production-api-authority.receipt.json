@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-api-authority.artifact.json",
+  "artifact_sha256": "da3f2099439644ace54f80beaf6fa03cf983ddb22a05a692c89f0d5c352cda73",
+  "claim_ceiling": "active prompt proposal, execute-approved, authenticated reset, and exact production identity wiring only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_decision_target_plugin_orchestrator.py source_proxy/tests/test_dummy_product_site_reset.py && npm exec vitest run src/app/v1/actions/execute-approved/__tests__/route.test.ts src/app/v1/coding/dummy-product-site-preview/reset/__tests__/route.test.ts",
+  "completed_at": "2026-07-18T11:44:41.035489+00:00",
+  "passed": true,
+  "profile_id": "production-api-authority",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

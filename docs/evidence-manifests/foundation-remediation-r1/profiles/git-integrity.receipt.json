@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/git-integrity.artifact.json",
+  "artifact_sha256": "98751fd90a91d82439aefb945d2f02ff1762e55fe5de449ec435995578968c12",
+  "claim_ceiling": "Git object/diff/ref integrity only",
+  "command": "git diff --check && git fsck --full --strict --no-progress --no-dangling && /home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py",
+  "completed_at": "2026-07-18T12:00:32.426583+00:00",
+  "passed": true,
+  "profile_id": "git-integrity",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

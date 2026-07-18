@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/spiritflix-authority.artifact.json",
+  "artifact_sha256": "236d6b1eefbb804fa5a94e6bf997aff3bef10fe46e85acaa8287b3bd45f9d46c",
+  "claim_ceiling": "bound transactional administrative mutation behavior and production route wiring only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_spiritflix_admin_authority.py && npm exec vitest run src/lib/coding/__tests__/spiritflix-admin-approval-binding.test.ts src/lib/coding/__tests__/spiritflix-admin-transaction.test.ts src/app/api/spiritflix/admin/__tests__/actions-route.test.ts src/app/api/spiritflix/admin/__tests__/library-route.test.ts src/app/api/spiritflix/admin/__tests__/smart-analysis-route.test.ts src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts src/app/api/spiritflix/__tests__/manual-models-route.test.ts src/app/api/spiritflix/__tests__/manual-tags-route.test.ts",
+  "completed_at": "2026-07-18T11:30:46.294466+00:00",
+  "passed": true,
+  "profile_id": "spiritflix-authority",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

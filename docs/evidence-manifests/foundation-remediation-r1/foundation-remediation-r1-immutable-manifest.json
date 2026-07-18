@@ -1,0 +1,286 @@
+{
+  "artifacts": [
+    {
+      "path": "docs/architecture/foundation-remediation-r1-restoration.md",
+      "sha256": "ddafe75aa84c213b85dbb5d85bbea9b2b3f81e048bbfd31b1cef2b9abc2da862",
+      "size_bytes": 5747
+    },
+    {
+      "path": "docs/architecture/foundation-remediation-r1-roadmap-correction.md",
+      "sha256": "99a917526d20c2680c642248f9c549e75614ab0b35ea2dc68e8acf35a3994a72",
+      "size_bytes": 5815
+    },
+    {
+      "path": "docs/architecture/foundation-remediation-r1-test-profiles.json",
+      "sha256": "aabadfbb7f507b98f8074fa66fd4fbd66141d3261b8bf1497404a6481aaf0317",
+      "size_bytes": 18698
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/lifecycle-receipt.json",
+      "sha256": "ccda1a909a6d24aa42028d77e7b883cd0fb46f0d3c362ffb5bc754a2aed8d4d3",
+      "size_bytes": 59539
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/production-proving-receipt.json",
+      "sha256": "ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a",
+      "size_bytes": 45507
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/authority-callgraph.artifact.json",
+      "sha256": "fe2b1b87d9330368958633d6be54113fd4f61faf0a8ea33df3761ff18b630992",
+      "size_bytes": 678
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/authority-callgraph.receipt.json",
+      "sha256": "66cd4a60efac026c3b6b43db777118b87c9df333c1887b4cf86eee7958c2aade",
+      "size_bytes": 735
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/backend-state.artifact.json",
+      "sha256": "921f54ba22d33b604246a2f34595c9a2e9fd746e8ef50ecab2999c3f32c50b4d",
+      "size_bytes": 2121
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/backend-state.receipt.json",
+      "sha256": "5580a1171fe9ba235398e9286867cf5c601382c4bee078040b386ce7c569dcb2",
+      "size_bytes": 891
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/cartographer-authority.artifact.json",
+      "sha256": "c0a0977e8d26d2e6089b4910f4055dccc6e42db0b876ac353d13b8a6670effe7",
+      "size_bytes": 2147
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/cartographer-authority.receipt.json",
+      "sha256": "9777d51247915eb409992e500bd0e5b6c85a5cc15f09fda8b8df5e7688e96968",
+      "size_bytes": 862
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/coding-lifecycle.artifact.json",
+      "sha256": "35549518d700dc365c1e106b2248c23c4a314b792fe0ae7681146de832c7d798",
+      "size_bytes": 904
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/coding-lifecycle.receipt.json",
+      "sha256": "d410d9e83b8299e7dc9546af3558f4a1783e810b797829a403e20838efdbd69d",
+      "size_bytes": 899
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/completion-regression.artifact.json",
+      "sha256": "ab45444d4b388909033789eda782d500ad2fe6c669413a275bb8a07ba59f4425",
+      "size_bytes": 727
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/completion-regression.receipt.json",
+      "sha256": "14e1bf82decb8c2519eea208c7ee4425e0c0f07c01c5f976c5216dfd37edf18f",
+      "size_bytes": 713
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/continuity.artifact.json",
+      "sha256": "27182984a5852b926034b0d3763623b75dcf9786374abb8be564c8ce9a743e88",
+      "size_bytes": 677
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/continuity.receipt.json",
+      "sha256": "68c6a77e94b3c6f87c875fe666bfe3b93db8c18ca3e17fe0c2f97b9f3a3c3458",
+      "size_bytes": 724
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/design-security.artifact.json",
+      "sha256": "f18e019732d9a6005f3c670dc3c4196f8d5bfb36cfb371e10f9d913d36847c17",
+      "size_bytes": 2716
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/design-security.receipt.json",
+      "sha256": "d821819369ee760720ac7d260d794f8801ed25c97e67f63c74bded40882de8c7",
+      "size_bytes": 1022
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/evidence-provenance.artifact.json",
+      "sha256": "37736b6fef1df088e55928c8dfc7146818b3cc258af5db24724d2d562de5ab6d",
+      "size_bytes": 793
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/evidence-provenance.receipt.json",
+      "sha256": "1e64c7d6f43722facce165e5e283fab6482711129c2c8c6a6c8d9d7675adaea3",
+      "size_bytes": 774
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/git-integrity.artifact.json",
+      "sha256": "98751fd90a91d82439aefb945d2f02ff1762e55fe5de449ec435995578968c12",
+      "size_bytes": 724
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/git-integrity.receipt.json",
+      "sha256": "fd42671b3489703135d1174cde0e23beb88bf713e53f53732a3c6c4b504726ac",
+      "size_bytes": 774
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/portable-authority.artifact.json",
+      "sha256": "1aa3ef5ac466b72435f7aa50930e9f852c879ee2d5910fdaf845bb95ad50755e",
+      "size_bytes": 797
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/portable-authority.receipt.json",
+      "sha256": "a6dd1236e9f5ec864f4f2f7be538a09bd40b8b6bd8ee49fce5e3246ce61a1a56",
+      "size_bytes": 794
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-api-authority.artifact.json",
+      "sha256": "da3f2099439644ace54f80beaf6fa03cf983ddb22a05a692c89f0d5c352cda73",
+      "size_bytes": 3022
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-api-authority.receipt.json",
+      "sha256": "88d1b1fbdee0c6d7325981b9e0c110afea23e79f7783c27ccbb9935a4fe122f5",
+      "size_bytes": 1019
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-build.artifact.json",
+      "sha256": "c74f497e18b874265377e89f2d0ac97ea010208e355923dbe4d53724b9bd612d",
+      "size_bytes": 8773
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-build.receipt.json",
+      "sha256": "1ea214d9737721a97f063ffa975f440d8c40c42b394e3e4bf4f1f1417204473b",
+      "size_bytes": 612
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-orchestrator.artifact.json",
+      "sha256": "86ae84e1f5e39ece376d4943dc08743bf5a819f5e5c738fee3a04b8f0f6a3936",
+      "size_bytes": 877
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-orchestrator.receipt.json",
+      "sha256": "18ea97b1832998bde3103bf318f2123ed0a6ee3d6ac366be8f55b5894ba00ca2",
+      "size_bytes": 787
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/proving-harness-regression.artifact.json",
+      "sha256": "4902a1ef4bfe718192b5d4cda765eb863b41cfa3f148a4135c11ec3422c81c8a",
+      "size_bytes": 1040
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/proving-harness-regression.receipt.json",
+      "sha256": "52306cd629d029a390fdda0f84f3fa1791f705fcf00cf2a77ed3743bd99f3bce",
+      "size_bytes": 894
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/recovery-fallback.artifact.json",
+      "sha256": "27621a727d741eed9171e8c616cf4a83c59246acd51f7d63e6e81dbafc1c9db0",
+      "size_bytes": 759
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/recovery-fallback.receipt.json",
+      "sha256": "8713b99de226418ee49722391835c15a957c3355c27bb37333773462f35b83d5",
+      "size_bytes": 756
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/runtime-contracts.artifact.json",
+      "sha256": "01f2a181d3733b955cdcf7ba3bd30fce08254d3d06b785a4e877e1c7f4554f06",
+      "size_bytes": 844
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/runtime-contracts.receipt.json",
+      "sha256": "bf2e625b67837b7dee4c0712117c649d0141dfdc13c5d11d7b823901abe52d44",
+      "size_bytes": 841
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/secret-scan.artifact.json",
+      "sha256": "6092563236da9b4bc8e66d32576190e938db25044e2d693f605451f93deaa1f3",
+      "size_bytes": 674
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/secret-scan.receipt.json",
+      "sha256": "3f52ba7dc31177b8fad9dc40badca314ece10788d42d2af6c589cea640377f40",
+      "size_bytes": 721
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/source-proxy-regression.artifact.json",
+      "sha256": "18a50c51d38a340a2e9dcb37a06273012522f0b9d1fdc108233f2d03a7acc3ba",
+      "size_bytes": 2564
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/source-proxy-regression.receipt.json",
+      "sha256": "41a63fcf4663fd07782de9be7ed6e32ee42eab122492c546728859227f171e18",
+      "size_bytes": 1280
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/spiritflix-authority.artifact.json",
+      "sha256": "236d6b1eefbb804fa5a94e6bf997aff3bef10fe46e85acaa8287b3bd45f9d46c",
+      "size_bytes": 3468
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/spiritflix-authority.receipt.json",
+      "sha256": "ed2748acc76147ef8e8b537a54d9f95e542ea5a9d38cc6886716a155df0280ab",
+      "size_bytes": 1300
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/target-adapters-1-10.artifact.json",
+      "sha256": "5907fbbd5720f13e322c3fa58eda305346b7ae618aa4e66728fcb4051684fce8",
+      "size_bytes": 739
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/target-adapters-1-10.receipt.json",
+      "sha256": "5513f45cc635510501909707d531289a447f6d1c408ab10159b047a2dd0b8462",
+      "size_bytes": 739
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/test-profiles.artifact.json",
+      "sha256": "5420978830c2b337f5ebca6a29b68c323f15dfd5051d30267fd2f741d7351223",
+      "size_bytes": 772
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/test-profiles.receipt.json",
+      "sha256": "2564252e8f6beab7f4573f7047d6be79ed4b0248664e6ab1e8f75e9841947572",
+      "size_bytes": 758
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/typecheck.artifact.json",
+      "sha256": "1d96f22edfcec8b539751b9264fde97cf236bf0d204e31852c8c23ea35eda54e",
+      "size_bytes": 568
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/profiles/typecheck.receipt.json",
+      "sha256": "bc3e1e50e330d0cbe2a673efbdc1fcf6c957e42e998fe9a0f2cf410959cefe4f",
+      "size_bytes": 609
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/protected-heads.json",
+      "sha256": "6219f574c81b1418c4abfb0e94e43e92b380c21a522d98c05e1391ce94c34046",
+      "size_bytes": 3019
+    },
+    {
+      "path": "docs/evidence-manifests/foundation-remediation-r1/terminal-spec.json",
+      "sha256": "7651d52589ba2e1d828f9fc4b8a19209d03a18c30a20d0ef03f5b0494c27a0b3",
+      "size_bytes": 6673
+    }
+  ],
+  "bundle_name": "foundation-remediation-r1-terminal.bundle",
+  "evidence_hash": "ee9dfba49d0e5609dbec90bc3d0095e331abc56ef359d8909f73d8879c818084",
+  "generated_at": "2026-07-18T12:00:47+00:00",
+  "lifecycle_receipt": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/lifecycle-receipt.json",
+    "sha256": "ccda1a909a6d24aa42028d77e7b883cd0fb46f0d3c362ffb5bc754a2aed8d4d3"
+  },
+  "production_proving_receipt": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/production-proving-receipt.json",
+    "sha256": "ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a"
+  },
+  "protected_heads_report": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/protected-heads.json",
+    "sha256": "6219f574c81b1418c4abfb0e94e43e92b380c21a522d98c05e1391ce94c34046"
+  },
+  "receipt": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/foundation-remediation-r1-receipt.json",
+    "sha256": "52b4bef5395031774209e1a204bdfdeee4be740da8c94dbd42181d968a776e37"
+  },
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "restoration_instructions": {
+    "path": "docs/architecture/foundation-remediation-r1-restoration.md",
+    "sha256": "ddafe75aa84c213b85dbb5d85bbea9b2b3f81e048bbfd31b1cef2b9abc2da862"
+  },
+  "schema": "spiritos-foundation-remediation-r1-immutable-evidence-manifest/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "tag_name": "foundation-remediation-r1-terminal-20260718T120047Z"
+}

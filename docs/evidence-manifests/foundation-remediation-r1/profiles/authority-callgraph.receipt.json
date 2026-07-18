@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/authority-callgraph.artifact.json",
+  "artifact_sha256": "fe2b1b87d9330368958633d6be54113fd4f61faf0a8ea33df3761ff18b630992",
+  "claim_ceiling": "static production import graph and authority invariants only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-authority.py",
+  "completed_at": "2026-07-18T11:25:14.191267+00:00",
+  "passed": true,
+  "profile_id": "authority-callgraph",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

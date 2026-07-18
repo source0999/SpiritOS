@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "live importer, state machine, and route ownership only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_long_running_tasks.py",
+  "completed_at": "2026-07-18T11:37:53.441631+00:00",
+  "passed": true,
+  "profile_id": "production-orchestrator",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:32:03.139464+00:00",
+  "stderr": "",
+  "stdout": "........................................................................ [ 77%]\n.....................                                                    [100%]\n93 passed in 349.85s (0:05:49)\n"
+}

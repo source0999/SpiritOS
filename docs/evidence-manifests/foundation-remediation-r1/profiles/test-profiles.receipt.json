@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/test-profiles.artifact.json",
+  "artifact_sha256": "5420978830c2b337f5ebca6a29b68c323f15dfd5051d30267fd2f741d7351223",
+  "claim_ceiling": "test-profile validator regression semantics only; terminal receipts are independently validated",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-test-profiles.py",
+  "completed_at": "2026-07-18T11:25:27.302903+00:00",
+  "passed": true,
+  "profile_id": "test-profiles",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

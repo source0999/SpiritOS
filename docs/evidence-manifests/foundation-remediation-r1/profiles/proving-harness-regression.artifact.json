@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "inner and outer proving-harness falsification behavior only; does not substitute for the real HTTP proving receipt",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-proving.py && /home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-lifecycle.py",
+  "completed_at": "2026-07-18T11:44:48.709264+00:00",
+  "passed": true,
+  "profile_id": "proving-harness-regression",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:44:41.818197+00:00",
+  "stderr": "..................\n----------------------------------------------------------------------\nRan 18 tests in 0.172s\n\nOK\n...........................\n----------------------------------------------------------------------\nRan 27 tests in 6.521s\n\nOK\n",
+  "stdout": ""
+}

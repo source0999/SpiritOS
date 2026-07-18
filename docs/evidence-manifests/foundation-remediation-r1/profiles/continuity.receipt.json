@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/continuity.artifact.json",
+  "artifact_sha256": "27182984a5852b926034b0d3763623b75dcf9786374abb8be564c8ce9a743e88",
+  "claim_ceiling": "R1 control-plane, branch, base, and protected-head continuity only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py",
+  "completed_at": "2026-07-18T11:25:11.530334+00:00",
+  "passed": true,
+  "profile_id": "continuity",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

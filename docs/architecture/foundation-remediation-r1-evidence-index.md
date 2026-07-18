@@ -42,17 +42,23 @@ and self-declared `GO` fields are not accepted terminal evidence.
 
 | ID | Required artifact | Status | SHA-256 | Claim ceiling |
 | --- | --- | --- | --- | --- |
-| `r1-authority-callgraph` | validator output/manifest entry | pending | pending | production import and authority boundaries |
-| `r1-orchestrator-route` | HTTP task lineage | pending | pending | live canonical owner and state machine |
-| `r1-runtime-contracts` | producer/consumer events | pending | pending | live version/schema/output/consumption enforcement |
-| `r1-cartographer-transfer` | proposal/selection/transfer lineage | pending | pending | real proposal-only participation |
-| `r1-independent-participants` | five distinct invocation/output records | pending | pending | executor/reviewer/verifier/anti-cheat/evidence participation |
-| `r1-target-adapters` | prompts 1-10 focused matrix | pending | pending | executable target-owned behavior only |
-| `r1-controlled-recovery` | one run/resume lineage | pending | pending | exact failure/retry/fallback/claim-ceiling recovery |
-| `r1-undo-reset-rerun` | undo, reset, and clean rerun receipts | pending | pending | reversible isolated fixture lifecycle |
-| `r1-terminal-receipt` | `foundation-remediation-r1-receipt.json` | pending | pending | tested source commit at stated claim ceiling |
-| `r1-immutable-manifest` | tracked closeout manifest | pending | pending | content-address and recovery reachability |
-| `r1-recovery-bundle` | verified Git bundle + SHA sidecar | pending | pending | local restoration only |
+| `r1-authority-callgraph` | `profiles/authority-callgraph.artifact.json` | passed | `fe2b1b87d9330368958633d6be54113fd4f61faf0a8ea33df3761ff18b630992` | production import and authority boundaries |
+| `r1-orchestrator-route` | `production-proving-receipt.json` | passed | `ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a` | live canonical owner and state machine |
+| `r1-runtime-contracts` | `profiles/runtime-contracts.receipt.json` | passed | `bf2e625b67837b7dee4c0712117c649d0141dfdc13c5d11d7b823901abe52d44` | live version/schema/output/consumption enforcement |
+| `r1-cartographer-transfer` | `production-proving-receipt.json` | passed | `ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a` | real proposal-only participation |
+| `r1-independent-participants` | `production-proving-receipt.json` | passed | `ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a` | executor/reviewer/verifier/anti-cheat/evidence participation |
+| `r1-target-adapters` | `profiles/target-adapters-1-10.receipt.json` | passed | `5513f45cc635510501909707d531289a447f6d1c408ab10159b047a2dd0b8462` | executable target-owned behavior only |
+| `r1-controlled-recovery` | `production-proving-receipt.json` | passed | `ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a` | exact primary failure and declared fallback recovery |
+| `r1-undo-reset-rerun` | `lifecycle-receipt.json` | passed | `ccda1a909a6d24aa42028d77e7b883cd0fb46f0d3c362ffb5bc754a2aed8d4d3` | reversible isolated fixture lifecycle and clean rerun |
+| `r1-profile-matrix` | `foundation-remediation-r1-test-profiles.json` plus 44 manifest entries | passed | `aabadfbb7f507b98f8074fa66fd4fbd66141d3261b8bf1497404a6481aaf0317` | exact 22 registered claim ceilings only |
+| `r1-terminal-receipt` | `foundation-remediation-r1-receipt.json` | passed | `52b4bef5395031774209e1a204bdfdeee4be740da8c94dbd42181d968a776e37` | tested source commit at `recovered_via_declared_fallback_only` |
+| `r1-immutable-manifest` | `foundation-remediation-r1-immutable-manifest.json` | passed | `bbd94369379138059bbb5bc8fcbdf9d54fbc6599d1c36a56fdbfd7e77a6405f7` | content-addressed tracked evidence set |
+| `r1-recovery-bundle` | verified bundle plus `.sha256` sidecar at the restoration path | passed after annotated-tag creation | external sidecar binds the final bundle bytes | local restoration only |
 
-The index is updated in every checkpoint that accepts new evidence. “Pending” may not
-be converted to “passed” without an actual artifact path and verified hash.
+The terminal manifest evidence hash is
+`ee9dfba49d0e5609dbec90bc3d0095e331abc56ef359d8909f73d8879c818084`.
+The profile registry records the raw receipt hash and completion timestamp for every
+mandatory profile; the immutable manifest independently binds all 44 profile files.
+The recovery-bundle digest is intentionally external because the bundle contains the
+commit that tracks this index. Its sidecar is created and verified only after the
+annotated terminal tag resolves to that commit.

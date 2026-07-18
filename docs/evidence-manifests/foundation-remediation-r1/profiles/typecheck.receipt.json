@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/typecheck.artifact.json",
+  "artifact_sha256": "1d96f22edfcec8b539751b9264fde97cf236bf0d204e31852c8c23ea35eda54e",
+  "claim_ceiling": "TypeScript static correctness only",
+  "command": "npm run typecheck",
+  "completed_at": "2026-07-18T11:52:48.098606+00:00",
+  "passed": true,
+  "profile_id": "typecheck",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

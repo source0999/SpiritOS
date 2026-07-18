@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/design-security.artifact.json",
+  "artifact_sha256": "f18e019732d9a6005f3c670dc3c4196f8d5bfb36cfb371e10f9d913d36847c17",
+  "claim_ceiling": "existing Design writeback authority and acknowledgement security preservation only",
+  "command": "npm exec vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts src/app/v1/coding/design-studio/approved-writeback/__tests__/route.test.ts src/lib/coding/__tests__/design-approval-authority.test.ts src/lib/coding/__tests__/design-studio-approved-writeback-runtime.test.ts src/lib/coding/__tests__/design-writeback-production-lifecycle.integration.test.ts",
+  "completed_at": "2026-07-18T11:30:55.982847+00:00",
+  "passed": true,
+  "profile_id": "design-security",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

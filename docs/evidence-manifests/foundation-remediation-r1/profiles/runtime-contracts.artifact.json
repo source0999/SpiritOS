@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "live version/schema/output/consumption enforcement only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_runtime_lane_boundary.py source_proxy/tests/test_coding_lane_contracts.py source_proxy/tests/test_cartographer_coding_orchestrator.py",
+  "completed_at": "2026-07-18T11:37:55.692778+00:00",
+  "passed": true,
+  "profile_id": "runtime-contracts",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:37:54.318934+00:00",
+  "stderr": "",
+  "stdout": "....................                                                     [100%]\n20 passed in 1.06s\n"
+}

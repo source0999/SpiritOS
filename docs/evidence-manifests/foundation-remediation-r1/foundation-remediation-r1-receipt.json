@@ -1,0 +1,138 @@
+{
+  "anti_cheat_result": {
+    "invocation_id": "coding-anti-cheat-invocation-ff273ed4abbe4ef986db1a1b0de226de",
+    "status": "passed"
+  },
+  "applied_diff_sha256": "c956b3a1dba50122db4bfcc01d1059a6459f5df2bcded6716a9a9ab72d55e643",
+  "approval": {
+    "approval_id": "apr_sIxcVgTJ9lXOlV-vRYLJyKLS",
+    "artifact_sha256": "683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546",
+    "generation": 1,
+    "orchestrator_run_id": "coding-run-b3ebcf83a04d402186837bbecb865176",
+    "state": "consumed"
+  },
+  "artifact_sha256": "683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546",
+  "authority_validation": {
+    "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/authority-callgraph.artifact.json",
+    "artifact_sha256": "fe2b1b87d9330368958633d6be54113fd4f61faf0a8ea33df3761ff18b630992",
+    "passed": true,
+    "result": "pass",
+    "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+    "tag_name": "foundation-remediation-r1-terminal-20260718T120047Z",
+    "validator_path": "scripts/validate-foundation-remediation-r1-authority.py",
+    "validator_sha256": "347201d4f033c7d80b94a67177eb4c686ecb2989cbc2c83c85d3874a2e157c65"
+  },
+  "backend_build_identity": {
+    "build_id": "58c570b0f9010abd28f973e9e7659a3a292ec38c",
+    "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+  },
+  "claim_ceiling": "recovered_via_declared_fallback_only",
+  "context_identity": {
+    "id": "init-storefront",
+    "sha256": "d7e06b461c80eee0e92213fe2dbb77e89d778370962b73484155dcb644b672ef"
+  },
+  "evidence_hash": "ee9dfba49d0e5609dbec90bc3d0095e331abc56ef359d8909f73d8879c818084",
+  "generated_at": "2026-07-18T12:00:47+00:00",
+  "lifecycle_receipt": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/lifecycle-receipt.json",
+    "sha256": "ccda1a909a6d24aa42028d77e7b883cd0fb46f0d3c362ffb5bc754a2aed8d4d3"
+  },
+  "orchestrator_attempt_id": "coding-attempt-021eebcc76784fb689d040b1d706d3e6",
+  "orchestrator_run_id": "coding-run-b3ebcf83a04d402186837bbecb865176",
+  "participants": {
+    "anti_cheat": {
+      "artifact_sha256": "683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546",
+      "consumer_acknowledgement_id": "coding-anti-cheat-ack-4fbbf1ac277147e5986e32c92ec834b0",
+      "invocation_id": "coding-anti-cheat-invocation-ff273ed4abbe4ef986db1a1b0de226de",
+      "output_id": "coding-anti-cheat-output-965df7003ccd485c81c51c0b37af12c8",
+      "output_sha256": "b6a41bd1f35df4ceb119bd6ae4530e70c8e240f3299302ab0d4bfbe7a2244e52",
+      "status": "passed"
+    },
+    "evidence_recorder": {
+      "artifact_sha256": "683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546",
+      "consumer_acknowledgement_id": "evidence-recorder-ack-cb7fa3b838a149a79c1e0055d4d7c33d",
+      "invocation_id": "evidence-recorder-invocation-6f8e3c0905e14188ada11293678e8af1",
+      "output_id": "evidence-recorder-output-82d3ac8d57cb4098b404377763767d6b",
+      "output_sha256": "bfcfd598d2ed85821b4f807d8acbed49227328d52583c71be3931f9b4b14367b",
+      "status": "passed"
+    },
+    "executor": {
+      "artifact_sha256": "683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546",
+      "consumer_acknowledgement_id": "coding-executor-ack-0a4e3f45a5154d7f89a9c79d1c2de8a5",
+      "invocation_id": "coding-executor-invocation-d6e360ccc49f4655a03fedc14fde7099",
+      "output_id": "coding-executor-output-4ef4bdda1990459fb268a72093c5d248",
+      "output_sha256": "5fbe820187de5a93c91369e42e913ee88f6ca2ce19e7487f9bc8915b4abe261a",
+      "status": "succeeded"
+    },
+    "reviewer": {
+      "artifact_sha256": "683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546",
+      "consumer_acknowledgement_id": "coding-reviewer-ack-9479e3c45313444f8b88ad0c7915c206",
+      "invocation_id": "coding-reviewer-invocation-00b5d143243545bd962c1ac67333e026",
+      "output_id": "coding-reviewer-output-542fc8ec3447451e9bc1b44cecaa2fa8",
+      "output_sha256": "17c085859808fe80247c70de4b30155c76e961d8b27ca8101e5c01ff2dcfd667",
+      "status": "passed"
+    },
+    "verifier": {
+      "artifact_sha256": "683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546",
+      "consumer_acknowledgement_id": "coding-verifier-ack-0d453f78bd2841058358ad0d3103b0a2",
+      "invocation_id": "coding-verifier-invocation-523aa7a8e05647a397a1c9afbcbffdf0",
+      "output_id": "coding-verifier-output-f5396c3132c04d7281a61b31434a2150",
+      "output_sha256": "6b2d031dc1a6bc0e37b30dce5ef1bc707ba94cb581cedfa9197216c3168669ab",
+      "status": "passed"
+    }
+  },
+  "production_proof": {
+    "claim_ceiling": "recovered_via_declared_fallback_only",
+    "proof_sha256": "ec34ebf53d1dfc9ac810629bfc3b3ba76b8daebcf9d87c2bc367b3f66bdc141a",
+    "recovery_id": "coding-recovery-417ff2f844644f909360cc7547f55ce4",
+    "terminal_proof_eligible": true
+  },
+  "production_proving_receipt": {
+    "path": "docs/evidence-manifests/foundation-remediation-r1/production-proving-receipt.json",
+    "sha256": "ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a"
+  },
+  "prompt_identity": {
+    "id": "coder-001-init-dummy-product-site",
+    "sha256": "351b9cefeba5f663fdfa3a1d559320dd43ed5fc49deacc2b4785ff9ca838a23f"
+  },
+  "protected_heads": {
+    "architecture_audit": "05612d2ae358bc01b6ef997243137649f8d65f14",
+    "campaign_1_terminal": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
+    "campaign_2_engineering_terminal": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
+    "campaign_3_design_terminal": "4aec510409e8bb82386190af9fa8f666efcbc63e",
+    "source_proxy": "594d66ef8280953af767a273d7c91be765d1a6eb",
+    "spiritflix": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196"
+  },
+  "redaction_verdict": {
+    "scanner": "foundation-remediation-r1-secret-scan-profile",
+    "verdict": "passed"
+  },
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "repository_identity": {
+    "repository_id": "SpiritOS",
+    "worktree_id": "2ad28b45204bff87d65524ae",
+    "worktree_realpath": "/home/source/SpiritOS-foundation-remediation-r1-20260717"
+  },
+  "result_sha256": "cf421c9e6d9bee97bb50daf582f34a21ff7e2e5a43d48d3a35740752c71557fd",
+  "reviewer_result": {
+    "invocation_id": "coding-reviewer-invocation-00b5d143243545bd962c1ac67333e026",
+    "status": "passed"
+  },
+  "schema": "spiritos-foundation-remediation-r1-terminal-receipt/v1",
+  "shell_build_identity": {
+    "build_id": "15ef6249b478e2eafa7fee68dfe01490ecee9709ed85bd13a1ead151c335735c",
+    "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+  },
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "target": "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+  "target_plugin_identity": {
+    "plugin_id": "lumacart",
+    "source_head": "ec204d63e431d10501c67db0264082db6e4d31e4"
+  },
+  "task_id": "task_767252fabf22",
+  "verdict": "SPIRITOS_FOUNDATION_REMEDIATION_COMPLETE",
+  "verifier_result": {
+    "invocation_id": "coding-verifier-invocation-523aa7a8e05647a397a1c9afbcbffdf0",
+    "status": "passed"
+  }
+}

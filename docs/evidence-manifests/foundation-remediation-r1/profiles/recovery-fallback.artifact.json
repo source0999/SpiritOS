@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "accountable orchestrator recovery only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_recovery.py source_proxy/tests/test_coding_orchestrator.py",
+  "completed_at": "2026-07-18T11:44:24.897573+00:00",
+  "passed": true,
+  "profile_id": "recovery-fallback",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:44:21.076570+00:00",
+  "stderr": "",
+  "stdout": "..............................................                           [100%]\n46 passed in 3.50s\n"
+}

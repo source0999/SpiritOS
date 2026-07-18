@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/runtime-contracts.artifact.json",
+  "artifact_sha256": "01f2a181d3733b955cdcf7ba3bd30fce08254d3d06b785a4e877e1c7f4554f06",
+  "claim_ceiling": "live version/schema/output/consumption enforcement only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_runtime_lane_boundary.py source_proxy/tests/test_coding_lane_contracts.py source_proxy/tests/test_cartographer_coding_orchestrator.py",
+  "completed_at": "2026-07-18T11:37:55.692778+00:00",
+  "passed": true,
+  "profile_id": "runtime-contracts",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

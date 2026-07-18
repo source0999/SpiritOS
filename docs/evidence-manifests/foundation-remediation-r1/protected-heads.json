@@ -1,0 +1,76 @@
+{
+  "entries": [
+    {
+      "actual_tip": "05612d2ae358bc01b6ef997243137649f8d65f14",
+      "commit_readable": true,
+      "expected_tip": "05612d2ae358bc01b6ef997243137649f8d65f14",
+      "name": "architecture_audit",
+      "passed": true,
+      "protected_commit": "05612d2ae358bc01b6ef997243137649f8d65f14",
+      "protected_commit_in_ref_history": true,
+      "ref": "refs/heads/codex/spiritos-architecture-audit-20260712",
+      "ref_matches": true
+    },
+    {
+      "actual_tip": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
+      "commit_readable": true,
+      "expected_tip": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
+      "name": "campaign_1_terminal",
+      "passed": true,
+      "protected_commit": "8a20473c2260bc132e595c64230d3fdfc9fef97f",
+      "protected_commit_in_ref_history": true,
+      "ref": "refs/heads/codex/spiritos-campaign-1-foundation-20260712",
+      "ref_matches": true
+    },
+    {
+      "actual_tip": "39de31bb73cb4a910281705259b35a6d42a0726c",
+      "commit_readable": true,
+      "expected_tip": "39de31bb73cb4a910281705259b35a6d42a0726c",
+      "name": "campaign_2_engineering_terminal",
+      "passed": true,
+      "protected_commit": "2b8ead66578d7f7053c01cb987e011b763c1c03d",
+      "protected_commit_in_ref_history": true,
+      "ref": "refs/heads/codex/spiritos-campaign-2-core-coding-os-20260716",
+      "ref_matches": true
+    },
+    {
+      "actual_tip": "4aec510409e8bb82386190af9fa8f666efcbc63e",
+      "commit_readable": true,
+      "expected_tip": "4aec510409e8bb82386190af9fa8f666efcbc63e",
+      "name": "campaign_3_design_terminal",
+      "passed": true,
+      "protected_commit": "4aec510409e8bb82386190af9fa8f666efcbc63e",
+      "protected_commit_in_ref_history": true,
+      "ref": "refs/heads/codex/spiritos-campaign-3-core-design-lane-20260717",
+      "ref_matches": true
+    },
+    {
+      "actual_tip": "594d66ef8280953af767a273d7c91be765d1a6eb",
+      "commit_readable": true,
+      "expected_tip": "594d66ef8280953af767a273d7c91be765d1a6eb",
+      "name": "source_proxy",
+      "passed": true,
+      "protected_commit": "594d66ef8280953af767a273d7c91be765d1a6eb",
+      "protected_commit_in_ref_history": true,
+      "ref": "refs/heads/codex/source-proxy-structural-milestone-20260711",
+      "ref_matches": true
+    },
+    {
+      "actual_tip": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+      "commit_readable": true,
+      "expected_tip": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+      "name": "spiritflix",
+      "passed": true,
+      "protected_commit": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+      "protected_commit_in_ref_history": true,
+      "ref": "refs/heads/codex/spiritflix-smart-scan-identity-fix",
+      "ref_matches": true
+    }
+  ],
+  "generated_at": "2026-07-18T12:00:47+00:00",
+  "inventory_matches_state": true,
+  "passed": true,
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "schema": "spiritos-foundation-remediation-r1-protected-head-report/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/coding-lifecycle.artifact.json",
+  "artifact_sha256": "35549518d700dc365c1e106b2248c23c4a314b792fe0ae7681146de832c7d798",
+  "claim_ceiling": "late finalization, process-isolated participants, and production-proof behavior only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_coding_participants.py source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_coding_proof.py",
+  "completed_at": "2026-07-18T11:31:52.094972+00:00",
+  "passed": true,
+  "profile_id": "coding-lifecycle",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

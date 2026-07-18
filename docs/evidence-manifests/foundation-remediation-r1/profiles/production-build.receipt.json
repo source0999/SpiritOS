@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-build.artifact.json",
+  "artifact_sha256": "c74f497e18b874265377e89f2d0ac97ea010208e355923dbe4d53724b9bd612d",
+  "claim_ceiling": "production compilation only",
+  "command": "npm run build",
+  "completed_at": "2026-07-18T11:53:59.895782+00:00",
+  "passed": true,
+  "profile_id": "production-build",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

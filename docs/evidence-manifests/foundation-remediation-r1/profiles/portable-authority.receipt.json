@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/portable-authority.artifact.json",
+  "artifact_sha256": "1aa3ef5ac466b72435f7aa50930e9f852c879ee2d5910fdaf845bb95ad50755e",
+  "claim_ceiling": "registered-root and approval state-machine behavior only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_approval_runtime_identity.py source_proxy/tests/test_campaign_approval_authority.py",
+  "completed_at": "2026-07-18T11:26:10.980253+00:00",
+  "passed": true,
+  "profile_id": "portable-authority",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

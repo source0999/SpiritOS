@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "evidence builder and validator regression semantics only; terminal provenance is independently validated",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-evidence.py",
+  "completed_at": "2026-07-18T11:25:26.622978+00:00",
+  "passed": true,
+  "profile_id": "evidence-provenance",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:25:14.639970+00:00",
+  "stderr": "..............\n----------------------------------------------------------------------\nRan 14 tests in 11.394s\n\nOK\n",
+  "stdout": ""
+}

@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "R1 control-plane, branch, base, and protected-head continuity only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py",
+  "completed_at": "2026-07-18T11:25:11.530334+00:00",
+  "passed": true,
+  "profile_id": "continuity",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:25:10.892068+00:00",
+  "stderr": "",
+  "stdout": "FOUNDATION_REMEDIATION_R1_CONTINUITY_VALID\n"
+}

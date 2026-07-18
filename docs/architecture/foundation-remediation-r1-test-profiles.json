@@ -2,27 +2,335 @@
   "schema": "spiritos-foundation-remediation-r1-test-profiles/v1",
   "remediation_id": "spiritos-foundation-remediation-r1",
   "profiles": [
-    {"id":"continuity","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py","claim_ceiling":"R1 control-plane, branch, base, and protected-head continuity only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"authority-callgraph","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-authority.py","claim_ceiling":"static production import graph and authority invariants only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"evidence-provenance","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-evidence.py","claim_ceiling":"evidence builder and validator regression semantics only; terminal provenance is independently validated","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"test-profiles","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-test-profiles.py","claim_ceiling":"test-profile validator regression semantics only; terminal receipts are independently validated","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"completion-regression","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-completion.py","claim_ceiling":"fail-closed completion semantics only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"portable-authority","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_approval_runtime_identity.py source_proxy/tests/test_campaign_approval_authority.py","claim_ceiling":"registered-root and approval state-machine behavior only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"cartographer-authority","product":"cartographer","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_cartographer_proposal_review_authority.py source_proxy/tests/test_cartographer_api.py source_proxy/tests/test_cartographer_coding_orchestrator.py","claim_ceiling":"Cartographer proposal-only authority and transfer only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"spiritflix-authority","product":"spiritflix","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_spiritflix_admin_authority.py && npm exec vitest run src/lib/coding/__tests__/spiritflix-admin-approval-binding.test.ts src/lib/coding/__tests__/spiritflix-admin-transaction.test.ts src/app/api/spiritflix/admin/__tests__/actions-route.test.ts src/app/api/spiritflix/admin/__tests__/library-route.test.ts src/app/api/spiritflix/admin/__tests__/smart-analysis-route.test.ts src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts src/app/api/spiritflix/__tests__/manual-models-route.test.ts src/app/api/spiritflix/__tests__/manual-tags-route.test.ts","claim_ceiling":"bound transactional administrative mutation behavior and production route wiring only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"design-security","product":"design","command":"npm exec vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts src/app/v1/coding/design-studio/approved-writeback/__tests__/route.test.ts src/lib/coding/__tests__/design-approval-authority.test.ts src/lib/coding/__tests__/design-studio-approved-writeback-runtime.test.ts src/lib/coding/__tests__/design-writeback-production-lifecycle.integration.test.ts","claim_ceiling":"existing Design writeback authority and acknowledgement security preservation only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"coding-lifecycle","product":"source-proxy","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_coding_participants.py source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_coding_proof.py","claim_ceiling":"late finalization, process-isolated participants, and production-proof behavior only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"target-adapters-1-10","product":"source-proxy","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_target_plugin_adapter.py","claim_ceiling":"target-owned specifications and executable behavior only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"production-orchestrator","product":"source-proxy","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_long_running_tasks.py","claim_ceiling":"live importer, state machine, and route ownership only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"runtime-contracts","product":"source-proxy","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_runtime_lane_boundary.py source_proxy/tests/test_coding_lane_contracts.py source_proxy/tests/test_cartographer_coding_orchestrator.py","claim_ceiling":"live version/schema/output/consumption enforcement only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"backend-state","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_long_running_tasks.py && npm exec vitest run src/app/v1/coding/runs/__tests__/route.test.ts src/lib/coding/__tests__/durable-run-store.test.ts src/lib/coding/__tests__/durable-run-invariants.test.ts","claim_ceiling":"single decision-bearing backend state owner only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"recovery-fallback","product":"source-proxy","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_recovery.py source_proxy/tests/test_coding_orchestrator.py","claim_ceiling":"accountable orchestrator recovery only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"production-api-authority","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_decision_target_plugin_orchestrator.py source_proxy/tests/test_dummy_product_site_reset.py && npm exec vitest run src/app/v1/actions/execute-approved/__tests__/route.test.ts src/app/v1/coding/dummy-product-site-preview/reset/__tests__/route.test.ts","claim_ceiling":"active prompt proposal, execute-approved, authenticated reset, and exact production identity wiring only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"proving-harness-regression","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-proving.py && /home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-lifecycle.py","claim_ceiling":"inner and outer proving-harness falsification behavior only; does not substitute for the real HTTP proving receipt","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"source-proxy-regression","product":"source-proxy","command":"/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_approval_runtime_identity.py source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_cartographer_coding_orchestrator.py source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_long_running_tasks.py source_proxy/tests/test_runtime_lane_boundary.py source_proxy/tests/test_target_plugin_adapter.py source_proxy/tests/test_coding_participants.py source_proxy/tests/test_coding_proof.py source_proxy/tests/test_coding_recovery.py source_proxy/tests/test_decision_target_plugin_orchestrator.py source_proxy/tests/test_dummy_product_site_reset.py","claim_ceiling":"Source Proxy backend regression only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"typecheck","product":"shared","command":"npm run typecheck","claim_ceiling":"TypeScript static correctness only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"production-build","product":"shared","command":"npm run build","claim_ceiling":"production compilation only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"secret-scan","product":"shared","command":"/home/source/SpiritOS/.venv/bin/python -B scripts/scan-foundation-remediation-r1-secrets.py","claim_ceiling":"high-confidence secret patterns in all tracked repository files only","mandatory":true,"status":"pending","latest_accepted":null},
-    {"id":"git-integrity","product":"shared","command":"git diff --check && git fsck --full --strict --no-progress --no-dangling && /home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py","claim_ceiling":"Git object/diff/ref integrity only","mandatory":true,"status":"pending","latest_accepted":null}
+    {
+      "id": "continuity",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py",
+      "claim_ceiling": "R1 control-plane, branch, base, and protected-head continuity only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/continuity.receipt.json",
+        "receipt_sha256": "68c6a77e94b3c6f87c875fe666bfe3b93db8c18ca3e17fe0c2f97b9f3a3c3458",
+        "completed_at": "2026-07-18T11:25:11.530334+00:00"
+      }
+    },
+    {
+      "id": "authority-callgraph",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-authority.py",
+      "claim_ceiling": "static production import graph and authority invariants only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/authority-callgraph.receipt.json",
+        "receipt_sha256": "66cd4a60efac026c3b6b43db777118b87c9df333c1887b4cf86eee7958c2aade",
+        "completed_at": "2026-07-18T11:25:14.191267+00:00"
+      }
+    },
+    {
+      "id": "evidence-provenance",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-evidence.py",
+      "claim_ceiling": "evidence builder and validator regression semantics only; terminal provenance is independently validated",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/evidence-provenance.receipt.json",
+        "receipt_sha256": "1e64c7d6f43722facce165e5e283fab6482711129c2c8c6a6c8d9d7675adaea3",
+        "completed_at": "2026-07-18T11:25:26.622978+00:00"
+      }
+    },
+    {
+      "id": "test-profiles",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-test-profiles.py",
+      "claim_ceiling": "test-profile validator regression semantics only; terminal receipts are independently validated",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/test-profiles.receipt.json",
+        "receipt_sha256": "2564252e8f6beab7f4573f7047d6be79ed4b0248664e6ab1e8f75e9841947572",
+        "completed_at": "2026-07-18T11:25:27.302903+00:00"
+      }
+    },
+    {
+      "id": "completion-regression",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-completion.py",
+      "claim_ceiling": "fail-closed completion semantics only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/completion-regression.receipt.json",
+        "receipt_sha256": "14e1bf82decb8c2519eea208c7ee4425e0c0f07c01c5f976c5216dfd37edf18f",
+        "completed_at": "2026-07-18T11:25:33.386901+00:00"
+      }
+    },
+    {
+      "id": "portable-authority",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_approval_runtime_identity.py source_proxy/tests/test_campaign_approval_authority.py",
+      "claim_ceiling": "registered-root and approval state-machine behavior only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/portable-authority.receipt.json",
+        "receipt_sha256": "a6dd1236e9f5ec864f4f2f7be538a09bd40b8b6bd8ee49fce5e3246ce61a1a56",
+        "completed_at": "2026-07-18T11:26:10.980253+00:00"
+      }
+    },
+    {
+      "id": "cartographer-authority",
+      "product": "cartographer",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_cartographer_proposal_review_authority.py source_proxy/tests/test_cartographer_api.py source_proxy/tests/test_cartographer_coding_orchestrator.py",
+      "claim_ceiling": "Cartographer proposal-only authority and transfer only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/cartographer-authority.receipt.json",
+        "receipt_sha256": "9777d51247915eb409992e500bd0e5b6c85a5cc15f09fda8b8df5e7688e96968",
+        "completed_at": "2026-07-18T11:30:10.494795+00:00"
+      }
+    },
+    {
+      "id": "spiritflix-authority",
+      "product": "spiritflix",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_spiritflix_admin_authority.py && npm exec vitest run src/lib/coding/__tests__/spiritflix-admin-approval-binding.test.ts src/lib/coding/__tests__/spiritflix-admin-transaction.test.ts src/app/api/spiritflix/admin/__tests__/actions-route.test.ts src/app/api/spiritflix/admin/__tests__/library-route.test.ts src/app/api/spiritflix/admin/__tests__/smart-analysis-route.test.ts src/app/api/spiritflix/admin/__tests__/smart-batch-route.test.ts src/app/api/spiritflix/__tests__/manual-models-route.test.ts src/app/api/spiritflix/__tests__/manual-tags-route.test.ts",
+      "claim_ceiling": "bound transactional administrative mutation behavior and production route wiring only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/spiritflix-authority.receipt.json",
+        "receipt_sha256": "ed2748acc76147ef8e8b537a54d9f95e542ea5a9d38cc6886716a155df0280ab",
+        "completed_at": "2026-07-18T11:30:46.294466+00:00"
+      }
+    },
+    {
+      "id": "design-security",
+      "product": "design",
+      "command": "npm exec vitest run src/app/v1/operator/design-approval/__tests__/route.test.ts src/app/v1/coding/design-studio/approved-writeback/__tests__/route.test.ts src/lib/coding/__tests__/design-approval-authority.test.ts src/lib/coding/__tests__/design-studio-approved-writeback-runtime.test.ts src/lib/coding/__tests__/design-writeback-production-lifecycle.integration.test.ts",
+      "claim_ceiling": "existing Design writeback authority and acknowledgement security preservation only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/design-security.receipt.json",
+        "receipt_sha256": "d821819369ee760720ac7d260d794f8801ed25c97e67f63c74bded40882de8c7",
+        "completed_at": "2026-07-18T11:30:55.982847+00:00"
+      }
+    },
+    {
+      "id": "coding-lifecycle",
+      "product": "source-proxy",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_coding_participants.py source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_coding_proof.py",
+      "claim_ceiling": "late finalization, process-isolated participants, and production-proof behavior only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/coding-lifecycle.receipt.json",
+        "receipt_sha256": "d410d9e83b8299e7dc9546af3558f4a1783e810b797829a403e20838efdbd69d",
+        "completed_at": "2026-07-18T11:31:52.094972+00:00"
+      }
+    },
+    {
+      "id": "target-adapters-1-10",
+      "product": "source-proxy",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_target_plugin_adapter.py",
+      "claim_ceiling": "target-owned specifications and executable behavior only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/target-adapters-1-10.receipt.json",
+        "receipt_sha256": "5513f45cc635510501909707d531289a447f6d1c408ab10159b047a2dd0b8462",
+        "completed_at": "2026-07-18T11:32:02.547144+00:00"
+      }
+    },
+    {
+      "id": "production-orchestrator",
+      "product": "source-proxy",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_long_running_tasks.py",
+      "claim_ceiling": "live importer, state machine, and route ownership only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-orchestrator.receipt.json",
+        "receipt_sha256": "18ea97b1832998bde3103bf318f2123ed0a6ee3d6ac366be8f55b5894ba00ca2",
+        "completed_at": "2026-07-18T11:37:53.441631+00:00"
+      }
+    },
+    {
+      "id": "runtime-contracts",
+      "product": "source-proxy",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_runtime_lane_boundary.py source_proxy/tests/test_coding_lane_contracts.py source_proxy/tests/test_cartographer_coding_orchestrator.py",
+      "claim_ceiling": "live version/schema/output/consumption enforcement only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/runtime-contracts.receipt.json",
+        "receipt_sha256": "bf2e625b67837b7dee4c0712117c649d0141dfdc13c5d11d7b823901abe52d44",
+        "completed_at": "2026-07-18T11:37:55.692778+00:00"
+      }
+    },
+    {
+      "id": "backend-state",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_long_running_tasks.py && npm exec vitest run src/app/v1/coding/runs/__tests__/route.test.ts src/lib/coding/__tests__/durable-run-store.test.ts src/lib/coding/__tests__/durable-run-invariants.test.ts",
+      "claim_ceiling": "single decision-bearing backend state owner only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/backend-state.receipt.json",
+        "receipt_sha256": "5580a1171fe9ba235398e9286867cf5c601382c4bee078040b386ce7c569dcb2",
+        "completed_at": "2026-07-18T11:44:20.447135+00:00"
+      }
+    },
+    {
+      "id": "recovery-fallback",
+      "product": "source-proxy",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_recovery.py source_proxy/tests/test_coding_orchestrator.py",
+      "claim_ceiling": "accountable orchestrator recovery only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/recovery-fallback.receipt.json",
+        "receipt_sha256": "8713b99de226418ee49722391835c15a957c3355c27bb37333773462f35b83d5",
+        "completed_at": "2026-07-18T11:44:24.897573+00:00"
+      }
+    },
+    {
+      "id": "production-api-authority",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_decision_target_plugin_orchestrator.py source_proxy/tests/test_dummy_product_site_reset.py && npm exec vitest run src/app/v1/actions/execute-approved/__tests__/route.test.ts src/app/v1/coding/dummy-product-site-preview/reset/__tests__/route.test.ts",
+      "claim_ceiling": "active prompt proposal, execute-approved, authenticated reset, and exact production identity wiring only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-api-authority.receipt.json",
+        "receipt_sha256": "88d1b1fbdee0c6d7325981b9e0c110afea23e79f7783c27ccbb9935a4fe122f5",
+        "completed_at": "2026-07-18T11:44:41.035489+00:00"
+      }
+    },
+    {
+      "id": "proving-harness-regression",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-proving.py && /home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-lifecycle.py",
+      "claim_ceiling": "inner and outer proving-harness falsification behavior only; does not substitute for the real HTTP proving receipt",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/proving-harness-regression.receipt.json",
+        "receipt_sha256": "52306cd629d029a390fdda0f84f3fa1791f705fcf00cf2a77ed3743bd99f3bce",
+        "completed_at": "2026-07-18T11:44:48.709264+00:00"
+      }
+    },
+    {
+      "id": "source-proxy-regression",
+      "product": "source-proxy",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_approval_runtime_identity.py source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_cartographer_coding_orchestrator.py source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_long_running_tasks.py source_proxy/tests/test_runtime_lane_boundary.py source_proxy/tests/test_target_plugin_adapter.py source_proxy/tests/test_coding_participants.py source_proxy/tests/test_coding_proof.py source_proxy/tests/test_coding_recovery.py source_proxy/tests/test_decision_target_plugin_orchestrator.py source_proxy/tests/test_dummy_product_site_reset.py",
+      "claim_ceiling": "Source Proxy backend regression only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/source-proxy-regression.receipt.json",
+        "receipt_sha256": "41a63fcf4663fd07782de9be7ed6e32ee42eab122492c546728859227f171e18",
+        "completed_at": "2026-07-18T11:52:42.488954+00:00"
+      }
+    },
+    {
+      "id": "typecheck",
+      "product": "shared",
+      "command": "npm run typecheck",
+      "claim_ceiling": "TypeScript static correctness only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/typecheck.receipt.json",
+        "receipt_sha256": "bc3e1e50e330d0cbe2a673efbdc1fcf6c957e42e998fe9a0f2cf410959cefe4f",
+        "completed_at": "2026-07-18T11:52:48.098606+00:00"
+      }
+    },
+    {
+      "id": "production-build",
+      "product": "shared",
+      "command": "npm run build",
+      "claim_ceiling": "production compilation only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-build.receipt.json",
+        "receipt_sha256": "1ea214d9737721a97f063ffa975f440d8c40c42b394e3e4bf4f1f1417204473b",
+        "completed_at": "2026-07-18T11:53:59.895782+00:00"
+      }
+    },
+    {
+      "id": "secret-scan",
+      "product": "shared",
+      "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/scan-foundation-remediation-r1-secrets.py",
+      "claim_ceiling": "high-confidence secret patterns in all tracked repository files only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/secret-scan.receipt.json",
+        "receipt_sha256": "3f52ba7dc31177b8fad9dc40badca314ece10788d42d2af6c589cea640377f40",
+        "completed_at": "2026-07-18T11:54:38.275096+00:00"
+      }
+    },
+    {
+      "id": "git-integrity",
+      "product": "shared",
+      "command": "git diff --check && git fsck --full --strict --no-progress --no-dangling && /home/source/SpiritOS/.venv/bin/python -B scripts/validate-foundation-remediation-r1-continuity.py",
+      "claim_ceiling": "Git object/diff/ref integrity only",
+      "mandatory": true,
+      "status": "passed",
+      "latest_accepted": {
+        "status": "passed",
+        "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+        "receipt_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/git-integrity.receipt.json",
+        "receipt_sha256": "fd42671b3489703135d1174cde0e23beb88bf713e53f53732a3c6c4b504726ac",
+        "completed_at": "2026-07-18T12:00:32.426583+00:00"
+      }
+    }
   ]
 }

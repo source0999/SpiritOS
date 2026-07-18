@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/evidence-provenance.artifact.json",
+  "artifact_sha256": "37736b6fef1df088e55928c8dfc7146818b3cc258af5db24724d2d562de5ab6d",
+  "claim_ceiling": "evidence builder and validator regression semantics only; terminal provenance is independently validated",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-evidence.py",
+  "completed_at": "2026-07-18T11:25:26.622978+00:00",
+  "passed": true,
+  "profile_id": "evidence-provenance",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

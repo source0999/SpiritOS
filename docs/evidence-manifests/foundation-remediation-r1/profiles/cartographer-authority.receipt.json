@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/cartographer-authority.artifact.json",
+  "artifact_sha256": "c0a0977e8d26d2e6089b4910f4055dccc6e42db0b876ac353d13b8a6670effe7",
+  "claim_ceiling": "Cartographer proposal-only authority and transfer only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_cartographer_proposal_review_authority.py source_proxy/tests/test_cartographer_api.py source_proxy/tests/test_cartographer_coding_orchestrator.py",
+  "completed_at": "2026-07-18T11:30:10.494795+00:00",
+  "passed": true,
+  "profile_id": "cartographer-authority",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

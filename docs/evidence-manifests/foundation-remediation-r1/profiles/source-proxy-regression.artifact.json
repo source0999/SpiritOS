@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "Source Proxy backend regression only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_approval_runtime_identity.py source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_cartographer_coding_orchestrator.py source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_long_running_tasks.py source_proxy/tests/test_runtime_lane_boundary.py source_proxy/tests/test_target_plugin_adapter.py source_proxy/tests/test_coding_participants.py source_proxy/tests/test_coding_proof.py source_proxy/tests/test_coding_recovery.py source_proxy/tests/test_decision_target_plugin_orchestrator.py source_proxy/tests/test_dummy_product_site_reset.py",
+  "completed_at": "2026-07-18T11:52:42.488954+00:00",
+  "passed": true,
+  "profile_id": "source-proxy-regression",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:44:49.255642+00:00",
+  "stderr": "",
+  "stdout": "........................................................................ [ 31%]\n........................................................................ [ 62%]\n........................................................................ [ 93%]\n................                                                         [100%]\n=============================== warnings summary ===============================\nsource_proxy/main.py:55\n  /home/source/SpiritOS-foundation-remediation-r1-20260717/source_proxy/main.py:55: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    @app.on_event(\"startup\")\n\n../SpiritOS/.venv/lib/python3.12/site-packages/fastapi/applications.py:4598\n  /home/source/SpiritOS/.venv/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    return self.router.on_event(event_type)  # ty: ignore[deprecated]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n232 passed, 2 warnings in 472.63s (0:07:52)\n"
+}

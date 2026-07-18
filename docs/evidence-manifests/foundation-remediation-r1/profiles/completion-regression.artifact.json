@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "fail-closed completion semantics only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-completion.py",
+  "completed_at": "2026-07-18T11:25:33.386901+00:00",
+  "passed": true,
+  "profile_id": "completion-regression",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:25:27.748144+00:00",
+  "stderr": "............\n----------------------------------------------------------------------\nRan 12 tests in 5.318s\n\nOK\n",
+  "stdout": ""
+}

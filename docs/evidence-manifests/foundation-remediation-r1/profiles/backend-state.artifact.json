@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "single decision-bearing backend state owner only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_long_running_tasks.py && npm exec vitest run src/app/v1/coding/runs/__tests__/route.test.ts src/lib/coding/__tests__/durable-run-store.test.ts src/lib/coding/__tests__/durable-run-invariants.test.ts",
+  "completed_at": "2026-07-18T11:44:20.447135+00:00",
+  "passed": true,
+  "profile_id": "backend-state",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:37:56.395209+00:00",
+  "stderr": "",
+  "stdout": "........................................................................ [ 96%]\n...                                                                      [100%]\n75 passed in 381.14s (0:06:21)\n\n\u001b[1m\u001b[30m\u001b[46m RUN \u001b[49m\u001b[39m\u001b[22m \u001b[36mv4.1.5 \u001b[39m\u001b[90m/home/source/SpiritOS-foundation-remediation-r1-20260717\u001b[39m\n\n \u001b[32m✓\u001b[39m src/lib/coding/__tests__/durable-run-store.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 37\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/lib/coding/__tests__/durable-run-invariants.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 5\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/app/v1/coding/runs/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 13\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m3 passed\u001b[39m\u001b[22m\u001b[90m (3)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m11 passed\u001b[39m\u001b[22m\u001b[90m (11)\u001b[39m\n\u001b[2m   Start at \u001b[22m 07:44:18\n\u001b[2m   Duration \u001b[22m 1.77s\u001b[2m (transform 116ms, setup 148ms, import 136ms, tests 55ms, environment 1.05s)\u001b[22m\n\n"
+}

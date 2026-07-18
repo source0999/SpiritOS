@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/production-orchestrator.artifact.json",
+  "artifact_sha256": "86ae84e1f5e39ece376d4943dc08743bf5a819f5e5c738fee3a04b8f0f6a3936",
+  "claim_ceiling": "live importer, state machine, and route ownership only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_long_running_tasks.py",
+  "completed_at": "2026-07-18T11:37:53.441631+00:00",
+  "passed": true,
+  "profile_id": "production-orchestrator",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

@@ -475,6 +475,92 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   and projection profiles pass, as do typecheck and the production build. The broad
   aggregate remains a diagnostic risk record and is not presented as terminal proof.
 
+## R1.11 accepted clean proving task
+
+- Frozen proving source `S` is
+  `ec204d63e431d10501c67db0264082db6e4d31e4`. The clean linked proof
+  worktree is registered as `331b249b96b1d5c7e9d68a9a`; the remediation
+  worktree identity bound by terminal evidence is `2ad28b45204bff87d65524ae`.
+- The first reproof invocation at `S` was interrupted by its client wrapper during
+  host I/O after the lifecycle had begun. It published no receipt and completed
+  clean teardown. The next attempt stopped fail-closed as
+  `lifecycle_node_modules_identity_mismatch` after registered Vitest profiles had
+  populated dependency-cache residue. It also published no receipt and cleaned its
+  runtime state. The official Vitest cache-clear path plus removal of the resulting
+  empty `.vite` and `.vite-temp` directories restored the exact pinned dependency
+  identity; no dependency content was substituted.
+- The unchanged-source retry then built the production Next shell and Source Proxy,
+  started loopback-only Source Proxy, Next, and TLS proxy scopes, provisioned an
+  isolated operator session and approval authority, and completed two real HTTP
+  production runs. Both selected persisted Cartographer proposal
+  `foundation-r1-lumacart-clean-proving-selection`, used prompt
+  `coder-001-init-dummy-product-site` and context `init-storefront`, recovered from
+  the intentional primary failure through the declared `coder` Ollama fallback,
+  consumed operator approval, applied a target-owned model artifact, and consumed
+  distinct executor, reviewer, verifier, anti-cheat, and evidence-recorder outputs.
+- Clean run 2 binds task `task_767252fabf22`, run
+  `coding-run-b3ebcf83a04d402186837bbecb865176`, attempt
+  `coding-attempt-021eebcc76784fb689d040b1d706d3e6`, artifact
+  `683b167af27c7c3f31a1949506eb77c0b78bebff97b9ca80413658455309b546`,
+  applied diff `c956b3a1dba50122db4bfcc01d1059a6459f5df2bcded6716a9a9ab72d55e643`,
+  result `cf421c9e6d9bee97bb50daf582f34a21ff7e2e5a43d48d3a35740752c71557fd`,
+  production proof `ec34ebf53d1dfc9ac810629bfc3b3ba76b8daebcf9d87c2bc367b3f66bdc141a`,
+  and recovery `coding-recovery-417ff2f844644f909360cc7547f55ce4`.
+- Undo/reset removed the proving fixture before the distinct clean rerun. Final
+  teardown stopped all services and descendants, closed all ports, revoked the
+  operator session and temporary authority, removed the dependency link, build,
+  runtime receipts, fixture, and state root, and restored the proof worktree clean
+  including ignored paths. The cgroup-v2 process boundary is explicitly limited to
+  trusted prehashed executables/code and makes no same-UID migration-resistance
+  claim.
+- Exact accepted receipt bytes are `production-proving-receipt.json` at
+  `ade839b7cb2c7621f126bd4fd529d4dddbb7a9832db4fce0113ddab9dc7b8a2a`
+  and `lifecycle-receipt.json` at
+  `ccda1a909a6d24aa42028d77e7b883cd0fb46f0d3c362ffb5bc754a2aed8d4d3`.
+  Their self-hashes are respectively
+  `44162b7288257115b83a5d863e41f1ff7fb5f0bd5d0de9d2f20e492b4aaa783b`
+  and `51057096226ccbebd6ed585ab819757996db648e06d7b93d11c7d57635e4edf1`.
+  Exact field sets, full inner/outer binding, the process boundary, two-run
+  semantics, and cleanup passed both generator and independent-validator contracts.
+  Rejected or interrupted attempts were not copied or anchored.
+
+## R1.12 atomic closeout
+
+- All 22 mandatory profiles ran serially at `S` after the clean lifecycle proof.
+  Their exact commands and claim ceilings are bound by 22 unique artifacts and 22
+  unique receipts under
+  `docs/evidence-manifests/foundation-remediation-r1/profiles/`. A separate read-only
+  audit found zero schema, command, ceiling, source, path, timestamp, result, or hash
+  discrepancies across the 44 files. The terminal-independent completion regression
+  passed `12/12` at `S`.
+- The terminal receipt raw hash is
+  `52b4bef5395031774209e1a204bdfdeee4be740da8c94dbd42181d968a776e37`.
+  The immutable manifest raw hash is
+  `bbd94369379138059bbb5bc8fcbdf9d54fbc6599d1c36a56fdbfd7e77a6405f7`,
+  with evidence hash
+  `ee9dfba49d0e5609dbec90bc3d0095e331abc56ef359d8909f73d8879c818084`.
+  The manifest binds the profile registry, all 44 profile files, exact proving and
+  lifecycle receipts, protected-head report, terminal spec, restoration
+  instructions, and roadmap correction.
+- The rejected candidate closeout
+  `d6dd49438ef186c6e28cf33276434b0c609aa471` remains in branch history as a
+  falsified attempt, but its candidate tag, bundle, sidecar, state, and evidence are
+  not accepted. The final closeout is one documentation-only commit directly atop
+  `S`; annotated tag `foundation-remediation-r1-terminal-20260718T120047Z` names
+  that terminal commit. The external recovery anchor is
+  `/home/source/SpiritOS-foundation-remediation-r1-final-anchor-20260718T120047Z/foundation-remediation-r1-terminal.bundle`
+  with adjacent `.sha256` sidecar. The sidecar remains external to break the
+  commit/tag/bundle content cycle and is verified after tag creation.
+- Protected heads and protected branch tips remain unchanged. Historical Campaign 3
+  remains classified exactly `CAMPAIGN_3_SCOPE_DIVERGED_TO_DESIGN`; its design
+  branch is preserved but is not accepted as the intended coding Campaign 3.
+  Neither Campaign 3 nor Campaign 4 was started by R1.
+- The inherited broad-suite diagnostics remain as recorded above and are not
+  silently relabeled: Python was `1908 passed / 12 failed`, with the three
+  R1-attributable failures repaired and nine untouched inherited failures, while
+  default Vitest was `2354 passed / 34 failed` outside the registered R1 matrix.
+- `PUSHED: false`. No remote push was performed or authorized.
+
 ## Closeout rule
 
 Markdown is never parsed to infer success. The completion evaluator must execute the

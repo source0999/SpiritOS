@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/completion-regression.artifact.json",
+  "artifact_sha256": "ab45444d4b388909033789eda782d500ad2fe6c669413a275bb8a07ba59f4425",
+  "claim_ceiling": "fail-closed completion semantics only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B scripts/test-foundation-remediation-r1-completion.py",
+  "completed_at": "2026-07-18T11:25:33.386901+00:00",
+  "passed": true,
+  "profile_id": "completion-regression",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}

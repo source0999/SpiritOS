@@ -1,0 +1,15 @@
+{
+  "claim_ceiling": "late finalization, process-isolated participants, and production-proof behavior only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_campaign_approval_authority.py source_proxy/tests/test_coding_participants.py source_proxy/tests/test_coding_orchestrator.py source_proxy/tests/test_coding_proof.py",
+  "completed_at": "2026-07-18T11:31:52.094972+00:00",
+  "passed": true,
+  "profile_id": "coding-lifecycle",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "returncode": 0,
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-artifact/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4",
+  "started_at": "2026-07-18T11:30:56.707037+00:00",
+  "stderr": "",
+  "stdout": "................................................................         [100%]\n64 passed in 54.67s\n"
+}

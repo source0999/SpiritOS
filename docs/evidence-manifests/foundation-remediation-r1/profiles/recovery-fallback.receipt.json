@@ -1,0 +1,13 @@
+{
+  "artifact_path": "docs/evidence-manifests/foundation-remediation-r1/profiles/recovery-fallback.artifact.json",
+  "artifact_sha256": "27621a727d741eed9171e8c616cf4a83c59246acd51f7d63e6e81dbafc1c9db0",
+  "claim_ceiling": "accountable orchestrator recovery only",
+  "command": "/home/source/SpiritOS/.venv/bin/python -B -m pytest -q source_proxy/tests/test_coding_recovery.py source_proxy/tests/test_coding_orchestrator.py",
+  "completed_at": "2026-07-18T11:44:24.897573+00:00",
+  "passed": true,
+  "profile_id": "recovery-fallback",
+  "remediation_id": "spiritos-foundation-remediation-r1",
+  "result": "pass",
+  "schema": "spiritos-foundation-remediation-r1-profile-execution-receipt/v1",
+  "source_commit": "ec204d63e431d10501c67db0264082db6e4d31e4"
+}
