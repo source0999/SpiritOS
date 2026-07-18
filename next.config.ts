@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
 
   allowedDevOrigins: buildAllowedDevOrigins(),
 
+  // SSHFS-hosted pytest cache artefacts are never application inputs. Exclude
+  // only their exact generated names from production output tracing.
+  outputFileTracingExcludes: {
+    "/*": ["./pytest-cache-files-6lyc1rny/**", "./pytest-cache-files-7racnkyv/**"],
+  },
+
   async headers() {
     return [
       {
