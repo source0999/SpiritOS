@@ -275,7 +275,7 @@ def proposal_state(*, transport: str = "canonical_litellm_router") -> tuple[dict
         "transfer_event_id": "transfer-event-1",
         "downstream_consumer_invocation_id": selected["invocation_id"],
         "provenance": {
-            "content_hash": "content-hash",
+            "content_hash": "c" * 64,
             "context": "context-json",
             "preview_id": "selection-preview-1",
             "source_head": source_head,
@@ -524,7 +524,7 @@ class FoundationR1ProvingTests(unittest.TestCase):
             "proposed_files": [PROVER.TARGET],
             "warnings": [],
             "requires_approval": True,
-            "fingerprint": "a" * 64,
+            "fingerprint": "a" * 16,
             "transitions": [
                 {
                     "status": "pending_review",
@@ -551,6 +551,8 @@ class FoundationR1ProvingTests(unittest.TestCase):
             proposal_id="proposal-1",
         )
         self.assertTrue(summary["persisted"])
+        self.assertEqual(summary["fingerprint"], "a" * 16)
+        self.assertRegex(summary["selection_content_sha256"], r"^[0-9a-f]{64}$")
         for key, value, reason in (
             ("persisted", False, "persisted_invalid"),
             ("generated", True, "generated_invalid"),
@@ -566,6 +568,37 @@ class FoundationR1ProvingTests(unittest.TestCase):
                     collection(invalid),
                     proposal_id="proposal-1",
                 )
+
+        for fingerprint in ("a" * 15, "a" * 17, "A" * 16, "g" * 16, "a" * 64):
+            with self.subTest(fingerprint=fingerprint), self.assertRaisesRegex(
+                PROVER.ProvingError,
+                "cartographer_proposal_fingerprint_invalid",
+            ):
+                PROVER._validate_cartographer_proposal_collection(
+                    collection({**proposal, "fingerprint": fingerprint}),
+                    proposal_id="proposal-1",
+                )
+
+        changed_summary = PROVER._validate_cartographer_proposal_collection(
+            collection({**proposal, "fingerprint": "b" * 16}),
+            proposal_id="proposal-1",
+        )
+        self.assertNotEqual(
+            summary["selection_content_sha256"],
+            changed_summary["selection_content_sha256"],
+        )
+        PROVER._validate_cartographer_selection_binding(
+            summary,
+            {"content_hash": summary["selection_content_sha256"]},
+        )
+        with self.assertRaisesRegex(
+            PROVER.ProvingError,
+            "cartographer_selection_proposal_binding_mismatch",
+        ):
+            PROVER._validate_cartographer_selection_binding(
+                summary,
+                {"content_hash": changed_summary["selection_content_sha256"]},
+            )
 
     def test_reset_requires_exact_absent_source_head_baseline(self) -> None:
         source_head = "a" * 40

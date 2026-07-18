@@ -490,6 +490,43 @@ def test_cartographer_durable_selection_binds_consumer_target_and_acknowledgemen
     assert replay.value.reason_code == "approval_already_consumed"
 
 
+def test_cartographer_selection_rejects_changed_proposal_fingerprint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Proposal:
+        proposal_id = "bp-campaign1-selection-fingerprint"
+        approved_diff = "diff --git a/blueprint b/blueprint\n+"
+        diff_preview = ""
+        proposed_files = ["src/app/page.tsx"]
+        fingerprint = "a" * 16
+        persisted = True
+        status = "pending_review"
+        warnings = []
+
+    proposal = Proposal()
+    monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [proposal])
+    preview = cartographer_selection.persist_cartographer_selection(
+        proposal_id=proposal.proposal_id,
+        consumer="coding-executor:coder",
+        target=proposal.proposed_files[0],
+    )
+    approval_id = issue(
+        str(preview["preview_id"]),
+        consumer="cartographer-transfer-consumer",
+        operation="cartographer_selection_transfer",
+    )
+
+    proposal.fingerprint = "b" * 16
+    with pytest.raises(CampaignApprovalError) as changed:
+        cartographer_selection.consume_cartographer_selection(
+            approval_id=approval_id,
+            proposal_id=proposal.proposal_id,
+            consumer="coding-executor:coder",
+            target=proposal.proposed_files[0],
+        )
+    assert changed.value.reason_code == "approval_content_hash_mismatch"
+
+
 def test_cartographer_durable_selection_rejects_wrong_consumer_and_target(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

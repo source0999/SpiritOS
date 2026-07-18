@@ -98,6 +98,7 @@ PROPOSAL_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,160}$")
 IDENTITY_RE = re.compile(r"^[A-Za-z0-9._:-]{1,200}$")
 GIT_OID_RE = re.compile(r"^[0-9a-f]{40,64}$")
 SHA256_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
+CARTOGRAPHER_PROPOSAL_FINGERPRINT_RE = re.compile(r"^[0-9a-f]{16}$")
 FORBIDDEN_RECEIPT_KEYS = {
     "approved_diff",
     "proposed_diff",
@@ -727,8 +728,32 @@ def _validate_cartographer_proposal_collection(
         proposal.get("fingerprint"),
         "cartographer_proposal_fingerprint_missing",
     )
-    if not _is_sha256(fingerprint):
+    if CARTOGRAPHER_PROPOSAL_FINGERPRINT_RE.fullmatch(fingerprint) is None:
         _fail("cartographer_proposal_fingerprint_invalid")
+    approved_diff = proposal.get("approved_diff") or proposal.get("diff_preview") or ""
+    if not isinstance(approved_diff, str):
+        _fail("cartographer_proposal_selection_content_invalid")
+    selection_content = {
+        "approved_diff": approved_diff,
+        "proposal_fingerprint": fingerprint,
+        "proposal_id": proposal_id,
+        "proposed_files": [TARGET],
+        "target": TARGET,
+    }
+    selection_context = json.dumps(
+        {"consumer": CONSUMER, "proposal_id": proposal_id},
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    selection_content_sha256 = hashlib.sha256(
+        json.dumps(
+            {"content": selection_content, "context": selection_context},
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
     transitions = [
         _mapping(item, "cartographer_proposal_transition_invalid")
         for item in _list(
@@ -780,10 +805,32 @@ def _validate_cartographer_proposal_collection(
         "component": "coding-foundation",
         "proposed_files": [TARGET],
         "fingerprint": fingerprint,
+        "selection_content_sha256": selection_content_sha256,
         "warnings": [],
         "transition_count": len(transitions),
         "last_transition_status": "pending_review",
     }
+
+
+def _validate_cartographer_selection_binding(
+    proposal: Mapping[str, Any],
+    consumption: Mapping[str, Any],
+) -> None:
+    expected = _text(
+        proposal.get("selection_content_sha256"),
+        "cartographer_proposal_selection_content_hash_missing",
+    )
+    actual = _text(
+        consumption.get("content_hash"),
+        "cartographer_selection_content_hash_missing",
+    )
+    if not _is_sha256(expected) or not _is_sha256(actual):
+        _fail("cartographer_selection_content_hash_invalid")
+    _require_equal(
+        actual,
+        expected,
+        "cartographer_selection_proposal_binding_mismatch",
+    )
 
 
 def _validate_initial_task(
@@ -1041,7 +1088,13 @@ def _validate_cartographer_consumption(
     transfer_event = _text(transfer.get("transfer_event_id"), "cartographer_transfer_event_missing")
     provenance = _mapping(transfer.get("provenance"), "cartographer_transfer_provenance_missing")
     _require_equal(provenance.get("source_head"), source_head, "cartographer_transfer_source_head_mismatch")
-    for key in ("content_hash", "context", "preview_id"):
+    content_hash = _text(
+        provenance.get("content_hash"),
+        "cartographer_transfer_content_hash_missing",
+    )
+    if not _is_sha256(content_hash):
+        _fail("cartographer_transfer_content_hash_invalid")
+    for key in ("context", "preview_id"):
         _text(provenance.get(key), f"cartographer_transfer_{key}_missing")
     _require_equal(finalization.get("state"), "consumed", "cartographer_finalization_state_invalid")
     acknowledgement = _mapping(
@@ -1077,6 +1130,7 @@ def _validate_cartographer_consumption(
             acknowledgement.get("acknowledgement_id"),
             "cartographer_acknowledgement_id_missing",
         ),
+        "content_hash": content_hash,
         "authority_state": authority["state"],
     }
 
@@ -1790,6 +1844,10 @@ def _run_one_proving_task(
         proposal_id=config.proposal_id,
         selection_id=selection_id,
         expectation=config.recovery,
+    )
+    _validate_cartographer_selection_binding(
+        cartographer_proposal,
+        material["cartographer"],
     )
     _require_equal(
         initial_state.get("run_id"),

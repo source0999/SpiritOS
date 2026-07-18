@@ -9,7 +9,7 @@ Remediation: `spiritos-foundation-remediation-r1`
 - Worktree: `/home/source/SpiritOS-foundation-remediation-r1-20260717`
 - Branch: `codex/spiritos-foundation-remediation-r1-20260717`
 - Base: `2b8ead66578d7f7053c01cb987e011b763c1c03d`
-- Recorded source head: `f0646f13c964d8a2367e67804b602404eb48093c`
+- Recorded source head: `1d5394e82d0c0d3aa36cb6c49e656f43ebe552ed`
 - Current phase/gate: Phase 4 / `r1_11_clean_proving_task`
 - GO eligibility: `false`
 - Terminal verdict: not available
@@ -99,7 +99,7 @@ NEXT_GATE: independently reviewed clean production proving task
 SERVICES: no R1 service active; failed proving startup scopes were fully revoked
 TESTS_REQUIRED: registered R1 profiles
 OPEN_BLOCKERS: none; expected validator failures are repair gates
-LAST_VERIFIED_HEAD: f0646f13c964d8a2367e67804b602404eb48093c
+LAST_VERIFIED_HEAD: 1d5394e82d0c0d3aa36cb6c49e656f43ebe552ed
 ```
 
 ## Authority repair checkpoint
@@ -224,6 +224,17 @@ LAST_VERIFIED_HEAD: f0646f13c964d8a2367e67804b602404eb48093c
   chain validation for that exact pinned leaf while preserving signature, validity,
   and hostname checks; the focused regression proves the flag is set. Failed startup
   attempts published no receipt and fully revoked their scopes.
+- The next clean lifecycle attempt passed identity, runtime, build, service, and TLS
+  gates but the inner client rejected Cartographer's canonical 16-hex proposal
+  fingerprint as though it were a 64-hex evidence digest. No proving or lifecycle
+  receipt was published, and all service scopes, ports, temporary authority state,
+  and generated fixture files were revoked. The harness now validates the established
+  16-hex proposal identifier separately, computes the authority's full SHA-256
+  selection-content binding, and requires the consumed transfer provenance to match
+  that exact observed proposal. A same-format fingerprint mutation is rejected by
+  the approval authority. Regression status after repair: proving `16/16`, lifecycle
+  `23/23`, focused fingerprint/selection authority `3/3`, static authority valid,
+  and `git diff --check` clean.
 
 ## Broad-suite diagnostic attribution
 
