@@ -351,6 +351,28 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   still establish an empty failure list. Regression observations: proof/orchestrator
   matrix `28/28`, proving `17/17`, lifecycle `25/25`, secret scan valid, static
   authority valid, and `git diff --check` clean.
+- At source `c9270d43a0f455d4e0676ac375f860439d5bfd84`, the next real lifecycle
+  reduced the proof failure to exactly
+  `immutable_artifact_target_plugin_identity_mismatch` plus its aggregate
+  `immutable_artifact_proposal_identity_mismatch`. The proposal retained the
+  target adapter's tuple-valued `allowed_actions` in the process-local task cache,
+  while immutable-artifact sealing correctly JSON-normalized the same value to a
+  list. Because JSON serializes tuples and lists identically, the proposal hash was
+  valid even though the strict in-memory proof comparison correctly rejected the
+  structural drift. The run otherwise crossed build, services, Cartographer,
+  model, preview, approval, apply, participant, and verification boundaries;
+  teardown was clean and published no receipt.
+- Target-plugin evidence identity is now JSON-canonical at its authority source, so
+  hot-cache and persisted/reloaded forms are structurally identical. Execution also
+  fails closed before approval consumption or workspace apply unless the preview,
+  persisted proposal, and durable approval carry one exact target identity, and the
+  immutable artifact binds directly to that persisted proposal identity. Regressions
+  cover JSON round-trip stability, live API persistence, approval material, strict
+  proof diagnostics, preview tampering, and durable-approval tampering. No proof
+  comparison was relaxed and a new clean lifecycle remains required. Observations:
+  focused changed-surface matrix `142/142`, registered Source Proxy regression
+  `232/232`, proving `17/17`, lifecycle `25/25`, test-profile semantics `5/5`,
+  secret scan valid, static authority valid, and `git diff --check` clean.
 
 ## Broad-suite diagnostic attribution
 

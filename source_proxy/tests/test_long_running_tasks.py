@@ -60,6 +60,7 @@ from source_proxy.tasks.long_running import (
     prepare_orchestrated_coding_finalization,
     record_post_apply_verification,
     record_coding_execution_approval,
+    record_coding_execution_preview,
     reject_long_running_task_plan,
     reset_long_running_tasks,
     update_long_running_task,
@@ -1503,6 +1504,138 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 os.environ["SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG"] = (
                 previous_audit_path
             )
+
+    def test_execute_approved_rejects_preview_identity_drift_before_authority_or_apply(
+        self,
+    ) -> None:
+        prompt_id = "coder-004-add-search-filter"
+        runtime_output_id = "runtime-target-identity"
+        target = "tests/ui-agent-trials/fixtures/dummy-product-site/index.html"
+        proposal_identity = {
+            "plugin_id": "lumacart",
+            "selected_prompt_id": prompt_id,
+            "result_identity": "proposal-identity",
+        }
+        preview_identity = {
+            **proposal_identity,
+            "result_identity": "preview-identity-drift",
+        }
+        proposal = {"target_plugin_identity": proposal_identity}
+        task_id = create_long_running_task("Reject preview target identity drift")[
+            "task"
+        ]["id"]
+        record_coding_execution_preview(
+            task_id,
+            preview_id="prv-target-identity",
+            generation=1,
+            target_plugin_identity=preview_identity,
+            proposal_binding=proposal,
+            runtime_output_id=runtime_output_id,
+        )
+
+        with (
+            mock.patch(
+                "source_proxy.tasks.long_running.central_gate_check"
+            ) as central_gate,
+            mock.patch(
+                "source_proxy.tasks.long_running.validate_coding_execution_approval"
+            ) as validate_approval,
+            mock.patch(
+                "source_proxy.tasks.long_running.enter_coding_execution_consuming"
+            ) as enter_consuming,
+            mock.patch(
+                "source_proxy.tasks.long_running._apply_verified_diff"
+            ) as apply_diff,
+        ):
+            with self.assertRaises(LongRunningTaskError) as blocked:
+                execute_approved_long_running_task(
+                    task_id,
+                    action="run selected dummy coder prompt",
+                    approval_id="apr-target-identity",
+                    approved_diff="unused-before-identity-gate",
+                    target=target,
+                    selected_prompt_id=prompt_id,
+                    context_hash="context-target-identity",
+                    runtime_output_id=runtime_output_id,
+                    proposal_binding=proposal,
+                )
+
+        self.assertEqual(
+            blocked.exception.reason_code,
+            "target_plugin_proposal_identity_mismatch",
+        )
+        central_gate.assert_not_called()
+        validate_approval.assert_not_called()
+        enter_consuming.assert_not_called()
+        apply_diff.assert_not_called()
+
+    def test_execute_approved_rejects_durable_identity_drift_before_consuming_or_apply(
+        self,
+    ) -> None:
+        prompt_id = "coder-004-add-search-filter"
+        runtime_output_id = "runtime-target-identity"
+        target = "tests/ui-agent-trials/fixtures/dummy-product-site/index.html"
+        proposal_identity = {
+            "plugin_id": "lumacart",
+            "selected_prompt_id": prompt_id,
+            "result_identity": "proposal-identity",
+        }
+        proposal = {"target_plugin_identity": proposal_identity}
+        task_id = create_long_running_task("Reject durable target identity drift")[
+            "task"
+        ]["id"]
+        record_coding_execution_preview(
+            task_id,
+            preview_id="prv-target-identity",
+            generation=1,
+            target_plugin_identity=proposal_identity,
+            proposal_binding=proposal,
+            runtime_output_id=runtime_output_id,
+        )
+        drifted_approval = {
+            "approval_id": "apr-target-identity",
+            "generation": 1,
+            "target_plugin_identity": {
+                **proposal_identity,
+                "result_identity": "approval-identity-drift",
+            },
+            "proposal_binding": proposal,
+            "binding": {},
+        }
+
+        with (
+            mock.patch("source_proxy.tasks.long_running.central_gate_check"),
+            mock.patch(
+                "source_proxy.tasks.long_running.validate_coding_execution_approval",
+                return_value=drifted_approval,
+            ) as validate_approval,
+            mock.patch(
+                "source_proxy.tasks.long_running.enter_coding_execution_consuming"
+            ) as enter_consuming,
+            mock.patch(
+                "source_proxy.tasks.long_running._apply_verified_diff"
+            ) as apply_diff,
+        ):
+            with self.assertRaises(LongRunningTaskError) as blocked:
+                execute_approved_long_running_task(
+                    task_id,
+                    action="run selected dummy coder prompt",
+                    approval_id="apr-target-identity",
+                    approved_diff="unused-before-identity-gate",
+                    target=target,
+                    selected_prompt_id=prompt_id,
+                    context_hash="context-target-identity",
+                    runtime_output_id=runtime_output_id,
+                    proposal_binding=proposal,
+                )
+
+        self.assertEqual(
+            blocked.exception.reason_code,
+            "target_plugin_approval_identity_mismatch",
+        )
+        validate_approval.assert_called_once()
+        enter_consuming.assert_not_called()
+        apply_diff.assert_not_called()
 
     def test_execute_approved_acceptance_no_go_when_causal_evidence_missing(self) -> None:
         previous_cwd = os.getcwd()

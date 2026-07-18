@@ -89,6 +89,8 @@ def test_typescript_selection_leaves_registered_root_identity_server_owned() -> 
     assert identity["branch"]
     assert identity["source_head"]
     assert identity["selected_prompt_id"] == packet()["target_plugin"]["selected_prompt_id"]
+    assert isinstance(identity["allowed_actions"], list)
+    assert identity == json.loads(json.dumps(identity, sort_keys=True))
 
 
 EXPECTED_COMMANDS = {

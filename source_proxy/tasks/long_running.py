@@ -1217,6 +1217,11 @@ def execute_approved_long_running_task(
         if isinstance(pending_preview, dict)
         else ""
     )
+    proposal_target_plugin_identity = (
+        persisted_proposal_binding.get("target_plugin_identity")
+        if isinstance(persisted_proposal_binding, dict)
+        else None
+    )
     from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 
     if is_lumacart_prompt_id(selected_prompt_id):
@@ -1234,6 +1239,14 @@ def execute_approved_long_running_task(
             raise LongRunningTaskError(
                 "Selected Coder execution requires the exact persisted model proposal.",
                 "target_plugin_proposal_binding_mismatch",
+            )
+        if (
+            not isinstance(proposal_target_plugin_identity, dict)
+            or target_plugin_identity != proposal_target_plugin_identity
+        ):
+            raise LongRunningTaskError(
+                "Selected Coder execution requires the proposal's exact target-plugin identity.",
+                "target_plugin_proposal_identity_mismatch",
             )
     if isinstance(target_plugin_identity, dict) and str(target_plugin_identity.get("selected_prompt_id") or "") != selected_prompt_id:
         raise LongRunningTaskError(
@@ -1347,6 +1360,15 @@ def execute_approved_long_running_task(
             "Durable coding approval rejected this execution binding.",
             error.reason_code,
             diagnostics=approval_binding_diagnostic,
+        )
+    if (
+        is_lumacart_prompt_id(selected_prompt_id)
+        and durable_approval.get("target_plugin_identity")
+        != proposal_target_plugin_identity
+    ):
+        raise LongRunningTaskError(
+            "Durable coding approval does not preserve the proposal's target-plugin identity.",
+            "target_plugin_approval_identity_mismatch",
         )
     from source_proxy.planning.plan import load_plan
 
@@ -1601,7 +1623,9 @@ def execute_approved_long_running_task(
                 "root": durable_approval["binding"].get("root"),
             },
             "target_plugin_identity": dict(
-                durable_approval.get("target_plugin_identity") or {}
+                proposal_target_plugin_identity
+                if isinstance(proposal_target_plugin_identity, dict)
+                else {}
             ),
             "prompt_identity": {
                 "selected_prompt_id": selected_prompt_id,

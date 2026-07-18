@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
@@ -70,7 +71,18 @@ class ResolvedTargetPlugin:
     acknowledgement_status: str = "pending"
 
     def evidence_identity(self) -> dict[str, Any]:
-        return asdict(self)
+        # Evidence identities cross both process-local and JSON-persisted state.
+        # Canonicalize at the authority boundary so tuple/list representation
+        # cannot change the identity after a restart or during artifact sealing.
+        return json.loads(
+            json.dumps(
+                asdict(self),
+                ensure_ascii=True,
+                allow_nan=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+        )
 
 
 _COMMON_FORBIDDEN_FILES = [

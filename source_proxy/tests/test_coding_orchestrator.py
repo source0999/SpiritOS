@@ -726,6 +726,11 @@ def test_canonical_target_plugin_proposal_binds_adapter_model_and_runtime_output
         selected_prompt_id=proposal["selected_prompt_id"],
     )
     assert material["proposal_binding"] == proposal
+    assert (
+        material["target_plugin_identity"]
+        == material["proposal_binding"]["target_plugin_identity"]
+        == proposal["target_plugin_identity"]
+    )
     assert material["approved_diff"]
 
 

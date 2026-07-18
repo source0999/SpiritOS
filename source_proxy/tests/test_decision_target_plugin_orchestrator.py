@@ -292,6 +292,12 @@ def test_active_lumacart_prompt_packet_uses_authoritative_orchestrator(
             == proposal["proposal_binding_sha256"]
         )
         assert persisted_proposal["runtime_output_id"] == proposal["runtime_output_id"]
+        persisted_identity = persisted_proposal["target_plugin_identity"]
+        assert persisted_identity == proposal["target_plugin_identity"]
+        assert isinstance(persisted_identity["allowed_actions"], list)
+        assert persisted_identity == json.loads(
+            json.dumps(persisted_identity, sort_keys=True)
+        )
         # This focused route test starts from a task, not a Cartographer
         # selection. Cartographer acknowledgement is required only when a real
         # selection/transfer was supplied; that production boundary is covered
