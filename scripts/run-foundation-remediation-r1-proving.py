@@ -1861,6 +1861,14 @@ def _run_one_proving_task(
         required = {"extended.scout-research", "extended.obsidian-knowledge", "extended.context-model", "extended.retained-sub-agent", "extended.mac-worker", "extended.platform-verifier"}
         if not required.issubset(observed):
             _fail("extended_lanes_required_receipts_missing")
+        controlled = _list(extended_lanes.get("controlled_failures"), "extended_lanes_controlled_failures_missing")
+        if len(controlled) != 2:
+            _fail("extended_lanes_controlled_failure_count_invalid")
+        assessments = [_mapping(item.get("assessment"), "extended_lanes_controlled_failure_invalid") for item in controlled if isinstance(item, Mapping)]
+        if len(assessments) != 2 or any(item.get("outcome") != "RECOVERING" for item in assessments):
+            _fail("extended_lanes_controlled_recovery_invalid")
+        if not any(item.get("external_host_failure") is True for item in assessments):
+            _fail("extended_lanes_external_host_failure_missing")
 
     prompt_packet = client.json(
         "next",
@@ -2086,7 +2094,7 @@ def _run_one_proving_task(
         "selection_preview_id": selection_preview_id,
         "selection_generation": selection_generation,
         "extended_lanes": (
-            {"response_sha256": extended_lanes_response_sha256, "all_required_live": bool(extended_lanes.get("all_required_live")), "lane_statuses": {str(item.get("lane_id") or ""): str(item.get("status") or "") for item in extended_lanes.get("lanes", []) if isinstance(item, Mapping)}}
+            {"response_sha256": extended_lanes_response_sha256, "all_required_live": bool(extended_lanes.get("all_required_live")), "lane_statuses": {str(item.get("lane_id") or ""): str(item.get("status") or "") for item in extended_lanes.get("lanes", []) if isinstance(item, Mapping)}, "controlled_failures": [{"lane_id": str(item.get("assessment", {}).get("lane_id") or ""), "recovered": item.get("assessment", {}).get("outcome") == "RECOVERING", "external_host_failure": item.get("assessment", {}).get("external_host_failure") is True} for item in extended_lanes.get("controlled_failures", []) if isinstance(item, Mapping)]}
             if extended_lanes is not None else {"not_run_on_clean_rerun": True}
         ),
         "prompt_packet": {

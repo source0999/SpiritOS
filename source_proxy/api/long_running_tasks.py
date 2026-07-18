@@ -22,6 +22,8 @@ from source_proxy.approval.runtime_identity import AuthorityRuntimeIdentityError
 from source_proxy.coding.extended_lanes import (
     build_diagnosis, invoke_context_model, invoke_mac, invoke_obsidian, invoke_platform_verifier, invoke_scout, invoke_subagent, resolve_conflict,
 )
+from source_proxy.coding.campaign_3_recovery import assess_extended_lane_failure, record_extended_lane_recovery_for_task
+from source_proxy.decision.mac_integration import run_mac_cancellation_probe_for_task
 from source_proxy.target_plugins.adapter import TargetPluginResolutionError, resolve_target_plugin
 from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
@@ -237,9 +239,21 @@ async def long_running_task_extended_lanes(
             raise LongRunningTaskError("Task was not found.", "task_not_found")
         scout = await invoke_scout(task_id, query=request.research_query, required=not request.allow_degraded_research)
         obsidian = invoke_obsidian(task_id, query=request.context_query, required=True)
+        failed_context_model = await invoke_context_model(task_id, task=request.context_query, model="campaign3-controlled-missing-model", required=True)
         context_model = await invoke_context_model(task_id, task=request.context_query, model=request.model, required=True)
+        model_recovery = record_extended_lane_recovery_for_task(
+            task_id,
+            assessment=assess_extended_lane_failure(lane_id="extended.context-model", failure="provider_unreachable", applicable=True, replacement_used=context_model.get("status") == "INTEGRATED_LIVE"),
+            evidence={"failed_receipt": failed_context_model.get("receipt"), "recovered_receipt": context_model.get("receipt")},
+        )
         subagent = await invoke_subagent(task_id, task=request.context_query, model=request.model, required=True)
+        mac_cancel = run_mac_cancellation_probe_for_task(task_id, source_commit=identity.source_head, timeout_seconds=1, delay_seconds=3)
         mac = invoke_mac(task_id, source_commit=identity.source_head, source_worktree=identity.worktree)
+        mac_recovery = record_extended_lane_recovery_for_task(
+            task_id,
+            assessment=assess_extended_lane_failure(lane_id="extended.mac-worker", failure="timeout", applicable=True, replacement_used=mac.get("status") == "INTEGRATED_LIVE"),
+            evidence={"failed_receipt": mac_cancel.get("receipt"), "recovered_receipt": mac.get("receipt")},
+        )
         platform = invoke_platform_verifier(task_id, mac_receipt=mac, local_diff_check=True)
         claims = [
             {"lane_id": "repository_current", "subject": "source_head", "value": identity.source_head, "provenance": "approval_runtime_identity"},
@@ -254,6 +268,7 @@ async def long_running_task_extended_lanes(
             "source_identity": {"worktree": identity.worktree, "source_head": identity.source_head, "state_namespace": identity.state_namespace},
             "lanes": lanes,
             "diagnosis": diagnosis,
+            "controlled_failures": [model_recovery, mac_recovery],
             "all_required_live": all(item.get("status") == "INTEGRATED_LIVE" for item in lanes),
         }
     except (LongRunningTaskError, AuthorityRuntimeIdentityError, ValueError) as error:
