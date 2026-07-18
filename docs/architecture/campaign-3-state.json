@@ -47,10 +47,10 @@
     "gate_3_10_coding_ui_campaign_readiness",
     "gate_3_11_final_acceptance_and_closeout"
   ],
-  "completed_gate_ids": ["gate_3_0_entry_verification_and_control_plane", "gate_3_1_extended_lane_inventory_and_classification"],
+  "completed_gate_ids": ["gate_3_0_entry_verification_and_control_plane", "gate_3_1_extended_lane_inventory_and_classification", "gate_3_2_scout_and_coding_research_integration"],
   "partial_gate_ids": [],
-  "next_gate_id": "gate_3_2_scout_and_coding_research_integration",
-  "current_phase": "extended_lane_inventory_runtime_contracts_complete",
+  "next_gate_id": "gate_3_3_obsidian_coding_knowledge_integration",
+  "current_phase": "scout_coding_research_runtime_complete",
   "entry_checks": {
     "r1_terminal_tag_verified": true,
     "r1_terminal_commit_verified": true,

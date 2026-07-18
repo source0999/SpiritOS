@@ -2,14 +2,14 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_1_extended_lane_inventory_complete`
+Checkpoint ID: `campaign_3_gate_3_2_scout_coding_research_complete`
 
-Verdict: `GATE_3_1_EXTENDED_LANE_INVENTORY_COMPLETE`
+Verdict: `GATE_3_2_SCOUT_CODING_RESEARCH_COMPLETE`
 
 State:
 
-- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`
-- next gate: `gate_3_2_scout_and_coding_research_integration`
+- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`
+- next gate: `gate_3_3_obsidian_coding_knowledge_integration`
 - Campaign 3 GO: false
 - Campaign 4 started: false
 - implementation gates started: true
@@ -23,7 +23,7 @@ Entry verification:
 - Shared Git object integrity passed `git fsck --strict --no-progress` with only dangling objects reported.
 - Historical design Campaign 3 remains `4aec510409e8bb82386190af9fa8f666efcbc63e` and remains classified as `CAMPAIGN_3_SCOPE_DIVERGED_TO_DESIGN`.
 
-Gate 3.1 runtime-backed inventory:
+Gate 3.1 and 3.2 runtime-backed inventory and research:
 
 - `docs/architecture/campaign-3-goal.md`
 - `docs/architecture/campaign-3-plan.md`
@@ -38,6 +38,9 @@ Gate 3.1 runtime-backed inventory:
 - `source_proxy/coding/extended_lane_registry.py`
 - `source_proxy/coding/runtime_lane_boundary.py`
 - `source_proxy/tests/test_extended_lane_registry.py`
+- `source_proxy/decision/scout_research.py`
+- `source_proxy/context/source_readiness.py`
+- `source_proxy/tests/test_campaign_3_scout_research.py`
 
 The registry has exactly eight retained, selectable production lanes. Scout
 providers, preview-only helpers, the Mac advisory route, and all prompt-only or
@@ -48,4 +51,6 @@ and consumption.
 
 Stop line:
 
-Gate 3.1 is complete. The next authorized task resumes at `gate_3_2_scout_and_coding_research_integration`.
+Scout owns the task-bound query, provider chain, bounded source selection, primary-source preference, fetch hashes, freshness, citations, failure status, and claim ceiling. SearXNG and fetch cannot be independently selected or counted. The context adapter carries the exact receipt to the canonical broker for downstream acknowledgement.
+
+Gate 3.2 is complete. The next authorized task resumes at `gate_3_3_obsidian_coding_knowledge_integration`.

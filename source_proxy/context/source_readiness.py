@@ -17,7 +17,7 @@ from source_proxy.context.obsidian import (
     obsidian_context_config_from_env,
     query_obsidian_context,
 )
-from source_proxy.decision.research import run_local_research_preview
+from source_proxy.decision.scout_research import run_canonical_coding_research
 
 ContextReadinessStatus = Literal[
     "used",
@@ -165,32 +165,40 @@ async def build_scout_search_context_packet(
     max_results: int = 6,
 ) -> ContextSourcePacket:
     try:
-        sources = await run_local_research_preview(task, max_results=max_results)
+        research = await run_canonical_coding_research(
+            task_id=f"context-{abs(hash(task))}", query=task, max_results=max_results
+        )
+        sources = research.get("sources") if isinstance(research.get("sources"), list) else []
     except Exception as exc:
         return ContextSourcePacket(
-            source="scout_search",
+            source="extended.scout-research",
             status="blocked",
             reason=f"research_packet_error: {exc}",
             diagnostics={"exception": type(exc).__name__},
             authority=dict(READ_ONLY_AUTHORITY),
         )
     public_sources = [_public_research_source(source) for source in sources]
-    status: ContextReadinessStatus = "used" if public_sources else "skipped"
+    research_status = str(research.get("status") or "skipped")
+    status: ContextReadinessStatus = (
+        "used" if public_sources else research_status if research_status in {"skipped", "blocked", "failed", "unavailable"} else "skipped"
+    )
     return ContextSourcePacket(
-        source="scout_search",
+        source="extended.scout-research",
         status=status,
-        reason="research_sources_selected" if public_sources else "no_research_sources_available",
+        reason=str(research.get("reason") or ("research_sources_selected" if public_sources else "no_research_sources_available")),
         packet={
             "sources": public_sources,
             "source_count": len(public_sources),
             "metadata_required": ["source", "freshness", "trust_status", "review_status"],
             "advisory_boundary": "evidence_only_no_code_or_memory_writes",
+            "research_receipt": research,
         },
         diagnostics={
             "read_only": True,
             "hidden_memory_writes": False,
             "hidden_code_writes": False,
-            "provider_call_made_by_adapter": False,
+            "provider_call_made_by_adapter": True,
+            "research_claim_ceiling": str(research.get("claim_ceiling") or "no_external_research_claim"),
         },
         authority=dict(READ_ONLY_AUTHORITY),
     )

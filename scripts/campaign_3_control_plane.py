@@ -118,12 +118,15 @@ def validate_continuity(root: Path) -> list[str]:
     rc, head = git(root, "rev-parse", "HEAD")
     if rc != 0 or not HEX40.fullmatch(head):
         failures.append("git_head_unreadable")
-    rc, parent = git(root, "rev-parse", "HEAD^")
-    if rc != 0 or parent != R1_TERMINAL:
-        failures.append("git_parent_not_r1_terminal")
-    rc, grandparent = git(root, "rev-parse", "HEAD~2")
-    if rc != 0 or grandparent != R1_SOURCE:
-        failures.append("git_grandparent_not_r1_source")
+    # Gate commits are allowed after the control-plane commit, but every one
+    # must remain on the accepted R1 terminal lineage rather than a mutable or
+    # historical-design branch.
+    rc, _ = git(root, "merge-base", "--is-ancestor", R1_TERMINAL, "HEAD")
+    if rc != 0:
+        failures.append("git_r1_terminal_not_ancestor")
+    rc, _ = git(root, "merge-base", "--is-ancestor", R1_SOURCE, "HEAD")
+    if rc != 0:
+        failures.append("git_r1_source_not_ancestor")
     ledger = read_text(root, "docs/architecture/campaign-3-ledger.md")
     if ledger.count("## Current Checkpoint") != 1:
         failures.append("ledger_current_checkpoint_count_invalid")
