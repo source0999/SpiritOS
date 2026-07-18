@@ -1,0 +1,31 @@
+{
+  "schema_version": "campaign-3/mac-verification-receipt/v1",
+  "task_id": "campaign3-gate34-mac",
+  "transport": {
+    "registered_tailscale_dns": "sources-mac-mini.tailb69ea6.ts.net",
+    "registered_tailscale_ipv4": "100.117.164.42",
+    "host_key_verified_against": "10.0.0.147"
+  },
+  "platform": {
+    "hostname": "spirit-mac-mini.local",
+    "os": "macOS",
+    "version": "15.7.7"
+  },
+  "source_binding": {
+    "source_commit": "7a98d3cc7293392e85009245aa87fa5a96329b42",
+    "observed_commit": "7a98d3cc7293392e85009245aa87fa5a96329b42",
+    "isolated_worktree": "/tmp/spiritos-campaign3-mac/worktree",
+    "source_bound": true
+  },
+  "job": {
+    "job_type": "run_safe_check",
+    "command": "git diff --check",
+    "success": true,
+    "duration_ms": 117,
+    "write_authority": false,
+    "verdict_effect": "mac_verification_passed"
+  },
+  "log_hash": "sha256:a464b062be5489df90a67b7f26d6a89be56a6986555cb6f8d980825ae294c3f2",
+  "cleanup_pending": true,
+  "claim_ceiling": "one source-bound macOS validation; no full Gate 3.4 completion claim"
+}

@@ -81,3 +81,11 @@ remains pending the external route restoration.
 Repeated recovery verification: the current host also reports TCP port 22 failed
 and `DestinationHostUnreachable` for `10.0.0.147`. This confirms that neither
 the Dell hop nor the configured local path can reach the registered Mac worker.
+
+Mac recovery evidence: resolved `sources-mac-mini.tailb69ea6.ts.net` through the
+registered Tailscale identity (`100.117.164.42`) and verified the existing SSH key
+against the prior registered host key. An isolated Mac checkout from the Campaign
+3 bundle ran `git diff --check` at `7a98d3cc7293392e85009245aa87fa5a96329b42`;
+the worker returned the same observed commit and log hash recorded in
+`docs/evidence-manifests/campaign-3/gate-3-4-mac-verification.json`. Timeout,
+cancellation, downstream acknowledgement, recovery, and cleanup remain required.
