@@ -595,6 +595,16 @@ def _runtime_environment(
         if inherited.get(key)
     }
     environment["PATH"] = SAFE_PATH
+    # Campaign 3 lane transports are explicitly allow-listed. Credentials are
+    # deliberately absent; operator material remains scoped to its real owner.
+    for name in (
+        "SPIRIT_MACMINI_REPO_PATH", "SPIRIT_MACMINI_TAILSCALE_HOST",
+        "SPIRIT_MACMINI_HOSTKEY_ALIAS", "SPIRIT_MACMINI_SSH_ALIAS",
+        "SPIRIT_MACMINI_GATEWAY_SSH_ALIAS", "SOURCE_PROXY_SCOUT_RESEARCH_URL",
+        "OBSIDIAN_VAULT_PATH", "OBSIDIAN_MAX_NOTE_AGE_SECONDS",
+    ):
+        if inherited.get(name):
+            environment[name] = inherited[name]
     environment.update(
         {
             "HOSTNAME": LOOPBACK,

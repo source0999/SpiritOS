@@ -18,6 +18,10 @@ from source_proxy.coding.orchestrator import (
     get_coding_orchestrator,
 )
 from source_proxy.approval.operator_session import OperatorSessionError, verify_operator_approval_assertion
+from source_proxy.approval.runtime_identity import AuthorityRuntimeIdentityError, resolve_authority_runtime_identity
+from source_proxy.coding.extended_lanes import (
+    build_diagnosis, invoke_context_model, invoke_mac, invoke_obsidian, invoke_platform_verifier, invoke_scout, invoke_subagent, resolve_conflict,
+)
 from source_proxy.target_plugins.adapter import TargetPluginResolutionError, resolve_target_plugin
 from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
@@ -69,6 +73,13 @@ class LongRunningTaskCreateRequest(BaseModel):
     description: str = Field(min_length=1, max_length=4000)
     steps: list[str] | None = None
     cartographer_selection: CartographerSelectionRequest | None = None
+
+
+class LongRunningTaskExtendedLanesRequest(BaseModel):
+    research_query: str = Field(min_length=8, max_length=500)
+    context_query: str = Field(min_length=8, max_length=500)
+    model: str = Field(default="gemma3n:e4b", min_length=3, max_length=200)
+    allow_degraded_research: bool = False
 
 
 class LongRunningTaskAdvanceRequest(BaseModel):
@@ -206,6 +217,49 @@ async def long_running_task_create(
             status_code=503,
             detail=_task_store_unavailable_envelope(error, elapsed_ms=elapsed_ms),
         ) from error
+
+
+@router.post("/long-running/{task_id}/extended-lanes")
+async def long_running_task_extended_lanes(
+    task_id: str,
+    request: LongRunningTaskExtendedLanesRequest,
+) -> dict[str, Any]:
+    """Invoke retained Campaign 3 lanes on an existing canonical task.
+
+    Source identity comes exclusively from the approval runtime identity; clients
+    cannot substitute a host, checkout, or commit.  Every lane persists its own
+    invocation and a named downstream consumer acknowledgement.
+    """
+    try:
+        identity = resolve_authority_runtime_identity()
+        task = get_long_running_task(task_id).get("task")
+        if not isinstance(task, dict) or task.get("id") != task_id:
+            raise LongRunningTaskError("Task was not found.", "task_not_found")
+        scout = await invoke_scout(task_id, query=request.research_query, required=not request.allow_degraded_research)
+        obsidian = invoke_obsidian(task_id, query=request.context_query, required=True)
+        context_model = await invoke_context_model(task_id, task=request.context_query, model=request.model, required=True)
+        subagent = await invoke_subagent(task_id, task=request.context_query, model=request.model, required=True)
+        mac = invoke_mac(task_id, source_commit=identity.source_head, source_worktree=identity.worktree)
+        platform = invoke_platform_verifier(task_id, mac_receipt=mac, local_diff_check=True)
+        claims = [
+            {"lane_id": "repository_current", "subject": "source_head", "value": identity.source_head, "provenance": "approval_runtime_identity"},
+            {"lane_id": "mac_platform_verifier", "subject": "source_head", "value": str(mac.get("receipt", {}).get("output", {}).get("mac", {}).get("receipt", {}).get("observed_commit") or ""), "provenance": "registered_tailscale_mac"},
+        ]
+        conflict = resolve_conflict(task_id, claims=claims)
+        lanes = [scout, obsidian, context_model, subagent, mac, platform, conflict]
+        diagnosis = build_diagnosis(task_id, lane_receipts=lanes)
+        return {
+            "schema_version": "campaign-3/extended-lanes-http/v1",
+            "task_id": task_id,
+            "source_identity": {"worktree": identity.worktree, "source_head": identity.source_head, "state_namespace": identity.state_namespace},
+            "lanes": lanes,
+            "diagnosis": diagnosis,
+            "all_required_live": all(item.get("status") == "INTEGRATED_LIVE" for item in lanes),
+        }
+    except (LongRunningTaskError, AuthorityRuntimeIdentityError, ValueError) as error:
+        reason = getattr(error, "reason_code", type(error).__name__)
+        raise HTTPException(status_code=400, detail={"reason_code": reason, "extended_lanes_status": "blocked"}) from error
+
 
 
 @router.get("/long-running")

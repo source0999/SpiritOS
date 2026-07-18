@@ -1835,6 +1835,33 @@ def _run_one_proving_task(
     )
     task_path_id = urllib.parse.quote(task_id, safe="")
 
+    extended_lanes: dict[str, Any] | None = None
+    extended_lanes_response_sha256: str | None = None
+    # The first task is the authoritative mutation lineage. The clean rerun
+    # remains a narrow reset proof and cannot overwrite lane evidence.
+    if ordinal == 1:
+        extended_lanes = client.json(
+            "next",
+            "POST",
+            f"/v1/tasks/long-running/{task_path_id}/extended-lanes",
+            {
+                "research_query": "Python official documentation asyncio cancellation",
+                "context_query": "SpiritOS Campaign 3 canonical Cartographer selection transfer coding verification",
+                "model": "gemma3n:e4b",
+                "allow_degraded_research": True,
+            },
+        )
+        extended_lanes_response_sha256 = _exchange_hash(client)
+        if extended_lanes.get("task_id") != task_id:
+            _fail("extended_lanes_task_binding_invalid")
+        identity = _mapping(extended_lanes.get("source_identity"), "extended_lanes_identity_missing")
+        _require_equal(identity.get("source_head"), config.expected_source_head, "extended_lanes_source_head_invalid")
+        lanes = _list(extended_lanes.get("lanes"), "extended_lanes_receipts_missing")
+        observed = {str(item.get("lane_id") or "") for item in lanes if isinstance(item, Mapping)}
+        required = {"extended.scout-research", "extended.obsidian-knowledge", "extended.context-model", "extended.retained-sub-agent", "extended.mac-worker", "extended.platform-verifier"}
+        if not required.issubset(observed):
+            _fail("extended_lanes_required_receipts_missing")
+
     prompt_packet = client.json(
         "next",
         "POST",
@@ -2058,6 +2085,10 @@ def _run_one_proving_task(
         "cartographer": material["cartographer"],
         "selection_preview_id": selection_preview_id,
         "selection_generation": selection_generation,
+        "extended_lanes": (
+            {"response_sha256": extended_lanes_response_sha256, "all_required_live": bool(extended_lanes.get("all_required_live")), "lane_statuses": {str(item.get("lane_id") or ""): str(item.get("status") or "") for item in extended_lanes.get("lanes", []) if isinstance(item, Mapping)}}
+            if extended_lanes is not None else {"not_run_on_clean_rerun": True}
+        ),
         "prompt_packet": {
             "selected_prompt_id": PROMPT_ID,
             "truth_receipt_run_id": prompt_receipt["run_id"],
@@ -2235,7 +2266,7 @@ def _expected_exchange_sequence(
 ) -> list[tuple[str, str, str]]:
     proposal_path_id = urllib.parse.quote(proposal_id, safe="")
 
-    def run_sequence(result: RunResult) -> list[tuple[str, str, str]]:
+    def run_sequence(result: RunResult, *, includes_extended_lanes: bool) -> list[tuple[str, str, str]]:
         task_path_id = urllib.parse.quote(str(result.summary.get("task_id") or ""), safe="")
         if not task_path_id:
             _fail("production_http_transcript_task_id_missing")
@@ -2248,6 +2279,7 @@ def _expected_exchange_sequence(
             ),
             ("next", "POST", "/v1/operator/cartographer-selection"),
             ("next", "POST", "/v1/tasks/long-running"),
+            *(((("next", "POST", f"/v1/tasks/long-running/{task_path_id}/extended-lanes"),) if includes_extended_lanes else ())),
             ("next", "POST", "/v1/decisions/prompt-packet"),
             ("source", "POST", "/v1/verification/diff-preview"),
             (
@@ -2266,10 +2298,10 @@ def _expected_exchange_sequence(
         _fail("production_http_transcript_task_id_missing")
     return [
         ("next", "POST", "/v1/operator/session"),
-        *run_sequence(first),
+        *run_sequence(first, includes_extended_lanes=True),
         ("next", "POST", f"/v1/tasks/long-running/{first_task_path}/undo"),
         ("next", "POST", "/v1/coding/dummy-product-site-preview/reset"),
-        *run_sequence(second),
+        *run_sequence(second, includes_extended_lanes=False),
         ("next", "DELETE", "/v1/operator/session"),
         ("next", "GET", "/v1/operator/session"),
     ]
