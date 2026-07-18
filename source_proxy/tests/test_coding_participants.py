@@ -7,6 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+import source_proxy.coding.participants as participant_module
 
 from source_proxy.coding.participants import (
     MANUAL_DIFF_CLAIM_CEILING,
@@ -86,6 +87,14 @@ def _executor_record(artifact: dict) -> dict:
 
 
 def test_independent_participants_consume_one_immutable_artifact(tmp_path: Path) -> None:
+    source_root = Path(participant_module.__file__).resolve().parents[1]
+    bytecode_before = {
+        path.relative_to(source_root).as_posix(): (
+            path.stat().st_size,
+            path.stat().st_mtime_ns,
+        )
+        for path in source_root.rglob("*.pyc")
+    }
     artifact = _artifact(tmp_path)
     executor = _executor_record(artifact)
     assert validate_coding_participant_record(
@@ -140,6 +149,14 @@ def test_independent_participants_consume_one_immutable_artifact(tmp_path: Path)
     assert next(
         item for item in receipt_records if item["role"] == "coding-verifier"
     )["result"]["verdict"] == "PASS"
+    bytecode_after = {
+        path.relative_to(source_root).as_posix(): (
+            path.stat().st_size,
+            path.stat().st_mtime_ns,
+        )
+        for path in source_root.rglob("*.pyc")
+    }
+    assert bytecode_after == bytecode_before
 
 
 def test_executor_creates_its_output_and_orchestrator_creates_the_acknowledgement(

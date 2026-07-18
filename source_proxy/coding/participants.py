@@ -515,10 +515,17 @@ def _invoke_worker_process(
         ),
         "LANG": os.environ.get("LANG", "C.UTF-8"),
         "LC_ALL": os.environ.get("LC_ALL", "C.UTF-8"),
+        "PYTHONDONTWRITEBYTECODE": "1",
         _WORKER_MODE_ENV: "1",
     }
     completed = subprocess.run(
-        [str(executable), "-m", "source_proxy.coding.participants", "--worker"],
+        [
+            str(executable),
+            "-B",
+            "-m",
+            "source_proxy.coding.participants",
+            "--worker",
+        ],
         input=json.dumps(payload, sort_keys=True, separators=(",", ":")),
         text=True,
         capture_output=True,

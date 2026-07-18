@@ -275,6 +275,31 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   regression pack `135/135`, long-running task suite `72/72`, and target-adapter
   suite `38/38`. A new clean source checkpoint and full two-run production proving
   lifecycle remain required.
+- The first lifecycle attempt at source
+  `46951d7220b8a4c0eddde7fcb1ea33c036df7e46` stopped at the clean Next build with
+  `lifecycle_next_build_failed`; it published no receipt and restored a clean proof
+  worktree. An immediate exact-command diagnostic build then completed compilation,
+  TypeScript, 136 static pages, and build traces successfully, so the isolated
+  failure is recorded as transient rather than rewritten as a source pass.
+- A second clean lifecycle attempt passed both dependency measurements, authority
+  preflight, the production build, and all three service startups. The inner client
+  later failed and teardown again withheld both receipts. The proof worktree showed
+  no tracked changes or generated fixture residue, but did contain newly generated
+  ignored `source_proxy/**/__pycache__/*.pyc` files. Timestamps and module names bind
+  those files to the independent participant-worker launch. That worker deliberately
+  constructed a minimal environment but omitted the outer lifecycle's
+  `PYTHONDONTWRITEBYTECODE=1` and invoked Python without `-B`, making the clean
+  teardown invariant unsatisfiable once participants ran.
+- Participant subprocesses now preserve the no-bytecode runtime boundary in both
+  their command and minimal environment. A regression snapshots every existing
+  `source_proxy` bytecode file before independent reviewer, verifier, anti-cheat, and
+  evidence-recorder workers run and requires an identical snapshot afterward. The
+  exact inner-client rejection from the failed attempt was not promoted into a
+  claim because its transient log was removed during fail-closed teardown; the next
+  proving attempt must be monitored directly and must still satisfy every receipt
+  invariant. Regression observations after repair: participant suite `18/18`,
+  orchestrator/proof/approval matrix `45/45`, lifecycle `25/25`, proving `16/16`,
+  static authority valid, and `git diff --check` clean.
 
 ## Broad-suite diagnostic attribution
 
