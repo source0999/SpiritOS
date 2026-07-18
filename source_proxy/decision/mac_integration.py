@@ -30,11 +30,16 @@ def _known_host_alias() -> str:
     return os.environ.get("SPIRIT_MACMINI_HOSTKEY_ALIAS", "10.0.0.147").strip()
 
 
+def _gateway_ssh_alias() -> str:
+    """Optional registered relay when the control plane lacks the Mac key."""
+    return os.environ.get("SPIRIT_MACMINI_GATEWAY_SSH_ALIAS", "").strip()
+
+
 def _run_mac_worker_job(job: dict[str, Any], timeout_seconds: int = 45) -> dict[str, Any]:
     if timeout_seconds <= 0:
         raise ValueError("mac_worker_timeout_invalid")
     remote_repo = _remote_repo()
-    command = [
+    mac_command = [
         "ssh",
         "-o",
         "BatchMode=yes",
@@ -44,11 +49,17 @@ def _run_mac_worker_job(job: dict[str, Any], timeout_seconds: int = 45) -> dict[
         "HostKeyAlias=" + _known_host_alias(),
     ]
     if _tailscale_host():
-        command.extend(["-o", "HostName=" + _tailscale_host()])
-    command.extend([
+        mac_command.extend(["-o", "HostName=" + _tailscale_host()])
+    mac_command.extend([
         _ssh_alias(),
         f"cd {shlex.quote(remote_repo)} && python3 scripts/mac-worker/spirit_mac_worker.py",
     ])
+    gateway = _gateway_ssh_alias()
+    command = (
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", gateway, shlex.join(mac_command)]
+        if gateway
+        else mac_command
+    )
     started = time.monotonic()
     try:
         completed = subprocess.run(
@@ -256,5 +267,85 @@ def run_bound_mac_verification_for_task(
         status=status,
         changed_state_fields=["ast_snapshot.campaign_3_mac_worker"],
         failure_reason="" if status == "INTEGRATED_LIVE" else str(receipt["verdict_effect"]),
+    )
+    return {"status": status, "receipt": receipt, "task": envelope["task"]}
+
+
+def run_mac_platform_preflight_for_task(
+    task_id: str,
+    *,
+    source_commit: str,
+    source_worktree: str,
+    timeout_seconds: int = 120,
+) -> dict[str, Any]:
+    """Persist real, read-only Apple-tool evidence bound to an exact source."""
+    if len(source_commit) != 40 or any(char not in "0123456789abcdef" for char in source_commit):
+        raise ValueError("mac_worker_source_commit_invalid")
+    from source_proxy.tasks.long_running import (
+        begin_subsystem_integration_invocation,
+        finish_subsystem_integration_result,
+    )
+    upstream = {
+        "task_id": task_id, "source_commit": source_commit,
+        "source_worktree": source_worktree, "transport": "registered_tailscale",
+        "job_type": "mac_platform_preflight",
+    }
+    invocation = begin_subsystem_integration_invocation(
+        task_id, subsystem="campaign_3_mac_platform_preflight", upstream_state=upstream
+    )
+    job = {
+        "job_id": f"mac-platform-preflight-{uuid4().hex}",
+        "job_type": "mac_platform_preflight", "node_id": MAC_WORKER_NODE_ID,
+        "task_id": task_id, "job_envelope_version": "campaign-3/mac-worker/v1",
+        "input": {"repo_path": _remote_repo(), "expected_source_commit": source_commit,
+                  "source_worktree": source_worktree, "write_authority": False},
+    }
+    result = _run_mac_worker_job(job, timeout_seconds=timeout_seconds)
+    body = result.get("result") if isinstance(result.get("result"), dict) else {}
+    observed_commit = str(body.get("head") or "")
+    serialized = json.dumps(result, sort_keys=True, separators=(",", ":"), default=str)
+    receipt = {
+        "schema_version": "campaign-3/mac-platform-preflight-receipt/v1",
+        "task_id": task_id, "job": job, "result": result,
+        "source_commit": source_commit, "observed_commit": observed_commit,
+        "log_hash": "sha256:" + hashlib.sha256(serialized.encode("utf-8")).hexdigest(),
+        "source_bound": result.get("success") is True and observed_commit == source_commit,
+        "write_authority": False, "invocation": invocation,
+    }
+    status = "INTEGRATED_LIVE" if receipt["source_bound"] else "BLOCKED_ENV"
+    envelope = finish_subsystem_integration_result(
+        task_id, subsystem="campaign_3_mac_platform_preflight",
+        consumer_subsystem="coding_verifier_mac_evidence_consumer", upstream_state=upstream,
+        output={"summary": "mac_platform_preflight_passed" if receipt["source_bound"] else "mac_platform_preflight_unavailable", "mac_receipt": receipt},
+        status=status, changed_state_fields=["ast_snapshot.campaign_3_mac_platform_preflight"],
+        failure_reason="" if status == "INTEGRATED_LIVE" else "mac_platform_preflight_unavailable",
+    )
+    return {"status": status, "receipt": receipt, "task": envelope["task"]}
+
+
+def run_mac_cancellation_probe_for_task(
+    task_id: str,
+    *,
+    source_commit: str,
+    timeout_seconds: int = 1,
+    delay_seconds: int = 3,
+) -> dict[str, Any]:
+    """Persist a controlled no-write timeout; a timeout never becomes success."""
+    from source_proxy.tasks.long_running import (
+        begin_subsystem_integration_invocation,
+        finish_subsystem_integration_result,
+    )
+    upstream = {"task_id": task_id, "source_commit": source_commit, "transport": "registered_tailscale", "job_type": "mac_cancellation_probe"}
+    invocation = begin_subsystem_integration_invocation(task_id, subsystem="campaign_3_mac_cancellation", upstream_state=upstream)
+    job = {"job_id": f"mac-cancel-{uuid4().hex}", "job_type": "mac_cancellation_probe", "node_id": MAC_WORKER_NODE_ID, "task_id": task_id, "job_envelope_version": "campaign-3/mac-worker/v1", "input": {"delay_seconds": delay_seconds, "expected_source_commit": source_commit, "write_authority": False}}
+    result = _run_mac_worker_job(job, timeout_seconds=timeout_seconds)
+    serialized = json.dumps(result, sort_keys=True, separators=(",", ":"), default=str)
+    timed_out = result.get("error") == "mac_worker_timeout"
+    receipt = {"schema_version": "campaign-3/mac-cancellation-receipt/v1", "task_id": task_id, "job": job, "result": result, "source_commit": source_commit, "log_hash": "sha256:" + hashlib.sha256(serialized.encode("utf-8")).hexdigest(), "timed_out": timed_out, "write_authority": False, "invocation": invocation}
+    status = "BLOCKED_ENV" if timed_out else "NEEDS_FIX"
+    envelope = finish_subsystem_integration_result(
+        task_id, subsystem="campaign_3_mac_cancellation", consumer_subsystem="coding_verifier_mac_evidence_consumer", upstream_state=upstream,
+        output={"summary": "mac_cancellation_timeout_observed" if timed_out else "mac_cancellation_probe_unexpected_result", "mac_receipt": receipt}, status=status,
+        changed_state_fields=["ast_snapshot.campaign_3_mac_cancellation"], failure_reason="mac_worker_timeout" if timed_out else "mac_cancellation_probe_unexpected_result",
     )
     return {"status": status, "receipt": receipt, "task": envelope["task"]}

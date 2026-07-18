@@ -18,9 +18,21 @@ SUPPORTED_JOB_TYPES = [
     "scout_research_packet",
     "browser_design_check",
     "mac_isolated_write_proof",
+    "mac_platform_preflight",
+    "mac_cancellation_probe",
     "run_safe_check",
     "system_status",
 ]
+
+MAC_PLATFORM_COMMANDS = {
+    "macos_version": ["sw_vers", "-productVersion"],
+    "xcodebuild_version": ["xcodebuild", "-version"],
+    "swift_version": ["swift", "--version"],
+    "safari_driver_version": ["safaridriver", "--version"],
+    "codesign_version": ["codesign", "--version"],
+    "pkgbuild_version": ["pkgbuild", "--version"],
+    "productbuild_version": ["productbuild", "--version"],
+}
 
 SAFE_CHECK_COMMANDS = {
     "git status --branch --short --untracked-files=normal": [
@@ -462,6 +474,61 @@ def run_safe_check(job):
     }
 
 
+def mac_platform_preflight(job):
+    """Return bounded, read-only macOS tool evidence for a source checkout."""
+    root = repo_root(job.get("input") or {})
+    capabilities = {}
+    for name, command in MAC_PLATFORM_COMMANDS.items():
+        try:
+            completed = subprocess.run(
+                command, cwd=str(root), text=True, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, timeout=20, check=False,
+            )
+            capabilities[name] = {
+                "command": command,
+                "available": completed.returncode == 0,
+                "returncode": completed.returncode,
+                "stdout": completed.stdout.strip()[:500],
+                "stderr": completed.stderr.strip()[:500],
+            }
+        except (OSError, subprocess.TimeoutExpired) as error:
+            capabilities[name] = {
+                "command": command,
+                "available": False,
+                "error": type(error).__name__,
+            }
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=str(root), text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8, check=False,
+    )
+    if head.returncode != 0:
+        raise RuntimeError(head.stderr or "source_commit_unavailable")
+    return {
+        "result": {
+            "summary": "Mac platform preflight completed without write authority.",
+            "head": head.stdout.strip(),
+            "platform": platform.platform(),
+            "capabilities": capabilities,
+            "write_authority": False,
+        },
+        "candidate_files": [],
+        "recommended_checks": ["Review unavailable Apple tools before enabling an Apple-specific lane."],
+    }
+
+
+def mac_cancellation_probe(job):
+    """A bounded, side-effect-free job used to verify transport cancellation."""
+    delay = int((job.get("input") or {}).get("delay_seconds") or 0)
+    if delay < 1 or delay > 10:
+        raise RuntimeError("mac_cancellation_probe_delay_invalid")
+    time.sleep(delay)
+    return {
+        "result": {"summary": "Mac cancellation probe completed.", "delay_seconds": delay},
+        "candidate_files": [],
+        "recommended_checks": [],
+    }
+
+
 def browser_design_check(job):
     input_data = job.get("input") or {}
     url = input_data.get("url")
@@ -651,6 +718,10 @@ def handle(job):
         return system_status(job)
     if job_type == "run_safe_check":
         return run_safe_check(job)
+    if job_type == "mac_platform_preflight":
+        return mac_platform_preflight(job)
+    if job_type == "mac_cancellation_probe":
+        return mac_cancellation_probe(job)
     if job_type == "scout_research_packet":
         return scout_research_packet(job)
     if job_type == "browser_design_check":
