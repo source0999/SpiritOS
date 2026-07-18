@@ -407,6 +407,28 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   non-existent Cartographer proposal ID. Each published no receipt, removed its
   isolated state, left no service or scope active, and restored a globally clean
   proof worktree before the next attempt.
+- At source `8419ed9737cdd0562335f36f2e94fe50995e7953`, the first clean
+  lifecycle attempt stopped fail-closed at `selected_prompt_task_create_timeout`.
+  It published no receipt, removed its isolated state and services, and restored
+  the proof worktree before an unchanged-source retry.
+- The unchanged-source retry completed both production HTTP runs, terminal proof,
+  undo/reset, the distinct clean rerun, and complete teardown. The outer publisher
+  then rejected the otherwise valid full-bound receipt at its own redaction gate as
+  `lifecycle_receipt_forbidden_key_present`, so no receipt was accepted or anchored.
+  Replaying that scanner against the last real full inner receipt isolated exactly
+  one rejected path: `operator_session.cookie_jar_cleared=true`. The inner proving
+  schema, evidence generator, and independent validator all require this Boolean
+  clearance declaration; it carries no cookie value, while forbidden-value scanning
+  remains mandatory.
+- Lifecycle redaction now accepts an explicit Boolean-true `*_cleared` declaration
+  as well as Boolean-false `*_recorded` and `*_exposed` declarations. False
+  clearance claims and value-bearing forbidden keys remain rejected. The complete
+  prior inner receipt produces zero forbidden paths under the repaired scanner, and
+  the independent emitter/validator audit found no further likely publication
+  mismatch. A new source-bound lifecycle is still mandatory. Observations: proving
+  `18/18`, lifecycle `27/27`, evidence `14/14`, completion `12/12`, test-profile
+  semantics `5/5`, secret scan valid, static authority valid, and `git diff --check`
+  clean.
 
 ## Broad-suite diagnostic attribution
 

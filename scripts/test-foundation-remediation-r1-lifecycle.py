@@ -1074,13 +1074,22 @@ class StateAndReceiptTests(unittest.TestCase):
         finally:
             shutil.rmtree(unowned)
 
-    def test_receipt_redaction_allows_negative_declarations_only(self) -> None:
+    def test_receipt_redaction_allows_explicit_safety_declarations_only(self) -> None:
         safe = {
             "credential_recorded": False,
             "session_token_recorded": False,
+            "cookie_jar_cleared": True,
             "value": "safe",
         }
         LIFECYCLE._assert_redacted(safe, forbidden_values=["not-present-value"])
+        with self.assertRaisesRegex(
+            LIFECYCLE.LifecycleError,
+            "lifecycle_receipt_forbidden_key_present",
+        ):
+            LIFECYCLE._assert_redacted(
+                {"cookie_jar_cleared": False},
+                forbidden_values=[],
+            )
         with self.assertRaisesRegex(
             LIFECYCLE.LifecycleError,
             "lifecycle_receipt_forbidden_key_present",

@@ -2140,13 +2140,16 @@ def _forbidden_key_paths(value: Any, *, prefix: str = "$") -> list[str]:
     if isinstance(value, Mapping):
         for key, child in value.items():
             normalized = str(key).lower().replace("-", "_")
-            negative_declaration = (
+            redaction_declaration = (
                 child is False
                 and normalized.endswith(("_recorded", "_exposed"))
+            ) or (
+                child is True
+                and normalized.endswith("_cleared")
             )
             if (
                 any(fragment in normalized for fragment in FORBIDDEN_KEY_FRAGMENTS)
-                and not negative_declaration
+                and not redaction_declaration
             ):
                 failures.append(f"{prefix}.{key}")
             failures.extend(_forbidden_key_paths(child, prefix=f"{prefix}.{key}"))
