@@ -120,29 +120,61 @@ def derive_production_proof(
     prompt_identity = artifact.get("prompt_identity")
     context_identity = artifact.get("context_identity")
     model_output_identity = artifact.get("model_output_identity")
-    if not (
-        artifact.get("target_plugin_identity") == proposal.get("target_plugin_identity")
-        and isinstance(prompt_identity, Mapping)
-        and prompt_identity.get("selected_prompt_id") == proposal.get("selected_prompt_id")
-        and prompt_identity.get("proposal_binding_sha256")
-        == proposal.get("proposal_binding_sha256")
-        and isinstance(context_identity, Mapping)
-        and context_identity.get("context_hash") == proposal.get("context_hash")
-        and context_identity.get("selected_context_id")
-        == proposal.get("selected_context_id")
-        and isinstance(model_output_identity, Mapping)
-        and all(
-            model_output_identity.get(key) == proposal.get(key)
-            for key in (
-                "runtime_output_id",
-                "runtime_output_artifact_sha256",
-                "producer_model_invocation_id",
-                "producer_model_output_sha256",
-                "producer_model_artifact_sha256",
-                "approved_diff_sha256",
-            )
-        )
+    proposal_identity_failures: list[str] = []
+    if artifact.get("target_plugin_identity") != proposal.get(
+        "target_plugin_identity"
     ):
+        proposal_identity_failures.append(
+            "immutable_artifact_target_plugin_identity_mismatch"
+        )
+    if not isinstance(prompt_identity, Mapping):
+        proposal_identity_failures.append("immutable_artifact_prompt_identity_missing")
+    else:
+        if prompt_identity.get("selected_prompt_id") != proposal.get(
+            "selected_prompt_id"
+        ):
+            proposal_identity_failures.append(
+                "immutable_artifact_prompt_id_mismatch"
+            )
+        if prompt_identity.get("proposal_binding_sha256") != proposal.get(
+            "proposal_binding_sha256"
+        ):
+            proposal_identity_failures.append(
+                "immutable_artifact_proposal_binding_sha256_mismatch"
+            )
+    if not isinstance(context_identity, Mapping):
+        proposal_identity_failures.append("immutable_artifact_context_identity_missing")
+    else:
+        if context_identity.get("context_hash") != proposal.get("context_hash"):
+            proposal_identity_failures.append(
+                "immutable_artifact_context_hash_mismatch"
+            )
+        if context_identity.get("selected_context_id") != proposal.get(
+            "selected_context_id"
+        ):
+            proposal_identity_failures.append(
+                "immutable_artifact_selected_context_id_mismatch"
+            )
+    model_output_keys = (
+        "runtime_output_id",
+        "runtime_output_artifact_sha256",
+        "producer_model_invocation_id",
+        "producer_model_output_sha256",
+        "producer_model_artifact_sha256",
+        "approved_diff_sha256",
+    )
+    if not isinstance(model_output_identity, Mapping):
+        proposal_identity_failures.append(
+            "immutable_artifact_model_output_identity_missing"
+        )
+    else:
+        for key in model_output_keys:
+            if model_output_identity.get(key) != proposal.get(key):
+                proposal_identity_failures.append(
+                    f"immutable_artifact_model_output_{key}_mismatch"
+                )
+    if proposal_identity_failures:
+        failures.extend(proposal_identity_failures)
         failures.append("immutable_artifact_proposal_identity_mismatch")
 
     model_invocations = _state_mapping_list(

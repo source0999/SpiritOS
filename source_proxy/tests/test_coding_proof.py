@@ -579,6 +579,26 @@ def test_production_proof_rejects_forged_runtime_consumption_binding() -> None:
     assert "runtime_lane_boundary_invalid" in proof["failures"]
 
 
+def test_production_proof_reports_exact_immutable_proposal_identity_drift() -> None:
+    state = _production_state()
+    state["immutable_artifact"]["prompt_identity"][
+        "selected_prompt_id"
+    ] = "forged-prompt"
+    state["immutable_artifact"]["model_output_identity"][
+        "runtime_output_id"
+    ] = "forged-output"
+
+    proof = derive_production_proof(state, expected_source_head=SOURCE_HEAD)
+
+    assert proof["terminal_proof_eligible"] is False
+    assert "immutable_artifact_proposal_identity_mismatch" in proof["failures"]
+    assert "immutable_artifact_prompt_id_mismatch" in proof["failures"]
+    assert (
+        "immutable_artifact_model_output_runtime_output_id_mismatch"
+        in proof["failures"]
+    )
+
+
 def test_production_proof_revalidates_participant_result_and_record_hashes() -> None:
     state = _production_state()
     reviewer = next(

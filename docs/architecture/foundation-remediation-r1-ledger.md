@@ -337,6 +337,20 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   identify the failed proof predicate and no terminal claim is made. Regression
   observations: long-running/API suite `73/73`, coding proof `9/9`, proving `17/17`,
   secret scan valid, static authority valid, and `git diff --check` clean.
+- At source `ed4c6fd677cde33d50c95a48452f9aee991cd7d1`, the bounded
+  diagnostic path succeeded and identified the sole derived-proof failure as
+  `immutable_artifact_proposal_identity_mismatch`. The run again crossed the real
+  model, preview, approval, apply, participant, and verification boundaries; clean
+  teardown removed the fixture and temporary authority and published no receipt.
+- That aggregate proof predicate compared plugin identity, two prompt bindings, two
+  context bindings, and six model-output bindings but did not identify which field
+  drifted. Production-proof derivation now emits a specific bounded reason for every
+  mismatched component while retaining the aggregate reason for compatibility. The
+  new regression independently corrupts prompt ID and runtime output ID and requires
+  both exact reasons. No comparison is relaxed and the next clean lifecycle must
+  still establish an empty failure list. Regression observations: proof/orchestrator
+  matrix `28/28`, proving `17/17`, lifecycle `25/25`, secret scan valid, static
+  authority valid, and `git diff --check` clean.
 
 ## Broad-suite diagnostic attribution
 
