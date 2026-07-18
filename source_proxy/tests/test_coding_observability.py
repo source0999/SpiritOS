@@ -13,7 +13,7 @@ def _persisted_task() -> dict[str, object]:
             "status": "completed",
             "ast_snapshot": {
                 "coding_orchestrator": {
-                    "schema_version": "coding-orchestrator/v1",
+                    "schema_version": "coding-orchestrator/v2",
                     "run_id": "coding-run-1",
                     "summary": "canonical coding run completed through final evidence",
                     "lane_states": {
@@ -56,6 +56,23 @@ def test_observability_reports_missing_or_unbound_facts_without_success_claim(mo
 
     assert result["verdict"] == "DEGRADED: coding_authority_lane_binding_invalid"
     assert result["authority"]["lane_binding_valid"] is False
+
+
+def test_observability_rejects_legacy_orchestrator_state(monkeypatch) -> None:
+    payload = _persisted_task()
+    task = payload["task"]
+    assert isinstance(task, dict)
+    snapshot = task["ast_snapshot"]
+    assert isinstance(snapshot, dict)
+    orchestrator = snapshot["coding_orchestrator"]
+    assert isinstance(orchestrator, dict)
+    orchestrator["schema_version"] = "coding-orchestrator/v1"
+    monkeypatch.setattr(observability, "get_long_running_task_snapshot", lambda _task_id: payload)
+
+    result = observability.build_coding_shell_observability("task-1")
+
+    assert result["verdict"] == "PENDING: coding_orchestrator_state_not_recorded"
+    assert result["orchestrator"]["recorded"] is False
 
 
 def test_observability_endpoint_is_read_only_surface(monkeypatch) -> None:

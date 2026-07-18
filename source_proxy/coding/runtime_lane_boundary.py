@@ -165,6 +165,173 @@ class RuntimeLaneBoundary:
         self._consumptions: dict[str, RuntimeLaneConsumptionRecord] = {}
         self._lock = RLock()
 
+    @classmethod
+    def from_payloads(
+        cls,
+        *,
+        outputs: Iterable[Mapping[str, Any]] = (),
+        acknowledgements: Iterable[Mapping[str, Any]] = (),
+        consumptions: Iterable[Mapping[str, Any]] = (),
+    ) -> "RuntimeLaneBoundary":
+        """Rehydrate only records that still satisfy every canonical binding."""
+
+        boundary = cls()
+        for payload in outputs:
+            boundary.restore_output(payload)
+        for payload in acknowledgements:
+            boundary.restore_acknowledgement(payload)
+        for payload in consumptions:
+            boundary.restore_consumption(payload)
+        return boundary
+
+    def restore_output(self, payload: Mapping[str, Any]) -> RuntimeLaneOutputRecord:
+        normalized = self._record_mapping(payload, "coding_lane_output_record_invalid")
+        if normalized.get("schema_version") != OUTPUT_RECORD_VERSION:
+            raise RuntimeLaneBoundaryError("coding_lane_output_record_schema_invalid")
+        lane_id = self._required_text(normalized.get("lane_id"), "coding_lane_missing")
+        contract = self._contract(lane_id)
+        contract_version = self._required_text(
+            normalized.get("contract_version"), "coding_lane_contract_version_missing"
+        )
+        if contract_version != contract["contract_version"]:
+            raise RuntimeLaneBoundaryError("coding_lane_output_record_contract_mismatch")
+        producer_invocation_id = self._required_text(
+            normalized.get("producer_invocation_id"),
+            "coding_lane_producer_invocation_id_missing",
+        )
+        output_id = self._required_text(normalized.get("output_id"), "coding_lane_output_id_missing")
+        issued_at = self._required_text(normalized.get("issued_at"), "coding_lane_output_issued_at_missing")
+        output_payload, payload_json = self._validate_payload(
+            lane_id=lane_id,
+            schema_name="output_schema",
+            payload=normalized.get("payload"),
+            malformed_reason="malformed_coding_lane_output",
+        )
+        artifact_hash = runtime_lane_artifact_hash(output_payload)
+        if normalized.get("artifact_hash") != artifact_hash:
+            raise RuntimeLaneBoundaryError("coding_lane_output_record_artifact_hash_mismatch")
+        record = RuntimeLaneOutputRecord(
+            schema_version=OUTPUT_RECORD_VERSION,
+            output_id=output_id,
+            lane_id=lane_id,
+            contract_version=contract_version,
+            producer_invocation_id=producer_invocation_id,
+            artifact_hash=artifact_hash,
+            issued_at=issued_at,
+            _payload_json=payload_json,
+        )
+        with self._lock:
+            if output_id in self._outputs:
+                raise RuntimeLaneBoundaryError("coding_lane_output_record_duplicate")
+            self._outputs[output_id] = record
+        return record
+
+    def restore_acknowledgement(
+        self, payload: Mapping[str, Any]
+    ) -> RuntimeLaneAcknowledgementRecord:
+        normalized = self._record_mapping(
+            payload, "coding_lane_acknowledgement_record_invalid"
+        )
+        if normalized.get("schema_version") != ACKNOWLEDGEMENT_RECORD_VERSION:
+            raise RuntimeLaneBoundaryError("coding_lane_acknowledgement_record_schema_invalid")
+        output = self._require_output(str(normalized.get("output_id") or ""))
+        contract = self._contract(output.lane_id)
+        consumer_version = self._required_text(
+            normalized.get("consumer_version"), "coding_lane_consumer_version_missing"
+        )
+        if consumer_version not in contract["compatible_consumer_versions"]:
+            raise RuntimeLaneBoundaryError("coding_lane_acknowledgement_record_consumer_mismatch")
+        consumer_invocation_id = self._required_text(
+            normalized.get("consumer_invocation_id"),
+            "coding_lane_consumer_invocation_id_missing",
+        )
+        if consumer_invocation_id == output.producer_invocation_id:
+            raise RuntimeLaneBoundaryError("coding_lane_consumer_invocation_not_distinct")
+        if any(
+            normalized.get(field) != expected
+            for field, expected in (
+                ("lane_id", output.lane_id),
+                ("contract_version", output.contract_version),
+                ("producer_invocation_id", output.producer_invocation_id),
+                ("artifact_hash", output.artifact_hash),
+            )
+        ):
+            raise RuntimeLaneBoundaryError("coding_lane_acknowledgement_binding_mismatch")
+        _, payload_json = self._validate_payload(
+            lane_id=output.lane_id,
+            schema_name="acknowledgement_schema",
+            payload=normalized.get("payload"),
+            malformed_reason="malformed_coding_lane_acknowledgement",
+        )
+        acknowledgement_id = self._required_text(
+            normalized.get("acknowledgement_id"),
+            "coding_lane_acknowledgement_id_missing",
+        )
+        record = RuntimeLaneAcknowledgementRecord(
+            schema_version=ACKNOWLEDGEMENT_RECORD_VERSION,
+            acknowledgement_id=acknowledgement_id,
+            output_id=output.output_id,
+            lane_id=output.lane_id,
+            contract_version=output.contract_version,
+            producer_invocation_id=output.producer_invocation_id,
+            artifact_hash=output.artifact_hash,
+            consumer_version=consumer_version,
+            consumer_invocation_id=consumer_invocation_id,
+            acknowledged_at=self._required_text(
+                normalized.get("acknowledged_at"),
+                "coding_lane_acknowledgement_time_missing",
+            ),
+            _payload_json=payload_json,
+        )
+        with self._lock:
+            if acknowledgement_id in self._acknowledgements:
+                raise RuntimeLaneBoundaryError("coding_lane_acknowledgement_record_duplicate")
+            self._acknowledgements[acknowledgement_id] = record
+        return record
+
+    def restore_consumption(
+        self, payload: Mapping[str, Any]
+    ) -> RuntimeLaneConsumptionRecord:
+        normalized = self._record_mapping(payload, "coding_lane_consumption_record_invalid")
+        if normalized.get("schema_version") != CONSUMPTION_RECORD_VERSION:
+            raise RuntimeLaneBoundaryError("coding_lane_consumption_record_schema_invalid")
+        output = self._require_output(str(normalized.get("output_id") or ""))
+        acknowledgement = self._require_acknowledgement(
+            str(normalized.get("acknowledgement_id") or "")
+        )
+        expected = {
+            "lane_id": output.lane_id,
+            "contract_version": output.contract_version,
+            "artifact_hash": output.artifact_hash,
+            "consumer_version": acknowledgement.consumer_version,
+            "consumer_invocation_id": acknowledgement.consumer_invocation_id,
+        }
+        if acknowledgement.output_id != output.output_id or any(
+            normalized.get(field) != value for field, value in expected.items()
+        ):
+            raise RuntimeLaneBoundaryError("coding_lane_consumption_binding_mismatch")
+        record = RuntimeLaneConsumptionRecord(
+            schema_version=CONSUMPTION_RECORD_VERSION,
+            consumption_id=self._required_text(
+                normalized.get("consumption_id"), "coding_lane_consumption_id_missing"
+            ),
+            output_id=output.output_id,
+            acknowledgement_id=acknowledgement.acknowledgement_id,
+            lane_id=output.lane_id,
+            contract_version=output.contract_version,
+            artifact_hash=output.artifact_hash,
+            consumer_version=acknowledgement.consumer_version,
+            consumer_invocation_id=acknowledgement.consumer_invocation_id,
+            consumed_at=self._required_text(
+                normalized.get("consumed_at"), "coding_lane_consumed_at_missing"
+            ),
+        )
+        with self._lock:
+            if output.output_id in self._consumptions:
+                raise RuntimeLaneBoundaryError("coding_lane_consumption_record_duplicate")
+            self._consumptions[output.output_id] = record
+        return record
+
     def issue_output(
         self,
         *,
@@ -401,6 +568,15 @@ class RuntimeLaneBoundary:
         if not isinstance(value, str) or not value.strip():
             raise RuntimeLaneBoundaryError(reason_code)
         return value.strip()
+
+    @staticmethod
+    def _record_mapping(payload: Mapping[str, Any], reason_code: str) -> dict[str, Any]:
+        if not isinstance(payload, Mapping):
+            raise RuntimeLaneBoundaryError(reason_code)
+        try:
+            return json.loads(_canonical_json(dict(payload)))
+        except (TypeError, ValueError) as error:
+            raise RuntimeLaneBoundaryError(reason_code) from error
 
 
 def runtime_lane_artifact_hash(payload: Mapping[str, Any]) -> str:

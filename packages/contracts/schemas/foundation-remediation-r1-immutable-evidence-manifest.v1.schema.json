@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiritos.local/schemas/foundation-remediation-r1-immutable-evidence-manifest.v1.schema.json",
+  "title": "SpiritOS Foundation Remediation R1 immutable evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "remediation_id",
+    "source_commit",
+    "tag_name",
+    "bundle_name",
+    "restoration_instructions",
+    "protected_heads_report",
+    "receipt",
+    "production_proving_receipt",
+    "lifecycle_receipt",
+    "artifacts",
+    "evidence_hash",
+    "generated_at"
+  ],
+  "properties": {
+    "schema": {
+      "const": "spiritos-foundation-remediation-r1-immutable-evidence-manifest/v1"
+    },
+    "remediation_id": {
+      "const": "spiritos-foundation-remediation-r1"
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "tag_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "bundle_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "restoration_instructions": {
+      "$ref": "#/$defs/pathHash"
+    },
+    "protected_heads_report": {
+      "$ref": "#/$defs/pathHash"
+    },
+    "receipt": {
+      "$ref": "#/$defs/pathHash"
+    },
+    "production_proving_receipt": {
+      "$ref": "#/$defs/pathHash"
+    },
+    "lifecycle_receipt": {
+      "$ref": "#/$defs/pathHash"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "evidence_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "pathHash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claim_ceiling": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

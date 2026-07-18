@@ -43,11 +43,20 @@ def _selection(*, proposal_id: str, consumer: str, target: str) -> tuple[dict[st
     if not target or target.strip() != target:
         raise CartographerSelectionError("cartographer_selection_target_invalid")
     proposal = _proposal(proposal_id)
+    if proposal.persisted is not True:
+        raise CartographerSelectionError("cartographer_selection_proposal_not_persisted")
+    if proposal.status not in {"pending_review", "approved"}:
+        raise CartographerSelectionError("cartographer_selection_proposal_not_actionable")
+    if proposal.warnings:
+        raise CartographerSelectionError("cartographer_selection_proposal_malformed")
+    proposed_files = list(proposal.proposed_files)
+    if target not in proposed_files:
+        raise CartographerSelectionError("cartographer_selection_target_not_proposed")
     content = {
         "approved_diff": proposal.approved_diff or proposal.diff_preview or "",
         "proposal_fingerprint": proposal.fingerprint or "",
         "proposal_id": proposal.proposal_id,
-        "proposed_files": list(proposal.proposed_files),
+        "proposed_files": proposed_files,
         "target": target,
     }
     context = canonical_json({"consumer": consumer, "proposal_id": proposal.proposal_id})
@@ -101,21 +110,92 @@ def consume_cartographer_selection(*, approval_id: str, proposal_id: str, consum
     return {"approval_id": approval_id, "generation": int(approval["generation"]), "binding": binding}
 
 
-def finalize_cartographer_selection(*, consumed: dict[str, Any], proposal_id: str, consumer: str, target: str) -> dict[str, Any]:
+def finalize_cartographer_selection(
+    *,
+    consumed: dict[str, Any],
+    proposal_id: str,
+    consumer: str,
+    target: str,
+    transfer: dict[str, Any],
+    downstream_acknowledgement: dict[str, Any],
+) -> dict[str, Any]:
+    """Finalize only an exact persisted handoff consumed by the real downstream run."""
+
     approval_id = str(consumed["approval_id"])
     generation = int(consumed["generation"])
-    acknowledgements = {
-        name: {"approval_id": approval_id, "generation": generation}
-        for name in (CONSUMER, "cartographer-reviewer", "cartographer-verifier", "evidence-recorder")
+    expected_transfer = {
+        "schema_version": "cartographer.coding-transfer/v1",
+        "proposal_id": proposal_id,
+        "selection_id": approval_id,
+        "selection_approval_id": approval_id,
+        "selection_generation": generation,
+        "consumer": consumer,
+        "target": target,
+        "task_id": transfer.get("task_id"),
+        "run_id": transfer.get("run_id"),
+        "transfer_event_id": transfer.get("transfer_event_id"),
+        "downstream_consumer_invocation_id": transfer.get(
+            "downstream_consumer_invocation_id"
+        ),
+        "provenance": {
+            "content_hash": consumed["binding"].get("content_hash"),
+            "context": consumed["binding"].get("context"),
+            "preview_id": consumed["binding"].get("preview"),
+            "source_head": consumed["binding"].get("source_head"),
+        },
     }
+    if transfer != expected_transfer:
+        raise CartographerSelectionError("cartographer_transfer_binding_mismatch")
+    expected_acknowledgement = {
+        "schema_version": "cartographer.downstream-acknowledgement/v2",
+        "acknowledgement_id": downstream_acknowledgement.get("acknowledgement_id"),
+        "transfer_event_id": transfer["transfer_event_id"],
+        "consumer_invocation_id": transfer["downstream_consumer_invocation_id"],
+        "consumer_output_id": downstream_acknowledgement.get("consumer_output_id"),
+        "consumer_output_sha256": downstream_acknowledgement.get(
+            "consumer_output_sha256"
+        ),
+        "consumer_artifact_sha256": downstream_acknowledgement.get(
+            "consumer_artifact_sha256"
+        ),
+        "consumer_completed_at": downstream_acknowledgement.get(
+            "consumer_completed_at"
+        ),
+        "consumer_passed": True,
+        "proposal_id": proposal_id,
+        "selection_id": approval_id,
+        "task_id": transfer["task_id"],
+        "run_id": transfer["run_id"],
+        "consumed": True,
+    }
+    required_downstream_fields = (
+        "acknowledgement_id",
+        "consumer_output_id",
+        "consumer_output_sha256",
+        "consumer_artifact_sha256",
+        "consumer_completed_at",
+    )
+    if downstream_acknowledgement != expected_acknowledgement or any(
+        not str(downstream_acknowledgement.get(field) or "").strip()
+        for field in required_downstream_fields
+    ):
+        raise CartographerSelectionError("cartographer_downstream_acknowledgement_mismatch")
     binding = dict(consumed["binding"])
     binding.update({
         "result_id": f"cartographer-transfer-{approval_id[-12:]}", "status": "succeeded",
         "source_head": current_head(),
         "evidence": canonical_json({
-            "redacted": True, "proposal_id": proposal_id, "consumer": consumer,
-            "target": target, "acknowledgements": acknowledgements,
+            "redacted": True,
+            "proposal_id": proposal_id,
+            "consumer": consumer,
+            "target": target,
+            "transfer": transfer,
+            "downstream_acknowledgement": downstream_acknowledgement,
         }),
     })
     receipt = _call("finalize", binding)
-    return {"receipt": receipt, "acknowledgements": acknowledgements}
+    return {
+        "receipt": receipt,
+        "transfer": transfer,
+        "downstream_acknowledgement": downstream_acknowledgement,
+    }

@@ -81,8 +81,6 @@ def _target_plugin_packet(prompt_id: str) -> dict[str, object]:
         "target_plugin": {
             "schema_version": "spiritos-target-plugin/v1",
             "id": "lumacart",
-            "repository_id": "spiritos-campaign-1",
-            "worktree_id": "spiritos-campaign-1-20260712",
             "fixture_root": "tests/ui-agent-trials/fixtures/dummy-product-site/",
             "selected_prompt_id": prompt_id,
             "selected_context_id": contexts[prompt_id],
@@ -209,7 +207,7 @@ def _issue_coding_approval(*, task_id: str, action: str, approved_diff: str, tar
             {
                 "preview_id": preview["preview_id"],
                 "expected_generation": str(preview["generation"]),
-                "consumer": "coding-executor",
+                "consumer": "coding-executor:coder",
                 "operation": "coding_execution",
                 "expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
             }
@@ -3037,7 +3035,10 @@ class CodingRegressionPackTests(unittest.TestCase):
         with (
             mock.patch.dict(os.environ, {"SOURCE_PROXY_FIP4_QWEN_CODER_ENABLED": "1"}),
             mock.patch("source_proxy.api.decision._run_fip4_qwen_coder") as fip4_mock,
-            mock.patch("source_proxy.api.decision.build_fip3_model_lane_packet") as fip3_mock,
+            mock.patch(
+                "source_proxy.api.decision.build_fip3_model_lane_packet",
+                return_value={},
+            ) as fip3_mock,
             mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"coder"}),
             mock.patch(
                 "source_proxy.tasks.long_running._call_coder_llm",
@@ -3639,7 +3640,17 @@ export default products;
         self.assertIn("git apply --check", payload["checks_run"])
         self.assertIn("src/products.js", payload["proposed_diff"])
         self.assertNotEqual(payload["reason_code"], "coder_replacement_content_validation_failed")
-        self.assertEqual(payload["task_spec"]["allowed_files"], ["tests/ui-agent-trials/fixtures/dummy-product-site/**"])
+        self.assertEqual(
+            payload["task_spec"]["allowed_files"],
+            [
+                "tests/ui-agent-trials/fixtures/dummy-product-site/README.md",
+                "tests/ui-agent-trials/fixtures/dummy-product-site/package.json",
+                "tests/ui-agent-trials/fixtures/dummy-product-site/index.html",
+                "tests/ui-agent-trials/fixtures/dummy-product-site/src/main.js",
+                "tests/ui-agent-trials/fixtures/dummy-product-site/src/products.js",
+                "tests/ui-agent-trials/fixtures/dummy-product-site/src/styles.css",
+            ],
+        )
         self.assertEqual(payload["diagnostics_summary"]["structured_output_mode"], "json_create_file_bundle")
         self.assertEqual(payload["diagnostics_summary"]["content_validation"]["ok"], True)
         self.assertEqual(payload["diagnostics_summary"]["structured_honesty_gate"]["status"], "passed")
@@ -4179,8 +4190,8 @@ export default products;
         with (
             mock.patch.dict(os.environ, {"SOURCE_PROXY_CODER_MODEL_ALIAS": "coder"}),
             mock.patch("source_proxy.tasks.long_running.available_model_aliases", return_value={"openai"}),
-            mock.patch("source_proxy.tasks.long_running.route_provider_for_alias", return_value="openai"),
-            mock.patch("source_proxy.tasks.long_running.route_model_for_alias", return_value="gpt-4o-mini"),
+            mock.patch("source_proxy.routing.litellm_router.route_provider_for_alias", return_value="openai"),
+            mock.patch("source_proxy.routing.litellm_router.route_model_for_alias", return_value="gpt-4o-mini"),
             mock.patch(
                 "source_proxy.tasks.long_running._call_coder_llm",
                 return_value=json.dumps(
@@ -5118,10 +5129,18 @@ export default products;
             verification_note="Docs-only change verified.",
         )
 
-        self.assertEqual(verified["task"]["status"], "completed")
+        self.assertEqual(
+            verified["task"]["status"],
+            "verification_passed_pending_participants",
+        )
+        self.assertNotEqual(verified["task"]["status"], "completed")
         self.assertEqual(
             verified["task"]["post_apply_verification"]["status"],
             "verified",
+        )
+        self.assertEqual(
+            verified["task"]["post_apply_verification"]["commit_blockers"],
+            ["independent_participants_pending"],
         )
         self.assertIn(DOC_LITERAL, (self.root / DOC_TARGET).read_text(encoding="utf-8"))
 

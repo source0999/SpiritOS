@@ -28,6 +28,15 @@ and self-declared `GO` fields are not accepted terminal evidence.
 | `r1-cartographer-authority-checkpoint` | full Cartographer API plus proposal-review authority suites | 263 + 7 pass | production proposal review authority and removed client-authority routes | checkpoint observation; terminal manifest pending |
 | `r1-design-security-checkpoint` | focused Design authority/writeback suites | 50 pass | existing Design writeback security only | checkpoint observation; terminal manifest pending |
 | `r1-spiritflix-authority-checkpoint` | broad SpiritFlix route/transaction suite plus Python authority | 419 + 4 pass | SpiritFlix administrative mutation authority only | checkpoint observation; terminal manifest pending |
+| `r1-production-orchestrator-checkpoint` | production route/orchestrator/proof/participant/recovery/target/runtime suites | 120 pass; long-running 71 pass; coding regression 133 pass | production ownership and fail-closed proof semantics only | checkpoint observation; clean proving run and terminal manifest pending |
+| `r1-decision-target-orchestrator-checkpoint` | real FastAPI task plus exact LumaCart decision route regression | pass | production importer, exact context/runtime consumption, and direct-bypass rejection only | checkpoint observation; real model/apply proof pending |
+| `r1-backend-state-checkpoint` | Source Proxy route tests and Next projection policy tests | pass | single decision-bearing backend owner only | checkpoint observation; terminal manifest pending |
+| `r1-immutable-evidence-implementation` | evidence generator/validator/test-profile/secret-scan regression suites | pass | fail-closed source-binding and provenance semantics only | checkpoint observation; terminal artifacts pending |
+| `r1-approval-reconciliation-checkpoint` | injected authority-response, receipt-persistence, and local-commit failures | pass | exact idempotent approval finalization and resumable local commit only | checkpoint observation; clean proving run and terminal manifest pending |
+| `r1-participant-ownership-checkpoint` | subprocess participant/output/acknowledgement and approval-evidence tamper suites | 42 pass | process-separated output ownership and downstream acknowledgement semantics only | checkpoint observation; clean proving run and terminal manifest pending |
+| `r1-terminal-projection-checkpoint` | Source Proxy terminal-proof and Next canonical proof-hash projection suites | pass | backend-owned terminal truth and read-only projection only | checkpoint observation; terminal manifest pending |
+| `r1-proving-harness-regression` | inner/outer harness adversarial suites | 16 + 22 pass | harness fail-closed semantics under the stated trusted-prehashed-code claim ceiling only | checkpoint observation; real HTTP proving receipts pending |
+| `r1-terminal-crossbinding-regression` | receipt/manifest cross-binding adversarial suite | 13 pass | standalone inner/outer receipt provenance and immutable-manifest inclusion only | checkpoint observation; real terminal artifacts pending |
 
 ## Required terminal evidence
 

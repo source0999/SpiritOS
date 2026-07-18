@@ -7,8 +7,10 @@ import {
   consumeDesignWritebackApproval,
   finalizeDesignWritebackApproval,
   hashDesignParticipantOutput,
+  acknowledgeDesignParticipantOutput,
   loadDesignWritebackApproval,
   type DesignParticipantRecord,
+  type DesignParticipantProducerOutput,
 } from "./design-approval-authority";
 import {
   rollbackApprovedDesignMemoryNote,
@@ -77,7 +79,11 @@ export async function runDesignStudioApprovedWriteback(
     return rejection(["approval_artifact_binding_mismatch"], false, artifact);
   }
 
-  const reviewer = invokeDesignReviewer(artifact);
+  const reviewerOutput = invokeDesignReviewer(artifact);
+  const reviewer = acknowledgeDesignParticipantOutput(
+    reviewerOutput,
+    `design-approval-consumer-${randomUUID()}`,
+  );
   if (reviewer.status !== "accepted") {
     return rejection(["design_reviewer_rejected"], false, artifact, [reviewer]);
   }
@@ -90,8 +96,16 @@ export async function runDesignStudioApprovedWriteback(
   const writeResult = writeApprovedDesignMemoryNote(request.payload, request.gate, {
     vaultRoot: SERVER_OWNED_VAULT_ROOT,
   });
-  const verifier = invokeDesignVerifier(artifact, writeResult);
-  const evidenceRecorder = invokeDesignEvidenceRecorder(artifact, reviewer, verifier);
+  const verifierOutput = invokeDesignVerifier(artifact, writeResult);
+  const evidenceOutput = invokeDesignEvidenceRecorder(artifact, reviewer, verifierOutput);
+  const verifier = acknowledgeDesignParticipantOutput(
+    verifierOutput,
+    evidenceOutput.invocation_id,
+  );
+  const evidenceRecorder = acknowledgeDesignParticipantOutput(
+    evidenceOutput,
+    `design-authority-finalizer-${randomUUID()}`,
+  );
   const participantRecords = [reviewer, verifier, evidenceRecorder];
 
   if (writeResult.status !== "written" || verifier.status !== "verified") {
@@ -178,7 +192,7 @@ export async function runDesignStudioApprovedWriteback(
   };
 }
 
-export function invokeDesignReviewer(artifact: DesignWritebackArtifact): DesignParticipantRecord {
+export function invokeDesignReviewer(artifact: DesignWritebackArtifact): DesignParticipantProducerOutput {
   const checks = [
     "immutable_artifact_hash_valid",
     "human_acceptance_bound",
@@ -198,7 +212,7 @@ export function invokeDesignReviewer(artifact: DesignWritebackArtifact): DesignP
 export function invokeDesignVerifier(
   artifact: DesignWritebackArtifact,
   result: ApprovedDesignMemoryWriteResult,
-): DesignParticipantRecord {
+): DesignParticipantProducerOutput {
   const checks = [
     "write_receipt_verified",
     "result_content_hash_matches_bound_artifact",
@@ -232,8 +246,8 @@ export function invokeDesignVerifier(
 export function invokeDesignEvidenceRecorder(
   artifact: DesignWritebackArtifact,
   reviewer: DesignParticipantRecord,
-  verifier: DesignParticipantRecord,
-): DesignParticipantRecord {
+  verifier: DesignParticipantProducerOutput,
+): DesignParticipantProducerOutput {
   const checks = [
     "reviewer_output_distinct",
     "verifier_output_distinct",
@@ -247,17 +261,20 @@ export function invokeDesignEvidenceRecorder(
     reviewer.output_id !== verifier.output_id &&
     reviewer.artifact_hash === artifact.artifact_hash &&
     verifier.artifact_hash === artifact.artifact_hash &&
+    reviewer.acknowledgement.consumed === true &&
+    reviewer.acknowledgement.output_id === reviewer.output_id &&
+    reviewer.acknowledgement.output_hash === reviewer.output_hash &&
     reviewer.status === "accepted" &&
     verifier.status === "verified";
   return participantRecord("evidence-recorder", artifact, recorded ? "recorded" : "rejected", checks);
 }
 
 function participantRecord(
-  participant: DesignParticipantRecord["participant"],
+  participant: DesignParticipantProducerOutput["participant"],
   artifact: DesignWritebackArtifact,
-  status: DesignParticipantRecord["status"],
+  status: DesignParticipantProducerOutput["status"],
   checks: string[],
-): DesignParticipantRecord {
+): DesignParticipantProducerOutput {
   const invocationId = `design-invocation-${randomUUID()}`;
   const outputId = `design-output-${randomUUID()}`;
   const invokedAt = new Date().toISOString();

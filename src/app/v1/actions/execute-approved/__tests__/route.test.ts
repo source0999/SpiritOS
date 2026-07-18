@@ -696,6 +696,8 @@ describe("execute-approved route", () => {
         trial_prompt_id: "coder-003-render-product-cards",
         trial_prompt_text: "render product cards",
         trial_suite_id: "suite-recovery-proof",
+        context_hash: "c".repeat(64),
+        runtime_output_id: "coding-output-coder-003",
       }),
     );
 

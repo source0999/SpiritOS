@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from types import ModuleType
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALUATOR = Path(__file__).with_name("foundation-remediation-r1-completion.py")
+AUTHORITY_VALIDATOR = Path(__file__).with_name("validate-foundation-remediation-r1-authority.py")
 
 
 def load_evaluator() -> ModuleType:
@@ -25,7 +29,19 @@ def load_evaluator() -> ModuleType:
     return module
 
 
+def load_authority_validator() -> ModuleType:
+    spec = importlib.util.spec_from_file_location(
+        "foundation_remediation_r1_authority", AUTHORITY_VALIDATOR
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("authority validator could not be imported")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 EVALUATOR_MODULE = load_evaluator()
+AUTHORITY_MODULE = load_authority_validator()
 
 
 def valid_terminal_state() -> dict:
@@ -59,6 +75,96 @@ def valid_terminal_state() -> dict:
 
 
 class FoundationRemediationCompletionTests(unittest.TestCase):
+    def test_authority_validator_detects_direct_decision_task_advance_bypass(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            path = root / "source_proxy/api/decision.py"
+            path.parent.mkdir(parents=True)
+            source = (ROOT / "source_proxy/api/decision.py").read_text(encoding="utf-8")
+            source = source.replace(
+                "get_coding_orchestrator().advance(task_id)",
+                "advance_long_running_task(task_id)",
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+            failures: list[str] = []
+            AUTHORITY_MODULE.production_prompt_packet_authority_failures(root, failures)
+        self.assertIn("production_decision_direct_task_advance_bypass", failures)
+
+    def test_authority_validator_detects_presynthesized_cartographer_participant(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            path = root / "source_proxy/cartographer/proposal_review_authority.py"
+            path.parent.mkdir(parents=True)
+            source = (ROOT / "source_proxy/cartographer/proposal_review_authority.py").read_text(
+                encoding="utf-8"
+            )
+            source = source.replace(
+                '"participant_requirements": participant_requirements,\n        "result_payload": result_payload,',
+                '"participant_requirements": participant_requirements,\n        "invocation_id": "forged-preview-invocation",\n        "result_payload": result_payload,',
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+            failures: list[str] = []
+            AUTHORITY_MODULE.cartographer_proposal_review_invariant_failures(root, failures)
+        self.assertTrue(
+            any(item.startswith("cartographer_review_plan_presynthesizes_runtime_state") for item in failures),
+            failures,
+        )
+
+    def test_authority_validator_detects_cartographer_finalization_before_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            authority = root / "source_proxy/cartographer/cartographer_selection_authority.py"
+            authority.parent.mkdir(parents=True)
+            authority.write_text(
+                "\n".join(
+                    (
+                        "proposal.persisted is not True",
+                        "proposal.status not in",
+                        "proposal.warnings",
+                        "target not in proposed_files",
+                        "cartographer_selection_target_not_proposed",
+                        "cartographer.downstream-acknowledgement/v2",
+                        "consumer_output_id consumer_output_sha256 consumer_artifact_sha256 consumer_completed_at",
+                    )
+                ),
+                encoding="utf-8",
+            )
+            orchestrator = root / "source_proxy/coding/orchestrator.py"
+            orchestrator.parent.mkdir(parents=True)
+            orchestrator.write_text(
+                "class Sample:\n"
+                "    def propose_target_plugin(self):\n"
+                "        self._finalize_cartographer_transfer_after_invocation()\n"
+                "        execute_target_plugin_command()\n"
+                "    def execute_approved(self):\n"
+                "        self._call_executor()\n",
+                encoding="utf-8",
+            )
+            failures: list[str] = []
+            AUTHORITY_MODULE.cartographer_selection_invariant_failures(root, failures)
+        self.assertIn(
+            "cartographer_selection_finalized_before_downstream_output:propose_target_plugin",
+            failures,
+        )
+
+    def test_authority_validator_detects_missing_terminal_projection_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            next_path = root / "src/lib/coding/durable-run-store.ts"
+            task_path = root / "source_proxy/tasks/long_running.py"
+            next_path.parent.mkdir(parents=True)
+            task_path.parent.mkdir(parents=True)
+            next_path.write_text("export const status = 'completed';\n", encoding="utf-8")
+            task_path.write_text("TRUTH = 'GO'\n", encoding="utf-8")
+            failures: list[str] = []
+            AUTHORITY_MODULE.terminal_projection_invariant_failures(root, failures)
+        self.assertIn(
+            "next_terminal_projection_invariant_missing:terminal_proof_eligible",
+            failures,
+        )
+
     def test_terminal_machine_state_requires_every_invariant(self) -> None:
         complete, failures = EVALUATOR_MODULE.evaluate_terminal_state(valid_terminal_state())
         self.assertTrue(complete, failures)
@@ -81,6 +187,29 @@ class FoundationRemediationCompletionTests(unittest.TestCase):
         failures = EVALUATOR_MODULE.terminal_profile_execution_failures(ROOT, valid_terminal_state())
         self.assertIn("mandatory_profile_execution_missing:continuity", failures)
         self.assertIn("mandatory_profile_execution_evidence_incomplete", failures)
+
+    def test_profile_execution_failures_are_a_hard_cli_terminal_blocker(self) -> None:
+        output = io.StringIO()
+        with (
+            mock.patch.object(EVALUATOR_MODULE, "run_validators", return_value=(True, [])),
+            mock.patch.object(
+                EVALUATOR_MODULE,
+                "load_state",
+                return_value=(valid_terminal_state(), None),
+            ),
+            mock.patch.object(EVALUATOR_MODULE, "evaluate_terminal_state", return_value=(True, [])),
+            mock.patch.object(
+                EVALUATOR_MODULE,
+                "terminal_profile_execution_failures",
+                return_value=["mandatory_profile_execution_evidence_incomplete"],
+            ),
+            mock.patch.object(sys, "argv", [str(EVALUATOR)]),
+            redirect_stdout(output),
+        ):
+            returncode = EVALUATOR_MODULE.main()
+        self.assertEqual(returncode, 1)
+        self.assertIn("mandatory_profile_execution_evidence_incomplete", output.getvalue())
+        self.assertNotIn(EVALUATOR_MODULE.TERMINAL_VERDICT + "\n", output.getvalue())
 
     def test_cli_executes_all_validators_and_rejects_preterminal_state(self) -> None:
         state = valid_terminal_state()

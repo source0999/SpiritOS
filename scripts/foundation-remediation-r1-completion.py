@@ -294,7 +294,7 @@ def main() -> int:
     terminal, state_failures = evaluate_terminal_state(state)
     profile_execution_failures = terminal_profile_execution_failures(root, state)
     failures = [*validator_failures, *state_failures, *profile_execution_failures]
-    if validators_ok and terminal:
+    if validators_ok and terminal and not profile_execution_failures:
         print(TERMINAL_VERDICT)
         return 0
     print("SPIRITOS_FOUNDATION_REMEDIATION_NOT_COMPLETE " + ",".join(failures))

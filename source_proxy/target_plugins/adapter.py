@@ -1,17 +1,28 @@
-"""Fail-closed target-plugin identity for Campaign 2 coding execution."""
+"""Fail-closed target-plugin identity for portable coding execution."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
-import subprocess
+import hashlib
 from pathlib import Path
 from typing import Any
 
+from source_proxy.approval.runtime_identity import (
+    AuthorityRuntimeIdentityError,
+    resolve_authority_runtime_identity,
+)
+
+from source_proxy.target_plugins.lumacart import (
+    execute_lumacart_prompt,
+    lumacart_command,
+    lumacart_task_spec,
+)
+
 
 TARGET_PLUGIN_SCHEMA_VERSION = "spiritos-target-plugin/v1"
+TARGET_ADAPTER_PROVENANCE_SCHEMA_VERSION = "spiritos-target-adapter-provenance/v1"
 LUMACART_PLUGIN_ID = "lumacart"
-CAMPAIGN_REPOSITORY_ID = "spiritos-campaign-2"
-CAMPAIGN_WORKTREE_ID = "spiritos-campaign-2-20260716"
 FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
 EXECUTION_PROFILE = "coder-10"
 PROMPT_CONTEXTS = {
@@ -31,6 +42,10 @@ PROMPT_CONTEXTS = {
 class TargetPluginResolutionError(ValueError):
     """An untrusted caller tried to select or substitute a target plugin."""
 
+    def __init__(self, reason_code: str):
+        super().__init__(reason_code)
+        self.reason_code = reason_code
+
 
 @dataclass(frozen=True)
 class ResolvedTargetPlugin:
@@ -39,6 +54,8 @@ class ResolvedTargetPlugin:
     repository_id: str
     worktree_id: str
     workspace_root: str
+    branch: str
+    state_namespace: str
     fixture_root: str
     source_head: str
     selected_prompt_id: str
@@ -56,81 +73,35 @@ class ResolvedTargetPlugin:
         return asdict(self)
 
 
-_PROMPT_COMMANDS = {
-    "coder-001-init-dummy-product-site": "create_storefront",
-    "coder-002-add-product-data": "add_product_data",
-    "coder-003-render-product-cards": "render_product_cards",
-}
-
 _COMMON_FORBIDDEN_FILES = [
     "src/app/**",
     "src/components/**",
     "src/lib/**",
     "source_proxy/**",
+    "backend/**",
     "docs/**",
     ".env*",
     "package.json",
     "package-lock.json",
     "pnpm-lock.yaml",
     "yarn.lock",
+    "node_modules/**",
+    ".git/**",
 ]
 
 
 def target_plugin_command(plugin: ResolvedTargetPlugin) -> str | None:
     """Return the only Python implementation command for a resolved plugin prompt."""
-    return _PROMPT_COMMANDS.get(plugin.selected_prompt_id)
+    return lumacart_command(plugin.selected_prompt_id)
 
 
 def target_plugin_task_spec(plugin: ResolvedTargetPlugin) -> dict[str, Any] | None:
     """Target-owned task constraints, including the same evidence identity used by verification."""
-    command = target_plugin_command(plugin)
-    if command == "create_storefront":
-        spec: dict[str, Any] = {
-            "schema_version": 1,
-            "task_type": "create_file_bundle",
-            "target": FIXTURE_ROOT,
-            "allowed_files": [f"{FIXTURE_ROOT}**"],
-            "forbidden_files": _COMMON_FORBIDDEN_FILES,
-            "literal_requirements": ["LumaCart"],
-            "verification": ["git diff --check"],
-            "risk_tier": "low",
-            "source": "target-plugin:lumacart:coder-001",
-        }
-    elif command == "add_product_data":
-        spec = {
-            "schema_version": 1,
-            "task_type": "modify_existing_file",
-            "target": f"{FIXTURE_ROOT}src/products.js",
-            "allowed_files": [f"{FIXTURE_ROOT}src/products.js"],
-            "forbidden_files": _COMMON_FORBIDDEN_FILES,
-            "literal_requirements": [
-                "at least 6 products", "id", "name", "price", "category", "description", "export default products",
-            ],
-            "verification": ["git apply --check", "product data field validation"],
-            "risk_tier": "low",
-            "source": "target-plugin:lumacart:coder-002",
-        }
-    elif command == "render_product_cards":
-        spec = {
-            "schema_version": 1,
-            "task_type": "create_file_bundle",
-            "target": FIXTURE_ROOT,
-            "allowed_files": [
-                f"{FIXTURE_ROOT}index.html", f"{FIXTURE_ROOT}src/main.js", f"{FIXTURE_ROOT}src/styles.css",
-            ],
-            "forbidden_files": [f"{FIXTURE_ROOT}src/products.js", *_COMMON_FORBIDDEN_FILES],
-            "literal_requirements": [
-                '<script type="module" src="src/main.js"></script>', "import products from './products.js';",
-                "product-card", "product.name", "product.category", "product.description", "product.price",
-            ],
-            "verification": ["git apply --check", "prompt3 option-a wiring validation"],
-            "risk_tier": "low",
-            "source": "target-plugin:lumacart:coder-003",
-        }
-    else:
-        return None
-    spec["target_plugin_identity"] = plugin.evidence_identity()
-    return spec
+    return lumacart_task_spec(
+        plugin.selected_prompt_id,
+        forbidden_files=_COMMON_FORBIDDEN_FILES,
+        target_plugin_identity=plugin.evidence_identity(),
+    )
 
 
 def execute_target_plugin_command(
@@ -140,28 +111,232 @@ def execute_target_plugin_command(
     workspace_root: Path,
     canonical_context: dict[str, Any],
     canonical_context_text: str,
+    llm_call: Callable[[str, str], str] | None = None,
+    model_alias: str | None = None,
 ) -> dict[str, Any]:
     """The generic route delegates target-specific execution; it cannot choose a target."""
     from source_proxy.tasks.long_running import (
+        _call_dummy_product_site_llm_with_wall_timeout,
+        _coder_model_alias_configuration_error,
+        _dummy_product_site_create_model_alias,
+        _dummy_product_site_direct_ollama_enabled,
+        _dummy_product_site_model_timeout_seconds,
         propose_dummy_product_site_create_diff,
         propose_dummy_product_site_product_data_diff,
         propose_dummy_product_site_render_cards_diff,
     )
 
     command = target_plugin_command(plugin)
+    selected_alias = model_alias or _dummy_product_site_create_model_alias()
+    configured_transport_kind = (
+        "injected_callback"
+        if llm_call is not None
+        else (
+            "direct_ollama"
+            if _dummy_product_site_direct_ollama_enabled(selected_alias)
+            else "canonical_litellm_router"
+        )
+    )
+    model_calls: list[dict[str, Any]] = []
+
+    def provenance_model_call(prompt: str, alias: str) -> str:
+        call_record: dict[str, Any] = {
+            "call_index": len(model_calls) + 1,
+            "rendered_prompt_sha256": _sha256_utf8(prompt),
+            "raw_response_sha256": None,
+            "raw_response_observed": False,
+            "transport_kind": configured_transport_kind,
+        }
+        model_calls.append(call_record)
+        try:
+            raw_response = (
+                llm_call(prompt, alias)
+                if llm_call is not None
+                else _call_dummy_product_site_llm_with_wall_timeout(
+                    prompt,
+                    alias,
+                    _dummy_product_site_model_timeout_seconds(),
+                )
+            )
+        except Exception as error:  # noqa: BLE001
+            call_record.update(
+                {
+                    "completed": False,
+                    "error_type": type(error).__name__,
+                }
+            )
+            raise
+        raw_response = str(raw_response or "")
+        call_record.update(
+            {
+                "completed": True,
+                "raw_response_observed": True,
+                "raw_response_sha256": _sha256_utf8(raw_response),
+            }
+        )
+        return raw_response
+
+    # Preserve the production fail-closed alias check. An explicitly injected
+    # callback remains usable for tests, but is never canonical proof.
+    alias_error = (
+        None
+        if llm_call is not None
+        else _coder_model_alias_configuration_error(selected_alias)
+    )
+    effective_model_call = provenance_model_call if alias_error is None else None
     kwargs = {
         "task": task,
         "workspace_root": workspace_root,
         "canonical_context": canonical_context,
         "canonical_context_text": canonical_context_text,
+        "llm_call": effective_model_call,
+        "model_alias": selected_alias,
     }
     if command == "create_storefront":
-        return propose_dummy_product_site_create_diff(**kwargs)
-    if command == "add_product_data":
-        return propose_dummy_product_site_product_data_diff(**kwargs)
-    if command == "render_product_cards":
-        return propose_dummy_product_site_render_cards_diff(**kwargs)
-    raise TargetPluginResolutionError("target_plugin_command_unsupported")
+        result = propose_dummy_product_site_create_diff(**kwargs)
+    elif command == "add_product_data":
+        result = propose_dummy_product_site_product_data_diff(**kwargs)
+    elif command == "render_product_cards":
+        result = propose_dummy_product_site_render_cards_diff(**kwargs)
+    elif command is not None:
+        result = execute_lumacart_prompt(
+            plugin.selected_prompt_id,
+            **kwargs,
+        )
+    else:
+        raise TargetPluginResolutionError("target_plugin_command_unsupported")
+    return _attach_target_adapter_provenance(
+        result,
+        plugin=plugin,
+        selected_alias=selected_alias,
+        configured_transport_kind=configured_transport_kind,
+        model_calls=model_calls,
+    )
+
+
+def _sha256_utf8(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _attach_target_adapter_provenance(
+    result: dict[str, Any],
+    *,
+    plugin: ResolvedTargetPlugin,
+    selected_alias: str,
+    configured_transport_kind: str,
+    model_calls: list[dict[str, Any]],
+) -> dict[str, Any]:
+    from source_proxy.routing.litellm_router import (
+        route_model_for_alias,
+        route_provider_for_alias,
+    )
+
+    diagnostics = result.get("coder_diagnostics")
+    if not isinstance(diagnostics, dict):
+        diagnostics = result.get("coderDiagnostics")
+    if not isinstance(diagnostics, dict):
+        diagnostics = {}
+
+    provider_call_made = bool(model_calls)
+    actual_transport_kind = configured_transport_kind if provider_call_made else "non_model"
+    provider_call_authorized = provider_call_made and configured_transport_kind != "injected_callback"
+    routed_provider = "unknown"
+    routed_model = selected_alias or "unknown"
+    if actual_transport_kind in {"direct_ollama", "canonical_litellm_router"}:
+        routed_provider = route_provider_for_alias(selected_alias) or "unknown"
+        routed_model = route_model_for_alias(selected_alias) or selected_alias or "unknown"
+    if actual_transport_kind == "injected_callback":
+        provider = "injected_callback"
+        model = selected_alias or "callback"
+    elif actual_transport_kind == "direct_ollama":
+        provider = "ollama"
+        model = routed_model.removeprefix("ollama_chat/")
+    elif actual_transport_kind == "canonical_litellm_router":
+        provider = routed_provider
+        model = routed_model
+    else:
+        provider = None
+        model = None
+
+    last_call = model_calls[-1] if model_calls else {}
+    blocked = bool(result.get("coder_blocked") or result.get("coderBlocked"))
+    proposed_diff = str(result.get("proposed_diff") or "")
+    terminal_proof_eligible = bool(
+        actual_transport_kind == "canonical_litellm_router"
+        and provider_call_authorized
+        and last_call.get("raw_response_observed") is True
+        and proposed_diff.strip()
+        and not blocked
+    )
+    if terminal_proof_eligible:
+        trust_status = "canonical_router_model_output_validated"
+        ineligibility_reason = None
+    elif actual_transport_kind == "injected_callback":
+        trust_status = "noncanonical_model_output_validated"
+        ineligibility_reason = "injected_callback_not_canonical_router"
+    elif actual_transport_kind == "direct_ollama":
+        trust_status = "noncanonical_model_output_validated"
+        ineligibility_reason = "direct_ollama_bypasses_canonical_router"
+    elif actual_transport_kind == "canonical_litellm_router":
+        trust_status = "canonical_router_model_output_not_usable"
+        ineligibility_reason = "canonical_model_result_not_usable"
+    elif bool(result.get("already_satisfied") or result.get("alreadySatisfied")):
+        trust_status = "verified_non_model_noop"
+        ineligibility_reason = "non_model_result"
+    elif str(result.get("expected_result_state") or "") == "PASS_BLOCKED":
+        trust_status = "verified_non_model_policy_block"
+        ineligibility_reason = "non_model_result"
+    else:
+        trust_status = "non_model_result"
+        ineligibility_reason = "non_model_result"
+
+    generation_source = str(diagnostics.get("generation_source") or "").strip()
+    if provider_call_made and not generation_source:
+        generation_source = "model"
+    elif not provider_call_made and (not generation_source or generation_source == "model"):
+        generation_source = "non_model"
+
+    provenance = {
+        "schema_version": TARGET_ADAPTER_PROVENANCE_SCHEMA_VERSION,
+        "plugin_id": plugin.plugin_id,
+        "selected_prompt_id": plugin.selected_prompt_id,
+        "rendered_prompt_sha256": last_call.get("rendered_prompt_sha256"),
+        "raw_response_sha256": last_call.get("raw_response_sha256"),
+        "hash_algorithm": "sha256",
+        "hash_encoding": "utf-8",
+        "transport_kind": actual_transport_kind,
+        "configured_transport_kind": configured_transport_kind,
+        "provider_call_made": provider_call_made,
+        "provider_call_authorized": provider_call_authorized,
+        "generation_source": generation_source,
+        "trust_status": trust_status,
+        "terminal_proof_eligible": terminal_proof_eligible,
+        "terminal_proof_ineligibility_reason": ineligibility_reason,
+        "selected_model_alias": selected_alias if provider_call_made else None,
+        "provider": provider,
+        "model": model,
+        "call_count": len(model_calls),
+        "calls": [dict(call) for call in model_calls],
+    }
+    diagnostics.update(
+        {
+            "rendered_prompt_sha256": provenance["rendered_prompt_sha256"],
+            "raw_response_sha256": provenance["raw_response_sha256"],
+            "transport_kind": actual_transport_kind,
+            "provider_call_made": provider_call_made,
+            "provider_call_authorized": provider_call_authorized,
+            "generation_source": generation_source,
+            "target_adapter_trust_status": trust_status,
+            "terminal_proof_eligible": terminal_proof_eligible,
+            "terminal_proof_ineligibility_reason": ineligibility_reason,
+            "provider": provider,
+            "model": model,
+        }
+    )
+    result["coder_diagnostics"] = diagnostics
+    result["coderDiagnostics"] = diagnostics
+    result["target_adapter_provenance"] = provenance
+    return result
 
 
 def _require(packet: dict[str, Any], key: str) -> str:
@@ -169,15 +344,6 @@ def _require(packet: dict[str, Any], key: str) -> str:
     if not value:
         raise TargetPluginResolutionError(f"target_plugin_missing_{key}")
     return value
-
-
-def _git_head(workspace_root: Path) -> str:
-    try:
-        return subprocess.check_output(
-            ["git", "-C", str(workspace_root), "rev-parse", "HEAD"], text=True
-        ).strip()
-    except (OSError, subprocess.CalledProcessError) as error:
-        raise TargetPluginResolutionError("target_plugin_source_head_unavailable") from error
 
 
 def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> ResolvedTargetPlugin:
@@ -192,9 +358,17 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
         raise TargetPluginResolutionError("target_plugin_schema_unsupported")
     if _require(declared, "id") != LUMACART_PLUGIN_ID:
         raise TargetPluginResolutionError("target_plugin_unsupported")
-    if _require(declared, "repository_id") != CAMPAIGN_REPOSITORY_ID:
+    try:
+        runtime_identity = resolve_authority_runtime_identity(root)
+    except AuthorityRuntimeIdentityError as error:
+        raise TargetPluginResolutionError(
+            f"target_plugin_runtime_identity_invalid:{error.reason_code}"
+        ) from error
+    declared_repository = str(declared.get("repository_id") or "").strip()
+    if declared_repository and declared_repository != runtime_identity.repository:
         raise TargetPluginResolutionError("target_plugin_repository_mismatch")
-    if _require(declared, "worktree_id") != CAMPAIGN_WORKTREE_ID:
+    declared_worktree = str(declared.get("worktree_id") or "").strip()
+    if declared_worktree and declared_worktree != runtime_identity.state_namespace:
         raise TargetPluginResolutionError("target_plugin_worktree_mismatch")
     if _require(declared, "fixture_root") != FIXTURE_ROOT:
         raise TargetPluginResolutionError("target_plugin_root_mismatch")
@@ -206,7 +380,7 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
         raise TargetPluginResolutionError("target_plugin_context_mismatch")
     if _require(declared, "execution_profile") != EXECUTION_PROFILE:
         raise TargetPluginResolutionError("target_plugin_execution_profile_mismatch")
-    source_head = _git_head(root)
+    source_head = runtime_identity.source_head
     declared_head = str(declared.get("source_head") or "").strip()
     if declared_head and declared_head != source_head:
         raise TargetPluginResolutionError("target_plugin_source_head_mismatch")
@@ -217,9 +391,11 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
     return ResolvedTargetPlugin(
         schema_version=TARGET_PLUGIN_SCHEMA_VERSION,
         plugin_id=LUMACART_PLUGIN_ID,
-        repository_id=CAMPAIGN_REPOSITORY_ID,
-        worktree_id=CAMPAIGN_WORKTREE_ID,
+        repository_id=runtime_identity.repository,
+        worktree_id=runtime_identity.state_namespace,
         workspace_root=str(root),
+        branch=runtime_identity.branch,
+        state_namespace=runtime_identity.state_namespace,
         fixture_root=FIXTURE_ROOT,
         source_head=source_head,
         selected_prompt_id=prompt_id,

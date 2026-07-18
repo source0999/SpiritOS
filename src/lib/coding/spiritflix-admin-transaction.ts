@@ -40,22 +40,53 @@ type TransactionInput<TSnapshot, TResult> = {
   verify: (result: TResult) => Promise<VerifiedState>;
 };
 
+type SpiritFlixAdminParticipantOutput = Omit<
+  SpiritFlixAdminParticipantInvocation,
+  "acknowledgement"
+>;
+
 function invocation(
   consumer: SpiritFlixAdminParticipantInvocation["consumer"],
   approvalId: string,
   generation: number,
   resultHash: string,
-): SpiritFlixAdminParticipantInvocation {
-  return {
-    acknowledgement: {
-      approval_id: approvalId,
-      generation,
-      result_hash: resultHash,
-    },
+): SpiritFlixAdminParticipantOutput {
+  const body = {
+    approval_id: approvalId,
     completed_at: new Date().toISOString(),
     consumer,
+    generation,
     invocation_id: `spiritflix-${consumer}-${randomUUID()}`,
     outcome: "accepted",
+    output_id: `spiritflix-${consumer}-output-${randomUUID()}`,
+    result_hash: resultHash,
+  } as const;
+  return {
+    ...body,
+    output_hash: hashSpiritFlixAdminState({
+      schema: "spiritflix-admin-participant-output/v2",
+      state: body,
+    }),
+  };
+}
+
+function acknowledgeInvocation(
+  output: SpiritFlixAdminParticipantOutput,
+  consumerInvocationId: string,
+): SpiritFlixAdminParticipantInvocation {
+  if (!consumerInvocationId || !output.output_hash || !output.output_id) {
+    throw new SpiritFlixAdminTransactionError("spiritflix_admin_acknowledgement_invalid", 409);
+  }
+  return {
+    ...output,
+    acknowledgement: {
+      acknowledgement_id: `spiritflix-ack-${randomUUID()}`,
+      consumer_invocation_id: consumerInvocationId,
+      invocation_id: output.invocation_id,
+      output_hash: output.output_hash,
+      output_id: output.output_id,
+      consumed: true,
+    },
   };
 }
 
@@ -63,7 +94,7 @@ async function invokeReviewer(
   artifact: { result_hash: string; result_schema: string; state: unknown; target: string; writer: unknown },
   approvalId: string,
   generation: number,
-): Promise<SpiritFlixAdminParticipantInvocation> {
+): Promise<SpiritFlixAdminParticipantOutput> {
   const independentlyComputed = hashSpiritFlixAdminState({ schema: artifact.result_schema, state: artifact.state });
   if (!artifact.result_hash.match(/^[a-f0-9]{64}$/) || independentlyComputed !== artifact.result_hash) {
     throw new SpiritFlixAdminTransactionError("spiritflix_admin_review_rejected", 409);
@@ -76,7 +107,7 @@ async function invokeVerifier<TResult>(
   result: TResult,
   approvalId: string,
   generation: number,
-): Promise<{ invocation: SpiritFlixAdminParticipantInvocation; resultHash: string; resultSchema: string; state: unknown }> {
+): Promise<{ invocation: SpiritFlixAdminParticipantOutput; resultHash: string; resultSchema: string; state: unknown }> {
   const verified = await verify(result);
   if (!verified || typeof verified.schema !== "string" || !verified.schema || verified.state === undefined) {
     throw new SpiritFlixAdminTransactionError("spiritflix_admin_verification_invalid", 409);
@@ -96,7 +127,8 @@ async function invokeEvidenceRecorder(
   state: unknown,
   approvalId: string,
   generation: number,
-): Promise<SpiritFlixAdminParticipantInvocation> {
+  consumedOutputs: SpiritFlixAdminParticipantOutput[],
+): Promise<SpiritFlixAdminParticipantOutput> {
   const projection = JSON.stringify({ result_hash: resultHash, result_schema: resultSchema });
   if (/token|password|authorization|cookie/i.test(projection)) {
     throw new SpiritFlixAdminTransactionError("spiritflix_admin_evidence_redaction_failed", 409);
@@ -105,6 +137,15 @@ async function invokeEvidenceRecorder(
   // verifier object or reuse the reviewer's identity.
   if (hashSpiritFlixAdminState({ schema: resultSchema, state }) !== resultHash) {
     throw new SpiritFlixAdminTransactionError("spiritflix_admin_evidence_hash_mismatch", 409);
+  }
+  if (
+    consumedOutputs.length !== 2 ||
+    new Set(consumedOutputs.map((item) => item.invocation_id)).size !== 2 ||
+    consumedOutputs.some(
+      (item) => item.result_hash !== resultHash || !item.output_id || !item.output_hash,
+    )
+  ) {
+    throw new SpiritFlixAdminTransactionError("spiritflix_admin_evidence_inputs_invalid", 409);
   }
   return invocation("evidence-recorder", approvalId, generation, resultHash);
 }
@@ -172,11 +213,18 @@ export async function runApprovedSpiritFlixAdminMutation<TSnapshot, TResult>(
       verified.state,
       input.approvalId,
       generation,
+      [reviewer, verified.invocation],
     );
+    const recorderInvocationId = recorder.invocation_id;
+    const finalizerInvocationId = `spiritflix-authority-finalizer-${randomUUID()}`;
     const finalization = evidence(
       verified.resultHash,
       verified.resultSchema,
-      [reviewer, verified.invocation, recorder],
+      [
+        acknowledgeInvocation(reviewer, recorderInvocationId),
+        acknowledgeInvocation(verified.invocation, recorderInvocationId),
+        acknowledgeInvocation(recorder, finalizerInvocationId),
+      ],
     );
     const finalized = await finalizeSpiritFlixAdminApproval(
       input.approvalId,

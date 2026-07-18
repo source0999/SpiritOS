@@ -1,18 +1,30 @@
 /// <reference types="vitest/globals" />
 
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
+import { auditOperatorAction, createOperatorApprovalAssertion, requireOperatorSession } from "@/lib/coding/operator-approval-session";
 
 import { POST } from "../route";
 
 vi.mock("@/lib/source-proxy-origin", () => ({
   sourceProxyFetch: vi.fn(),
 }));
+vi.mock("@/lib/coding/operator-approval-session", () => ({
+  auditOperatorAction: vi.fn(),
+  createOperatorApprovalAssertion: vi.fn(),
+  requireOperatorSession: vi.fn(),
+}));
 
 const mockedSourceProxyFetch = vi.mocked(sourceProxyFetch);
+const mockedAuditOperatorAction = vi.mocked(auditOperatorAction);
+const mockedCreateOperatorApprovalAssertion = vi.mocked(createOperatorApprovalAssertion);
+const mockedRequireOperatorSession = vi.mocked(requireOperatorSession);
 
 describe("dummy product site preview reset route", () => {
   beforeEach(() => {
     mockedSourceProxyFetch.mockReset();
+    mockedAuditOperatorAction.mockReset().mockResolvedValue(undefined);
+    mockedCreateOperatorApprovalAssertion.mockReset().mockResolvedValue("signed-reset-assertion");
+    mockedRequireOperatorSession.mockReset().mockResolvedValue({ operator: "spiritos-local-operator", role: "approval-issuer" } as Awaited<ReturnType<typeof requireOperatorSession>>);
     vi.stubEnv("SPIRIT_CODING_USE_PROXY", "true");
   });
 
@@ -55,9 +67,17 @@ describe("dummy product site preview reset route", () => {
       "/v1/coding/dummy-product-site/reset",
       {
         body: JSON.stringify({ target_plugin: { id: "lumacart" } }),
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "x-spiritos-operator-assertion": "signed-reset-assertion",
+        },
         method: "POST",
       },
+    );
+    expect(mockedAuditOperatorAction).toHaveBeenCalledWith(
+      expect.objectContaining({ role: "approval-issuer" }),
+      "approve",
+      "dummy-product-site-reset",
     );
   });
 
@@ -100,6 +120,19 @@ describe("dummy product site preview reset route", () => {
       reason_code: "coding_proxy_disabled",
     });
     expect(response.status).toBe(409);
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects reset without a live operator session", async () => {
+    mockedRequireOperatorSession.mockRejectedValueOnce(new Error("operator_session_missing"));
+
+    const response = await POST(new Request("http://localhost/reset", { method: "POST" }));
+
+    await expect(response.json()).resolves.toEqual({
+      error: "Authenticated dummy product site reset is forbidden",
+      reason_code: "operator_session_missing",
+    });
+    expect(response.status).toBe(403);
     expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 });

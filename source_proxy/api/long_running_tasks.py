@@ -11,38 +11,52 @@ from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from source_proxy.approval.gate import execute_approved_action
 from source_proxy.approval.campaign_authority import CampaignApprovalError, issue_coding_execution_approval, persist_coding_execution_preview, reject_coding_execution_preview, resolve_coding_execution_preview
+from source_proxy.coding.orchestrator import (
+    CodingOrchestratorError,
+    get_coding_orchestrator,
+)
 from source_proxy.approval.operator_session import OperatorSessionError, verify_operator_approval_assertion
 from source_proxy.target_plugins.adapter import TargetPluginResolutionError, resolve_target_plugin
+from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
 from source_proxy.tasks.long_running import (
     LongRunningTaskError,
-    advance_long_running_task,
     cancel_long_running_task,
     create_long_running_task,
     get_long_running_task,
     get_long_running_task_snapshot,
     list_long_running_tasks,
-    record_post_apply_verification,
     assert_coding_execution_preview, record_coding_execution_approval, record_coding_execution_preview,
     reject_long_running_task_plan,
     undo_last_approved_change,
-    update_long_running_task,
 )
 
 router = APIRouter(prefix="/v1/tasks")
 
 
+class CartographerSelectionRequest(BaseModel):
+    selection_approval_id: str = Field(min_length=1, max_length=160)
+    proposal_id: str = Field(min_length=1, max_length=160)
+    target: str = Field(min_length=1, max_length=1000)
+
+
 class LongRunningTaskCreateRequest(BaseModel):
     description: str = Field(min_length=1, max_length=4000)
     steps: list[str] | None = None
+    cartographer_selection: CartographerSelectionRequest | None = None
 
 
 class LongRunningTaskAdvanceRequest(BaseModel):
     proposed_diff: str | None = Field(default=None, max_length=200_000)
     sandbox_result: dict[str, Any] | None = None
     test_command: list[str] | None = None
+
+
+class LongRunningTaskTargetPluginProposalRequest(BaseModel):
+    task: str = Field(min_length=1, max_length=4000)
+    selected_prompt_id: str = Field(min_length=1, max_length=160)
+    target_plugin: dict[str, Any]
 
 
 class LongRunningTaskExecuteApprovedRequest(BaseModel):
@@ -52,6 +66,7 @@ class LongRunningTaskExecuteApprovedRequest(BaseModel):
     approved_diff: str = Field(min_length=1, max_length=200_000)
     selected_prompt_id: str = Field(min_length=1, max_length=160)
     context_hash: str = Field(min_length=1, max_length=128)
+    runtime_output_id: str | None = Field(default=None, min_length=1, max_length=180)
     target: str | None = Field(default=None, max_length=1000)
     test_command: list[str] | None = None
 
@@ -62,6 +77,7 @@ class LongRunningTaskApprovalPreviewRequest(BaseModel):
     target: str = Field(min_length=1, max_length=1000)
     selected_prompt_id: str = Field(min_length=1, max_length=160)
     context_hash: str = Field(min_length=1, max_length=128)
+    runtime_output_id: str | None = Field(default=None, min_length=1, max_length=180)
     target_plugin: dict[str, Any] | None = None
 
 
@@ -109,12 +125,44 @@ async def long_running_task_create(
 ) -> dict[str, Any]:
     started = time.perf_counter()
     try:
-        return create_long_running_task(
+        created = create_long_running_task(
             request.description,
             request.steps,
             run_queue_checks=False,
         )
-    except LongRunningTaskError as error:
+        task = created.get("task")
+        task_id = str(task.get("id") or "") if isinstance(task, dict) else ""
+        if not task_id:
+            raise LongRunningTaskError(
+                "Task creation did not return its durable task id.",
+                "task_creation_id_missing",
+            )
+        sources = [
+            {
+                "source": "http-task-description",
+                "considered": True,
+                "status": "used",
+                "required": True,
+                "selected": True,
+                "included": True,
+            }
+        ]
+        selection = request.cartographer_selection
+        if selection is None:
+            created["coding_orchestrator"] = get_coding_orchestrator().start(
+                task_id,
+                sources=sources,
+            )
+        else:
+            created["coding_orchestrator"] = get_coding_orchestrator().start_from_cartographer_selection(
+                task_id,
+                selection_approval_id=selection.selection_approval_id,
+                proposal_id=selection.proposal_id,
+                target=selection.target,
+                sources=sources,
+            )
+        return created
+    except (LongRunningTaskError, CodingOrchestratorError) as error:
         elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
         raise HTTPException(
             status_code=400,
@@ -250,7 +298,7 @@ async def long_running_task_advance(
     request: LongRunningTaskAdvanceRequest,
 ) -> dict[str, Any]:
     try:
-        return advance_long_running_task(
+        return get_coding_orchestrator().advance(
             task_id,
             proposed_diff=request.proposed_diff,
             sandbox_result=request.sandbox_result,
@@ -263,6 +311,32 @@ async def long_running_task_advance(
         ) from error
 
 
+@router.post("/long-running/{task_id}/target-plugin-proposal")
+async def long_running_task_target_plugin_proposal(
+    task_id: str,
+    request: LongRunningTaskTargetPluginProposalRequest,
+) -> dict[str, Any]:
+    try:
+        plugin = resolve_target_plugin(
+            {
+                "target_plugin": request.target_plugin,
+                "selected_prompt_id": request.selected_prompt_id,
+            },
+            Path.cwd(),
+        )
+        return get_coding_orchestrator().propose_target_plugin(
+            task_id,
+            plugin=plugin,
+            task=request.task,
+        )
+    except (LongRunningTaskError, CodingOrchestratorError, TargetPluginResolutionError) as error:
+        reason_code = getattr(error, "reason_code", str(error))
+        raise HTTPException(
+            status_code=422,
+            detail={"error": str(error), "reason_code": reason_code},
+        ) from error
+
+
 @router.post("/long-running/{task_id}/approval-preview")
 async def long_running_task_approval_preview(
     task_id: str,
@@ -270,20 +344,61 @@ async def long_running_task_approval_preview(
 ) -> dict[str, Any]:
     try:
         target_plugin_identity = None
-        if request.target_plugin is not None:
+        proposal_binding = None
+        approved_diff = request.approved_diff
+        target = request.target
+        context_hash = request.context_hash
+        if is_lumacart_prompt_id(request.selected_prompt_id):
+            if not request.runtime_output_id:
+                raise CodingOrchestratorError("target_plugin_runtime_output_id_missing")
+            material = get_coding_orchestrator().target_plugin_approval_material(
+                task_id,
+                runtime_output_id=request.runtime_output_id,
+                selected_prompt_id=request.selected_prompt_id,
+            )
+            if (
+                request.approved_diff != material["approved_diff"]
+                or request.target != material["target"]
+                or request.context_hash != material["context_hash"]
+            ):
+                raise CodingOrchestratorError("target_plugin_preview_material_mismatch")
+            approved_diff = str(material["approved_diff"])
+            target = str(material["target"])
+            context_hash = str(material["context_hash"])
+            target_plugin_identity = dict(material["target_plugin_identity"])
+            proposal_binding = dict(material["proposal_binding"])
+            if request.target_plugin is not None:
+                requested_identity = resolve_target_plugin(
+                    {
+                        "target_plugin": request.target_plugin,
+                        "selected_prompt_id": request.selected_prompt_id,
+                    },
+                    Path.cwd(),
+                ).evidence_identity()
+                if requested_identity != target_plugin_identity:
+                    raise CodingOrchestratorError("target_plugin_preview_identity_mismatch")
+        elif request.target_plugin is not None:
             target_plugin_identity = resolve_target_plugin(
                 {"target_plugin": request.target_plugin, "selected_prompt_id": request.selected_prompt_id},
                 Path.cwd(),
             ).evidence_identity()
         preview = persist_coding_execution_preview(
-            task_id=task_id, action=request.action, approved_diff=request.approved_diff,
-            target=request.target, selected_prompt_id=request.selected_prompt_id,
-            context_hash=request.context_hash,
+            task_id=task_id, action=request.action, approved_diff=approved_diff,
+            target=target, selected_prompt_id=request.selected_prompt_id,
+            context_hash=context_hash,
             target_plugin_identity=target_plugin_identity,
+            proposal_binding=proposal_binding,
         )
-        record_coding_execution_preview(task_id, preview_id=str(preview["preview_id"]), generation=int(preview["generation"]), target_plugin_identity=target_plugin_identity)
+        record_coding_execution_preview(
+            task_id,
+            preview_id=str(preview["preview_id"]),
+            generation=int(preview["generation"]),
+            target_plugin_identity=target_plugin_identity,
+            proposal_binding=proposal_binding,
+            runtime_output_id=request.runtime_output_id,
+        )
         return {"authority": "spiritos-approval-authority", "consumer": "coding-executor", "preview": preview}
-    except (CampaignApprovalError, TargetPluginResolutionError) as error:
+    except (CampaignApprovalError, TargetPluginResolutionError, CodingOrchestratorError) as error:
         raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
 
 
@@ -334,20 +449,27 @@ async def long_running_task_execute_approved(
     request: LongRunningTaskExecuteApprovedRequest,
 ) -> dict[str, Any]:
     try:
-        return execute_approved_action(
-            task_id=task_id,
+        return get_coding_orchestrator().execute_approved(
+            task_id,
             action=request.action,
             approval_id=request.approval_id,
             approved_by=request.approved_by,
             approved_diff=request.approved_diff,
             selected_prompt_id=request.selected_prompt_id,
             context_hash=request.context_hash,
+            runtime_output_id=request.runtime_output_id,
             target=request.target,
             test_command=request.test_command,
         )
-    except LongRunningTaskError as error:
-        detail = {"error": str(error), "reason_code": error.reason_code}
-        if error.diagnostics:
+    except (LongRunningTaskError, CodingOrchestratorError) as error:
+        detail = {
+            "error": str(error),
+            "reason_code": error.reason_code,
+            "truth_status": "BLOCKED_SAFE",
+            "safe_block": True,
+            "commit_safe": False,
+        }
+        if isinstance(error, LongRunningTaskError) and error.diagnostics:
             detail.update(error.diagnostics)
         raise HTTPException(
             status_code=422,
@@ -498,7 +620,7 @@ async def long_running_task_verification(
     request: LongRunningTaskVerificationRequest,
 ) -> dict[str, Any]:
     try:
-        return record_post_apply_verification(
+        return get_coding_orchestrator().complete_post_apply(
             task_id,
             checks=request.checks,
             confirm_backup_audit_present=request.confirm_backup_audit_present,
@@ -513,7 +635,7 @@ async def long_running_task_verification(
             skip_reason=request.skip_reason,
             verification_note=request.verification_note,
         )
-    except LongRunningTaskError as error:
+    except (LongRunningTaskError, CodingOrchestratorError) as error:
         raise HTTPException(
             status_code=422,
             detail={"error": str(error), "reason_code": error.reason_code},
@@ -563,20 +685,11 @@ async def long_running_task_selected_dummy_applied(
     task_id: str,
     request: LongRunningTaskSelectedDummyApplyRequest,
 ) -> dict[str, Any]:
-    try:
-        changed = ", ".join(request.changed_files[:8])
-        return update_long_running_task(
-            task_id,
-            status="completed",
-            current_agent_role="debugger",
-            architect_status="completed",
-            architect_reason=request.reason_code,
-            truncated_test_results=(
-                f"reason_code: {request.reason_code}; changed_files={changed}"
-            ),
-        )
-    except LongRunningTaskError as error:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": str(error), "reason_code": error.reason_code},
-        ) from error
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "reason_code": "client_completion_authority_removed",
+            "task_id": task_id,
+            "message": "Only the persisted CodingOrchestrator may finalize task truth.",
+        },
+    )

@@ -10,11 +10,13 @@ for (let index = 2; index < process.argv.length; index += 2) {
 
 const port = Number(args.get("--port") ?? process.env.SPIRITFLIX_PROD_PORT ?? "3000");
 const targetPort = Number(args.get("--target-port") ?? process.env.SPIRITFLIX_PROD_INTERNAL_PORT ?? "3002");
+const host = args.get("--host") ?? process.env.SPIRITFLIX_PROD_HOST ?? "0.0.0.0";
 const keyPath = args.get("--key") ?? "./certificates/spirit-dev-key.pem";
 const certPath = args.get("--cert") ?? "./certificates/spirit-dev.pem";
 
 if (!Number.isInteger(port) || port <= 0) throw new Error(`Invalid public port: ${port}`);
 if (!Number.isInteger(targetPort) || targetPort <= 0) throw new Error(`Invalid target port: ${targetPort}`);
+if (!["127.0.0.1", "::1", "localhost", "0.0.0.0"].includes(host)) throw new Error(`Invalid public host: ${host}`);
 
 const server = createServer(
   {
@@ -52,6 +54,6 @@ const server = createServer(
   },
 );
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`SpiritFlix HTTPS proxy listening on 0.0.0.0:${port} -> http://127.0.0.1:${targetPort}`);
+server.listen(port, host, () => {
+  console.log(`SpiritFlix HTTPS proxy listening on ${host}:${port} -> http://127.0.0.1:${targetPort}`);
 });

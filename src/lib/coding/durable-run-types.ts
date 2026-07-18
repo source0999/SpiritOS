@@ -173,6 +173,20 @@ export type DurableCodingRun = {
   last_write_decision?: string | null;
   write_debug?: DurableCodingRunWriteDebugEntry[];
   invariant_violations?: string[];
+  /**
+   * Present only for the R1 read-only projection of Source Proxy task truth.
+   * Next may render these facts but cannot promote or mutate them.
+   */
+  backend_authority?: {
+    schema_version: "source-proxy-coding-run-projection/v1";
+    owner: "source_proxy";
+    store: "long_running_tasks_sqlite";
+    projection: "read_only";
+    source_task_id: string;
+    source_status: string;
+    terminal_success: boolean;
+    terminal_evidence_reasons: string[];
+  };
 };
 
 export type DurableCodingRunCreateInput = Partial<DurableCodingRun> & {

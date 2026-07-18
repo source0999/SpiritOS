@@ -65,6 +65,19 @@
     "deprecation_state": "active"
   },
   {
+    "lane_id": "anti-cheat",
+    "contract_version": "coding.lane-contract/v1.0.0",
+    "owner": "source-proxy-verification",
+    "authority_class": "verification",
+    "input_schema": {"type": "object", "properties": {"task_id": {"type": "string"}, "artifact_hash": {"type": "string"}}, "required": ["task_id", "artifact_hash"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"passed": {"type": "boolean"}, "detector_ids": {"type": "array"}, "violations": {"type": "array"}}, "required": ["passed", "detector_ids", "violations"], "additionalProperties": false},
+    "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
+    "acknowledgement_schema": {"type": "object", "properties": {"approval_id": {"type": "string"}, "generation": {"type": "integer"}}, "required": ["approval_id", "generation"], "additionalProperties": false},
+    "evidence_schema": {"type": "object", "properties": {"anticheat_hash": {"type": "string"}, "artifact_hash": {"type": "string"}}, "required": ["anticheat_hash", "artifact_hash"], "additionalProperties": false},
+    "compatible_consumer_versions": ["coding-orchestrator/v1", "coding-anti-cheat/v1"],
+    "deprecation_state": "active"
+  },
+  {
     "lane_id": "repair",
     "contract_version": "coding.lane-contract/v1.0.0",
     "owner": "source-proxy-coding",

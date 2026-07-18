@@ -142,7 +142,7 @@ class CartographerSafetyAuditTests(unittest.TestCase):
         self.assertFalse(push_queue["actions_taken"])
         self.assertFalse(audit_trail["actions_taken"])
 
-    def test_apply_blocks_diff_target_mismatch_without_writing(self) -> None:
+    def test_legacy_apply_surface_is_forbidden_without_writing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             _write_minimal_blueprints(root)
@@ -187,7 +187,7 @@ class CartographerSafetyAuditTests(unittest.TestCase):
                     )
             self.assertEqual(blueprint.read_text(encoding="utf-8"), before)
 
-        self.assertEqual(raised.exception.reason_code, "approved_diff_path_mismatch")
+        self.assertEqual(raised.exception.reason_code, "forbidden_cartographer_mutation")
 
     def test_cartographer_safety_manifest_keeps_bypass_and_write_controls_locked(self) -> None:
         with patch.dict(os.environ, {"SPIRIT_PROJECT_PATH": ""}, clear=False):

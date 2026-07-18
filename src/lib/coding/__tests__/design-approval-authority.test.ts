@@ -2,6 +2,7 @@
 
 import {
   DESIGN_PARTICIPANTS,
+  acknowledgeDesignParticipantOutput,
   hashDesignParticipantOutput,
   redactedDesignWritebackEvidence,
   type DesignApprovalBinding,
@@ -37,7 +38,10 @@ const participantRecords = DESIGN_PARTICIPANTS.map((participant, index) => {
           ? "verified" as const
           : "recorded" as const,
   };
-  return { ...output, output_hash: hashDesignParticipantOutput(output) };
+  return acknowledgeDesignParticipantOutput(
+    { ...output, output_hash: hashDesignParticipantOutput(output) },
+    `consumer-${index}`,
+  );
 }) satisfies DesignParticipantRecord[];
 
 function evidence(records = participantRecords) {

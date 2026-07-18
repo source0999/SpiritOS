@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from source_proxy.approval.runtime_identity import resolve_authority_runtime_identity
+from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 
 
 _RUNTIME_IDENTITY = resolve_authority_runtime_identity()
@@ -38,7 +39,7 @@ def _target_plugin_binding(
     *, target: str, selected_prompt_id: str, identity: dict[str, Any] | None
 ) -> tuple[str, dict[str, Any]]:
     """Use a server-resolved adapter identity; never infer a fixture plugin from a path."""
-    selected_fixture_prompt = selected_prompt_id.startswith("coder-00")
+    selected_fixture_prompt = is_lumacart_prompt_id(selected_prompt_id)
     if identity is None:
         if selected_fixture_prompt:
             raise CampaignApprovalError("target_plugin_identity_missing")
@@ -55,12 +56,25 @@ def _target_plugin_binding(
     return plugin, dict(identity)
 
 
-def coding_content_hash(*, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str) -> str:
+def coding_content_hash(
+    *,
+    task_id: str,
+    action: str,
+    approved_diff: str,
+    target: str,
+    selected_prompt_id: str,
+    context_hash: str,
+    target_plugin_identity: dict[str, Any] | None = None,
+    proposal_binding: dict[str, Any] | None = None,
+) -> str:
     return hashlib.sha256(canonical_json({
+        "action": action,
         "approved_diff": approved_diff,
         "context_hash": context_hash,
+        "proposal_binding": dict(proposal_binding or {}),
         "selected_prompt_id": selected_prompt_id,
         "target": target,
+        "target_plugin_identity": dict(target_plugin_identity or {}),
         "task_id": task_id,
     }).encode("utf-8")).hexdigest()
 
@@ -89,7 +103,7 @@ def _call(command: str, payload: dict[str, Any]) -> dict[str, Any]:
     return response
 
 
-def validate_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
+def validate_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None, proposal_binding: dict[str, Any] | None = None) -> dict[str, Any]:
     """Validate an exact approval binding without entering the consuming state."""
     approval = _call("lookup", {"approval_id": approval_id})
     consumer = coding_executor_consumer(lane_id)
@@ -100,7 +114,7 @@ def validate_coding_execution_approval(*, approval_id: str, task_id: str, action
     if approval.get("context") != context_hash:
         raise CampaignApprovalError("approval_context_mismatch")
     plugin, identity = _target_plugin_binding(target=target, selected_prompt_id=selected_prompt_id, identity=target_plugin_identity)
-    content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash)
+    content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash, target_plugin_identity=identity, proposal_binding=proposal_binding)
     binding = {
         "approval_id": approval_id,
         "consumer": consumer,
@@ -117,8 +131,9 @@ def validate_coding_execution_approval(*, approval_id: str, task_id: str, action
         "source_head": current_head(),
         "generation": str(approval.get("generation") or ""),
         "target_plugin_identity": canonical_json(identity),
+        "proposal_binding": canonical_json(dict(proposal_binding or {})),
     }
-    return {"approval_id": approval_id, "generation": int(approval["generation"]), "plugin": plugin, "target_plugin_identity": identity, "binding": binding}
+    return {"approval_id": approval_id, "generation": int(approval["generation"]), "plugin": plugin, "target_plugin_identity": identity, "proposal_binding": dict(proposal_binding or {}), "binding": binding}
 
 
 def enter_coding_execution_consuming(approval: dict[str, Any]) -> dict[str, Any]:
@@ -130,7 +145,7 @@ def enter_coding_execution_consuming(approval: dict[str, Any]) -> dict[str, Any]
     return {**approval, "state": str(transition.get("state") or "consuming")}
 
 
-def consume_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
+def consume_coding_execution_approval(*, approval_id: str, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, lane_id: str = CODING_EXECUTOR_LANE, target_plugin_identity: dict[str, Any] | None = None, proposal_binding: dict[str, Any] | None = None) -> dict[str, Any]:
     approval = validate_coding_execution_approval(
         approval_id=approval_id,
         task_id=task_id,
@@ -141,13 +156,14 @@ def consume_coding_execution_approval(*, approval_id: str, task_id: str, action:
         context_hash=context_hash,
         lane_id=lane_id,
         target_plugin_identity=target_plugin_identity,
+        proposal_binding=proposal_binding,
     )
     return enter_coding_execution_consuming(approval)
 
 
-def persist_coding_execution_preview(*, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, target_plugin_identity: dict[str, Any] | None = None) -> dict[str, Any]:
-    content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash)
+def persist_coding_execution_preview(*, task_id: str, action: str, approved_diff: str, target: str, selected_prompt_id: str, context_hash: str, target_plugin_identity: dict[str, Any] | None = None, proposal_binding: dict[str, Any] | None = None) -> dict[str, Any]:
     plugin, identity = _target_plugin_binding(target=target, selected_prompt_id=selected_prompt_id, identity=target_plugin_identity)
+    content_hash = coding_content_hash(task_id=task_id, action=action, approved_diff=approved_diff, target=target, selected_prompt_id=selected_prompt_id, context_hash=context_hash, target_plugin_identity=identity, proposal_binding=proposal_binding)
     return _call("persist-preview", {
         "repository": REPOSITORY, "worktree": ROOT, "root": ROOT,
         "target": target, "plugin": plugin,

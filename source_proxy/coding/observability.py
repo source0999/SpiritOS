@@ -30,7 +30,7 @@ def build_coding_shell_observability(task_id: str) -> dict[str, Any]:
     identity = authority.get("target_plugin_identity")
     identity = dict(identity) if isinstance(identity, Mapping) else None
     authority_bound = bool(authority) and actual_consumer == expected_consumer
-    orchestrator_recorded = orchestrator.get("schema_version") == "coding-orchestrator/v1"
+    orchestrator_recorded = orchestrator.get("schema_version") == "coding-orchestrator/v2"
 
     return {
         "schema_version": "coding-shell-observability/v1",

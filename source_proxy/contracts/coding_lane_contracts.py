@@ -15,6 +15,7 @@ CORE_CODING_LANE_IDS = (
     "coder",
     "reviewer",
     "verifier",
+    "anti-cheat",
     "repair",
     "evidence-recorder",
 )

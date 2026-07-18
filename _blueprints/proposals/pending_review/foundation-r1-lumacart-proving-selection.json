@@ -1,0 +1,30 @@
+{
+  "affected_blueprints": [
+    "cartographer-agent"
+  ],
+  "changed_files": [
+    "source_proxy/api/long_running_tasks.py",
+    "source_proxy/cartographer/cartographer_selection_authority.py",
+    "source_proxy/coding/orchestrator.py",
+    "source_proxy/coding/runtime_lane_boundary.py",
+    "source_proxy/target_plugins/lumacart.py"
+  ],
+  "component": "coding-foundation",
+  "confidence": "high",
+  "proposal_id": "foundation-r1-lumacart-clean-proving-selection",
+  "proposed_files": [
+    "tests/ui-agent-trials/fixtures/dummy-product-site/README.md"
+  ],
+  "rationale": "Select the isolated LumaCart fixture as the bounded target for the Foundation Remediation R1 production proving run. This proposal supplies discovery and transfer context only; the canonical model must author the coding diff after selection.",
+  "requires_approval": true,
+  "status": "pending_review",
+  "title": "Select LumaCart for the clean Foundation R1 proving run",
+  "transitions": [
+    {
+      "actor": "foundation-remediation-r1-control-plane",
+      "status": "pending_review",
+      "timestamp": "2026-07-17T00:00:00Z"
+    }
+  ],
+  "type": "coding_target_selection"
+}

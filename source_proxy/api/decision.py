@@ -15,34 +15,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_DEBUG_LOG_PATH = "/home/source/SpiritOS/.cursor/debug-9460b9.log"
-
-
-def _agent_debug_log(
-    *,
-    hypothesis_id: str,
-    location: str,
-    message: str,
-    data: dict[str, Any] | None = None,
-    run_id: str = "pre-fix",
-) -> None:
-    # #region agent log
-    try:
-        payload = {
-            "sessionId": "9460b9",
-            "runId": run_id,
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data or {},
-            "timestamp": int(time.time() * 1000),
-        }
-        with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as handle:
-            handle.write(json.dumps(payload, default=str) + "\n")
-    except OSError:
-        pass
-    # #endregion
-
 from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -56,12 +28,19 @@ from source_proxy.decision.prompt_packet import (
 )
 from source_proxy.tasks.long_running import (
     _workspace_root,
+    canonical_context_broker_for_task,
+    coding_orchestrator_state_for_task,
     derive_context_mode,
     forbidden_paths_for_context_mode,
     generate_unified_diff_from_content,
     propose_coder_agent_diff_payload_from_plan,
+    record_canonical_context_broker_for_task,
     reset_coder_timing_diagnostics,
     snapshot_coder_timing_diagnostics,
+)
+from source_proxy.coding.orchestrator import (
+    CodingOrchestratorError,
+    get_coding_orchestrator,
 )
 from source_proxy.target_plugins.adapter import (
     TargetPluginResolutionError,
@@ -70,6 +49,7 @@ from source_proxy.target_plugins.adapter import (
     target_plugin_command,
     target_plugin_task_spec,
 )
+from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 from source_proxy.verification.contracts import (
     SUBJECTIVE_IMPROVEMENT_REQUIRES_DIFF_REASON_CODE,
     VISUAL_IMPROVEMENT_DIFF_TOO_SHALLOW_REASON_CODE,
@@ -804,6 +784,151 @@ def _build_canonical_context_packet(
 
 def _canonical_context_prompt_text(report: dict[str, Any]) -> str:
     return render_context_broker_prompt(report)
+
+
+def _canonical_context_material_hash(report: dict[str, Any]) -> str:
+    """Hash source material without treating lifecycle acknowledgements as input."""
+
+    sources: list[dict[str, Any]] = []
+    for raw_source in report.get("sources_considered", []):
+        if not isinstance(raw_source, dict):
+            continue
+        sources.append(
+            {
+                "source": str(raw_source.get("source") or ""),
+                "considered": raw_source.get("considered") is not False,
+                "status": str(raw_source.get("status") or ""),
+                "reason": str(raw_source.get("reason") or ""),
+                "required": raw_source.get("required") is True,
+                "selected": raw_source.get("selected") is True,
+                "included": raw_source.get("included") is True,
+                "packet": raw_source.get("packet")
+                if isinstance(raw_source.get("packet"), dict)
+                else {},
+                "authority": raw_source.get("authority")
+                if isinstance(raw_source.get("authority"), dict)
+                else {},
+            }
+        )
+    return _json_hash(
+        {
+            "explicit_target": str(report.get("explicit_target") or ""),
+            "sources": sources,
+        }
+    )
+
+
+def _run_production_target_plugin_proposal(
+    *,
+    task_id: str,
+    target_plugin: Any,
+    task: str,
+    canonical_context: dict[str, Any],
+) -> dict[str, Any]:
+    """Enter the persisted orchestrator for an active target-plugin HTTP run.
+
+    The decision route owns context discovery, but it does not own execution.
+    It persists an unacknowledged report, lets the real planner acknowledge and
+    consume that report, and then asks the canonical orchestrator to invoke the
+    target adapter.  A retry may reuse an already-acknowledged identical report;
+    it may never replace completed-planner context with different material.
+    """
+
+    orchestrator = get_coding_orchestrator()
+    state = coding_orchestrator_state_for_task(task_id)
+    if not isinstance(state, dict):
+        raise CodingOrchestratorError("coding_orchestrator_state_missing")
+    run_id = str(state.get("run_id") or "")
+    if not run_id:
+        raise CodingOrchestratorError("coding_orchestrator_run_id_missing")
+    lane_states = state.get("lane_states")
+    if not isinstance(lane_states, dict):
+        raise CodingOrchestratorError("coding_orchestrator_state_invalid")
+
+    if str(lane_states.get("planner") or "pending") != "completed":
+        pending_context = acknowledge_context_consumer(
+            canonical_context,
+            consumer="planner",
+            evidence="",
+            applicable=True,
+            reason="planner_invocation_pending",
+        )
+        record_canonical_context_broker_for_task(
+            task_id,
+            report=pending_context,
+            orchestrator_run_id=run_id,
+        )
+        if load_plan(task_id) is None:
+            orchestrator.advance(task_id)
+        if load_plan(task_id) is None:
+            raise CodingOrchestratorError("authoritative_plan_missing")
+        orchestrator.acknowledge_planner(task_id)
+    else:
+        persisted_context = canonical_context_broker_for_task(task_id)
+        if not isinstance(persisted_context, dict):
+            raise CodingOrchestratorError("canonical_context_report_missing")
+        if (
+            _canonical_context_material_hash(persisted_context)
+            != _canonical_context_material_hash(canonical_context)
+        ):
+            raise CodingOrchestratorError(
+                "canonical_context_changed_after_planner_consumption"
+            )
+        if persisted_context.get("go_eligible") is not True:
+            raise CodingOrchestratorError("target_plugin_canonical_context_blocked")
+
+    receipt = orchestrator.propose_target_plugin(
+        task_id,
+        plugin=target_plugin,
+        task=task,
+    )
+    result = receipt.get("target_plugin_result")
+    if not isinstance(result, dict):
+        raise CodingOrchestratorError("target_plugin_result_missing")
+    proposed_diff = str(result.get("proposed_diff") or "")
+    proposal = receipt.get("target_plugin_proposal")
+    if proposed_diff.strip():
+        if not isinstance(proposal, dict):
+            raise CodingOrchestratorError("target_plugin_proposal_missing")
+        if (
+            proposal.get("status") != "ready_for_approval_preview"
+            or not str(receipt.get("target_plugin_output_id") or "")
+            or not str(proposal.get("context_hash") or "")
+        ):
+            raise CodingOrchestratorError("target_plugin_proposal_identity_missing")
+    return receipt
+
+
+def _mark_unorchestrated_target_plugin_preview(
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    """Prevent a taskless target preview from masquerading as terminal proof."""
+
+    preview = dict(result)
+    diagnostics = preview.get("coder_diagnostics")
+    if not isinstance(diagnostics, dict):
+        diagnostics = preview.get("coderDiagnostics")
+    diagnostics = dict(diagnostics) if isinstance(diagnostics, dict) else {}
+    provenance = preview.get("target_adapter_provenance")
+    if isinstance(provenance, dict):
+        provenance = dict(provenance)
+        provenance["terminal_proof_eligible"] = False
+        provenance["terminal_proof_ineligibility_reason"] = (
+            "active_coding_orchestrator_task_missing"
+        )
+        provenance["claim_ceiling"] = "unorchestrated_preview_only"
+        preview["target_adapter_provenance"] = provenance
+    diagnostics["terminal_proof_eligible"] = False
+    diagnostics["terminal_proof_ineligibility_reason"] = (
+        "active_coding_orchestrator_task_missing"
+    )
+    diagnostics["claim_ceiling"] = "unorchestrated_preview_only"
+    diagnostics["target_plugin_orchestrated"] = False
+    preview["coder_diagnostics"] = diagnostics
+    preview["coderDiagnostics"] = diagnostics
+    preview["terminal_proof_eligible"] = False
+    preview["claim_ceiling"] = "unorchestrated_preview_only"
+    return preview
 
 
 def _canonical_context_blocked_coder_payload(report: dict[str, Any]) -> dict[str, Any]:
@@ -5302,15 +5427,6 @@ def _product_trial_feature_already_satisfied_payload(
     current = target_path.read_text(encoding="utf-8", errors="replace")
 
     def satisfied(note: str, *, quick_proof: bool = True) -> dict[str, Any]:
-        # #region agent log
-        _agent_debug_log(
-            hypothesis_id="D",
-            location="decision.py:_product_trial_feature_already_satisfied_payload",
-            message="product trial feature already on disk",
-            data={"target": target, "note": note[:120], "quick_proof": quick_proof},
-            run_id="post-fix",
-        )
-        # #endregion
         return _deterministic_already_satisfied_payload(
             target,
             context_mode=derive_context_mode(target),
@@ -5859,20 +5975,6 @@ def _trial_live_model_call_diagnostics(
         if not quick_proof:
             timeout_attempts.append(max(per_alias_timeout * 2, per_alias_timeout + 15.0))
         for attempt_index, timeout_seconds in enumerate(timeout_attempts):
-            # #region agent log
-            _agent_debug_log(
-                hypothesis_id="C",
-                location="decision.py:_trial_live_model_call_diagnostics",
-                message="trial proof model attempt",
-                data={
-                    "alias": alias,
-                    "timeout_seconds": timeout_seconds,
-                    "attempt_index": attempt_index,
-                    "cold_start_retry": attempt_index > 0,
-                },
-                run_id="post-fix",
-            )
-            # #endregion
             try:
                 direct_ollama = (
                     os.getenv("SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF", "1").strip().lower()
@@ -5911,37 +6013,10 @@ def _trial_live_model_call_diagnostics(
                         "raw_response_excerpt": raw[:240],
                     }
                 )
-                # #region agent log
-                _agent_debug_log(
-                    hypothesis_id="C",
-                    location="decision.py:_trial_live_model_call_diagnostics",
-                    message="trial proof model success",
-                    data={
-                        "alias": alias,
-                        "raw_response_length": len(raw),
-                        "attempt_index": attempt_index,
-                    },
-                    run_id="post-fix",
-                )
-                # #endregion
                 return diagnostics
             except Exception as error:
                 last_error = error
                 attempted_direct_ollama = bool(locals().get("direct_ollama"))
-                # #region agent log
-                _agent_debug_log(
-                    hypothesis_id="C",
-                    location="decision.py:_trial_live_model_call_diagnostics",
-                    message="trial proof model failed",
-                    data={
-                        "alias": alias,
-                        "attempt_index": attempt_index,
-                        "exception_type": type(error).__name__,
-                        "exception_message": str(error)[:240],
-                    },
-                    run_id="post-fix",
-                )
-                # #endregion
                 if (
                     attempt_index + 1 < len(timeout_attempts)
                     and _trial_proof_timeout_error(error)
@@ -6049,17 +6124,6 @@ def _state_trial_already_satisfied(current: str) -> bool:
 def _dummy_reversible_live_trial_coder_diff_payload(task: str) -> dict[str, Any] | None:
     """Bounded live-apply path for ui-agent-trials dummy fixtures (model proof + deterministic diff)."""
     target = _parse_explicit_target_file_line(task)
-    # #region agent log
-    _agent_debug_log(
-        hypothesis_id="A",
-        location="decision.py:_dummy_reversible_live_trial_coder_diff_payload",
-        message="dummy live trial entry",
-        data={
-            "target": target,
-            "backend_route_match": _backend_route_trial_task_matches(task.lower()),
-        },
-    )
-    # #endregion
     if not target.startswith("tests/ui-agent-trials/fixtures/dummy-coding-targets/"):
         return None
 
@@ -6828,7 +6892,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     reset_request = _request_with_cleared_file_focus(request)
     target_plugin = None
     selected_prompt = str(reset_request.selected_prompt_id or reset_request.trial_prompt_id or "").strip()
-    plugin_requested = selected_prompt.startswith("coder-00") or isinstance(
+    plugin_requested = is_lumacart_prompt_id(selected_prompt) or isinstance(
         (reset_request.dummy_coder_10_packet or {}).get("target_plugin"), dict
     )
     if plugin_requested:
@@ -6926,7 +6990,10 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     dummy_product_site_create = target_plugin_command_name == "create_storefront"
     target_gate_blocked = bool(
         hard_target_reason
-        or "target_unresolved" in route_reasons
+        or (
+            "target_unresolved" in route_reasons
+            and not allowed_create_target
+        )
         or (
             _target_missing_blocks_prompt_packet(trial_task, route_reasons)
             and not allowed_create_target
@@ -6961,6 +7028,7 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
         and reset_request.wants_implementation
         and reset_request.needs_codebase_context
     )
+    target_plugin_orchestrator_receipt: dict[str, Any] | None = None
     if (
         _route_payload_requests_coder_agent_diff(route_payload)
         and (reset_request.wants_implementation or bool(explicit_target))
@@ -7019,20 +7087,17 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 "manual_step_expected",
                 "noop_expected",
             }
-            if reset_request.trial_mode == "live_apply" and expected_no_edit:
-                architect_plan = None
-                # #region agent log
-                _agent_debug_log(
-                    hypothesis_id="B",
-                    location="decision.py:prompt_packet",
-                    message="expected no-edit trial branch",
-                    data={
-                        "expected_outcome": str(reset_request.expected_outcome or ""),
-                        "target": explicit_target,
-                        "task_excerpt": trial_task[:120],
-                    },
+            if (
+                reset_request.trial_mode == "live_apply"
+                and expected_no_edit
+                and not (
+                    target_plugin_command_name
+                    and target_plugin
+                    and reset_request.active_task_id
+                    and is_lumacart_prompt_id(selected_prompt)
                 )
-                # #endregion
+            ):
+                architect_plan = None
                 coder = _expected_no_edit_trial_payload_with_model(
                     trial_task,
                     str(reset_request.expected_outcome or ""),
@@ -7040,27 +7105,32 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                     canonical_context_text=canonical_context_prompt,
                 )
             else:
-                # #region agent log
-                _agent_debug_log(
-                    hypothesis_id="A",
-                    location="decision.py:prompt_packet",
-                    message="bounded coder trial branch",
-                    data={
-                        "expected_outcome": str(reset_request.expected_outcome or ""),
-                        "target": explicit_target,
-                        "task_excerpt": trial_task[:120],
-                    },
-                )
-                # #endregion
                 recovered = None
-                if reset_request.trial_recover_already_satisfied and explicit_target:
+                if (
+                    reset_request.trial_recover_already_satisfied
+                    and explicit_target
+                    and not (
+                        target_plugin_command_name
+                        and target_plugin
+                        and reset_request.active_task_id
+                        and is_lumacart_prompt_id(selected_prompt)
+                    )
+                ):
                     recovered = _product_trial_feature_already_satisfied_payload(
                         trial_task,
                         explicit_target,
                     )
                 if recovered is not None:
                     coder = recovered
-                elif reset_request.trial_mode != "live_apply":
+                elif (
+                    reset_request.trial_mode != "live_apply"
+                    and not (
+                        target_plugin_command_name
+                        and target_plugin
+                        and reset_request.active_task_id
+                        and is_lumacart_prompt_id(selected_prompt)
+                    )
+                ):
                     deterministic_preview = _dummy_trial_coder_diff_payload(trial_task)
                     if deterministic_preview is not None:
                         architect_plan = None
@@ -7083,18 +7153,110 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                             canonical_context_text=canonical_context_prompt,
                         )
                 elif target_plugin_command_name and target_plugin:
-                    architect_plan = None
-                    coder = await asyncio.get_running_loop().run_in_executor(
-                        None,
-                        functools.partial(
-                            execute_target_plugin_command,
-                            target_plugin,
-                            task=trial_task,
-                            workspace_root=_workspace_root(),
-                            canonical_context=canonical_context_broker,
-                            canonical_context_text=canonical_context_prompt,
-                        ),
-                    )
+                    if (
+                        reset_request.active_task_id
+                        and is_lumacart_prompt_id(selected_prompt)
+                    ):
+                        architect_task = trial_task
+                        if allowed_create_target or allowed_live_trial_target:
+                            architect_task = _trial_bounded_create_task(
+                                trial_task,
+                                explicit_target,
+                                reset_request.allowed_files,
+                            )
+                        architect_plan = _load_or_prepare_architect_plan(
+                            architect_task,
+                            reset_request.active_task_id,
+                            expected_target=explicit_target,
+                        )
+                        if not _architect_plan_has_usable_coder_packet(
+                            architect_plan,
+                            expected_target=explicit_target,
+                        ):
+                            raise HTTPException(
+                                status_code=409,
+                                detail={
+                                    "error": "authoritative_plan_missing",
+                                    "reason_code": "authoritative_plan_missing",
+                                    "task_id": reset_request.active_task_id,
+                                    "truth_status": "BLOCKED_SAFE",
+                                    "canonical_owner": "CodingOrchestrator",
+                                },
+                            )
+                        try:
+                            target_plugin_orchestrator_receipt = (
+                                await asyncio.get_running_loop().run_in_executor(
+                                    None,
+                                    functools.partial(
+                                        _run_production_target_plugin_proposal,
+                                        task_id=reset_request.active_task_id,
+                                        target_plugin=target_plugin,
+                                        task=trial_task,
+                                        canonical_context=canonical_context_broker,
+                                    ),
+                                )
+                            )
+                        except CodingOrchestratorError as error:
+                            raise HTTPException(
+                                status_code=409,
+                                detail={
+                                    "error": str(error),
+                                    "reason_code": error.reason_code,
+                                    "task_id": reset_request.active_task_id,
+                                    "truth_status": "BLOCKED_SAFE",
+                                    "canonical_owner": "CodingOrchestrator",
+                                },
+                            ) from error
+                        coder = dict(
+                            target_plugin_orchestrator_receipt[
+                                "target_plugin_result"
+                            ]
+                        )
+                        proposal = target_plugin_orchestrator_receipt.get(
+                            "target_plugin_proposal"
+                        )
+                        persisted_context = (
+                            proposal.get("canonical_context_report")
+                            if isinstance(proposal, dict)
+                            and isinstance(
+                                proposal.get("canonical_context_report"), dict
+                            )
+                            else canonical_context_broker_for_task(
+                                reset_request.active_task_id
+                            )
+                        )
+                        if not isinstance(persisted_context, dict):
+                            raise HTTPException(
+                                status_code=409,
+                                detail={
+                                    "reason_code": "canonical_context_report_missing",
+                                    "task_id": reset_request.active_task_id,
+                                    "truth_status": "BLOCKED_SAFE",
+                                    "canonical_owner": "CodingOrchestrator",
+                                },
+                            )
+                        canonical_context_broker = persisted_context
+                        canonical_context_prompt = _canonical_context_prompt_text(
+                            persisted_context
+                        )
+                        architect_plan = load_plan(reset_request.active_task_id)
+                    else:
+                        # A target-plugin packet without an active durable task is
+                        # a bounded preview only. It cannot produce terminal proof.
+                        architect_plan = None
+                        coder = _mark_unorchestrated_target_plugin_preview(
+                            await asyncio.get_running_loop().run_in_executor(
+                                None,
+                                functools.partial(
+                                    execute_target_plugin_command,
+                                    target_plugin,
+                                    task=trial_task,
+                                    workspace_root=_workspace_root(),
+                                    canonical_context=canonical_context_broker,
+                                    canonical_context_text=canonical_context_prompt,
+                                ),
+                            )
+                        )
                 elif _fip4_qwen_enabled() and explicit_target:
                     architect_plan = None
                     fip4_result_raw = await asyncio.get_running_loop().run_in_executor(
@@ -7220,6 +7382,14 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                     )
         proposed = str(coder.get("proposed_diff") or "")
         target = str(coder.get("target") or "")
+        if target_plugin_orchestrator_receipt is not None:
+            orchestrated_target_plugin_proposal = (
+                target_plugin_orchestrator_receipt.get("target_plugin_proposal")
+            )
+            if isinstance(orchestrated_target_plugin_proposal, dict) and str(
+                orchestrated_target_plugin_proposal.get("target") or ""
+            ):
+                target = str(orchestrated_target_plugin_proposal["target"])
         coder_blocked = bool(coder.get("coder_blocked"))
         blocked_reason = str(coder.get("blocked_reason") or "")
         needed_context = str(coder.get("needed_context") or "")
@@ -7243,26 +7413,57 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
             if isinstance(coder.get("coder_diagnostics"), dict)
             else {}
         )
+        if target_plugin_orchestrator_receipt is not None:
+            orchestrated_proposal = target_plugin_orchestrator_receipt.get(
+                "target_plugin_proposal"
+            )
+            if isinstance(orchestrated_proposal, dict):
+                diagnostics["target_plugin_output_id"] = str(
+                    target_plugin_orchestrator_receipt.get(
+                        "target_plugin_output_id"
+                    )
+                    or orchestrated_proposal.get("runtime_output_id")
+                    or ""
+                )
+                diagnostics["target_plugin_context_hash"] = str(
+                    orchestrated_proposal.get("context_hash") or ""
+                )
+                diagnostics["target_plugin_proposal_binding_sha256"] = str(
+                    orchestrated_proposal.get("proposal_binding_sha256") or ""
+                )
+                diagnostics["canonical_context_consumed_by_coder_execution"] = bool(
+                    orchestrated_proposal.get("context_consumption_id")
+                    and orchestrated_proposal.get(
+                        "context_consumer_acknowledgement_id"
+                    )
+                )
+            diagnostics["coding_orchestrator_run_id"] = str(
+                target_plugin_orchestrator_receipt.get("run_id") or ""
+            )
+            diagnostics["coding_orchestrator_authoritative"] = (
+                target_plugin_orchestrator_receipt.get("authoritative") is True
+            )
         provider_model_truth = _provider_model_truth_from_coder_diagnostics(diagnostics)
         coder_context_applicable = bool(
             proposed.strip()
             or provider_model_truth.get("providerCallMade") is True
         )
-        canonical_context_broker = _record_active_task_context_broker(
-            reset_request.active_task_id,
-            canonical_context_broker,
-            coder_applicable=coder_context_applicable,
-            coder_consumed=(
-                diagnostics.get("canonical_context_consumed_by_coder_execution") is True
-            ),
-            repair_attempted=bool(
-                diagnostics.get("repair_attempted") is True
-                or diagnostics.get("prompt3_retry_attempted") is True
-            ),
-            repair_consumed=(
-                diagnostics.get("canonical_context_consumed_by_coder_execution") is True
-            ),
-        )
+        if target_plugin_orchestrator_receipt is None:
+            canonical_context_broker = _record_active_task_context_broker(
+                reset_request.active_task_id,
+                canonical_context_broker,
+                coder_applicable=coder_context_applicable,
+                coder_consumed=(
+                    diagnostics.get("canonical_context_consumed_by_coder_execution") is True
+                ),
+                repair_attempted=bool(
+                    diagnostics.get("repair_attempted") is True
+                    or diagnostics.get("prompt3_retry_attempted") is True
+                ),
+                repair_consumed=(
+                    diagnostics.get("canonical_context_consumed_by_coder_execution") is True
+                ),
+            )
         diagnostics["canonical_context_broker"] = canonical_context_broker
         diagnostics["canonical_context_report_hash"] = canonical_context_broker.get(
             "canonical_report_hash",
@@ -7659,6 +7860,68 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 else []
             ),
         }
+        if target_plugin is not None:
+            response_payload["target_plugin_orchestrated"] = (
+                target_plugin_orchestrator_receipt is not None
+            )
+            response_payload["targetPluginOrchestrated"] = (
+                target_plugin_orchestrator_receipt is not None
+            )
+        if target_plugin_orchestrator_receipt is not None:
+            orchestrated_proposal = target_plugin_orchestrator_receipt.get(
+                "target_plugin_proposal"
+            )
+            proposal_payload = (
+                dict(orchestrated_proposal)
+                if isinstance(orchestrated_proposal, dict)
+                else {}
+            )
+            runtime_output_id = str(
+                target_plugin_orchestrator_receipt.get("target_plugin_output_id")
+                or proposal_payload.get("runtime_output_id")
+                or ""
+            )
+            proposal_context_hash = str(
+                proposal_payload.get("context_hash")
+                or canonical_context_broker.get("canonical_report_hash")
+                or ""
+            )
+            response_payload.update(
+                {
+                    "coding_orchestrator": target_plugin_orchestrator_receipt,
+                    "codingOrchestrator": target_plugin_orchestrator_receipt,
+                    "target_plugin_proposal": proposal_payload,
+                    "targetPluginProposal": proposal_payload,
+                    "target_plugin_orchestrated": True,
+                    "targetPluginOrchestrated": True,
+                    "target_plugin_run_id": str(
+                        target_plugin_orchestrator_receipt.get("run_id") or ""
+                    ),
+                    "targetPluginRunId": str(
+                        target_plugin_orchestrator_receipt.get("run_id") or ""
+                    ),
+                    "target_plugin_proposal_binding_sha256": str(
+                        proposal_payload.get("proposal_binding_sha256") or ""
+                    ),
+                    "targetPluginProposalBindingSha256": str(
+                        proposal_payload.get("proposal_binding_sha256") or ""
+                    ),
+                }
+            )
+            if runtime_output_id:
+                response_payload["target_plugin_output_id"] = runtime_output_id
+                response_payload["targetPluginOutputId"] = runtime_output_id
+                response_payload["runtime_output_id"] = runtime_output_id
+                response_payload["runtimeOutputId"] = runtime_output_id
+            if proposal_context_hash:
+                response_payload["target_plugin_context_hash"] = (
+                    proposal_context_hash
+                )
+                response_payload["targetPluginContextHash"] = (
+                    proposal_context_hash
+                )
+                response_payload["context_hash"] = proposal_context_hash
+                response_payload["contextHash"] = proposal_context_hash
         return _attach_fip0_truth_receipt(
             response_payload,
             request=reset_request,
@@ -7769,9 +8032,9 @@ def _load_or_prepare_architect_plan(
 
     if task_id:
         try:
-            from source_proxy.tasks.long_running import advance_long_running_task
-
-            advance_long_running_task(task_id)
+            # All live task advancement belongs to the canonical production
+            # orchestrator, including plan preparation from the prompt route.
+            get_coding_orchestrator().advance(task_id)
             plan = _load_active_architect_plan(task_id)
             if _architect_plan_has_usable_coder_packet(plan, expected_target=expected_target):
                 return plan
@@ -7876,8 +8139,17 @@ def _trial_bounded_create_task(task: str, target: str, allowed_files: list[str])
         for item in allowed_files
         if (normalized := _normalize_trial_allowed_path(item))
     ]
-    if not normalized_target or not allowed:
+    if (
+        not normalized_target
+        or not allowed
+        or not _trial_path_allowed(normalized_target, allowed)
+    ):
         return task
+    # The deterministic planner deliberately requires an exact target binding.
+    # The request may authorize that target through a bounded glob, so narrow the
+    # persisted planning envelope to the already-authorized concrete path.
+    if normalized_target not in allowed:
+        allowed.append(normalized_target)
     payload = {
         "task": task.strip(),
         "mode": "proposal",

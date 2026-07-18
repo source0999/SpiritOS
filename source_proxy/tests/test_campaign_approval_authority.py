@@ -164,6 +164,44 @@ def test_coding_approval_rejects_changed_source_head(monkeypatch: pytest.MonkeyP
     assert caught.value.reason_code == "approval_source_mismatch"
 
 
+def test_coding_approval_finalization_is_idempotent_only_for_the_exact_result() -> None:
+    task_id = "campaign1-test-idempotent-finalization"
+    preview = coding_preview(task_id=task_id)
+    consumed = consume(issue(str(preview["preview_id"])), task_id=task_id)
+    evidence = {"schema_version": "test/v1", "artifact_sha256": "sha256:" + "a" * 64}
+
+    first = finalize_coding_execution_approval(
+        consumed,
+        result_id=task_id,
+        evidence=evidence,
+        status="succeeded",
+    )
+    replay = finalize_coding_execution_approval(
+        consumed,
+        result_id=task_id,
+        evidence=evidence,
+        status="succeeded",
+    )
+
+    assert first["state"] == replay["state"] == "consumed"
+    assert first["idempotent"] is False
+    assert replay["idempotent"] is True
+    with pytest.raises(CampaignApprovalError, match="approval_already_consumed"):
+        finalize_coding_execution_approval(
+            consumed,
+            result_id=f"{task_id}-different",
+            evidence=evidence,
+            status="succeeded",
+        )
+    with pytest.raises(CampaignApprovalError, match="approval_already_consumed"):
+        finalize_coding_execution_approval(
+            consumed,
+            result_id=task_id,
+            evidence={"schema_version": "test/v1", "artifact_sha256": "sha256:" + "b" * 64},
+            status="succeeded",
+        )
+
+
 def test_coding_approval_persists_the_server_resolved_lumacart_plugin() -> None:
     identity = {
         "plugin_id": "lumacart",
@@ -185,21 +223,30 @@ def test_coding_approval_persists_the_server_resolved_lumacart_plugin() -> None:
 
 def test_coding_evidence_requires_identical_approval_generation_for_all_consumers() -> None:
     artifact_sha256 = "sha256:" + "a" * 64
+    acknowledgements = {
+        name: {
+            "approval_id": "apr_campaign1",
+            "generation": 2,
+            "artifact_sha256": artifact_sha256,
+            "invocation_id": f"invocation-{index}",
+            "output_id": f"output-{index}",
+            "acknowledgement_id": f"acknowledgement-{index}",
+        }
+        for index, name in enumerate(REQUIRED_CONSUMERS)
+    }
     receipt = {
         "approval_id": "apr_campaign1",
         "generation": 2,
         "artifact_sha256": artifact_sha256,
-        "acknowledgements": {
-            name: {
-                "approval_id": "apr_campaign1",
-                "generation": 2,
-                "artifact_sha256": artifact_sha256,
-                "invocation_id": f"invocation-{index}",
-                "output_id": f"output-{index}",
-                "consumer_acknowledgement_id": f"acknowledgement-{index}",
+        "acknowledgements": acknowledgements,
+        "participant_records": [
+            {
+                "role": name,
+                "consumer_acknowledgement_id": acknowledgement["acknowledgement_id"],
+                "consumer_acknowledgement": acknowledgement,
             }
-            for index, name in enumerate(REQUIRED_CONSUMERS)
-        },
+            for name, acknowledgement in acknowledgements.items()
+        ],
     }
     validate_coding_approval_evidence(receipt)
     receipt["acknowledgements"]["coding-verifier"]["generation"] = 3
@@ -208,31 +255,39 @@ def test_coding_evidence_requires_identical_approval_generation_for_all_consumer
     assert caught.value.reason_code == "approval_acknowledgement_mismatch:coding-verifier"
 
 
-def test_coding_evidence_requires_identical_target_plugin_identity_for_all_consumers() -> None:
+def test_coding_evidence_rejects_acknowledgement_not_owned_by_the_participant() -> None:
     identity = {"plugin_id": "lumacart", "selected_prompt_id": "coder-001-init-dummy-product-site"}
     artifact_sha256 = "sha256:" + "b" * 64
+    acknowledgements = {
+        name: {
+            "approval_id": "apr_campaign1",
+            "generation": 2,
+            "artifact_sha256": artifact_sha256,
+            "invocation_id": f"invocation-{index}",
+            "output_id": f"output-{index}",
+            "acknowledgement_id": f"acknowledgement-{index}",
+        }
+        for index, name in enumerate(REQUIRED_CONSUMERS)
+    }
     receipt = {
         "approval_id": "apr_campaign1",
         "generation": 2,
         "target_plugin_identity": identity,
         "artifact_sha256": artifact_sha256,
-        "acknowledgements": {
-            name: {
-                "approval_id": "apr_campaign1",
-                "generation": 2,
-                "artifact_sha256": artifact_sha256,
-                "invocation_id": f"invocation-{index}",
-                "output_id": f"output-{index}",
-                "consumer_acknowledgement_id": f"acknowledgement-{index}",
-                "target_plugin_identity": dict(identity),
+        "acknowledgements": acknowledgements,
+        "participant_records": [
+            {
+                "role": name,
+                "consumer_acknowledgement_id": acknowledgement["acknowledgement_id"],
+                "consumer_acknowledgement": dict(acknowledgement),
             }
-            for index, name in enumerate(REQUIRED_CONSUMERS)
-        },
+            for name, acknowledgement in acknowledgements.items()
+        ],
     }
-    receipt["acknowledgements"]["evidence-recorder"]["target_plugin_identity"] = {"plugin_id": "other"}
+    receipt["participant_records"][-1]["consumer_acknowledgement"]["output_id"] = "forged-output"
     with pytest.raises(CampaignApprovalEvidenceError) as caught:
         validate_coding_approval_evidence(receipt)
-    assert caught.value.reason_code == "approval_target_plugin_acknowledgement_mismatch:evidence-recorder"
+    assert caught.value.reason_code == "approval_acknowledgement_not_participant_owned:evidence-recorder"
 
 
 def test_coding_approval_rejects_fabricated_and_cancelled_ids() -> None:
@@ -364,8 +419,11 @@ def test_cartographer_durable_selection_binds_consumer_target_and_acknowledgemen
         proposal_id = "bp-campaign1-selection"
         approved_diff = "diff --git a/blueprint b/blueprint\n+"
         diff_preview = ""
-        proposed_files = ["_blueprints/current/dashboard.md"]
+        proposed_files = ["design:dashboard"]
         fingerprint = "proposal-fingerprint"
+        persisted = True
+        status = "pending_review"
+        warnings = []
 
     monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [Proposal()])
     preview = cartographer_selection.persist_cartographer_selection(
@@ -379,15 +437,50 @@ def test_cartographer_durable_selection_binds_consumer_target_and_acknowledgemen
         approval_id=approval_id, proposal_id=Proposal.proposal_id,
         consumer="design-writeback", target="design:dashboard",
     )
+    transfer = {
+        "schema_version": "cartographer.coding-transfer/v1",
+        "proposal_id": Proposal.proposal_id,
+        "selection_id": approval_id,
+        "selection_approval_id": approval_id,
+        "selection_generation": 1,
+        "consumer": "design-writeback",
+        "target": "design:dashboard",
+        "task_id": "design-task-1",
+        "run_id": "design-run-1",
+        "transfer_event_id": "cartographer-transfer-event-1",
+        "downstream_consumer_invocation_id": "design-consumer-invocation-1",
+        "provenance": {
+            "content_hash": consumed["binding"]["content_hash"],
+            "context": consumed["binding"]["context"],
+            "preview_id": consumed["binding"]["preview"],
+            "source_head": consumed["binding"]["source_head"],
+        },
+    }
+    acknowledgement = {
+        "schema_version": "cartographer.downstream-acknowledgement/v2",
+        "acknowledgement_id": "design-consumer-ack-1",
+        "transfer_event_id": transfer["transfer_event_id"],
+        "consumer_invocation_id": transfer["downstream_consumer_invocation_id"],
+        "consumer_output_id": "design-consumer-output-1",
+        "consumer_output_sha256": "b" * 64,
+        "consumer_artifact_sha256": "c" * 64,
+        "consumer_completed_at": "2026-07-17T12:00:00+00:00",
+        "consumer_passed": True,
+        "proposal_id": Proposal.proposal_id,
+        "selection_id": approval_id,
+        "task_id": transfer["task_id"],
+        "run_id": transfer["run_id"],
+        "consumed": True,
+    }
     finalized = cartographer_selection.finalize_cartographer_selection(
         consumed=consumed, proposal_id=Proposal.proposal_id,
         consumer="design-writeback", target="design:dashboard",
+        transfer=transfer,
+        downstream_acknowledgement=acknowledgement,
     )
     assert finalized["receipt"]["state"] == "consumed"
-    assert set(finalized["acknowledgements"]) == {
-        "cartographer-transfer-consumer", "cartographer-reviewer", "cartographer-verifier", "evidence-recorder",
-    }
-    assert all(value == {"approval_id": approval_id, "generation": 1} for value in finalized["acknowledgements"].values())
+    assert finalized["transfer"] == transfer
+    assert finalized["downstream_acknowledgement"] == acknowledgement
 
     with pytest.raises(CampaignApprovalError) as replay:
         cartographer_selection.consume_cartographer_selection(
@@ -404,8 +497,11 @@ def test_cartographer_durable_selection_rejects_wrong_consumer_and_target(
         proposal_id = "bp-campaign1-selection-reject"
         approved_diff = "diff --git a/blueprint b/blueprint\n+"
         diff_preview = ""
-        proposed_files = ["_blueprints/current/dashboard.md"]
+        proposed_files = ["src/app/page.tsx"]
         fingerprint = "proposal-fingerprint"
+        persisted = True
+        status = "pending_review"
+        warnings = []
 
     monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [Proposal()])
     preview = cartographer_selection.persist_cartographer_selection(
@@ -420,9 +516,50 @@ def test_cartographer_durable_selection_rejects_wrong_consumer_and_target(
             approval_id=approval_id, proposal_id=Proposal.proposal_id,
                 consumer="coding-executor:coder", target="src/app/other.tsx",
         )
-    assert wrong_target.value.reason_code == "approval_target_mismatch"
+    assert (
+        wrong_target.value.reason_code
+        == "cartographer_selection_target_not_proposed"
+    )
     with pytest.raises(CampaignApprovalError) as wrong_consumer:
         cartographer_selection.persist_cartographer_selection(
             proposal_id=Proposal.proposal_id, consumer="unregistered-writer", target="src/app/page.tsx",
         )
     assert wrong_consumer.value.reason_code == "cartographer_selection_consumer_mismatch"
+
+
+def test_cartographer_selection_rejects_unpersisted_or_unproposed_targets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Proposal:
+        proposal_id = "bp-campaign1-selection-source-bound"
+        approved_diff = None
+        diff_preview = ""
+        proposed_files = ["tests/ui-agent-trials/fixtures/dummy-product-site/README.md"]
+        fingerprint = "proposal-fingerprint"
+        persisted = False
+        status = "pending_review"
+        warnings = []
+
+    monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [Proposal()])
+    with pytest.raises(cartographer_selection.CartographerSelectionError) as unpersisted:
+        cartographer_selection.persist_cartographer_selection(
+            proposal_id=Proposal.proposal_id,
+            consumer="coding-executor:coder",
+            target=Proposal.proposed_files[0],
+        )
+    assert (
+        unpersisted.value.reason_code
+        == "cartographer_selection_proposal_not_persisted"
+    )
+
+    Proposal.persisted = True
+    with pytest.raises(cartographer_selection.CartographerSelectionError) as unrelated_target:
+        cartographer_selection.persist_cartographer_selection(
+            proposal_id=Proposal.proposal_id,
+            consumer="coding-executor:coder",
+            target="src/app/page.tsx",
+        )
+    assert (
+        unrelated_target.value.reason_code
+        == "cartographer_selection_target_not_proposed"
+    )

@@ -37,6 +37,16 @@ export const DESIGN_PARTICIPANTS = [
 ] as const;
 
 export type DesignParticipantRecord = {
+  acknowledgement: {
+    acknowledgement_id: string;
+    artifact_hash: string;
+    consumed: true;
+    consumer_invocation_id: string;
+    output_hash: string;
+    output_id: string;
+    producer_invocation_id: string;
+    recorded_at: string;
+  };
   artifact_hash: string;
   checks: string[];
   invocation_id: string;
@@ -47,7 +57,37 @@ export type DesignParticipantRecord = {
   status: "accepted" | "recorded" | "rejected" | "verified";
 };
 
-export type DesignParticipantOutput = Omit<DesignParticipantRecord, "output_hash">;
+export type DesignParticipantOutput = Omit<
+  DesignParticipantRecord,
+  "acknowledgement" | "output_hash"
+>;
+
+export type DesignParticipantProducerOutput = DesignParticipantOutput & {
+  output_hash: string;
+};
+
+export function acknowledgeDesignParticipantOutput(
+  output: DesignParticipantProducerOutput,
+  consumerInvocationId: string,
+): DesignParticipantRecord {
+  const { output_hash, ...body } = output;
+  if (!consumerInvocationId.trim() || output_hash !== hashDesignParticipantOutput(body)) {
+    throw new Error("design_participant_acknowledgement_invalid");
+  }
+  return {
+    ...output,
+    acknowledgement: {
+      acknowledgement_id: `design-ack-${randomUUID()}`,
+      artifact_hash: output.artifact_hash,
+      consumed: true,
+      consumer_invocation_id: consumerInvocationId,
+      output_hash: output.output_hash,
+      output_id: output.output_id,
+      producer_invocation_id: output.invocation_id,
+      recorded_at: new Date().toISOString(),
+    },
+  };
+}
 
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
@@ -301,6 +341,9 @@ export function redactedDesignWritebackEvidence(
   const participants = input.participant_records.map((record) => record.participant);
   const invocationIds = new Set(input.participant_records.map((record) => record.invocation_id));
   const outputIds = new Set(input.participant_records.map((record) => record.output_id));
+  const acknowledgementIds = new Set(
+    input.participant_records.map((record) => record.acknowledgement.acknowledgement_id),
+  );
   if (
     input.artifact_hash !== approval.content_hash ||
     input.receipt.target !== approval.target ||
@@ -309,6 +352,7 @@ export function redactedDesignWritebackEvidence(
     !DESIGN_PARTICIPANTS.every((participant) => participants.includes(participant)) ||
     invocationIds.size !== DESIGN_PARTICIPANTS.length ||
     outputIds.size !== DESIGN_PARTICIPANTS.length ||
+    acknowledgementIds.size !== DESIGN_PARTICIPANTS.length ||
     input.participant_records.some(
       (record) =>
         record.artifact_hash !== input.artifact_hash ||
@@ -322,6 +366,12 @@ export function redactedDesignWritebackEvidence(
           participant: record.participant,
           status: record.status,
         }) ||
+        record.acknowledgement.consumed !== true ||
+        record.acknowledgement.artifact_hash !== record.artifact_hash ||
+        record.acknowledgement.producer_invocation_id !== record.invocation_id ||
+        record.acknowledgement.output_id !== record.output_id ||
+        record.acknowledgement.output_hash !== record.output_hash ||
+        !record.acknowledgement.consumer_invocation_id ||
         record.checks.length === 0,
     )
   ) {

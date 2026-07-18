@@ -9,8 +9,8 @@ Remediation: `spiritos-foundation-remediation-r1`
 - Worktree: `/home/source/SpiritOS-foundation-remediation-r1-20260717`
 - Branch: `codex/spiritos-foundation-remediation-r1-20260717`
 - Base: `2b8ead66578d7f7053c01cb987e011b763c1c03d`
-- Recorded source head: `790835cfb8e4857fe7d99264ad1386e9775c0276`
-- Current phase/gate: Phase 2 / `r1_5_coding_lifecycle`
+- Recorded source head: `bec3bcf41d60f699a3a6c005e440946f5b22d417`
+- Current phase/gate: Phase 4 / `r1_11_clean_proving_task`
 - GO eligibility: `false`
 - Terminal verdict: not available
 - Campaign 3 started: `false`; Campaign 4 started: `false`; push: `false`
@@ -75,12 +75,12 @@ These are defect confirmations, not accepted completion evidence.
 | R1.2 Cartographer authority | complete | legacy client authority routes are absent; persisted proposal review uses server-owned identity, exact bindings, consume-before-write, independent checks, and rollback |
 | R1.3 SpiritFlix authority | complete | production writers use authenticated, complete mutation bindings and a verify/finalize-or-compensate transaction |
 | R1.4 Design security | complete | existing writeback only; exact artifact binding, production issuer/consumer, independent disk verification, late finalization, and rollback |
-| R1.5 coding lifecycle | partial | participant evidence contract is repaired; production orchestrator checkpoint remains pending |
-| R1.6 target adapters 1-10 | pending | executable target-owned behavior |
-| R1.7 production orchestrator | pending | live importer and persisted owner |
-| R1.8 runtime contracts/transfer | partial | immutable version/schema/output/acknowledgement/consumption boundary is tested; live orchestrator integration and Cartographer lineage remain pending |
-| R1.9 backend state/recovery | pending | Source Proxy truth and one-run recovery |
-| R1.10 immutable evidence | pending | implement source-bound schema/generator and profile evidence model; terminal receipt waits for proof |
+| R1.5 coding lifecycle | complete | apply is nonterminal; five independently invoked participants bind one immutable artifact and successful authority finalization is hard-gated on proof recomputation |
+| R1.6 target adapters 1-10 | complete | every exact LumaCart prompt has target-owned specification, command policy, identity, and executable adapter behavior |
+| R1.7 production orchestrator | complete | API task creation owns one durable orchestrator and the exact target proposal path consumes persisted context/runtime records through that owner |
+| R1.8 runtime contracts/transfer | complete | live output, acknowledgement, and consumption boundaries are enforced; Cartographer selection remains pending until real downstream invocation and finalization |
+| R1.9 backend state/recovery | complete | Source Proxy is decision authority, Next is read-only projection, and fallback is recorded within one accountable run lineage |
+| R1.10 immutable evidence | complete | strict source-bound schemas, generator, validator, secret scan, and adversarial regression suites are implemented; the terminal artifacts deliberately wait for R1.11 proof |
 | R1.11 clean proving task | pending | real HTTP/model/approval/apply/participants/recovery/undo/rerun |
 | R1.12 closeout | pending | full matrix, terminal receipt/manifest, tag, bundle, sidecar, restoration instructions |
 
@@ -91,15 +91,15 @@ USER_OBJECTIVE: Foundation Remediation R1
 PROJECT_SCOPE: Source Proxy, SpiritFlix, Cartographer, Design security preservation, shared authority/evidence
 ACTIVE_WORKTREE: /home/source/SpiritOS-foundation-remediation-r1-20260717
 ACTIVE_BRANCH: codex/spiritos-foundation-remediation-r1-20260717
-ALLOWED_PATHS: source_proxy/, src/app/api/spiritflix/, src/app/v1/cartographer/, src/lib/coding/, packages/contracts/, scripts/, docs/architecture/
+ALLOWED_PATHS: .gitignore, _blueprints/proposals/pending_review/, source_proxy/, src/app/api/spiritflix/, src/app/v1/actions/, src/app/v1/cartographer/, src/app/v1/coding/, src/components/coding/, src/lib/coding/, tests/ui-agent-trials/fixtures/dummy-product-site/, packages/contracts/, scripts/, docs/architecture/
 FORBIDDEN_DETOURS: Campaign 3 implementation, Campaign 4, Scout/Mac/Obsidian/retained agents, Designer expansion, push
-CURRENT_PHASE: R1.5
-COMPLETED_GATES: R1.0, R1.1, R1.2, R1.3, R1.4
-NEXT_GATE: checkpoint late coding finalization and the production orchestrator
+CURRENT_PHASE: R1.11
+COMPLETED_GATES: R1.0, R1.1, R1.2, R1.3, R1.4, R1.5, R1.6, R1.7, R1.8, R1.9, R1.10
+NEXT_GATE: independently reviewed clean production proving task
 SERVICES: no R1 service started
 TESTS_REQUIRED: registered R1 profiles
 OPEN_BLOCKERS: none; expected validator failures are repair gates
-LAST_VERIFIED_HEAD: 790835cfb8e4857fe7d99264ad1386e9775c0276
+LAST_VERIFIED_HEAD: bec3bcf41d60f699a3a6c005e440946f5b22d417
 ```
 
 ## Authority repair checkpoint
@@ -138,6 +138,111 @@ LAST_VERIFIED_HEAD: 790835cfb8e4857fe7d99264ad1386e9775c0276
   Cartographer handoff, and observability regression tests.
 - Claim ceiling: library boundary only. Production integration remains an explicit
   R1.8 partial gate and cannot satisfy the authority validator yet.
+
+## Production coding authority checkpoint
+
+- One canonical `CodingOrchestrator` is created and persisted by the production task
+  API. Exact LumaCart proposal generation enters it through context-broker, planner,
+  model routing, and target-adapter runtime boundaries; a direct adapter bypass is
+  rejected by production-path regression and static call-graph checks.
+- Apply is explicitly nonterminal. Executor, reviewer, verifier, anti-cheat, and
+  evidence recorder create separate invocation/output/acknowledgement records bound
+  to one artifact. Finalization independently recomputes the proof and fails closed
+  when any required output, consumption, participant, model, recovery, or
+  Cartographer binding is missing.
+- Source Proxy owns decision-bearing run state. The Next coding-runs endpoints are
+  bounded read-only projections and cannot create, mutate, or finalize a run.
+- The canonical model router records exact primary/fallback attempts and a recovery
+  record inside one lineage. A non-model result cannot satisfy terminal proof.
+- Focused observations: the combined production/orchestrator/proof/participant/
+  recovery/target/runtime matrix passed `120` tests; the full long-running route
+  suite passed `71`; the coding regression pack passed `133`; the real decision
+  route/orchestrator binding test passed; the strengthened authority validator
+  reports valid. These remain nonterminal checkpoint observations until a clean
+  source commit is exercised by R1.11 and immutably anchored.
+
+## Durable approval and participant-ownership checkpoint
+
+- Coding finalization now persists an exact authority-finalization intent before the
+  authority call. A lost response, receipt-persistence failure, or local task-commit
+  failure resumes that same intent without rerunning participants or consuming a new
+  approval generation. Exact already-consumed finalization is idempotent; any changed
+  result or evidence is rejected.
+- Production reviewer, verifier, anti-cheat, and evidence-recorder work runs in
+  distinct subprocesses. Each producer emits a self-hashed v2 output after the child
+  process starts; the downstream parent consumer validates that output and then emits
+  its own separately hashed acknowledgement. The executor likewise owns its output,
+  and the orchestrator creates its acknowledgement only after validation.
+- Approval evidence contains the exact participant-owned acknowledgement objects,
+  not copied identity fields or caller-authored `performed` labels. Design and
+  SpiritFlix preserve their existing scope while enforcing the same output-before-
+  acknowledgement ordering and distinct producer/consumer identities.
+- Source Proxy remains the only decision-bearing task owner. A Next projection can
+  display terminal success only when a canonical-hashed production proof binds the
+  same task, run, artifact, approval generation, execution evidence, and terminal
+  result. Missing or altered proof leaves the projection nonterminal.
+- Focused observations: approval/participant/proof suites passed `42`; the broader
+  orchestrator, Cartographer, long-running, and decision-route suites passed `92`;
+  the relevant Next/Design/SpiritFlix matrix passed `55`; TypeScript typecheck and a
+  full production build passed. These are implementation observations only until the
+  exact committed source is rerun through every registered profile.
+
+## Immutable evidence implementation checkpoint
+
+- Added strict JSON schemas for profile receipts, terminal receipts, and immutable
+  manifests, plus content-addressed generation, validation, protected-head reports,
+  high-confidence secret scanning, and adversarial tests.
+- Evidence construction requires the exact current source commit and rejects missing
+  build/plugin/prompt/context/approval/participant/authority bindings. The terminal
+  validator also requires a tagged closeout commit, verified bundle and sidecar, and
+  tracked restoration instructions.
+- No terminal receipt or success field has been created at this checkpoint. Those
+  artifacts depend on the real clean proving run and full source-commit test matrix.
+
+## Clean-proving harness checkpoint
+
+- The inner proving client requires two distinct production HTTP runs at one exact
+  source commit: a controlled primary-model failure with recorded fallback and a
+  clean rerun after authenticated undo/reset. It validates real Cartographer transfer,
+  runtime output consumption, participant-owned acknowledgements, approval generation,
+  immutable artifact/diff/result hashes, and a 27-exchange HMAC-bound transcript.
+- The outer launcher accepts only a clean registered non-detached linked worktree,
+  prehashes the Python executable/environment and Node executable/dependency tree,
+  launches Source Proxy, Next, and the loopback TLS proxy in one isolated user scope,
+  and revalidates the complete worktree and measured runtimes after teardown.
+- Process containment has a deliberately narrow claim ceiling: revocation of trusted,
+  prehashed descendants that remain in the user scope. Resistance to hostile same-UID
+  cgroup migration is explicitly not claimed. Terminal evidence additionally requires
+  three empty descendant scans and recursively unpopulated cgroups.
+- The terminal generator now validates and cross-binds standalone inner and outer
+  receipt blobs and requires both in the immutable manifest/tag. Regression status:
+  proving `16/16`, lifecycle `22/22`, evidence `13/13`, completion `12/12`, and
+  profile-registry `5/5`. No application service or real proving run has yet been
+  started; R1.11 remains pending.
+
+## Broad-suite diagnostic attribution
+
+- A non-acceptance diagnostic run of all `source_proxy/tests` reached `1908 passed`
+  and `12 failed`. Three failures touched R1-changed behavior: the legacy
+  Cartographer apply test expected a superseded mismatch reason after the whole
+  mutation surface became forbidden, and two observability fixtures still declared
+  orchestrator schema v1. The safety expectation now preserves the stronger
+  fail-closed rule (`15/15` focused pass), and observability now accepts only v2 while
+  explicitly rejecting legacy v1 (`4/4` focused plus `89/89` orchestrator/route pass).
+- The remaining nine diagnostics reproduce in areas untouched from the Campaign 2
+  base: a missing/stale future Cartographer consultation contract, environment-bound
+  timing fixtures, deterministic Markdown parsing, a headless-browser timeout, and a
+  stale research-source mock. They are recorded as inherited repository risks, not
+  accepted R1 evidence and not silently converted to passes. The mandatory R1
+  profiles exercise the changed production authority and proving surfaces directly.
+- A repository-wide default Vitest diagnostic reached `2354 passed` and `34 failed`
+  across 765 hierarchical suites. The failures are outside the registered R1 matrix:
+  Playwright/e2e and shebang-bearing scripts miscollected by Vitest, dummy fixture
+  files with no suite, inherited dashboard/media/Scout assertions, legacy coding UI
+  tests in untouched surfaces, and three multiline static-source assertions made
+  CRLF-sensitive by this host checkout. The changed Design/SpiritFlix/Next authority
+  and projection profiles pass, as do typecheck and the production build. The broad
+  aggregate remains a diagnostic risk record and is not presented as terminal proof.
 
 ## Closeout rule
 

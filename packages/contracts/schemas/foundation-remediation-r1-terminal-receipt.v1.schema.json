@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spiritos.local/schemas/foundation-remediation-r1-terminal-receipt.v1.schema.json",
+  "title": "SpiritOS Foundation Remediation R1 terminal receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "remediation_id",
+    "verdict",
+    "source_commit",
+    "repository_identity",
+    "protected_heads",
+    "shell_build_identity",
+    "backend_build_identity",
+    "target_plugin_identity",
+    "prompt_identity",
+    "context_identity",
+    "task_id",
+    "orchestrator_run_id",
+    "orchestrator_attempt_id",
+    "target",
+    "participants",
+    "approval",
+    "artifact_sha256",
+    "applied_diff_sha256",
+    "result_sha256",
+    "production_proof",
+    "production_proving_receipt",
+    "lifecycle_receipt",
+    "reviewer_result",
+    "verifier_result",
+    "anti_cheat_result",
+    "authority_validation",
+    "evidence_hash",
+    "generated_at",
+    "redaction_verdict",
+    "claim_ceiling"
+  ],
+  "properties": {
+    "schema": {
+      "const": "spiritos-foundation-remediation-r1-terminal-receipt/v1"
+    },
+    "remediation_id": {
+      "const": "spiritos-foundation-remediation-r1"
+    },
+    "verdict": {
+      "const": "SPIRITOS_FOUNDATION_REMEDIATION_COMPLETE"
+    },
+    "source_commit": {
+      "$ref": "#/$defs/hex40"
+    },
+    "repository_identity": {
+      "$ref": "#/$defs/repositoryIdentity"
+    },
+    "protected_heads": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/hex40"
+      }
+    },
+    "shell_build_identity": {
+      "$ref": "#/$defs/buildIdentity"
+    },
+    "backend_build_identity": {
+      "$ref": "#/$defs/buildIdentity"
+    },
+    "target_plugin_identity": {
+      "$ref": "#/$defs/targetPluginIdentity"
+    },
+    "prompt_identity": {
+      "$ref": "#/$defs/contentIdentity"
+    },
+    "context_identity": {
+      "$ref": "#/$defs/contentIdentity"
+    },
+    "task_id": {
+      "$ref": "#/$defs/nonempty"
+    },
+    "orchestrator_run_id": {
+      "$ref": "#/$defs/nonempty"
+    },
+    "orchestrator_attempt_id": {
+      "$ref": "#/$defs/nonempty"
+    },
+    "target": {
+      "$ref": "#/$defs/nonempty"
+    },
+    "participants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executor", "reviewer", "verifier", "anti_cheat", "evidence_recorder"],
+      "properties": {
+        "executor": { "$ref": "#/$defs/participant" },
+        "reviewer": { "$ref": "#/$defs/participant" },
+        "verifier": { "$ref": "#/$defs/participant" },
+        "anti_cheat": { "$ref": "#/$defs/participant" },
+        "evidence_recorder": { "$ref": "#/$defs/participant" }
+      }
+    },
+    "approval": {
+      "$ref": "#/$defs/approval"
+    },
+    "artifact_sha256": {
+      "$ref": "#/$defs/hex64"
+    },
+    "applied_diff_sha256": {
+      "$ref": "#/$defs/hex64"
+    },
+    "result_sha256": {
+      "$ref": "#/$defs/hex64"
+    },
+    "production_proof": {
+      "$ref": "#/$defs/productionProof"
+    },
+    "production_proving_receipt": {
+      "$ref": "#/$defs/pathHash"
+    },
+    "lifecycle_receipt": {
+      "$ref": "#/$defs/pathHash"
+    },
+    "reviewer_result": {
+      "$ref": "#/$defs/participantResult"
+    },
+    "verifier_result": {
+      "$ref": "#/$defs/participantResult"
+    },
+    "anti_cheat_result": {
+      "$ref": "#/$defs/participantResult"
+    },
+    "authority_validation": {
+      "$ref": "#/$defs/authorityValidation"
+    },
+    "evidence_hash": {
+      "$ref": "#/$defs/hex64"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "redaction_verdict": {
+      "$ref": "#/$defs/redactionVerdict"
+    },
+    "claim_ceiling": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "enum": ["GO", "go", "unbounded", "UNBOUNDED"]
+      }
+    }
+  },
+  "$defs": {
+    "nonempty": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hex40": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "hex64": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "repositoryIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_id", "worktree_id", "worktree_realpath"],
+      "properties": {
+        "repository_id": { "$ref": "#/$defs/nonempty" },
+        "worktree_id": { "$ref": "#/$defs/nonempty" },
+        "worktree_realpath": { "$ref": "#/$defs/nonempty" }
+      }
+    },
+    "buildIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["build_id", "source_commit"],
+      "properties": {
+        "build_id": { "$ref": "#/$defs/nonempty" },
+        "source_commit": { "$ref": "#/$defs/hex40" },
+        "artifact_path": { "$ref": "#/$defs/nonempty" },
+        "artifact_sha256": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "targetPluginIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin_id", "source_head"],
+      "properties": {
+        "plugin_id": { "$ref": "#/$defs/nonempty" },
+        "source_head": { "$ref": "#/$defs/hex40" }
+      }
+    },
+    "contentIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonempty" },
+        "sha256": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "invocation_id",
+        "output_id",
+        "output_sha256",
+        "consumer_acknowledgement_id",
+        "artifact_sha256"
+      ],
+      "properties": {
+        "status": { "enum": ["passed", "succeeded"] },
+        "invocation_id": { "$ref": "#/$defs/nonempty" },
+        "output_id": { "$ref": "#/$defs/nonempty" },
+        "output_sha256": { "$ref": "#/$defs/hex64" },
+        "consumer_acknowledgement_id": { "$ref": "#/$defs/nonempty" },
+        "artifact_sha256": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approval_id", "generation", "state", "artifact_sha256", "orchestrator_run_id"],
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "pattern": "^apr_[A-Za-z0-9_-]+$"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "state": { "const": "consumed" },
+        "artifact_sha256": { "$ref": "#/$defs/hex64" },
+        "orchestrator_run_id": { "$ref": "#/$defs/nonempty" }
+      }
+    },
+    "productionProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proof_sha256", "terminal_proof_eligible", "claim_ceiling", "recovery_id"],
+      "properties": {
+        "proof_sha256": { "$ref": "#/$defs/hex64" },
+        "terminal_proof_eligible": { "const": true },
+        "claim_ceiling": {
+          "type": "string",
+          "minLength": 1,
+          "not": { "enum": ["GO", "go", "unbounded", "UNBOUNDED"] }
+        },
+        "recovery_id": { "$ref": "#/$defs/nonempty" }
+      }
+    },
+    "pathHash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonempty" },
+        "sha256": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "participantResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "invocation_id"],
+      "properties": {
+        "status": { "enum": ["passed", "succeeded"] },
+        "invocation_id": { "$ref": "#/$defs/nonempty" }
+      }
+    },
+    "authorityValidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_commit",
+        "tag_name",
+        "validator_path",
+        "validator_sha256",
+        "artifact_path",
+        "artifact_sha256",
+        "result",
+        "passed"
+      ],
+      "properties": {
+        "source_commit": { "$ref": "#/$defs/hex40" },
+        "tag_name": { "$ref": "#/$defs/nonempty" },
+        "validator_path": { "$ref": "#/$defs/nonempty" },
+        "validator_sha256": { "$ref": "#/$defs/hex64" },
+        "artifact_path": { "$ref": "#/$defs/nonempty" },
+        "artifact_sha256": { "$ref": "#/$defs/hex64" },
+        "result": { "const": "pass" },
+        "passed": { "const": true }
+      }
+    },
+    "redactionVerdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "scanner"],
+      "properties": {
+        "verdict": { "const": "passed" },
+        "scanner": { "$ref": "#/$defs/nonempty" },
+        "artifact_sha256": { "$ref": "#/$defs/hex64" }
+      }
+    }
+  }
+}

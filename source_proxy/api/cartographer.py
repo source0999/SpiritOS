@@ -11,8 +11,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from source_proxy.cartographer.apply import CartographerApplyError, apply_approved_doc_proposal
 from source_proxy.cartographer.cartographer_selection_authority import (
     CartographerSelectionError,
-    consume_cartographer_selection,
-    finalize_cartographer_selection,
     issue_cartographer_selection,
     persist_cartographer_selection,
     reject_cartographer_selection,
@@ -1861,26 +1859,17 @@ async def cartographer_selection_transfer(
     proposal_id: str,
     request: CartographerSelectionExecuteRequest,
 ) -> dict[str, Any]:
-    try:
-        consumed = consume_cartographer_selection(
-            approval_id=request.approval_id, proposal_id=proposal_id,
-            consumer=request.consumer, target=request.target,
-        )
-        finalized = finalize_cartographer_selection(
-            consumed=consumed, proposal_id=proposal_id,
-            consumer=request.consumer, target=request.target,
-        )
-        return {
-            "authority": "spiritos-approval-authority",
-            "cartographer_identity": "cartographer-proposal-only",
-            "consumer": "cartographer-transfer-consumer",
-            "approval_id": consumed["approval_id"], "generation": consumed["generation"],
-            "acknowledgements": finalized["acknowledgements"],
-            "write_authority": False, "approval_issuer_authority": False,
-            "git_authority": False, "queue_authority": False,
-        }
-    except CartographerSelectionError as error:
-        raise HTTPException(status_code=422, detail={"reason_code": error.reason_code}) from error
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "reason_code": "cartographer_transfer_requires_coding_orchestrator",
+            "proposal_id": proposal_id,
+            "message": (
+                "Pass the issued selection approval to long-running task creation so the "
+                "canonical CodingOrchestrator persists and acknowledges the transfer."
+            ),
+        },
+    )
 
 
 @router.post("/proposals/{proposal_id}/apply-approved")

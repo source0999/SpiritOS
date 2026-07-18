@@ -262,6 +262,7 @@ def build_canonical_coding_lane_registry(
         "coder": ("source_proxy/tasks/", "source_proxy/target_plugins/"),
         "reviewer": ("source_proxy/planning/", "source_proxy/verification/"),
         "verifier": ("source_proxy/verification/", "source_proxy/decision/"),
+        "anti-cheat": ("source_proxy/verification/anticheat/",),
         "repair": ("source_proxy/tasks/",),
         "evidence-recorder": ("source_proxy/approval/",),
     }

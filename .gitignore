@@ -111,6 +111,8 @@ source_proxy/**/*.py[cod]
 
 # Local root runtime artifacts
 .spirit-backups/
+# Retired pre-R1 Next cache. It is ignored and never read as task truth;
+# Source Proxy long_running_tasks.sqlite3 is the sole durable coding owner.
 data/coding-runs.json
 data/*.jsonl
 data/*.sqlite3

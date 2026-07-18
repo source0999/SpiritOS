@@ -235,3 +235,47 @@ def test_required_outputs_fail_closed_until_each_output_is_consumed() -> None:
     with pytest.raises(RuntimeLaneBoundaryError) as unknown:
         boundary.require_outputs_consumed(["lane-output-missing"])
     assert unknown.value.reason_code == "unknown_coding_lane_output:lane-output-missing"
+
+
+def test_durable_records_rehydrate_with_exact_bindings() -> None:
+    boundary = RuntimeLaneBoundary()
+    output = boundary.issue_output(
+        lane_id="reviewer",
+        contract_version="coding.lane-contract/v1.0.0",
+        producer_invocation_id="reviewer-invocation-1",
+        payload={"passed": True, "findings": []},
+    )
+    acknowledgement = boundary.record_consumer_acknowledgement(
+        output_id=output.output_id,
+        consumer_version="coding-orchestrator/v1",
+        consumer_invocation_id="orchestrator-consumer-1",
+        payload={"approval_id": "apr_1", "generation": 1},
+    )
+    consumption = boundary.mark_output_consumed(
+        output_id=output.output_id,
+        acknowledgement_id=acknowledgement.acknowledgement_id,
+    )
+
+    restored = RuntimeLaneBoundary.from_payloads(
+        outputs=[output.to_payload()],
+        acknowledgements=[acknowledgement.to_payload()],
+        consumptions=[consumption.to_payload()],
+    )
+
+    assert restored.output(output.output_id).to_payload() == output.to_payload()
+    assert restored.acknowledgement(acknowledgement.acknowledgement_id).to_payload() == acknowledgement.to_payload()
+    assert restored.consumption(output.output_id).to_payload() == consumption.to_payload()
+
+
+def test_durable_rehydration_rejects_tampered_artifact_hash() -> None:
+    boundary = RuntimeLaneBoundary()
+    output = boundary.issue_output(
+        lane_id="anti-cheat",
+        contract_version="coding.lane-contract/v1.0.0",
+        producer_invocation_id="anti-cheat-invocation-1",
+        payload={"passed": True, "detector_ids": ["canned_output"], "violations": []},
+    ).to_payload()
+    output["artifact_hash"] = "sha256:" + "0" * 64
+
+    with pytest.raises(RuntimeLaneBoundaryError, match="artifact_hash_mismatch"):
+        RuntimeLaneBoundary.from_payloads(outputs=[output])

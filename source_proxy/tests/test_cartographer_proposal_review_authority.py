@@ -201,6 +201,26 @@ def test_authenticated_review_consumes_before_transaction_and_records_independen
         assert approved_payload["transitions"][-1]["actor"] == SERVER_ACTOR
         assert approved_payload["proposal_review_authority"]["generation"] == 1
         assert approved_payload["proposal_review_authority"]["result_hash"] == body["result_hash"]
+        assert "invocations" not in approved_payload["proposal_review_authority"]
+        requirements = approved_payload["proposal_review_authority"][
+            "participant_requirements"
+        ]
+        assert len(requirements) == 3
+        assert all(
+            "invocation_id" not in item
+            and "output_id" not in item
+            and "consumer_acknowledgement_id" not in item
+            and "status" not in item
+            for item in requirements
+        )
+        persisted_preview_plan = json.loads(
+            authority.previews[preview["preview"]["preview_id"]]["context_hash"]
+        )
+        assert "invocation_records" not in persisted_preview_plan
+        assert all(
+            "invocation_id" not in item
+            for item in persisted_preview_plan["participant_requirements"]
+        )
         invocation_ids = {item["invocation_id"] for item in body["invocations"]}
         output_ids = {item["output_id"] for item in body["invocations"]}
         acknowledgement_ids = {
@@ -224,6 +244,18 @@ def test_authenticated_review_consumes_before_transaction_and_records_independen
             "independent_verification",
             "evidence_recording",
         }
+        assert all(
+            item["schema_version"] == "cartographer.participant-invocation/v2"
+            and item["status"] == "succeeded"
+            and item["output_sha256"]
+            and item["started_at"]
+            and item["completed_at"]
+            and item["consumer_acknowledgement"]["consumed"] is True
+            and item["consumer_acknowledgement"]["output_id"] == item["output_id"]
+            and item["consumer_acknowledgement"]["output_sha256"]
+            == item["output_sha256"]
+            for item in body["invocations"]
+        )
 
 
 def test_review_rejects_caller_authored_authority_fields_and_missing_assertion() -> None:

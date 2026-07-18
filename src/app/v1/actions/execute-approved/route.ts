@@ -1,6 +1,7 @@
 import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 import { patchCodingRun, upsertCodingRunRow } from "@/lib/coding/durable-run-store";
 import type { DurableCodingRunProvenance } from "@/lib/coding/durable-run-types";
+import { getDummyCoder10Prompt } from "@/lib/coding/target-plugins/lumacart/prompts";
 import { execFile } from "node:child_process";
 import { createHash } from "crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -103,6 +104,18 @@ export async function POST(request: Request) {
       ? record.trial_prompt_text
       : typeof record.trialPromptText === "string"
         ? record.trialPromptText
+        : "";
+  const runtimeOutputId =
+    typeof record.runtime_output_id === "string"
+      ? record.runtime_output_id
+      : typeof record.runtimeOutputId === "string"
+        ? record.runtimeOutputId
+        : "";
+  const suppliedContextHash =
+    typeof record.context_hash === "string"
+      ? record.context_hash
+      : typeof record.contextHash === "string"
+        ? record.contextHash
         : "";
   const changedFiles = changedFilesFromApprovedDiff(approvedDiff);
 
@@ -225,7 +238,17 @@ export async function POST(request: Request) {
   }
 
   const selectedPromptId = trialPromptId || taskId;
-  const contextHash = createHash("sha256").update(`${trialPromptId}|${trialPromptText}|${target}`).digest("hex");
+  const targetPluginPrompt = getDummyCoder10Prompt(selectedPromptId);
+  if (targetPluginPrompt && (!runtimeOutputId.trim() || !suppliedContextHash.trim())) {
+    return Response.json(
+      {
+        error: "execute-approved requires the persisted target-plugin proposal identity.",
+        reason_code: "target_plugin_orchestrator_proposal_identity_missing",
+      },
+      { status: 409 },
+    );
+  }
+  const contextHash = suppliedContextHash || createHash("sha256").update(`${trialPromptId}|${trialPromptText}|${target}`).digest("hex");
   const durableApprovalId = approvalId;
   if (!durableApprovalId) {
     return Response.json(
@@ -253,6 +276,7 @@ export async function POST(request: Request) {
         target,
         selected_prompt_id: selectedPromptId,
         context_hash: contextHash,
+        ...(targetPluginPrompt ? { runtime_output_id: runtimeOutputId } : {}),
       }),
       headers: {
         "content-type": "application/json",

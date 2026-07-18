@@ -319,16 +319,29 @@ def finalize(data):
     try:
         row = approval_row(database, approval_id)
         validate_binding(data, row)
+        expected_state = "consumed" if succeeded else "invalidated"
+        if row["state"] == expected_state:
+            if row["result_id"] != result_id or row["evidence"] != evidence:
+                fail(TERMINAL_REASONS.get(row["state"], "approval_not_approved"))
+            database.execute("COMMIT")
+            print(json.dumps({
+                "approval_id": approval_id,
+                "generation": row["generation"],
+                "state": expected_state,
+                "result_id": result_id,
+                "idempotent": True,
+            }))
+            return
         if row["state"] != "consuming":
             fail(TERMINAL_REASONS.get(row["state"], "approval_not_approved"))
-        state = "consumed" if succeeded else "invalidated"
+        state = expected_state
         database.execute("UPDATE approval_records_v3 SET state=?, result_id=?, evidence=? WHERE id=?", (state, result_id, evidence, approval_id))
         database.execute("COMMIT")
     except Exception:
         if database.in_transaction:
             database.execute("ROLLBACK")
         raise
-    print(json.dumps({"approval_id": approval_id, "generation": row["generation"], "state": state, "result_id": result_id}))
+    print(json.dumps({"approval_id": approval_id, "generation": row["generation"], "state": state, "result_id": result_id, "idempotent": False}))
 
 
 def compensate(data):

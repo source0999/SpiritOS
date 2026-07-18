@@ -16,6 +16,7 @@ import time
 import urllib.error
 import urllib.request
 from urllib.parse import urlparse
+from collections.abc import Mapping
 from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -45,13 +46,19 @@ from source_proxy.context.canonical_broker import acknowledge_context_consumer
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
     cancel_coding_execution_approval,
-    consume_coding_execution_approval,
+    current_head,
+    enter_coding_execution_consuming,
     finalize_coding_execution_approval,
+    validate_coding_execution_approval,
 )
 from source_proxy.approval.campaign_evidence import (
-    CampaignApprovalEvidenceError,
     validate_coding_approval_evidence,
 )
+from source_proxy.coding.participants import (
+    build_coding_executor_output,
+    validate_coding_participant_record,
+)
+from source_proxy.coding.proof import derive_production_proof
 from source_proxy.planning.plan import (
     AcceptanceCriterion,
     CoderPacket,
@@ -1162,10 +1169,15 @@ def execute_approved_long_running_task(
     approval_id: str,
     selected_prompt_id: str = "legacy-test",
     context_hash: str = "legacy-test",
+    runtime_output_id: str | None = None,
+    proposal_binding: dict[str, Any] | None = None,
+    artifact_provenance: dict[str, Any] | None = None,
     target: str | None = None,
     approved_by: str = "human",
     test_command: list[str] | None = None,
     lane_id: str = "coder",
+    orchestrator_run_id: str | None = None,
+    orchestrator_attempt_id: str | None = None,
 ) -> dict[str, Any]:
     """Apply a user-approved diff after the same read-only safety preview passes.
 
@@ -1176,7 +1188,7 @@ def execute_approved_long_running_task(
     task = _lookup_task(task_id)
     status_before = task.status
     trace_id = _ensure_causal_trace_id(task)
-    run_id = f"execute_approved_long_running_task:{task_id}"
+    run_id = orchestrator_run_id or f"execute_approved_long_running_task:{task_id}"
     invocation_event = _append_causal_event(
         task,
         event_type="invocation",
@@ -1195,11 +1207,34 @@ def execute_approved_long_running_task(
         if isinstance(pending_preview, dict)
         else None
     )
-    if selected_prompt_id.startswith("coder-00") and not isinstance(target_plugin_identity, dict):
-        raise LongRunningTaskError(
-            "Selected Coder execution requires the server-resolved target-plugin identity.",
-            "target_plugin_direct_fixture_bypass",
-        )
+    persisted_proposal_binding = (
+        pending_preview.get("proposal_binding")
+        if isinstance(pending_preview, dict)
+        else None
+    )
+    persisted_runtime_output_id = (
+        str(pending_preview.get("runtime_output_id") or "")
+        if isinstance(pending_preview, dict)
+        else ""
+    )
+    from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
+
+    if is_lumacart_prompt_id(selected_prompt_id):
+        if not isinstance(target_plugin_identity, dict):
+            raise LongRunningTaskError(
+                "Selected Coder execution requires the server-resolved target-plugin identity.",
+                "target_plugin_direct_fixture_bypass",
+            )
+        if (
+            not isinstance(persisted_proposal_binding, dict)
+            or proposal_binding != persisted_proposal_binding
+            or not runtime_output_id
+            or runtime_output_id != persisted_runtime_output_id
+        ):
+            raise LongRunningTaskError(
+                "Selected Coder execution requires the exact persisted model proposal.",
+                "target_plugin_proposal_binding_mismatch",
+            )
     if isinstance(target_plugin_identity, dict) and str(target_plugin_identity.get("selected_prompt_id") or "") != selected_prompt_id:
         raise LongRunningTaskError(
             "Execution selected prompt does not match the persisted target-plugin identity.",
@@ -1232,7 +1267,7 @@ def execute_approved_long_running_task(
         _save_task(task)
         raise
     try:
-        durable_approval = consume_coding_execution_approval(
+        durable_approval = validate_coding_execution_approval(
             approval_id=approval_id,
             task_id=task_id,
             action=action,
@@ -1242,6 +1277,11 @@ def execute_approved_long_running_task(
             context_hash=context_hash,
             lane_id=lane_id,
             target_plugin_identity=target_plugin_identity if isinstance(target_plugin_identity, dict) else None,
+            proposal_binding=(
+                persisted_proposal_binding
+                if isinstance(persisted_proposal_binding, dict)
+                else None
+            ),
         )
     except CampaignApprovalError as error:
         expected_approval_id = "server-owned-durable-approval"
@@ -1411,6 +1451,20 @@ def execute_approved_long_running_task(
             "required_context_blocked",
         )
 
+    try:
+        durable_approval = enter_coding_execution_consuming(durable_approval)
+    except CampaignApprovalError as error:
+        task.status = "blocked_approval_mismatch"
+        task.architect_status = "blocked"
+        task.architect_reason = error.reason_code
+        task.truncated_test_results = f"reason_code: {error.reason_code}"
+        task.updated_at = _now_iso()
+        _save_task(task)
+        raise LongRunningTaskError(
+            "Durable coding approval could not enter consuming after preflight.",
+            error.reason_code,
+        ) from error
+
     before_executing = task.status
     task.status = "executing"
     _append_causal_event(
@@ -1449,7 +1503,7 @@ def execute_approved_long_running_task(
 
     try:
         apply_result = _apply_verified_diff(approved_diff, verification)
-    except LongRunningTaskError:
+    except LongRunningTaskError as apply_error:
         before_failure = task.status
         task.status = "failed_needs_human"
         _append_causal_event(
@@ -1464,6 +1518,23 @@ def execute_approved_long_running_task(
             notes=["workspace application failed"],
         )
         task.truncated_test_results = "Approved diff failed during workspace application."
+        try:
+            finalize_coding_execution_approval(
+                durable_approval,
+                result_id=f"coding-execution-{task.id}-apply-failed",
+                evidence={
+                    "approval_id": approval_id,
+                    "generation": durable_approval["generation"],
+                    "task_id": task.id,
+                    "reason_code": apply_error.reason_code,
+                    "receipt": "source_proxy_execute_approved_apply_failure",
+                },
+                status="failed",
+            )
+        except CampaignApprovalError as finalization_error:
+            task.truncated_test_results += (
+                f" approval_failure_finalization={finalization_error.reason_code}"
+            )
         task.updated_at = _now_iso()
         _save_task(task)
         raise
@@ -1513,35 +1584,95 @@ def execute_approved_long_running_task(
     }
     task.ast_snapshot = snapshot
     _append_audit_log(audit_record)
-    try:
-        finalize_coding_execution_approval(
-            durable_approval,
-            result_id=f"coding-execution-{task.id}",
-            evidence={
-                "approval_id": approval_id,
-                "generation": durable_approval["generation"],
-                "task_id": task.id,
-                "target": target,
-                "changed_files": audit_record["changed_files"],
-                "receipt": "source_proxy_execute_approved",
-                "target_plugin_identity": durable_approval.get("target_plugin_identity", {}),
+    from source_proxy.coding.participants import build_applied_artifact
+
+    immutable_artifact = build_applied_artifact(
+        task_id=task.id,
+        run_id=run_id,
+        approval_id=approval_id,
+        generation=int(durable_approval["generation"]),
+        approved_diff=approved_diff,
+        execution={"audit": audit_record},
+        provenance={
+            "source_commit": str(durable_approval["binding"].get("source_head") or ""),
+            "repository_identity": {
+                "repository": durable_approval["binding"].get("repository"),
+                "worktree": durable_approval["binding"].get("worktree"),
+                "root": durable_approval["binding"].get("root"),
             },
-            status="succeeded",
-        )
-    except CampaignApprovalError as error:
-        raise LongRunningTaskError("Durable coding approval could not be finalized.", error.reason_code) from error
+            "target_plugin_identity": dict(
+                durable_approval.get("target_plugin_identity") or {}
+            ),
+            "prompt_identity": {
+                "selected_prompt_id": selected_prompt_id,
+                "proposal_binding_sha256": (
+                    persisted_proposal_binding.get("proposal_binding_sha256")
+                    if isinstance(persisted_proposal_binding, dict)
+                    else None
+                ),
+            },
+            "context_identity": {
+                "context_hash": context_hash,
+                "selected_context_id": (
+                    persisted_proposal_binding.get("selected_context_id")
+                    if isinstance(persisted_proposal_binding, dict)
+                    else None
+                ),
+            },
+            "model_output_identity": {
+                key: persisted_proposal_binding.get(key)
+                for key in (
+                    "runtime_output_id",
+                    "runtime_output_artifact_sha256",
+                    "producer_model_invocation_id",
+                    "producer_model_output_sha256",
+                    "producer_model_artifact_sha256",
+                    "approved_diff_sha256",
+                )
+            }
+            if isinstance(persisted_proposal_binding, dict)
+            else {},
+            "cartographer_identity": dict(
+                (artifact_provenance or {}).get("cartographer_identity") or {}
+            ),
+            "claim_ceiling": str(
+                (artifact_provenance or {}).get("claim_ceiling")
+                or (
+                    "model_authored_diff_pending_independent_verification"
+                    if isinstance(persisted_proposal_binding, dict)
+                    else "approved_manual_diff_pending_independent_verification"
+                )
+            ),
+        },
+    )
+    executor_result = {
+        "passed": True,
+        "applied_diff_sha256": immutable_artifact["approved_diff_sha256"],
+        "result_sha256": immutable_artifact["result_sha256"],
+        "changed_files": audit_record["changed_files"],
+    }
     snapshot = _ensure_ast_snapshot_dict(task)
     snapshot["campaign_2_approval"] = {
         "approval_id": approval_id,
         "generation": durable_approval["generation"],
+        "state": "consuming",
         "consumer": "coding-executor:coder",
+        "binding": durable_approval["binding"],
         "target_plugin_identity": durable_approval.get("target_plugin_identity", {}),
-        "acknowledgements": {
-            "coding-executor:coder": {"approval_id": approval_id, "generation": durable_approval["generation"], "target_plugin_identity": durable_approval.get("target_plugin_identity", {})},
-            "coding-reviewer": {"approval_id": approval_id, "generation": durable_approval["generation"], "target_plugin_identity": durable_approval.get("target_plugin_identity", {})},
-        },
-        "evidence": "redacted_source_proxy_execute_approved_receipt",
+        "proposal_binding": durable_approval.get("proposal_binding", {}),
+        "runtime_output_id": runtime_output_id,
+        "orchestrator_run_id": run_id,
+        "orchestrator_attempt_id": orchestrator_attempt_id,
+        "artifact_sha256": immutable_artifact["artifact_sha256"],
+        "participant_records": [
+            build_coding_executor_output(
+                immutable_artifact,
+                result=executor_result,
+                started_at=invocation_event["created_at"],
+            )
+        ],
     }
+    snapshot["coding_artifact"] = immutable_artifact
     task.ast_snapshot = snapshot
 
     before_applied = task.status
@@ -1609,6 +1740,8 @@ def execute_approved_long_running_task(
         "risk": verification["risk"],
         "status": task.status,
         "target": target,
+        "artifact": immutable_artifact,
+        "executor_participant": snapshot["campaign_2_approval"]["participant_records"][0],
         "verification_plan": verification["verification_plan"],
         "commit_created": False,
         "push_ran": False,
@@ -2306,12 +2439,12 @@ def record_post_apply_verification(
         verification["commit_blockers"] = ["post_apply_verification_failed"]
     elif all_required_done and (not browser_required or browser_done):
         verification["status"] = "verified"
-        verification["commit_proposal_blocked"] = False
-        verification["commit_blockers"] = []
-        task.status = "completed"
+        verification["commit_proposal_blocked"] = True
+        verification["commit_blockers"] = ["independent_participants_pending"]
+        task.status = "verification_passed_pending_participants"
         task.steps = _append_unique_steps(
             task.steps,
-            ["Post-apply verification completed."],
+            ["Post-apply checks passed; independent participants and approval finalization remain required."],
         )
     else:
         verification["status"] = "verification_ready"
@@ -2324,9 +2457,9 @@ def record_post_apply_verification(
 
     for diff in task.open_diffs:
         if str(diff.get("status") or "").startswith("applied"):
-            diff["status"] = task.status if task.status != "completed" else "verified"
+            diff["status"] = task.status
             diff["post_apply_verification"] = verification
-            diff["verified"] = task.status == "completed"
+            diff["verified"] = False
 
     task.truncated_test_results = _post_apply_results_json(task, verification)
     snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
@@ -2339,9 +2472,11 @@ def record_post_apply_verification(
     if approved_execution_evidence:
         approved_execution_evidence["post_apply_verification"] = verification
         approved_execution_evidence["final_truth_status"] = (
-            "GO" if task.status == "completed" else "BLOCKED_SAFE"
+            "PENDING_PARTICIPANTS"
+            if task.status == "verification_passed_pending_participants"
+            else "BLOCKED_SAFE"
         )
-        approved_execution_evidence["commit_safe"] = task.status == "completed"
+        approved_execution_evidence["commit_safe"] = False
         snapshot["approved_execution_evidence"] = approved_execution_evidence
     task.ast_snapshot = snapshot
     _finalize_post_apply_backup_manifest(task, verification)
@@ -2394,29 +2529,12 @@ def record_post_apply_verification(
     if isinstance(snapshot.get("approved_execution_evidence"), dict):
         snapshot["approved_execution_evidence"]["post_apply_verification"] = verification
         snapshot["approved_execution_evidence"]["final_truth_status"] = (
-            "GO" if task.status == "completed" else "BLOCKED_SAFE"
+            "PENDING_PARTICIPANTS"
+            if task.status == "verification_passed_pending_participants"
+            else "BLOCKED_SAFE"
         )
-        snapshot["approved_execution_evidence"]["commit_safe"] = task.status == "completed"
+        snapshot["approved_execution_evidence"]["commit_safe"] = False
     task.ast_snapshot = snapshot
-    campaign_approval = snapshot.get("campaign_2_approval")
-    if task.status == "completed" and isinstance(campaign_approval, dict):
-        campaign_approval["acknowledgements"] = {
-            consumer: {
-                "approval_id": campaign_approval["approval_id"],
-                "generation": campaign_approval["generation"],
-                "target_plugin_identity": campaign_approval.get("target_plugin_identity", {}),
-            }
-            for consumer in ("coding-executor:coder", "coding-reviewer", "coding-verifier", "evidence-recorder")
-        }
-        snapshot["campaign_2_approval"] = campaign_approval
-        task.ast_snapshot = snapshot
-        try:
-            validate_coding_approval_evidence(campaign_approval)
-        except CampaignApprovalEvidenceError as error:
-            verification["status"] = "verification_failed"
-            verification["commit_proposal_blocked"] = True
-            verification["commit_blockers"] = [error.reason_code]
-            task.status = "verification_failed"
     # Context acknowledgements are part of final verification truth.  Re-sync
     # every decision-bearing copy after that gate so a late context failure
     # cannot leave the open diff claiming `verified` while the task and receipt
@@ -2426,13 +2544,536 @@ def record_post_apply_verification(
             "applied_needs_verification",
             "applied_verification_failed",
             "verification_failed",
+            "verification_passed_pending_participants",
             "verified",
         }:
-            diff["status"] = task.status if task.status != "completed" else "verified"
+            diff["status"] = task.status
             diff["post_apply_verification"] = verification
-            diff["verified"] = task.status == "completed"
+            diff["verified"] = False
     task.truncated_test_results = _post_apply_results_json(task, verification)
     _finalize_post_apply_backup_manifest(task, verification)
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return _task_envelope(task)
+
+
+def _coding_state_sha256(state: Mapping[str, Any]) -> str:
+    normalized = dict(state)
+    # Approval finalization is a durable outbox layered over the frozen
+    # participant state. Its retry metadata must not invalidate the exact state
+    # hash that the authority request already binds.
+    if "authority_finalization" in normalized:
+        normalized["authority_finalization"] = None
+    canonical = json.dumps(
+        normalized,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(canonical).hexdigest()}"
+
+
+def _orchestrated_coding_finalization_context(
+    task_id: str,
+    *,
+    participant_records: list[Mapping[str, Any]],
+    runtime_outputs: list[Mapping[str, Any]],
+    runtime_acknowledgements: list[Mapping[str, Any]],
+    runtime_consumptions: list[Mapping[str, Any]],
+    orchestrator_state_sha256: str | None = None,
+) -> dict[str, Any]:
+    task = _lookup_task(task_id)
+    if task.status != "verification_passed_pending_participants":
+        raise LongRunningTaskError(
+            "Coding finalization requires passed verification pending participants.",
+            "coding_finalization_state_invalid",
+        )
+    snapshot = _ensure_ast_snapshot_dict(task)
+    campaign_approval = snapshot.get("campaign_2_approval")
+    artifact = snapshot.get("coding_artifact")
+    context_report = snapshot.get("canonical_context_broker")
+    context_acknowledgements = (
+        context_report.get("downstream_acknowledgements")
+        if isinstance(context_report, dict)
+        else None
+    )
+    required_context_consumers = (
+        "planner",
+        "coder",
+        "verifier",
+        "final_receipt_builder",
+    )
+    if not isinstance(context_acknowledgements, dict) or any(
+        not isinstance(context_acknowledgements.get(consumer), dict)
+        or context_acknowledgements[consumer].get("acknowledged") is not True
+        for consumer in required_context_consumers
+    ):
+        raise LongRunningTaskError(
+            "Every production context consumer must acknowledge the canonical report.",
+            "coding_context_consumption_incomplete",
+        )
+    if not isinstance(campaign_approval, dict) or campaign_approval.get("state") != "consuming":
+        raise LongRunningTaskError(
+            "Coding approval is not in the consuming state.",
+            "coding_approval_not_consuming",
+        )
+    if not isinstance(artifact, dict) or not str(artifact.get("artifact_sha256") or "").startswith("sha256:"):
+        raise LongRunningTaskError("Coding artifact is missing.", "coding_artifact_missing")
+
+    required_roles = (
+        "coding-executor",
+        "coding-reviewer",
+        "coding-verifier",
+        "coding-anti-cheat",
+        "evidence-recorder",
+    )
+    records = [dict(record) for record in participant_records]
+    by_role = {str(record.get("role") or ""): record for record in records}
+    if set(by_role) != set(required_roles) or len(records) != len(required_roles):
+        raise LongRunningTaskError(
+            "Required coding participant records are missing or duplicated.",
+            "coding_participant_set_invalid",
+        )
+    artifact_hash = str(artifact["artifact_sha256"])
+    invocation_ids = [str(by_role[role].get("invocation_id") or "") for role in required_roles]
+    output_ids = [str(by_role[role].get("output_id") or "") for role in required_roles]
+    acknowledgement_ids = [
+        str(by_role[role].get("consumer_acknowledgement_id") or "")
+        for role in required_roles
+    ]
+    if any(
+        by_role[role].get("passed") is not True
+        or by_role[role].get("artifact_sha256") != artifact_hash
+        for role in required_roles
+    ):
+        raise LongRunningTaskError(
+            "A required coding participant failed or consumed another artifact.",
+            "coding_participant_result_invalid",
+        )
+    try:
+        records = [
+            validate_coding_participant_record(
+                by_role[role],
+                artifact,
+                expected_role=role,
+            )
+            for role in required_roles
+        ]
+    except Exception as error:
+        raise LongRunningTaskError(
+            "A coding participant record failed independent hash validation.",
+            str(getattr(error, "reason_code", "coding_participant_record_invalid")),
+        ) from error
+    by_role = {str(record["role"]): record for record in records}
+    for identities, reason in (
+        (invocation_ids, "coding_participant_invocation_identity_invalid"),
+        (output_ids, "coding_participant_output_identity_invalid"),
+        (acknowledgement_ids, "coding_participant_acknowledgement_identity_invalid"),
+    ):
+        if "" in identities or len(set(identities)) != len(identities):
+            raise LongRunningTaskError("Coding participant identities are not distinct.", reason)
+
+    output_payloads = [dict(record) for record in runtime_outputs]
+    acknowledgement_payloads = [dict(record) for record in runtime_acknowledgements]
+    consumption_payloads = [dict(record) for record in runtime_consumptions]
+    consumed_output_ids = {str(record.get("output_id") or "") for record in consumption_payloads}
+    required_output_ids = {str(record.get("output_id") or "") for record in output_payloads}
+    if not required_output_ids or consumed_output_ids != required_output_ids:
+        raise LongRunningTaskError(
+            "Every runtime lane output must be consumed before finalization.",
+            "coding_runtime_output_consumption_incomplete",
+        )
+
+    production_proof: dict[str, Any]
+    canonical_state_hash: str | None = None
+    if orchestrator_state_sha256 is not None:
+        orchestrator_state = coding_orchestrator_state_for_task(task_id)
+        if not isinstance(orchestrator_state, dict):
+            raise LongRunningTaskError(
+                "Canonical orchestrator state is missing at finalization.",
+                "coding_orchestrator_state_missing",
+            )
+        canonical_state_hash = _coding_state_sha256(orchestrator_state)
+        if canonical_state_hash != orchestrator_state_sha256:
+            raise LongRunningTaskError(
+                "Canonical orchestrator state changed before finalization.",
+                "coding_orchestrator_state_hash_mismatch",
+            )
+        for actual, persisted, reason in (
+            (records, orchestrator_state.get("participant_records"), "coding_orchestrator_participants_mismatch"),
+            (output_payloads, orchestrator_state.get("runtime_outputs"), "coding_orchestrator_outputs_mismatch"),
+            (acknowledgement_payloads, orchestrator_state.get("runtime_acknowledgements"), "coding_orchestrator_acknowledgements_mismatch"),
+            (consumption_payloads, orchestrator_state.get("runtime_consumptions"), "coding_orchestrator_consumptions_mismatch"),
+        ):
+            if actual != persisted:
+                raise LongRunningTaskError(
+                    "Caller evidence does not match canonical orchestrator state.",
+                    reason,
+                )
+        if orchestrator_state.get("immutable_artifact") != artifact:
+            raise LongRunningTaskError(
+                "Canonical orchestrator artifact does not match the applied artifact.",
+                "coding_orchestrator_artifact_mismatch",
+            )
+        production_bound = bool(
+            isinstance(orchestrator_state.get("target_plugin_proposal"), Mapping)
+            or isinstance(orchestrator_state.get("cartographer_transfer"), Mapping)
+            or artifact.get("target_plugin_identity")
+            or campaign_approval.get("target_plugin_identity")
+        )
+        try:
+            production_proof = derive_production_proof(
+                orchestrator_state,
+                expected_source_head=current_head(),
+            )
+        except Exception as error:
+            raise LongRunningTaskError(
+                "Canonical production coding proof could not be derived.",
+                "coding_production_proof_invalid",
+                diagnostics={
+                    "truth_status": "BLOCKED_SAFE",
+                    "safe_block": True,
+                    "commit_safe": False,
+                    "claim_ceiling": "production_proof_not_established",
+                    "production_proof_failures": [
+                        str(getattr(error, "reason_code", type(error).__name__))
+                    ],
+                },
+            ) from error
+        if (
+            production_bound
+            and production_proof.get("terminal_proof_eligible") is not True
+        ):
+            failures = production_proof.get("failures")
+            normalized_failures = (
+                [str(item) for item in failures]
+                if isinstance(failures, list)
+                else ["production_proof_not_terminal"]
+            )
+            raise LongRunningTaskError(
+                "Canonical production coding proof is not terminally eligible.",
+                "coding_production_proof_not_terminal",
+                diagnostics={
+                    "truth_status": "BLOCKED_SAFE",
+                    "safe_block": True,
+                    "commit_safe": False,
+                    "claim_ceiling": str(
+                        production_proof.get("claim_ceiling")
+                        or "production_proof_not_established"
+                    ),
+                    "production_proof_failures": normalized_failures,
+                },
+            )
+    else:
+        production_proof = {
+            "schema_version": "coding.production-proof/v1",
+            "task_id": task_id,
+            "run_id": artifact.get("run_id"),
+            "terminal_proof_eligible": False,
+            "claim_ceiling": "direct_low_level_finalization_not_production_proof",
+            "failures": ["canonical_orchestrator_state_not_bound"],
+        }
+
+    approval = {
+        "approval_id": campaign_approval["approval_id"],
+        "generation": int(campaign_approval["generation"]),
+        "target_plugin_identity": dict(campaign_approval.get("target_plugin_identity") or {}),
+        "binding": dict(campaign_approval["binding"]),
+    }
+    evidence = {
+        "schema_version": "coding.approval-finalization-evidence/v1",
+        "task_id": task.id,
+        "run_id": artifact["run_id"],
+        "artifact_sha256": artifact_hash,
+        "participant_invocation_ids": invocation_ids,
+        "participant_output_ids": output_ids,
+        "consumer_acknowledgement_ids": acknowledgement_ids,
+        "runtime_output_ids": sorted(required_output_ids),
+        "runtime_consumption_ids": sorted(
+            str(record.get("consumption_id") or "") for record in consumption_payloads
+        ),
+        "orchestrator_state_sha256": canonical_state_hash,
+        "production_proof": production_proof,
+    }
+    result_id = f"coding-execution-{task.id}"
+    participant_acknowledgements = {
+        role: dict(by_role[role]["consumer_acknowledgement"])
+        for role in required_roles
+    }
+    validated_campaign_approval = dict(campaign_approval)
+    validated_campaign_approval.update(
+        {
+            "state": "consumed",
+            "result_id": result_id,
+            "artifact_sha256": artifact_hash,
+            "participant_records": records,
+            "acknowledgements": participant_acknowledgements,
+            "evidence": evidence,
+        }
+    )
+    validate_coding_approval_evidence(validated_campaign_approval)
+    return {
+        "task": task,
+        "snapshot": snapshot,
+        "approval": approval,
+        "result_id": result_id,
+        "evidence": evidence,
+        "campaign_approval": validated_campaign_approval,
+        "artifact": artifact,
+        "artifact_hash": artifact_hash,
+        "records": records,
+        "invocation_ids": invocation_ids,
+        "output_payloads": output_payloads,
+        "acknowledgement_payloads": acknowledgement_payloads,
+        "consumption_payloads": consumption_payloads,
+        "orchestrator_state_sha256": canonical_state_hash,
+        "production_proof": production_proof,
+    }
+
+
+def prepare_orchestrated_coding_finalization(
+    task_id: str,
+    *,
+    participant_records: list[Mapping[str, Any]],
+    runtime_outputs: list[Mapping[str, Any]],
+    runtime_acknowledgements: list[Mapping[str, Any]],
+    runtime_consumptions: list[Mapping[str, Any]],
+    orchestrator_state_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Return the exact authority request after all non-mutating success gates pass."""
+
+    context = _orchestrated_coding_finalization_context(
+        task_id,
+        participant_records=participant_records,
+        runtime_outputs=runtime_outputs,
+        runtime_acknowledgements=runtime_acknowledgements,
+        runtime_consumptions=runtime_consumptions,
+        orchestrator_state_sha256=orchestrator_state_sha256,
+    )
+    return {
+        "approval": dict(context["approval"]),
+        "result_id": str(context["result_id"]),
+        "evidence": dict(context["evidence"]),
+    }
+
+
+def finalize_orchestrated_coding_execution(
+    task_id: str,
+    *,
+    authority_finalization: Mapping[str, Any],
+    participant_records: list[Mapping[str, Any]],
+    runtime_outputs: list[Mapping[str, Any]],
+    runtime_acknowledgements: list[Mapping[str, Any]],
+    runtime_consumptions: list[Mapping[str, Any]],
+    orchestrator_state_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Persist success only after the orchestrator consumed the durable approval."""
+
+    existing_task = _lookup_task(task_id)
+    if existing_task.status == "completed":
+        snapshot = _ensure_ast_snapshot_dict(existing_task)
+        campaign_approval = snapshot.get("campaign_2_approval")
+        campaign_evidence = (
+            campaign_approval.get("evidence")
+            if isinstance(campaign_approval, Mapping)
+            else None
+        )
+        finalization = dict(authority_finalization)
+        expected_result_id = f"coding-execution-{task_id}"
+        try:
+            exact_authority_identity = (
+                isinstance(campaign_approval, Mapping)
+                and finalization.get("state") == "consumed"
+                and campaign_approval.get("state") == "consumed"
+                and str(finalization.get("approval_id") or "")
+                == str(campaign_approval.get("approval_id") or "")
+                and int(finalization.get("generation") or -1)
+                == int(campaign_approval.get("generation") or -2)
+                and str(finalization.get("result_id") or "") == expected_result_id
+                and str(campaign_approval.get("result_id") or "") == expected_result_id
+            )
+        except (TypeError, ValueError):
+            exact_authority_identity = False
+        exact_replay = (
+            exact_authority_identity
+            and [dict(record) for record in participant_records]
+            == snapshot.get("coding_participant_records")
+            and [dict(record) for record in runtime_outputs]
+            == snapshot.get("coding_runtime_outputs")
+            and [dict(record) for record in runtime_acknowledgements]
+            == snapshot.get("coding_runtime_acknowledgements")
+            and [dict(record) for record in runtime_consumptions]
+            == snapshot.get("coding_runtime_consumptions")
+            and snapshot.get("coding_orchestrator_state_sha256")
+            == orchestrator_state_sha256
+            and isinstance(campaign_evidence, Mapping)
+            and campaign_evidence.get("orchestrator_state_sha256")
+            == orchestrator_state_sha256
+            and isinstance(snapshot.get("coding_production_proof"), Mapping)
+        )
+        if exact_replay:
+            return _task_envelope(existing_task)
+        raise LongRunningTaskError(
+            "Completed coding execution does not match the replayed authority result.",
+            "coding_finalization_replay_mismatch",
+        )
+
+    context = _orchestrated_coding_finalization_context(
+        task_id,
+        participant_records=participant_records,
+        runtime_outputs=runtime_outputs,
+        runtime_acknowledgements=runtime_acknowledgements,
+        runtime_consumptions=runtime_consumptions,
+        orchestrator_state_sha256=orchestrator_state_sha256,
+    )
+    finalization = dict(authority_finalization)
+    approval = context["approval"]
+    if (
+        finalization.get("state") != "consumed"
+        or str(finalization.get("approval_id") or "") != str(approval["approval_id"])
+        or int(finalization.get("generation") or -1) != int(approval["generation"])
+        or str(finalization.get("result_id") or "") != str(context["result_id"])
+    ):
+        raise LongRunningTaskError(
+            "Authority finalization does not match the prepared coding result.",
+            "coding_authority_finalization_binding_invalid",
+        )
+
+    task = context["task"]
+    snapshot = context["snapshot"]
+    campaign_approval = context["campaign_approval"]
+    artifact = context["artifact"]
+    artifact_hash = context["artifact_hash"]
+    records = context["records"]
+    invocation_ids = context["invocation_ids"]
+    snapshot["campaign_2_approval"] = campaign_approval
+    snapshot["coding_runtime_outputs"] = context["output_payloads"]
+    snapshot["coding_runtime_acknowledgements"] = context["acknowledgement_payloads"]
+    snapshot["coding_runtime_consumptions"] = context["consumption_payloads"]
+    snapshot["coding_participant_records"] = records
+    snapshot["coding_production_proof"] = dict(context["production_proof"])
+    snapshot["coding_orchestrator_state_sha256"] = context[
+        "orchestrator_state_sha256"
+    ]
+    task.ast_snapshot = snapshot
+    task.status = "completed"
+    for diff in task.open_diffs:
+        if str(diff.get("status") or "") == "verification_passed_pending_participants":
+            diff["status"] = "verified"
+            diff["verified"] = True
+    approved_execution_evidence = snapshot.get("approved_execution_evidence")
+    if isinstance(approved_execution_evidence, dict):
+        terminal_proof_eligible = bool(
+            context["production_proof"].get("terminal_proof_eligible")
+        )
+        approved_execution_evidence["final_truth_status"] = (
+            "GO" if terminal_proof_eligible else "VERIFIED_NONTERMINAL"
+        )
+        approved_execution_evidence["commit_safe"] = True
+        approved_execution_evidence["artifact_sha256"] = artifact_hash
+        approved_execution_evidence["participant_invocation_ids"] = invocation_ids
+        approved_execution_evidence["terminal_proof_eligible"] = terminal_proof_eligible
+        approved_execution_evidence["claim_ceiling"] = context[
+            "production_proof"
+        ].get("claim_ceiling")
+        approved_execution_evidence["production_proof_sha256"] = context[
+            "production_proof"
+        ].get("proof_sha256")
+        snapshot["approved_execution_evidence"] = approved_execution_evidence
+    verification = _current_post_apply_verification(task)
+    if isinstance(verification, dict):
+        verification["commit_proposal_blocked"] = False
+        verification["commit_blockers"] = []
+        snapshot["post_apply_verification"] = verification
+        for diff in task.open_diffs:
+            if str(diff.get("status") or "") == "verified":
+                diff["post_apply_verification"] = verification
+    _append_causal_event(
+        task,
+        event_type="status_transition",
+        subsystem="coding_orchestrator",
+        approval_id=str(campaign_approval["approval_id"]),
+        run_id=str(artifact["run_id"]),
+        status_before="verification_passed_pending_participants",
+        status_after="completed",
+        changed_state_fields=[
+            "status",
+            "ast_snapshot.campaign_2_approval",
+            "ast_snapshot.coding_participant_records",
+            "ast_snapshot.coding_runtime_consumptions",
+        ],
+        notes=["all required independent participants and runtime consumptions passed"],
+    )
+    _finalize_post_apply_backup_manifest(task, _current_post_apply_verification(task) or {})
+    task.updated_at = _now_iso()
+    _save_task(task)
+    return _task_envelope(task)
+
+
+def fail_orchestrated_coding_execution(
+    task_id: str,
+    *,
+    reason_code: str,
+    participant_records: list[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Invalidate a consuming approval when any required participant fails."""
+
+    task = _lookup_task(task_id)
+    snapshot = _ensure_ast_snapshot_dict(task)
+    campaign_approval = snapshot.get("campaign_2_approval")
+    artifact = snapshot.get("coding_artifact")
+    if not isinstance(campaign_approval, dict) or not isinstance(artifact, dict):
+        raise LongRunningTaskError(
+            "Cannot fail an orchestrated execution without its approval and artifact.",
+            "coding_failure_binding_missing",
+        )
+    if campaign_approval.get("state") == "consuming":
+        approval = {
+            "approval_id": campaign_approval["approval_id"],
+            "generation": int(campaign_approval["generation"]),
+            "target_plugin_identity": dict(campaign_approval.get("target_plugin_identity") or {}),
+            "binding": dict(campaign_approval["binding"]),
+        }
+        try:
+            finalize_coding_execution_approval(
+                approval,
+                result_id=f"coding-execution-{task.id}-failed",
+                evidence={
+                    "schema_version": "coding.approval-failure-evidence/v1",
+                    "task_id": task.id,
+                    "run_id": artifact.get("run_id"),
+                    "artifact_sha256": artifact.get("artifact_sha256"),
+                    "reason_code": reason_code,
+                    "participant_invocation_ids": [
+                        str(record.get("invocation_id") or "")
+                        for record in participant_records
+                    ],
+                },
+                status="failed",
+            )
+            campaign_approval["state"] = "invalidated"
+        except CampaignApprovalError as error:
+            campaign_approval["state"] = "failure_finalization_failed"
+            campaign_approval["finalization_error"] = error.reason_code
+    campaign_approval["failure_reason"] = reason_code
+    campaign_approval["participant_records"] = [dict(record) for record in participant_records]
+    snapshot["campaign_2_approval"] = campaign_approval
+    snapshot["coding_participant_records"] = [dict(record) for record in participant_records]
+    task.ast_snapshot = snapshot
+    before = task.status
+    task.status = "verification_failed"
+    _append_causal_event(
+        task,
+        event_type="failure",
+        subsystem="coding_orchestrator",
+        approval_id=str(campaign_approval.get("approval_id") or ""),
+        run_id=str(artifact.get("run_id") or ""),
+        status_before=before,
+        status_after=task.status,
+        changed_state_fields=["status", "ast_snapshot.campaign_2_approval"],
+        notes=[reason_code],
+    )
     task.updated_at = _now_iso()
     _save_task(task)
     return _task_envelope(task)
@@ -2802,6 +3443,19 @@ def _tail_output(stdout: str, stderr: str, limit: int = 4000) -> str:
     return combined[-limit:]
 
 
+def _run_allowlisted_code_check(command: list[str], *, root: Path) -> Any:
+    """Run one server-selected verifier command behind a narrow test boundary."""
+
+    return subprocess.run(
+        command,
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+
+
 def _run_code_post_apply_verification(
     changed_files: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -2818,14 +3472,7 @@ def _run_code_post_apply_verification(
         command = [str(part) for part in check["command"]]
         started = time.perf_counter()
         try:
-            result = subprocess.run(
-                command,
-                cwd=root,
-                capture_output=True,
-                text=True,
-                timeout=120,
-                check=False,
-            )
+            result = _run_allowlisted_code_check(command, root=root)
             exit_code = int(result.returncode)
             output_tail = _tail_output(result.stdout or "", result.stderr or "")
         except subprocess.TimeoutExpired as exc:
@@ -3330,6 +3977,8 @@ def record_coding_execution_preview(
     preview_id: str,
     generation: int,
     target_plugin_identity: dict[str, Any] | None = None,
+    proposal_binding: dict[str, Any] | None = None,
+    runtime_output_id: str | None = None,
 ) -> dict[str, Any]:
     task = _lookup_task(task_id)
     snapshot = _ensure_ast_snapshot_dict(task)
@@ -3339,6 +3988,8 @@ def record_coding_execution_preview(
         "consumer": "coding-executor:coder",
         "state": "previewed",
         "target_plugin_identity": dict(target_plugin_identity or {}),
+        "proposal_binding": dict(proposal_binding or {}),
+        "runtime_output_id": runtime_output_id,
     }
     task.ast_snapshot = snapshot
     task.updated_at = _now_iso()
@@ -3763,7 +4414,7 @@ def record_coding_orchestrator_state(
     *,
     state: Mapping[str, Any],
 ) -> None:
-    """Persist a non-authoritative lane-state receipt alongside the task."""
+    """Persist the authoritative orchestrator state inside Source Proxy SQLite."""
     task = _lookup_task(task_id)
     snapshot = _ensure_ast_snapshot_dict(task)
     snapshot["coding_orchestrator"] = dict(state)
@@ -4197,8 +4848,25 @@ def _approved_execution_diagnostic_envelope(task: LongRunningTask) -> dict[str, 
         if str(item or "").strip()
     ]
     commit_safe = task.status == "completed" and not commit_blockers
-    truth_status = "GO" if commit_safe else "BLOCKED_SAFE"
-    reason_code = "go_ready" if commit_safe else "post_apply_verification_required"
+    production_proof = snapshot.get("coding_production_proof")
+    terminal_proof_eligible = bool(
+        isinstance(production_proof, dict)
+        and production_proof.get("terminal_proof_eligible") is True
+    )
+    truth_status = (
+        "GO"
+        if commit_safe and terminal_proof_eligible
+        else "VERIFIED_NONTERMINAL"
+        if commit_safe
+        else "BLOCKED_SAFE"
+    )
+    reason_code = (
+        "go_ready"
+        if truth_status == "GO"
+        else "verified_nonterminal_production_proof"
+        if truth_status == "VERIFIED_NONTERMINAL"
+        else "post_apply_verification_required"
+    )
     recommended_next_action = (
         "Post-apply verification is complete; commit remains a separate explicit operator action."
         if commit_safe
@@ -4206,6 +4874,12 @@ def _approved_execution_diagnostic_envelope(task: LongRunningTask) -> dict[str, 
     )
     why_not_go = (
         ""
+        if truth_status == "GO"
+        else str(
+            production_proof.get("claim_ceiling")
+            if isinstance(production_proof, dict)
+            else "canonical_orchestrator_state_not_bound"
+        )
         if commit_safe
         else "; ".join(commit_blockers) or post_status or "post_apply_verification_required"
     )
@@ -4336,6 +5010,7 @@ def _approved_execution_diagnostic_envelope(task: LongRunningTask) -> dict[str, 
             "run_status": task.status,
             "block_receipt_path": block_receipt_path or "not_applicable: no backup manifest recorded",
             "truth_status": truth_status,
+            "terminal_proof_eligible": terminal_proof_eligible,
             "why_not_go": why_not_go,
         },
         "persisted_at": task.updated_at,
@@ -5055,8 +5730,22 @@ def _finalize_post_apply_backup_manifest(
             "canonical_context_report_hash": str(
                 context_report.get("canonical_report_hash") or ""
             ),
-            "final_truth_status": "GO" if task.status == "completed" else "BLOCKED_SAFE",
+            "final_truth_status": (
+                "GO"
+                if task.status == "completed"
+                and isinstance(snapshot.get("coding_production_proof"), dict)
+                and snapshot["coding_production_proof"].get("terminal_proof_eligible")
+                is True
+                else "VERIFIED_NONTERMINAL"
+                if task.status == "completed"
+                else "BLOCKED_SAFE"
+            ),
             "commit_safe": task.status == "completed",
+            "terminal_proof_eligible": bool(
+                isinstance(snapshot.get("coding_production_proof"), dict)
+                and snapshot["coding_production_proof"].get("terminal_proof_eligible")
+                is True
+            ),
             "finalized_at": _now_iso(),
         }
     )

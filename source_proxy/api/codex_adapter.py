@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import tempfile
 from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from source_proxy.codex.adapter import (
@@ -17,6 +19,10 @@ from source_proxy.codex.adapter import (
     build_codex_cli_status,
     build_codex_command,
     validate_codex_envelope,
+)
+from source_proxy.approval.operator_session import (
+    OperatorSessionError,
+    verify_operator_approval_assertion,
 )
 from source_proxy.safety.paths import (
     normalize_repo_path_candidate,
@@ -39,6 +45,8 @@ BOUNDED_DIFF_PREVIEW_NEW_PHRASE = (
 )
 DUMMY_PRODUCT_SITE_FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site"
 DUMMY_PRODUCT_SITE_RESET_RECEIPT_ROOT = "data/source-proxy"
+DUMMY_PRODUCT_SITE_RESET_ASSERTION_PREVIEW = "dummy-product-site-reset"
+DUMMY_PRODUCT_SITE_RESET_PROMPT_ID = "coder-001-init-dummy-product-site"
 
 
 class CodexAdapterRequest(BaseModel):
@@ -90,8 +98,17 @@ async def bounded_diff_preview(request: BoundedDiffPreviewRequest) -> dict[str, 
 @router.post("/dummy-product-site/reset")
 async def reset_dummy_product_site_fixture_endpoint(
     request: DummyProductSiteResetRequest,
+    x_spiritos_operator_assertion: str = Header(default=""),
 ) -> dict[str, Any]:
     try:
+        assertion = verify_operator_approval_assertion(x_spiritos_operator_assertion)
+        if (
+            assertion.get("action") != "approve"
+            or assertion.get("task_id") != DUMMY_PRODUCT_SITE_RESET_PROMPT_ID
+            or assertion.get("preview_id") != DUMMY_PRODUCT_SITE_RESET_ASSERTION_PREVIEW
+            or assertion.get("generation") != 1
+        ):
+            raise OperatorSessionError("operator_assertion_mismatch")
         resolved = resolve_target_plugin(
             {
                 "target_plugin": request.target_plugin,
@@ -99,7 +116,7 @@ async def reset_dummy_product_site_fixture_endpoint(
             },
             Path.cwd(),
         )
-        if resolved.selected_prompt_id != "coder-001-init-dummy-product-site":
+        if resolved.selected_prompt_id != DUMMY_PRODUCT_SITE_RESET_PROMPT_ID:
             raise _request_error(
                 "Only the canonical Prompt 1 plugin may reset its fixture.",
                 "target_plugin_reset_prompt_mismatch",
@@ -108,6 +125,11 @@ async def reset_dummy_product_site_fixture_endpoint(
             Path.cwd(),
             target_plugin_identity=resolved.evidence_identity(),
         )
+    except OperatorSessionError as error:
+        raise HTTPException(
+            status_code=403,
+            detail=_blocked_error_detail(str(error), str(error)),
+        ) from error
     except TargetPluginResolutionError as error:
         raise HTTPException(
             status_code=409,
@@ -136,7 +158,7 @@ def reset_dummy_product_site_fixture(
     *,
     target_plugin_identity: dict[str, Any],
 ) -> dict[str, Any]:
-    """Remove only the fixed dummy fixture and persist the verified result."""
+    """Restore the fixed dummy fixture to its exact source-HEAD baseline."""
 
     expected_root = "tests/ui-agent-trials/fixtures/dummy-product-site"
     normalized_root = normalize_repo_path_candidate(DUMMY_PRODUCT_SITE_FIXTURE_ROOT).rstrip("/")
@@ -161,8 +183,20 @@ def reset_dummy_product_site_fixture(
             "unsafe_reset_target",
         )
 
-    existed = lexical_target.exists()
     fixture_root = f"{expected_root}/"
+    source_baseline = _source_head_fixture_baseline(workspace, fixture_root)
+    if source_baseline["tracked_paths"]:
+        raise _request_error(
+            "Dummy product site reset requires an empty fixture at source HEAD.",
+            "reset_source_baseline_not_empty",
+        )
+    if target_plugin_identity.get("source_head") != source_baseline["source_head"]:
+        raise _request_error(
+            "Dummy product site reset source identity does not match the target plugin.",
+            "reset_source_head_mismatch",
+        )
+
+    existed = lexical_target.exists()
     removed_paths: list[str] = []
     if existed:
         if not lexical_target.is_dir():
@@ -179,7 +213,11 @@ def reset_dummy_product_site_fixture(
             ) from error
         removed_paths.append(fixture_root)
 
-    clean_verified = not lexical_target.exists() and not _path_is_link_like(lexical_target)
+    clean_verified = (
+        not lexical_target.exists()
+        and not _path_is_link_like(lexical_target)
+        and source_baseline["fixture_absent"] is True
+    )
     if not clean_verified:
         raise _request_error(
             "Dummy product site reset could not verify a clean fixture state.",
@@ -198,6 +236,10 @@ def reset_dummy_product_site_fixture(
         "existed": existed,
         "removed_paths": removed_paths,
         "clean_verified": clean_verified,
+        "source_head": source_baseline["source_head"],
+        "source_baseline_verified": True,
+        "source_baseline_sha256": source_baseline["sha256"],
+        "source_baseline_tracked_paths": source_baseline["tracked_paths"],
         "reset_receipt_id": reset_receipt_id,
         "target_plugin_identity": target_plugin_identity,
     }
@@ -207,6 +249,86 @@ def reset_dummy_product_site_fixture(
         result=result,
     )
     return result
+
+
+def _source_head_fixture_baseline(workspace: Path, fixture_root: str) -> dict[str, Any]:
+    """Return a fail-closed, content-addressed source-tree baseline."""
+
+    try:
+        head = subprocess.run(
+            ["git", "-C", str(workspace), "rev-parse", "--verify", "HEAD^{commit}"],
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise _request_error(
+            "Dummy product site reset could not resolve the source HEAD.",
+            "reset_source_head_unavailable",
+        ) from error
+    source_head = head.stdout.strip()
+    if (
+        head.returncode != 0
+        or len(source_head) not in {40, 64}
+        or any(character not in "0123456789abcdef" for character in source_head)
+    ):
+        raise _request_error(
+            "Dummy product site reset could not resolve the source HEAD.",
+            "reset_source_head_unavailable",
+        )
+    try:
+        tree = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(workspace),
+                "ls-tree",
+                "-r",
+                "--name-only",
+                "--full-tree",
+                source_head,
+                "--",
+                fixture_root.rstrip("/"),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise _request_error(
+            "Dummy product site reset could not inspect the source baseline.",
+            "reset_source_baseline_unavailable",
+        ) from error
+    if tree.returncode != 0:
+        raise _request_error(
+            "Dummy product site reset could not inspect the source baseline.",
+            "reset_source_baseline_unavailable",
+        )
+    tracked_paths = sorted(
+        line.strip().replace("\\", "/")
+        for line in tree.stdout.splitlines()
+        if line.strip()
+    )
+    baseline = {
+        "fixture_root": fixture_root.rstrip("/") + "/",
+        "source_head": source_head,
+        "tracked_paths": tracked_paths,
+    }
+    baseline_sha256 = sha256(
+        json.dumps(
+            baseline,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        **baseline,
+        "fixture_absent": not tracked_paths,
+        "sha256": baseline_sha256,
+    }
 
 
 def _write_dummy_product_site_reset_receipt(
@@ -236,6 +358,7 @@ def _write_dummy_product_site_reset_receipt(
         "scope": {
             "fixed_fixture_only": True,
             "generic_cleanup_tasks_started": False,
+            "source_baseline_verified": True,
         },
     }
     try:

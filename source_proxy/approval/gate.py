@@ -4,9 +4,6 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
-from source_proxy.tasks.long_running import execute_approved_long_running_task
-
-
 @dataclass(frozen=True)
 class SpendBreakdown:
     model_alias: str
@@ -69,7 +66,9 @@ def execute_approved_action(
     layer, which re-runs diff verification, applies the patch, and writes audit
     records in one place.
     """
-    return execute_approved_long_running_task(
+    from source_proxy.coding.orchestrator import get_coding_orchestrator
+
+    return get_coding_orchestrator().execute_approved(
         task_id,
         action=action,
         approval_id=approval_id,

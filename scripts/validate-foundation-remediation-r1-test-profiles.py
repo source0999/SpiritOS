@@ -34,10 +34,11 @@ REQUIRED_IDS = {
     "runtime-contracts",
     "backend-state",
     "recovery-fallback",
+    "production-api-authority",
+    "proving-harness-regression",
     "source-proxy-regression",
     "typecheck",
     "production-build",
-    "clean-proving-task",
     "secret-scan",
     "git-integrity",
 }
@@ -47,7 +48,22 @@ PLACEHOLDER_COMMANDS = (
     "isolated real ",
     " plus prompt",
     "tracked diff and ",
+    "protected-head verification",
 )
+CONCRETE_COMMAND_PREFIXES = (
+    "/home/source/spiritos/.venv/bin/python ",
+    "bash ",
+    "git ",
+    "npm ",
+    "python3 ",
+)
+RECURSIVE_PROFILE_COMMANDS = {
+    "evidence-provenance": "validate-foundation-remediation-r1-evidence.py",
+    "test-profiles": "validate-foundation-remediation-r1-test-profiles.py",
+}
+# The real HTTP proving run belongs to terminal authority/evidence validation. A
+# test-profile receipt must never stand in for that production execution proof.
+FORBIDDEN_PROFILE_IDS = {"clean-proving-task"}
 
 
 def load_json(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -105,6 +121,23 @@ def safe_repo_path(root: Path, value: str) -> Path | None:
     except ValueError:
         return None
     return path
+
+
+def command_definition_failure(profile_id: str, command: object) -> str | None:
+    if not isinstance(command, str) or not command.strip():
+        return f"profile_command_invalid:{profile_id}"
+    normalized = " ".join(command.strip().split())
+    lowered = normalized.lower()
+    if profile_id in FORBIDDEN_PROFILE_IDS:
+        return f"terminal_proof_must_not_be_test_profile:{profile_id}"
+    if any(marker in lowered for marker in PLACEHOLDER_COMMANDS):
+        return f"profile_command_placeholder:{profile_id}"
+    recursive = RECURSIVE_PROFILE_COMMANDS.get(profile_id)
+    if recursive and recursive in lowered:
+        return f"profile_command_recursive:{profile_id}"
+    if not lowered.startswith(CONCRETE_COMMAND_PREFIXES):
+        return f"profile_command_not_executable:{profile_id}"
+    return None
 
 
 def validate_receipt(
@@ -286,6 +319,9 @@ def main() -> int:
         for field in ("product", "command", "claim_ceiling"):
             if not isinstance(profile.get(field), str) or not profile[field].strip():
                 failures.append(f"profile_field_invalid:{profile_id}:{field}")
+        command_failure = command_definition_failure(profile_id, profile.get("command"))
+        if command_failure:
+            failures.append(command_failure)
         if profile.get("mandatory") is not True:
             failures.append(f"mandatory_profile_not_mandatory:{profile_id}")
         status = profile.get("status")
@@ -308,9 +344,6 @@ def main() -> int:
         if terminal:
             if status != "passed":
                 failures.append(f"terminal_profile_not_passed:{profile_id}")
-            command = str(profile.get("command") or "").lower()
-            if any(marker in command for marker in PLACEHOLDER_COMMANDS):
-                failures.append(f"terminal_profile_command_placeholder:{profile_id}")
 
     missing = sorted(REQUIRED_IDS - seen)
     unexpected = sorted(seen - REQUIRED_IDS)

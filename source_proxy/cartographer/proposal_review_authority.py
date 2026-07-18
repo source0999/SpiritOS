@@ -204,6 +204,10 @@ def execute_cartographer_proposal_review(
             )
 
         review_invocation = _invoke_independent_review(plan, proposal)
+        review_invocation = _acknowledge_invocation(
+            review_invocation,
+            consumer_invocation_id=f"cart-transaction-{uuid4().hex}",
+        )
         result_payload = deepcopy(plan["result_payload"])
         _validate_planned_result(result_payload, plan)
         target_path = Path(str(plan["target"]))
@@ -217,7 +221,21 @@ def execute_cartographer_proposal_review(
             plan,
             transaction=transaction,
         )
-        evidence_invocation = _invoke_evidence_recording(plan, transaction=transaction)
+        evidence_invocation_id = f"cart-evidence-{uuid4().hex}"
+        verification_invocation = _acknowledge_invocation(
+            verification_invocation,
+            consumer_invocation_id=evidence_invocation_id,
+        )
+        evidence_invocation = _invoke_evidence_recording(
+            plan,
+            transaction=transaction,
+            consumed_records=(review_invocation, verification_invocation),
+            invocation_id=evidence_invocation_id,
+        )
+        evidence_invocation = _acknowledge_invocation(
+            evidence_invocation,
+            consumer_invocation_id=f"cart-authority-finalizer-{uuid4().hex}",
+        )
         _validate_invocation_set(
             plan,
             review_invocation,
@@ -235,6 +253,11 @@ def execute_cartographer_proposal_review(
                 review_invocation["invocation_id"],
                 verification_invocation["invocation_id"],
                 evidence_invocation["invocation_id"],
+            ],
+            "participant_records": [
+                review_invocation,
+                verification_invocation,
+                evidence_invocation,
             ],
         }
         finalized_receipt = _call(
@@ -331,36 +354,24 @@ def _build_review_plan(
         "generation": 1,
     }
     review_artifact_hash = _hash(artifact)
-    invocation_records = [
+    participant_requirements = [
         {
-            "invocation_id": f"cart-review-{uuid4().hex}",
-            "output_id": f"cart-review-output-{uuid4().hex}",
-            "consumer_acknowledgement_id": f"cart-review-ack-{uuid4().hex}",
             "role": "cartographer-reviewer",
             "kind": "independent_review",
             "artifact_hash": review_artifact_hash,
             "artifact_sha256": review_artifact_hash,
-            "status": "succeeded",
         },
         {
-            "invocation_id": f"cart-verify-{uuid4().hex}",
-            "output_id": f"cart-verify-output-{uuid4().hex}",
-            "consumer_acknowledgement_id": f"cart-verify-ack-{uuid4().hex}",
             "role": "cartographer-verifier",
             "kind": "independent_verification",
             "artifact_hash": review_artifact_hash,
             "artifact_sha256": review_artifact_hash,
-            "status": "succeeded",
         },
         {
-            "invocation_id": f"cart-evidence-{uuid4().hex}",
-            "output_id": f"cart-evidence-output-{uuid4().hex}",
-            "consumer_acknowledgement_id": f"cart-evidence-ack-{uuid4().hex}",
             "role": "evidence-recorder",
             "kind": "evidence_recording",
             "artifact_hash": review_artifact_hash,
             "artifact_sha256": review_artifact_hash,
-            "status": "succeeded",
         },
     ]
     result_payload = _result_payload(
@@ -370,7 +381,7 @@ def _build_review_plan(
         expected_result_state=expected_result_state,
         reviewed_at=reviewed_at,
         review_artifact_hash=review_artifact_hash,
-        invocation_records=invocation_records,
+        participant_requirements=participant_requirements,
     )
     result_hash = _result_hash(result_payload)
     result_payload["proposal_review_authority"]["result_hash"] = result_hash
@@ -379,7 +390,7 @@ def _build_review_plan(
         "review_artifact_hash": review_artifact_hash,
         "result_hash": result_hash,
         "result_id": f"cartographer-review-result-{uuid4().hex}",
-        "invocation_records": invocation_records,
+        "participant_requirements": participant_requirements,
         "result_payload": result_payload,
     }
 
@@ -392,7 +403,7 @@ def _result_payload(
     expected_result_state: str,
     reviewed_at: str,
     review_artifact_hash: str,
-    invocation_records: list[dict[str, str]],
+    participant_requirements: list[dict[str, str]],
 ) -> dict[str, Any]:
     payload = deepcopy(proposal.payload)
     payload.update(
@@ -421,7 +432,7 @@ def _result_payload(
                 "generation": 1,
                 "proposal_snapshot_hash": proposal.snapshot_hash,
                 "review_artifact_hash": review_artifact_hash,
-                "invocations": invocation_records,
+                "participant_requirements": participant_requirements,
             },
         }
     )
@@ -644,22 +655,30 @@ def _transactional_replace(
 def _invoke_independent_review(
     plan: dict[str, Any],
     proposal: PersistedProposal,
-) -> dict[str, str]:
-    record = _invocation(plan, "independent_review")
+) -> dict[str, Any]:
+    started_at = _now_timestamp()
     if proposal.snapshot_hash != plan["proposal_snapshot_hash"]:
         raise CartographerProposalReviewError(
             "Independent review detected proposal drift.",
             "proposal_review_snapshot_drift",
         )
-    return record
+    return _completed_participant_invocation(
+        plan,
+        "independent_review",
+        started_at=started_at,
+        result={
+            "passed": True,
+            "proposal_snapshot_hash": proposal.snapshot_hash,
+        },
+    )
 
 
 def _invoke_independent_verification(
     plan: dict[str, Any],
     *,
     transaction: ProposalRecordTransaction,
-) -> dict[str, str]:
-    record = _invocation(plan, "independent_verification")
+) -> dict[str, Any]:
+    started_at = _now_timestamp()
     if (
         not transaction.target_path.is_file()
         or transaction.target_path.read_bytes() != transaction.target_bytes
@@ -677,24 +696,60 @@ def _invoke_independent_verification(
             "proposal_review_verification_failed",
         ) from error
     _validate_planned_result(payload, plan)
-    return record
+    return _completed_participant_invocation(
+        plan,
+        "independent_verification",
+        started_at=started_at,
+        result={
+            "passed": True,
+            "result_hash": _result_hash(payload),
+            "target_sha256": hashlib.sha256(transaction.target_bytes).hexdigest(),
+        },
+    )
 
 
 def _invoke_evidence_recording(
     plan: dict[str, Any],
     *,
     transaction: ProposalRecordTransaction,
-) -> dict[str, str]:
-    record = _invocation(plan, "evidence_recording")
-    if not transaction.target_path.is_file() or record["artifact_hash"] != plan["review_artifact_hash"]:
+    consumed_records: tuple[dict[str, Any], dict[str, Any]],
+    invocation_id: str,
+) -> dict[str, Any]:
+    started_at = _now_timestamp()
+    if not transaction.target_path.is_file():
         raise CartographerProposalReviewError(
             "Evidence invocation could not bind the reviewed artifact.",
             "proposal_review_evidence_failed",
         )
-    return record
+    for record in consumed_records:
+        acknowledgement = record.get("consumer_acknowledgement")
+        if (
+            record.get("status") != "succeeded"
+            or not isinstance(acknowledgement, dict)
+            or acknowledgement.get("consumed") is not True
+            or acknowledgement.get("output_id") != record.get("output_id")
+            or acknowledgement.get("output_sha256") != record.get("output_sha256")
+        ):
+            raise CartographerProposalReviewError(
+                "Evidence invocation did not receive completed participant outputs.",
+                "proposal_review_evidence_failed",
+            )
+    return _completed_participant_invocation(
+        plan,
+        "evidence_recording",
+        started_at=started_at,
+        invocation_id=invocation_id,
+        result={
+            "passed": True,
+            "consumed_output_sha256": [
+                str(record["output_sha256"]) for record in consumed_records
+            ],
+            "target_sha256": hashlib.sha256(transaction.target_bytes).hexdigest(),
+        },
+    )
 
 
-def _validate_invocation_set(plan: dict[str, Any], *records: dict[str, str]) -> None:
+def _validate_invocation_set(plan: dict[str, Any], *records: dict[str, Any]) -> None:
     invocation_ids = {record["invocation_id"] for record in records}
     output_ids = {record["output_id"] for record in records}
     acknowledgement_ids = {record["consumer_acknowledgement_id"] for record in records}
@@ -705,6 +760,14 @@ def _validate_invocation_set(plan: dict[str, Any], *records: dict[str, str]) -> 
         or any(
             record["artifact_hash"] != plan["review_artifact_hash"]
             or record["artifact_sha256"] != plan["review_artifact_hash"]
+            or record.get("status") != "succeeded"
+            or record.get("output_sha256") != _hash(record.get("result"))
+            or not isinstance(record.get("consumer_acknowledgement"), dict)
+            or record["consumer_acknowledgement"].get("consumed") is not True
+            or record["consumer_acknowledgement"].get("output_id")
+            != record.get("output_id")
+            or record["consumer_acknowledgement"].get("output_sha256")
+            != record.get("output_sha256")
             for record in records
         )
     ):
@@ -714,27 +777,88 @@ def _validate_invocation_set(plan: dict[str, Any], *records: dict[str, str]) -> 
         )
 
 
-def _invocation(plan: dict[str, Any], kind: str) -> dict[str, str]:
-    records = plan.get("invocation_records")
-    if not isinstance(records, list):
+def _participant_requirement(plan: dict[str, Any], kind: str) -> dict[str, str]:
+    requirements = plan.get("participant_requirements")
+    if not isinstance(requirements, list):
         raise CartographerProposalReviewError(
-            "Review invocation plan is invalid.",
+            "Review participant requirements are invalid.",
             "proposal_review_context_invalid",
         )
-    record = next(
+    requirement = next(
         (
             item
-            for item in records
+            for item in requirements
             if isinstance(item, dict) and item.get("kind") == kind
         ),
         None,
     )
-    if not isinstance(record, dict):
+    if not isinstance(requirement, dict):
         raise CartographerProposalReviewError(
-            "Review invocation record is missing.",
+            "Review participant requirement is missing.",
             "proposal_review_context_invalid",
         )
-    return {str(key): str(value) for key, value in record.items()}
+    return {str(key): str(value) for key, value in requirement.items()}
+
+
+def _completed_participant_invocation(
+    plan: dict[str, Any],
+    kind: str,
+    *,
+    started_at: str,
+    result: dict[str, Any],
+    invocation_id: str | None = None,
+) -> dict[str, Any]:
+    requirement = _participant_requirement(plan, kind)
+    prefix = {
+        "independent_review": "cart-review",
+        "independent_verification": "cart-verify",
+        "evidence_recording": "cart-evidence",
+    }[kind]
+    output_sha256 = _hash(result)
+    return {
+        "schema_version": "cartographer.participant-invocation/v2",
+        **requirement,
+        "invocation_id": invocation_id or f"{prefix}-{uuid4().hex}",
+        "output_id": f"{prefix}-output-{uuid4().hex}",
+        "output_sha256": output_sha256,
+        "started_at": started_at,
+        "completed_at": _now_timestamp(),
+        "status": "succeeded",
+        "result": deepcopy(result),
+    }
+
+
+def _acknowledge_invocation(
+    record: dict[str, Any],
+    *,
+    consumer_invocation_id: str,
+) -> dict[str, Any]:
+    if (
+        record.get("status") != "succeeded"
+        or not str(record.get("output_id") or "")
+        or record.get("output_sha256") != _hash(record.get("result"))
+        or not consumer_invocation_id.strip()
+    ):
+        raise CartographerProposalReviewError(
+            "Participant output could not be acknowledged.",
+            "proposal_review_invocation_binding_failed",
+        )
+    acknowledgement = {
+        "schema_version": "cartographer.participant-acknowledgement/v1",
+        "acknowledgement_id": f"cart-participant-ack-{uuid4().hex}",
+        "consumer_invocation_id": consumer_invocation_id,
+        "producer_invocation_id": str(record["invocation_id"]),
+        "output_id": str(record["output_id"]),
+        "output_sha256": str(record["output_sha256"]),
+        "consumed": True,
+        "recorded_at": _now_timestamp(),
+    }
+    acknowledged = dict(record)
+    acknowledged["consumer_acknowledgement_id"] = acknowledgement[
+        "acknowledgement_id"
+    ]
+    acknowledged["consumer_acknowledgement"] = acknowledgement
+    return acknowledged
 
 
 def _validate_planned_result(payload: dict[str, Any], plan: dict[str, Any]) -> None:

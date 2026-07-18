@@ -10,6 +10,7 @@ import {
   resolveAuthorityRuntimeIdentity,
 } from "@/lib/coding/authority-runtime-identity";
 import { hashApprovalContent } from "@/lib/coding/design-approval-authority";
+import { hashSpiritFlixAdminState } from "@/lib/coding/spiritflix-admin-approval-binding";
 
 const CONSUMER = "spiritflix-admin-executor";
 const OPERATION = "spiritflix_admin_mutation";
@@ -17,14 +18,22 @@ const PLUGIN = "spiritflix-admin";
 
 export type SpiritFlixAdminParticipantInvocation = {
   acknowledgement: {
-    approval_id: string;
-    generation: number;
-    result_hash: string;
+    acknowledgement_id: string;
+    consumer_invocation_id: string;
+    invocation_id: string;
+    output_hash: string;
+    output_id: string;
+    consumed: true;
   };
+  approval_id: string;
   completed_at: string;
   consumer: "spiritflix-admin-reviewer" | "spiritflix-admin-verifier" | "evidence-recorder";
+  generation: number;
   invocation_id: string;
   outcome: "accepted";
+  output_hash: string;
+  output_id: string;
+  result_hash: string;
 };
 
 export type SpiritFlixAdminFinalizationEvidence = {
@@ -33,6 +42,60 @@ export type SpiritFlixAdminFinalizationEvidence = {
   result_hash: string;
   result_schema: string;
 };
+
+function validateParticipantInvocations(
+  status: "succeeded" | "failed",
+  evidence: SpiritFlixAdminFinalizationEvidence,
+) {
+  if (status === "failed" && evidence.participant_invocations.length === 0) return;
+  const expected = new Set([
+    "spiritflix-admin-reviewer",
+    "spiritflix-admin-verifier",
+    "evidence-recorder",
+  ]);
+  const invocations = evidence.participant_invocations;
+  const ids = new Set(invocations.map((item) => item.invocation_id));
+  const outputs = new Set(invocations.map((item) => item.output_id));
+  const acknowledgements = new Set(
+    invocations.map((item) => item.acknowledgement.acknowledgement_id),
+  );
+  if (
+    status !== "succeeded" ||
+    invocations.length !== expected.size ||
+    ids.size !== expected.size ||
+    outputs.size !== expected.size ||
+    acknowledgements.size !== expected.size ||
+    invocations.some((item) => {
+      const body = {
+        approval_id: item.approval_id,
+        completed_at: item.completed_at,
+        consumer: item.consumer,
+        generation: item.generation,
+        invocation_id: item.invocation_id,
+        outcome: item.outcome,
+        output_id: item.output_id,
+        result_hash: item.result_hash,
+      };
+      return (
+        !expected.delete(item.consumer) ||
+        item.result_hash !== evidence.result_hash ||
+        item.output_hash !==
+          hashSpiritFlixAdminState({
+            schema: "spiritflix-admin-participant-output/v2",
+            state: body,
+          }) ||
+        item.acknowledgement.consumed !== true ||
+        item.acknowledgement.invocation_id !== item.invocation_id ||
+        item.acknowledgement.output_id !== item.output_id ||
+        item.acknowledgement.output_hash !== item.output_hash ||
+        !item.acknowledgement.consumer_invocation_id
+      );
+    }) ||
+    expected.size !== 0
+  ) {
+    throw new Error("spiritflix_admin_participant_evidence_mismatch");
+  }
+}
 
 async function invoke(
   identity: AuthorityRuntimeIdentity,
@@ -179,6 +242,10 @@ export async function finalizeSpiritFlixAdminApproval(
   status: "succeeded" | "failed",
   finalization?: SpiritFlixAdminFinalizationEvidence,
 ) {
+  if (!finalization && status === "succeeded") {
+    return { ok: false as const, reason: "spiritflix_admin_participant_evidence_missing" };
+  }
+  if (finalization) validateParticipantInvocations(status, finalization);
   const identity = await resolveAuthorityRuntimeIdentity();
   const configuredRoot = await configuredAdminRoot(identity);
   const loaded = await invoke(identity, "lookup", { approval_id });

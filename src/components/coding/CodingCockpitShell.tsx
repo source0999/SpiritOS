@@ -7586,6 +7586,14 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
       const payload = proposalRead.payload;
       const record = asRecord(payload);
       const coderDiagnostics = asRecord(record.coder_diagnostics);
+      const targetPluginRuntimeOutputId =
+        stringValue(record.target_plugin_output_id) ??
+        stringValue(record.runtime_output_id) ??
+        stringValue(coderDiagnostics.target_plugin_output_id);
+      const targetPluginContextHash =
+        stringValue(record.target_plugin_context_hash) ??
+        stringValue(record.context_hash) ??
+        stringValue(coderDiagnostics.target_plugin_context_hash);
       const contextMetadata = asRecord(record.context_metadata);
       const canonicalContextBroker = asRecord(
         record.canonical_context_broker ?? contextMetadata.canonical_context_broker,
@@ -8021,13 +8029,10 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
           verificationStatus: "diff preview passed",
         }));
         const approvalAction = `Run selected dummy Coder prompt ${prompt.id}`;
-        const contextHashBytes = await window.crypto.subtle.digest(
-          "SHA-256",
-          new TextEncoder().encode(`${prompt.id}|${prompt.submittedPrompt}|${responseSelectedTarget}`),
-        );
-        const contextHash = Array.from(new Uint8Array(contextHashBytes))
-          .map((value) => value.toString(16).padStart(2, "0"))
-          .join("");
+        if (!targetPluginRuntimeOutputId || !targetPluginContextHash) {
+          throw new Error("target_plugin_orchestrator_proposal_identity_missing");
+        }
+        const contextHash = targetPluginContextHash;
         const approvalPreviewResponse = await fetchWithTimeout(
           `/v1/tasks/long-running/${encodeURIComponent(taskId)}/approval-preview`,
           {
@@ -8035,6 +8040,7 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
               action: approvalAction,
               approved_diff: proposedDiff,
               context_hash: contextHash,
+              runtime_output_id: targetPluginRuntimeOutputId,
               target_plugin: packet.target_plugin,
               selected_prompt_id: prompt.id,
               target: responseSelectedTarget,
@@ -8079,6 +8085,8 @@ export function CodingCockpitShell({ embedded = false }: CodingCockpitShellProps
             task_id: taskId,
             trial_prompt_id: prompt.id,
             trial_prompt_text: prompt.submittedPrompt,
+            context_hash: contextHash,
+            runtime_output_id: targetPluginRuntimeOutputId,
           }),
           headers: { "content-type": "application/json" },
           method: "POST",

@@ -25,8 +25,6 @@ def target_packet(prompt_id: str = "coder-001-init-dummy-product-site") -> dict[
         "target_plugin": {
             "schema_version": "spiritos-target-plugin/v1",
             "id": "lumacart",
-            "repository_id": "spiritos-campaign-1",
-            "worktree_id": "spiritos-campaign-1-20260712",
             "fixture_root": "tests/ui-agent-trials/fixtures/dummy-product-site/",
             "selected_prompt_id": prompt_id,
             "selected_context_id": contexts[prompt_id],
@@ -45,16 +43,31 @@ def initialize_workspace_git(workspace: Path) -> None:
 
 
 class DummyProductSiteResetTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.operator_assertion = patch(
+            "source_proxy.api.codex_adapter.verify_operator_approval_assertion",
+            return_value={
+                "action": "approve",
+                "task_id": "coder-001-init-dummy-product-site",
+                "preview_id": "dummy-product-site-reset",
+                "generation": 1,
+            },
+        )
+        self.operator_assertion.start()
+
+    def tearDown(self) -> None:
+        self.operator_assertion.stop()
+
     def test_reset_route_removes_only_fixed_fixture_and_writes_verified_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir).resolve()
+            untouched = workspace / "unrelated-user-work.txt"
+            untouched.write_text("preserve me", encoding="utf-8")
+            initialize_workspace_git(workspace)
             fixture = workspace / FIXTURE_ROOT
             fixture.joinpath("src").mkdir(parents=True)
             fixture.joinpath("index.html").write_text("<h1>LumaCart</h1>", encoding="utf-8")
             fixture.joinpath("src", "main.js").write_text("export {};", encoding="utf-8")
-            untouched = workspace / "unrelated-user-work.txt"
-            untouched.write_text("preserve me", encoding="utf-8")
-            initialize_workspace_git(workspace)
 
             with patch("source_proxy.api.codex_adapter.Path.cwd", return_value=workspace):
                 response = TestClient(app).post(
@@ -73,6 +86,10 @@ class DummyProductSiteResetTests(unittest.TestCase):
                     "existed",
                     "removed_paths",
                     "clean_verified",
+                    "source_head",
+                    "source_baseline_verified",
+                    "source_baseline_sha256",
+                    "source_baseline_tracked_paths",
                     "reset_receipt_id",
                     "target_plugin_identity",
                 },
@@ -86,6 +103,10 @@ class DummyProductSiteResetTests(unittest.TestCase):
             self.assertTrue(payload["existed"])
             self.assertEqual(payload["removed_paths"], [payload["fixture_root"]])
             self.assertTrue(payload["clean_verified"])
+            self.assertTrue(payload["source_baseline_verified"])
+            self.assertEqual(payload["source_baseline_tracked_paths"], [])
+            self.assertEqual(len(payload["source_baseline_sha256"]), 64)
+            self.assertEqual(payload["target_plugin_identity"]["source_head"], payload["source_head"])
             self.assertTrue(payload["reset_receipt_id"].startswith("dummy-product-site-reset-"))
             self.assertEqual(payload["target_plugin_identity"]["selected_prompt_id"], "coder-001-init-dummy-product-site")
             self.assertFalse(fixture.exists())
@@ -106,6 +127,7 @@ class DummyProductSiteResetTests(unittest.TestCase):
                 {
                     "fixed_fixture_only": True,
                     "generic_cleanup_tasks_started": False,
+                    "source_baseline_verified": True,
                 },
             )
 
@@ -124,6 +146,29 @@ class DummyProductSiteResetTests(unittest.TestCase):
             self.assertTrue(payload["clean_verified"])
             receipt_path = workspace / "data" / "source-proxy" / f"{payload['reset_receipt_id']}.json"
             self.assertTrue(receipt_path.is_file())
+
+    def test_reset_route_rejects_a_fixture_tracked_at_source_head(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir).resolve()
+            fixture = workspace / FIXTURE_ROOT
+            fixture.mkdir(parents=True)
+            marker = fixture / "README.md"
+            marker.write_text("tracked baseline\n", encoding="utf-8")
+            initialize_workspace_git(workspace)
+
+            with patch("source_proxy.api.codex_adapter.Path.cwd", return_value=workspace):
+                response = TestClient(app).post(
+                    "/v1/coding/dummy-product-site/reset",
+                    json=target_packet(),
+                )
+
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(
+                response.json()["detail"]["reason_code"],
+                "reset_source_baseline_not_empty",
+            )
+            self.assertEqual(marker.read_text(encoding="utf-8"), "tracked baseline\n")
+            self.assertFalse((workspace / "data" / "source-proxy").exists())
 
     def test_reset_route_fails_closed_if_fixed_root_is_changed(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -185,6 +230,34 @@ class DummyProductSiteResetTests(unittest.TestCase):
             self.assertEqual(missing.json()["detail"]["reason_code"], "target_plugin_missing")
             self.assertEqual(wrong_prompt.status_code, 409)
             self.assertEqual(wrong_prompt.json()["detail"]["reason_code"], "target_plugin_reset_prompt_mismatch")
+
+    def test_reset_route_requires_an_exact_live_operator_assertion(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir).resolve()
+            initialize_workspace_git(workspace)
+            with (
+                patch("source_proxy.api.codex_adapter.Path.cwd", return_value=workspace),
+                patch(
+                    "source_proxy.api.codex_adapter.verify_operator_approval_assertion",
+                    return_value={
+                        "action": "approve",
+                        "task_id": "coder-001-init-dummy-product-site",
+                        "preview_id": "unrelated-reset",
+                        "generation": 1,
+                    },
+                ),
+            ):
+                response = TestClient(app).post(
+                    "/v1/coding/dummy-product-site/reset",
+                    json=target_packet(),
+                )
+
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(
+                response.json()["detail"]["reason_code"],
+                "operator_assertion_mismatch",
+            )
+            self.assertFalse((workspace / "data" / "source-proxy").exists())
 
 
 if __name__ == "__main__":

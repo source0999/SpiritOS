@@ -55,11 +55,22 @@ describe("SpiritFlix approved mutation transaction", () => {
       "evidence-recorder",
     ]);
     expect(new Set(completed.evidence.participant_invocations.map((item) => item.invocation_id)).size).toBe(3);
+    const [reviewer, verifier, recorder] = completed.evidence.participant_invocations;
+    expect(new Set(completed.evidence.participant_invocations.map((item) => item.output_id)).size).toBe(3);
     expect(completed.evidence.participant_invocations.every((item) => (
-      item.acknowledgement.approval_id === "approval-4" &&
-      item.acknowledgement.generation === 4 &&
-      item.acknowledgement.result_hash === completed.evidence.result_hash
+      item.approval_id === "approval-4" &&
+      item.generation === 4 &&
+      item.result_hash === completed.evidence.result_hash &&
+      item.acknowledgement.consumed === true &&
+      item.acknowledgement.invocation_id === item.invocation_id &&
+      item.acknowledgement.output_id === item.output_id &&
+      item.acknowledgement.output_hash === item.output_hash
     ))).toBe(true);
+    expect(reviewer.acknowledgement.consumer_invocation_id).toBe(recorder.invocation_id);
+    expect(verifier.acknowledgement.consumer_invocation_id).toBe(recorder.invocation_id);
+    expect(recorder.acknowledgement.consumer_invocation_id).toMatch(
+      /^spiritflix-authority-finalizer-/,
+    );
     expect(authority.finalize).toHaveBeenCalledWith(
       "approval-4",
       binding.action,

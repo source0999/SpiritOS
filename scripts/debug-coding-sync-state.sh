@@ -6,7 +6,6 @@ cd "$ROOT"
 
 FRONTEND_URL="${SPIRIT_FRONTEND_URL:-https://10.0.0.186:3000}"
 PROXY_URL="${SPIRIT_PROXY_URL:-https://10.0.0.186:8787}"
-STORE="${SPIRIT_CODING_RUNS_STORE:-data/coding-runs.json}"
 
 section() {
   printf '\n== %s ==\n' "$1"
@@ -30,64 +29,11 @@ curl_probe() {
 
 section "coding sync snapshot"
 date -Is
-printf 'root=%s\nstore=%s\nfrontend=%s\nproxy=%s\n' "$ROOT" "$STORE" "$FRONTEND_URL" "$PROXY_URL"
+printf 'root=%s\nfrontend=%s\nproxy=%s\n' "$ROOT" "$FRONTEND_URL" "$PROXY_URL"
 
-section "durable run store"
-node - "$STORE" <<'NODE'
-const fs = require("fs");
-const storePath = process.argv[2];
-const terminal = new Set(["completed", "failed", "timed_out", "cancelled", "cleared", "reverted"]);
-const inFlight = new Set(["pending", "running"]);
-function violations(run) {
-  const rows = Array.isArray(run.rows) ? run.rows : [];
-  const running = rows.filter((row) => inFlight.has(row.status));
-  const completedRows = rows.filter((row) => !inFlight.has(row.status) && row.result_label !== "RUNNING").length;
-  const out = [];
-  if (running.length > 1) out.push(`multiple_running_rows:${running.map((row) => row.prompt_id).join(",")}`);
-  if ((run.completed_count ?? 0) < completedRows) out.push(`completed_count_below_rows:${run.completed_count}<${completedRows}`);
-  if ((run.completed_count ?? 0) > (run.requested_count ?? 0)) out.push(`completed_count_above_requested:${run.completed_count}>${run.requested_count}`);
-  if (terminal.has(run.status) && run.status !== "cleared" && run.status !== "cancelled" && running.length) {
-    out.push(`terminal_run_has_running_row:${run.status}:${running.map((row) => row.prompt_id).join(",")}`);
-  }
-  if (run.status === "completed" && (run.completed_count ?? 0) < (run.requested_count ?? 0)) {
-    out.push(`completed_status_before_full_count:${run.completed_count}/${run.requested_count}`);
-  }
-  if (run.status === "cleared" && run.current_prompt_id) out.push(`cleared_run_keeps_current_prompt:${run.current_prompt_id}`);
-  if (running.length === 1 && run.current_prompt_id !== running[0].prompt_id) {
-    out.push(`current_prompt_not_running_row:${run.current_prompt_id ?? "none"}!=${running[0].prompt_id}`);
-  }
-  return out;
-}
-if (!fs.existsSync(storePath)) {
-  console.log(JSON.stringify({ exists: false, active: null, recent: [] }, null, 2));
-  process.exit(0);
-}
-const payload = JSON.parse(fs.readFileSync(storePath, "utf8"));
-const runs = Array.isArray(payload.runs) ? payload.runs : [];
-const recent = runs.slice(0, 5).map((run) => ({
-  run_id: run.run_id,
-  status: run.status,
-  completed_count: run.completed_count,
-  requested_count: run.requested_count,
-  current_prompt_id: run.current_prompt_id,
-  last_write_decision: run.last_write_decision ?? null,
-  invariant_violations: run.invariant_violations ?? violations(run),
-  rows: (run.rows ?? []).map((row) => ({
-    prompt_id: row.prompt_id,
-    status: row.status,
-    result_label: row.result_label,
-    reason_code: row.reason_code,
-    owner_kind: row.owner_kind ?? null,
-    write_source: row.write_source ?? null,
-  })),
-  write_debug_tail: (run.write_debug ?? []).slice(-8),
-}));
-console.log(JSON.stringify({
-  exists: true,
-  active: recent.find((run) => !terminal.has(run.status)) ?? null,
-  recent,
-}, null, 2));
-NODE
+section "durable run authority"
+printf '%s\n' 'Source Proxy long_running_tasks.sqlite3 is authoritative.'
+printf '%s\n' 'data/coding-runs.json is a retired, ignored pre-R1 cache and is not inspected.'
 
 section "agent-lab baseline"
 node <<'NODE'

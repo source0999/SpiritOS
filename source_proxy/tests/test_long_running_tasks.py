@@ -18,7 +18,19 @@ from fastapi.testclient import TestClient
 
 from source_proxy.api.long_running_tasks import router as long_running_tasks_router
 from source_proxy.context.canonical_broker import build_context_broker_report
-from source_proxy.approval.campaign_authority import persist_coding_execution_preview
+from source_proxy.approval.campaign_authority import (
+    finalize_coding_execution_approval,
+    persist_coding_execution_preview,
+)
+from source_proxy.coding.participants import (
+    acknowledge_coding_participant_output,
+    run_coding_anti_cheat,
+    run_coding_evidence_recorder,
+    run_coding_reviewer,
+    run_coding_verifier,
+)
+from source_proxy.coding.runtime_lane_boundary import RuntimeLaneBoundary
+from source_proxy.contracts.coding_lane_contracts import canonical_coding_lane_contracts
 from source_proxy.planning.plan import (
     PLAN_SCHEMA_VERSION,
     AcceptanceCriterion,
@@ -35,6 +47,7 @@ from source_proxy.planning.plan import (
 )
 from source_proxy.tasks.long_running import (
     _canonical_diff_sha256,
+    acknowledge_task_context_consumer,
     advance_long_running_task,
     create_long_running_task,
     execute_approved_long_running_task,
@@ -42,6 +55,8 @@ from source_proxy.tasks.long_running import (
     get_long_running_task_snapshot,
     list_long_running_tasks,
     LongRunningTaskError,
+    finalize_orchestrated_coding_execution,
+    prepare_orchestrated_coding_finalization,
     record_post_apply_verification,
     record_coding_execution_approval,
     reject_long_running_task_plan,
@@ -51,10 +66,146 @@ from source_proxy.tasks.long_running import (
 import source_proxy.tasks.long_running as long_running_module
 
 
-def _approval_id(task_id: str, diff: str, target: str) -> str:
+def _finalize_pending_task_with_real_participants(
+    task_id: str,
+    pending: dict[str, object],
+) -> dict[str, object]:
+    task = pending["task"]
+    assert isinstance(task, dict)
+    snapshot = task["ast_snapshot"]
+    assert isinstance(snapshot, dict)
+    artifact = snapshot["coding_artifact"]
+    approval = snapshot["campaign_2_approval"]
+    verification = snapshot["post_apply_verification"]
+    assert isinstance(artifact, dict)
+    assert isinstance(approval, dict)
+    assert isinstance(verification, dict)
+    executor_output = dict(approval["participant_records"][0])
+    records = [
+        acknowledge_coding_participant_output(
+            executor_output,
+            artifact,
+            consumer_service="source-proxy.coding.orchestrator/v2",
+        )
+    ]
+    records.append(run_coding_reviewer(artifact))
+    records.append(run_coding_verifier(artifact, verification))
+    records.append(
+        run_coding_anti_cheat(
+            artifact,
+            model_evidence={
+                "provider_available": True,
+                "provider_result": "success",
+                "reported_success_path": "primary",
+                "fallback_used": False,
+            },
+        )
+    )
+    records.append(
+        run_coding_evidence_recorder(
+            artifact,
+            participant_records=records,
+        )
+    )
+    assert all(record["passed"] is True for record in records)
+
+    boundary = RuntimeLaneBoundary()
+    outputs: list[dict[str, object]] = []
+    acknowledgements: list[dict[str, object]] = []
+    consumptions: list[dict[str, object]] = []
+    lane_payloads = {
+        "coder": {
+            "approved_diff": Path(artifact["workspace_root"], artifact["approved_diff_path"]).read_text(
+                encoding="utf-8"
+            ),
+            "changed_files": [item["path"] for item in artifact["changed_files"]],
+        },
+        "reviewer": {
+            "passed": records[1]["passed"],
+            "findings": records[1]["result"]["findings"],
+        },
+        "verifier": {
+            "verdict": records[2]["result"]["verdict"],
+            "checks": records[2]["result"]["checks"],
+        },
+        "anti-cheat": {
+            "passed": records[3]["passed"],
+            "detector_ids": records[3]["result"]["detector_ids"],
+            "violations": records[3]["result"]["violations"],
+        },
+        "evidence-recorder": {
+            "receipt_id": records[4]["result"]["receipt_id"],
+            "truth_status": records[4]["result"]["truth_status"],
+        },
+    }
+    contracts = canonical_coding_lane_contracts()
+    for index, (lane_id, payload) in enumerate(lane_payloads.items()):
+        output = boundary.issue_output(
+            lane_id=lane_id,
+            contract_version=contracts[lane_id]["contract_version"],
+            producer_invocation_id=str(records[index]["invocation_id"]),
+            payload=payload,
+        )
+        acknowledgement = boundary.record_consumer_acknowledgement(
+            output_id=output.output_id,
+            consumer_version="coding-orchestrator/v1",
+            consumer_invocation_id=f"test-orchestrator-consumer-{index}",
+            payload={
+                "approval_id": approval["approval_id"],
+                "generation": approval["generation"],
+            },
+        )
+        consumption = boundary.mark_output_consumed(
+            output_id=output.output_id,
+            acknowledgement_id=acknowledgement.acknowledgement_id,
+        )
+        outputs.append(output.to_payload())
+        acknowledgements.append(acknowledgement.to_payload())
+        consumptions.append(consumption.to_payload())
+
+    for consumer in ("planner", "coder", "verifier", "final_receipt_builder"):
+        report = acknowledge_task_context_consumer(
+            task_id,
+            consumer=consumer,
+            evidence=f"test_real_participant_{consumer}_context_consumption",
+            applicable=True,
+            reason="real participant regression helper consumed canonical context",
+        )
+        assert report["go_eligible"] is True
+
+    authority_request = prepare_orchestrated_coding_finalization(
+        task_id,
+        participant_records=records,
+        runtime_outputs=outputs,
+        runtime_acknowledgements=acknowledgements,
+        runtime_consumptions=consumptions,
+    )
+    authority_finalization = finalize_coding_execution_approval(
+        authority_request["approval"],
+        result_id=authority_request["result_id"],
+        evidence=authority_request["evidence"],
+        status="succeeded",
+    )
+    return finalize_orchestrated_coding_execution(
+        task_id,
+        authority_finalization=authority_finalization,
+        participant_records=records,
+        runtime_outputs=outputs,
+        runtime_acknowledgements=acknowledgements,
+        runtime_consumptions=consumptions,
+    )
+
+
+def _approval_id(
+    task_id: str,
+    diff: str,
+    target: str,
+    *,
+    action: str = "implement proposed file change",
+) -> str:
     preview = persist_coding_execution_preview(
         task_id=task_id,
-        action="implement proposed file change",
+        action=action,
         approved_diff=diff,
         target=target,
         selected_prompt_id="legacy-test",
@@ -170,7 +321,7 @@ def _dummy_product_site_lifecycle_diff(
     return "".join(patches), applied_contents
 
 
-def _manual_plan(task_id: str) -> ArchitectPlan:
+def _manual_plan(task_id: str, target: str = "src/app/page.tsx") -> ArchitectPlan:
     return ArchitectPlan(
         plan_id="plan-api-test",
         task_id=task_id,
@@ -190,7 +341,7 @@ def _manual_plan(task_id: str) -> ArchitectPlan:
             estimated_complexity="trivial",
         ),
         coder_packet=CoderPacket(
-            target_file=TargetFile("src/app/page.tsx", False, None),
+            target_file=TargetFile(target, False, None),
             operation="create",
             acceptance_criteria=[],
             constraints=ContentConstraints([], [], [], [], None, None),
@@ -797,12 +948,11 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()["task"]
-        self.assertEqual(payload["status"], "completed")
-        self.assertEqual(payload["architect_status"], "completed")
-        self.assertEqual(payload["architect_reason"], "selected_dummy_apply_completed")
-        self.assertIn("selected_dummy_apply_completed", payload["truncated_test_results"])
+        self.assertEqual(response.status_code, 410)
+        self.assertEqual(
+            response.json()["detail"]["reason_code"],
+            "client_completion_authority_removed",
+        )
 
     def test_router_returns_saved_architect_plan(self) -> None:
         app = FastAPI()
@@ -1380,7 +1530,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 payload = execute_approved_long_running_task(
                     task_id,
                     action="append docs note",
-                    approval_id=_approval_id(task_id, diff, "docs/nogo.md"),
+                    approval_id=_approval_id(
+                        task_id, diff, "docs/nogo.md", action="append docs note"
+                    ),
                     approved_by="test",
                     approved_diff=diff,
                     target="docs/nogo.md",
@@ -1423,7 +1575,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 payload = execute_approved_long_running_task(
                     task_id,
                     action="append docs note",
-                    approval_id=_approval_id(task_id, diff, "docs/causal.md"),
+                    approval_id=_approval_id(
+                        task_id, diff, "docs/causal.md", action="append docs note"
+                    ),
                     approved_diff=diff,
                     target="docs/causal.md",
             )
@@ -1508,7 +1662,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     execute_approved_long_running_task(
                         task_id,
                         action="append docs note",
-                        approval_id=_approval_id(task_id, diff, "docs/gate.md"),
+                        approval_id=_approval_id(
+                            task_id, diff, "docs/gate.md", action="append docs note"
+                        ),
                         approved_diff=diff,
                         target="docs/gate.md",
                     )
@@ -1587,6 +1743,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "/v1/tasks/long-running",
                 json={"description": "Cancel durable approval"},
             ).json()["task"]["id"]
+            save_plan(task_id, _manual_plan(task_id, "src/app/demo/page.tsx"))
             diff = "\n".join([
                 "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
                 "--- a/src/app/demo/page.tsx",
@@ -1780,6 +1937,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 json={"description": "Apply approved stale route diff"},
             )
             task_id = created.json()["task"]["id"]
+            save_plan(task_id, _manual_plan(task_id, "src/app/demo/page.tsx"))
             diff = "\n".join(
                 [
                     "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
@@ -1867,7 +2025,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             payload = execute_approved_long_running_task(
                 task_id,
                 action="append docs note",
-                approval_id=_approval_id(task_id, diff, "docs/apply.md"),
+                approval_id=_approval_id(
+                    task_id, diff, "docs/apply.md", action="append docs note"
+                ),
                 approved_diff=diff,
                 target="docs/apply.md",
             )
@@ -1915,7 +2075,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             execute_approved_long_running_task(
                 task_id,
                 action="modify file",
-                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                approval_id=_approval_id(
+                    task_id, diff, "src/app/demo/page.tsx", action="modify file"
+                ),
                 approved_diff=diff,
                 target="src/app/demo/page.tsx",
             )
@@ -1976,7 +2138,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             applied = execute_approved_long_running_task(
                 task_id,
                 action="append docs note",
-                approval_id=_approval_id(task_id, diff, "docs/phase-2a.md"),
+                approval_id=_approval_id(
+                    task_id, diff, "docs/phase-2a.md", action="append docs note"
+                ),
                 approved_diff=diff,
                 target="docs/phase-2a.md",
             )
@@ -2000,10 +2164,16 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 verification_note="Docs-only change verified.",
             )
             verification = completed["task"]["post_apply_verification"]
-            self.assertEqual(completed["task"]["status"], "completed")
+            self.assertEqual(
+                completed["task"]["status"],
+                "verification_passed_pending_participants",
+            )
             self.assertEqual(verification["status"], "verified")
-            self.assertFalse(verification["commit_proposal_blocked"])
-            self.assertEqual(verification["commit_blockers"], [])
+            self.assertTrue(verification["commit_proposal_blocked"])
+            self.assertEqual(
+                verification["commit_blockers"],
+                ["independent_participants_pending"],
+            )
             self.assertFalse(verification["push_path_available"])
             self.assertEqual(verification["push_blockers"], ["push_requires_separate_approval"])
             self.assertEqual(
@@ -2034,6 +2204,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "/v1/tasks/long-running",
                 json={"description": "Append router verification docs note"},
             ).json()["task"]["id"]
+            save_plan(task_id, _manual_plan(task_id, "docs/router-verify.md"))
             diff = "\n".join(
                 [
                     "diff --git a/docs/router-verify.md b/docs/router-verify.md",
@@ -2051,7 +2222,12 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 f"/v1/tasks/long-running/{task_id}/execute-approved",
                 json={
                     "action": "append docs note",
-                    "approval_id": _approval_id(task_id, diff, "docs/router-verify.md"),
+                    "approval_id": _approval_id(
+                        task_id,
+                        diff,
+                        "docs/router-verify.md",
+                        action="append docs note",
+                    ),
                     "approved": True,
                     "approved_diff": diff,
                     "target": "docs/router-verify.md",
@@ -2071,7 +2247,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 },
             )
 
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(response.json()["task"]["status"], "completed")
             self.assertEqual(
                 response.json()["task"]["post_apply_verification"]["status"],
@@ -2095,6 +2271,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "/v1/tasks/long-running",
                 json={"description": "Append docs note"},
             ).json()["task"]["id"]
+            save_plan(task_id, _manual_plan(task_id, "docs/missing-confirm.md"))
             diff = "\n".join(
                 [
                     "diff --git a/docs/missing-confirm.md b/docs/missing-confirm.md",
@@ -2112,7 +2289,12 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 f"/v1/tasks/long-running/{task_id}/execute-approved",
                 json={
                     "action": "append docs note",
-                    "approval_id": _approval_id(task_id, diff, "docs/missing-confirm.md"),
+                    "approval_id": _approval_id(
+                        task_id,
+                        diff,
+                        "docs/missing-confirm.md",
+                        action="append docs note",
+                    ),
                     "approved": True,
                     "approved_diff": diff,
                     "target": "docs/missing-confirm.md",
@@ -2158,7 +2340,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertEqual(
             response.json()["detail"]["reason_code"],
-            "invalid_post_apply_verification_state",
+            "coder_and_reviewer_must_complete_before_verification",
         )
 
     def test_router_code_verify_rejects_unapplied_task(self) -> None:
@@ -2178,7 +2360,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertEqual(
             response.json()["detail"]["reason_code"],
-            "invalid_post_apply_verification_state",
+            "coder_and_reviewer_must_complete_before_verification",
         )
 
     def test_router_verify_runs_allowlisted_code_verification(self) -> None:
@@ -2209,6 +2391,13 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "/v1/tasks/long-running",
                 json={"description": "Update coding frontend test"},
             ).json()["task"]["id"]
+            save_plan(
+                task_id,
+                _manual_plan(
+                    task_id,
+                    "src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                ),
+            )
             diff = "\n".join(
                 [
                     "diff --git a/src/lib/coding/__tests__/unified-diff-paths.test.ts b/src/lib/coding/__tests__/unified-diff-paths.test.ts",
@@ -2228,6 +2417,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                         task_id,
                         diff,
                         "src/lib/coding/__tests__/unified-diff-paths.test.ts",
+                        action="modify coding test",
                     ),
                     "approved": True,
                     "approved_diff": diff,
@@ -2236,6 +2426,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     "context_hash": "legacy-test",
                 },
             )
+            self.assertEqual(applied.status_code, 200, applied.text)
             applied_verification = applied.json()["task"]["post_apply_verification"]
             self.assertEqual(applied_verification["status"], "verification_ready")
             self.assertEqual(
@@ -2251,7 +2442,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             completed_process.stdout = "ok"
             completed_process.stderr = ""
             with mock.patch(
-                "source_proxy.tasks.long_running.subprocess.run",
+                "source_proxy.tasks.long_running._run_allowlisted_code_check",
                 return_value=completed_process,
             ) as run_mock:
                 response = client.post(
@@ -2259,7 +2450,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     json={"run_code_verification": True},
                 )
 
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.text)
             payload = response.json()
             self.assertEqual(payload["task"]["status"], "completed")
             verification = payload["task"]["post_apply_verification"]
@@ -2298,6 +2489,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "/v1/tasks/long-running",
                 json={"description": "Update route code"},
             ).json()["task"]["id"]
+            save_plan(task_id, _manual_plan(task_id, "src/app/demo/page.tsx"))
             diff = "\n".join(
                 [
                     "diff --git a/src/app/demo/page.tsx b/src/app/demo/page.tsx",
@@ -2313,7 +2505,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 f"/v1/tasks/long-running/{task_id}/execute-approved",
                 json={
                     "action": "modify route",
-                    "approval_id": _approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                    "approval_id": _approval_id(
+                        task_id, diff, "src/app/demo/page.tsx", action="modify route"
+                    ),
                     "approved": True,
                     "approved_diff": diff,
                     "target": "src/app/demo/page.tsx",
@@ -2327,7 +2521,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             failed_process.stdout = ""
             failed_process.stderr = "x" * 4100 + "TYPECHECK_FAILED_TAIL"
             with mock.patch(
-                "source_proxy.tasks.long_running.subprocess.run",
+                "source_proxy.tasks.long_running._run_allowlisted_code_check",
                 return_value=failed_process,
             ):
                 response = client.post(
@@ -2375,7 +2569,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             applied = execute_approved_long_running_task(
                 task_id,
                 action="modify route file",
-                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                approval_id=_approval_id(
+                    task_id, diff, "src/app/demo/page.tsx", action="modify route file"
+                ),
                 approved_diff=diff,
                 target="src/app/demo/page.tsx",
             )
@@ -2391,7 +2587,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             completed_process.stdout = "ok"
             completed_process.stderr = ""
             with mock.patch(
-                "source_proxy.tasks.long_running.subprocess.run",
+                "source_proxy.tasks.long_running._run_allowlisted_code_check",
                 return_value=completed_process,
             ):
                 pending = record_post_apply_verification(
@@ -2436,6 +2632,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "/v1/tasks/long-running",
                 json={"description": "Append docs note"},
             ).json()["task"]["id"]
+            save_plan(task_id, _manual_plan(task_id, "docs/code-verify-docs.md"))
             diff = "\n".join(
                 [
                     "diff --git a/docs/code-verify-docs.md b/docs/code-verify-docs.md",
@@ -2453,7 +2650,12 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 f"/v1/tasks/long-running/{task_id}/execute-approved",
                 json={
                     "action": "append docs note",
-                    "approval_id": _approval_id(task_id, diff, "docs/code-verify-docs.md"),
+                    "approval_id": _approval_id(
+                        task_id,
+                        diff,
+                        "docs/code-verify-docs.md",
+                        action="append docs note",
+                    ),
                     "approved": True,
                     "approved_diff": diff,
                     "target": "docs/code-verify-docs.md",
@@ -2489,6 +2691,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 "/v1/tasks/long-running",
                 json={"description": "Update Python file"},
             ).json()["task"]["id"]
+            save_plan(task_id, _manual_plan(task_id, "source_proxy/demo.py"))
             diff = "\n".join(
                 [
                     "diff --git a/source_proxy/demo.py b/source_proxy/demo.py",
@@ -2504,7 +2707,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 f"/v1/tasks/long-running/{task_id}/execute-approved",
                 json={
                     "action": "modify python",
-                    "approval_id": _approval_id(task_id, diff, "source_proxy/demo.py"),
+                    "approval_id": _approval_id(
+                        task_id, diff, "source_proxy/demo.py", action="modify python"
+                    ),
                     "approved": True,
                     "approved_diff": diff,
                     "target": "source_proxy/demo.py",
@@ -2562,7 +2767,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             applied = execute_approved_long_running_task(
                 task_id,
                 action="append docs note",
-                approval_id=_approval_id(task_id, diff, "docs/preserve.md"),
+                approval_id=_approval_id(
+                    task_id, diff, "docs/preserve.md", action="append docs note"
+                ),
                 approved_diff=diff,
                 target="docs/preserve.md",
             )
@@ -2607,7 +2814,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             execute_approved_long_running_task(
                 task_id,
                 action="modify file",
-                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                approval_id=_approval_id(
+                    task_id, diff, "src/app/demo/page.tsx", action="modify file"
+                ),
                 approved_diff=diff,
                 target="src/app/demo/page.tsx",
             )
@@ -2655,7 +2864,9 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
             execute_approved_long_running_task(
                 task_id,
                 action="modify file",
-                approval_id=_approval_id(task_id, diff, "src/app/demo/page.tsx"),
+                approval_id=_approval_id(
+                    task_id, diff, "src/app/demo/page.tsx", action="modify file"
+                ),
                 approved_diff=diff,
                 target="src/app/demo/page.tsx",
             )
@@ -2680,7 +2891,10 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                 manual_browser_check_done=False,
                 skip_reason="Verified externally in CI.",
             )
-            self.assertEqual(completed["task"]["status"], "completed")
+            self.assertEqual(
+                completed["task"]["status"],
+                "verification_passed_pending_participants",
+            )
             self.assertEqual(
                 completed["task"]["post_apply_verification"]["status"],
                 "verified",
@@ -2871,6 +3085,7 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                     task_id,
                     diff,
                     "tests/ui-agent-trials/fixtures/dummy-product-site/",
+                    action="Run selected dummy coder prompt 1",
                 ),
                 approved_diff=diff,
                 target="tests/ui-agent-trials/fixtures/dummy-product-site/",
@@ -2901,6 +3116,8 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
                         "storefront_runtime_engine": "frontend_simulation",
                     },
                 )
+            if verified["task"]["status"] == "verification_passed_pending_participants":
+                verified = _finalize_pending_task_with_real_participants(task_id, verified)
         finally:
             os.chdir(previous_cwd)
         return {
@@ -2943,11 +3160,13 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(len(task["open_diffs"]), 1)
         self.assertEqual(task["open_diffs"][0]["status"], "verified")
         self.assertEqual(manifest["post_apply_verification"], verification)
-        self.assertEqual(execution_evidence["final_truth_status"], "GO")
+        self.assertEqual(execution_evidence["final_truth_status"], "VERIFIED_NONTERMINAL")
         self.assertTrue(execution_evidence["commit_safe"])
+        self.assertFalse(execution_evidence["terminal_proof_eligible"])
         self.assertEqual(manifest["stage"], "post_apply_verified")
-        self.assertEqual(manifest["final_truth_status"], "GO")
+        self.assertEqual(manifest["final_truth_status"], "VERIFIED_NONTERMINAL")
         self.assertTrue(manifest["commit_safe"])
+        self.assertFalse(manifest["terminal_proof_eligible"])
         finalized_manifest_sha256 = long_running_module._sha256_file(manifest_path)
         self.assertEqual(
             execution_evidence["backup_manifest_sha256"],

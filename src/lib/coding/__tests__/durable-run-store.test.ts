@@ -1,819 +1,257 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
+import { createHash } from "node:crypto";
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { sourceProxyFetch } from "@/lib/source-proxy-origin";
 import {
+  NonAuthoritativeCodingRunMutationError,
   createCodingRun,
-  getActiveCodingRun,
-  getCodingRun,
   listRecentCodingRuns,
   patchCodingRun,
+  projectSourceProxyTaskEnvelope,
   upsertCodingRunRow,
 } from "@/lib/coding/durable-run-store";
 
-describe("durable coding run store", () => {
-  let tempDir = "";
-  let previousStore: string | undefined;
+vi.mock("@/lib/source-proxy-origin", () => ({ sourceProxyFetch: vi.fn() }));
 
-  beforeEach(async () => {
-    previousStore = process.env.SPIRIT_CODING_RUNS_STORE;
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "spirit-coding-runs-"));
-    process.env.SPIRIT_CODING_RUNS_STORE = path.join(tempDir, "coding-runs.json");
-  });
+const mockedSourceProxyFetch = vi.mocked(sourceProxyFetch);
+const sourceResponse = (
+  body: BodyInit | null,
+  init?: ResponseInit,
+): Awaited<ReturnType<typeof sourceProxyFetch>> =>
+  new Response(body, init) as unknown as Awaited<ReturnType<typeof sourceProxyFetch>>;
+const participantRoles = [
+  "coding-executor",
+  "coding-reviewer",
+  "coding-verifier",
+  "coding-anti-cheat",
+  "evidence-recorder",
+];
+const laneIds = [
+  "context-broker",
+  "planner",
+  "coder",
+  "reviewer",
+  "verifier",
+  "anti-cheat",
+  "repair",
+  "evidence-recorder",
+];
 
-  afterEach(async () => {
-    if (previousStore === undefined) {
-      delete process.env.SPIRIT_CODING_RUNS_STORE;
-    } else {
-      process.env.SPIRIT_CODING_RUNS_STORE = previousStore;
-    }
-    await rm(tempDir, { force: true, recursive: true });
-  });
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+    .join(",")}}`;
+}
 
-  it("creates a durable run id and rehydrates active/completed rows", async () => {
-    const created = await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      requested_count: 1,
-      run_id: "suite-sync-1",
-      status: "running",
-    });
+function sha256Json(value: unknown): string {
+  return `sha256:${createHash("sha256").update(canonicalJson(value), "utf8").digest("hex")}`;
+}
 
-    expect(created.run_id).toBe("suite-sync-1");
-    expect(await getActiveCodingRun()).toMatchObject({ run_id: "suite-sync-1" });
-
-    await upsertCodingRunRow("suite-sync-1", "coder-001", {
-      applied_changed_files: ["src/app/agent-lab/page.tsx"],
-      checks_result: "git diff --check recorded",
-      checks_run: ["git diff --check"],
-      disk_changed_files: ["src/app/agent-lab/page.tsx"],
-      model_called_for_generation: "ollama_chat/qwen2.5-coder:7b",
-      preview_changed_files: ["src/app/agent-lab/page.tsx"],
-      provider_call_made: true,
-      result_label: "PASS",
-      reversal_available: true,
-      reversal_status: "available",
-      run_id: "task-row-1",
-      status: "completed",
-      step_instrumentation: {
-        execute_approved_completed_at: "2026-06-07T00:00:00.000Z",
-        last_progress_reason_code: "server_apply_proof_recorded",
-        result_finalized_at: "2026-06-07T00:00:01.000Z",
+function taskEnvelope(
+  status: string,
+  options: { completeEvidence?: boolean; taskId?: string; description?: string } = {},
+) {
+  const taskId = options.taskId ?? "task-authoritative-1";
+  const complete = options.completeEvidence === true;
+  const runId = `coding-run-${taskId}`;
+  const approvalId = `approval-${taskId}`;
+  const artifactSha256 = `sha256:${"a".repeat(64)}`;
+  const proofBody = {
+    schema_version: "coding.production-proof/v1",
+    task_id: taskId,
+    run_id: runId,
+    source_head: "b".repeat(40),
+    target_plugin_proposal_sha256: `sha256:${"c".repeat(64)}`,
+    model_invocation_id: "model-invocation-1",
+    model_output_id: "model-output-1",
+    cartographer_proposal_id: "proposal-1",
+    cartographer_selection_id: "selection-1",
+    cartographer_transfer_event_id: "transfer-1",
+    recovery_id: null,
+    participant_invocation_ids: participantRoles.map((_role, index) => `invocation-${index}`),
+    artifact_sha256: artifactSha256,
+    approval_id: approvalId,
+    failures: [],
+    terminal_proof_eligible: true,
+    claim_ceiling: "model_authored_applied_diff_verified",
+  };
+  const productionProof = { ...proofBody, proof_sha256: sha256Json(proofBody) };
+  const outputs = participantRoles.map((role, index) => ({
+    output_id: `output-${index}`,
+    producer: role,
+  }));
+  return {
+    access_scope: "read_only_task_status_tracking",
+    task: {
+      id: taskId,
+      status,
+      created_at: "2026-07-17T10:00:00Z",
+      updated_at: "2026-07-17T10:01:00Z",
+      description: options.description ?? "Apply the bounded coding change",
+      next_action: status === "completed" ? "Done" : "Continue through backend gates",
+      post_apply_verification: {
+        status: complete ? "verified" : "verification_ready",
+        changed_files: ["src/example.ts"],
+        checks: [{ id: "typecheck", required: true, status: complete ? "passed" : "pending" }],
       },
-    });
-
-    const withRow = await getCodingRun("suite-sync-1");
-    expect(withRow?.rows[0]).toMatchObject({
-      prompt_id: "coder-001",
-      run_id: "task-row-1",
-      provider_call_made: true,
-      reversal_available: true,
-      step_instrumentation: {
-        execute_approved_completed_at: "2026-06-07T00:00:00.000Z",
-        last_progress_reason_code: "server_apply_proof_recorded",
-        result_finalized_at: "2026-06-07T00:00:01.000Z",
+      ast_snapshot: {
+        coding_artifact: {
+          model: "qwen-coder",
+          provider: "ollama",
+          artifact_sha256: artifactSha256,
+          approval_id: approvalId,
+        },
+        coding_orchestrator: {
+          schema_version: complete ? "coding-orchestrator/v2" : "coding-orchestrator/v1",
+          authoritative: complete,
+          run_id: runId,
+          summary: "Backend-authored summary",
+          lane_states: Object.fromEntries(
+            laneIds.map((lane) => [lane, complete ? (lane === "repair" ? "skipped" : "completed") : "running"]),
+          ),
+        },
+        campaign_2_approval: {
+          approval_id: approvalId,
+          state: complete ? "consumed" : "consuming",
+        },
+        approved_execution_evidence: {
+          final_truth_status: complete ? "GO" : "PENDING_PARTICIPANTS",
+          commit_safe: complete,
+          terminal_proof_eligible: complete,
+          production_proof_sha256: complete ? productionProof.proof_sha256 : null,
+          audit: { changed_files: ["src/example.ts"] },
+        },
+        coding_production_proof: complete ? productionProof : {},
+        coding_participant_records: complete
+          ? participantRoles.map((role, index) => ({
+              role,
+              passed: true,
+              invocation_id: `invocation-${index}`,
+              output_id: `participant-output-${index}`,
+              consumer_acknowledgement_id: `ack-${index}`,
+            }))
+          : [],
+        coding_runtime_outputs: complete ? outputs : [],
+        coding_runtime_consumptions: complete
+          ? outputs.map((output, index) => ({ consumption_id: `consume-${index}`, output_id: output.output_id }))
+          : [],
       },
-    });
+    },
+  };
+}
 
-    await patchCodingRun("suite-sync-1", {
-      completed_count: 1,
-      final_summary: "Finished",
-      status: "completed",
-    });
-    expect(await getActiveCodingRun()).toBeNull();
-    expect((await listRecentCodingRuns(1))[0]).toMatchObject({
-      completed_count: 1,
-      run_id: "suite-sync-1",
-      status: "completed",
-    });
+describe("Source Proxy coding-run projection", () => {
+  beforeEach(() => {
+    mockedSourceProxyFetch.mockReset();
   });
 
-  it("marks the current running row terminal when a first prompt abort is patched without result rows", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      current_prompt_id: "coder-001",
-      requested_count: 10,
-      run_id: "suite-timeout-1",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-timeout-1", "coder-001", {
-      model_called_for_generation: "qwen2.5-coder:7b",
-      prompt_text: "make a new isolated test",
-      prompt_excerpt: "make a new isolated test",
-      provider_call_made: false,
-      result_label: "RUNNING",
-      run_id: "suite-timeout-1:coder-001",
-      status: "running",
-    });
+  it("never promotes apply-only backend state to PASS or completed", () => {
+    const run = projectSourceProxyTaskEnvelope(taskEnvelope("applied_needs_verification"));
 
-    await patchCodingRun("suite-timeout-1", {
-      final_summary: "Backend failed - model sync timed out",
-      last_error: "timeout_source: /v1/decisions/prompt-packet",
-      reason_code: "coder_sync_timeout",
-      status: "timed_out",
-    });
-
-    const run = await getCodingRun("suite-timeout-1");
     expect(run).toMatchObject({
-      reason_code: "coder_sync_timeout",
-      status: "timed_out",
-    });
-    expect(run?.rows[0]).toMatchObject({
-      error_summary: "timeout_source: /v1/decisions/prompt-packet",
-      prompt_id: "coder-001",
-      reason_code: "coder_sync_timeout",
-      result_label: "NEEDS FIX",
-      status: "timed_out",
-    });
-    expect(await getActiveCodingRun()).toBeNull();
-  });
-
-  it("does not let late frontend stale writes downgrade server apply proof", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      current_prompt_id: "coder-001",
-      requested_count: 10,
-      run_id: "suite-server-proof-race",
       status: "running",
-    });
-    await upsertCodingRunRow("suite-server-proof-race", "coder-001", {
-      applied_changed_files: ["src/app/agent-lab/page.tsx"],
-      checks_result: "server apply proof recorded",
-      checks_run: ["git diff --check"],
-      disk_changed_files: ["src/app/agent-lab/page.tsx"],
-      endpoint_statuses: [
-        "/v1/actions/execute-approved:200",
-        "/v1/actions/execute-approved:server_apply_proof_recorded",
-      ],
-      preview_changed_files: ["src/app/agent-lab/page.tsx"],
-      provider_call_made: true,
-      result_label: "PASS",
-      reversal_available: true,
-      reversal_status: "available",
-      run_id: "task-server-proof",
-      status: "completed",
-      step_instrumentation: {
-        last_progress_reason_code: "server_apply_proof_recorded",
-        result_finalized_at: "2026-06-07T00:00:00.000Z",
+      completed_count: 0,
+      reason_code: "post_apply_verification_required",
+      backend_authority: {
+        owner: "source_proxy",
+        projection: "read_only",
+        source_status: "applied_needs_verification",
+        terminal_success: false,
       },
     });
+    expect(run?.rows[0]).toMatchObject({ status: "running", result_label: "PENDING" });
+  });
 
-    await upsertCodingRunRow("suite-server-proof-race", "coder-001", {
-      endpoint_statuses: [
-        "/v1/actions/execute-approved:200",
-        "/v1/actions/execute-approved:stale_no_completion",
-      ],
-      error_summary: "Prompt 1 reached execute-approved without disk/applied proof before the stale deadline.",
-      reason_code: "execute_approved_body_read_missing",
-      result_label: "NEEDS FIX",
+  it("projects completed only when verification, approval, participants, lanes, and consumption all agree", () => {
+    const incomplete = projectSourceProxyTaskEnvelope(taskEnvelope("completed"));
+    const complete = projectSourceProxyTaskEnvelope(
+      taskEnvelope("completed", { completeEvidence: true }),
+    );
+
+    expect(incomplete).toMatchObject({
       status: "failed",
-      step_instrumentation: {
-        last_progress_reason_code: "execute_approved_body_read_missing",
-      },
+      reason_code: "backend_terminal_evidence_incomplete",
+      backend_authority: { terminal_success: false },
     });
-
-    const run = await getCodingRun("suite-server-proof-race");
-    expect(run?.rows[0]).toMatchObject({
-      applied_changed_files: ["src/app/agent-lab/page.tsx"],
-      disk_changed_files: ["src/app/agent-lab/page.tsx"],
-      reason_code: "",
-      result_label: "PASS",
+    expect(complete).toMatchObject({
       status: "completed",
-      step_instrumentation: {
-        last_progress_reason_code: "server_apply_proof_recorded",
-      },
+      completed_count: 1,
+      reason_code: null,
+      backend_authority: { terminal_success: true },
     });
-    expect(run?.rows[0].endpoint_statuses).toContain("/v1/actions/execute-approved:stale_no_completion");
+    expect(complete?.rows[0].result_label).toBe("PASS");
   });
 
-  it("deduplicates patched rows and does not count completed RUNNING placeholders", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      requested_count: 10,
-      run_id: "suite-duplicate-rows",
-      status: "running",
-    });
+  it("fails closed when terminal production proof is absent or re-sealed incorrectly", () => {
+    const missing = taskEnvelope("completed", { completeEvidence: true });
+    missing.task.ast_snapshot.coding_production_proof = {};
+    const tampered = taskEnvelope("completed", { completeEvidence: true });
+    (tampered.task.ast_snapshot.coding_production_proof as Record<string, unknown>).claim_ceiling =
+      "forged_terminal_claim";
 
-    await patchCodingRun("suite-duplicate-rows", {
-      rows: [
-        {
-          applied_changed_files: [],
-          checks_result: "",
-          checks_run: [],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:started"],
-          error_summary: "",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "counter",
-          prompt_id: "coder-006",
-          prompt_text: "counter",
-          provider_call_made: false,
-          reason_code: "",
-          result_label: "RUNNING",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: "suite-duplicate-rows:coder-006",
-          started_at: "2026-06-07T00:00:00.000Z",
-          status: "completed",
-          updated_at: "2026-06-07T00:00:00.000Z",
-        },
-        {
-          applied_changed_files: [],
-          checks_result: "already_satisfied_without_expected_noop",
-          checks_run: ["git diff --check"],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:200"],
-          error_summary: "reason_code=already_satisfied_without_expected_noop",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "counter",
-          prompt_id: "coder-006",
-          prompt_text: "counter",
-          provider_call_made: true,
-          reason_code: "already_satisfied_without_expected_noop",
-          result_label: "NEEDS FIX",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: "task-counter",
-          started_at: "2026-06-07T00:00:01.000Z",
-          status: "failed",
-          updated_at: "2026-06-07T00:00:01.000Z",
-        },
-        {
-          applied_changed_files: [],
-          checks_result: "",
-          checks_run: [],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:started"],
-          error_summary: "",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "notes",
-          prompt_id: "coder-008",
-          prompt_text: "notes",
-          provider_call_made: false,
-          reason_code: "",
-          result_label: "RUNNING",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: "suite-duplicate-rows:coder-008",
-          started_at: "2026-06-07T00:00:02.000Z",
-          status: "completed",
-          updated_at: "2026-06-07T00:00:02.000Z",
-        },
-      ],
-    });
-
-    const run = await getCodingRun("suite-duplicate-rows");
-    expect(run?.completed_count).toBe(1);
-    expect(run?.rows.map((row) => `${row.prompt_id}:${row.status}:${row.result_label}`)).toEqual([
-      "coder-006:failed:NEEDS FIX",
-      "coder-008:running:RUNNING",
-    ]);
-  });
-
-  it("does not let late shorter suite patches move progress backward", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      completed_count: 3,
-      requested_count: 10,
-      run_id: "suite-progress-race",
-      status: "running",
-    });
-
-    for (const promptId of ["coder-001", "coder-002", "coder-003"]) {
-      await upsertCodingRunRow("suite-progress-race", promptId, {
-        checks_result: "recorded",
-        checks_run: ["git diff --check"],
-        model_called_for_generation: "qwen",
-        prompt_excerpt: promptId,
-        prompt_text: promptId,
-        provider_call_made: true,
-        result_label: "NEEDS FIX",
-        run_id: `suite-progress-race:${promptId}`,
+    for (const envelope of [missing, tampered]) {
+      expect(projectSourceProxyTaskEnvelope(envelope)).toMatchObject({
         status: "failed",
+        reason_code: "backend_terminal_evidence_incomplete",
+        backend_authority: { terminal_success: false },
       });
     }
-
-    await patchCodingRun("suite-progress-race", {
-      completed_count: 2,
-      rows: [
-        {
-          applied_changed_files: [],
-          checks_result: "recorded",
-          checks_run: ["git diff --check"],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:200"],
-          error_summary: "no diff",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "coder-001",
-          prompt_id: "coder-001",
-          prompt_text: "coder-001",
-          provider_call_made: true,
-          reason_code: "",
-          result_label: "NEEDS FIX",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: "suite-progress-race:coder-001",
-          started_at: "2026-06-07T00:00:00.000Z",
-          status: "failed",
-          updated_at: "2026-06-07T00:00:01.000Z",
-        },
-        {
-          applied_changed_files: [],
-          checks_result: "recorded",
-          checks_run: ["git diff --check"],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:200"],
-          error_summary: "no diff",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "coder-002",
-          prompt_id: "coder-002",
-          prompt_text: "coder-002",
-          provider_call_made: true,
-          reason_code: "",
-          result_label: "NEEDS FIX",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: "suite-progress-race:coder-002",
-          started_at: "2026-06-07T00:00:02.000Z",
-          status: "failed",
-          updated_at: "2026-06-07T00:00:03.000Z",
-        },
-      ],
-    });
-
-    const run = await getCodingRun("suite-progress-race");
-    expect(run?.completed_count).toBe(3);
-    expect(run?.rows.map((row) => row.prompt_id).sort()).toEqual([
-      "coder-001",
-      "coder-002",
-      "coder-003",
-    ]);
   });
 
-  it("does not let a late terminal suite patch stop an in-flight next prompt", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      completed_count: 4,
-      current_prompt_id: "coder-005",
-      requested_count: 10,
-      run_id: "suite-terminal-race",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-terminal-race", "coder-005", {
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "form",
-      prompt_text: "form",
-      provider_call_made: false,
-      result_label: "RUNNING",
-      run_id: "suite-terminal-race:coder-005",
-      status: "running",
-    });
+  it("discards mutation-shaped PASS/completed input and returns backend truth", async () => {
+    mockedSourceProxyFetch.mockImplementation(async () =>
+      sourceResponse(JSON.stringify(taskEnvelope("applied_needs_verification")), { status: 200 }),
+    );
 
-    await patchCodingRun("suite-terminal-race", {
-      completed_count: 4,
-      final_summary: "Finished",
-      rows: [],
-      status: "failed",
-    });
-
-    const run = await getCodingRun("suite-terminal-race");
-    expect(run).toMatchObject({
-      completed_count: 4,
-      current_prompt_id: "coder-005",
-      status: "running",
-    });
-    expect(run?.rows[0]).toMatchObject({
-      prompt_id: "coder-005",
-      result_label: "RUNNING",
-      status: "running",
-    });
-
-    await patchCodingRun("suite-terminal-race", {
-      final_summary: "Cleared by user",
-      reason_code: "user_cleared_synced_run",
-      status: "cleared",
-    });
-
-    expect(await getCodingRun("suite-terminal-race")).toMatchObject({
-      completed_count: 4,
-      current_prompt_id: null,
-      reason_code: "user_cleared_synced_run",
-      last_write_decision: "accepted_clear_wins",
-      invariant_violations: [],
-      status: "cleared",
-    });
-  });
-
-  it("classifies and demotes duplicate running rows instead of leaving two active prompts", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      current_prompt_id: "coder-006",
-      requested_count: 10,
-      run_id: "suite-duplicate-running-debug",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-duplicate-running-debug", "coder-006", {
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "older",
-      prompt_text: "older",
-      result_label: "RUNNING",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-duplicate-running-debug", "coder-008", {
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "newer",
-      prompt_text: "newer",
-      result_label: "RUNNING",
-      status: "running",
-    });
-
-    const run = await getCodingRun("suite-duplicate-running-debug");
-    expect(run?.rows.map((row) => `${row.prompt_id}:${row.status}:${row.reason_code}`).sort()).toEqual([
-      "coder-006:failed:rejected_duplicate_running_row",
-      "coder-008:running:",
-    ]);
-    expect(run?.invariant_violations).toEqual([]);
-    expect(run?.last_write_decision).toBe("accepted_duplicate_running_demoted:coder-006");
-    expect(run?.write_debug?.at(-1)).toMatchObject({
-      accepted: true,
-      decision: "accepted_duplicate_running_demoted:coder-006",
-      prompt_id: "coder-008",
-      source: "row_upsert",
-    });
-  });
-
-  it("records rejected late row reopen attempts on terminal runs", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      completed_count: 10,
-      current_prompt_id: "coder-010",
-      requested_count: 10,
-      run_id: "suite-terminal-debug",
+    const patched = await patchCodingRun("task-authoritative-1", {
       status: "completed",
+      completed_count: 99,
     });
-
-    await upsertCodingRunRow("suite-terminal-debug", "coder-010", {
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "late",
-      prompt_text: "late",
-      result_label: "RUNNING",
-      status: "running",
-    });
-
-    const run = await getCodingRun("suite-terminal-debug");
-    expect(run).toMatchObject({
-      completed_count: 10,
-      last_write_decision: "rejected_terminal_row_reopen",
+    const rowUpsert = await upsertCodingRunRow("task-authoritative-1", "forged-prompt", {
       status: "completed",
-    });
-    expect(run?.write_debug?.at(-1)).toMatchObject({
-      accepted: false,
-      decision: "rejected_terminal_row_reopen",
-      prompt_id: "coder-010",
-      source: "row_upsert",
-    });
-  });
-
-  it("blocks completed terminal patches before the requested count", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      current_prompt_id: "coder-001",
-      requested_count: 10,
-      run_id: "suite-completed-before-full-count",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-completed-before-full-count", "coder-001", {
-      error_summary: "user_clicked_stop_suite",
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "first",
-      prompt_text: "first",
-      provider_call_made: false,
-      reason_code: "user_clicked_stop_suite",
-      result_label: "FAILED",
-      status: "failed",
-    });
-
-    await patchCodingRun("suite-completed-before-full-count", {
-      completed_count: 0,
-      final_summary: "Finished",
-      status: "completed",
-    });
-
-    const run = await getCodingRun("suite-completed-before-full-count");
-    expect(run).toMatchObject({
-      completed_count: 1,
-      invariant_violations: [],
-      last_write_decision: "accepted_completed_terminal_blocked_before_full_count",
-      reason_code: "completed_before_requested_count_blocked",
-      status: "failed",
-    });
-  });
-
-  it("keeps the current prompt on the newest in-flight row when an older row finishes late", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      completed_count: 5,
-      current_prompt_id: "coder-007",
-      requested_count: 10,
-      run_id: "suite-current-pointer-race",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-current-pointer-race", "coder-007", {
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "newer",
-      prompt_text: "newer",
-      provider_call_made: false,
-      result_label: "RUNNING",
-      run_id: "suite-current-pointer-race:coder-007",
-      status: "running",
-    });
-
-    await upsertCodingRunRow("suite-current-pointer-race", "coder-006", {
-      checks_result: "recorded",
-      checks_run: ["git diff --check"],
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "older",
-      prompt_text: "older",
-      provider_call_made: true,
-      result_label: "NEEDS FIX",
-      run_id: "suite-current-pointer-race:coder-006",
-      status: "failed",
-    });
-
-    const run = await getCodingRun("suite-current-pointer-race");
-    expect(run).toMatchObject({
-      completed_count: 1,
-      current_prompt_id: "coder-007",
-      status: "running",
-    });
-    expect(run?.rows.map((row) => `${row.prompt_id}:${row.status}`).sort()).toEqual([
-      "coder-006:failed",
-      "coder-007:running",
-    ]);
-  });
-
-  it("does not move current prompt backward when the previous current row finishes after the next prompt starts", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      completed_count: 2,
-      current_prompt_id: "coder-003",
-      requested_count: 10,
-      run_id: "suite-current-previous-finishes-late",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-current-previous-finishes-late", "coder-004", {
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "new prompt",
-      prompt_text: "new prompt",
-      provider_call_made: false,
-      result_label: "RUNNING",
-      run_id: "suite-current-previous-finishes-late:coder-004",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-current-previous-finishes-late", "coder-003", {
-      checks_result: "recorded",
-      checks_run: ["git diff --check"],
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "previous prompt",
-      prompt_text: "previous prompt",
-      provider_call_made: true,
       result_label: "PASS",
-      run_id: "suite-current-previous-finishes-late:coder-003",
-      status: "completed",
     });
 
-    const run = await getCodingRun("suite-current-previous-finishes-late");
-    expect(run).toMatchObject({
-      current_prompt_id: "coder-004",
-      invariant_violations: [],
-      status: "running",
-    });
-    expect(run?.rows.map((row) => `${row.prompt_id}:${row.status}`).sort()).toEqual([
-      "coder-003:completed",
-      "coder-004:running",
-    ]);
+    expect(patched?.status).toBe("running");
+    expect(rowUpsert?.status).toBe("running");
+    expect(rowUpsert?.rows[0].result_label).toBe("PENDING");
+    expect(mockedSourceProxyFetch).toHaveBeenCalledTimes(2);
   });
 
-  it("does not reopen a terminal run from a late running suite patch", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      completed_count: 10,
-      current_prompt_id: "coder-010",
-      final_summary: "Finished",
-      requested_count: 10,
-      run_id: "suite-terminal-reopen-patch",
-      status: "failed",
-    });
-    await patchCodingRun("suite-terminal-reopen-patch", {
-      completed_count: 10,
-      rows: Array.from({ length: 10 }, (_, index) => {
-        const promptId = `coder-${String(index + 1).padStart(3, "0")}`;
-        return {
-          applied_changed_files: [],
-          checks_result: "not run",
-          checks_run: [],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:200"],
-          error_summary: "",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "done",
-          prompt_id: promptId,
-          prompt_text: "done",
-          provider_call_made: true,
-          reason_code: "",
-          result_label: "NEEDS FIX",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: `suite-terminal-reopen-patch:${promptId}`,
-          started_at: "2026-06-07T00:00:00.000Z",
-          status: "failed" as const,
-          updated_at: "2026-06-07T00:00:01.000Z",
-        };
-      }),
-    });
-
-    await patchCodingRun("suite-terminal-reopen-patch", {
-      completed_count: 9,
-      current_prompt_id: "coder-010",
-      final_summary: "Running prompt-packet",
-      rows: [
-        {
-          applied_changed_files: [],
-          checks_result: "",
-          checks_run: [],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:started"],
-          error_summary: "",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "late",
-          prompt_id: "coder-010",
-          prompt_text: "late",
-          provider_call_made: false,
-          reason_code: "",
-          result_label: "RUNNING",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: "suite-terminal-reopen-patch:coder-010-late",
-          started_at: "2026-06-07T00:00:10.000Z",
-          status: "running",
-          updated_at: "2026-06-07T00:00:11.000Z",
-        },
-      ],
-      status: "running",
-    });
-
-    const run = await getCodingRun("suite-terminal-reopen-patch");
-    expect(run).toMatchObject({
-      completed_count: 10,
-      current_prompt_id: "coder-010",
-      final_summary: "Finished",
-      status: "failed",
-    });
-    expect(run?.rows.at(-1)).toMatchObject({ prompt_id: "coder-010", status: "failed" });
+  it("fails closed instead of creating a local JSON run", async () => {
+    await expect(createCodingRun({ status: "completed" })).rejects.toBeInstanceOf(
+      NonAuthoritativeCodingRunMutationError,
+    );
+    expect(mockedSourceProxyFetch).not.toHaveBeenCalled();
   });
 
-  it("does not reopen a terminal run from a late running row upsert", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      completed_count: 10,
-      current_prompt_id: "coder-010",
-      final_summary: "Finished",
-      requested_count: 10,
-      run_id: "suite-terminal-reopen-row",
-      status: "failed",
-    });
-    await patchCodingRun("suite-terminal-reopen-row", {
-      completed_count: 10,
-      rows: Array.from({ length: 10 }, (_, index) => {
-        const promptId = `coder-${String(index + 1).padStart(3, "0")}`;
-        return {
-          applied_changed_files: [],
-          checks_result: "not run",
-          checks_run: [],
-          disk_changed_files: [],
-          endpoint_statuses: ["/v1/decisions/prompt-packet:200"],
-          error_summary: "",
-          generated_diff_present: false,
-          model_called_for_generation: "qwen",
-          preview_changed_files: [],
-          prompt_excerpt: "done",
-          prompt_id: promptId,
-          prompt_text: "done",
-          provider_call_made: true,
-          reason_code: "",
-          result_label: "NEEDS FIX",
-          reversal_available: false,
-          reversal_status: "none",
-          run_id: `suite-terminal-reopen-row:${promptId}`,
-          started_at: "2026-06-07T00:00:00.000Z",
-          status: "failed" as const,
-          updated_at: "2026-06-07T00:00:01.000Z",
-        };
-      }),
+  it("bounds the requested run count, detail fanout, strings, and output rows", async () => {
+    const taskIds = Array.from({ length: 60 }, (_, index) => `task-${index}`);
+    mockedSourceProxyFetch.mockImplementation(async (path) => {
+      if (path.startsWith("/v1/tasks/long-running?")) {
+        return sourceResponse(
+          JSON.stringify({ tasks: taskIds.map((task_id) => ({ task_id })) }),
+          { status: 200 },
+        );
+      }
+      const taskId = decodeURIComponent(path.split("/").at(-1) ?? "");
+      return sourceResponse(
+        JSON.stringify(taskEnvelope("running", { taskId, description: "x".repeat(10_000) })),
+        { status: 200 },
+      );
     });
 
-    await upsertCodingRunRow("suite-terminal-reopen-row", "coder-010", {
-      model_called_for_generation: "qwen",
-      prompt_excerpt: "late",
-      prompt_text: "late",
-      provider_call_made: false,
-      result_label: "RUNNING",
-      run_id: "suite-terminal-reopen-row:coder-010-late",
-      status: "running",
-    });
+    const runs = await listRecentCodingRuns(999);
 
-    const run = await getCodingRun("suite-terminal-reopen-row");
-    expect(run).toMatchObject({
-      completed_count: 10,
-      current_prompt_id: "coder-010",
-      final_summary: "Finished",
-      status: "failed",
-    });
-    expect(run?.rows.at(-1)).toMatchObject({ prompt_id: "coder-010", status: "failed" });
-  });
-
-  it("treats cleared runs as terminal so another device does not attach to them", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      requested_count: 10,
-      run_id: "suite-cleared-1",
-      status: "running",
-    });
-
-    await patchCodingRun("suite-cleared-1", {
-      final_summary: "Run cleared from synced coding cloud.",
-      reason_code: "user_cleared_synced_run",
-      status: "cleared",
-    });
-
-    expect(await getActiveCodingRun()).toBeNull();
-    expect((await listRecentCodingRuns(1))[0]).toMatchObject({
-      reason_code: "user_cleared_synced_run",
-      run_id: "suite-cleared-1",
-      status: "cleared",
-    });
-  });
-
-  it("preserves row progress when a run patch and row upsert happen concurrently", async () => {
-    await createCodingRun({
-      benchmark_name: "Messy Coder 10",
-      current_prompt_id: "coder-001",
-      requested_count: 10,
-      run_id: "suite-race-1",
-      status: "running",
-    });
-    await upsertCodingRunRow("suite-race-1", "coder-001", {
-      model_called_for_generation: "qwen2.5-coder:7b",
-      prompt_text: "make a new isolated test",
-      prompt_excerpt: "make a new isolated test",
-      provider_call_made: false,
-      result_label: "RUNNING",
-      run_id: "suite-race-1:coder-001",
-      status: "running",
-    });
-
-    await Promise.all([
-      upsertCodingRunRow("suite-race-1", "coder-001", {
-        endpoint_statuses: ["/v1/tasks/long-running:200"],
-        model_called_for_generation: "ollama_chat/qwen2.5-coder:7b",
-        provider_call_made: false,
-        result_label: "RUNNING",
-        status: "running",
-      }),
-      patchCodingRun("suite-race-1", {
-        endpoint_statuses: ["/v1/tasks/long-running:200"],
-        final_summary: "Reading request",
-        model_called_for_generation: "ollama_chat/qwen2.5-coder:7b",
-        status: "running",
-      }),
-    ]);
-
-    const run = await getCodingRun("suite-race-1");
-    expect(run).toMatchObject({
-      endpoint_statuses: ["/v1/tasks/long-running:200"],
-      final_summary: "Reading request",
-      status: "running",
-    });
-    expect(run?.rows[0]).toMatchObject({
-      endpoint_statuses: ["/v1/tasks/long-running:200"],
-      model_called_for_generation: "ollama_chat/qwen2.5-coder:7b",
-      prompt_id: "coder-001",
-      status: "running",
-    });
+    expect(mockedSourceProxyFetch.mock.calls[0][0]).toContain("limit=50");
+    expect(mockedSourceProxyFetch).toHaveBeenCalledTimes(51);
+    expect(runs).toHaveLength(50);
+    expect(runs.every((run) => run.rows.length === 1)).toBe(true);
+    expect(runs.every((run) => run.benchmark_name.length <= 160)).toBe(true);
   });
 });
