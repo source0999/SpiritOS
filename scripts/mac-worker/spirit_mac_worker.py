@@ -29,9 +29,9 @@ MAC_PLATFORM_COMMANDS = {
     "xcodebuild_version": ["xcodebuild", "-version"],
     "swift_version": ["swift", "--version"],
     "safari_driver_version": ["safaridriver", "--version"],
-    "codesign_version": ["codesign", "--version"],
-    "pkgbuild_version": ["pkgbuild", "--version"],
-    "productbuild_version": ["productbuild", "--version"],
+    "codesign_path": ["xcrun", "--find", "codesign"],
+    "pkgbuild_path": ["xcrun", "--find", "pkgbuild"],
+    "productbuild_path": ["xcrun", "--find", "productbuild"],
 }
 
 SAFE_CHECK_COMMANDS = {
