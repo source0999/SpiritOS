@@ -373,6 +373,40 @@ LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
   focused changed-surface matrix `142/142`, registered Source Proxy regression
   `232/232`, proving `17/17`, lifecycle `25/25`, test-profile semantics `5/5`,
   secret scan valid, static authority valid, and `git diff --check` clean.
+- At source `73ae061f13adc6e45aa5f7051b20ef59397ecde9`, the clean lifecycle
+  completed both production HTTP runs. The first run reached terminal production
+  proof, undo/reset removed the fixture, and the distinct clean rerun independently
+  reached terminal proof. The inner client emitted `status: passed` and
+  `terminal_proof_eligible: true`; outer teardown removed the fixture, dependency
+  link, build, runtime receipts, temporary state, operator session, approval
+  authority, services, processes, and ports and restored a clean ignored-inclusive
+  worktree. This proves the target-identity repair crossed the previously failing
+  boundary, but the resulting receipt bytes are not accepted for closeout.
+- An independent emitter-to-validator audit rejected those otherwise successful
+  receipt bytes for four exact contract drifts: the proving and lifecycle emitters
+  used a non-canonical remediation ID; the lifecycle claim ceiling included the
+  trusted-process boundary while generator and validator expected a shorter stale
+  literal; the lifecycle embedded a derived 11-field inner summary where the
+  independent contracts require the exact separately published inner receipt; and
+  the intentionally emitted cgroup `process_boundary` was absent from both exact
+  field sets. The invalid external receipts remain audit diagnostics only and will
+  not be copied, manifested, tagged, bundled, or used for a terminal claim.
+- Receipt emitters now use the state/manifest remediation namespace, the stricter
+  trusted-process claim ceiling is canonical across emitter, generator, and
+  independent validator, the outer receipt binds the complete inner receipt, and
+  the six-field cgroup process boundary is both accepted and independently checked
+  for kind, kernel enforcement, explicit same-UID claim limit, prehashed systemd
+  executables, and threat model. A cross-module regression constructs evidence with
+  the real emitter constants and binding helper, then exercises generator and
+  independent-validator contracts. In-memory normalization of the rejected real
+  receipt data using only these four repairs passes both independent contracts; a
+  fresh source-bound lifecycle is still mandatory. Observations: evidence `14/14`,
+  proving `18/18`, lifecycle `27/27`, and `git diff --check` clean.
+- Three invocation-only false starts before the successful diagnostic run were also
+  fail-closed: two stopped at runtime-identity argument validation and one used a
+  non-existent Cartographer proposal ID. Each published no receipt, removed its
+  isolated state, left no service or scope active, and restored a globally clean
+  proof worktree before the next attempt.
 
 ## Broad-suite diagnostic attribution
 

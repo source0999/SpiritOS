@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +16,8 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR_PATH = Path(__file__).with_name("generate-foundation-remediation-r1-evidence.py")
 VALIDATOR_PATH = Path(__file__).with_name("validate-foundation-remediation-r1-evidence.py")
+PROVER_PATH = Path(__file__).with_name("run-foundation-remediation-r1-proving.py")
+LIFECYCLE_PATH = Path(__file__).with_name("run-foundation-remediation-r1-lifecycle.py")
 
 
 def load_module(name: str, path: Path) -> ModuleType:
@@ -22,12 +25,15 @@ def load_module(name: str, path: Path) -> ModuleType:
     if spec is None or spec.loader is None:
         raise RuntimeError(f"could not load {path}")
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
 
 
 GENERATOR = load_module("foundation_r1_evidence_generator", GENERATOR_PATH)
 VALIDATOR = load_module("foundation_r1_evidence_validator", VALIDATOR_PATH)
+PROVER = load_module("foundation_r1_production_prover", PROVER_PATH)
+LIFECYCLE = load_module("foundation_r1_lifecycle_owner", LIFECYCLE_PATH)
 
 
 def git(root: Path, *args: str) -> str:
@@ -71,7 +77,7 @@ def protected_report(source_commit: str) -> dict:
         )
     return {
         "schema": GENERATOR.PROTECTED_REPORT_SCHEMA,
-        "remediation_id": GENERATOR.REMEDIATION_ID,
+        "remediation_id": PROVER.REMEDIATION_ID,
         "source_commit": source_commit,
         "generated_at": "2026-07-17T20:00:00+00:00",
         "inventory_matches_state": True,
@@ -242,7 +248,7 @@ def write_production_receipts(root: Path, source_commit: str) -> tuple[Path, Pat
     inner = {
         "schema_version": GENERATOR.PRODUCTION_PROVING_RECEIPT_SCHEMA,
         "receipt_type": "foundation_r1_black_box_production_proving",
-        "remediation_id": GENERATOR.REMEDIATION_ID,
+        "remediation_id": LIFECYCLE.REMEDIATION_ID,
         "run_mode": "production_http",
         "terminal_proof_eligible": True,
         "claim_ceiling": CLAIM_CEILING,
@@ -344,7 +350,7 @@ def write_production_receipts(root: Path, source_commit: str) -> tuple[Path, Pat
         "remediation_id": GENERATOR.REMEDIATION_ID,
         "status": "passed",
         "terminal_proof_eligible": False,
-        "claim_ceiling": "subordinate_clean_checkout_build_service_and_revocation_proof_only",
+        "claim_ceiling": LIFECYCLE.LIFECYCLE_CLAIM_CEILING,
         "started_at": "2026-07-17T18:50:00+00:00",
         "completed_at": "2026-07-17T19:35:00+00:00",
         "source": {
@@ -360,11 +366,18 @@ def write_production_receipts(root: Path, source_commit: str) -> tuple[Path, Pat
             "source_proxy": {"source_tree": "9" * 40},
         },
         "services": services,
-        "inner_proving": {
-            **inner,
-            "execution": {"receipt_sha256": inner["receipt_sha256"]},
-            "published_only_after_lifecycle_teardown": True,
+        "process_boundary": {
+            "kind": "systemd_user_scope_cgroup_v2",
+            "kernel_membership_enforced": True,
+            "same_uid_cgroup_migration_resistance_claimed": False,
+            "systemctl_executable_sha256": "6" * 64,
+            "systemd_run_executable_sha256": "7" * 64,
+            "threat_model": "trusted_prehashed_executables_and_code",
         },
+        "inner_proving": LIFECYCLE._bind_full_inner_proving_receipt(
+            inner,
+            {"receipt_sha256": inner["receipt_sha256"]},
+        ),
         "temporary_authority": {
             "state_root_removed": True,
             "shared_signing_key_preexisted": True,
@@ -485,6 +498,34 @@ def terminal_spec(root: Path, source_commit: str, tag_name: str, authority_path:
 
 
 class ImmutableEvidenceTests(unittest.TestCase):
+    def test_generator_and_independent_validator_share_lifecycle_contract(self) -> None:
+        self.assertEqual(
+            {
+                GENERATOR.REMEDIATION_ID,
+                VALIDATOR.REMEDIATION_ID,
+                PROVER.REMEDIATION_ID,
+                LIFECYCLE.REMEDIATION_ID,
+            },
+            {"spiritos-foundation-remediation-r1"},
+        )
+        self.assertEqual(
+            {
+                GENERATOR.LIFECYCLE_CLAIM_CEILING,
+                VALIDATOR.LIFECYCLE_CLAIM_CEILING,
+                LIFECYCLE.LIFECYCLE_CLAIM_CEILING,
+            },
+            {
+                "subordinate_clean_checkout_build_service_and_trusted_process_"
+                "revocation_proof_only"
+            },
+        )
+        self.assertEqual(GENERATOR.LIFECYCLE_FIELDS, VALIDATOR.LIFECYCLE_FIELDS)
+        self.assertEqual(
+            GENERATOR.PROCESS_BOUNDARY_FIELDS,
+            VALIDATOR.PROCESS_BOUNDARY_FIELDS,
+        )
+        self.assertIn("process_boundary", GENERATOR.LIFECYCLE_FIELDS)
+
     def test_contract_schemas_are_strict_draft_2020_12_documents(self) -> None:
         for relative, schema_identity in VALIDATOR.CONTRACT_SCHEMAS.items():
             payload = json.loads((ROOT / relative).read_text(encoding="utf-8"))
@@ -706,6 +747,20 @@ class ImmutableEvidenceTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 GENERATOR.EvidenceBuildError,
                 "lifecycle_teardown_invalid",
+            ):
+                GENERATOR.validate_terminal_spec(root, payload, source, tag)
+
+            payload = terminal_spec(root, source, tag, authority.relative_to(root).as_posix())
+            lifecycle = root / payload["lifecycle_receipt"]["path"]
+            forged = json.loads(lifecycle.read_text(encoding="utf-8"))
+            forged["process_boundary"]["kernel_membership_enforced"] = False
+            forged.pop("receipt_sha256")
+            forged["receipt_sha256"] = GENERATOR.compact_sha256(forged)
+            GENERATOR.write_json_atomic(lifecycle, forged)
+            payload["lifecycle_receipt"]["sha256"] = GENERATOR.sha256_file(lifecycle)
+            with self.assertRaisesRegex(
+                GENERATOR.EvidenceBuildError,
+                "lifecycle_process_boundary_invalid",
             ):
                 GENERATOR.validate_terminal_spec(root, payload, source, tag)
 

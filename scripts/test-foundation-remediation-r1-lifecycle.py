@@ -164,6 +164,34 @@ class TemporaryLinkedWorktree(unittest.TestCase):
             inner_process_timeout_seconds=60,
         )
 
+    def test_receipt_identity_uses_terminal_remediation_namespace(self) -> None:
+        self.assertEqual(
+            LIFECYCLE.REMEDIATION_ID,
+            "spiritos-foundation-remediation-r1",
+        )
+        self.assertEqual(
+            LIFECYCLE.LIFECYCLE_CLAIM_CEILING,
+            "subordinate_clean_checkout_build_service_and_trusted_process_"
+            "revocation_proof_only",
+        )
+
+    def test_outer_receipt_binds_the_full_inner_receipt(self) -> None:
+        raw = {
+            "schema_version": LIFECYCLE.INNER_RECEIPT_SCHEMA,
+            "receipt_sha256": "sha256:" + "a" * 64,
+            "runs": [{"task_id": "task-1"}, {"task_id": "task-2"}],
+        }
+        execution = {"receipt_sha256": raw["receipt_sha256"]}
+
+        bound = LIFECYCLE._bind_full_inner_proving_receipt(raw, execution)
+        embedded = dict(bound)
+        self.assertEqual(embedded.pop("execution"), execution)
+        self.assertIs(
+            embedded.pop("published_only_after_lifecycle_teardown"),
+            True,
+        )
+        self.assertEqual(embedded, raw)
+
     def cli(self) -> list[str]:
         config = self.config()
         return [

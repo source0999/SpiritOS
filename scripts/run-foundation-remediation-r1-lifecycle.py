@@ -31,9 +31,13 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
-REMEDIATION_ID = "foundation-remediation-r1"
+REMEDIATION_ID = "spiritos-foundation-remediation-r1"
 RECEIPT_SCHEMA = "spiritos-foundation-remediation-r1-lifecycle-receipt/v1"
 INNER_RECEIPT_SCHEMA = "spiritos-foundation-remediation-r1-production-proving-receipt/v1"
+LIFECYCLE_CLAIM_CEILING = (
+    "subordinate_clean_checkout_build_service_and_trusted_process_"
+    "revocation_proof_only"
+)
 STATE_PREFIX = "spiritos-foundation-r1-state-"
 LOOPBACK = "127.0.0.1"
 SAFE_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -1872,6 +1876,19 @@ def _validate_inner_receipt(
     }
 
 
+def _bind_full_inner_proving_receipt(
+    raw_inner_receipt: Mapping[str, Any],
+    execution: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Embed the exact separately published receipt, not a derived summary."""
+
+    return {
+        **dict(raw_inner_receipt),
+        "execution": dict(execution),
+        "published_only_after_lifecycle_teardown": True,
+    }
+
+
 def _operator_state_summary(path: Path) -> dict[str, Any]:
     if not path.is_file() or path.is_symlink():
         _fail("lifecycle_operator_state_invalid")
@@ -2551,7 +2568,7 @@ def _run_lifecycle(config: LifecycleConfig) -> dict[str, Any]:
         "remediation_id": REMEDIATION_ID,
         "status": "passed",
         "terminal_proof_eligible": False,
-        "claim_ceiling": "subordinate_clean_checkout_build_service_and_trusted_process_revocation_proof_only",
+        "claim_ceiling": LIFECYCLE_CLAIM_CEILING,
         "started_at": started_at,
         "completed_at": completed_at,
         "source": {
@@ -2583,11 +2600,10 @@ def _run_lifecycle(config: LifecycleConfig) -> dict[str, Any]:
         },
         "services": service_receipts,
         "process_boundary": cgroup_runtime,
-        "inner_proving": {
-            **inner_receipt,
-            "execution": inner_execution,
-            "published_only_after_lifecycle_teardown": True,
-        },
+        "inner_proving": _bind_full_inner_proving_receipt(
+            raw_inner_receipt,
+            inner_execution,
+        ),
         "temporary_authority": {
             "state_root_sha256": _sha256_text(str(state_root)),
             "state_directory_sha256": state_directory_sha256,

@@ -364,6 +364,12 @@ def runtime_boundary_payload() -> dict:
 
 
 class FoundationR1ProvingTests(unittest.TestCase):
+    def test_receipt_identity_uses_terminal_remediation_namespace(self) -> None:
+        self.assertEqual(
+            PROVER.REMEDIATION_ID,
+            "spiritos-foundation-remediation-r1",
+        )
+
     def test_failure_diagnostics_emit_only_allowlisted_reason_codes(self) -> None:
         self.assertEqual(
             PROVER._safe_diagnostic_reason_codes(

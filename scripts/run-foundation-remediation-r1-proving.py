@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
-REMEDIATION_ID = "foundation-remediation-r1"
+REMEDIATION_ID = "spiritos-foundation-remediation-r1"
 RECEIPT_SCHEMA = "spiritos-foundation-remediation-r1-production-proving-receipt/v1"
 PROMPT_ID = "coder-001-init-dummy-product-site"
 CONTEXT_ID = "init-storefront"

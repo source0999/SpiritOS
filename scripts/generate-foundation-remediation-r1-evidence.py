@@ -32,6 +32,10 @@ PRODUCTION_PROVING_RECEIPT_SCHEMA = (
     "spiritos-foundation-remediation-r1-production-proving-receipt/v1"
 )
 LIFECYCLE_RECEIPT_SCHEMA = "spiritos-foundation-remediation-r1-lifecycle-receipt/v1"
+LIFECYCLE_CLAIM_CEILING = (
+    "subordinate_clean_checkout_build_service_and_trusted_process_"
+    "revocation_proof_only"
+)
 AUTHORITY_VALIDATOR_PATH = "scripts/validate-foundation-remediation-r1-authority.py"
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -185,12 +189,21 @@ LIFECYCLE_FIELDS = {
     "source",
     "build",
     "services",
+    "process_boundary",
     "inner_proving",
     "temporary_authority",
     "teardown",
     "redaction",
     "failures",
     "receipt_sha256",
+}
+PROCESS_BOUNDARY_FIELDS = {
+    "kind",
+    "kernel_membership_enforced",
+    "same_uid_cgroup_migration_resistance_claimed",
+    "systemctl_executable_sha256",
+    "systemd_run_executable_sha256",
+    "threat_model",
 }
 PROVING_RUN_REQUIRED_FIELDS = {
     "ordinal",
@@ -827,8 +840,7 @@ def validate_lifecycle_receipt(
         or receipt.get("remediation_id") != REMEDIATION_ID
         or receipt.get("status") != "passed"
         or receipt.get("terminal_proof_eligible") is not False
-        or receipt.get("claim_ceiling")
-        != "subordinate_clean_checkout_build_service_and_revocation_proof_only"
+        or receipt.get("claim_ceiling") != LIFECYCLE_CLAIM_CEILING
         or receipt.get("failures") != []
     ):
         raise EvidenceBuildError("lifecycle_receipt_identity_invalid")
@@ -855,6 +867,33 @@ def validate_lifecycle_receipt(
         raise EvidenceBuildError("lifecycle_inner_proving_receipt_mismatch")
     if execution.get("receipt_sha256") != inner_receipt.get("receipt_sha256"):
         raise EvidenceBuildError("lifecycle_inner_execution_receipt_hash_mismatch")
+
+    process_boundary = require_mapping(
+        receipt.get("process_boundary"),
+        "lifecycle_process_boundary_missing",
+    )
+    exact_object(
+        process_boundary,
+        name="lifecycle_process_boundary",
+        required=PROCESS_BOUNDARY_FIELDS,
+    )
+    if (
+        process_boundary.get("kind") != "systemd_user_scope_cgroup_v2"
+        or process_boundary.get("kernel_membership_enforced") is not True
+        or process_boundary.get("same_uid_cgroup_migration_resistance_claimed")
+        is not False
+        or process_boundary.get("threat_model")
+        != "trusted_prehashed_executables_and_code"
+    ):
+        raise EvidenceBuildError("lifecycle_process_boundary_invalid")
+    raw_sha256(
+        process_boundary.get("systemctl_executable_sha256"),
+        "lifecycle_process_boundary_invalid",
+    )
+    raw_sha256(
+        process_boundary.get("systemd_run_executable_sha256"),
+        "lifecycle_process_boundary_invalid",
+    )
 
     expected_runtime = require_mapping(
         inner_receipt.get("expected_runtime_identity"),
