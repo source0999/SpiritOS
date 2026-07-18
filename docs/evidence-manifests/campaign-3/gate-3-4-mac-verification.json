@@ -1,35 +1,50 @@
 {
-  "schema_version": "campaign-3/mac-verification-receipt/v1",
-  "task_id": "campaign3-gate34-mac",
+  "schema_version": "campaign-3/mac-gate-3-4-evidence/v1",
   "transport": {
     "registered_tailscale_dns": "sources-mac-mini.tailb69ea6.ts.net",
     "registered_tailscale_ipv4": "100.117.164.42",
-    "host_key_verified_against": "10.0.0.147"
-  },
-  "platform": {
-    "hostname": "spirit-mac-mini.local",
-    "os": "macOS",
-    "version": "15.7.7"
+    "host_key_alias": "10.0.0.147",
+    "relay": "spirit"
   },
   "source_binding": {
-    "source_commit": "7a98d3cc7293392e85009245aa87fa5a96329b42",
-    "observed_commit": "7a98d3cc7293392e85009245aa87fa5a96329b42",
-    "isolated_worktree": "/tmp/spiritos-campaign3-mac/worktree",
+    "source_commit": "1b932b9c575a237509724f2c9387d25e68416067",
+    "observed_commit": "1b932b9c575a237509724f2c9387d25e68416067",
+    "isolated_mac_checkout": "/Users/spiritmac/Library/Caches/spiritos-campaign3-gate34-1b932/worktree",
     "source_bound": true
   },
-  "job": {
-    "job_type": "run_safe_check",
-    "command": "git diff --check",
-    "success": true,
-    "duration_ms": 117,
-    "write_authority": false,
-    "verdict_effect": "mac_verification_passed"
+  "capability_preflight": {
+    "task_id": "task_9847e2580eb5",
+    "status": "INTEGRATED_LIVE",
+    "consumer": "coding_verifier_mac_evidence_consumer",
+    "log_hash": "sha256:ef1c098b310fd1466a30f13c0d8db38661febfe766e58d8b84ed8ada04079fbe",
+    "macos": "15.7.7",
+    "xcodebuild": "Xcode 26.0.1 (17A400)",
+    "swift": "Apple Swift 6.2",
+    "safaridriver": "Included with Safari 26.5",
+    "packaging_tools": ["/usr/bin/codesign", "/usr/bin/pkgbuild", "/usr/bin/productbuild"],
+    "write_authority": false
   },
-  "log_hash": "sha256:a464b062be5489df90a67b7f26d6a89be56a6986555cb6f8d980825ae294c3f2",
-  "cleanup_pending": false,
+  "source_bound_validation": {
+    "task_id": "task_3040562f14be",
+    "command": "git diff --check",
+    "status": "INTEGRATED_LIVE",
+    "consumer_event_id": "consumer_7dec9a71b8734cd3",
+    "log_hash": "sha256:8f941554b0ba039ef6da7e395fd2bb3aac6d620f7c547e8dda1631c041b10108",
+    "write_authority": false
+  },
+  "controlled_timeout_and_recovery": {
+    "timeout_task_id": "task_5a4baf10aca3",
+    "timeout_status": "BLOCKED_ENV",
+    "timeout_error": "mac_worker_timeout",
+    "timeout_log_hash": "sha256:41fa370946a84133889faa188abbfbc64598d8ed0d39b8b7a8e5212b1b898e3e",
+    "recovery_task_id": "task_9847e2580eb5",
+    "recovery_status": "INTEGRATED_LIVE"
+  },
   "cleanup": {
     "mac_isolated_checkout_removed": true,
-    "dell_transfer_bundles_removed": true
+    "mac_transfer_bundles_removed": true,
+    "dell_transfer_bundles_removed": true,
+    "confirmation": "MAC_GATE34_CLEANUP_CONFIRMED; DELL_GATE34_CLEANUP_CONFIRMED"
   },
-  "claim_ceiling": "one source-bound macOS validation; no full Gate 3.4 completion claim"
+  "verdict_effect": "A Mac timeout persisted BLOCKED_ENV; the recovered source-bound preflight and diff check persisted INTEGRATED_LIVE consumption. Neither receipt grants write authority."
 }

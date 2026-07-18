@@ -22,3 +22,12 @@
 
 Gate 3.1 and later must add immutable evidence for retained lane runtime contract validation, production caller and consumer proof, Scout research provenance and citations, Obsidian note identity and conflicts, Mac worker source-bound execution, retained sub-agent invocation and consumption, cross-lane conflicts, diagnosis envelope, degradation and fallback, all-lane proving task, final terminal receipt, manifest, tag, bundle, sidecar, and restoration instructions.
 
+## Gate 3.4 Mac Evidence
+
+| Evidence | Path Or Command | Status |
+| --- | --- | --- |
+| Current Tailscale host resolution | `sources-mac-mini.tailb69ea6.ts.net` (`100.117.164.42`) | live and host-key verified |
+| Source-bound capability preflight | `task_9847e2580eb5` | consumed, `INTEGRATED_LIVE` |
+| Source-bound Mac diff validation | `task_3040562f14be` | consumed, `INTEGRATED_LIVE` |
+| Controlled cancellation | `task_5a4baf10aca3` | persisted `BLOCKED_ENV` on `mac_worker_timeout` |
+| Receipt, hashes, and cleanup | `docs/evidence-manifests/campaign-3/gate-3-4-mac-verification.json` | recorded |

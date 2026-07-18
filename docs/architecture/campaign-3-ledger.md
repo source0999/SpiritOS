@@ -2,14 +2,14 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_4_mac_live_proof_partial`
+Checkpoint ID: `campaign_3_gate_3_4_complete`
 
-Verdict: `GATE_3_3_COMPLETE_GATE_3_4_LIVE_PROOF_PARTIAL`
+Verdict: `GATE_3_4_COMPLETE`
 
 State:
 
-- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`
-- next gate: `gate_3_4_mac_worker_and_mac_coding_frameworks`
+- completed gates: `gate_3_0_entry_verification_and_control_plane`, `gate_3_1_extended_lane_inventory_and_classification`, `gate_3_2_scout_and_coding_research_integration`, `gate_3_3_obsidian_coding_knowledge_integration`, `gate_3_4_mac_worker_and_mac_coding_frameworks`
+- next gate: `gate_3_5_retained_coding_sub_agents`
 - Campaign 3 GO: false
 - Campaign 4 started: false
 - implementation gates started: true
@@ -91,5 +91,14 @@ the worker returned the same observed commit and log hash recorded in
 cancellation, downstream acknowledgement, recovery, and cleanup remain required.
 
 The isolated Mac checkout and Dell transfer bundles were removed after the receipt;
-cleanup is now proven for that real execution. The remaining Gate 3.4 work is
-durable downstream consumption plus timeout/cancellation and recovery evidence.
+cleanup is now proven for that real execution.
+
+Gate 3.4 completed with current Tailscale identity resolution rather than the stale
+LAN endpoint. At commit `1b932b9c575a237509724f2c9387d25e68416067`, the Mac
+reported macOS 15.7.7, Xcode 26.0.1, Swift 6.2, SafariDriver 26.5, and discoverable
+codesign/pkgbuild/productbuild tools. The source-bound platform preflight and
+`git diff --check` were consumed by `coding_verifier_mac_evidence_consumer`. A
+bounded no-write cancellation probe persisted `BLOCKED_ENV` on timeout, then a
+fresh source-bound preflight recovered to `INTEGRATED_LIVE`. See
+`docs/evidence-manifests/campaign-3/gate-3-4-mac-verification.json` for hashes,
+task identities, and cleanup confirmation. The next authorized task is Gate 3.5.
