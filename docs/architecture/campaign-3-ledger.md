@@ -2,9 +2,9 @@
 
 ## Current Checkpoint
 
-Checkpoint ID: `campaign_3_gate_3_3_obsidian_coding_knowledge_complete`
+Checkpoint ID: `campaign_3_gate_3_4_mac_worker_external_network_blocked`
 
-Verdict: `GATE_3_3_OBSIDIAN_CODING_KNOWLEDGE_COMPLETE`
+Verdict: `GATE_3_3_COMPLETE_GATE_3_4_EXTERNAL_HOST_BLOCKED`
 
 State:
 
@@ -64,3 +64,11 @@ it cannot write until canonical approval, executor, verification, evidence, and
 compensating restoration bind it.
 
 Gate 3.3 is complete. The next authorized task resumes at `gate_3_4_mac_worker_and_mac_coding_frameworks`.
+
+External blocker recorded 2026-07-18: the configured Dell route resolves
+`spirit-mac-mini` to `10.0.0.147:22` as user `spiritmac` with the configured
+identity file, but a direct preflight from Dell returned `No route to host`.
+No Mac job, placeholder, or `not applicable` response was counted. Gate 3.4
+requires restoration of network reachability to this configured host (or an
+authorized replacement host registration) before it can produce the required
+source-bound macOS build/WebKit/platform-verification result.
