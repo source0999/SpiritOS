@@ -502,13 +502,28 @@ class FoundationR1ProvingTests(unittest.TestCase):
             "changed_files": [{"path": path} for path in PROVER.PROMPT1_FILES],
             "limits": {"terminal_execution_allowed": False},
             "task_spec_check": {"ok": True},
-            "deterministic_checks": [{"id": "git_apply", "blocking": True, "status": "passed"}],
+            "deterministic_checks": [
+                {"id": "git_apply", "blocking": True, "status": "passed"},
+                {"id": "syntax_parse", "blocking": True, "status": "skipped"},
+            ],
             "risk": "low",
         }
         self.assertEqual(
             PROVER._validate_diff_preview(payload, PROVER.PROMPT1_FILES)["status"],
             "preview_ready",
         )
+        for status in ("failed", "timeout"):
+            invalid = {
+                **payload,
+                "deterministic_checks": [
+                    {"id": "syntax_parse", "blocking": True, "status": status}
+                ],
+            }
+            with self.subTest(status=status), self.assertRaisesRegex(
+                PROVER.ProvingError,
+                "diff_preview_blocking_check_failed",
+            ):
+                PROVER._validate_diff_preview(invalid, PROVER.PROMPT1_FILES)
         payload["would_execute"] = True
         with self.assertRaisesRegex(PROVER.ProvingError, "diff_preview_would_execute_invalid"):
             PROVER._validate_diff_preview(payload, PROVER.PROMPT1_FILES)

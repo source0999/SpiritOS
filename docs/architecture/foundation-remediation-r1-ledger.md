@@ -9,7 +9,7 @@ Remediation: `spiritos-foundation-remediation-r1`
 - Worktree: `/home/source/SpiritOS-foundation-remediation-r1-20260717`
 - Branch: `codex/spiritos-foundation-remediation-r1-20260717`
 - Base: `2b8ead66578d7f7053c01cb987e011b763c1c03d`
-- Recorded source head: `1d5394e82d0c0d3aa36cb6c49e656f43ebe552ed`
+- Recorded source head: `297151eb814512bfa4d37a6306e20a9dfe2af041`
 - Current phase/gate: Phase 4 / `r1_11_clean_proving_task`
 - GO eligibility: `false`
 - Terminal verdict: not available
@@ -99,7 +99,7 @@ NEXT_GATE: independently reviewed clean production proving task
 SERVICES: no R1 service active; failed proving startup scopes were fully revoked
 TESTS_REQUIRED: registered R1 profiles
 OPEN_BLOCKERS: none; expected validator failures are repair gates
-LAST_VERIFIED_HEAD: 1d5394e82d0c0d3aa36cb6c49e656f43ebe552ed
+LAST_VERIFIED_HEAD: 297151eb814512bfa4d37a6306e20a9dfe2af041
 ```
 
 ## Authority repair checkpoint
@@ -235,6 +235,23 @@ LAST_VERIFIED_HEAD: 1d5394e82d0c0d3aa36cb6c49e656f43ebe552ed
   the approval authority. Regression status after repair: proving `16/16`, lifecycle
   `23/23`, focused fingerprint/selection authority `3/3`, static authority valid,
   and `git diff --check` clean.
+- At source `297151eb814512bfa4d37a6306e20a9dfe2af041`, the production client advanced
+  through Cartographer selection and controlled model routing before rejecting a
+  read-only diff preview with `diff_preview_blocking_check_failed`. The preview
+  contract intentionally marks a TypeScript syntax check `skipped` when the bounded
+  LumaCart change contains JavaScript but no TS/TSX; its canonical pass predicate
+  accepts blocking checks in either `passed` or `skipped` state. The proving client
+  had incorrectly narrowed that predicate to `passed` only. It now mirrors the live
+  contract while continuing to reject blocking `failed` and `timeout` results.
+  Failed attempts published no receipt, left no fixture files, and fully revoked all
+  scoped services and temporary authority state. Regression status: proving `16/16`,
+  lifecycle `23/23`, focused diff-preview matrix `45/45`, and the exact LumaCart
+  blocking/skipped production shape is asserted directly.
+- A diagnostic replay also rejected the stale Node executable anchor `55e9b91c…`
+  before service launch. Direct byte hashing, inode/stat inspection, Node version,
+  and the owning `nodejs 20.20.2-1nodesource1` package establish the current
+  `/usr/bin/node` SHA-256 as
+  `6295488653f0d93b0a157841746fef7e72cc4328cfb60c4bbe0ca2668a836ffd`.
 
 ## Broad-suite diagnostic attribution
 

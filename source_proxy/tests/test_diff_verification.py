@@ -307,6 +307,16 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertEqual(payload["status"], "preview_ready")
         self.assertEqual(payload["risk"], "low")
         self.assertEqual(payload["changed_files"][0]["risk_flags"], [])
+        checks = {item["id"]: item for item in payload["deterministic_checks"]}
+        self.assertEqual(checks["syntax_parse"]["status"], "skipped")
+        self.assertTrue(checks["syntax_parse"]["blocking"])
+        self.assertTrue(
+            all(
+                item["status"] in {"passed", "skipped"}
+                for item in payload["deterministic_checks"]
+                if item["blocking"]
+            )
+        )
 
     def test_manual_result_preview_blocks_secret_shaped_path(self) -> None:
         app = FastAPI()

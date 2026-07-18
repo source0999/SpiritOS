@@ -1305,7 +1305,7 @@ def _validate_diff_preview(payload: Mapping[str, Any], changed_files: Sequence[s
     checks = _list(payload.get("deterministic_checks"), "diff_preview_deterministic_checks_missing")
     for check in checks:
         item = _mapping(check, "diff_preview_deterministic_check_invalid")
-        if item.get("blocking") is True and item.get("status") != "passed":
+        if item.get("blocking") is True and item.get("status") not in {"passed", "skipped"}:
             _fail("diff_preview_blocking_check_failed")
     return {
         "status": "preview_ready",
