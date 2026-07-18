@@ -56,7 +56,7 @@ R1_FALLBACK_PROVIDER = "ollama"
 R1_FALLBACK_MODEL = f"ollama_chat/{R1_CODER_MODEL}"
 R1_REPOSITORY_ID = "SpiritOS"
 HEALTH_REQUEST_TIMEOUT_SECONDS = 5
-R1_NODE_OPTIONS = "--max-old-space-size=4096 --max-semi-space-size=64"
+R1_NODE_OPTIONS = "--max-old-space-size=4096 --max-semi-space-size=256"
 PROVING_FIXTURE_RELATIVE = Path(
     "tests/ui-agent-trials/fixtures/dummy-product-site"
 )
@@ -1276,15 +1276,13 @@ def _run_logged(
                 cwd=cwd,
                 env=dict(environment),
                 # Next's webpack worker crashes under this host's systemd scope
-                # when stdin is /dev/null. Close a private pipe instead.
+                # when stdin is /dev/null. Keep a private pipe until exit instead.
                 stdin=subprocess.PIPE,
                 stdout=stdout,
                 stderr=stderr,
                 # systemd-run owns this short-lived scope. A second session
                 # boundary causes Next's webpack worker to segfault on Dell.
             )
-            if process.stdin is not None:
-                process.stdin.close()
             try:
                 cgroup_path = _wait_scope_control_group(
                     scope_unit,
@@ -1301,6 +1299,8 @@ def _run_logged(
                 raise
             try:
                 return_code = process.wait(timeout=timeout_seconds)
+                if process.stdin is not None:
+                    process.stdin.close()
             except subprocess.TimeoutExpired as error:
                 scope_stopped = _stop_scope(
                     scope_unit,
