@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import hashlib
+import importlib
 import json
 import os
 import re
@@ -54,6 +55,8 @@ R1_FAILED_PROVIDER = "model-router"
 R1_FALLBACK_PROVIDER = "ollama"
 R1_FALLBACK_MODEL = f"ollama_chat/{R1_CODER_MODEL}"
 R1_REPOSITORY_ID = "SpiritOS"
+HEALTH_REQUEST_TIMEOUT_SECONDS = 5
+R1_NODE_OPTIONS = "--max-old-space-size=4096 --max-semi-space-size=64"
 PROVING_FIXTURE_RELATIVE = Path(
     "tests/ui-agent-trials/fixtures/dummy-product-site"
 )
@@ -253,6 +256,7 @@ class LifecycleConfig:
     startup_timeout_seconds: float
     inner_http_timeout_seconds: float
     inner_process_timeout_seconds: float
+    operator_e2e_secret_source: str = "generated"
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -656,6 +660,7 @@ def _build_environment(runtime_environment: Mapping[str, str]) -> dict[str, str]
         "SPIRITOS_OPERATOR_E2E_SECRET",
     ):
         output.pop(key, None)
+    output["NODE_OPTIONS"] = R1_NODE_OPTIONS
     return output
 
 
@@ -673,6 +678,23 @@ def _scoped_runtime_environment(
     if not operator_e2e_secret:
         output.pop("SPIRITOS_OPERATOR_E2E_SECRET", None)
     return output
+
+
+def _operator_e2e_secret(config: LifecycleConfig) -> str:
+    """Resolve an operator secret only for the explicitly requested isolated run."""
+    if config.operator_e2e_secret_source == "generated":
+        return secrets.token_urlsafe(48)
+    if config.operator_e2e_secret_source != "canonical":
+        _fail("lifecycle_operator_secret_source_invalid")
+    sys.path.insert(0, str(config.proof_worktree))
+    try:
+        loader = getattr(importlib.import_module("source_proxy.approval.operator_session"), "_secret")
+        value = loader()
+    except Exception as error:
+        raise LifecycleError("lifecycle_operator_secret_unavailable") from error
+    if len(value) < 8 or "\x00" in value:
+        _fail("lifecycle_operator_secret_invalid")
+    return value
 
 
 def _approval_secret_baseline() -> tuple[str, tuple[int, int, int, int]]:
@@ -1521,7 +1543,7 @@ def _wait_for_json_health(
                 headers={"Accept": "application/json", "Cache-Control": "no-store"},
                 method="GET",
             )
-            with opener.open(request, timeout=2) as response:
+            with opener.open(request, timeout=HEALTH_REQUEST_TIMEOUT_SECONDS) as response:
                 raw = response.read(1024 * 1024 + 1)
                 if len(raw) > 1024 * 1024 or not 200 <= int(response.status) < 300:
                     raise ValueError("health_invalid")
@@ -2265,7 +2287,7 @@ def _run_lifecycle(config: LifecycleConfig) -> dict[str, Any]:
     primary_error: LifecycleError | None = None
     teardown_errors: list[str] = []
     try:
-        operator_secret = secrets.token_urlsafe(48)
+        operator_secret = _operator_e2e_secret(config)
         environment = _runtime_environment(
             config,
             state_root=state_root,
@@ -2723,6 +2745,7 @@ def _parse_config(argv: Sequence[str] | None = None) -> LifecycleConfig:
     parser.add_argument("--startup-timeout-seconds", type=float, default=180)
     parser.add_argument("--inner-http-timeout-seconds", type=float, default=900)
     parser.add_argument("--inner-process-timeout-seconds", type=float, default=7200)
+    parser.add_argument("--operator-e2e-secret-source", choices=("generated", "canonical"), default="generated")
     args = parser.parse_args(argv)
 
     proof_raw = args.proof_worktree.expanduser()
@@ -2913,6 +2936,7 @@ def _parse_config(argv: Sequence[str] | None = None) -> LifecycleConfig:
         startup_timeout_seconds=float(args.startup_timeout_seconds),
         inner_http_timeout_seconds=float(args.inner_http_timeout_seconds),
         inner_process_timeout_seconds=float(args.inner_process_timeout_seconds),
+        operator_e2e_secret_source=str(args.operator_e2e_secret_source),
     )
 
 
