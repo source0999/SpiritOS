@@ -9,7 +9,7 @@ Remediation: `spiritos-foundation-remediation-r1`
 - Worktree: `/home/source/SpiritOS-foundation-remediation-r1-20260717`
 - Branch: `codex/spiritos-foundation-remediation-r1-20260717`
 - Base: `2b8ead66578d7f7053c01cb987e011b763c1c03d`
-- Recorded source head: `bec3bcf41d60f699a3a6c005e440946f5b22d417`
+- Recorded source head: `f0646f13c964d8a2367e67804b602404eb48093c`
 - Current phase/gate: Phase 4 / `r1_11_clean_proving_task`
 - GO eligibility: `false`
 - Terminal verdict: not available
@@ -96,10 +96,10 @@ FORBIDDEN_DETOURS: Campaign 3 implementation, Campaign 4, Scout/Mac/Obsidian/ret
 CURRENT_PHASE: R1.11
 COMPLETED_GATES: R1.0, R1.1, R1.2, R1.3, R1.4, R1.5, R1.6, R1.7, R1.8, R1.9, R1.10
 NEXT_GATE: independently reviewed clean production proving task
-SERVICES: no R1 service started
+SERVICES: no R1 service active; failed proving startup scopes were fully revoked
 TESTS_REQUIRED: registered R1 profiles
 OPEN_BLOCKERS: none; expected validator failures are repair gates
-LAST_VERIFIED_HEAD: bec3bcf41d60f699a3a6c005e440946f5b22d417
+LAST_VERIFIED_HEAD: f0646f13c964d8a2367e67804b602404eb48093c
 ```
 
 ## Authority repair checkpoint
@@ -216,9 +216,14 @@ LAST_VERIFIED_HEAD: bec3bcf41d60f699a3a6c005e440946f5b22d417
   three empty descendant scans and recursively unpopulated cgroups.
 - The terminal generator now validates and cross-binds standalone inner and outer
   receipt blobs and requires both in the immutable manifest/tag. Regression status:
-  proving `16/16`, lifecycle `22/22`, evidence `13/13`, completion `12/12`, and
-  profile-registry `5/5`. No application service or real proving run has yet been
-  started; R1.11 remains pending.
+  proving `16/16`, lifecycle `23/23`, evidence `13/13`, completion `12/12`, and
+  profile-registry `5/5`. No successful real proving receipt exists; R1.11 remains
+  pending.
+- The first real lifecycle startup falsified an assumption that the pinned mkcert
+  leaf could be used as a Python CA root. HTTPS health now enables OpenSSL partial-
+  chain validation for that exact pinned leaf while preserving signature, validity,
+  and hostname checks; the focused regression proves the flag is set. Failed startup
+  attempts published no receipt and fully revoked their scopes.
 
 ## Broad-suite diagnostic attribution
 

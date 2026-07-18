@@ -9,6 +9,7 @@ import json
 import os
 import shutil
 import socket
+import ssl
 import sqlite3
 import subprocess
 import sys
@@ -490,6 +491,47 @@ class TemporaryLinkedWorktree(unittest.TestCase):
                 LIFECYCLE._verify_external_debug_writer_retired(self.proof)
         finally:
             decision.write_text(original, encoding="utf-8")
+
+    def test_https_health_pins_the_exact_leaf_as_a_partial_chain(self) -> None:
+        context = SimpleNamespace(verify_flags=0)
+
+        class Response:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, _limit):
+                return b'{"status":"unauthenticated"}'
+
+        opener = SimpleNamespace(open=lambda *_args, **_kwargs: Response())
+        service = SimpleNamespace(
+            name="next_tls",
+            port=443,
+            process=SimpleNamespace(poll=lambda: None),
+            health_response_sha256="",
+        )
+        with (
+            mock.patch("ssl.create_default_context", return_value=context),
+            mock.patch.object(
+                LIFECYCLE.urllib.request,
+                "build_opener",
+                return_value=opener,
+            ),
+        ):
+            payload = LIFECYCLE._wait_for_json_health(
+                service,
+                path="/v1/operator/session",
+                timeout_seconds=1,
+                scheme="https",
+                ca_file=self.certificate,
+            )
+
+        self.assertEqual(payload, {"status": "unauthenticated"})
+        self.assertTrue(context.verify_flags & ssl.VERIFY_X509_PARTIAL_CHAIN)
 
     def test_state_root_is_removed_when_runtime_setup_fails(self) -> None:
         created: list[Path] = []

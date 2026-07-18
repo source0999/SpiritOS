@@ -1494,6 +1494,10 @@ def _wait_for_json_health(
         if ca_file is None:
             _fail("lifecycle_https_health_ca_missing")
         context = ssl.create_default_context(cafile=str(ca_file))
+        # The supplied file is the exact pinned development leaf certificate,
+        # not its private mkcert root. Permit that leaf to terminate the trusted
+        # chain while retaining normal signature, validity, and hostname checks.
+        context.verify_flags |= ssl.VERIFY_X509_PARTIAL_CHAIN
         handlers.append(urllib.request.HTTPSHandler(context=context))
     elif scheme != "http":
         _fail("lifecycle_health_scheme_invalid")
