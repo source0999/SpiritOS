@@ -26,6 +26,10 @@
     "verdict_effect": "mac_verification_passed"
   },
   "log_hash": "sha256:a464b062be5489df90a67b7f26d6a89be56a6986555cb6f8d980825ae294c3f2",
-  "cleanup_pending": true,
+  "cleanup_pending": false,
+  "cleanup": {
+    "mac_isolated_checkout_removed": true,
+    "dell_transfer_bundles_removed": true
+  },
   "claim_ceiling": "one source-bound macOS validation; no full Gate 3.4 completion claim"
 }

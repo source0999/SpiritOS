@@ -89,3 +89,7 @@ against the prior registered host key. An isolated Mac checkout from the Campaig
 the worker returned the same observed commit and log hash recorded in
 `docs/evidence-manifests/campaign-3/gate-3-4-mac-verification.json`. Timeout,
 cancellation, downstream acknowledgement, recovery, and cleanup remain required.
+
+The isolated Mac checkout and Dell transfer bundles were removed after the receipt;
+cleanup is now proven for that real execution. The remaining Gate 3.4 work is
+durable downstream consumption plus timeout/cancellation and recovery evidence.
