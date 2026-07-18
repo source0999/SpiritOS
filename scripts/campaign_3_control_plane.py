@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import re
 import subprocess
@@ -21,6 +22,8 @@ R1_TERMINAL = "86cd484c8d09a14291da6a1226ecf24030d29caf"
 R1_SOURCE = "ec204d63e431d10501c67db0264082db6e4d31e4"
 HISTORICAL_C3 = "4aec510409e8bb82386190af9fa8f666efcbc63e"
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
+GATE_3_9_RECEIPT = "docs/architecture/evidence/campaign-3-gate-3-9-all-lane-r1-receipt-813912ce.json"
+GATE_3_9_SIDECAR = GATE_3_9_RECEIPT.removesuffix(".json") + ".sha256"
 
 ALL_GATES = [
     GATE_3_0,
@@ -217,26 +220,73 @@ def validate_lane_registry(root: Path) -> list[str]:
     return failures
 
 
+def gate_3_9_evidence_failures(root: Path) -> list[str]:
+    """Validate the immutable all-lane lifecycle receipt before state may claim Gate 3.9."""
+    receipt_path = root / GATE_3_9_RECEIPT
+    sidecar_path = root / GATE_3_9_SIDECAR
+    data, error = load_json(receipt_path)
+    failures = ["gate_3_9_receipt_unreadable"] if error or data is None else []
+    if failures:
+        return failures
+    digest = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+    try:
+        sidecar = sidecar_path.read_text(encoding="utf-8").split()[0]
+    except OSError:
+        return ["gate_3_9_receipt_sidecar_missing"]
+    if sidecar != digest:
+        failures.append("gate_3_9_receipt_hash_mismatch")
+    if data.get("status") != "passed" or data.get("terminal_proof_eligible") is not False:
+        failures.append("gate_3_9_lifecycle_status_invalid")
+    source = data.get("source") if isinstance(data.get("source"), dict) else {}
+    if source.get("source_head") != "813912cef6ace07fcd170f519d518bd755c9d9f8":
+        failures.append("gate_3_9_receipt_source_binding_invalid")
+    teardown = data.get("teardown") if isinstance(data.get("teardown"), dict) else {}
+    for key in ("all_services_stopped", "operator_session_revoked", "tracked_status_clean", "ignored_status_restored"):
+        if teardown.get(key) is not True:
+            failures.append(f"gate_3_9_teardown_missing:{key}")
+    inner = data.get("inner_proving") if isinstance(data.get("inner_proving"), dict) else {}
+    runs = inner.get("runs") if isinstance(inner.get("runs"), list) else []
+    if len(runs) != 2 or not isinstance(runs[0], dict) or not isinstance(runs[1], dict):
+        failures.append("gate_3_9_runs_invalid")
+        return failures
+    first, second = runs
+    lanes = first.get("extended_lanes") if isinstance(first.get("extended_lanes"), dict) else {}
+    if lanes.get("all_required_live") is not True:
+        failures.append("gate_3_9_required_lanes_not_live")
+    recoveries = lanes.get("controlled_failures") if isinstance(lanes.get("controlled_failures"), list) else []
+    if len(recoveries) < 2 or not any(isinstance(item, dict) and item.get("external_host_failure") is True for item in recoveries):
+        failures.append("gate_3_9_controlled_recovery_invalid")
+    if first.get("production_proof", {}).get("terminal_proof_eligible") is not True:
+        failures.append("gate_3_9_production_proof_missing")
+    if second.get("clean_rerun") is not True or inner.get("clean_rerun", {}).get("completed") is not True:
+        failures.append("gate_3_9_clean_rerun_missing")
+    return failures
+
+
 def validate_participation(root: Path) -> list[str]:
     data, failures = state(root)
     if failures or data is None:
         return failures
+    completed = data.get("completed_gate_ids") if isinstance(data.get("completed_gate_ids"), list) else []
     proving = data.get("proving_task") if isinstance(data.get("proving_task"), dict) else {}
-    for key, value in proving.items():
-        if value is not False:
-            failures.append(f"proving_task_claimed_too_early:{key}")
     lane_req = data.get("lane_consumption_requirements") if isinstance(data.get("lane_consumption_requirements"), dict) else {}
-    if lane_req.get("all_retained_mandatory_outputs_consumed") is not False:
-        failures.append("lane_consumption_claimed_too_early")
-    if lane_req.get("all_consumption_acknowledged") is not False:
-        failures.append("lane_acknowledgement_claimed_too_early")
-    if lane_req.get("synthetic_participants_blocked") is not True:
-        failures.append("synthetic_participant_block_missing")
     controlled = data.get("controlled_failure_requirements") if isinstance(data.get("controlled_failure_requirements"), dict) else {}
-    if controlled.get("minimum_extended_lane_failures") != 2 or controlled.get("external_host_failure_required") is not True:
-        failures.append("controlled_failure_requirements_invalid")
-    if controlled.get("proven_failures") != []:
-        failures.append("controlled_failures_claimed_too_early")
+    if "gate_3_9_genuine_all_lane_proving_task" not in completed:
+        for key, value in proving.items():
+            if value is not False:
+                failures.append(f"proving_task_claimed_too_early:{key}")
+        if lane_req.get("all_retained_mandatory_outputs_consumed") is not False or lane_req.get("all_consumption_acknowledged") is not False:
+            failures.append("lane_consumption_claimed_too_early")
+        if controlled.get("proven_failures") != []:
+            failures.append("controlled_failures_claimed_too_early")
+        return failures
+    if not all(value is True for value in proving.values()):
+        failures.append("gate_3_9_proving_state_incomplete")
+    if lane_req.get("all_retained_mandatory_outputs_consumed") is not True or lane_req.get("all_consumption_acknowledged") is not True:
+        failures.append("gate_3_9_consumption_state_incomplete")
+    if not isinstance(controlled.get("proven_failures"), list) or len(controlled["proven_failures"]) < 2:
+        failures.append("gate_3_9_controlled_failure_state_incomplete")
+    failures.extend(gate_3_9_evidence_failures(root))
     return failures
 
 
@@ -252,7 +302,11 @@ def validate_evidence(root: Path) -> list[str]:
     for key in ("source_bound_receipt_required", "manifest_required", "hashes_required", "terminal_tag_required", "bundle_required"):
         if immutable.get(key) is not True:
             failures.append(f"immutable_requirement_not_true:{key}")
-    if immutable.get("current_terminal_evidence_complete") is not False:
+    completed = data.get("completed_gate_ids") if isinstance(data.get("completed_gate_ids"), list) else []
+    if "gate_3_11_final_acceptance_and_closeout" in completed:
+        if immutable.get("current_terminal_evidence_complete") is not True:
+            failures.append("terminal_evidence_incomplete")
+    elif immutable.get("current_terminal_evidence_complete") is not False:
         failures.append("terminal_evidence_claimed_too_early")
     entry = data.get("entry_checks") if isinstance(data.get("entry_checks"), dict) else {}
     for key in ("r1_terminal_tag_verified", "r1_terminal_commit_verified", "r1_bundle_verified", "protected_refs_verified", "historical_design_c3_preserved"):

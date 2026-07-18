@@ -59,3 +59,11 @@ Gate 3.1 and later must add immutable evidence for retained lane runtime contrac
 | Evidence | Path Or Command | Status |
 | --- | --- | --- |
 | Recovery policy and failure receipts | `docs/evidence-manifests/campaign-3/gate-3-8-recovery.json` | Scout, Obsidian, Mac, model, and conflict cases recorded |
+
+## Gate 3.9 Genuine All-Lane Proof
+
+| Evidence | Path Or Command | Status |
+| --- | --- | --- |
+| Source-bound all-lane lifecycle receipt | `docs/architecture/evidence/campaign-3-gate-3-9-all-lane-r1-receipt-813912ce.json` | passed at `813912cef6`; authenticated approval, canonical apply, review, verification, anti-cheat, undo/reset, clean rerun, and teardown verified |
+| Immutable SHA-256 sidecar | `docs/architecture/evidence/campaign-3-gate-3-9-all-lane-r1-receipt-813912ce.sha256` | `6df55c4d66223a7ad6e5670594c853e9956d184e2bdec5614f48a01a12beb406` |
+| Controlled recovery | receipt `inner_proving.runs[0].extended_lanes.controlled_failures` | context-model and Mac-worker recovered; external-host failure recorded |
