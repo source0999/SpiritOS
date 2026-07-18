@@ -184,8 +184,32 @@ class FoundationRemediationCompletionTests(unittest.TestCase):
         self.assertIn("closeout_invariant_false:independent_participants_passed", failures)
 
     def test_terminal_completion_rejects_profile_pass_labels_without_execution_receipts(self) -> None:
-        failures = EVALUATOR_MODULE.terminal_profile_execution_failures(ROOT, valid_terminal_state())
-        self.assertIn("mandatory_profile_execution_missing:continuity", failures)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            registry_path = (
+                root
+                / "docs"
+                / "architecture"
+                / "foundation-remediation-r1-test-profiles.json"
+            )
+            registry_path.parent.mkdir(parents=True)
+            registry = json.loads(
+                (
+                    ROOT
+                    / "docs"
+                    / "architecture"
+                    / "foundation-remediation-r1-test-profiles.json"
+                ).read_text(encoding="utf-8")
+            )
+            for profile in registry["profiles"]:
+                profile["status"] = "passed"
+                profile["latest_accepted"] = None
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            failures = EVALUATOR_MODULE.terminal_profile_execution_failures(
+                root,
+                valid_terminal_state(),
+            )
+        self.assertIn("mandatory_profile_receipt_missing:continuity", failures)
         self.assertIn("mandatory_profile_execution_evidence_incomplete", failures)
 
     def test_profile_execution_failures_are_a_hard_cli_terminal_blocker(self) -> None:
