@@ -27,6 +27,7 @@ from source_proxy.approval.runtime_identity import (
 CAMPAIGN_ID = "campaign-3.5"
 AUTHORIZED_BRANCH = "codex/campaign-3-5-execution-20260719"
 ALLOWED_MODEL_ALIASES = frozenset({"coder", "local"})
+ALLOWED_ACTIONS = frozenset({"model_call", "apply"})
 MAX_AUTHORIZATION_MINUTES = 60
 
 
@@ -95,7 +96,7 @@ def issue_campaign_3_5_model_call_authorization(
                 identity.worktree,
                 identity.branch,
                 identity.source_head,
-                json.dumps(["model_call"]),
+                json.dumps(sorted(ALLOWED_ACTIONS)),
                 json.dumps(sorted(ALLOWED_MODEL_ALIASES)),
                 operator,
                 _iso(now),
@@ -126,7 +127,7 @@ def issue_campaign_3_5_model_call_authorization(
         "branch": identity.branch,
         "worktree": identity.worktree,
         "source_head": identity.source_head,
-        "allowed_actions": ["model_call"],
+        "allowed_actions": sorted(ALLOWED_ACTIONS),
         "allowed_model_aliases": sorted(ALLOWED_MODEL_ALIASES),
         "expires_at": _iso(expires_at),
         "revocable": True,
@@ -142,9 +143,9 @@ def validate_campaign_3_5_model_call_authorization(
 ) -> ModelCallAuthorityReceipt:
     identity = _identity()
     _require_authorized_branch(identity)
-    if action != "model_call":
+    if action not in ALLOWED_ACTIONS:
         raise ModelCallAuthorityError("model_call_authority_action_forbidden")
-    if model_alias not in ALLOWED_MODEL_ALIASES:
+    if action == "model_call" and model_alias not in ALLOWED_MODEL_ALIASES:
         raise ModelCallAuthorityError("model_call_authority_model_forbidden")
     if not run_id.strip():
         raise ModelCallAuthorityError("model_call_authority_run_id_missing")
@@ -169,7 +170,10 @@ def validate_campaign_3_5_model_call_authorization(
             )
             raise ModelCallAuthorityError("model_call_authority_expired")
         aliases = set(json.loads(str(row["allowed_model_aliases"])))
-        if model_alias not in aliases:
+        actions = set(json.loads(str(row["allowed_actions"])))
+        if action not in actions:
+            raise ModelCallAuthorityError("model_call_authority_action_forbidden")
+        if action == "model_call" and model_alias not in aliases:
             raise ModelCallAuthorityError("model_call_authority_model_forbidden")
         _append_event(
             database,

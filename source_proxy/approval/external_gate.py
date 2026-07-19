@@ -69,12 +69,25 @@ def central_gate_check(
         "increment_id",
     )
     clean_run_id = _clean_optional(run_id) or f"{clean_increment}:{clean_action}"
-    if clean_action == "model_call" and clean_increment == CAMPAIGN_ID:
+    if (
+        clean_increment == CAMPAIGN_ID
+        and (
+            clean_action == "model_call"
+            or (
+                clean_action == "apply"
+                and clean_run_id.startswith("execute_approved_long_running_task:")
+            )
+        )
+    ):
         return _campaign_3_5_model_call_check(
             action=clean_action,
             increment_id=clean_increment,
             run_id=clean_run_id,
-            model_alias=_clean_required(model_alias, "model_alias"),
+            model_alias=(
+                _clean_required(model_alias, "model_alias")
+                if clean_action == "model_call"
+                else "not_applicable"
+            ),
         )
     state = _read_gate_state()
 

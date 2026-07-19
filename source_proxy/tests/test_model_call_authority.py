@@ -54,6 +54,7 @@ class Campaign35ModelCallAuthorityTests(unittest.TestCase):
 
         self.assertEqual(issued["state"], "approved")
         self.assertEqual(issued["campaign_id"], "campaign-3.5")
+        self.assertEqual(issued["allowed_actions"], ["apply", "model_call"])
         self.assertTrue(issued["revocable"])
         self.assertTrue(issued["secret_exposed"] is False)
         self.assertEqual(receipt.approved_increment, "campaign-3.5")
