@@ -75,7 +75,10 @@ def central_gate_check(
             clean_action == "model_call"
             or (
                 clean_action == "apply"
-                and clean_run_id.startswith("execute_approved_long_running_task:")
+                and (
+                    clean_run_id.startswith("execute_approved_long_running_task:")
+                    or clean_run_id.startswith("coding-run-")
+                )
             )
         )
     ):

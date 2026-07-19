@@ -59,6 +59,13 @@ class Campaign35ModelCallAuthorityTests(unittest.TestCase):
         self.assertTrue(issued["secret_exposed"] is False)
         self.assertEqual(receipt.approved_increment, "campaign-3.5")
         self.assertTrue(receipt.approval_token_id.startswith("mca_"))
+        with self._authority_environment():
+            apply_receipt = central_gate_check(
+                "apply",
+                increment_id="campaign-3.5",
+                run_id="coding-run-test",
+            )
+        self.assertEqual(apply_receipt.action, "apply")
 
     def test_provider_scope_replay_and_revocation_fail_closed(self) -> None:
         with self._authority_environment():
