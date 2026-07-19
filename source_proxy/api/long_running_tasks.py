@@ -24,7 +24,11 @@ from source_proxy.coding.extended_lanes import (
 )
 from source_proxy.coding.campaign_3_recovery import assess_extended_lane_failure, record_extended_lane_recovery_for_task
 from source_proxy.decision.mac_integration import run_mac_cancellation_probe_for_task
-from source_proxy.target_plugins.adapter import TargetPluginResolutionError, resolve_target_plugin
+from source_proxy.target_plugins.adapter import (
+    GENERIC_WORKSPACE_PROMPT_ID,
+    TargetPluginResolutionError,
+    resolve_target_plugin,
+)
 from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
 from source_proxy.tasks.long_running import (
@@ -441,7 +445,7 @@ async def long_running_task_approval_preview(
         approved_diff = request.approved_diff
         target = request.target
         context_hash = request.context_hash
-        if is_lumacart_prompt_id(request.selected_prompt_id):
+        if request.selected_prompt_id in {GENERIC_WORKSPACE_PROMPT_ID} or is_lumacart_prompt_id(request.selected_prompt_id):
             if not request.runtime_output_id:
                 raise CodingOrchestratorError("target_plugin_runtime_output_id_missing")
             material = get_coding_orchestrator().target_plugin_approval_material(
