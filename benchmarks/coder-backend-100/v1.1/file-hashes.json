@@ -1,0 +1,17 @@
+{
+  "schema": "source-proxy-coder-backend-100-file-hashes/v1",
+  "algorithm": "sha256",
+  "files": {
+    "README.md": "859b6cdb8bf732fbfb546f76ba3c7637d3f704f87bd1bdd4ede0d9ac4bf9b0ca",
+    "fixture-blueprints.md": "d87812bd071def25020918d7dc38358e14be0e8666328be5cbebea5b8b1384a9",
+    "harness-spec.md": "2e6507e77d3474a69335e1c4efb5d78f8d9bb0d735cffbd273bf8fe93cc1750e",
+    "manifest.json": "0d6ae09d9ffe885c437236b9a10afad50c49d38eac1a8a8d05b8f7471c7592f4",
+    "oracle-contract.md": "ae9c567a55e4c123ec8593efa9e77f9a399fedfdaeb2ce8124d3158565f5f230",
+    "task.schema.json": "72eaa70f24211303acaad88185481ec23a51965779e9364cd3460efb011e9bc9",
+    "tasks.json": "d437ccd216d56661e16afba9fe2b81b2c15d142342af0fe3868d7ac84d625b53",
+    "tasks.jsonl": "84c00187b9cc3d1932dd2e9286c558c01091d799568d8d8dcc80f7c9cc06f0c6",
+    "tasks.md": "828224aeff1a492c37188ac2f07647cbdfce796e121e6571ca394899828b187f",
+    "validation-report.json": "7b1d130cf5f4cc73b761919e858f2c8d6268f2cd4f286050cf035ec8598da87e",
+    "_build_v1_1.py": "81da1f362bf7dcbe375ca45b2ef88d245447d305a1a29f99e484dedcf6a86fdd"
+  }
+}

@@ -19,6 +19,8 @@ docker-compose*.yml text eol=lf
 # line endings can be part of the recorded result or a patch under review.
 docs/evidence/** -text
 tests/ui-agent-trials/fixtures/** -text
+benchmarks/coder-backend-100/v1.1/** -text
+benchmarks/coder-backend-100/v1.1/tasks.md whitespace=-trailing-space,-blank-at-eof
 *.patch -text
 *.diff -text
 

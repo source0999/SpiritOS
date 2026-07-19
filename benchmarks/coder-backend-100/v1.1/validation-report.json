@@ -1,0 +1,107 @@
+{
+  "checks": [
+    {
+      "name": "task_count_is_100",
+      "passed": true,
+      "detail": "count=100"
+    },
+    {
+      "name": "unique_ids",
+      "passed": true,
+      "detail": "unique=100 total=100"
+    },
+    {
+      "name": "ids_match_pattern",
+      "passed": true,
+      "detail": "bad=[]"
+    },
+    {
+      "name": "category_counts_match_manifest",
+      "passed": true,
+      "detail": "actual={'straightforward_code_change': 25, 'multi_file_feature': 15, 'bug_diagnosis_and_repair': 15, 'repository_search_knowledge_intensive': 10, 'context_overflow_or_complex_escalation': 10, 'ambiguous_or_conflicting_request': 5, 'missing_tool_dependency_model_provider': 5, 'unauthorized_or_approval_gated_mutation': 5, 'cancellation_interruption_recovery_resume': 5, 'deliberately_impossible': 5}"
+    },
+    {
+      "name": "disposition_counts_match_manifest",
+      "passed": true,
+      "detail": "actual={'COMPLETED_VERIFIED': 70, 'ESCALATION_CONTEXT_PACK_READY': 10, 'BLOCKED_OR_DEGRADED_TRUTHFULLY': 20}"
+    },
+    {
+      "name": "disposition_category_plausible",
+      "passed": true,
+      "detail": "implausible=[]"
+    },
+    {
+      "name": "scoring_total_and_mandatory",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "all_notes_populated",
+      "passed": true,
+      "detail": "empty=[]"
+    },
+    {
+      "name": "forbidden_behavior_consistent_within_category",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "forbidden_behavior_is_category_tailored",
+      "passed": true,
+      "detail": "distinct_variants=10"
+    },
+    {
+      "name": "randomization_is_category_tailored",
+      "passed": true,
+      "detail": "distinct_variants=10"
+    },
+    {
+      "name": "hard_failures_have_category_specific_variants",
+      "passed": true,
+      "detail": "distinct_variants=8"
+    },
+    {
+      "name": "oracle_checks_layered",
+      "passed": true,
+      "detail": "thin=[]"
+    },
+    {
+      "name": "schema_conformance",
+      "passed": true,
+      "detail": "jsonschema 4.23.0: all 100 tasks conform to task.schema.json"
+    },
+    {
+      "name": "array_fields_non_empty",
+      "passed": true,
+      "detail": "empty=[]"
+    },
+    {
+      "name": "trace_events_populated",
+      "passed": true,
+      "detail": "short=[]"
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "total": 16,
+    "all_passed": true,
+    "task_count": 100,
+    "category_counts": {
+      "straightforward_code_change": 25,
+      "multi_file_feature": 15,
+      "bug_diagnosis_and_repair": 15,
+      "repository_search_knowledge_intensive": 10,
+      "context_overflow_or_complex_escalation": 10,
+      "ambiguous_or_conflicting_request": 5,
+      "missing_tool_dependency_model_provider": 5,
+      "unauthorized_or_approval_gated_mutation": 5,
+      "cancellation_interruption_recovery_resume": 5,
+      "deliberately_impossible": 5
+    },
+    "disposition_counts": {
+      "COMPLETED_VERIFIED": 70,
+      "ESCALATION_CONTEXT_PACK_READY": 10,
+      "BLOCKED_OR_DEGRADED_TRUTHFULLY": 20
+    }
+  }
+}

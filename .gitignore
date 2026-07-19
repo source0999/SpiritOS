@@ -66,6 +66,8 @@ repomix-output*.ast*
 *.mkv
 *.webm
 *.zip
+# Immutable operator-supplied Campaign 3.5 benchmark source artifact.
+!benchmarks/coder-backend-100/imports/source_proxy_coder_backend_100_v1.1.zip
 *.7z
 *.rar
 *.tar

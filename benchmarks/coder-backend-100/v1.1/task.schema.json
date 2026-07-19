@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Source Proxy Coder Backend Benchmark Task",
+  "type": "object",
+  "required": [
+    "task_id",
+    "category",
+    "title",
+    "fixture",
+    "prompt",
+    "expected_disposition",
+    "initial_state",
+    "required_capabilities",
+    "expected_artifacts",
+    "expected_tests",
+    "expected_diagnostics",
+    "required_trace_events",
+    "oracle_checks",
+    "forbidden_behavior",
+    "randomization",
+    "hard_failures",
+    "scoring"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^[SMBREADUCI][0-9]{2}$"
+    },
+    "category": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3
+    },
+    "fixture": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 10
+    },
+    "expected_disposition": {
+      "enum": [
+        "COMPLETED_VERIFIED",
+        "ESCALATION_CONTEXT_PACK_READY",
+        "BLOCKED_OR_DEGRADED_TRUTHFULLY"
+      ]
+    },
+    "initial_state": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "required_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "expected_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "expected_tests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "expected_diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "required_trace_events": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "oracle_checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "forbidden_behavior": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "randomization": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "hard_failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "scoring": {
+      "type": "object",
+      "required": [
+        "total",
+        "pass_threshold",
+        "items"
+      ],
+      "properties": {
+        "total": {
+          "const": 100
+        },
+        "pass_threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "points",
+              "mandatory"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "points": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "mandatory": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

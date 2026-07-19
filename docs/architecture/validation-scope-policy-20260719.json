@@ -1,0 +1,19 @@
+{
+  "schema": "spiritos-validation-scope-policy/v1",
+  "status": "ACCEPTED_VALIDATION_SCOPE_CORRECTION",
+  "scopes": ["TRANSACTION", "EXTERNAL_DEPENDENCY_HEALTH", "CAMPAIGN_EXECUTION_GATE"],
+  "unknown_scope_policy": "BLOCK_CURRENT_TRANSACTION",
+  "external_spiritflix_continuity": {
+    "status": "FAIL",
+    "severity": "ERROR",
+    "scope": "EXTERNAL_DEPENDENCY_HEALTH",
+    "applies_to_current_transaction": false,
+    "blocks_current_transaction": false,
+    "blocks_spiritflix_dependent_execution": true,
+    "affected_component": "SpiritFlix",
+    "affected_campaigns": ["campaign-1", "campaign-2", "campaign-3.5", "campaign-4"],
+    "evidence": "docs/architecture/campaign-1-2-continuity-drift-20260719.json",
+    "remediation_plan": "docs/architecture/spiritflix-continuity-repair-plan-20260719.md",
+    "operator_acknowledgement_required": true
+  }
+}

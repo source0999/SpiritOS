@@ -1,0 +1,17 @@
+{
+  "schema": "spiritos-campaign-3-5-plan/v1",
+  "campaign_id": "spiritos-campaign-3-5-integrated-coder-backend",
+  "title": "Campaign 3.5 — Integrated Coder Backend Proving and Open-Source Closure",
+  "status": "PLANNED_AWAITING_OPERATOR_AUTHORIZATION",
+  "base_commit": "74ac367faf9a72c652061a5482c0180bb0b0c844",
+  "canonical_benchmark": {"id": "source-proxy-coder-backend-100-v1", "version": "1.1.0", "path": "benchmarks/coder-backend-100/v1.1/", "operator_supplied": true},
+  "execution_started": false,
+  "campaign_4_ui_work_forbidden": true,
+  "external_dependency_policy": {"spiritflix_continuity": {"status": "UNRESOLVED_EXTERNAL_DEPENDENCY", "blocks_planning_commit": false, "blocks_spiritflix_dependent_execution": true, "drift_evidence": "docs/architecture/campaign-1-2-continuity-drift-20260719.json", "repair_plan": "docs/architecture/spiritflix-continuity-repair-plan-20260719.md"}},
+  "phases": ["production_path_smoke", "integration_inventory", "integration_closure", "fixture_readiness", "core_30_then_full_100", "independent_oracle_and_anti_cheat", "controlled_failure_and_clean_rerun"],
+  "completion_contract": "docs/architecture/campaign-3.5/completion-contract.json",
+  "secrecy_design": "docs/architecture/campaign-3.5/benchmark-secrecy-design.md",
+  "trace_reconciliation": "docs/architecture/campaign-3.5/trace-event-reconciliation-plan.md",
+  "infrastructure_inventory": "docs/architecture/campaign-3.5/missing-infrastructure-inventory.md",
+  "terminal_verdicts": ["CAMPAIGN_3_5_COMPLETE_BACKEND_PROVEN", "CAMPAIGN_3_5_BLOCKED_INTEGRATION_INCOMPLETE", "CAMPAIGN_3_5_BLOCKED_BACKEND_NOT_RELIABLE", "CAMPAIGN_3_5_BLOCKED_VERIFICATION_INVALID"]
+}

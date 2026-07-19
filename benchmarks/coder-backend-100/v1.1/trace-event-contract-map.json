@@ -1,0 +1,9 @@
+{
+  "schema": "source-proxy-coder-backend-100-trace-event-contract-map/v1",
+  "version": 1,
+  "status": "PLANNED_PENDING_PRODUCTION_EVENT_DISCOVERY",
+  "source": "Operator-supplied v1.1 task definitions; names are target terms, not evidence of current runtime emissions.",
+  "required_mapping_fields": ["benchmark_event", "production_event", "payload_mapping", "semantic_equivalence", "missing_field_analysis", "amendment_version", "approval_record", "independent_evaluator_acceptance"],
+  "mapping_rules": ["Map every event to a real authenticated production-path emission before execution.", "Missing or ambiguous semantics block execution or require a separately approved versioned amendment.", "Never silently weaken, rename, or rewrite the immutable task definitions."],
+  "mappings": []
+}

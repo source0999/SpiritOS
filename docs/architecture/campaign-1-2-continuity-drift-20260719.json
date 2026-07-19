@@ -1,0 +1,23 @@
+{
+  "schema": "spiritos-historical-continuity-drift/v1",
+  "validation_timestamp": "2026-07-19",
+  "repository_identity": "/home/source/SpiritOS/.git",
+  "live_observed_ref": "refs/heads/master",
+  "live_observed_commit": "85dee8b59cce39afe1fbe7d674c066ccca1e6f13",
+  "historical_protected_commit": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+  "historical_ref": "refs/heads/codex/spiritflix-smart-scan-identity-fix",
+  "historical_object": {"type": "commit", "tree_readable": true, "parent_readable": true},
+  "allowed_relation": "descendant_required_for_moving_live_ref",
+  "actual_relation": "live_is_ancestor_of_historical; historical_is_not_ancestor_of_live",
+  "commits_from_live_to_historical": 168,
+  "drift_classification": "REAL_DIVERGENCE_OR_UNPROVEN_DRIFT",
+  "strict_fsck": "failed_pack_checksum_and_crc",
+  "protected_path_policy": "broad_historical_protected_head; no narrower documented allowlist",
+  "comparison": {"files_changed": 1356, "added": 1107, "modified": 238, "deleted": 11},
+  "campaigns": {
+    "campaign_1": {"validator": "scripts/validate-campaign-1-continuity.py", "state_path": "docs/architecture/campaign-1-state.json", "state_key": "protected_heads.spiritflix", "result": "protected_head_mismatch:spiritflix"},
+    "campaign_2": {"validator": "scripts/validate-campaign-2-continuity.py", "state_path": "docs/architecture/campaign-2-state.json", "state_key": "protected_heads.spiritflix", "result": "protected_head_mismatch:spiritflix"}
+  },
+  "validator_change_permitted": false,
+  "required_external_input": "An authoritative, integrity-verified SpiritFlix reference and approved continuity relation/policy."
+}

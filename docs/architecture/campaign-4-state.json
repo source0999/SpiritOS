@@ -1,0 +1,31 @@
+{
+  "schema": "spiritos-campaign-4-state/v1",
+  "campaign_id": "spiritos-campaign-4-coding-ui-wiring",
+  "status": "PAUSED_FOR_CAMPAIGN_3_5_BACKEND_PROOF",
+  "pause_reason": "Integrated production-path coder capability must be independently proven before UI wiring.",
+  "corrected_campaign_3_base": "74ac367faf9a72c652061a5482c0180bb0b0c844",
+  "required_prerequisite_campaign": "campaign-3.5",
+  "required_prerequisite_terminal_verdict": "CAMPAIGN_3_5_COMPLETE_BACKEND_PROVEN",
+  "date": "2026-07-19",
+  "implementation_began": false,
+  "accepted_commits": false,
+  "push_occurred": false,
+  "unaccepted_alleged_work": {
+    "branch": "codex/spiritos-campaign-4-coding-shell-wiring-20260719",
+    "head": "53338fce5468897c7f612bd1c1b21e4f26a1230b",
+    "base": "74ac367faf9a72c652061a5482c0180bb0b0c844",
+    "committed": true,
+    "uncommitted_changes_at_inspection": false,
+    "commits_after_base": 1,
+    "inventory": "19 files: campaign documentation/control-plane scripts and package.json; no accepted UI implementation",
+    "accepted": false,
+    "action": "preserved_unmerged_unmodified"
+  },
+  "resumption_authority": "human_operator_after_review_and_acceptance",
+  "campaign_3_5_plan_path": "docs/architecture/campaign-3.5/plan.md",
+  "benchmark_path": "benchmarks/coder-backend-100/v1.1/",
+  "scope_on_resume": "coding_ui_wiring_only",
+  "frontend_authoritative_state_forbidden": true,
+  "automatic_resume_forbidden": true
+  ,"spiritflix_dependency_preflight": {"required_for_spiritflix_backed_ui_proof": true, "unresolved_continuity_blocks_execution": true, "blocks_current_planning_commit": false, "repair_plan": "docs/architecture/spiritflix-continuity-repair-plan-20260719.md"}
+}

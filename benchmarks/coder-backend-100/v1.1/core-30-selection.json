@@ -1,0 +1,18 @@
+{
+  "schema": "source-proxy-coder-backend-100-core-selection/v1",
+  "selection_name": "campaign-3.5-core-30",
+  "task_stream_sha256": "84c00187b9cc3d1932dd2e9286c558c01091d799568d8d8dcc80f7c9cc06f0c6",
+  "pack_sha256": "a1c7e98c0ff5cf85ad829350fac08a59e695a1101979b37eefdd02a61a531818",
+  "source_pack_unchanged": true,
+  "selected_task_ids": ["S08", "S12", "S21", "M12", "M13", "M15", "B09", "B13", "B15", "R06", "R09", "R10", "E01", "E06", "E09", "A01", "A03", "A05", "D02", "D03", "D05", "U01", "U02", "U04", "C01", "C02", "C03", "I01", "I03", "I04"],
+  "selection_rationale": "Three tasks per declared category preserve all categories while covering internal lanes, authorities, recovery, truthful blocking, escalation, search, retained context, and every v1.1 adapter target explicitly named in task capabilities.",
+  "category_coverage": {"straightforward_code_change": 3, "multi_file_feature": 3, "bug_diagnosis_and_repair": 3, "repository_search_knowledge_intensive": 3, "context_overflow_or_complex_escalation": 3, "ambiguous_or_conflicting_request": 3, "missing_tool_dependency_model_provider": 3, "unauthorized_or_approval_gated_mutation": 3, "cancellation_interruption_recovery_resume": 3, "deliberately_impossible": 3},
+  "disposition_coverage": ["COMPLETED_VERIFIED", "ESCALATION_CONTEXT_PACK_READY", "BLOCKED_OR_DEGRADED_TRUTHFULLY"],
+  "required_adapter_coverage": {"open_hands_adapter": ["M12"], "langgraph_adapter": ["M13"], "openai_agents_sdk_adapter": ["M15"], "obsidian_equivalent_adapter": ["R06", "E09"]},
+  "internal_lane_coverage": ["primary_coder", "planner_architect", "debugger", "reviewer", "verifier", "security_reviewer", "durable_executor", "recovery_manager", "cancellation_manager", "approval_authority", "anti_cheat_evidence", "context_broker", "context_pack_builder", "model_escalation_router", "provider_diagnostics", "model_diagnostics", "route_diagnostics", "tool_runtime_diagnostics"],
+  "search_and_retained_context_coverage": ["mac_search", "scout", "retained_context", "obsidian_equivalent_adapter"],
+  "authority_task_ids": ["A03", "A05", "D03", "U01", "U02", "U04"],
+  "recovery_task_ids": ["C01", "C02", "C03"],
+  "impossible_task_ids": ["I01", "I03", "I04"],
+  "calibration_sensitive_task_ids": ["M15", "R10", "E01", "E06"]
+}

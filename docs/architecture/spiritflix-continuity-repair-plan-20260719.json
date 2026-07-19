@@ -1,0 +1,11 @@
+{
+  "schema": "spiritos-spiritflix-continuity-repair-plan/v1",
+  "status": "PLANNED_NOT_EXECUTED",
+  "protected_commit": "5fde4ae064d471e1133e00d6bf25fb5aecb5d196",
+  "observed_master": "85dee8b59cce39afe1fbe7d674c066ccca1e6f13",
+  "observed_relation": "master_is_behind_protected_commit",
+  "dirty_checkout_repair_forbidden": true,
+  "strict_external_fsck": "failed_pack_checksum_crc_inflate",
+  "phases": ["SF-0-preserve-and-identify-authority", "SF-1-build-clean-object-source", "SF-2-determine-approved-live-head", "SF-3-restore-after-approval", "SF-4-reconnect-dependent-campaigns"],
+  "terminal_verdicts": ["SPIRITFLIX_CONTINUITY_RESTORED", "SPIRITFLIX_CONTINUITY_BLOCKED_NO_AUTHORITATIVE_OBJECT_SOURCE", "SPIRITFLIX_CONTINUITY_BLOCKED_DIVERGENT_HISTORY", "SPIRITFLIX_CONTINUITY_BLOCKED_OPERATOR_REF_DECISION_REQUIRED", "SPIRITFLIX_CONTINUITY_BLOCKED_OBJECT_CORRUPTION"]
+}
