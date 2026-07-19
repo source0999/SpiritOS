@@ -258,7 +258,11 @@ def _require_clean_worktree(identity: AuthorityRuntimeIdentity) -> None:
     except (OSError, subprocess.CalledProcessError) as error:
         raise ModelCallAuthorityError("model_call_authority_worktree_status_unavailable") from error
     changed_paths = [line for line in status.splitlines() if line.strip()]
-    if changed_paths == [" M next-env.d.ts"] and _is_generated_next_dev_routes_change(identity):
+    if (
+        len(changed_paths) == 1
+        and changed_paths[0].endswith(" next-env.d.ts")
+        and _is_generated_next_dev_routes_change(identity)
+    ):
         return
     if changed_paths:
         raise ModelCallAuthorityError("model_call_authority_dirty_worktree")
