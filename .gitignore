@@ -178,6 +178,7 @@ tests/ui-agent-trials/fixtures/dummy-product-site/
 # Git retains only the matching manifest and classification under docs/evidence-manifests/.
 /docs/evidence/**
 .campaign-3-5-phase0-run.sh
+.campaign-3-5-phase0-run/
 
 # Campaign 1 externalized generated media gallery; the tracked manifest is the integrity record.
 /scripts/media/model_gallery/**
