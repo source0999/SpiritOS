@@ -13,6 +13,15 @@ from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
     Campaign35FixtureAuthorityError,
     load_campaign_3_5_fixture_authority,
 )
+from source_proxy.target_plugins.adapter import (
+    GENERIC_WORKSPACE_CONTEXT_ID,
+    GENERIC_WORKSPACE_PLUGIN_ID,
+    GENERIC_WORKSPACE_PROFILE,
+    GENERIC_WORKSPACE_PROMPT_ID,
+    TARGET_PLUGIN_SCHEMA_VERSION,
+    execute_target_plugin_command,
+    resolve_target_plugin,
+)
 
 
 def _git(root: Path, *args: str) -> str:
@@ -54,3 +63,27 @@ def test_rejects_manifest_scope_or_baseline_tampering(tmp_path: Path, monkeypatc
 
     with pytest.raises(Campaign35FixtureAuthorityError, match="allowed_paths_invalid"):
         load_campaign_3_5_fixture_authority()
+
+
+@pytest.mark.parametrize(
+    ("response", "reason"),
+    [
+        ("```diff\ndiff --git a/secret.txt b/secret.txt\n--- a/secret.txt\n+++ b/secret.txt\n@@ -0,0 +1 @@\n+x\n```", "generic_workspace_scope_violation"),
+        ("not a diff", "generic_workspace_model_diff_invalid"),
+    ],
+)
+def test_generic_adapter_fails_closed_outside_server_manifest_scope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, response: str, reason: str
+) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "example.py").write_text("value = 1\n", encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+    path = tmp_path / "manifest.json"; path.write_text(json.dumps(_manifest(root)), encoding="utf-8"); os.chmod(path, 0o600)
+    monkeypatch.setenv(ENV_MANIFEST, str(path))
+    packet = {"selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "target_plugin": {"schema_version": TARGET_PLUGIN_SCHEMA_VERSION, "id": GENERIC_WORKSPACE_PLUGIN_ID, "fixture_root": ".", "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID, "execution_profile": GENERIC_WORKSPACE_PROFILE}}
+    plugin = resolve_target_plugin(packet, root)
+    result = execute_target_plugin_command(plugin, task="Change only the fixture.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=lambda _prompt, _alias: response, model_alias="coder")
+
+    assert result["coder_blocked"] is True
+    assert result["reason_code"] == reason
