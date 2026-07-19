@@ -4,7 +4,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+from source_proxy.approval.external_gate import ExternalGateError
 from source_proxy.planning.architect import (
     ArchitectLLMError,
     FallthroughToLLM,
@@ -380,6 +382,26 @@ class DeterministicArchitectTests(unittest.TestCase):
 
         self.assertEqual(raised.exception.reason_code, "architect_llm_timeout")
         self.assertIn("timed out", str(raised.exception))
+
+    def test_llm_architect_surfaces_gate_denial_without_retrying_as_json(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with (
+                patch("source_proxy.planning.architect.available_model_aliases", return_value={"local"}),
+                patch(
+                    "source_proxy.planning.architect._call_architect_llm",
+                    side_effect=ExternalGateError("Gate state is missing.", "gate_missing"),
+                ) as call,
+            ):
+                with self.assertRaises(ArchitectLLMError) as raised:
+                    plan_task_with_llm(
+                        "Create a small widget",
+                        "task-gate-denied",
+                        Path(tmp),
+                    )
+
+        self.assertEqual(raised.exception.reason_code, "architect_gate_missing")
+        self.assertEqual(str(raised.exception), "Gate state is missing.")
+        call.assert_called_once()
 
     def test_llm_architect_default_timeout_is_twenty_seconds(self) -> None:
         from source_proxy.planning import architect

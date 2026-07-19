@@ -33,7 +33,7 @@ from source_proxy.planning.plan import (
     VerificationPlan,
 )
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
-from source_proxy.approval.external_gate import central_gate_check
+from source_proxy.approval.external_gate import ExternalGateError, central_gate_check
 from source_proxy.safety.paths import normalize_repo_path_candidate
 from source_proxy.tasks.long_running import (
     REPOMIX_BUNDLE_NAMES,
@@ -522,6 +522,14 @@ def plan_task_with_llm(
                 task=clean_task,
                 workspace_root=root,
             )
+        except ExternalGateError as error:
+            # A closed or mismatched approval gate is an intentional policy
+            # decision, not malformed model output. Do not retry it or hide it
+            # behind the generic JSON diagnostic.
+            raise ArchitectLLMError(
+                f"architect_{error.reason_code}",
+                str(error),
+            ) from error
         except Exception as error:
             if _is_timeout_error(error):
                 raise ArchitectLLMError(

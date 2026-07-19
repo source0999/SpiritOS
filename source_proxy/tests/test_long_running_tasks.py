@@ -1364,6 +1364,35 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         )
         self.assertEqual(advanced["task"]["current_agent_role"], "coder")
 
+    def test_architect_gate_block_surfaces_specific_reason_code(self) -> None:
+        created = create_long_running_task("Create a small widget.")
+        task_id = created["task"]["id"]
+
+        from source_proxy.planning.architect import ArchitectLLMError, FallthroughToLLM
+
+        with (
+            mock.patch(
+                "source_proxy.planning.architect.plan_task_deterministically",
+                return_value=FallthroughToLLM("forced_llm_for_test"),
+            ),
+            mock.patch(
+                "source_proxy.planning.architect.plan_task_with_llm",
+                side_effect=ArchitectLLMError(
+                    "architect_gate_missing",
+                    "Gate state is missing.",
+                ),
+            ),
+        ):
+            advanced = advance_long_running_task(task_id)
+
+        self.assertEqual(advanced["task"]["status"], "blocked")
+        self.assertEqual(advanced["task"]["architect_reason"], "architect_gate_missing")
+        self.assertEqual(advanced["reason_code"], "architect_gate_missing")
+        self.assertEqual(
+            advanced["diagnostic_envelope"]["reason_code"],
+            "architect_gate_missing",
+        )
+
     def test_architect_blocks_vague_write_without_llm_target_guess(self) -> None:
         created = create_long_running_task(
             "Make a small improvement to the docs explaining approval safety."

@@ -6340,7 +6340,12 @@ def _run_architect_handoff(task: LongRunningTask) -> None:
             task.architect_reason = error.reason_code
             task.status = "blocked"
             _set_task_role(task, "architect", reason="architect_llm_blocked")
-            task.truncated_test_results = f"architect_llm_blocked: {error}"
+            # Keep the operational context while placing the actionable reason
+            # first so blocked-task diagnostics preserve policy denials such as
+            # a missing external model-call approval gate.
+            task.truncated_test_results = (
+                f"reason_code: {error.reason_code}; architect_llm_blocked: {error}"
+            )
             task.steps = _append_unique_steps(
                 task.steps,
                 [f"Planning with LLM Architect: {result.reason}.", f"LLM Architect blocked: {error.reason_code}."],

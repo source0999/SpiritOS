@@ -22,7 +22,13 @@ An isolated backend on `127.0.0.1:8788` and HTTPS frontend on `127.0.0.1:3002` w
 - The canonical frontend reset route issued a signed server assertion and the backend accepted the selected LumaCart target-plugin identity.
 - The reset receipt was `reset_verified`, with `clean_verified: true`, a zero-file fixture, and source head `d30b909b5a904461d9bbe244ad7e6b77be952ef7`.
 - A durable task (`task_62fa3e5789ac`) and canonical coding run (`coding-run-a87a707a9d0e4f5e82cc347297d25e54`) were created. The context-broker output was persisted before advance.
-- The first advance truthfully blocked before a model call or fixture mutation. Its durable diagnostic was `architect_llm_blocked`; the underlying cause was `gate_missing` for `.gate/state.json` in the isolated execution worktree.
+- The first advance truthfully blocked before a model call or fixture mutation. Its durable diagnostic was initially `architect_llm_blocked`; the underlying cause was `gate_missing` for `.gate/state.json` in the isolated execution worktree.
+
+## Diagnostic propagation repair and retest
+
+The generic diagnostic prefix could obscure a more specific Architect policy denial even though the task record retained that specific reason. The repair now preserves the structured Architect reason before the generic operational context. Its focused regression suite passed (14 tests), as did the immutable benchmark validator.
+
+An isolated, actual Source Proxy backend process was then restarted from the execution worktree with a fresh task database. The same selected LumaCart task advanced only as far as the external model-call gate and returned `status: blocked`, `reason_code: architect_gate_missing`, and the same reason in its diagnostic envelope. The runtime process and task-local state were removed after the retest. This did not call a model, create a diff, mutate the fixture, issue approval, or execute an apply.
 
 No model invocation, diff proposal, approval issuance, apply, reviewer result, verifier result, final receipt, or completion claim occurred. The failed task remains a truthful pre-apply block only.
 
