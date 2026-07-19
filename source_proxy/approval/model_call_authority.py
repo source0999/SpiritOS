@@ -257,8 +257,27 @@ def _require_clean_worktree(identity: AuthorityRuntimeIdentity) -> None:
         )
     except (OSError, subprocess.CalledProcessError) as error:
         raise ModelCallAuthorityError("model_call_authority_worktree_status_unavailable") from error
-    if status.strip():
+    changed_paths = [line for line in status.splitlines() if line.strip()]
+    if changed_paths == [" M next-env.d.ts"] and _is_generated_next_dev_routes_change(identity):
+        return
+    if changed_paths:
         raise ModelCallAuthorityError("model_call_authority_dirty_worktree")
+
+
+def _is_generated_next_dev_routes_change(identity: AuthorityRuntimeIdentity) -> bool:
+    try:
+        committed = subprocess.check_output(
+            ["git", "-C", str(identity.root), "show", "HEAD:next-env.d.ts"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+        current = (identity.root / "next-env.d.ts").read_text(encoding="utf-8")
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    return current == committed.replace(
+        'import "./.next/types/routes.d.ts";',
+        'import "./.next/dev/types/routes.d.ts";',
+    )
 
 
 def _open_database(identity: AuthorityRuntimeIdentity) -> sqlite3.Connection:

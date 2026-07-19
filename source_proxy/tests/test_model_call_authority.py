@@ -26,9 +26,12 @@ class Campaign35ModelCallAuthorityTests(unittest.TestCase):
         self._git("config", "user.email", "campaign35@example.invalid")
         self._git("config", "user.name", "Campaign 3.5 Test")
         (self.root / "package.json").write_text("{}\n", encoding="utf-8")
+        (self.root / "next-env.d.ts").write_text(
+            'import "./.next/types/routes.d.ts";\n', encoding="utf-8"
+        )
         (self.root / "source_proxy").mkdir()
         (self.root / "source_proxy" / "placeholder.py").write_text("# test\n", encoding="utf-8")
-        self._git("add", "package.json", "source_proxy/placeholder.py")
+        self._git("add", "package.json", "next-env.d.ts", "source_proxy/placeholder.py")
         self._git("commit", "-qm", "test worktree")
         self.branch = self._git("branch", "--show-current")
         self.environment = {
@@ -99,6 +102,16 @@ class Campaign35ModelCallAuthorityTests(unittest.TestCase):
                     operator="spiritos-local-operator"
                 )
         self.assertEqual(blocked.exception.reason_code, "model_call_authority_dirty_worktree")
+
+    def test_issuance_allows_only_the_known_generated_next_routes_change(self) -> None:
+        (self.root / "next-env.d.ts").write_text(
+            'import "./.next/dev/types/routes.d.ts";\n', encoding="utf-8"
+        )
+        with self._authority_environment():
+            issued = issue_campaign_3_5_model_call_authorization(
+                operator="spiritos-local-operator"
+            )
+        self.assertEqual(issued["state"], "approved")
 
     def _authority_environment(self):
         return _AuthorityEnvironment(self.environment, self.branch)
