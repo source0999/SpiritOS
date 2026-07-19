@@ -5914,7 +5914,7 @@ def _ollama_trial_proof_call(
     proof_prompt: str,
     timeout_seconds: float,
 ) -> str:
-    central_gate_check("model_call", run_id=f"ollama_trial_proof:{alias}")
+    central_gate_check("model_call", run_id=f"ollama_trial_proof:{alias}", model_alias=alias)
     litellm_model = route_model_for_alias(alias) or ""
     if route_provider_for_alias(alias) != "ollama" or not litellm_model.startswith("ollama_chat/"):
         raise ValueError(f"Trial proof direct Ollama path is not available for alias {alias!r}.")

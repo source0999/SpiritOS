@@ -8,6 +8,7 @@ from source_proxy.api.codex_adapter import router as codex_adapter_router
 from source_proxy.api.coding_self_tests import router as coding_self_tests_router
 from source_proxy.api.coding_observability import router as coding_observability_router
 from source_proxy.api.campaign_3_readiness import router as campaign_3_readiness_router
+from source_proxy.api.campaign_3_5_authority import router as campaign_3_5_authority_router
 from source_proxy.api.context_index import router as context_index_router
 from source_proxy.api.context_inventory import router as context_inventory_router
 from source_proxy.api.decision import router as decision_router
@@ -39,6 +40,7 @@ app.include_router(codex_adapter_router)
 app.include_router(coding_self_tests_router)
 app.include_router(coding_observability_router)
 app.include_router(campaign_3_readiness_router)
+app.include_router(campaign_3_5_authority_router)
 app.include_router(context_index_router)
 app.include_router(context_inventory_router)
 app.include_router(decision_router)

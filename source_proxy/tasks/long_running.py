@@ -7202,7 +7202,11 @@ def _dummy_product_site_direct_ollama_enabled(selected_alias: str) -> bool:
 
 
 def _call_dummy_product_site_ollama_direct(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
-    central_gate_check("model_call", run_id=f"dummy_product_site_ollama:{selected_alias}")
+    central_gate_check(
+        "model_call",
+        run_id=f"dummy_product_site_ollama:{selected_alias}",
+        model_alias=selected_alias,
+    )
     resolved_model = route_model_for_alias(selected_alias) or ""
     model = resolved_model.removeprefix("ollama_chat/") or resolve_coder_ollama_model_name(probe=False)
     route = resolve_ollama_route(probe=False)
@@ -11716,7 +11720,7 @@ def _call_coder_llm(
     num_retries: int | None = None,
 ) -> str:
     alias = model_alias or _coder_model_alias()
-    central_gate_check("model_call", run_id=f"coder_llm:{alias}")
+    central_gate_check("model_call", run_id=f"coder_llm:{alias}", model_alias=alias)
     resolved_model = route_model_for_alias(alias) or ""
     ollama_route = resolve_ollama_route(probe=False)
     coder_ollama_model = resolve_coder_ollama_model_name(probe=False)

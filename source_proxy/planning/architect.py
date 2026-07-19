@@ -1234,7 +1234,7 @@ def _raise_if_model_alias_unavailable(alias: str) -> None:
 
 
 def _call_architect_llm(prompt: str, *, model_alias: str) -> str:
-    central_gate_check("model_call", run_id="architect_llm")
+    central_gate_check("model_call", run_id="architect_llm", model_alias=model_alias)
     completion = get_router().completion(
         model=model_alias,
         messages=[{"role": "system", "content": prompt}],

@@ -7,6 +7,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from source_proxy.approval.model_call_authority import (
+    CAMPAIGN_ID,
+    ModelCallAuthorityError,
+    validate_campaign_3_5_model_call_authorization,
+)
+
 
 VALID_GATE_STATES = {
     "WAITING_FOR_HUMAN",
@@ -54,6 +60,7 @@ def central_gate_check(
     action: str,
     increment_id: str | None = None,
     run_id: str | None = None,
+    model_alias: str | None = None,
 ) -> ExternalGateReceipt:
     """Single required guard for Source Proxy model-call and apply paths."""
     clean_action = _clean_required(action, "action")
@@ -62,6 +69,13 @@ def central_gate_check(
         "increment_id",
     )
     clean_run_id = _clean_optional(run_id) or f"{clean_increment}:{clean_action}"
+    if clean_action == "model_call" and clean_increment == CAMPAIGN_ID:
+        return _campaign_3_5_model_call_check(
+            action=clean_action,
+            increment_id=clean_increment,
+            run_id=clean_run_id,
+            model_alias=_clean_required(model_alias, "model_alias"),
+        )
     state = _read_gate_state()
 
     status = str(state.get("status") or "")
@@ -98,6 +112,41 @@ def central_gate_check(
         approved_increment=approved_increment,
         approval_token_id=approval_token,
         checked_at=datetime.now(UTC).isoformat(),
+    )
+
+
+def _campaign_3_5_model_call_check(
+    *,
+    action: str,
+    increment_id: str,
+    run_id: str,
+    model_alias: str,
+) -> ExternalGateReceipt:
+    try:
+        authorization = validate_campaign_3_5_model_call_authorization(
+            action=action,
+            model_alias=model_alias,
+            run_id=run_id,
+        )
+    except ModelCallAuthorityError as error:
+        raise ExternalGateError(
+            "Campaign 3.5 model-call authority denied the request.",
+            error.reason_code,
+            {
+                "campaign_id": CAMPAIGN_ID,
+                "central_gate_check_passed": False,
+                "blocked_reason": error.reason_code,
+                **error.details,
+            },
+        ) from error
+    return ExternalGateReceipt(
+        action=action,
+        increment_id=increment_id,
+        run_id=run_id,
+        gate_state_before="DURABLE_CAMPAIGN_3_5_AUTHORITY",
+        approved_increment=increment_id,
+        approval_token_id=authorization.authorization_id,
+        checked_at=authorization.checked_at,
     )
 
 
