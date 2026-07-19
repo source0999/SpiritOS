@@ -43,7 +43,7 @@
     },
     "campaign_2_historical_engineering_terminal": {
       "ref": "refs/heads/codex/spiritos-campaign-2-core-coding-os-20260716",
-      "commit": "39de31bb73cb4a910281705259b35a6d42a0726c"
+      "commit": "2b8ead66578d7f7053c01cb987e011b763c1c03d"
     },
     "historical_design_campaign_3": {
       "ref": "refs/heads/codex/spiritos-campaign-3-core-design-lane-20260717",
@@ -84,7 +84,7 @@
     "gate_3_11_final_acceptance_and_closeout"
   ],
   "partial_gate_ids": [],
-  "next_gate_id": null,
+  "next_gate_id": "none",
   "current_phase": "campaign_3_extended_coding_lanes_integrated",
   "controlled_failure_requirements": {
     "minimum_extended_lane_failures": 2,
