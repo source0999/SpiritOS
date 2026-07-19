@@ -7,6 +7,8 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 from pathlib import Path
+import re
+import subprocess
 from typing import Any
 
 from source_proxy.approval.runtime_identity import (
@@ -19,11 +21,19 @@ from source_proxy.target_plugins.lumacart import (
     lumacart_command,
     lumacart_task_spec,
 )
+from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
+    Campaign35FixtureAuthorityError,
+    load_campaign_3_5_fixture_authority,
+)
 
 
 TARGET_PLUGIN_SCHEMA_VERSION = "spiritos-target-plugin/v1"
 TARGET_ADAPTER_PROVENANCE_SCHEMA_VERSION = "spiritos-target-adapter-provenance/v1"
 LUMACART_PLUGIN_ID = "lumacart"
+GENERIC_WORKSPACE_PLUGIN_ID = "generic-workspace"
+GENERIC_WORKSPACE_PROMPT_ID = "generic-unified-diff"
+GENERIC_WORKSPACE_CONTEXT_ID = "server-fixture-manifest"
+GENERIC_WORKSPACE_PROFILE = "generic-unified-diff-v1"
 FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
 EXECUTION_PROFILE = "coder-10"
 PROMPT_CONTEXTS = {
@@ -104,11 +114,13 @@ _COMMON_FORBIDDEN_FILES = [
 
 def target_plugin_command(plugin: ResolvedTargetPlugin) -> str | None:
     """Return the only Python implementation command for a resolved plugin prompt."""
-    return lumacart_command(plugin.selected_prompt_id)
+    return "generic_unified_diff" if plugin.plugin_id == GENERIC_WORKSPACE_PLUGIN_ID else lumacart_command(plugin.selected_prompt_id)
 
 
 def target_plugin_task_spec(plugin: ResolvedTargetPlugin) -> dict[str, Any] | None:
     """Target-owned task constraints, including the same evidence identity used by verification."""
+    if plugin.plugin_id == GENERIC_WORKSPACE_PLUGIN_ID:
+        return {"schema_version": 1, "command": "generic_unified_diff", "task_type": "scoped_unified_diff", "target": plugin.fixture_root, "allowed_files": list(plugin.allowed_actions), "target_plugin_identity": plugin.evidence_identity()}
     return lumacart_task_spec(
         plugin.selected_prompt_id,
         forbidden_files=_COMMON_FORBIDDEN_FILES,
@@ -204,7 +216,9 @@ def execute_target_plugin_command(
         "llm_call": effective_model_call,
         "model_alias": selected_alias,
     }
-    if command == "create_storefront":
+    if command == "generic_unified_diff":
+        result = _execute_generic_unified_diff(plugin, task, workspace_root, provenance_model_call, selected_alias)
+    elif command == "create_storefront":
         result = propose_dummy_product_site_create_diff(**kwargs)
     elif command == "add_product_data":
         result = propose_dummy_product_site_product_data_diff(**kwargs)
@@ -224,6 +238,25 @@ def execute_target_plugin_command(
         configured_transport_kind=configured_transport_kind,
         model_calls=model_calls,
     )
+
+
+def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root: Path, model_call: Callable[[str, str], str] | None, alias: str) -> dict[str, Any]:
+    if model_call is None:
+        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_alias_unavailable", "coder_diagnostics": {"generation_source": "non_model", "changed_files": []}}
+    allowed = list(plugin.allowed_actions)
+    prompt = "Return only one fenced unified diff. Modify only these allowed relative paths or prefixes: " + json.dumps(allowed) + ".\nTask:\n" + task
+    raw = model_call(prompt, alias)
+    match = re.fullmatch(r"\s*```diff\n(.*)\n```\s*", str(raw or ""), flags=re.DOTALL)
+    diff = match.group(1) + "\n" if match else ""
+    files = sorted(set(re.findall(r"^\+\+\+ b/(.+)$", diff, flags=re.MULTILINE)))
+    if not diff or not files:
+        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": {"generation_source": "model", "changed_files": []}}
+    if any(not any(path == allowed_path.rstrip("/") or path.startswith(allowed_path.rstrip("/") + "/") for allowed_path in allowed) for path in files):
+        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_scope_violation", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
+    checked = subprocess.run(["git", "apply", "--check", "--recount", "-"], input=diff, text=True, cwd=root, capture_output=True, check=False, timeout=15)
+    if checked.returncode != 0:
+        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_diff_check_failed", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
+    return {"proposed_diff": diff, "coder_blocked": False, "expected_result_state": "MODEL_DIFF_READY", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
 
 
 def _sha256_utf8(value: str) -> str:
@@ -368,7 +401,10 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
     root = workspace_root.resolve()
     if _require(declared, "schema_version") != TARGET_PLUGIN_SCHEMA_VERSION:
         raise TargetPluginResolutionError("target_plugin_schema_unsupported")
-    if _require(declared, "id") != LUMACART_PLUGIN_ID:
+    plugin_id = _require(declared, "id")
+    if plugin_id == GENERIC_WORKSPACE_PLUGIN_ID:
+        return _resolve_generic_workspace_plugin(packet, declared)
+    if plugin_id != LUMACART_PLUGIN_ID:
         raise TargetPluginResolutionError("target_plugin_unsupported")
     try:
         runtime_identity = resolve_authority_runtime_identity(root)
@@ -416,3 +452,17 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
         allowed_actions=("propose", "approve", "execute", "verify", "record-evidence"),
         result_identity=result_identity,
     )
+
+
+def _resolve_generic_workspace_plugin(packet: dict[str, Any], declared: dict[str, Any]) -> ResolvedTargetPlugin:
+    try:
+        authority = load_campaign_3_5_fixture_authority()
+    except Campaign35FixtureAuthorityError as error:
+        raise TargetPluginResolutionError(error.reason_code) from error
+    if _require(declared, "fixture_root") != "." or _require(declared, "selected_prompt_id") != GENERIC_WORKSPACE_PROMPT_ID or _require(declared, "selected_context_id") != GENERIC_WORKSPACE_CONTEXT_ID or _require(declared, "execution_profile") != GENERIC_WORKSPACE_PROFILE:
+        raise TargetPluginResolutionError("generic_workspace_plugin_contract_mismatch")
+    selected = str(packet.get("selected_prompt_id") or "").strip()
+    if selected and selected != GENERIC_WORKSPACE_PROMPT_ID:
+        raise TargetPluginResolutionError("target_plugin_selected_prompt_mismatch")
+    scope = authority.adapter_scope()
+    return ResolvedTargetPlugin(schema_version=TARGET_PLUGIN_SCHEMA_VERSION, plugin_id=GENERIC_WORKSPACE_PLUGIN_ID, repository_id="campaign-3.5-fixture", worktree_id=authority.manifest_sha256[:24], workspace_root=str(authority.workspace_root), branch="fixture", state_namespace=authority.manifest_sha256[:24], fixture_root=".", source_head=authority.baseline_tree_sha256, selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID, selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID, execution_profile=authority.execution_profile, allowed_actions=tuple(scope["allowed_paths"]), result_identity=f"generic-workspace:{authority.manifest_sha256[:12]}")
