@@ -177,6 +177,7 @@ tests/ui-agent-trials/fixtures/dummy-product-site/
 # Campaign 1 evidence is archived byte-for-byte under SPIRITOS_EVIDENCE_ROOT.
 # Git retains only the matching manifest and classification under docs/evidence-manifests/.
 /docs/evidence/**
+.campaign-3-5-phase0-run.sh
 
 # Campaign 1 externalized generated media gallery; the tracked manifest is the integrity record.
 /scripts/media/model_gallery/**
