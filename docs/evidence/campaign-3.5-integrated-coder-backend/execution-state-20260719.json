@@ -1,0 +1,38 @@
+{
+  "schema_version": "campaign-3.5-execution-state/v1",
+  "campaign_id": "campaign-3.5",
+  "updated_at": "2026-07-19",
+  "phase_0": {
+    "status": "passed",
+    "receipt": "docs/evidence/campaign-3.5-integrated-coder-backend/phase-0-authenticated-run-20260719.json",
+    "source_head": "59aba3dfe160ad6a3548e369800c970598943827"
+  },
+  "phase_1": {
+    "status": "in_progress",
+    "findings": [
+      {
+        "component": "authenticated benchmark runner",
+        "status": "MISSING",
+        "evidence": "No runner for benchmarks/coder-backend-100/v1.1 exists; validate-campaign-3-5-benchmark.py validates archive structure only."
+      },
+      {
+        "component": "seeded disposable fixture generator",
+        "status": "MISSING",
+        "evidence": "fixture-blueprints.md declares blueprint names and required guarantees, but no task fixture generator or generated benchmark fixture repository exists."
+      },
+      {
+        "component": "independent private oracle",
+        "status": "MISSING",
+        "evidence": "oracle-contract.md defines the process and secrecy boundary; no separate Campaign 3.5 oracle package or private-store implementation exists."
+      },
+      {
+        "component": "production coding path",
+        "status": "REQUIRES_PRODUCTION_PATH_VALIDATION",
+        "evidence": "Phase 0 validates one bounded LumaCart fixture run only; Core-30 and full-100 remain unexecuted."
+      }
+    ]
+  },
+  "core_30": {"status": "not_started"},
+  "full_100": {"status": "not_started"},
+  "terminal_verdict": null
+}
