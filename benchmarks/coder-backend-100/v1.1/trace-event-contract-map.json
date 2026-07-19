@@ -1,7 +1,19 @@
 {
   "schema": "source-proxy-coder-backend-100-trace-event-contract-map/v1",
   "version": 2,
-  "status": "MAPPED_PENDING_PHASE_0_RUNTIME_CONFIRMATION",
+  "status": "MAPPED_RUNTIME_CONFIRMED_PHASE_0",
+  "runtime_confirmation": {
+    "receipt": "docs/evidence/campaign-3.5-integrated-coder-backend/phase-0-authenticated-run-20260719.json",
+    "source_head": "59aba3dfe160ad6a3548e369800c970598943827",
+    "scope": "Authenticated, disposable LumaCart fixture only; the fixture was reset after server-owned verification.",
+    "required_results": {
+      "model_invocations_minimum": 1,
+      "verification_status": "completed",
+      "truth_status": "GO",
+      "browser_verification_status": "passed",
+      "real_browser_used": true
+    }
+  },
   "source": "Campaign 3.5 static discovery of real Source Proxy production emitters; immutable v1.1 task definitions are not changed.",
   "required_mapping_fields": ["benchmark_event", "production_event", "payload_mapping", "semantic_equivalence", "missing_field_analysis", "amendment_version", "approval_record", "independent_evaluator_acceptance"],
   "mapping_rules": ["Map every event to a real authenticated production-path emission before benchmark execution.", "Missing or ambiguous semantics block execution or require a separately approved versioned amendment.", "Never silently weaken, rename, or rewrite the immutable task definitions."],

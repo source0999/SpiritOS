@@ -41,3 +41,17 @@ class Campaign35TraceEventMapTests(unittest.TestCase):
             errors = validator.validate(path)
 
         self.assertTrue(any("production event is not emitted" in error for error in errors))
+
+    def test_validator_rejects_a_runtime_receipt_with_a_failed_browser_proof(self) -> None:
+        document = json.loads(MAP.read_text(encoding="utf-8"))
+        receipt_path = ROOT / document["runtime_confirmation"]["receipt"]
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt["browser_verification_status"] = "failed"
+        original = receipt_path.read_text(encoding="utf-8")
+        try:
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            errors = validator.validate(MAP)
+        finally:
+            receipt_path.write_text(original, encoding="utf-8")
+
+        self.assertTrue(any("browser_verification_status mismatch" in error for error in errors))

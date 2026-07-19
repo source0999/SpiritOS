@@ -43,8 +43,14 @@ def validate(path: Path) -> list[str]:
         return [f"trace map unreadable: {error}"]
     if document.get("schema") != "source-proxy-coder-backend-100-trace-event-contract-map/v1":
         errors.append("trace map schema is invalid")
-    if document.get("status") != "MAPPED_PENDING_PHASE_0_RUNTIME_CONFIRMATION":
-        errors.append("trace map status does not require Phase 0 runtime confirmation")
+    status = document.get("status")
+    if status not in {
+        "MAPPED_PENDING_PHASE_0_RUNTIME_CONFIRMATION",
+        "MAPPED_RUNTIME_CONFIRMED_PHASE_0",
+    }:
+        errors.append("trace map status is invalid")
+    elif status == "MAPPED_RUNTIME_CONFIRMED_PHASE_0":
+        errors.extend(_validate_runtime_confirmation(document))
     mappings = document.get("mappings")
     if not isinstance(mappings, list):
         return [*errors, "mappings is not a list"]
@@ -98,6 +104,44 @@ def validate(path: Path) -> list[str]:
         errors.append(f"required benchmark events are unmapped: {missing_events}")
     if unknown_events:
         errors.append(f"unknown benchmark events are mapped: {unknown_events}")
+    return errors
+
+
+def _validate_runtime_confirmation(document: dict[str, object]) -> list[str]:
+    confirmation = document.get("runtime_confirmation")
+    if not isinstance(confirmation, dict):
+        return ["runtime-confirmed map lacks runtime_confirmation"]
+    receipt_path = confirmation.get("receipt")
+    source_head = confirmation.get("source_head")
+    required = confirmation.get("required_results")
+    if not isinstance(receipt_path, str) or not receipt_path.startswith("docs/evidence/"):
+        return ["runtime confirmation receipt path is invalid"]
+    if not isinstance(source_head, str) or len(source_head) != 40:
+        return ["runtime confirmation source head is invalid"]
+    if not isinstance(required, dict):
+        return ["runtime confirmation required results are invalid"]
+    try:
+        receipt = json.loads((ROOT / receipt_path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return [f"runtime confirmation receipt is unreadable: {error}"]
+    if receipt.get("schema_version") != "campaign-3.5-phase-0-receipt/v1":
+        return ["runtime confirmation receipt schema is invalid"]
+    if receipt.get("source_head") != source_head:
+        return ["runtime confirmation receipt source head mismatch"]
+    expected = {
+        "verification_status": required.get("verification_status"),
+        "truth_status": required.get("truth_status"),
+        "browser_verification_status": required.get("browser_verification_status"),
+        "real_browser_used": required.get("real_browser_used"),
+    }
+    errors = [
+        f"runtime confirmation receipt {key} mismatch"
+        for key, value in expected.items()
+        if receipt.get(key) != value
+    ]
+    minimum = required.get("model_invocations_minimum")
+    if not isinstance(minimum, int) or minimum < 1 or int(receipt.get("model_invocations") or 0) < minimum:
+        errors.append("runtime confirmation receipt has no model invocation")
     return errors
 
 

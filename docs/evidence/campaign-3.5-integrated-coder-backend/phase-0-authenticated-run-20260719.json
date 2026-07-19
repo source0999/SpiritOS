@@ -1,0 +1,12 @@
+{
+  "browser_verification_status": "passed",
+  "execute_status": "applied_needs_verification",
+  "managed_frontend_origin": "https://127.0.0.1:3002",
+  "model_invocations": 1,
+  "real_browser_used": true,
+  "schema_version": "campaign-3.5-phase-0-receipt/v1",
+  "source_head": "59aba3dfe160ad6a3548e369800c970598943827",
+  "task_id": "task_e48c4ccd3115",
+  "truth_status": "GO",
+  "verification_status": "completed"
+}
