@@ -12,6 +12,7 @@ from typing import Any
 
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
+    REPOSITORY,
     ROOT,
     _call,
     canonical_json,
@@ -71,7 +72,7 @@ def selection_content_hash(*, proposal_id: str, consumer: str, target: str) -> s
 def persist_cartographer_selection(*, proposal_id: str, consumer: str, target: str) -> dict[str, Any]:
     _content, context = _selection(proposal_id=proposal_id, consumer=consumer, target=target)
     return _call("persist-preview", {
-        "repository": "SpiritOS", "worktree": ROOT, "root": ROOT,
+        "repository": REPOSITORY, "worktree": ROOT, "root": ROOT,
         "target": target, "plugin": PLUGIN,
         "content_hash": selection_content_hash(proposal_id=proposal_id, consumer=consumer, target=target),
         "context": context, "source_head": current_head(),
@@ -100,7 +101,7 @@ def consume_cartographer_selection(*, approval_id: str, proposal_id: str, consum
     _content, context = _selection(proposal_id=proposal_id, consumer=consumer, target=target)
     binding = {
         "approval_id": approval_id, "generation": str(approval.get("generation") or ""),
-        "consumer": CONSUMER, "operation": OPERATION, "repository": "SpiritOS",
+        "consumer": CONSUMER, "operation": OPERATION, "repository": REPOSITORY,
         "worktree": ROOT, "root": ROOT, "target": target, "plugin": PLUGIN,
         "preview": approval.get("preview"),
         "content_hash": selection_content_hash(proposal_id=proposal_id, consumer=consumer, target=target),

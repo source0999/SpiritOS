@@ -91,6 +91,15 @@ class Campaign35ModelCallAuthorityTests(unittest.TestCase):
         self.assertEqual(revoked["authorization_id"], issued["authorization_id"])
         self.assertEqual(replay.exception.reason_code, "model_call_authority_missing")
 
+    def test_issuance_refuses_a_dirty_worktree(self) -> None:
+        (self.root / "untracked-change.txt").write_text("unsafe authority drift\n", encoding="utf-8")
+        with self._authority_environment():
+            with self.assertRaises(ModelCallAuthorityError) as blocked:
+                issue_campaign_3_5_model_call_authorization(
+                    operator="spiritos-local-operator"
+                )
+        self.assertEqual(blocked.exception.reason_code, "model_call_authority_dirty_worktree")
+
     def _authority_environment(self):
         return _AuthorityEnvironment(self.environment, self.branch)
 

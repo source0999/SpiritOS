@@ -221,6 +221,39 @@ def test_coding_approval_persists_the_server_resolved_lumacart_plugin() -> None:
     assert str(preview["preview_id"]).startswith("prv_")
 
 
+def test_cartographer_selection_binds_the_registered_runtime_repository(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Proposal:
+        proposal_id = "runtime-identity-selection"
+        approved_diff = ""
+        diff_preview = ""
+        proposed_files = ["tests/ui-agent-trials/fixtures/dummy-product-site/README.md"]
+        fingerprint = "runtime-identity-fingerprint"
+        persisted = True
+        status = "pending_review"
+        warnings: list[str] = []
+
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(cartographer_selection, "list_proposals", lambda: [Proposal()])
+    monkeypatch.setattr(
+        cartographer_selection,
+        "_call",
+        lambda command, payload: captured.update(command=command, payload=payload)
+        or {"preview_id": "prv_runtime", "generation": 1},
+    )
+
+    cartographer_selection.persist_cartographer_selection(
+        proposal_id=Proposal.proposal_id,
+        consumer="coding-executor:coder",
+        target=Proposal.proposed_files[0],
+    )
+
+    assert captured["command"] == "persist-preview"
+    assert captured["payload"]["repository"] == authority.REPOSITORY
+    assert captured["payload"]["worktree"] == authority.ROOT
+
+
 def test_coding_evidence_requires_identical_approval_generation_for_all_consumers() -> None:
     artifact_sha256 = "sha256:" + "a" * 64
     acknowledgements = {

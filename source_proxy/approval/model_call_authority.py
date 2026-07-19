@@ -12,6 +12,7 @@ import os
 import secrets
 import sqlite3
 import stat
+import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -69,6 +70,7 @@ def issue_campaign_3_5_model_call_authorization(
     """Issue one bounded, auditable authority after backend assertion validation."""
     identity = _identity()
     _require_authorized_branch(identity)
+    _require_clean_worktree(identity)
     if not operator.strip():
         raise ModelCallAuthorityError("model_call_authority_operator_missing")
     duration = max(1, min(int(duration_minutes), MAX_AUTHORIZATION_MINUTES))
@@ -143,6 +145,7 @@ def validate_campaign_3_5_model_call_authorization(
 ) -> ModelCallAuthorityReceipt:
     identity = _identity()
     _require_authorized_branch(identity)
+    _require_clean_worktree(identity)
     if action not in ALLOWED_ACTIONS:
         raise ModelCallAuthorityError("model_call_authority_action_forbidden")
     if action == "model_call" and model_alias not in ALLOWED_MODEL_ALIASES:
@@ -243,6 +246,19 @@ def _identity() -> AuthorityRuntimeIdentity:
 def _require_authorized_branch(identity: AuthorityRuntimeIdentity) -> None:
     if identity.branch != AUTHORIZED_BRANCH:
         raise ModelCallAuthorityError("model_call_authority_branch_forbidden")
+
+
+def _require_clean_worktree(identity: AuthorityRuntimeIdentity) -> None:
+    try:
+        status = subprocess.check_output(
+            ["git", "-C", str(identity.root), "status", "--porcelain=v1", "--untracked-files=all"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ModelCallAuthorityError("model_call_authority_worktree_status_unavailable") from error
+    if status.strip():
+        raise ModelCallAuthorityError("model_call_authority_dirty_worktree")
 
 
 def _open_database(identity: AuthorityRuntimeIdentity) -> sqlite3.Connection:
