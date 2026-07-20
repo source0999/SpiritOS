@@ -70,11 +70,11 @@ def _java_spring_debug(seed: str) -> dict[str, str]:
 
 
 def _sql_small(seed: str) -> dict[str, str]:
-    return {"migrations/001_users.sql":_h(seed,"sql-app-small")+"CREATE TABLE users (id INTEGER PRIMARY KEY, first_name TEXT NOT NULL, last_name TEXT NOT NULL);\n", "src/models.py":"class User: middle_name = None  # baseline database has no column\n", "tests/test_migrations.py":"def test_initial_schema(): assert True\n", "migrations/legacy_users.sql":"-- historical schema decoy\n"}
+    return {"migrations/001_users.sql":_h(seed,"sql-app-small").replace("//", "--", 1)+"CREATE TABLE users (id INTEGER PRIMARY KEY, first_name TEXT NOT NULL, last_name TEXT NOT NULL);\n", "src/models.py":"class User: middle_name = None  # baseline database has no column\n", "tests/test_migrations.py":"def test_initial_schema(): assert True\n", "migrations/legacy_users.sql":"-- historical schema decoy\n"}
 
 
 def _sql_debug(seed: str) -> dict[str, str]:
-    return {"migrations/002_add_status.sql":_h(seed,"sql-app-debug")+"ALTER TABLE users ADD COLUMN status TEXT NOT NULL; -- baseline fails populated rows\n", "migrations/002_down.sql":"ALTER TABLE users DROP COLUMN status;\n", "tests/test_migrations.py":"def test_empty_database(): assert True\n", "docs/migrations.md":"Migrations are reversible.\n"}
+    return {"migrations/002_add_status.sql":_h(seed,"sql-app-debug").replace("//", "--", 1)+"ALTER TABLE users ADD COLUMN status TEXT NOT NULL; -- baseline fails populated rows\n", "migrations/002_down.sql":"ALTER TABLE users DROP COLUMN status;\n", "tests/test_migrations.py":"def test_empty_database(): assert True\n", "docs/migrations.md":"Migrations are reversible.\n"}
 
 
 SYSTEM_FIXTURE_BUILDERS: dict[str, Callable[[str], dict[str, str]]] = {

@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 21,
+  "task_count": 23,
   "tasks": [
     {
       "category": "dst_wall_time",
@@ -12,6 +12,11 @@
       "category": "utf8_chunk_boundaries",
       "passed": true,
       "task_id": "B06"
+    },
+    {
+      "category": "populated_migration",
+      "passed": true,
+      "task_id": "B09"
     },
     {
       "category": "eof_termination",
@@ -79,6 +84,11 @@
       "task_id": "S13"
     },
     {
+      "category": "nullable_middle_name",
+      "passed": true,
+      "task_id": "S14"
+    },
+    {
       "category": "unicode_slug",
       "passed": true,
       "task_id": "S15"
@@ -112,6 +122,7 @@
   "validated_task_ids": [
     "B05",
     "B06",
+    "B09",
     "B10",
     "M12",
     "S01",
@@ -125,6 +136,7 @@
     "S10",
     "S11",
     "S13",
+    "S14",
     "S15",
     "S16",
     "S18",

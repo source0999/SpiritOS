@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "schema_version": "campaign-3.5-sql-runtime-validation/v1",
+  "task_count": 2,
+  "tasks": [
+    {
+      "category": "populated_migration",
+      "passed": true,
+      "task_id": "B09"
+    },
+    {
+      "category": "nullable_middle_name",
+      "passed": true,
+      "task_id": "S14"
+    }
+  ],
+  "validated_task_ids": [
+    "B09",
+    "S14"
+  ]
+}
