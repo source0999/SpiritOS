@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 47,
+  "task_count": 50,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -84,6 +84,11 @@
       "task_id": "C05"
     },
     {
+      "category": "transactional_outbox",
+      "passed": true,
+      "task_id": "M06"
+    },
+    {
       "category": "thumbnail_pipeline",
       "passed": true,
       "task_id": "M12"
@@ -97,6 +102,16 @@
       "category": "batched_user_loading",
       "passed": true,
       "task_id": "M14"
+    },
+    {
+      "category": "auth_csrf_route",
+      "passed": true,
+      "task_id": "R01"
+    },
+    {
+      "category": "canonical_error_envelope",
+      "passed": true,
+      "task_id": "R02"
     },
     {
       "category": "retained_adr_transition",
@@ -256,9 +271,12 @@
     "C01",
     "C04",
     "C05",
+    "M06",
     "M12",
     "M13",
     "M14",
+    "R01",
+    "R02",
     "R06",
     "R09",
     "R10",

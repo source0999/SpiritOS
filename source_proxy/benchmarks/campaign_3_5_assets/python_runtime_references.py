@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from source_proxy.benchmarks.campaign_3_5_assets.core_references import apply_core_reference
 
 
-PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M13", "R06", "R09", "R10"})
+PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M06", "M13", "R01", "R02", "R06", "R09", "R10"})
 
 
 def _replace(path: Path, before: str, after: str) -> None:
@@ -56,6 +56,12 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         apply_core_reference(task_id, root)
     elif task_id == "B01":
         _replace(root / "src/payments/webhooks.py", "repository.capture(event[\"payment_id\"])\n    return {\"ok\": True}", "if repository.claim_event(event['id']): repository.capture(event['payment_id'])\n    return {'ok': True}")
+    elif task_id == "M06":
+        _replace(root / "src/services/signup.py", "created = repository.insert_user(user)\n    mailer.send_welcome(created)  # Baseline: direct non-transactional delivery.\n    return created", "def persist():\n        created = repository.insert_user(user)\n        repository.insert_outbox({'type':'welcome','user':created['id'],'idempotency_key':created['id']})\n        return created\n    return repository.transaction(persist)")
+    elif task_id == "R01":
+        _replace(root / "services/assets/routes.py", "def delete_asset(asset_id): return {'deleted': asset_id} # baseline lacks canonical auth/CSRF", "from services.auth.session import authenticated_session\nfrom services.auth.csrf import require_csrf\ndef delete_asset(request, asset_id):\n    if not authenticated_session(request) or not require_csrf(request): raise PermissionError('authenticated csrf required')\n    return {'deleted': asset_id}")
+    elif task_id == "R02":
+        _replace(root / "services/imports/handler.py", "def parse_error(message): return {'error': message} # wrong envelope", "from shared.errors import api_error\ndef parse_error(message): return api_error('IMPORT_PARSE_ERROR', message)")
     else:
         raise ValueError("campaign_3_5_python_runtime_task_unknown")
 
@@ -102,6 +108,21 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
                 self.claimed.add(event_id); return True
             def capture(self, payment_id): self.captures.append(payment_id)
         repository=Repository(); module.capture(repository, {'id':'event','payment_id':'payment'}); module.capture(repository, {'id':'event','payment_id':'payment'}); return repository.captures == ['payment'], "webhook_idempotency"
+    if task_id == "M06":
+        module = _module(root / "src/services/signup.py")
+        class Repository:
+            def __init__(self): self.outbox=[]
+            def transaction(self, fn): return fn()
+            def insert_user(self, user): return {'id': user['id']}
+            def insert_outbox(self, event): self.outbox.append(event)
+        repository=Repository(); result=module.create_user(repository, object(), {'id':'u'}); return result['id']=='u' and repository.outbox[0]['idempotency_key']=='u', "transactional_outbox"
+    if task_id == "R01":
+        module = _module(root / "services/assets/routes.py")
+        class Request: user=True; csrf_valid=True
+        try: module.delete_asset(type('Bad',(),{'user':False,'csrf_valid':False})(), 'a'); return False, "auth_csrf_route"
+        except PermissionError: return module.delete_asset(Request(), 'a') == {'deleted':'a'}, "auth_csrf_route"
+    if task_id == "R02":
+        module = _module(root / "services/imports/handler.py"); return module.parse_error('bad') == {'code':'IMPORT_PARSE_ERROR','detail':'bad'}, "canonical_error_envelope"
     if task_id == "B13":
         module = _module(root / "src/authz/cache.py"); cache=module.PermissionCache(); return cache.allowed("a","u","read",lambda *_:True) and not cache.allowed("b","u","read",lambda *_:False), "tenant_cache_isolation"
     if task_id == "B15":
