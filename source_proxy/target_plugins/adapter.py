@@ -258,7 +258,7 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
             alias,
         )
         diff, response_format = _extract_generic_unified_diff(str(raw or ""))
-        files = sorted(set(re.findall(r"^\+\+\+ b/(.+)$", diff, flags=re.MULTILINE)))
+        files = _generic_diff_files(diff)
         diagnostics = {"generation_source": "model", "changed_files": files, "model_response_format": response_format, "repair_attempted": attempt == 1}
         if not diff or not files:
             return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": diagnostics}
@@ -268,6 +268,14 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
         if checked.returncode == 0:
             return {"proposed_diff": diff, "coder_blocked": False, "expected_result_state": "MODEL_DIFF_READY", "coder_diagnostics": diagnostics}
     return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_diff_check_failed", "coder_diagnostics": diagnostics}
+
+
+def _generic_diff_files(diff: str) -> list[str]:
+    """Read changed paths from mandatory Git diff headers, not presentation labels."""
+    pairs = re.findall(r"^diff --git a/(.+) b/(.+)$", diff, flags=re.MULTILINE)
+    if not pairs or any(before != after for before, after in pairs):
+        return []
+    return sorted({after for _before, after in pairs})
 
 
 def _extract_generic_unified_diff(raw: str) -> tuple[str, str]:
