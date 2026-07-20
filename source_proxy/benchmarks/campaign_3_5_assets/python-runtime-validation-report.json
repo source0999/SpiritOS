@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-python-runtime-validation/v1",
-  "task_count": 10,
+  "task_count": 16,
   "tasks": [
     {
       "category": "dst_wall_time",
@@ -12,6 +12,31 @@
       "category": "eof_termination",
       "passed": true,
       "task_id": "B10"
+    },
+    {
+      "category": "tenant_cache_isolation",
+      "passed": true,
+      "task_id": "B13"
+    },
+    {
+      "category": "stable_file_traversal",
+      "passed": true,
+      "task_id": "B15"
+    },
+    {
+      "category": "sorting_retry_repair",
+      "passed": true,
+      "task_id": "C04"
+    },
+    {
+      "category": "retained_adr_transition",
+      "passed": true,
+      "task_id": "R06"
+    },
+    {
+      "category": "authenticated_router_health",
+      "passed": true,
+      "task_id": "R09"
     },
     {
       "category": "http_contract_equivalent",
@@ -39,6 +64,11 @@
       "task_id": "S11"
     },
     {
+      "category": "constant_time_token_contract",
+      "passed": true,
+      "task_id": "S12"
+    },
+    {
       "category": "unicode_slug",
       "passed": true,
       "task_id": "S15"
@@ -57,11 +87,17 @@
   "validated_task_ids": [
     "B05",
     "B10",
+    "B13",
+    "B15",
+    "C04",
+    "R06",
+    "R09",
     "S01",
     "S02",
     "S05",
     "S09",
     "S11",
+    "S12",
     "S15",
     "S20",
     "S24"

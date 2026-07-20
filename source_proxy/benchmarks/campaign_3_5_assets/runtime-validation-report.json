@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 23,
+  "task_count": 29,
   "tasks": [
     {
       "category": "dst_wall_time",
@@ -24,9 +24,34 @@
       "task_id": "B10"
     },
     {
+      "category": "tenant_cache_isolation",
+      "passed": true,
+      "task_id": "B13"
+    },
+    {
+      "category": "stable_file_traversal",
+      "passed": true,
+      "task_id": "B15"
+    },
+    {
+      "category": "sorting_retry_repair",
+      "passed": true,
+      "task_id": "C04"
+    },
+    {
       "category": "thumbnail_pipeline",
       "passed": true,
       "task_id": "M12"
+    },
+    {
+      "category": "retained_adr_transition",
+      "passed": true,
+      "task_id": "R06"
+    },
+    {
+      "category": "authenticated_router_health",
+      "passed": true,
+      "task_id": "R09"
     },
     {
       "category": "http_contract_equivalent",
@@ -79,6 +104,11 @@
       "task_id": "S11"
     },
     {
+      "category": "constant_time_token_contract",
+      "passed": true,
+      "task_id": "S12"
+    },
+    {
       "category": "milliseconds_ttl",
       "passed": true,
       "task_id": "S13"
@@ -124,7 +154,12 @@
     "B06",
     "B09",
     "B10",
+    "B13",
+    "B15",
+    "C04",
     "M12",
+    "R06",
+    "R09",
     "S01",
     "S02",
     "S03",
@@ -135,6 +170,7 @@
     "S09",
     "S10",
     "S11",
+    "S12",
     "S13",
     "S14",
     "S15",

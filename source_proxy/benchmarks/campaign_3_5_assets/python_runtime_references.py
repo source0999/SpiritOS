@@ -6,8 +6,10 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from source_proxy.benchmarks.campaign_3_5_assets.core_references import apply_core_reference
 
-PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S15", "S20", "S24", "B05", "B10"})
+
+PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B05", "B10", "B13", "B15", "C04", "R06", "R09"})
 
 
 def _replace(path: Path, before: str, after: str) -> None:
@@ -47,6 +49,8 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/calendar/recurrence.py", "from datetime import timedelta\n\ndef weekly(start, count):\n    # Baseline defect: elapsed 7-day arithmetic loses local wall-time across DST.\n    return [start + timedelta(days=7 * index) for index in range(count)]", "from datetime import datetime, timedelta\n\ndef weekly(start, count):\n    return [datetime.combine(start.date() + timedelta(days=7 * index), start.timetz()).replace(tzinfo=start.tzinfo) for index in range(count)]")
     elif task_id == "B10":
         _replace(root / "src/cli/confirm.py", "value = stream.readline()\n        if value.strip().lower()", "value = stream.readline()\n        if value == '': return False\n        if value.strip().lower()")
+    elif task_id in {"S12", "B13", "B15", "C04", "R06", "R09"}:
+        apply_core_reference(task_id, root)
     else:
         raise ValueError("campaign_3_5_python_runtime_task_unknown")
 
@@ -82,4 +86,16 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
     if task_id == "B10":
         from io import StringIO
         module = _module(root / "src/cli/confirm.py"); return module.confirm(StringIO("")) is False, "eof_termination"
+    if task_id == "S12":
+        module = _module(root / "src/security/tokens.py"); return module.is_valid_token("x", "x") and not module.is_valid_token("x", "y"), "constant_time_token_contract"
+    if task_id == "B13":
+        module = _module(root / "src/authz/cache.py"); cache=module.PermissionCache(); return cache.allowed("a","u","read",lambda *_:True) and not cache.allowed("b","u","read",lambda *_:False), "tenant_cache_isolation"
+    if task_id == "B15":
+        module = _module(root / "generator/docs.py"); return module.files(["b","a"]) == ["a","b"], "stable_file_traversal"
+    if task_id == "C04":
+        module = _module(root / "src/sort.py"); return module.sort([3,1,2,1]) == [1,1,2,3], "sorting_retry_repair"
+    if task_id == "R06":
+        module = _module(root / "src/jobs/state.py"); result=module.cancel("queued"); return result == ("cancelling", "cancelled", "audit-emitted"), "retained_adr_transition"
+    if task_id == "R09":
+        module = _module(root / "src/router/authenticated.py"); return module.select_model([{"healthy":False},{"healthy":True,"name":"good"}])["name"] == "good", "authenticated_router_health"
     return False, "unknown"
