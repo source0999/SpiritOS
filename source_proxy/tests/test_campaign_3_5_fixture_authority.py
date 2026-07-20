@@ -20,6 +20,7 @@ from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_PROMPT_ID,
     TARGET_PLUGIN_SCHEMA_VERSION,
     execute_target_plugin_command,
+    _structured_edits_to_diff,
     resolve_target_plugin,
 )
 
@@ -105,3 +106,16 @@ def test_generic_adapter_accepts_a_pure_unfenced_unified_diff(
 
     assert result["coder_blocked"] is False
     assert result["coder_diagnostics"]["model_response_format"] == "unfenced_unified_diff"
+
+
+def test_structured_edits_reject_python_syntax_before_apply(tmp_path: Path) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "example.py").write_text("def value():\n    return 1\n", encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+
+    diff, files, category = _structured_edits_to_diff(root, ["src/"], json.dumps({"edits": [{"path": "src/example.py", "old": "return 1", "new": "return {"}]}))
+
+    assert diff == ""
+    assert files == []
+    assert category == "structured_edits_python_syntax_invalid"

@@ -253,13 +253,13 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
         + "\nRepository context (coder-visible fixture files only):\n"
         + _generic_workspace_context(root, allowed)
     )
-    for attempt in range(2):
-        structured = attempt == 1
+    for attempt in range(3):
+        structured = attempt >= 1
         repair_prompt = (
             prompt
-            + "\nThe previous diff was not safely applicable. Return only one JSON object (optionally in a json fence): "
+            + "\nThe previous response was not safely applicable. Return only one JSON object (optionally in a json fence): "
             + '{"edits":[{"path":"relative/allowed-file","old":"an exact non-empty visible substring occurring once","new":"replacement text"}]}. '
-            + "Do not include prose or a unified diff."
+            + "Do not include prose or a unified diff. Ensure edited Python source remains syntactically valid."
         )
         raw = model_call(repair_prompt if structured else prompt, alias)
         if structured:
@@ -269,7 +269,7 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
             files = _generic_diff_files(diff)
         diagnostics = {"generation_source": "model", "changed_files": files, "model_response_format": response_format, "repair_attempted": attempt == 1}
         if not diff or not files:
-            if not structured:
+            if attempt < 2:
                 continue
             return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": diagnostics}
         if any(not any(path == allowed_path.rstrip("/") or path.startswith(allowed_path.rstrip("/") + "/") for allowed_path in allowed) for path in files):
@@ -332,6 +332,11 @@ def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) ->
         original, replacement = originals[path], updated[path]
         if original == replacement:
             return "", [], "invalid_structured_edits"
+        if path.endswith(".py"):
+            try:
+                compile(replacement, path, "exec")
+            except SyntaxError:
+                return "", [], "structured_edits_python_syntax_invalid"
         body = "".join(difflib.unified_diff(original.splitlines(keepends=True), replacement.splitlines(keepends=True), fromfile=f"a/{path}", tofile=f"b/{path}"))
         chunks.append(f"diff --git a/{path} b/{path}\n{body}")
     return "".join(chunks), sorted(updated), "structured_edits"
