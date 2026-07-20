@@ -238,6 +238,8 @@ def run_campaign_3_5_task(
         # Campaign 3.5 authority, rather than the unrelated default increment.
         with _fixture_authority(prepared.manifest_path), _temporary_environment(
             "SOURCE_PROXY_GATE_INCREMENT", "campaign-3.5"
+        ), _temporary_environment(
+            "SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA", "0"
         ):
             plugin = resolve_target_plugin(_packet(), prepared.fixture_root)
             adapter_result = execute_target_plugin_command(

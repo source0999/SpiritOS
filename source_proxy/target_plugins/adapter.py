@@ -244,7 +244,14 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
     if model_call is None:
         return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_alias_unavailable", "coder_diagnostics": {"generation_source": "non_model", "changed_files": []}}
     allowed = list(plugin.allowed_actions)
-    prompt = "Return only one fenced unified diff. Modify only these allowed relative paths or prefixes: " + json.dumps(allowed) + ".\nTask:\n" + task
+    prompt = (
+        "Return only one fenced unified diff. Modify only these allowed relative paths or prefixes: "
+        + json.dumps(allowed)
+        + ". Do not modify files not present in the repository context.\nTask:\n"
+        + task
+        + "\nRepository context (coder-visible fixture files only):\n"
+        + _generic_workspace_context(root, allowed)
+    )
     raw = model_call(prompt, alias)
     match = re.fullmatch(r"\s*```diff\n(.*)\n```\s*", str(raw or ""), flags=re.DOTALL)
     diff = match.group(1) + "\n" if match else ""
@@ -257,6 +264,47 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
     if checked.returncode != 0:
         return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_diff_check_failed", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
     return {"proposed_diff": diff, "coder_blocked": False, "expected_result_state": "MODEL_DIFF_READY", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
+
+
+def _generic_workspace_context(root: Path, allowed_paths: list[str]) -> str:
+    """Render a bounded view of tracked, in-scope fixture files for the coder.
+
+    The generic adapter is used for server-provisioned disposable fixtures.  It
+    must give the model enough normal workspace context to make a patch, but it
+    must never traverse out of that fixture or read the harness-private store.
+    """
+    listed = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=root,
+        capture_output=True,
+        check=False,
+        timeout=15,
+    )
+    if listed.returncode:
+        raise TargetPluginResolutionError("generic_workspace_listing_failed")
+    root_resolved = root.resolve()
+    remaining = 160_000
+    entries: list[str] = []
+    for raw_path in listed.stdout.decode("utf-8", errors="strict").split("\0"):
+        if not raw_path or not any(
+            raw_path == allowed.rstrip("/") or raw_path.startswith(allowed.rstrip("/") + "/")
+            for allowed in allowed_paths
+        ):
+            continue
+        candidate = (root / raw_path).resolve()
+        if root_resolved not in candidate.parents or not candidate.is_file() or candidate.is_symlink():
+            continue
+        content = candidate.read_text(encoding="utf-8", errors="replace")
+        if len(content) > 32_000:
+            content = content[:32_000] + "\n[truncated]\n"
+        entry = f"--- {raw_path}\n{content}\n"
+        if len(entry) > remaining:
+            break
+        entries.append(entry)
+        remaining -= len(entry)
+    if not entries:
+        raise TargetPluginResolutionError("generic_workspace_context_empty")
+    return "".join(entries)
 
 
 def _sha256_utf8(value: str) -> str:
