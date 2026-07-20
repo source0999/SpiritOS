@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "schema_version": "campaign-3.5-typescript-runtime-validation/v1",
+  "task_count": 3,
+  "tasks": [
+    {
+      "category": "thumbnail_pipeline",
+      "passed": true,
+      "task_id": "M12"
+    },
+    {
+      "category": "typescript_recursive_redaction",
+      "passed": true,
+      "task_id": "S08"
+    },
+    {
+      "category": "typescript_pagination",
+      "passed": true,
+      "task_id": "S10"
+    }
+  ],
+  "validated_task_ids": [
+    "M12",
+    "S08",
+    "S10"
+  ]
+}

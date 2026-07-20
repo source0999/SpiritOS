@@ -1,0 +1,87 @@
+{
+  "passed": true,
+  "schema_version": "campaign-3.5-combined-runtime-validation/v1",
+  "task_count": 13,
+  "tasks": [
+    {
+      "category": "dst_wall_time",
+      "passed": true,
+      "task_id": "B05"
+    },
+    {
+      "category": "eof_termination",
+      "passed": true,
+      "task_id": "B10"
+    },
+    {
+      "category": "thumbnail_pipeline",
+      "passed": true,
+      "task_id": "M12"
+    },
+    {
+      "category": "http_contract_equivalent",
+      "passed": true,
+      "task_id": "S01"
+    },
+    {
+      "category": "email_normalization",
+      "passed": true,
+      "task_id": "S02"
+    },
+    {
+      "category": "bounded_deterministic_retry",
+      "passed": true,
+      "task_id": "S05"
+    },
+    {
+      "category": "typescript_recursive_redaction",
+      "passed": true,
+      "task_id": "S08"
+    },
+    {
+      "category": "version_metadata",
+      "passed": true,
+      "task_id": "S09"
+    },
+    {
+      "category": "typescript_pagination",
+      "passed": true,
+      "task_id": "S10"
+    },
+    {
+      "category": "quiet_output",
+      "passed": true,
+      "task_id": "S11"
+    },
+    {
+      "category": "unicode_slug",
+      "passed": true,
+      "task_id": "S15"
+    },
+    {
+      "category": "boolean_table",
+      "passed": true,
+      "task_id": "S20"
+    },
+    {
+      "category": "atomic_save",
+      "passed": true,
+      "task_id": "S24"
+    }
+  ],
+  "validated_task_ids": [
+    "B05",
+    "B10",
+    "M12",
+    "S01",
+    "S02",
+    "S05",
+    "S08",
+    "S09",
+    "S10",
+    "S11",
+    "S15",
+    "S20",
+    "S24"
+  ]
+}
