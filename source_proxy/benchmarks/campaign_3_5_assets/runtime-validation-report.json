@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 50,
+  "task_count": 51,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -12,6 +12,11 @@
       "category": "webhook_idempotency",
       "passed": true,
       "task_id": "B01"
+    },
+    {
+      "category": "websocket_client_cleanup",
+      "passed": true,
+      "task_id": "B02"
     },
     {
       "category": "query_invalidation",
@@ -257,6 +262,7 @@
   "validated_task_ids": [
     "A02",
     "B01",
+    "B02",
     "B03",
     "B05",
     "B06",

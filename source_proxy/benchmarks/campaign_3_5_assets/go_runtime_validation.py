@@ -10,7 +10,7 @@ from source_proxy.benchmarks.campaign_3_5_assets.fixture_catalog import material
 from source_proxy.benchmarks.campaign_3_5_assets.seeding import Campaign35RunSeed, derive_task_seed, task_seed_commitment
 
 GO=Path('/home/source/.campaign-3-5-tools/go/bin/go')
-GO_RUNTIME_TASKS=frozenset({'S03','S13','S18','S25','B08','B14'})
+GO_RUNTIME_TASKS=frozenset({'S03','S13','S18','S25','B02','B08','B14'})
 
 def _replace(path:Path,before:str,after:str)->None:
  text=path.read_text(encoding='utf-8')
@@ -24,6 +24,7 @@ def apply_go_runtime_reference(task_id:str,root:Path)->None:
  elif task_id=='S25': _replace(root/'internal/logging/middleware.go','return map[string]string{} } // loses existing correlation id','if value,ok:=ctx.Value(CorrelationIDKey).(string); ok { return map[string]string{CorrelationIDKey:value} }; return map[string]string{} }')
  elif task_id=='B08': _replace(root/'internal/http/routes.go','return \"/users/{id}\" } // /users/me shadowed','if path==\"/users/me\" { return \"/users/me\" }; return \"/users/{id}\" }')
  elif task_id=='B14': _replace(root/'worker/retry.go','func Retry(err error) bool { return err != nil } // baseline retries permanent validation errors','func Retry(err error) bool { _,permanent:=err.(ValidationError); return err != nil && !permanent }')
+ elif task_id=='B02': _replace(root/'internal/hub/hub.go','func (h *Hub) Disconnect(id string){} // baseline leak','func (h *Hub) Disconnect(id string){ delete(h.clients,id) }')
  else: raise ValueError('campaign_3_5_go_runtime_task_unknown')
 
 def _test(root:Path,path:Path,content:str)->bool:
@@ -37,6 +38,7 @@ def probe_go_runtime(task_id:str,root:Path)->tuple[bool,str]:
  if task_id=='S25': return _test(root,root/'internal/logging','package logging\nimport("testing";"context")\nfunc TestProbe(t *testing.T){x:=Complete(context.WithValue(context.Background(),CorrelationIDKey,"x"));if x[CorrelationIDKey]!="x"{t.Fatal(x)}}\n'),'correlation_logging'
  if task_id=='B08': return _test(root,root/'internal/http','package http\nimport "testing"\nfunc TestProbe(t *testing.T){if UserRoute("/users/me")!="/users/me"{t.Fatal(UserRoute("/users/me"))}}\n'),'literal_route_priority'
  if task_id=='B14': return _test(root,root/'worker','package worker\nimport("testing";"errors")\nfunc TestProbe(t *testing.T){if Retry(ValidationError{})||!Retry(errors.New("network")){t.Fatal()}}\n'),'permanent_error_no_retry'
+ if task_id=='B02': return _test(root,root/'internal/hub','package hub\nimport "testing"\nfunc TestProbe(t *testing.T){h:=Hub{clients:map[string]chan string{"a":make(chan string)}};h.Disconnect("a");if len(h.clients)!=0{t.Fatal(h.clients)}}\n'),'websocket_client_cleanup'
  return False,'unknown'
 
 def validate_go_runtime_references(tasks:list[dict[str,Any]])->dict[str,Any]:

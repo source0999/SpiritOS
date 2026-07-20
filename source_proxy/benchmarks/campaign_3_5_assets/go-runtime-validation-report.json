@@ -1,8 +1,13 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-go-runtime-validation/v1",
-  "task_count": 6,
+  "task_count": 7,
   "tasks": [
+    {
+      "category": "websocket_client_cleanup",
+      "passed": true,
+      "task_id": "B02"
+    },
     {
       "category": "literal_route_priority",
       "passed": true,
@@ -35,6 +40,7 @@
     }
   ],
   "validated_task_ids": [
+    "B02",
     "B08",
     "B14",
     "S03",
