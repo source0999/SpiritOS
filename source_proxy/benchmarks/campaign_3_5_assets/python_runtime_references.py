@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -9,7 +10,7 @@ from zoneinfo import ZoneInfo
 from source_proxy.benchmarks.campaign_3_5_assets.core_references import apply_core_reference
 
 
-PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B05", "B10", "B13", "B15", "C04", "R06", "R09"})
+PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M13", "R06", "R09", "R10"})
 
 
 def _replace(path: Path, before: str, after: str) -> None:
@@ -20,6 +21,8 @@ def _replace(path: Path, before: str, after: str) -> None:
 
 
 def _module(path: Path):
+    root = next(parent for parent in path.parents if (parent / ".git").is_dir())
+    sys.path.insert(0, str(root))
     spec = importlib.util.spec_from_file_location(f"fixture_{path.stem}_{id(path)}", path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
@@ -49,7 +52,7 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/calendar/recurrence.py", "from datetime import timedelta\n\ndef weekly(start, count):\n    # Baseline defect: elapsed 7-day arithmetic loses local wall-time across DST.\n    return [start + timedelta(days=7 * index) for index in range(count)]", "from datetime import datetime, timedelta\n\ndef weekly(start, count):\n    return [datetime.combine(start.date() + timedelta(days=7 * index), start.timetz()).replace(tzinfo=start.tzinfo) for index in range(count)]")
     elif task_id == "B10":
         _replace(root / "src/cli/confirm.py", "value = stream.readline()\n        if value.strip().lower()", "value = stream.readline()\n        if value == '': return False\n        if value.strip().lower()")
-    elif task_id in {"S12", "B13", "B15", "C04", "R06", "R09"}:
+    elif task_id in {"S12", "B13", "B15", "C01", "C04", "C05", "M13", "R06", "R09", "R10"}:
         apply_core_reference(task_id, root)
     else:
         raise ValueError("campaign_3_5_python_runtime_task_unknown")
@@ -98,4 +101,12 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         module = _module(root / "src/jobs/state.py"); result=module.cancel("queued"); return result == ("cancelling", "cancelled", "audit-emitted"), "retained_adr_transition"
     if task_id == "R09":
         module = _module(root / "src/router/authenticated.py"); return module.select_model([{"healthy":False},{"healthy":True,"name":"good"}])["name"] == "good", "authenticated_router_health"
+    if task_id == "C01":
+        module = _module(root / "src/validation.py"); return module.validate("first", "second"), "restart_validation"
+    if task_id == "C05":
+        module = _module(root / "src/worker.py"); return module.apply_first_file()["lease_owner"] == "takeover-safe", "lease_takeover"
+    if task_id == "M13":
+        module = _module(root / "src/services/operations.py"); return module.destructive_operation("actor", lambda: "mutated") == "approval-required", "server_policy_approval"
+    if task_id == "R10":
+        module = _module(root / "services/logging/access.py"); return "secret" not in module.log_request("secret") and "REDACTED" in module.log_request("secret"), "secret_log_redaction"
     return False, "unknown"

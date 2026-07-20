@@ -49,7 +49,7 @@ def apply_core_reference(task_id: str, root: Path) -> None:
     elif task_id == "R09":
         _replace(root / "src/router/authenticated.py", "def select_model(candidates): return candidates[0] # baseline ignores health", "def select_model(candidates): return next(candidate for candidate in candidates if candidate.get('healthy'))")
     elif task_id == "R10":
-        _replace(root / "services/logging/access.py", "return f'access_token={token}' # baseline secret leak", "from shared.redaction import redact\n    return f'access_token={redact(token)}'")
+        _replace(root / "services/logging/access.py", "def log_request(token): return f'access_token={token}' # baseline secret leak", "from shared.redaction import redact\ndef log_request(token): return f'access_token={redact(token)}'")
     elif task_id == "C01":
         (root / "src/validation.py").write_text("def validate(first, second): return first is not None and second is not None\n", encoding="utf-8")
         _replace(root / "src/worker.py", "def apply_second_file(): return 'pending'", "def apply_second_file(): return 'written-after-restart'")

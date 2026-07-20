@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-python-runtime-validation/v1",
-  "task_count": 16,
+  "task_count": 20,
   "tasks": [
     {
       "category": "dst_wall_time",
@@ -24,9 +24,24 @@
       "task_id": "B15"
     },
     {
+      "category": "restart_validation",
+      "passed": true,
+      "task_id": "C01"
+    },
+    {
       "category": "sorting_retry_repair",
       "passed": true,
       "task_id": "C04"
+    },
+    {
+      "category": "lease_takeover",
+      "passed": true,
+      "task_id": "C05"
+    },
+    {
+      "category": "server_policy_approval",
+      "passed": true,
+      "task_id": "M13"
     },
     {
       "category": "retained_adr_transition",
@@ -37,6 +52,11 @@
       "category": "authenticated_router_health",
       "passed": true,
       "task_id": "R09"
+    },
+    {
+      "category": "secret_log_redaction",
+      "passed": true,
+      "task_id": "R10"
     },
     {
       "category": "http_contract_equivalent",
@@ -89,9 +109,13 @@
     "B10",
     "B13",
     "B15",
+    "C01",
     "C04",
+    "C05",
+    "M13",
     "R06",
     "R09",
+    "R10",
     "S01",
     "S02",
     "S05",
