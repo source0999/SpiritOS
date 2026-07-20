@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "schema_version": "campaign-3.5-go-runtime-validation/v1",
+  "task_count": 4,
+  "tasks": [
+    {
+      "category": "canonical_json",
+      "passed": true,
+      "task_id": "S03"
+    },
+    {
+      "category": "milliseconds_ttl",
+      "passed": true,
+      "task_id": "S13"
+    },
+    {
+      "category": "missing_directory",
+      "passed": true,
+      "task_id": "S18"
+    },
+    {
+      "category": "correlation_logging",
+      "passed": true,
+      "task_id": "S25"
+    }
+  ],
+  "validated_task_ids": [
+    "S03",
+    "S13",
+    "S18",
+    "S25"
+  ]
+}

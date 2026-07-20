@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 15,
+  "task_count": 19,
   "tasks": [
     {
       "category": "dst_wall_time",
@@ -27,6 +27,11 @@
       "category": "email_normalization",
       "passed": true,
       "task_id": "S02"
+    },
+    {
+      "category": "canonical_json",
+      "passed": true,
+      "task_id": "S03"
     },
     {
       "category": "bounded_deterministic_retry",
@@ -59,6 +64,11 @@
       "task_id": "S11"
     },
     {
+      "category": "milliseconds_ttl",
+      "passed": true,
+      "task_id": "S13"
+    },
+    {
       "category": "unicode_slug",
       "passed": true,
       "task_id": "S15"
@@ -69,6 +79,11 @@
       "task_id": "S16"
     },
     {
+      "category": "missing_directory",
+      "passed": true,
+      "task_id": "S18"
+    },
+    {
       "category": "boolean_table",
       "passed": true,
       "task_id": "S20"
@@ -77,6 +92,11 @@
       "category": "atomic_save",
       "passed": true,
       "task_id": "S24"
+    },
+    {
+      "category": "correlation_logging",
+      "passed": true,
+      "task_id": "S25"
     }
   ],
   "validated_task_ids": [
@@ -85,15 +105,19 @@
     "M12",
     "S01",
     "S02",
+    "S03",
     "S05",
     "S07",
     "S08",
     "S09",
     "S10",
     "S11",
+    "S13",
     "S15",
     "S16",
+    "S18",
     "S20",
-    "S24"
+    "S24",
+    "S25"
   ]
 }
