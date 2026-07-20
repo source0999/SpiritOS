@@ -3167,7 +3167,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "B05": [
@@ -3244,7 +3244,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "B10": [
@@ -3318,7 +3318,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "M10": [
@@ -3399,7 +3399,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "S11": [
@@ -3495,7 +3495,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "S20": [
@@ -3567,7 +3567,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "M01": [
@@ -3649,7 +3649,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "S01": [
@@ -3748,7 +3748,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "S02": [
@@ -3864,7 +3864,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "B13": [
@@ -3942,7 +3942,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "S12": [
@@ -4016,7 +4016,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "B01": [
@@ -4096,7 +4096,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "M06": [
@@ -4205,7 +4205,7 @@
         "Using the UI or benchmark metadata as canonical backend state",
         "Writing oracle outputs, expected receipts, traces, or test results directly"
       ],
-      "implementation_status": "NOT_STARTED",
+      "implementation_status": "BUILDER_IMPLEMENTED",
       "outage_or_authority_behavior": [],
       "private_oracle_contract": {
         "A01": [

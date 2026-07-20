@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from source_proxy.benchmarks.campaign_3_5_assets.fixture_catalog import IMPLEMENTED_FIXTURE_IDS
 from source_proxy.benchmarks.campaign_3_5_assets.inventory import VALID_STATUSES, build_inventory
 
 
@@ -25,3 +26,12 @@ def test_inventory_is_lossless_and_has_all_fixture_readiness_records() -> None:
         assert fixture["required_initial_state"]
         assert fixture["private_oracle_contract"]
         assert fixture["runtime_dependencies"]
+
+
+def test_inventory_reports_implemented_builder_families_without_opening_execution() -> None:
+    tasks = json.loads((ROOT / "benchmarks/coder-backend-100/v1.1/tasks.json").read_text(encoding="utf-8"))
+    inventory = build_inventory(tasks, builder_implemented=IMPLEMENTED_FIXTURE_IDS)
+
+    implemented = {fixture["fixture_id"] for fixture in inventory["fixtures"] if fixture["implementation_status"] == "BUILDER_IMPLEMENTED"}
+    assert implemented == IMPLEMENTED_FIXTURE_IDS
+    assert inventory["aggregate_readiness"]["tasks_executable"] == 0
