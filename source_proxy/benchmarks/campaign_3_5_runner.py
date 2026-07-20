@@ -309,7 +309,7 @@ def run_campaign_3_5_task(
         "adapter": {
             key: provenance.get(key)
             for key in ("transport_kind", "provider_call_made", "provider_call_authorized", "trust_status", "terminal_proof_eligible", "call_count", "provider", "model")
-        },
+        } | {"model_response_format": adapter_result.get("coder_diagnostics", {}).get("model_response_format")},
         "apply_authority": apply_receipt,
         "runner_reason": runner_reason,
         "final_disposition": disposition,
