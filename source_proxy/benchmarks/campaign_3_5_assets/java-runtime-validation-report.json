@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-java-runtime-validation/v1",
-  "task_count": 2,
+  "task_count": 3,
   "tasks": [
     {
       "category": "empty_csv",
@@ -12,10 +12,16 @@
       "category": "preserved_io_cause",
       "passed": true,
       "task_id": "S16"
+    },
+    {
+      "category": "not_found_envelope_status",
+      "passed": true,
+      "task_id": "S23"
     }
   ],
   "validated_task_ids": [
     "S07",
-    "S16"
+    "S16",
+    "S23"
   ]
 }

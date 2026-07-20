@@ -1,8 +1,18 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-go-runtime-validation/v1",
-  "task_count": 4,
+  "task_count": 6,
   "tasks": [
+    {
+      "category": "literal_route_priority",
+      "passed": true,
+      "task_id": "B08"
+    },
+    {
+      "category": "permanent_error_no_retry",
+      "passed": true,
+      "task_id": "B14"
+    },
     {
       "category": "canonical_json",
       "passed": true,
@@ -25,6 +35,8 @@
     }
   ],
   "validated_task_ids": [
+    "B08",
+    "B14",
     "S03",
     "S13",
     "S18",

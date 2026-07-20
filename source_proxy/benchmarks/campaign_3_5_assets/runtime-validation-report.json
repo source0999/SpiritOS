@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 39,
+  "task_count": 42,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -24,6 +24,11 @@
       "task_id": "B07"
     },
     {
+      "category": "literal_route_priority",
+      "passed": true,
+      "task_id": "B08"
+    },
+    {
       "category": "populated_migration",
       "passed": true,
       "task_id": "B09"
@@ -42,6 +47,11 @@
       "category": "tenant_cache_isolation",
       "passed": true,
       "task_id": "B13"
+    },
+    {
+      "category": "permanent_error_no_retry",
+      "passed": true,
+      "task_id": "B14"
     },
     {
       "category": "stable_file_traversal",
@@ -189,6 +199,11 @@
       "task_id": "S20"
     },
     {
+      "category": "not_found_envelope_status",
+      "passed": true,
+      "task_id": "S23"
+    },
+    {
       "category": "atomic_save",
       "passed": true,
       "task_id": "S24"
@@ -204,10 +219,12 @@
     "B05",
     "B06",
     "B07",
+    "B08",
     "B09",
     "B10",
     "B12",
     "B13",
+    "B14",
     "B15",
     "C01",
     "C04",
@@ -237,6 +254,7 @@
     "S18",
     "S19",
     "S20",
+    "S23",
     "S24",
     "S25"
   ]

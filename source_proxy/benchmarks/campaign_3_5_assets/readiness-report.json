@@ -1,6 +1,6 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 39,
+  "completed_task_runtime_semantic_validation": 42,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
@@ -16,9 +16,7 @@
     "B02",
     "B03",
     "B04",
-    "B08",
     "B11",
-    "B14",
     "M01",
     "M02",
     "M03",
@@ -40,8 +38,7 @@
     "R08",
     "S04",
     "S21",
-    "S22",
-    "S23"
+    "S22"
   ],
   "schema_version": "campaign-3.5-asset-readiness/v1",
   "tasks_executable": 0,
