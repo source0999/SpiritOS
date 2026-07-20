@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 62,
+  "task_count": 66,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -94,6 +94,11 @@
       "task_id": "C05"
     },
     {
+      "category": "key_rotation_grace_audit",
+      "passed": true,
+      "task_id": "M01"
+    },
+    {
       "category": "feature_flagged_csv_export",
       "passed": true,
       "task_id": "M02"
@@ -164,6 +169,16 @@
       "task_id": "R02"
     },
     {
+      "category": "config_precedence",
+      "passed": true,
+      "task_id": "R03"
+    },
+    {
+      "category": "approved_retry_consolidation",
+      "passed": true,
+      "task_id": "R04"
+    },
+    {
       "category": "generator_boundary",
       "passed": true,
       "task_id": "R05"
@@ -177,6 +192,11 @@
       "category": "suspended_account_contract",
       "passed": true,
       "task_id": "R07"
+    },
+    {
+      "category": "server_approval_authority",
+      "passed": true,
+      "task_id": "R08"
     },
     {
       "category": "authenticated_router_health",
@@ -333,6 +353,7 @@
     "C01",
     "C04",
     "C05",
+    "M01",
     "M02",
     "M03",
     "M04",
@@ -347,9 +368,12 @@
     "M15",
     "R01",
     "R02",
+    "R03",
+    "R04",
     "R05",
     "R06",
     "R07",
+    "R08",
     "R09",
     "R10",
     "S01",

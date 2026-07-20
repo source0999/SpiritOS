@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from source_proxy.benchmarks.campaign_3_5_assets.core_references import apply_core_reference
 
 
-PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M06", "M13", "M15", "R01", "R02", "R05", "R06", "R09", "R10"})
+PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M01", "M06", "M13", "M15", "R01", "R02", "R03", "R04", "R05", "R06", "R08", "R09", "R10"})
 
 
 def _replace(path: Path, before: str, after: str) -> None:
@@ -64,6 +64,16 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "services/imports/handler.py", "def parse_error(message): return {'error': message} # wrong envelope", "from shared.errors import api_error\ndef parse_error(message): return api_error('IMPORT_PARSE_ERROR', message)")
     elif task_id == "R05":
         _replace(root / "generator/client_template.py", "def render_client(): return 'template'", "def render_client(): return 'generated-client-with-fix'")
+    elif task_id == "M01":
+        _replace(root / "src/api/keys.py", "return repository.replace(key_id)", "prior = repository.get(key_id)\n    replacement = repository.create_replacement(prior)\n    repository.set_grace(prior['id'], 600)\n    repository.audit('key_rotated', prior['id'])\n    return replacement")
+    elif task_id == "R03":
+        (root / "config").mkdir(exist_ok=True)
+        (root / "config/precedence.py").write_text("def resolve(flags, environment, project, user, default):\n    for source in (flags, environment, project, user):\n        if source is not None: return source\n    return default\n", encoding="utf-8")
+    elif task_id == "R04":
+        (root / "services/production_caller.py").parent.mkdir(exist_ok=True)
+        (root / "services/production_caller.py").write_text("from shared.retry import retry\ndef run(operation): return retry(operation)\n", encoding="utf-8")
+    elif task_id == "R08":
+        (root / "services/bulk_delete.py").write_text("def delete(authority, request):\n    if not authority.approved(request): raise PermissionError('server approval required')\n    return 'deleted'\n", encoding="utf-8")
     else:
         raise ValueError("campaign_3_5_python_runtime_task_unknown")
 
@@ -129,6 +139,26 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         module = _module(root / "packages/python/producer.py"); return module.produce() == {'ok': True, 'value':'x'}, "repository_wide_result_migration"
     if task_id == "R05":
         module = _module(root / "generator/client_template.py"); return module.render_client() == 'generated-client-with-fix' and (root / "generated/client.py").read_text() == '# generated; direct edits forbidden\n', "generator_boundary"
+    if task_id == "M01":
+        module = _module(root / "src/api/keys.py")
+        class Repository:
+            def __init__(self): self.grace=[]; self.events=[]
+            def get(self, key_id): return {'id':key_id}
+            def create_replacement(self, prior): return {'id':'new','secret':'once'}
+            def set_grace(self, key_id, seconds): self.grace.append((key_id,seconds))
+            def audit(self, event, key_id): self.events.append((event,key_id))
+        repository=Repository(); result=module.rotate_key(repository,'old'); return result['secret']=='once' and repository.grace==[('old',600)] and repository.events==[('key_rotated','old')], "key_rotation_grace_audit"
+    if task_id == "R03":
+        module = _module(root / "config/precedence.py"); return module.resolve('flag','env','project','user','default')=='flag' and module.resolve(None,None,'project','user','default')=='project', "config_precedence"
+    if task_id == "R04":
+        module = _module(root / "services/production_caller.py"); return module.run(lambda:'ok')=='ok' and 'retry' in (root/'services/production_caller.py').read_text(), "approved_retry_consolidation"
+    if task_id == "R08":
+        module = _module(root / "services/bulk_delete.py")
+        class Authority:
+            def __init__(self, value): self.value=value
+            def approved(self, request): return self.value
+        try: module.delete(Authority(False), {'approved':True}); return False, "server_approval_authority"
+        except PermissionError: return module.delete(Authority(True), {'approved':False})=='deleted', "server_approval_authority"
     if task_id == "B13":
         module = _module(root / "src/authz/cache.py"); cache=module.PermissionCache(); return cache.allowed("a","u","read",lambda *_:True) and not cache.allowed("b","u","read",lambda *_:False), "tenant_cache_isolation"
     if task_id == "B15":

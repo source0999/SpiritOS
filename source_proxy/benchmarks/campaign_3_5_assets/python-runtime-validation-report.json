@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-python-runtime-validation/v1",
-  "task_count": 26,
+  "task_count": 30,
   "tasks": [
     {
       "category": "webhook_idempotency",
@@ -44,6 +44,11 @@
       "task_id": "C05"
     },
     {
+      "category": "key_rotation_grace_audit",
+      "passed": true,
+      "task_id": "M01"
+    },
+    {
       "category": "transactional_outbox",
       "passed": true,
       "task_id": "M06"
@@ -69,6 +74,16 @@
       "task_id": "R02"
     },
     {
+      "category": "config_precedence",
+      "passed": true,
+      "task_id": "R03"
+    },
+    {
+      "category": "approved_retry_consolidation",
+      "passed": true,
+      "task_id": "R04"
+    },
+    {
       "category": "generator_boundary",
       "passed": true,
       "task_id": "R05"
@@ -77,6 +92,11 @@
       "category": "retained_adr_transition",
       "passed": true,
       "task_id": "R06"
+    },
+    {
+      "category": "server_approval_authority",
+      "passed": true,
+      "task_id": "R08"
     },
     {
       "category": "authenticated_router_health",
@@ -143,13 +163,17 @@
     "C01",
     "C04",
     "C05",
+    "M01",
     "M06",
     "M13",
     "M15",
     "R01",
     "R02",
+    "R03",
+    "R04",
     "R05",
     "R06",
+    "R08",
     "R09",
     "R10",
     "S01",

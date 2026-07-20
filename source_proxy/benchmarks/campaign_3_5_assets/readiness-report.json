@@ -1,6 +1,6 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 62,
+  "completed_task_runtime_semantic_validation": 66,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
@@ -13,12 +13,8 @@
   "remaining_profile_task_ids": [
     "A01",
     "B04",
-    "M01",
     "M05",
-    "M10",
-    "R03",
-    "R04",
-    "R08"
+    "M10"
   ],
   "schema_version": "campaign-3.5-asset-readiness/v1",
   "tasks_executable": 0,
