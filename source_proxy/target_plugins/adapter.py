@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
+import difflib
 import hashlib
 import json
 from pathlib import Path
@@ -253,14 +254,23 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
         + _generic_workspace_context(root, allowed)
     )
     for attempt in range(2):
-        raw = model_call(
-            prompt if attempt == 0 else prompt + "\nThe previous diff did not apply. Re-read the repository context and return a corrected full unified diff only.",
-            alias,
+        structured = attempt == 1
+        repair_prompt = (
+            prompt
+            + "\nThe previous diff was not safely applicable. Return only one JSON object (optionally in a json fence): "
+            + '{"edits":[{"path":"relative/allowed-file","old":"an exact non-empty visible substring occurring once","new":"replacement text"}]}. '
+            + "Do not include prose or a unified diff."
         )
-        diff, response_format = _extract_generic_unified_diff(str(raw or ""))
-        files = _generic_diff_files(diff)
+        raw = model_call(repair_prompt if structured else prompt, alias)
+        if structured:
+            diff, files, response_format = _structured_edits_to_diff(root, allowed, str(raw or ""))
+        else:
+            diff, response_format = _extract_generic_unified_diff(str(raw or ""))
+            files = _generic_diff_files(diff)
         diagnostics = {"generation_source": "model", "changed_files": files, "model_response_format": response_format, "repair_attempted": attempt == 1}
         if not diff or not files:
+            if not structured:
+                continue
             return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": diagnostics}
         if any(not any(path == allowed_path.rstrip("/") or path.startswith(allowed_path.rstrip("/") + "/") for allowed_path in allowed) for path in files):
             return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_scope_violation", "coder_diagnostics": diagnostics}
@@ -276,6 +286,55 @@ def _generic_diff_files(diff: str) -> list[str]:
     if not pairs or any(before != after for before, after in pairs):
         return []
     return sorted({after for _before, after in pairs})
+
+
+def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) -> tuple[str, list[str], str]:
+    """Convert exact model-proposed visible-text replacements into a Git diff.
+
+    This is a bounded fallback for models that understand an edit but generate
+    an unreliable hunk location.  The model still chooses the replacement;
+    the adapter merely derives mechanically correct hunk metadata from the
+    coder-visible baseline.  No private oracle data participates.
+    """
+    stripped = raw.strip()
+    fenced = re.fullmatch(r"```json[ \t]*\n(?P<payload>.*?)(?:\n)?```", stripped, flags=re.DOTALL | re.IGNORECASE)
+    try:
+        payload = json.loads(fenced.group("payload") if fenced else stripped)
+    except (AttributeError, json.JSONDecodeError):
+        return "", [], "non_structured_edits"
+    edits = payload.get("edits") if isinstance(payload, dict) and set(payload) == {"edits"} else None
+    if not isinstance(edits, list) or not edits or len(edits) > 10:
+        return "", [], "invalid_structured_edits"
+    originals: dict[str, str] = {}
+    updated: dict[str, str] = {}
+    root_resolved = root.resolve()
+    for edit in edits:
+        if not isinstance(edit, dict) or set(edit) != {"path", "old", "new"}:
+            return "", [], "invalid_structured_edits"
+        path, old, new = (edit.get("path"), edit.get("old"), edit.get("new"))
+        if not isinstance(path, str) or not isinstance(old, str) or not isinstance(new, str) or not old or old == new:
+            return "", [], "invalid_structured_edits"
+        if not any(path == allowed.rstrip("/") or path.startswith(allowed.rstrip("/") + "/") for allowed in allowed_paths):
+            return "", [], "structured_edits_scope_violation"
+        candidate = (root / path).resolve()
+        if root_resolved not in candidate.parents or not candidate.is_file() or candidate.is_symlink():
+            return "", [], "invalid_structured_edits"
+        tracked = subprocess.run(["git", "ls-files", "--error-unmatch", "--", path], cwd=root, capture_output=True, check=False, timeout=15)
+        if tracked.returncode:
+            return "", [], "invalid_structured_edits"
+        original = originals.setdefault(path, candidate.read_text(encoding="utf-8"))
+        current = updated.get(path, original)
+        if current.count(old) != 1:
+            return "", [], "structured_edits_old_text_mismatch"
+        updated[path] = current.replace(old, new, 1)
+    chunks: list[str] = []
+    for path in sorted(updated):
+        original, replacement = originals[path], updated[path]
+        if original == replacement:
+            return "", [], "invalid_structured_edits"
+        body = "".join(difflib.unified_diff(original.splitlines(keepends=True), replacement.splitlines(keepends=True), fromfile=f"a/{path}", tofile=f"b/{path}"))
+        chunks.append(f"diff --git a/{path} b/{path}\n{body}")
+    return "".join(chunks), sorted(updated), "structured_edits"
 
 
 def _extract_generic_unified_diff(raw: str) -> tuple[str, str]:
