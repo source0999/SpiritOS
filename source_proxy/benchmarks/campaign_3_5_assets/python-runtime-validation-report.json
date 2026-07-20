@@ -1,8 +1,13 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-python-runtime-validation/v1",
-  "task_count": 20,
+  "task_count": 21,
   "tasks": [
+    {
+      "category": "webhook_idempotency",
+      "passed": true,
+      "task_id": "B01"
+    },
     {
       "category": "dst_wall_time",
       "passed": true,
@@ -105,6 +110,7 @@
     }
   ],
   "validated_task_ids": [
+    "B01",
     "B05",
     "B10",
     "B13",

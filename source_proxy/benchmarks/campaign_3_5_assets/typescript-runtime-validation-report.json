@@ -1,12 +1,17 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-typescript-runtime-validation/v1",
-  "task_count": 10,
+  "task_count": 12,
   "tasks": [
     {
       "category": "cursor_pagination",
       "passed": true,
       "task_id": "A02"
+    },
+    {
+      "category": "query_invalidation",
+      "passed": true,
+      "task_id": "B03"
     },
     {
       "category": "durable_audit",
@@ -27,6 +32,11 @@
       "category": "batched_user_loading",
       "passed": true,
       "task_id": "M14"
+    },
+    {
+      "category": "date_utility_migration",
+      "passed": true,
+      "task_id": "S04"
     },
     {
       "category": "typescript_recursive_redaction",
@@ -56,10 +66,12 @@
   ],
   "validated_task_ids": [
     "A02",
+    "B03",
     "B07",
     "B12",
     "M12",
     "M14",
+    "S04",
     "S08",
     "S10",
     "S17",

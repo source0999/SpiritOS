@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from source_proxy.benchmarks.campaign_3_5_assets.core_references import apply_core_reference
 
 
-PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M13", "R06", "R09", "R10"})
+PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M13", "R06", "R09", "R10"})
 
 
 def _replace(path: Path, before: str, after: str) -> None:
@@ -54,6 +54,8 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/cli/confirm.py", "value = stream.readline()\n        if value.strip().lower()", "value = stream.readline()\n        if value == '': return False\n        if value.strip().lower()")
     elif task_id in {"S12", "B13", "B15", "C01", "C04", "C05", "M13", "R06", "R09", "R10"}:
         apply_core_reference(task_id, root)
+    elif task_id == "B01":
+        _replace(root / "src/payments/webhooks.py", "repository.capture(event[\"payment_id\"])\n    return {\"ok\": True}", "if repository.claim_event(event['id']): repository.capture(event['payment_id'])\n    return {'ok': True}")
     else:
         raise ValueError("campaign_3_5_python_runtime_task_unknown")
 
@@ -91,6 +93,15 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         module = _module(root / "src/cli/confirm.py"); return module.confirm(StringIO("")) is False, "eof_termination"
     if task_id == "S12":
         module = _module(root / "src/security/tokens.py"); return module.is_valid_token("x", "x") and not module.is_valid_token("x", "y"), "constant_time_token_contract"
+    if task_id == "B01":
+        module = _module(root / "src/payments/webhooks.py")
+        class Repository:
+            def __init__(self): self.claimed=set(); self.captures=[]
+            def claim_event(self, event_id):
+                if event_id in self.claimed: return False
+                self.claimed.add(event_id); return True
+            def capture(self, payment_id): self.captures.append(payment_id)
+        repository=Repository(); module.capture(repository, {'id':'event','payment_id':'payment'}); module.capture(repository, {'id':'event','payment_id':'payment'}); return repository.captures == ['payment'], "webhook_idempotency"
     if task_id == "B13":
         module = _module(root / "src/authz/cache.py"); cache=module.PermissionCache(); return cache.allowed("a","u","read",lambda *_:True) and not cache.allowed("b","u","read",lambda *_:False), "tenant_cache_isolation"
     if task_id == "B15":

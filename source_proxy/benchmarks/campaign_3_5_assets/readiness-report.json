@@ -1,6 +1,6 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 44,
+  "completed_task_runtime_semantic_validation": 47,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
@@ -12,9 +12,7 @@
   "reference_solvability_structurally_validated": 16,
   "remaining_profile_task_ids": [
     "A01",
-    "B01",
     "B02",
-    "B03",
     "B04",
     "B11",
     "M01",
@@ -35,8 +33,7 @@
     "R04",
     "R05",
     "R07",
-    "R08",
-    "S04"
+    "R08"
   ],
   "schema_version": "campaign-3.5-asset-readiness/v1",
   "tasks_executable": 0,

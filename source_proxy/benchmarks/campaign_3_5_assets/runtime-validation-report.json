@@ -1,12 +1,22 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 44,
+  "task_count": 47,
   "tasks": [
     {
       "category": "cursor_pagination",
       "passed": true,
       "task_id": "A02"
+    },
+    {
+      "category": "webhook_idempotency",
+      "passed": true,
+      "task_id": "B01"
+    },
+    {
+      "category": "query_invalidation",
+      "passed": true,
+      "task_id": "B03"
     },
     {
       "category": "dst_wall_time",
@@ -119,6 +129,11 @@
       "task_id": "S03"
     },
     {
+      "category": "date_utility_migration",
+      "passed": true,
+      "task_id": "S04"
+    },
+    {
       "category": "bounded_deterministic_retry",
       "passed": true,
       "task_id": "S05"
@@ -226,6 +241,8 @@
   ],
   "validated_task_ids": [
     "A02",
+    "B01",
+    "B03",
     "B05",
     "B06",
     "B07",
@@ -248,6 +265,7 @@
     "S01",
     "S02",
     "S03",
+    "S04",
     "S05",
     "S06",
     "S07",

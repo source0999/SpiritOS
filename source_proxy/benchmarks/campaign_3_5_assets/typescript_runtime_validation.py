@@ -13,7 +13,7 @@ from source_proxy.benchmarks.campaign_3_5_assets.fixture_catalog import material
 from source_proxy.benchmarks.campaign_3_5_assets.seeding import Campaign35RunSeed, derive_task_seed, task_seed_commitment
 
 
-TYPESCRIPT_RUNTIME_TASKS = frozenset({"S08", "S10", "S17", "S19", "S22", "M12", "M14", "B07", "B12", "A02"})
+TYPESCRIPT_RUNTIME_TASKS = frozenset({"S04", "S08", "S10", "S17", "S19", "S22", "M12", "M14", "B03", "B07", "B12", "A02"})
 ROOT = Path(__file__).resolve().parents[3]
 TSC = ROOT / "node_modules/.bin/tsc"
 
@@ -40,6 +40,8 @@ def apply_typescript_runtime_reference(task_id: str, root: Path) -> None:
         apply_core_reference(task_id, root)
     elif task_id == "S10":
         _replace(root / "src/pagination.ts", "return page * pageSize;", "return (page - 1) * pageSize;")
+    elif task_id == "S04":
+        _replace(root / "src/dates.ts", "export const renderUtc = (value: Date) => require('moment').utc(value).format();", "export const renderUtc = (value: Date) => value.toISOString();")
     elif task_id == "S17":
         _replace(root / "src/jobs/create.ts", "import { randomUUID } from 'node:crypto'; export function createJob(name:string) { return {id: randomUUID(), name}; }", "const productionUUID=()=> 'production-id'; export function createJob(name:string, uuidFactory:()=>string=productionUUID) { return {id: uuidFactory(), name}; }")
     elif task_id == "S19":
@@ -52,6 +54,8 @@ def apply_typescript_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/graphql/orders.ts", "export async function orders(repo:any) { return (await repo.orders()).map((o:any) => ({...o, user: repo.user(o.userId)})); }", "export async function orders(repo:any) { const rows=await repo.orders(); const users=await repo.users([...new Set(rows.map((o:any)=>o.userId))]); return rows.map((o:any)=>({...o,user:users[o.userId]})); }")
     elif task_id == "B07":
         _replace(root / "src/audit.ts", "return tx.insert('audit', entry);", "return tx.durableAudit.insert('audit', entry);")
+    elif task_id == "B03":
+        _replace(root / "src/projects/rename.ts", "await client.rename(id,name);", "await client.rename(id,name); await client.invalidate(['project', id]);")
     elif task_id == "B12":
         _replace(root / "src/watch.ts", "watcher.watch(file);", "watcher.watch(file, {rename: true});")
     elif task_id == "A02":
@@ -66,6 +70,8 @@ def probe_typescript_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         return _compile_and_probe(root / "src/security/redact.ts", expression), "typescript_recursive_redaction"
     if task_id == "S10":
         return _compile_and_probe(root / "src/pagination.ts", "m.offset(1, 25) === 0 && m.offset(2, 25) === 25"), "typescript_pagination"
+    if task_id == "S04":
+        return _compile_and_probe(root / "src/dates.ts", "m.renderUtc(new Date('2026-01-01T00:00:00Z')) === '2026-01-01T00:00:00.000Z'"), "date_utility_migration"
     if task_id == "S17":
         return _compile_and_probe(root / "src/jobs/create.ts", "m.createJob('job', ()=>'fixed').id === 'fixed' && m.createJob('job').id === 'production-id'"), "uuid_injection"
     if task_id == "S19":
@@ -83,6 +89,8 @@ def probe_typescript_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         return _compile_and_probe(root / "packages/worker/src/thumbnail.ts", "m.processThumbnail({id:'a'}).then(x => x.sizes.length === 3 && x.status === 'complete')"), "thumbnail_pipeline"
     if task_id == "M14":
         return _compile_and_probe(root / "src/graphql/orders.ts", "m.orders({orders:async()=>[{userId:'u'}],users:async()=>({u:{id:'u'}})}).then(x=>x[0].user.id==='u')"), "batched_user_loading"
+    if task_id == "B03":
+        return _compile_and_probe(root / "src/projects/rename.ts", "(()=>{let events=[];return m.rename({rename:async()=>events.push('rename'),invalidate:async x=>events.push(x.join(':'))},'id','name').then(()=>events.join(',')==='rename,project:id')})()"), "query_invalidation"
     if task_id == "B07":
         return _compile_and_probe(root / "src/audit.ts", "m.record({durableAudit:{insert:async(_,x)=>x}},{id:'a'}).then(x=>x.id==='a')"), "durable_audit"
     if task_id == "B12":
