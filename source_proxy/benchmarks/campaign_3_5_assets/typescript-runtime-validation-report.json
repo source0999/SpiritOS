@@ -1,12 +1,32 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-typescript-runtime-validation/v1",
-  "task_count": 3,
+  "task_count": 9,
   "tasks": [
+    {
+      "category": "cursor_pagination",
+      "passed": true,
+      "task_id": "A02"
+    },
+    {
+      "category": "durable_audit",
+      "passed": true,
+      "task_id": "B07"
+    },
+    {
+      "category": "rename_aware_watcher",
+      "passed": true,
+      "task_id": "B12"
+    },
     {
       "category": "thumbnail_pipeline",
       "passed": true,
       "task_id": "M12"
+    },
+    {
+      "category": "batched_user_loading",
+      "passed": true,
+      "task_id": "M14"
     },
     {
       "category": "typescript_recursive_redaction",
@@ -17,11 +37,27 @@
       "category": "typescript_pagination",
       "passed": true,
       "task_id": "S10"
+    },
+    {
+      "category": "uuid_injection",
+      "passed": true,
+      "task_id": "S17"
+    },
+    {
+      "category": "max_body_size",
+      "passed": true,
+      "task_id": "S19"
     }
   ],
   "validated_task_ids": [
+    "A02",
+    "B07",
+    "B12",
     "M12",
+    "M14",
     "S08",
-    "S10"
+    "S10",
+    "S17",
+    "S19"
   ]
 }
