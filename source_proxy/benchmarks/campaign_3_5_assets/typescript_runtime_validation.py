@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import tempfile
+import os
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,7 @@ from source_proxy.benchmarks.campaign_3_5_assets.fixture_catalog import material
 from source_proxy.benchmarks.campaign_3_5_assets.seeding import Campaign35RunSeed, derive_task_seed, task_seed_commitment
 
 
-TYPESCRIPT_RUNTIME_TASKS = frozenset({"S08", "S10", "S17", "S19", "M12", "M14", "B07", "B12", "A02"})
+TYPESCRIPT_RUNTIME_TASKS = frozenset({"S08", "S10", "S17", "S19", "S22", "M12", "M14", "B07", "B12", "A02"})
 ROOT = Path(__file__).resolve().parents[3]
 TSC = ROOT / "node_modules/.bin/tsc"
 
@@ -43,6 +44,8 @@ def apply_typescript_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/jobs/create.ts", "import { randomUUID } from 'node:crypto'; export function createJob(name:string) { return {id: randomUUID(), name}; }", "const productionUUID=()=> 'production-id'; export function createJob(name:string, uuidFactory:()=>string=productionUUID) { return {id: uuidFactory(), name}; }")
     elif task_id == "S19":
         _replace(root / "src/server.ts", "export const jsonOptions = {};", "export const jsonOptions = { limit: 1024 * 1024, errorCode: 'PAYLOAD_TOO_LARGE' };")
+    elif task_id == "S22":
+        _replace(root / "src/SettingsPanel.tsx", "import {useEffect} from 'react'; export function SettingsPanel(){ useEffect(()=>{ window.addEventListener('resize', ()=>{}); }); return null; }", "import {useEffect} from 'react'; export function SettingsPanel(){ useEffect(()=>{ const listener=()=>{}; window.addEventListener('resize', listener); return ()=>window.removeEventListener('resize', listener); }, []); return null; }")
     elif task_id == "M12":
         apply_core_reference(task_id, root)
     elif task_id == "M14":
@@ -67,6 +70,15 @@ def probe_typescript_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         return _compile_and_probe(root / "src/jobs/create.ts", "m.createJob('job', ()=>'fixed').id === 'fixed' && m.createJob('job').id === 'production-id'"), "uuid_injection"
     if task_id == "S19":
         return _compile_and_probe(root / "src/server.ts", "m.jsonOptions.limit === 1024 * 1024 && m.jsonOptions.errorCode === 'PAYLOAD_TOO_LARGE'"), "max_body_size"
+    if task_id == "S22":
+        source = root / "src/SettingsPanel.tsx"
+        with tempfile.TemporaryDirectory(prefix="campaign35-react-output-") as temporary:
+            output = Path(temporary) / "SettingsPanel.js"
+            transpile = "const fs=require('fs'),ts=require('typescript'); const source=fs.readFileSync(process.argv[1],'utf8'); fs.writeFileSync(process.argv[2],ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText);"
+            subprocess.run(["node", "-e", transpile, str(source), str(output)], check=True, capture_output=True, text=True, cwd=ROOT)
+            script = "const {JSDOM}=require('jsdom');const dom=new JSDOM('<!doctype html><html><body></body></html>');global.window=dom.window;global.document=dom.window.document;global.navigator=dom.window.navigator;let add=0,remove=0;const a=window.addEventListener.bind(window),r=window.removeEventListener.bind(window);window.addEventListener=(...x)=>{if(x[0]==='resize')add++;return a(...x)};window.removeEventListener=(...x)=>{if(x[0]==='resize')remove++;return r(...x)};const React=require('react'),{render}=require('@testing-library/react'),{SettingsPanel}=require(process.argv[1]);let x=render(React.createElement(SettingsPanel));x.unmount();x=render(React.createElement(SettingsPanel));x.unmount();process.exit(add===2&&remove===2?0:1);"
+            result = subprocess.run(["node", "-e", script, str(output)], cwd=ROOT, env={**os.environ, "NODE_PATH": str(ROOT / "node_modules")}, capture_output=True, text=True)
+            return result.returncode == 0, "react_listener_cleanup"
     if task_id == "M12":
         return _compile_and_probe(root / "packages/worker/src/thumbnail.ts", "m.processThumbnail({id:'a'}).then(x => x.sizes.length === 3 && x.status === 'complete')"), "thumbnail_pipeline"
     if task_id == "M14":

@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-typescript-runtime-validation/v1",
-  "task_count": 9,
+  "task_count": 10,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -47,6 +47,11 @@
       "category": "max_body_size",
       "passed": true,
       "task_id": "S19"
+    },
+    {
+      "category": "react_listener_cleanup",
+      "passed": true,
+      "task_id": "S22"
     }
   ],
   "validated_task_ids": [
@@ -58,6 +63,7 @@
     "S08",
     "S10",
     "S17",
-    "S19"
+    "S19",
+    "S22"
   ]
 }

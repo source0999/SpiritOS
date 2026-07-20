@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 43,
+  "task_count": 44,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -204,6 +204,11 @@
       "task_id": "S21"
     },
     {
+      "category": "react_listener_cleanup",
+      "passed": true,
+      "task_id": "S22"
+    },
+    {
       "category": "not_found_envelope_status",
       "passed": true,
       "task_id": "S23"
@@ -260,6 +265,7 @@
     "S19",
     "S20",
     "S21",
+    "S22",
     "S23",
     "S24",
     "S25"
