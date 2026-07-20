@@ -10,6 +10,7 @@ def test_gate_refuses_execution_until_every_task_has_independent_profile_validat
         builder_report={"passed": True, "validated_fixture_ids": [str(index) for index in range(65)]},
         noncompletion_report={"validated_task_ids": ["U01"]},
         core_reference_report={"validated_task_ids": []},
+        runtime_report={"validated_task_ids": []},
     )
     assert result["passed"] is False
     assert result["tasks_executable"] == 0
