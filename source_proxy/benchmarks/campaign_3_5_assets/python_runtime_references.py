@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from source_proxy.benchmarks.campaign_3_5_assets.core_references import apply_core_reference
 
 
-PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M06", "M13", "R01", "R02", "R06", "R09", "R10"})
+PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M06", "M13", "M15", "R01", "R02", "R05", "R06", "R09", "R10"})
 
 
 def _replace(path: Path, before: str, after: str) -> None:
@@ -52,7 +52,7 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/calendar/recurrence.py", "from datetime import timedelta\n\ndef weekly(start, count):\n    # Baseline defect: elapsed 7-day arithmetic loses local wall-time across DST.\n    return [start + timedelta(days=7 * index) for index in range(count)]", "from datetime import datetime, timedelta\n\ndef weekly(start, count):\n    return [datetime.combine(start.date() + timedelta(days=7 * index), start.timetz()).replace(tzinfo=start.tzinfo) for index in range(count)]")
     elif task_id == "B10":
         _replace(root / "src/cli/confirm.py", "value = stream.readline()\n        if value.strip().lower()", "value = stream.readline()\n        if value == '': return False\n        if value.strip().lower()")
-    elif task_id in {"S12", "B13", "B15", "C01", "C04", "C05", "M13", "R06", "R09", "R10"}:
+    elif task_id in {"S12", "B13", "B15", "C01", "C04", "C05", "M13", "M15", "R06", "R09", "R10"}:
         apply_core_reference(task_id, root)
     elif task_id == "B01":
         _replace(root / "src/payments/webhooks.py", "repository.capture(event[\"payment_id\"])\n    return {\"ok\": True}", "if repository.claim_event(event['id']): repository.capture(event['payment_id'])\n    return {'ok': True}")
@@ -62,6 +62,8 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "services/assets/routes.py", "def delete_asset(asset_id): return {'deleted': asset_id} # baseline lacks canonical auth/CSRF", "from services.auth.session import authenticated_session\nfrom services.auth.csrf import require_csrf\ndef delete_asset(request, asset_id):\n    if not authenticated_session(request) or not require_csrf(request): raise PermissionError('authenticated csrf required')\n    return {'deleted': asset_id}")
     elif task_id == "R02":
         _replace(root / "services/imports/handler.py", "def parse_error(message): return {'error': message} # wrong envelope", "from shared.errors import api_error\ndef parse_error(message): return api_error('IMPORT_PARSE_ERROR', message)")
+    elif task_id == "R05":
+        _replace(root / "generator/client_template.py", "def render_client(): return 'template'", "def render_client(): return 'generated-client-with-fix'")
     else:
         raise ValueError("campaign_3_5_python_runtime_task_unknown")
 
@@ -123,6 +125,10 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         except PermissionError: return module.delete_asset(Request(), 'a') == {'deleted':'a'}, "auth_csrf_route"
     if task_id == "R02":
         module = _module(root / "services/imports/handler.py"); return module.parse_error('bad') == {'code':'IMPORT_PARSE_ERROR','detail':'bad'}, "canonical_error_envelope"
+    if task_id == "M15":
+        module = _module(root / "packages/python/producer.py"); return module.produce() == {'ok': True, 'value':'x'}, "repository_wide_result_migration"
+    if task_id == "R05":
+        module = _module(root / "generator/client_template.py"); return module.render_client() == 'generated-client-with-fix' and (root / "generated/client.py").read_text() == '# generated; direct edits forbidden\n', "generator_boundary"
     if task_id == "B13":
         module = _module(root / "src/authz/cache.py"); cache=module.PermissionCache(); return cache.allowed("a","u","read",lambda *_:True) and not cache.allowed("b","u","read",lambda *_:False), "tenant_cache_isolation"
     if task_id == "B15":

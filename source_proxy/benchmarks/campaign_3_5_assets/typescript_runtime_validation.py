@@ -13,7 +13,7 @@ from source_proxy.benchmarks.campaign_3_5_assets.fixture_catalog import material
 from source_proxy.benchmarks.campaign_3_5_assets.seeding import Campaign35RunSeed, derive_task_seed, task_seed_commitment
 
 
-TYPESCRIPT_RUNTIME_TASKS = frozenset({"S04", "S08", "S10", "S17", "S19", "S22", "M12", "M14", "B03", "B07", "B12", "A02"})
+TYPESCRIPT_RUNTIME_TASKS = frozenset({"S04", "S08", "S10", "S17", "S19", "S22", "M02", "M07", "M12", "M14", "B03", "B07", "B12", "A02", "R07"})
 ROOT = Path(__file__).resolve().parents[3]
 TSC = ROOT / "node_modules/.bin/tsc"
 
@@ -48,6 +48,10 @@ def apply_typescript_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/server.ts", "export const jsonOptions = {};", "export const jsonOptions = { limit: 1024 * 1024, errorCode: 'PAYLOAD_TOO_LARGE' };")
     elif task_id == "S22":
         _replace(root / "src/SettingsPanel.tsx", "import {useEffect} from 'react'; export function SettingsPanel(){ useEffect(()=>{ window.addEventListener('resize', ()=>{}); }); return null; }", "import {useEffect} from 'react'; export function SettingsPanel(){ useEffect(()=>{ const listener=()=>{}; window.addEventListener('resize', listener); return ()=>window.removeEventListener('resize', listener); }, []); return null; }")
+    elif task_id == "M02":
+        _replace(root / "packages/api/src/invoices.ts", "export const exportInvoices = () => { throw new Error('not implemented'); };", "export const exportInvoices = (enabled:boolean) => { if(!enabled) { const error:any=new Error('not found'); error.code=404; throw error; } return 'id,total\\n'; };")
+    elif task_id == "M07":
+        _replace(root / "packages/gateway/src/tracing.ts", "export const enqueue = (job:object) => job; // baseline drops trace context", "export const enqueue = (job:any, traceId:string) => ({...job, traceId});")
     elif task_id == "M12":
         apply_core_reference(task_id, root)
     elif task_id == "M14":
@@ -60,6 +64,8 @@ def apply_typescript_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "src/watch.ts", "watcher.watch(file);", "watcher.watch(file, {rename: true});")
     elif task_id == "A02":
         _replace(root / "src/comments/route.ts", "export const listComments = () => ({items: []});", "export const listComments = (cursor?:string) => ({items: [], nextCursor: cursor ? undefined : 'next'});")
+    elif task_id == "R07":
+        _replace(root / "web/src/account.ts", "export type AccountState = 'ACTIVE';", "export type AccountState = 'ACTIVE' | 'SUSPENDED'; export const supported=(state:AccountState)=>state==='SUSPENDED';")
     else:
         raise ValueError("campaign_3_5_typescript_runtime_task_unknown")
 
@@ -85,6 +91,10 @@ def probe_typescript_runtime(task_id: str, root: Path) -> tuple[bool, str]:
             script = "const {JSDOM}=require('jsdom');const dom=new JSDOM('<!doctype html><html><body></body></html>');global.window=dom.window;global.document=dom.window.document;global.navigator=dom.window.navigator;let add=0,remove=0;const a=window.addEventListener.bind(window),r=window.removeEventListener.bind(window);window.addEventListener=(...x)=>{if(x[0]==='resize')add++;return a(...x)};window.removeEventListener=(...x)=>{if(x[0]==='resize')remove++;return r(...x)};const React=require('react'),{render}=require('@testing-library/react'),{SettingsPanel}=require(process.argv[1]);let x=render(React.createElement(SettingsPanel));x.unmount();x=render(React.createElement(SettingsPanel));x.unmount();process.exit(add===2&&remove===2?0:1);"
             result = subprocess.run(["node", "-e", script, str(output)], cwd=ROOT, env={**os.environ, "NODE_PATH": str(ROOT / "node_modules")}, capture_output=True, text=True)
             return result.returncode == 0, "react_listener_cleanup"
+    if task_id == "M02":
+        return _compile_and_probe(root / "packages/api/src/invoices.ts", "(()=>{try{m.exportInvoices(false);return false}catch(e){return e.code===404}})() && m.exportInvoices(true).includes('id,total')"), "feature_flagged_csv_export"
+    if task_id == "M07":
+        return _compile_and_probe(root / "packages/gateway/src/tracing.ts", "m.enqueue({job:'x'},'trace').traceId==='trace'"), "trace_context_propagation"
     if task_id == "M12":
         return _compile_and_probe(root / "packages/worker/src/thumbnail.ts", "m.processThumbnail({id:'a'}).then(x => x.sizes.length === 3 && x.status === 'complete')"), "thumbnail_pipeline"
     if task_id == "M14":
@@ -97,6 +107,8 @@ def probe_typescript_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         return _compile_and_probe(root / "src/watch.ts", "(()=>{let x=[];m.watchFileOnly({watch:(...a)=>x=a},'x');return x[1].rename===true})()"), "rename_aware_watcher"
     if task_id == "A02":
         return _compile_and_probe(root / "src/comments/route.ts", "m.listComments().nextCursor === 'next' && m.listComments('x').nextCursor === undefined"), "cursor_pagination"
+    if task_id == "R07":
+        return _compile_and_probe(root / "web/src/account.ts", "m.supported('SUSPENDED') === true"), "suspended_account_contract"
     return False, "unknown"
 
 

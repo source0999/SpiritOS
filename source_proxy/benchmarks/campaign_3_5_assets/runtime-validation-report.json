@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 55,
+  "task_count": 60,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -89,6 +89,11 @@
       "task_id": "C05"
     },
     {
+      "category": "feature_flagged_csv_export",
+      "passed": true,
+      "task_id": "M02"
+    },
+    {
       "category": "filesystem_storage_conformance",
       "passed": true,
       "task_id": "M04"
@@ -97,6 +102,11 @@
       "category": "transactional_outbox",
       "passed": true,
       "task_id": "M06"
+    },
+    {
+      "category": "trace_context_propagation",
+      "passed": true,
+      "task_id": "M07"
     },
     {
       "category": "resumable_checkpoint",
@@ -129,6 +139,11 @@
       "task_id": "M14"
     },
     {
+      "category": "repository_wide_result_migration",
+      "passed": true,
+      "task_id": "M15"
+    },
+    {
       "category": "auth_csrf_route",
       "passed": true,
       "task_id": "R01"
@@ -139,9 +154,19 @@
       "task_id": "R02"
     },
     {
+      "category": "generator_boundary",
+      "passed": true,
+      "task_id": "R05"
+    },
+    {
       "category": "retained_adr_transition",
       "passed": true,
       "task_id": "R06"
+    },
+    {
+      "category": "suspended_account_contract",
+      "passed": true,
+      "task_id": "R07"
     },
     {
       "category": "authenticated_router_health",
@@ -297,17 +322,22 @@
     "C01",
     "C04",
     "C05",
+    "M02",
     "M04",
     "M06",
+    "M07",
     "M08",
     "M09",
     "M11",
     "M12",
     "M13",
     "M14",
+    "M15",
     "R01",
     "R02",
+    "R05",
     "R06",
+    "R07",
     "R09",
     "R10",
     "S01",

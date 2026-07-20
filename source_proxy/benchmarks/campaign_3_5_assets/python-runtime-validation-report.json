@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-python-runtime-validation/v1",
-  "task_count": 24,
+  "task_count": 26,
   "tasks": [
     {
       "category": "webhook_idempotency",
@@ -54,6 +54,11 @@
       "task_id": "M13"
     },
     {
+      "category": "repository_wide_result_migration",
+      "passed": true,
+      "task_id": "M15"
+    },
+    {
       "category": "auth_csrf_route",
       "passed": true,
       "task_id": "R01"
@@ -62,6 +67,11 @@
       "category": "canonical_error_envelope",
       "passed": true,
       "task_id": "R02"
+    },
+    {
+      "category": "generator_boundary",
+      "passed": true,
+      "task_id": "R05"
     },
     {
       "category": "retained_adr_transition",
@@ -135,8 +145,10 @@
     "C05",
     "M06",
     "M13",
+    "M15",
     "R01",
     "R02",
+    "R05",
     "R06",
     "R09",
     "R10",
