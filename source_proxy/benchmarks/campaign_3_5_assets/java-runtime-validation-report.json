@@ -1,8 +1,13 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-java-runtime-validation/v1",
-  "task_count": 3,
+  "task_count": 4,
   "tasks": [
+    {
+      "category": "versioned_webhook_replay_protection",
+      "passed": true,
+      "task_id": "M11"
+    },
     {
       "category": "empty_csv",
       "passed": true,
@@ -20,6 +25,7 @@
     }
   ],
   "validated_task_ids": [
+    "M11",
     "S07",
     "S16",
     "S23"

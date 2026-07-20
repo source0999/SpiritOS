@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 53,
+  "task_count": 55,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -99,9 +99,19 @@
       "task_id": "M06"
     },
     {
+      "category": "resumable_checkpoint",
+      "passed": true,
+      "task_id": "M08"
+    },
+    {
       "category": "tenant_rate_limit",
       "passed": true,
       "task_id": "M09"
+    },
+    {
+      "category": "versioned_webhook_replay_protection",
+      "passed": true,
+      "task_id": "M11"
     },
     {
       "category": "thumbnail_pipeline",
@@ -289,7 +299,9 @@
     "C05",
     "M04",
     "M06",
+    "M08",
     "M09",
+    "M11",
     "M12",
     "M13",
     "M14",
