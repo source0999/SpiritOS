@@ -1,8 +1,18 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-java-runtime-validation/v1",
-  "task_count": 4,
+  "task_count": 6,
   "tasks": [
+    {
+      "category": "canonical_response_etag",
+      "passed": true,
+      "task_id": "B11"
+    },
+    {
+      "category": "optimistic_concurrency",
+      "passed": true,
+      "task_id": "M03"
+    },
     {
       "category": "versioned_webhook_replay_protection",
       "passed": true,
@@ -25,6 +35,8 @@
     }
   ],
   "validated_task_ids": [
+    "B11",
+    "M03",
     "M11",
     "S07",
     "S16",

@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 60,
+  "task_count": 62,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -54,6 +54,11 @@
       "task_id": "B10"
     },
     {
+      "category": "canonical_response_etag",
+      "passed": true,
+      "task_id": "B11"
+    },
+    {
       "category": "rename_aware_watcher",
       "passed": true,
       "task_id": "B12"
@@ -92,6 +97,11 @@
       "category": "feature_flagged_csv_export",
       "passed": true,
       "task_id": "M02"
+    },
+    {
+      "category": "optimistic_concurrency",
+      "passed": true,
+      "task_id": "M03"
     },
     {
       "category": "filesystem_storage_conformance",
@@ -315,6 +325,7 @@
     "B08",
     "B09",
     "B10",
+    "B11",
     "B12",
     "B13",
     "B14",
@@ -323,6 +334,7 @@
     "C04",
     "C05",
     "M02",
+    "M03",
     "M04",
     "M06",
     "M07",

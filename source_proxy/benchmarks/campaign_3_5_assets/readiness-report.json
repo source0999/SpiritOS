@@ -1,6 +1,6 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 60,
+  "completed_task_runtime_semantic_validation": 62,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
@@ -13,9 +13,7 @@
   "remaining_profile_task_ids": [
     "A01",
     "B04",
-    "B11",
     "M01",
-    "M03",
     "M05",
     "M10",
     "R03",
