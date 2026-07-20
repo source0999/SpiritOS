@@ -288,13 +288,24 @@ def run_campaign_3_5_task(
         disposition = "BLOCKED_OR_DEGRADED_TRUTHFULLY"
     else:
         disposition = "BLOCKED_OR_DEGRADED_TRUTHFULLY"
-    oracle = evaluate_profile(
-        prepared.profile,
-        fixture_root=prepared.fixture_root,
-        allowed_paths=["src/", "tests/", "migrations/", "config/", "docs/", "pyproject.toml"],
-        final_disposition=disposition,
-        semantic_probe=_semantic_probe(str(prepared.task["task_id"])) if changed else None,
-    )
+    try:
+        oracle = evaluate_profile(
+            prepared.profile,
+            fixture_root=prepared.fixture_root,
+            allowed_paths=["src/", "tests/", "migrations/", "config/", "docs/", "pyproject.toml"],
+            final_disposition=disposition,
+            semantic_probe=_semantic_probe(str(prepared.task["task_id"])) if changed else None,
+        )
+    except Exception as error:  # An oracle crash is a failed benchmark result, never a lost receipt.
+        oracle = {
+            "schema_version": "campaign-3.5-oracle-result/v1",
+            "task_id": prepared.task["task_id"],
+            "passed": False,
+            "checks": {"oracle_execution": False},
+            "changed_path_count": -1,
+            "semantic_category": f"oracle_execution_error:{type(error).__name__}",
+            "result_commitment": hashlib.sha256(type(error).__name__.encode("utf-8")).hexdigest(),
+        }
     provenance = adapter_result.get("target_adapter_provenance", {})
     receipt = {
         "schema_version": RECEIPT_SCHEMA,
@@ -317,9 +328,11 @@ def run_campaign_3_5_task(
         "benchmark_passed": bool(oracle["passed"] and provenance.get("terminal_proof_eligible") is True),
         "private_data_exposed": False,
     }
-    receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.chmod(receipt_path, 0o600)
-    shutil.rmtree(prepared.fixture_root.parent.parent)
+    try:
+        receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        os.chmod(receipt_path, 0o600)
+    finally:
+        shutil.rmtree(prepared.fixture_root.parent.parent)
     return receipt
 
 
