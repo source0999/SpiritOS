@@ -252,17 +252,22 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
         + "\nRepository context (coder-visible fixture files only):\n"
         + _generic_workspace_context(root, allowed)
     )
-    raw = model_call(prompt, alias)
-    diff, response_format = _extract_generic_unified_diff(str(raw or ""))
-    files = sorted(set(re.findall(r"^\+\+\+ b/(.+)$", diff, flags=re.MULTILINE)))
-    if not diff or not files:
-        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": {"generation_source": "model", "changed_files": [], "model_response_format": response_format}}
-    if any(not any(path == allowed_path.rstrip("/") or path.startswith(allowed_path.rstrip("/") + "/") for allowed_path in allowed) for path in files):
-        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_scope_violation", "coder_diagnostics": {"generation_source": "model", "changed_files": files, "model_response_format": response_format}}
-    checked = subprocess.run(["git", "apply", "--check", "--recount", "-"], input=diff, text=True, cwd=root, capture_output=True, check=False, timeout=15)
-    if checked.returncode != 0:
-        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_diff_check_failed", "coder_diagnostics": {"generation_source": "model", "changed_files": files, "model_response_format": response_format}}
-    return {"proposed_diff": diff, "coder_blocked": False, "expected_result_state": "MODEL_DIFF_READY", "coder_diagnostics": {"generation_source": "model", "changed_files": files, "model_response_format": response_format}}
+    for attempt in range(2):
+        raw = model_call(
+            prompt if attempt == 0 else prompt + "\nThe previous diff did not apply. Re-read the repository context and return a corrected full unified diff only.",
+            alias,
+        )
+        diff, response_format = _extract_generic_unified_diff(str(raw or ""))
+        files = sorted(set(re.findall(r"^\+\+\+ b/(.+)$", diff, flags=re.MULTILINE)))
+        diagnostics = {"generation_source": "model", "changed_files": files, "model_response_format": response_format, "repair_attempted": attempt == 1}
+        if not diff or not files:
+            return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": diagnostics}
+        if any(not any(path == allowed_path.rstrip("/") or path.startswith(allowed_path.rstrip("/") + "/") for allowed_path in allowed) for path in files):
+            return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_scope_violation", "coder_diagnostics": diagnostics}
+        checked = subprocess.run(["git", "apply", "--check", "--recount", "-"], input=diff, text=True, cwd=root, capture_output=True, check=False, timeout=15)
+        if checked.returncode == 0:
+            return {"proposed_diff": diff, "coder_blocked": False, "expected_result_state": "MODEL_DIFF_READY", "coder_diagnostics": diagnostics}
+    return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_diff_check_failed", "coder_diagnostics": diagnostics}
 
 
 def _extract_generic_unified_diff(raw: str) -> tuple[str, str]:
