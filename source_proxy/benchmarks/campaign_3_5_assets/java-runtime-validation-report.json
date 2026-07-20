@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "schema_version": "campaign-3.5-java-runtime-validation/v1",
+  "task_count": 2,
+  "tasks": [
+    {
+      "category": "empty_csv",
+      "passed": true,
+      "task_id": "S07"
+    },
+    {
+      "category": "preserved_io_cause",
+      "passed": true,
+      "task_id": "S16"
+    }
+  ],
+  "validated_task_ids": [
+    "S07",
+    "S16"
+  ]
+}

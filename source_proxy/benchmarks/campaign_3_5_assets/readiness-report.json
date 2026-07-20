@@ -1,6 +1,6 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 13,
+  "completed_task_runtime_semantic_validation": 15,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
@@ -56,11 +56,9 @@
     "S03",
     "S04",
     "S06",
-    "S07",
     "S12",
     "S13",
     "S14",
-    "S16",
     "S17",
     "S18",
     "S19",

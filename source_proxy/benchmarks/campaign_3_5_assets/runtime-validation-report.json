@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 13,
+  "task_count": 15,
   "tasks": [
     {
       "category": "dst_wall_time",
@@ -34,6 +34,11 @@
       "task_id": "S05"
     },
     {
+      "category": "empty_csv",
+      "passed": true,
+      "task_id": "S07"
+    },
+    {
       "category": "typescript_recursive_redaction",
       "passed": true,
       "task_id": "S08"
@@ -59,6 +64,11 @@
       "task_id": "S15"
     },
     {
+      "category": "preserved_io_cause",
+      "passed": true,
+      "task_id": "S16"
+    },
+    {
       "category": "boolean_table",
       "passed": true,
       "task_id": "S20"
@@ -76,11 +86,13 @@
     "S01",
     "S02",
     "S05",
+    "S07",
     "S08",
     "S09",
     "S10",
     "S11",
     "S15",
+    "S16",
     "S20",
     "S24"
   ]

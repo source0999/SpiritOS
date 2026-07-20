@@ -50,7 +50,7 @@ def _java_cli(seed: str) -> dict[str, str]:
 
 
 def _java_service_small(seed: str) -> dict[str, str]:
-    return {"pom.xml":"<project><modelVersion>4.0.0</modelVersion><groupId>x</groupId><artifactId>config</artifactId><version>1</version></project>\n", "src/main/java/app/ConfigLoader.java":_h(seed,"java-service-small")+"package app; import java.io.*; class ConfigLoader { void load() { try{} catch(Exception e){ throw new ConfigLoadException(\"failed\"); } } } class ConfigLoadException extends RuntimeException { ConfigLoadException(String m){super(m);} }\n", "src/test/java/app/ConfigLoaderTest.java":"package app; class ConfigLoaderTest {}\n", "README.md":"Configuration loader service.\n"}
+    return {"pom.xml":"<project><modelVersion>4.0.0</modelVersion><groupId>x</groupId><artifactId>config</artifactId><version>1</version></project>\n", "src/main/java/app/ConfigLoader.java":_h(seed,"java-service-small")+"package app; import java.io.*; class ConfigLoader { void load() { try{ throw new IOException(\"disk\"); } catch(IOException e){ throw new ConfigLoadException(\"failed\"); } } } class ConfigLoadException extends RuntimeException { ConfigLoadException(String m){super(m);} }\n", "src/test/java/app/ConfigLoaderTest.java":"package app; class ConfigLoaderTest {}\n", "README.md":"Configuration loader service.\n"}
 
 
 def _java_service_debug(seed: str) -> dict[str, str]:
