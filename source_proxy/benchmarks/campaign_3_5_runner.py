@@ -151,6 +151,20 @@ def _fixture_authority(manifest_path: Path) -> Iterator[None]:
             os.environ[ENV_MANIFEST] = old_value
 
 
+@contextmanager
+def _temporary_environment(key: str, value: str) -> Iterator[None]:
+    """Bind a process-local production setting without changing host state."""
+    old_value = os.environ.get(key)
+    os.environ[key] = value
+    try:
+        yield
+    finally:
+        if old_value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = old_value
+
+
 def _semantic_probe(task_id: str) -> Callable[[Path], tuple[bool, str]] | None:
     """Return a private runtime probe without exposing its implementation."""
     from source_proxy.benchmarks.campaign_3_5_assets.core_references import CORE_COMPLETED_TASKS, probe_core_reference
@@ -219,7 +233,12 @@ def run_campaign_3_5_task(
     apply_receipt: dict[str, Any] | None = None
     runner_reason: str | None = None
     try:
-        with _fixture_authority(prepared.manifest_path):
+        # The production model client deliberately reads this established gate
+        # setting.  Bind it locally so its own central check receives the
+        # Campaign 3.5 authority, rather than the unrelated default increment.
+        with _fixture_authority(prepared.manifest_path), _temporary_environment(
+            "SOURCE_PROXY_GATE_INCREMENT", "campaign-3.5"
+        ):
             plugin = resolve_target_plugin(_packet(), prepared.fixture_root)
             adapter_result = execute_target_plugin_command(
                 plugin,
