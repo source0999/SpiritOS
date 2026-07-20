@@ -1,0 +1,105 @@
+{
+  "passed": true,
+  "schema_version": "campaign-3.5-core-reference-validation/v1",
+  "task_count": 16,
+  "tasks": [
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "A01"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "B09"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "B13"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "B15"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "C01"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "C04"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "C05"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "M12"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "M13"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "M15"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "R06"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "R09"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "R10"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "S08"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "S12"
+    },
+    {
+      "category": "core_semantic_reference",
+      "passed": true,
+      "task_id": "S21"
+    }
+  ],
+  "validated_task_ids": [
+    "A01",
+    "B09",
+    "B13",
+    "B15",
+    "C01",
+    "C04",
+    "C05",
+    "M12",
+    "M13",
+    "M15",
+    "R06",
+    "R09",
+    "R10",
+    "S08",
+    "S12",
+    "S21"
+  ]
+}
