@@ -253,17 +253,32 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
         + _generic_workspace_context(root, allowed)
     )
     raw = model_call(prompt, alias)
-    match = re.fullmatch(r"\s*```diff\n(.*)\n```\s*", str(raw or ""), flags=re.DOTALL)
-    diff = match.group(1) + "\n" if match else ""
+    diff, response_format = _extract_generic_unified_diff(str(raw or ""))
     files = sorted(set(re.findall(r"^\+\+\+ b/(.+)$", diff, flags=re.MULTILINE)))
     if not diff or not files:
-        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": {"generation_source": "model", "changed_files": []}}
+        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_diff_invalid", "coder_diagnostics": {"generation_source": "model", "changed_files": [], "model_response_format": response_format}}
     if any(not any(path == allowed_path.rstrip("/") or path.startswith(allowed_path.rstrip("/") + "/") for allowed_path in allowed) for path in files):
-        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_scope_violation", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
+        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_scope_violation", "coder_diagnostics": {"generation_source": "model", "changed_files": files, "model_response_format": response_format}}
     checked = subprocess.run(["git", "apply", "--check", "--recount", "-"], input=diff, text=True, cwd=root, capture_output=True, check=False, timeout=15)
     if checked.returncode != 0:
-        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_diff_check_failed", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
-    return {"proposed_diff": diff, "coder_blocked": False, "expected_result_state": "MODEL_DIFF_READY", "coder_diagnostics": {"generation_source": "model", "changed_files": files}}
+        return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_diff_check_failed", "coder_diagnostics": {"generation_source": "model", "changed_files": files, "model_response_format": response_format}}
+    return {"proposed_diff": diff, "coder_blocked": False, "expected_result_state": "MODEL_DIFF_READY", "coder_diagnostics": {"generation_source": "model", "changed_files": files, "model_response_format": response_format}}
+
+
+def _extract_generic_unified_diff(raw: str) -> tuple[str, str]:
+    """Accept one pure unified-diff response without retaining model content."""
+    stripped = raw.strip()
+    fenced = re.fullmatch(
+        r"```(?:diff|patch|unified-diff)?[ \t]*\n(?P<diff>.*?)(?:\n)?```",
+        stripped,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    if fenced:
+        candidate = fenced.group("diff").strip()
+        return (candidate + "\n" if candidate.startswith("diff --git ") else "", "fenced_unified_diff")
+    if stripped.startswith("diff --git "):
+        return stripped + "\n", "unfenced_unified_diff"
+    return "", "non_unified_diff"
 
 
 def _generic_workspace_context(root: Path, allowed_paths: list[str]) -> str:
