@@ -1,8 +1,13 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-python-runtime-validation/v1",
-  "task_count": 30,
+  "task_count": 32,
   "tasks": [
+    {
+      "category": "canonical_black_format",
+      "passed": true,
+      "task_id": "A01"
+    },
     {
       "category": "webhook_idempotency",
       "passed": true,
@@ -52,6 +57,11 @@
       "category": "transactional_outbox",
       "passed": true,
       "task_id": "M06"
+    },
+    {
+      "category": "encrypted_credentials_store",
+      "passed": true,
+      "task_id": "M10"
     },
     {
       "category": "server_policy_approval",
@@ -155,6 +165,7 @@
     }
   ],
   "validated_task_ids": [
+    "A01",
     "B01",
     "B05",
     "B10",
@@ -165,6 +176,7 @@
     "C05",
     "M01",
     "M06",
+    "M10",
     "M13",
     "M15",
     "R01",

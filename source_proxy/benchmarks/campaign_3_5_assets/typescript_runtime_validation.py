@@ -13,7 +13,7 @@ from source_proxy.benchmarks.campaign_3_5_assets.fixture_catalog import material
 from source_proxy.benchmarks.campaign_3_5_assets.seeding import Campaign35RunSeed, derive_task_seed, task_seed_commitment
 
 
-TYPESCRIPT_RUNTIME_TASKS = frozenset({"S04", "S08", "S10", "S17", "S19", "S22", "M02", "M07", "M12", "M14", "B03", "B07", "B12", "A02", "R07"})
+TYPESCRIPT_RUNTIME_TASKS = frozenset({"S04", "S08", "S10", "S17", "S19", "S22", "M02", "M05", "M07", "M12", "M14", "B03", "B07", "B12", "A02", "R07"})
 ROOT = Path(__file__).resolve().parents[3]
 TSC = ROOT / "node_modules/.bin/tsc"
 
@@ -52,6 +52,8 @@ def apply_typescript_runtime_reference(task_id: str, root: Path) -> None:
         _replace(root / "packages/api/src/invoices.ts", "export const exportInvoices = () => { throw new Error('not implemented'); };", "export const exportInvoices = (enabled:boolean) => { if(!enabled) { const error:any=new Error('not found'); error.code=404; throw error; } return 'id,total\\n'; };")
     elif task_id == "M07":
         _replace(root / "packages/gateway/src/tracing.ts", "export const enqueue = (job:object) => job; // baseline drops trace context", "export const enqueue = (job:any, traceId:string) => ({...job, traceId});")
+    elif task_id == "M05":
+        (root / "packages/app/src/CommandPalette.tsx").write_text("import React,{useEffect,useState} from 'react'; export function CommandPalette({navigate}:{navigate:(path:string)=>void}){const [open,setOpen]=useState(false);useEffect(()=>{const key=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();setOpen(true)}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key)},[]);if(!open)return null;return <div role='dialog' aria-label='Command palette' tabIndex={-1} onKeyDown={e=>{if(e.key==='Escape')setOpen(false)}}><button onClick={()=>navigate('/home')}>Home</button></div>}\n",encoding='utf-8')
     elif task_id == "M12":
         apply_core_reference(task_id, root)
     elif task_id == "M14":
@@ -95,6 +97,15 @@ def probe_typescript_runtime(task_id: str, root: Path) -> tuple[bool, str]:
         return _compile_and_probe(root / "packages/api/src/invoices.ts", "(()=>{try{m.exportInvoices(false);return false}catch(e){return e.code===404}})() && m.exportInvoices(true).includes('id,total')"), "feature_flagged_csv_export"
     if task_id == "M07":
         return _compile_and_probe(root / "packages/gateway/src/tracing.ts", "m.enqueue({job:'x'},'trace').traceId==='trace'"), "trace_context_propagation"
+    if task_id == "M05":
+        source = root / "packages/app/src/CommandPalette.tsx"
+        with tempfile.TemporaryDirectory(prefix="campaign35-palette-output-") as temporary:
+            output = Path(temporary) / "CommandPalette.js"
+            transpile = "const fs=require('fs'),ts=require('typescript');fs.writeFileSync(process.argv[2],ts.transpileModule(fs.readFileSync(process.argv[1],'utf8'),{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText);"
+            subprocess.run(["node","-e",transpile,str(source),str(output)],check=True,capture_output=True,text=True,cwd=ROOT)
+            script="const {JSDOM}=require('jsdom');const d=new JSDOM('<!doctype html><html><body></body></html>');global.window=d.window;global.document=d.window.document;global.navigator=d.window.navigator;const React=require('react'),{render,fireEvent,screen}=require('@testing-library/react'),{CommandPalette}=require(process.argv[1]);let paths=[];render(React.createElement(CommandPalette,{navigate:p=>paths.push(p)}));fireEvent.keyDown(window,{key:'k',ctrlKey:true});if(!screen.getByRole('dialog'))process.exit(1);fireEvent.keyDown(screen.getByRole('dialog'),{key:'Escape'});if(document.querySelector('[role=dialog]'))process.exit(1);process.exit(0);"
+            result=subprocess.run(["node","-e",script,str(output)],cwd=ROOT,env={**os.environ,"NODE_PATH":str(ROOT/'node_modules')},capture_output=True,text=True)
+            return result.returncode==0,"accessible_command_palette"
     if task_id == "M12":
         return _compile_and_probe(root / "packages/worker/src/thumbnail.ts", "m.processThumbnail({id:'a'}).then(x => x.sizes.length === 3 && x.status === 'complete')"), "thumbnail_pipeline"
     if task_id == "M14":

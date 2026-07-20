@@ -10,7 +10,7 @@ from source_proxy.benchmarks.campaign_3_5_assets.fixture_catalog import material
 from source_proxy.benchmarks.campaign_3_5_assets.seeding import Campaign35RunSeed, derive_task_seed, task_seed_commitment
 
 
-JAVA_RUNTIME_TASKS=frozenset({"S07","S16","S23","B11","M03","M11"})
+JAVA_RUNTIME_TASKS=frozenset({"S07","S16","S23","B04","B11","M03","M11"})
 
 def _replace(path:Path,before:str,after:str)->None:
     text=path.read_text(encoding="utf-8")
@@ -18,7 +18,7 @@ def _replace(path:Path,before:str,after:str)->None:
     path.write_text(text.replace(before,after),encoding="utf-8")
 
 def apply_java_runtime_reference(task_id:str,root:Path)->None:
-    path=root/"src/main/java/app"/("CsvParser.java" if task_id=="S07" else "ConfigLoader.java" if task_id=="S16" else "WidgetAdvice.java" if task_id=="S23" else "EtagFilter.java" if task_id=="B11" else "Profile.java" if task_id=="M03" else "WebhookSigner.java")
+    path=root/"src/main/java/app"/("CsvParser.java" if task_id=="S07" else "ConfigLoader.java" if task_id=="S16" else "WidgetAdvice.java" if task_id=="S23" else "Scheduler.java" if task_id=="B04" else "EtagFilter.java" if task_id=="B11" else "Profile.java" if task_id=="M03" else "WebhookSigner.java")
     if task_id=="S07": _replace(path,"if(value.isEmpty()) throw new IllegalArgumentException(\"header\"); return 1;","if(value.isEmpty()) return 0; if(!value.startsWith(\"name,\")) throw new IllegalArgumentException(\"header\"); return 1;")
     elif task_id=="S16":
         _replace(path,"throw new ConfigLoadException(\"failed\");","throw new ConfigLoadException(\"failed\", e);")
@@ -29,6 +29,7 @@ def apply_java_runtime_reference(task_id:str,root:Path)->None:
     elif task_id=="M11": path.write_text("package app; import java.util.*; class WebhookSigner { String signV1(String payload,String secret){return Integer.toHexString((payload+secret).hashCode());} boolean verifyV2(String payload,long timestamp,String secret,long now,Set<String> seen){String key=timestamp+\":\"+payload;if(Math.abs(now-timestamp)>300||seen.contains(key))return false;seen.add(key);return signV1(timestamp+\".\"+payload,secret).length()>0;} }\n",encoding="utf-8")
     elif task_id=="B11": path.write_text("package app; class EtagFilter { String etag(byte[] canonicalBytes){return Integer.toHexString(java.util.Arrays.hashCode(canonicalBytes));} String etagForResponse(byte[] canonicalBytes, boolean gzip){return etag(canonicalBytes);} }\n",encoding="utf-8")
     elif task_id=="M03": path.write_text("package app; class Profile { String name; long version; Profile(String n,long v){name=n;version=v;} boolean update(String next,long ifMatch){if(version!=ifMatch)return false;name=next;version++;return true;} }\n",encoding="utf-8")
+    elif task_id=="B04": path.write_text("package app; class Scheduler { private final Object lock=new Object(); private boolean cancelled; void cancel(){synchronized(lock){cancelled=true;}} void complete(){synchronized(lock){if(!cancelled){}}} boolean cancelled(){synchronized(lock){return cancelled;}} }\n",encoding="utf-8")
 
 def _run(root:Path,source:str,harness:str)->bool:
     with tempfile.TemporaryDirectory(prefix="campaign35-java-output-") as temporary:
@@ -43,6 +44,7 @@ def probe_java_runtime(task_id:str,root:Path)->tuple[bool,str]:
     if task_id=="S16": return _run(root,"ConfigLoader.java","try { new ConfigLoader().load(); System.exit(1); } catch(ConfigLoadException e) { if(e.getCause()==null || !\"failed\".equals(e.getMessage())) System.exit(1); }"),"preserved_io_cause"
     if task_id=="S23": return _run(root,"WidgetAdvice.java","if(new WidgetAdvice().status(new WidgetNotFoundException())!=404 || new WidgetAdvice().status(new RuntimeException())!=500) System.exit(1);"),"not_found_envelope_status"
     if task_id=="M11": return _run(root,"WebhookSigner.java","WebhookSigner s=new WebhookSigner(); java.util.Set<String> seen=new java.util.HashSet<>(); if(!s.verifyV2(\"p\",1000,\"k\",1001,seen)||s.verifyV2(\"p\",1000,\"k\",1001,seen)||s.verifyV2(\"p\",1000,\"k\",1400,new java.util.HashSet<>()))System.exit(1);"),"versioned_webhook_replay_protection"
+    if task_id=="B04": return _run(root,"Scheduler.java","Scheduler s=new Scheduler(); Thread w1=new Thread(()->s.cancel());Thread w2=new Thread(()->s.complete());w1.start();w2.start();try{w1.join(1000);w2.join(1000);}catch(Exception e){System.exit(1);}if(w1.isAlive()||w2.isAlive()||!s.cancelled())System.exit(1);"),"scheduler_lock_order"
     if task_id=="B11": return _run(root,"EtagFilter.java","EtagFilter f=new EtagFilter(); if(!f.etagForResponse(new byte[]{1},false).equals(f.etagForResponse(new byte[]{1},true)))System.exit(1);"),"canonical_response_etag"
     return _run(root,"Profile.java","Profile p=new Profile(\"a\",1); if(!p.update(\"b\",1)||p.update(\"c\",1)||p.version!=2)System.exit(1);"),"optimistic_concurrency"
 

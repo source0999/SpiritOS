@@ -1,8 +1,13 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 66,
+  "task_count": 70,
   "tasks": [
+    {
+      "category": "canonical_black_format",
+      "passed": true,
+      "task_id": "A01"
+    },
     {
       "category": "cursor_pagination",
       "passed": true,
@@ -22,6 +27,11 @@
       "category": "query_invalidation",
       "passed": true,
       "task_id": "B03"
+    },
+    {
+      "category": "scheduler_lock_order",
+      "passed": true,
+      "task_id": "B04"
     },
     {
       "category": "dst_wall_time",
@@ -114,6 +124,11 @@
       "task_id": "M04"
     },
     {
+      "category": "accessible_command_palette",
+      "passed": true,
+      "task_id": "M05"
+    },
+    {
       "category": "transactional_outbox",
       "passed": true,
       "task_id": "M06"
@@ -132,6 +147,11 @@
       "category": "tenant_rate_limit",
       "passed": true,
       "task_id": "M09"
+    },
+    {
+      "category": "encrypted_credentials_store",
+      "passed": true,
+      "task_id": "M10"
     },
     {
       "category": "versioned_webhook_replay_protection",
@@ -335,10 +355,12 @@
     }
   ],
   "validated_task_ids": [
+    "A01",
     "A02",
     "B01",
     "B02",
     "B03",
+    "B04",
     "B05",
     "B06",
     "B07",
@@ -357,10 +379,12 @@
     "M02",
     "M03",
     "M04",
+    "M05",
     "M06",
     "M07",
     "M08",
     "M09",
+    "M10",
     "M11",
     "M12",
     "M13",

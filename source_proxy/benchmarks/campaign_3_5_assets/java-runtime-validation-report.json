@@ -1,8 +1,13 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-java-runtime-validation/v1",
-  "task_count": 6,
+  "task_count": 7,
   "tasks": [
+    {
+      "category": "scheduler_lock_order",
+      "passed": true,
+      "task_id": "B04"
+    },
     {
       "category": "canonical_response_etag",
       "passed": true,
@@ -35,6 +40,7 @@
     }
   ],
   "validated_task_ids": [
+    "B04",
     "B11",
     "M03",
     "M11",

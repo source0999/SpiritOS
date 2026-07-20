@@ -3,6 +3,12 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import subprocess
+import os
+
+CAMPAIGN_PYTHON = "/home/source/.campaign-3-5-tools/python"
+if CAMPAIGN_PYTHON not in sys.path:
+    sys.path.insert(0, CAMPAIGN_PYTHON)
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -10,7 +16,7 @@ from zoneinfo import ZoneInfo
 from source_proxy.benchmarks.campaign_3_5_assets.core_references import apply_core_reference
 
 
-PYTHON_RUNTIME_TASKS = frozenset({"S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M01", "M06", "M13", "M15", "R01", "R02", "R03", "R04", "R05", "R06", "R08", "R09", "R10"})
+PYTHON_RUNTIME_TASKS = frozenset({"A01", "S01", "S02", "S05", "S09", "S11", "S12", "S15", "S20", "S24", "B01", "B05", "B10", "B13", "B15", "C01", "C04", "C05", "M01", "M06", "M10", "M13", "M15", "R01", "R02", "R03", "R04", "R05", "R06", "R08", "R09", "R10"})
 
 
 def _replace(path: Path, before: str, after: str) -> None:
@@ -74,6 +80,10 @@ def apply_python_runtime_reference(task_id: str, root: Path) -> None:
         (root / "services/production_caller.py").write_text("from shared.retry import retry\ndef run(operation): return retry(operation)\n", encoding="utf-8")
     elif task_id == "R08":
         (root / "services/bulk_delete.py").write_text("def delete(authority, request):\n    if not authority.approved(request): raise PermissionError('server approval required')\n    return 'deleted'\n", encoding="utf-8")
+    elif task_id == "A01":
+        subprocess.run(["python3", "-m", "black", "--quiet", str(root / "src/reporting/formatting.py")], check=True, env={**os.environ, "PYTHONPATH": "/home/source/.campaign-3-5-tools/python"})
+    elif task_id == "M10":
+        (root / "src/credentials/store.py").write_text("from cryptography.fernet import Fernet\nimport os\ndef put(path,name,value,keyring):\n    token=Fernet(keyring.key()).encrypt(value.encode())\n    path.write_text(name+'='+token.decode()+'\\n',encoding='utf-8');os.chmod(path,0o600)\ndef get(path,name,keyring):\n    values=dict(line.split('=',1) for line in path.read_text().splitlines())\n    return Fernet(keyring.key()).decrypt(values[name].encode()).decode()\n",encoding="utf-8")
     else:
         raise ValueError("campaign_3_5_python_runtime_task_unknown")
 
@@ -159,6 +169,19 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
             def approved(self, request): return self.value
         try: module.delete(Authority(False), {'approved':True}); return False, "server_approval_authority"
         except PermissionError: return module.delete(Authority(True), {'approved':False})=='deleted', "server_approval_authority"
+    if task_id == "A01":
+        result = subprocess.run(["python3", "-m", "black", "--check", "--quiet", str(root / "src/reporting/formatting.py")], env={**os.environ, "PYTHONPATH": "/home/source/.campaign-3-5-tools/python"})
+        return result.returncode == 0, "canonical_black_format"
+    if task_id == "M10":
+        module = _module(root / "src/credentials/store.py")
+        from cryptography.fernet import Fernet
+        import tempfile, stat
+        class Keyring:
+            def __init__(self): self._key=Fernet.generate_key()
+            def key(self): return self._key
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/"credentials"; keyring=Keyring(); module.put(path,"api","secret",keyring)
+            return module.get(path,"api",keyring)=="secret" and b"secret" not in path.read_bytes() and stat.S_IMODE(path.stat().st_mode)==0o600, "encrypted_credentials_store"
     if task_id == "B13":
         module = _module(root / "src/authz/cache.py"); cache=module.PermissionCache(); return cache.allowed("a","u","read",lambda *_:True) and not cache.allowed("b","u","read",lambda *_:False), "tenant_cache_isolation"
     if task_id == "B15":

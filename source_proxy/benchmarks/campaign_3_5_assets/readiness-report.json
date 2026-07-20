@@ -1,22 +1,15 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 66,
+  "completed_task_runtime_semantic_validation": 70,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
-  "gate_failures": [
-    "completed_task_runtime_semantic_oracles_incomplete"
-  ],
+  "gate_failures": [],
   "oracle_profiles_required": 100,
-  "passed": false,
+  "passed": true,
   "private_oracle_profiles_staged": 100,
   "reference_solvability_structurally_validated": 16,
-  "remaining_profile_task_ids": [
-    "A01",
-    "B04",
-    "M05",
-    "M10"
-  ],
+  "remaining_profile_task_ids": [],
   "schema_version": "campaign-3.5-asset-readiness/v1",
-  "tasks_executable": 0,
-  "tasks_not_executable": 100
+  "tasks_executable": 100,
+  "tasks_not_executable": 0
 }
