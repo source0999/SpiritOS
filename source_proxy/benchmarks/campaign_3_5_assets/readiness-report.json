@@ -1,6 +1,6 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 19,
+  "completed_task_runtime_semantic_validation": 21,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
@@ -17,7 +17,6 @@
     "B02",
     "B03",
     "B04",
-    "B06",
     "B07",
     "B08",
     "B09",
@@ -54,7 +53,6 @@
     "R09",
     "R10",
     "S04",
-    "S06",
     "S12",
     "S14",
     "S17",

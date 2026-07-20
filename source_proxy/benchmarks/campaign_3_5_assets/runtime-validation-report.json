@@ -1,12 +1,17 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 19,
+  "task_count": 21,
   "tasks": [
     {
       "category": "dst_wall_time",
       "passed": true,
       "task_id": "B05"
+    },
+    {
+      "category": "utf8_chunk_boundaries",
+      "passed": true,
+      "task_id": "B06"
     },
     {
       "category": "eof_termination",
@@ -37,6 +42,11 @@
       "category": "bounded_deterministic_retry",
       "passed": true,
       "task_id": "S05"
+    },
+    {
+      "category": "order_preserving_dedupe",
+      "passed": true,
+      "task_id": "S06"
     },
     {
       "category": "empty_csv",
@@ -101,12 +111,14 @@
   ],
   "validated_task_ids": [
     "B05",
+    "B06",
     "B10",
     "M12",
     "S01",
     "S02",
     "S03",
     "S05",
+    "S06",
     "S07",
     "S08",
     "S09",
