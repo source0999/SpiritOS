@@ -1,0 +1,192 @@
+{
+  "passed": true,
+  "profiles": [
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E01"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": [
+        "mobile",
+        "partner"
+      ],
+      "task_id": "E02"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E03"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E04"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E05"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E06"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E07"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E08"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E09"
+    },
+    {
+      "category": "escalation_condition_provisioned",
+      "passed": true,
+      "task_id": "E10"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "A03"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "A04"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "A05"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "D01"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "D02"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "D03"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "D04"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "D05"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "U01"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "U02"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "U03"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "U04"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "U05"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "C02"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "C03"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "I01"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "I02"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "I03"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "I04"
+    },
+    {
+      "category": "blocked_condition_provisioned",
+      "passed": true,
+      "task_id": "I05"
+    }
+  ],
+  "schema_version": "campaign-3.5-noncompletion-provisioning/v1",
+  "task_count": 30,
+  "validated_task_ids": [
+    "E01",
+    "E02",
+    "E03",
+    "E04",
+    "E05",
+    "E06",
+    "E07",
+    "E08",
+    "E09",
+    "E10",
+    "A03",
+    "A04",
+    "A05",
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "U01",
+    "U02",
+    "U03",
+    "U04",
+    "U05",
+    "C02",
+    "C03",
+    "I01",
+    "I02",
+    "I03",
+    "I04",
+    "I05"
+  ]
+}

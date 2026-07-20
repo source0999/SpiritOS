@@ -37,6 +37,12 @@ def _huge_monorepo(seed: str) -> dict[str, str]:
     files={"src/orchestration/engine.py":"class Engine:\n def run(self, request): return request\n", "docs/architecture.md":"The orchestration module has stable callers and explicit seams.\n"}
     for index in range(140): files[f"callers/service_{index:03d}.py"]=f"from src.orchestration.engine import Engine\ndef call_{index}(): return Engine().run({index})\n"
     for index in range(80): files[f"modules/module_{index:03d}.py"]=f"def operation_{index}(value): return value\n"
+    # The same fixture serves the 600-conflict and 70k-line escalation tasks.
+    # Generated data is substantial enough to require selection but small
+    # enough for a disposable local Git fixture.
+    for index in range(600): files[f"generated/conflicts/schema_{index:03d}.txt"]=f"<<<<<<< branch-a\nfield_{index}: old\n=======\nfield_{index}: new\n>>>>>>> branch-b\n"
+    rules = "".join(f"RULE_{index:05d} = {index % 17}\n" for index in range(70000))
+    files["legacy/rules_engine.py"] = "# 70k-line legacy rules engine for migration scoping\n" + rules
     return _base(seed,"huge-monorepo-context",files)
 
 
@@ -74,7 +80,9 @@ def _huge_history(seed: str) -> dict[str, str]:
 
 
 def _crypto(seed: str) -> dict[str, str]:
-    return _base(seed,"crypto-context",{"src/signing/current.py":"ALGORITHM='ed25519'\ndef sign(data): return data\n","clients/compatibility.md":"Clients require existing signatures during transition.\n","threat-model.md":"Key flows, interoperability constraints and threats are recorded.\n","keys/manifest.json":"{\"rotation\":\"controlled\",\"private_keys_mounted\":false}\n"})
+    files={"src/signing/current.py":"ALGORITHM='ed25519'\ndef sign(data): return data\n","clients/compatibility.md":"Clients require existing signatures during transition.\n","threat-model.md":"Key flows, interoperability constraints and threats are recorded.\n","keys/manifest.json":"{\"rotation\":\"controlled\",\"private_keys_mounted\":false}\n"}
+    for index in range(24): files[f"clients/client_{index:02d}/signing.md"]=f"client {index}: compatibility requirements for ed25519 signatures\n"
+    return _base(seed,"crypto-context",files)
 
 
 def _mixed_monorepo(seed: str) -> dict[str, str]:
