@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-rust-runtime-validation/v1",
-  "task_count": 2,
+  "task_count": 3,
   "tasks": [
     {
       "category": "utf8_chunk_boundaries",
@@ -12,10 +12,16 @@
       "category": "order_preserving_dedupe",
       "passed": true,
       "task_id": "S06"
+    },
+    {
+      "category": "semantic_version_order",
+      "passed": true,
+      "task_id": "S21"
     }
   ],
   "validated_task_ids": [
     "B06",
-    "S06"
+    "S06",
+    "S21"
   ]
 }
