@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-go-runtime-validation/v1",
-  "task_count": 7,
+  "task_count": 9,
   "tasks": [
     {
       "category": "websocket_client_cleanup",
@@ -17,6 +17,16 @@
       "category": "permanent_error_no_retry",
       "passed": true,
       "task_id": "B14"
+    },
+    {
+      "category": "filesystem_storage_conformance",
+      "passed": true,
+      "task_id": "M04"
+    },
+    {
+      "category": "tenant_rate_limit",
+      "passed": true,
+      "task_id": "M09"
     },
     {
       "category": "canonical_json",
@@ -43,6 +53,8 @@
     "B02",
     "B08",
     "B14",
+    "M04",
+    "M09",
     "S03",
     "S13",
     "S18",

@@ -1,6 +1,6 @@
 {
   "blocked_or_escalation_state_validated": 30,
-  "completed_task_runtime_semantic_validation": 51,
+  "completed_task_runtime_semantic_validation": 53,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
@@ -17,11 +17,9 @@
     "M01",
     "M02",
     "M03",
-    "M04",
     "M05",
     "M07",
     "M08",
-    "M09",
     "M10",
     "M11",
     "M15",

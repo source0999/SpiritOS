@@ -1,7 +1,7 @@
 {
   "passed": true,
   "schema_version": "campaign-3.5-combined-runtime-validation/v1",
-  "task_count": 51,
+  "task_count": 53,
   "tasks": [
     {
       "category": "cursor_pagination",
@@ -89,9 +89,19 @@
       "task_id": "C05"
     },
     {
+      "category": "filesystem_storage_conformance",
+      "passed": true,
+      "task_id": "M04"
+    },
+    {
       "category": "transactional_outbox",
       "passed": true,
       "task_id": "M06"
+    },
+    {
+      "category": "tenant_rate_limit",
+      "passed": true,
+      "task_id": "M09"
     },
     {
       "category": "thumbnail_pipeline",
@@ -277,7 +287,9 @@
     "C01",
     "C04",
     "C05",
+    "M04",
     "M06",
+    "M09",
     "M12",
     "M13",
     "M14",
