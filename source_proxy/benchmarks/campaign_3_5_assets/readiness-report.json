@@ -1,14 +1,15 @@
 {
   "blocked_or_escalation_state_validated": 30,
+  "completed_task_runtime_semantic_validation": 0,
   "fixture_types_boundary_validated": 65,
   "fixture_types_required": 65,
   "gate_failures": [
-    "completed_task_private_reference_and_semantic_probes_incomplete"
+    "completed_task_runtime_semantic_oracles_incomplete"
   ],
-  "oracle_profiles_independently_validated": 46,
   "oracle_profiles_required": 100,
   "passed": false,
-  "reference_solvability_validated": 16,
+  "private_oracle_profiles_staged": 100,
+  "reference_solvability_structurally_validated": 16,
   "remaining_profile_task_ids": [
     "A02",
     "B01",

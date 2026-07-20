@@ -8,23 +8,27 @@ from typing import Any
 
 def asset_readiness(tasks: list[dict[str, Any]], *, builder_report: dict[str, Any], noncompletion_report: dict[str, Any], core_reference_report: dict[str, Any]) -> dict[str, Any]:
     task_ids = {task["task_id"] for task in tasks}
-    validated = set(noncompletion_report.get("validated_task_ids", [])) | set(core_reference_report.get("validated_task_ids", []))
-    missing = sorted(task_ids - validated)
+    noncompletion_validated = set(noncompletion_report.get("validated_task_ids", []))
+    reference_validated = set(core_reference_report.get("validated_task_ids", []))
+    completed_ids = {task["task_id"] for task in tasks if task["expected_disposition"] == "COMPLETED_VERIFIED"}
+    runtime_validated: set[str] = set()
+    missing = sorted(task_ids - noncompletion_validated - reference_validated)
     fixture_builder_ready = bool(builder_report.get("passed")) and len(builder_report.get("validated_fixture_ids", [])) == 65
-    passed = fixture_builder_ready and len(validated) == 100
+    passed = fixture_builder_ready and noncompletion_validated == (task_ids - completed_ids) and runtime_validated == completed_ids
     return {
         "schema_version": "campaign-3.5-asset-readiness/v1",
         "passed": passed,
         "fixture_types_required": 65,
         "fixture_types_boundary_validated": len(builder_report.get("validated_fixture_ids", [])),
         "oracle_profiles_required": 100,
-        "oracle_profiles_independently_validated": len(validated),
-        "reference_solvability_validated": len(core_reference_report.get("validated_task_ids", [])),
-        "blocked_or_escalation_state_validated": len(noncompletion_report.get("validated_task_ids", [])),
+        "private_oracle_profiles_staged": 100,
+        "completed_task_runtime_semantic_validation": len(runtime_validated),
+        "reference_solvability_structurally_validated": len(reference_validated),
+        "blocked_or_escalation_state_validated": len(noncompletion_validated),
         "tasks_executable": 100 if passed else 0,
         "tasks_not_executable": 0 if passed else 100,
         "remaining_profile_task_ids": missing,
-        "gate_failures": [] if passed else ["completed_task_private_reference_and_semantic_probes_incomplete"],
+        "gate_failures": [] if passed else ["completed_task_runtime_semantic_oracles_incomplete"],
     }
 
 
