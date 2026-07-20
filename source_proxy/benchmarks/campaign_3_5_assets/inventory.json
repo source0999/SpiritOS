@@ -101,7 +101,7 @@
         "A03"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "A03": [
           "nonmutation check passes"
@@ -221,7 +221,7 @@
         "U03"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "U01": [
           "authority and nonmutation checks pass"
@@ -303,7 +303,7 @@
         "A05"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "A05": [
           "nonmutation check passes"
@@ -409,7 +409,7 @@
         "U05"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "R09": [
           "routing tests pass"
@@ -492,7 +492,7 @@
         "E10"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E10": [
           "pack validator passes"
@@ -570,7 +570,7 @@
         "D03"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "D03": [
           "nonmutation check"
@@ -650,7 +650,7 @@
         "E05"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E05": [
           "pack includes traces, bisect candidates, topology, acceptance target"
@@ -729,7 +729,7 @@
         "E07"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E07": [
           "pack schema passes"
@@ -808,7 +808,7 @@
         "U04"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "U04": [
           "remote unchanged",
@@ -896,7 +896,7 @@
         "S18"
       ],
       "technology": "go",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S03": [
           "go test ./... passes",
@@ -995,7 +995,7 @@
         "B08"
       ],
       "technology": "go",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B02": [
           "go test ./... passes",
@@ -1099,7 +1099,7 @@
         "M09"
       ],
       "technology": "go",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M04": [
           "go test ./... passes",
@@ -1193,7 +1193,7 @@
         "S25"
       ],
       "technology": "go",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S13": [
           "go test ./... passes"
@@ -1271,7 +1271,7 @@
         "B14"
       ],
       "technology": "go",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B14": [
           "go test ./... passes"
@@ -1351,7 +1351,7 @@
         "E09"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E09": [
           "pack includes retained-context provenance and conflict list"
@@ -1473,7 +1473,7 @@
         "E06"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E01": [
           "context-pack schema validation passes"
@@ -1559,7 +1559,7 @@
         "E03"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E03": [
           "pack has threat model and mandatory test inventory"
@@ -1637,7 +1637,7 @@
         "E08"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E08": [
           "pack validates token accounting and continuation steps"
@@ -1790,7 +1790,7 @@
         "I05"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "I01": [
           "nonmutation check"
@@ -1876,7 +1876,7 @@
         "S07"
       ],
       "technology": "java",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S07": [
           "mvn test passes"
@@ -1954,7 +1954,7 @@
         "B04"
       ],
       "technology": "java",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B04": [
           "mvn test passes",
@@ -2027,7 +2027,7 @@
         "S16"
       ],
       "technology": "java",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S16": [
           "mvn test passes"
@@ -2105,7 +2105,7 @@
         "B11"
       ],
       "technology": "java",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B11": [
           "mvn test passes",
@@ -2206,7 +2206,7 @@
         "M11"
       ],
       "technology": "java",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M03": [
           "mvn test passes",
@@ -2284,7 +2284,7 @@
         "S23"
       ],
       "technology": "java",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S23": [
           "mvn test passes"
@@ -2482,7 +2482,7 @@
         "R10"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "R01": [
           "targeted route tests and auth regression suite pass"
@@ -2579,7 +2579,7 @@
         "D01"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "D01": [
           "nonmutation check; diagnostic probe assertions"
@@ -2662,7 +2662,7 @@
         "M15"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M15": [
           "all language/package suites pass",
@@ -2740,7 +2740,7 @@
         "B15"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B15": [
           "all generator tests pass",
@@ -2819,7 +2819,7 @@
         "R07"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "R07": [
           "all affected language suites pass"
@@ -2898,7 +2898,7 @@
         "D04"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "D04": [
           "no mutation",
@@ -2979,7 +2979,7 @@
         "E02"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "E02": [
           "pack completeness tests pass"
@@ -3057,7 +3057,7 @@
         "A04"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "A04": [
           "nonmutation and receipt-schema checks pass"
@@ -3136,7 +3136,7 @@
         "D02"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "D02": [
           "no fixture mutation",
@@ -3213,7 +3213,7 @@
         "B05"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B05": [
           "pytest passes",
@@ -3288,7 +3288,7 @@
         "B10"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B10": [
           "pytest passes"
@@ -3369,7 +3369,7 @@
         "M10"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M10": [
           "pytest passes",
@@ -3462,7 +3462,7 @@
         "S24"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S11": [
           "pytest passes",
@@ -3537,7 +3537,7 @@
         "S20"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S20": [
           "pytest passes"
@@ -3619,7 +3619,7 @@
         "M01"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M01": [
           "unit and integration suites pass",
@@ -3714,7 +3714,7 @@
         "S09"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S01": [
           "pytest passes",
@@ -3826,7 +3826,7 @@
         "S15"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S02": [
           "pytest passes",
@@ -3913,7 +3913,7 @@
         "B13"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B13": [
           "pytest passes"
@@ -3985,7 +3985,7 @@
         "S12"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S12": [
           "pytest passes",
@@ -4065,7 +4065,7 @@
         "B01"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B01": [
           "pytest passes",
@@ -4170,7 +4170,7 @@
         "M13"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M06": [
           "pytest passes",
@@ -4250,7 +4250,7 @@
         "A01"
       ],
       "technology": "python",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "A01": [
           "format check and tests pass"
@@ -4327,7 +4327,7 @@
         "B03"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B03": [
           "frontend tests pass"
@@ -4407,7 +4407,7 @@
         "M05"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M05": [
           "unit, accessibility, and navigation tests pass"
@@ -4480,7 +4480,7 @@
         "S22"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S22": [
           "frontend tests pass"
@@ -4640,7 +4640,7 @@
         "C05"
       ],
       "technology": "control-plane",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "C01": [
           "tests pass after resume"
@@ -4733,7 +4733,7 @@
         "R06"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "R06": [
           "state transition tests pass"
@@ -4806,7 +4806,7 @@
         "S21"
       ],
       "technology": "rust",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S21": [
           "cargo test passes"
@@ -4881,7 +4881,7 @@
         "B06"
       ],
       "technology": "rust",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B06": [
           "cargo test passes",
@@ -4953,7 +4953,7 @@
         "S06"
       ],
       "technology": "rust",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S06": [
           "cargo test passes"
@@ -5030,7 +5030,7 @@
         "M08"
       ],
       "technology": "rust",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M08": [
           "cargo test --workspace passes",
@@ -5111,7 +5111,7 @@
         "D05"
       ],
       "technology": "multi-repository-context",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "D05": [
           "nonmutation check"
@@ -5191,7 +5191,7 @@
         "B09"
       ],
       "technology": "sql",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B09": [
           "migration test on empty and populated DB passes"
@@ -5267,7 +5267,7 @@
         "S14"
       ],
       "technology": "sql",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S14": [
           "migration up and down pass",
@@ -5344,7 +5344,7 @@
         "A02"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "A02": [
           "API tests pass"
@@ -5436,7 +5436,7 @@
         "S17"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S08": [
           "npm test passes",
@@ -5569,7 +5569,7 @@
         "M12"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M02": [
           "pnpm test passes",
@@ -5675,7 +5675,7 @@
         "B12"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "B07": [
           "npm test passes",
@@ -5758,7 +5758,7 @@
         "M14"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "M14": [
           "npm test passes",
@@ -5867,7 +5867,7 @@
         "S19"
       ],
       "technology": "typescript",
-      "validation_status": "NOT_STARTED",
+      "validation_status": "BOUNDARY_VALIDATED",
       "visible_test_contract": {
         "S04": [
           "npm test passes",

@@ -69,7 +69,9 @@ def _runtime_dependencies(technology: str) -> list[str]:
     }[technology]
 
 
-def build_inventory(tasks: list[dict[str, Any]], *, builder_implemented: frozenset[str] = frozenset()) -> dict[str, Any]:
+def build_inventory(
+    tasks: list[dict[str, Any]], *, builder_implemented: frozenset[str] = frozenset(), boundary_validated: frozenset[str] = frozenset()
+) -> dict[str, Any]:
     """Return an ordered, lossless task-to-fixture readiness inventory."""
     by_fixture: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for task in tasks:
@@ -109,7 +111,7 @@ def build_inventory(tasks: list[dict[str, Any]], *, builder_implemented: frozens
                     }
                 ),
                 "implementation_status": "BUILDER_IMPLEMENTED" if fixture_id in builder_implemented else STATUS_NOT_STARTED,
-                "validation_status": STATUS_NOT_STARTED,
+                "validation_status": "BOUNDARY_VALIDATED" if fixture_id in boundary_validated else STATUS_NOT_STARTED,
             }
         )
     return {
