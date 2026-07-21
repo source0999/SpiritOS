@@ -71,6 +71,19 @@ def _authority(path: Path) -> Iterator[None]:
             os.environ[ENV_MANIFEST] = previous
 
 
+@contextmanager
+def _temporary_environment(key: str, value: str) -> Iterator[None]:
+    previous = os.environ.get(key)
+    os.environ[key] = value
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = previous
+
+
 class _PrivateOutputCapture:
     def __init__(self, root: Path, run_id: str) -> None:
         self.root = root / "private-model-output"
@@ -124,7 +137,7 @@ def _case_result(case: CalibrationCase, output_dir: Path, model_alias: str) -> d
     result: dict[str, Any] = {}
     apply_error: str | None = None
     try:
-        with _authority(authority):
+        with _authority(authority), _temporary_environment("SOURCE_PROXY_GATE_INCREMENT", "campaign-3.5"), _temporary_environment("SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA", "0"):
             plugin = resolve_target_plugin(_packet(), root)
             result = execute_target_plugin_command(plugin, task=case.task, workspace_root=root, canonical_context={}, canonical_context_text="", model_alias=model_alias, model_output_observer=capture)
         diff = str(result.get("proposed_diff") or "")
