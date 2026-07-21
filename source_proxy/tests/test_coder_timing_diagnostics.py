@@ -140,6 +140,8 @@ class CoderTimeoutDiagnosticsTests(unittest.TestCase):
         ) as router_mock, mock.patch(
             "source_proxy.tasks.long_running.route_model_for_alias",
             return_value="ollama_chat/qwen2.5-coder:7b",
+        ), mock.patch(
+            "source_proxy.tasks.long_running.central_gate_check",
         ):
             router_mock.return_value.completion.return_value = mock.Mock(
                 model_dump=lambda: {"choices": [{"message": {"content": '{"replacement_content":"x"}'}}]}  # noqa: E501
@@ -152,3 +154,7 @@ class CoderTimeoutDiagnosticsTests(unittest.TestCase):
         self.assertIn("provider_request_started_at_ms", timing)
         self.assertEqual(timing.get("model_requested"), "coder")
         self.assertTrue(str(timing.get("model_resolved") or "").startswith("ollama_chat/"))
+        completion_kwargs = router_mock.return_value.completion.call_args.kwargs
+        self.assertEqual(completion_kwargs["messages"][0]["role"], "system")
+        self.assertEqual(completion_kwargs["messages"][1], {"role": "user", "content": "tiny"})
+        self.assertEqual(completion_kwargs["max_tokens"], 1000)

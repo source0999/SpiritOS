@@ -11755,10 +11755,14 @@ def _call_coder_llm(
     _mark_coder_timing("provider_request_started", model_requested=alias)
     completion_kwargs: dict[str, Any] = {
         "model": alias,
-        "messages": [{"role": "system", "content": prompt}],
+        "messages": [
+            {"role": "system", "content": "You are a careful coding assistant. Follow the user's output contract exactly."},
+            {"role": "user", "content": prompt},
+        ],
         "stream": False,
         "temperature": 0,
         "timeout": request_timeout,
+        "max_tokens": _read_coder_max_completion_tokens(),
     }
     if num_retries is not None:
         completion_kwargs["num_retries"] = num_retries
@@ -11791,6 +11795,17 @@ def _call_coder_llm(
         return content if isinstance(content, str) else ""
     text = first.get("text")
     return text if isinstance(text, str) else ""
+
+
+def _read_coder_max_completion_tokens() -> int:
+    raw_value = os.getenv("SOURCE_PROXY_CODER_MAX_COMPLETION_TOKENS", "1000")
+    try:
+        value = int(raw_value)
+    except ValueError as error:
+        raise ValueError("SOURCE_PROXY_CODER_MAX_COMPLETION_TOKENS must be an integer.") from error
+    if not 128 <= value <= 4096:
+        raise ValueError("SOURCE_PROXY_CODER_MAX_COMPLETION_TOKENS must be between 128 and 4096.")
+    return value
 
 
 def _normalize_coder_unified_diff(raw_response: str, target_path: str) -> str:

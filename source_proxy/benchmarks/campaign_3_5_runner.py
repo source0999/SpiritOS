@@ -214,6 +214,37 @@ def _receipt_path(evidence_dir: Path, run_id: str) -> Path:
     return path
 
 
+class _PrivateModelOutputCapture:
+    """Persist raw responses outside the fixture and public receipt boundary."""
+
+    def __init__(self, evidence_dir: Path, run_id: str) -> None:
+        self._root = evidence_dir / ".campaign-3-5-private-model-output"
+        self._root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        os.chmod(self._root, 0o700)
+        self._run_id = run_id
+        self.entries: list[dict[str, Any]] = []
+
+    def __call__(self, call_record: dict[str, Any], raw_response: str) -> None:
+        index = int(call_record["call_index"])
+        path = self._root / f"{self._run_id}-call-{index}.txt"
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+                output.write(raw_response)
+        except BaseException:
+            try:
+                path.unlink(missing_ok=True)
+            finally:
+                raise
+        os.chmod(path, 0o600)
+        self.entries.append(
+            {
+                "call_index": index,
+                "sha256": hashlib.sha256(raw_response.encode("utf-8")).hexdigest(),
+            }
+        )
+
+
 def run_campaign_3_5_task(
     task_id: str,
     *,
@@ -229,6 +260,7 @@ def run_campaign_3_5_task(
     """
     prepared = prepare_campaign_3_5_run(task_id, run_root=run_root)
     receipt_path = _receipt_path(evidence_dir, prepared.run_id)
+    raw_output_capture = _PrivateModelOutputCapture(evidence_dir, prepared.run_id)
     adapter_result: dict[str, Any] = {}
     apply_receipt: dict[str, Any] | None = None
     runner_reason: str | None = None
@@ -250,6 +282,7 @@ def run_campaign_3_5_task(
                 canonical_context_text="",
                 llm_call=llm_call,
                 model_alias=model_alias,
+                model_output_observer=raw_output_capture,
             )
             provenance = adapter_result.get("target_adapter_provenance", {})
             diff = str(adapter_result.get("proposed_diff") or "")
@@ -321,6 +354,11 @@ def run_campaign_3_5_task(
             key: provenance.get(key)
             for key in ("transport_kind", "provider_call_made", "provider_call_authorized", "trust_status", "terminal_proof_eligible", "call_count", "provider", "model")
         } | {"model_response_format": adapter_result.get("coder_diagnostics", {}).get("model_response_format")},
+        "raw_model_output": {
+            "captured_privately": bool(raw_output_capture.entries),
+            "call_hashes": raw_output_capture.entries,
+            "public_receipt_contains_raw_text": False,
+        },
         "apply_authority": apply_receipt,
         "runner_reason": runner_reason,
         "final_disposition": disposition,

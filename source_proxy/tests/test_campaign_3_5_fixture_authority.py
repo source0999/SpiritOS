@@ -20,6 +20,7 @@ from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_PROMPT_ID,
     TARGET_PLUGIN_SCHEMA_VERSION,
     execute_target_plugin_command,
+    _generic_workspace_context,
     _structured_edits_to_diff,
     resolve_target_plugin,
 )
@@ -119,3 +120,18 @@ def test_structured_edits_reject_python_syntax_before_apply(tmp_path: Path) -> N
     assert diff == ""
     assert files == []
     assert category == "structured_edits_python_syntax_invalid"
+
+
+def test_generic_workspace_context_uses_bounded_coder_visible_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "large.py").write_text("x" * 8_000, encoding="utf-8")
+    (root / "src" / "other.py").write_text("value = 1\n", encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+    monkeypatch.setenv("SOURCE_PROXY_CODER_CONTEXT_CHAR_BUDGET", "5000")
+
+    context = _generic_workspace_context(root, ["src/"])
+
+    assert len(context) <= 5_100
+    assert "--- src/large.py" in context
+    assert "[truncated]" in context

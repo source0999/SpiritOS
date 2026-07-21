@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 import difflib
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -138,6 +139,7 @@ def execute_target_plugin_command(
     canonical_context_text: str,
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
+    model_output_observer: Callable[[dict[str, Any], str], None] | None = None,
 ) -> dict[str, Any]:
     """The generic route delegates target-specific execution; it cannot choose a target."""
     from source_proxy.tasks.long_running import (
@@ -199,6 +201,16 @@ def execute_target_plugin_command(
                 "raw_response_sha256": _sha256_utf8(raw_response),
             }
         )
+        if model_output_observer is not None:
+            try:
+                # This observer is deliberately write-only from the adapter's
+                # perspective.  It permits a harness-private forensic store
+                # without placing raw model text in diagnostics or receipts.
+                model_output_observer(dict(call_record), raw_response)
+                call_record["raw_response_captured"] = True
+            except Exception as error:  # noqa: BLE001
+                call_record["raw_response_captured"] = False
+                call_record["raw_response_capture_error"] = type(error).__name__
         return raw_response
 
     # Preserve the production fail-closed alias check. An explicitly injected
@@ -246,9 +258,11 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
         return {"proposed_diff": "", "coder_blocked": True, "reason_code": "generic_workspace_model_alias_unavailable", "coder_diagnostics": {"generation_source": "non_model", "changed_files": []}}
     allowed = list(plugin.allowed_actions)
     prompt = (
-        "Return only one fenced unified diff. Modify only these allowed relative paths or prefixes: "
+        "You are editing a disposable Git fixture. Return only one fenced unified diff, with no prose before or after it. "
+        "Modify only these allowed relative paths or prefixes: "
         + json.dumps(allowed)
-        + ". Do not modify files not present in the repository context.\nTask:\n"
+        + ". Do not create files or modify files absent from the repository context. "
+        + "A valid answer makes the requested change while preserving unrelated behavior and has Git diff headers beginning `diff --git`.\nTask:\n"
         + task
         + "\nRepository context (coder-visible fixture files only):\n"
         + _generic_workspace_context(root, allowed)
@@ -259,7 +273,7 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
             prompt
             + "\nThe previous response was not safely applicable. Return only one JSON object (optionally in a json fence): "
             + '{"edits":[{"path":"relative/allowed-file","old":"an exact non-empty visible substring occurring once","new":"replacement text"}]}. '
-            + "Do not include prose or a unified diff. Ensure edited Python source remains syntactically valid."
+            + "Do not include prose or a unified diff. Preserve syntax for the edited file's language."
         )
         raw = model_call(repair_prompt if structured else prompt, alias)
         if structured:
@@ -375,7 +389,11 @@ def _generic_workspace_context(root: Path, allowed_paths: list[str]) -> str:
     if listed.returncode:
         raise TargetPluginResolutionError("generic_workspace_listing_failed")
     root_resolved = root.resolve()
-    remaining = 160_000
+    # The canonical local Coder route is commonly loaded with a 4k-token
+    # context. Keep enough room for the task and a useful completion instead
+    # of silently overflowing that context with fixture source.
+    remaining = _generic_workspace_context_char_budget()
+    per_file_limit = min(4_000, remaining)
     entries: list[str] = []
     for raw_path in listed.stdout.decode("utf-8", errors="strict").split("\0"):
         if not raw_path or not any(
@@ -387,8 +405,8 @@ def _generic_workspace_context(root: Path, allowed_paths: list[str]) -> str:
         if root_resolved not in candidate.parents or not candidate.is_file() or candidate.is_symlink():
             continue
         content = candidate.read_text(encoding="utf-8", errors="replace")
-        if len(content) > 32_000:
-            content = content[:32_000] + "\n[truncated]\n"
+        if len(content) > per_file_limit:
+            content = content[:per_file_limit] + "\n[truncated]\n"
         entry = f"--- {raw_path}\n{content}\n"
         if len(entry) > remaining:
             break
@@ -397,6 +415,17 @@ def _generic_workspace_context(root: Path, allowed_paths: list[str]) -> str:
     if not entries:
         raise TargetPluginResolutionError("generic_workspace_context_empty")
     return "".join(entries)
+
+
+def _generic_workspace_context_char_budget() -> int:
+    raw = os.getenv("SOURCE_PROXY_CODER_CONTEXT_CHAR_BUDGET", "9000")
+    try:
+        budget = int(raw)
+    except ValueError as error:
+        raise TargetPluginResolutionError("generic_workspace_context_budget_invalid") from error
+    if not 2_000 <= budget <= 20_000:
+        raise TargetPluginResolutionError("generic_workspace_context_budget_out_of_range")
+    return budget
 
 
 def _sha256_utf8(value: str) -> str:
