@@ -122,6 +122,19 @@ def test_structured_edits_reject_python_syntax_before_apply(tmp_path: Path) -> N
     assert category == "structured_edits_python_syntax_invalid"
 
 
+def test_structured_edits_accepts_unambiguous_backtick_wrapped_source_strings(tmp_path: Path) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "label.go").write_text('package label\n\nfunc Value() string { return "draft" }\n', encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+
+    diff, files, category = _structured_edits_to_diff(root, ["src/"], '{"edits":[{"path":"src/label.go","old":`"draft"`,"new":`"ready"`}]}')
+
+    assert "-func Value() string { return \"draft\" }" in diff
+    assert files == ["src/label.go"]
+    assert category == "structured_edits_backtick_strings"
+
+
 def test_generic_adapter_repair_protocol_accepts_json_with_escaped_source_quotes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

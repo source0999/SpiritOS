@@ -312,10 +312,27 @@ def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) ->
     """
     stripped = raw.strip()
     fenced = re.fullmatch(r"```json[ \t]*\n(?P<payload>.*?)(?:\n)?```", stripped, flags=re.DOTALL | re.IGNORECASE)
+    payload_text = fenced.group("payload") if fenced else stripped
+    response_format = "structured_edits"
     try:
-        payload = json.loads(fenced.group("payload") if fenced else stripped)
+        payload = json.loads(payload_text)
     except (AttributeError, json.JSONDecodeError):
-        return "", [], "non_structured_edits"
+        # Some otherwise complete coding-model replies use Go-style backticks
+        # around a JSON string containing source quotes. Decode only that
+        # unambiguous scalar spelling; the full edit schema and exact-text
+        # checks below still fail closed.
+        converted = re.sub(
+            r"(:\s*)`([^`\r\n]*)`(?=\s*[,}])",
+            lambda match: match.group(1) + json.dumps(match.group(2)),
+            payload_text,
+        )
+        if converted == payload_text:
+            return "", [], "non_structured_edits"
+        try:
+            payload = json.loads(converted)
+        except json.JSONDecodeError:
+            return "", [], "non_structured_edits"
+        response_format = "structured_edits_backtick_strings"
     edits = payload.get("edits") if isinstance(payload, dict) and set(payload) == {"edits"} else None
     if not isinstance(edits, list) or not edits or len(edits) > 10:
         return "", [], "invalid_structured_edits"
@@ -353,7 +370,7 @@ def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) ->
                 return "", [], "structured_edits_python_syntax_invalid"
         body = "".join(difflib.unified_diff(original.splitlines(keepends=True), replacement.splitlines(keepends=True), fromfile=f"a/{path}", tofile=f"b/{path}"))
         chunks.append(f"diff --git a/{path} b/{path}\n{body}")
-    return "".join(chunks), sorted(updated), "structured_edits"
+    return "".join(chunks), sorted(updated), response_format
 
 
 def _extract_generic_unified_diff(raw: str) -> tuple[str, str]:
