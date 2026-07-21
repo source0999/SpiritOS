@@ -261,7 +261,7 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
         "You are editing a disposable Git fixture. Return only one fenced unified diff, with no prose before or after it. "
         "Modify only these allowed relative paths or prefixes: "
         + json.dumps(allowed)
-        + ". Do not create files or modify files absent from the repository context. "
+        + ". Do not create files or modify files absent from the repository context. Do not introduce an undefined name: include any required import or declaration in the same edit. "
         + "A valid answer makes the requested change while preserving unrelated behavior and has Git diff headers beginning `diff --git`.\nTask:\n"
         + task
         + "\nRepository context (coder-visible fixture files only):\n"
@@ -273,7 +273,7 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
             prompt
             + "\nThe previous response was not safely applicable. Return only one JSON object (optionally in a json fence): "
             + '{"edits":[{"path":"relative/allowed-file","old":"an exact non-empty visible substring occurring once","new":"replacement text"}]}. '
-            + "Do not include prose or a unified diff. Every JSON string must use JSON double quotes (escape embedded quotes with backslashes); never use language-code backticks. Preserve syntax for the edited file's language."
+            + "Do not include prose or a unified diff. Every JSON string must use JSON double quotes (escape embedded quotes with backslashes); never use language-code backticks. Preserve syntax for the edited file's language and do not introduce an undefined name."
         )
         raw = model_call(repair_prompt if structured else prompt, alias)
         if structured:
