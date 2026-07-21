@@ -385,7 +385,7 @@ def run_campaign_3_5_task(
     verifier = {"identity": "deterministic-evidence-verifier/v1", "passed": bool(tests["passed"] and oracle["passed"] and reviewer["passed"])}
     _stage_event(trace_events, "verifier_completed", passed=verifier["passed"])
     if runner_reason is None and not tests["passed"]:
-        runner_reason = "TEST_ENVIRONMENT_ERROR"
+        runner_reason = "VISIBLE_TESTS_FAILED"
     if runner_reason is None and not oracle["passed"]:
         runner_reason = "SEMANTIC_VERIFICATION_FAILED"
     if runner_reason is None and not reviewer["passed"]:
