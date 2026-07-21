@@ -273,7 +273,7 @@ def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root:
             prompt
             + "\nThe previous response was not safely applicable. Return only one JSON object (optionally in a json fence): "
             + '{"edits":[{"path":"relative/allowed-file","old":"an exact non-empty visible substring occurring once","new":"replacement text"}]}. '
-            + "Do not include prose or a unified diff. Preserve syntax for the edited file's language."
+            + "Do not include prose or a unified diff. Every JSON string must use JSON double quotes (escape embedded quotes with backslashes); never use language-code backticks. Preserve syntax for the edited file's language."
         )
         raw = model_call(repair_prompt if structured else prompt, alias)
         if structured:

@@ -122,6 +122,25 @@ def test_structured_edits_reject_python_syntax_before_apply(tmp_path: Path) -> N
     assert category == "structured_edits_python_syntax_invalid"
 
 
+def test_generic_adapter_repair_protocol_accepts_json_with_escaped_source_quotes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "label.go").write_text('package label\n\nfunc Value() string { return "draft" }\n', encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+    path = tmp_path / "manifest.json"; path.write_text(json.dumps(_manifest(root)), encoding="utf-8"); os.chmod(path, 0o600)
+    monkeypatch.setenv(ENV_MANIFEST, str(path))
+    packet = {"selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "target_plugin": {"schema_version": TARGET_PLUGIN_SCHEMA_VERSION, "id": GENERIC_WORKSPACE_PLUGIN_ID, "fixture_root": ".", "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID, "execution_profile": GENERIC_WORKSPACE_PROFILE}}
+    plugin = resolve_target_plugin(packet, root)
+    responses = iter(["not a diff", '{"edits":[{"path":"src/label.go","old":"return \\"draft\\"","new":"return \\"ready\\""}]}'])
+
+    result = execute_target_plugin_command(plugin, task="Return ready.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=lambda _prompt, _alias: next(responses), model_alias="coder")
+
+    assert result["coder_blocked"] is False
+    assert result["coder_diagnostics"]["model_response_format"] == "structured_edits"
+
+
 def test_generic_workspace_context_uses_bounded_coder_visible_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     root = tmp_path / "fixture"; root.mkdir()
     _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
