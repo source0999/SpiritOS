@@ -259,8 +259,9 @@ class _PrivateModelOutputCapture:
         self.entries: list[dict[str, Any]] = []
 
     def __call__(self, call_record: dict[str, Any], raw_response: str) -> None:
-        index = int(call_record["call_index"])
-        path = self._root / f"{self._run_id}-call-{index}.txt"
+        provider_call_index = int(call_record["call_index"])
+        capture_index = len(self.entries) + 1
+        path = self._root / f"{self._run_id}-response-{capture_index}-provider-call-{provider_call_index}.txt"
         descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:
             with os.fdopen(descriptor, "w", encoding="utf-8") as output:
@@ -273,7 +274,8 @@ class _PrivateModelOutputCapture:
         os.chmod(path, 0o600)
         self.entries.append(
             {
-                "call_index": index,
+                "capture_index": capture_index,
+                "provider_call_index": provider_call_index,
                 "sha256": hashlib.sha256(raw_response.encode("utf-8")).hexdigest(),
             }
         )
