@@ -357,6 +357,57 @@ def run_campaign_3_5_task(
     ).returncode != 0
     tests = _run_visible_tests(prepared.task, prepared.fixture_root) if runner_reason is None and changed else {"status": "not_run", "passed": False}
     _stage_event(trace_events, "tests_completed", passed=tests["passed"])
+    # One bounded repair pass lets the production coder inspect the exact
+    # applied public tree after a visible-test failure.  It never receives a
+    # private oracle result, expected answer, or hidden test name.
+    if runner_reason is None and changed and not tests["passed"]:
+        _stage_event(trace_events, "visible_test_repair_requested")
+        try:
+            with _fixture_authority(prepared.manifest_path), _temporary_environment(
+                "SOURCE_PROXY_GATE_INCREMENT", "campaign-3.5"
+            ), _temporary_environment(
+                "SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA", "0"
+            ):
+                plugin = resolve_target_plugin(_packet(), prepared.fixture_root)
+                repair_task = (
+                    str(prepared.task["prompt"])
+                    + "\n\nA prior patch is already applied, but the declared visible tests still fail. "
+                    + "Inspect the current repository context and return one scoped patch that makes the public task and visible tests pass. "
+                    + "Do not rely on any hidden verification."
+                )
+                repair_result = execute_target_plugin_command(
+                    plugin,
+                    task=repair_task,
+                    workspace_root=prepared.fixture_root,
+                    canonical_context={},
+                    canonical_context_text="",
+                    llm_call=llm_call,
+                    model_alias=model_alias,
+                    model_output_observer=raw_output_capture,
+                )
+                repair_provenance = repair_result.get("target_adapter_provenance", {})
+                repair_diff = str(repair_result.get("proposed_diff") or "")
+                if repair_diff and repair_provenance.get("terminal_proof_eligible") is True:
+                    completed = subprocess.run(
+                        ["git", "apply", "--recount", "-"],
+                        input=repair_diff,
+                        text=True,
+                        cwd=prepared.fixture_root,
+                        capture_output=True,
+                        check=False,
+                        timeout=15,
+                    )
+                    if completed.returncode == 0:
+                        adapter_result = repair_result
+                        _stage_event(trace_events, "visible_test_repair_applied")
+                        tests = _run_visible_tests(prepared.task, prepared.fixture_root)
+                        _stage_event(trace_events, "tests_completed", passed=tests["passed"], retry=True)
+                    else:
+                        _stage_event(trace_events, "visible_test_repair_rejected", reason="PATCH_APPLICATION_ERROR")
+                else:
+                    _stage_event(trace_events, "visible_test_repair_rejected", reason=str(repair_result.get("reason_code") or "MODEL_OUTPUT_NOT_APPLICABLE"))
+        except Exception as error:  # A failed repair transport preserves the original test failure.
+            _stage_event(trace_events, "visible_test_repair_rejected", reason=f"repair_execution_error:{type(error).__name__}")
     candidate_disposition = "COMPLETED_VERIFIED" if runner_reason is None and changed and tests["passed"] else "BLOCKED_OR_DEGRADED_TRUTHFULLY"
     try:
         _stage_event(trace_events, "oracle_started")
