@@ -355,6 +355,15 @@ def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) ->
             return "", [], "invalid_structured_edits"
         original = originals.setdefault(path, candidate.read_text(encoding="utf-8"))
         current = updated.get(path, original)
+        if current.count(old) != 1 and "\\n" in old:
+            # A JSON response can contain source newlines escaped twice.  This
+            # is a transport spelling, not an inferred edit: accept it only
+            # if the decoded locator is an exact unique match in visible text.
+            decoded_old = old.replace("\\r\\n", "\r\n").replace("\\n", "\n")
+            if current.count(decoded_old) == 1:
+                old = decoded_old
+                new = new.replace("\\r\\n", "\r\n").replace("\\n", "\n")
+                response_format = "structured_edits_double_escaped_newlines"
         if current.count(old) != 1:
             return "", [], "structured_edits_old_text_mismatch"
         updated[path] = current.replace(old, new, 1)

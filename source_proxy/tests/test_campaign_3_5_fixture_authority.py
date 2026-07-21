@@ -135,6 +135,20 @@ def test_structured_edits_accepts_unambiguous_backtick_wrapped_source_strings(tm
     assert category == "structured_edits_backtick_strings"
 
 
+def test_structured_edits_accepts_double_escaped_newlines_only_for_an_exact_locator(tmp_path: Path) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "example.py").write_text("def value():\n    return 'draft'\n", encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+
+    raw = json.dumps({"edits": [{"path": "src/example.py", "old": "def value():\\n    return 'draft'", "new": "def value():\\n    return 'ready'"}]})
+    diff, files, category = _structured_edits_to_diff(root, ["src/"], raw)
+
+    assert "+    return 'ready'" in diff
+    assert files == ["src/example.py"]
+    assert category == "structured_edits_double_escaped_newlines"
+
+
 def test_generic_adapter_repair_protocol_accepts_json_with_escaped_source_quotes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
