@@ -14,6 +14,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -214,6 +215,39 @@ def _receipt_path(evidence_dir: Path, run_id: str) -> Path:
     return path
 
 
+def _run_visible_tests(task: dict[str, Any], fixture_root: Path) -> dict[str, Any]:
+    """Execute declared visible tests against the exact post-apply tree."""
+    if "pytest passes" not in task.get("expected_tests", []):
+        return {"status": "not_declared", "passed": True}
+    started = datetime.now(UTC)
+    completed = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q"],
+        cwd=fixture_root,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=60,
+        env={
+            **os.environ,
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPATH": os.pathsep.join(filter(None, [str(fixture_root), os.environ.get("PYTHONPATH", "")])),
+        },
+    )
+    return {
+        "status": "completed",
+        "passed": completed.returncode == 0,
+        "command": "python -m pytest -q",
+        "exit_code": completed.returncode,
+        "started_at": started.isoformat(),
+        "stdout_sha256": hashlib.sha256(completed.stdout.encode("utf-8")).hexdigest(),
+        "stderr_sha256": hashlib.sha256(completed.stderr.encode("utf-8")).hexdigest(),
+    }
+
+
+def _stage_event(events: list[dict[str, Any]], name: str, **details: Any) -> None:
+    events.append({"event": name, "at": datetime.now(UTC).isoformat(), **details})
+
+
 class _PrivateModelOutputCapture:
     """Persist raw responses outside the fixture and public receipt boundary."""
 
@@ -264,6 +298,8 @@ def run_campaign_3_5_task(
     adapter_result: dict[str, Any] = {}
     apply_receipt: dict[str, Any] | None = None
     runner_reason: str | None = None
+    trace_events: list[dict[str, Any]] = []
+    _stage_event(trace_events, "durable_task_created", task_id=task_id)
     try:
         # The production model client deliberately reads this established gate
         # setting.  Bind it locally so its own central check receives the
@@ -274,6 +310,7 @@ def run_campaign_3_5_task(
             "SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA", "0"
         ):
             plugin = resolve_target_plugin(_packet(), prepared.fixture_root)
+            _stage_event(trace_events, "planner_or_router_decision", plugin_id=plugin.plugin_id)
             adapter_result = execute_target_plugin_command(
                 plugin,
                 task=str(prepared.task["prompt"]),
@@ -285,6 +322,7 @@ def run_campaign_3_5_task(
                 model_output_observer=raw_output_capture,
             )
             provenance = adapter_result.get("target_adapter_provenance", {})
+            _stage_event(trace_events, "provider_model_called", call_count=provenance.get("call_count", 0))
             diff = str(adapter_result.get("proposed_diff") or "")
             adapter_reason = str(adapter_result.get("reason_code") or "").strip()
             if adapter_result.get("coder_blocked"):
@@ -305,7 +343,9 @@ def run_campaign_3_5_task(
                     timeout=15,
                 )
                 if completed.returncode:
-                    runner_reason = "campaign_3_5_apply_failed"
+                    runner_reason = "PATCH_APPLICATION_ERROR"
+                else:
+                    _stage_event(trace_events, "patch_applied")
             elif diff:
                 runner_reason = "campaign_3_5_noncanonical_diff_not_applied"
     except Exception as error:  # Preserve no model/provider/private content in receipts.
@@ -315,21 +355,21 @@ def run_campaign_3_5_task(
         ["git", "-C", str(prepared.fixture_root), "diff", "--quiet", "HEAD"],
         check=False,
     ).returncode != 0
-    if runner_reason is None and changed:
-        disposition = "COMPLETED_VERIFIED"
-    elif runner_reason is None:
-        disposition = "BLOCKED_OR_DEGRADED_TRUTHFULLY"
-    else:
-        disposition = "BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    tests = _run_visible_tests(prepared.task, prepared.fixture_root) if runner_reason is None and changed else {"status": "not_run", "passed": False}
+    _stage_event(trace_events, "tests_completed", passed=tests["passed"])
+    candidate_disposition = "COMPLETED_VERIFIED" if runner_reason is None and changed and tests["passed"] else "BLOCKED_OR_DEGRADED_TRUTHFULLY"
     try:
+        _stage_event(trace_events, "oracle_started")
         oracle = evaluate_profile(
             prepared.profile,
             fixture_root=prepared.fixture_root,
             allowed_paths=["src/", "tests/", "migrations/", "config/", "docs/", "pyproject.toml"],
-            final_disposition=disposition,
+            final_disposition=candidate_disposition,
             semantic_probe=_semantic_probe(str(prepared.task["task_id"])) if changed else None,
         )
+        _stage_event(trace_events, "oracle_completed", passed=oracle["passed"])
     except Exception as error:  # An oracle crash is a failed benchmark result, never a lost receipt.
+        runner_reason = runner_reason or "ORACLE_EXECUTION_ERROR"
         oracle = {
             "schema_version": "campaign-3.5-oracle-result/v1",
             "task_id": prepared.task["task_id"],
@@ -339,6 +379,20 @@ def run_campaign_3_5_task(
             "semantic_category": f"oracle_execution_error:{type(error).__name__}",
             "result_commitment": hashlib.sha256(type(error).__name__.encode("utf-8")).hexdigest(),
         }
+        _stage_event(trace_events, "oracle_completed", passed=False, failure="ORACLE_EXECUTION_ERROR")
+    reviewer = {"identity": "deterministic-scope-reviewer/v1", "passed": bool(changed and oracle["checks"].get("scope") is True)}
+    _stage_event(trace_events, "reviewer_completed", passed=reviewer["passed"])
+    verifier = {"identity": "deterministic-evidence-verifier/v1", "passed": bool(tests["passed"] and oracle["passed"] and reviewer["passed"])}
+    _stage_event(trace_events, "verifier_completed", passed=verifier["passed"])
+    if runner_reason is None and not tests["passed"]:
+        runner_reason = "TEST_ENVIRONMENT_ERROR"
+    if runner_reason is None and not oracle["passed"]:
+        runner_reason = "SEMANTIC_VERIFICATION_FAILED"
+    if runner_reason is None and not reviewer["passed"]:
+        runner_reason = "REVIEWER_REJECTED"
+    if runner_reason is None and not verifier["passed"]:
+        runner_reason = "VERIFIER_REJECTED"
+    disposition = "COMPLETED_VERIFIED" if runner_reason is None else "BLOCKED_OR_DEGRADED_TRUTHFULLY"
     provenance = adapter_result.get("target_adapter_provenance", {})
     receipt = {
         "schema_version": RECEIPT_SCHEMA,
@@ -362,8 +416,12 @@ def run_campaign_3_5_task(
         "apply_authority": apply_receipt,
         "runner_reason": runner_reason,
         "final_disposition": disposition,
+        "visible_tests": tests,
         "oracle": oracle,
-        "benchmark_passed": bool(oracle["passed"] and provenance.get("terminal_proof_eligible") is True),
+        "reviewer": reviewer,
+        "verifier": verifier,
+        "trace_events": trace_events,
+        "benchmark_passed": bool(disposition == "COMPLETED_VERIFIED" and provenance.get("terminal_proof_eligible") is True),
         "private_data_exposed": False,
     }
     try:

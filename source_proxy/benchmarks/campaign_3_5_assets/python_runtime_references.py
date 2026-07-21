@@ -38,7 +38,9 @@ def _module(path: Path):
 
 def apply_python_runtime_reference(task_id: str, root: Path) -> None:
     if task_id == "S01":
-        _replace(root / "src/api/items.py", "return list(ITEMS)", "\n    if limit is None: limit = 20\n    if not 1 <= limit <= 100: raise ValueError('limit out of range')\n    return list(ITEMS[:limit])")
+        _replace(root / "src/api/items.py", "from fastapi import FastAPI", "from fastapi import FastAPI, HTTPException")
+        _replace(root / "src/api/items.py", "    # Baseline defect: the endpoint ignores the optional bound.\n    return list(ITEMS)", "    if limit is None:\n        limit = 20\n    if not 1 <= limit <= 100:\n        raise HTTPException(status_code=422, detail='limit must be between 1 and 100')\n    return list(ITEMS[:limit])")
+        _replace(root / "tests/test_items.py", "    assert len(response.json()) >= 100", "    assert len(response.json()) == 20\n\ndef test_limit_boundaries():\n    assert len(client.get('/items', params={'limit': 1}).json()) == 1\n    assert len(client.get('/items', params={'limit': 100}).json()) == 100\n    assert client.get('/items', params={'limit': 0}).status_code == 422\n    assert client.get('/items', params={'limit': 101}).status_code == 422")
     elif task_id == "S02":
         _replace(root / "src/identity/email.py", "return value.strip().lower()", "value = value.strip()\n    if value.count('@') != 1: raise ValueError('invalid email')\n    local, domain = value.split('@')\n    return local + '@' + domain.lower()")
     elif task_id == "S05":
@@ -92,8 +94,18 @@ def probe_python_runtime(task_id: str, root: Path) -> tuple[bool, str]:
     if task_id in {"S01", "S09"}:
         module = _module(root / "src/api/items.py")
         if task_id == "S01":
-            try: module.list_items(0); return False, "range_not_enforced"
-            except ValueError: return len(module.list_items()) == 20 and len(module.list_items(100)) == 100, "http_contract_equivalent"
+            from fastapi.testclient import TestClient
+            before = [dict(item) for item in module.ITEMS]
+            client = TestClient(module.app, raise_server_exceptions=False)
+            requests = [(None, 20), (1, 1), (37, 37), (100, 100)]
+            for limit, expected_length in requests:
+                response = client.get("/items", params={} if limit is None else {"limit": limit})
+                if response.status_code != 200 or not isinstance(response.json(), list) or len(response.json()) != expected_length:
+                    return False, "http_limit_contract_failed"
+            for limit in (0, 101):
+                if client.get("/items", params={"limit": limit}).status_code != 422:
+                    return False, "http_range_contract_failed"
+            return module.ITEMS == before and len(module.ITEMS) >= 100, "http_storage_contract"
         return module.health().get("version") == module.PACKAGE_VERSION, "version_metadata"
     if task_id == "S02":
         module = _module(root / "src/identity/email.py"); return module.normalize_email(" Local@EXAMPLE.com ") == "Local@example.com", "email_normalization"

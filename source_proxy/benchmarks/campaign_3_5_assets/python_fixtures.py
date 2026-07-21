@@ -25,8 +25,8 @@ def _header(seed: str, fixture_id: str) -> str:
 def _fastapi_small(seed: str) -> dict[str, str]:
     header = _header(seed, "py-fastapi-small")
     return {
-        "src/api/items.py": header + """PACKAGE_VERSION = \"0.9.0\"\nITEMS = [{\"id\": index} for index in range(250)]\n\ndef list_items(limit=None):\n    # Baseline defect: ignores the optional bound.\n    return list(ITEMS)\n\ndef health():\n    # Baseline defect: omits canonical package metadata.\n    return {\"status\": \"ok\"}\n""",
-        "tests/test_items.py": """from src.api.items import health, list_items\n\ndef test_default_route_returns_records():\n    assert len(list_items()) == 250\n\ndef test_health_is_ok():\n    assert health()[\"status\"] == \"ok\"\n""",
+        "src/api/items.py": header + """from fastapi import FastAPI\n\nPACKAGE_VERSION = \"0.9.0\"\nITEMS = [{\"id\": index} for index in range(250)]\napp = FastAPI()\n\n@app.get(\"/items\")\ndef list_items(limit: int | None = None):\n    # Baseline defect: the endpoint ignores the optional bound.\n    return list(ITEMS)\n\n@app.get(\"/health\")\ndef health():\n    return {\"status\": \"ok\", \"version\": PACKAGE_VERSION}\n""",
+        "tests/test_items.py": """from fastapi.testclient import TestClient\n\nfrom src.api.items import app\n\nclient = TestClient(app)\n\ndef test_baseline_endpoint_is_available():\n    response = client.get(\"/items\")\n    assert response.status_code == 200\n    assert len(response.json()) >= 100\n\ndef test_health_is_ok():\n    assert client.get(\"/health\").json()[\"status\"] == \"ok\"\n""",
         "src/api/decoy_items.py": "def list_items(limit=None): return []  # test-only decoy\n",
     }
 
