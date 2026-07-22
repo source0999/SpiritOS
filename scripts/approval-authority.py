@@ -20,6 +20,10 @@ from source_proxy.approval.runtime_identity import (  # noqa: E402
     AuthorityRuntimeIdentityError,
     resolve_authority_runtime_identity,
 )
+from source_proxy.target_plugins.selection import (  # noqa: E402
+    GENERIC_WORKSPACE_PLUGIN_ID,
+    LUMACART_PLUGIN_ID,
+)
 
 AUTHORITY_ID = "spiritos-approval-authority"
 ISSUER_ID = "spiritos-approval-authority/foundation-remediation-r1"
@@ -49,6 +53,17 @@ CONSUMER_OPERATIONS = {
     "cartographer-transfer-consumer": "cartographer_selection_transfer",
 }
 ACKNOWLEDGEMENT_CONSUMERS = {"coding-reviewer", "coding-verifier", "spiritflix-admin-reviewer", "spiritflix-admin-verifier", "cartographer-reviewer", "cartographer-verifier", "design-reviewer", "design-verifier", "evidence-recorder"}
+APPROVAL_PREVIEW_PLUGIN_IDS = frozenset(
+    {
+        "design-studio",
+        "coding-shell",
+        "dummy-product-site",
+        GENERIC_WORKSPACE_PLUGIN_ID,
+        LUMACART_PLUGIN_ID,
+        "spiritflix-admin",
+        "cartographer-transfer",
+    }
+)
 TERMINAL_REASONS = {
     "consumed": "approval_already_consumed",
     "rejected": "approval_rejected",
@@ -151,7 +166,7 @@ def persist_preview(data):
     exact_campaign_identity(data)
     target = require(data, "target")
     plugin = require(data, "plugin")
-    if plugin not in {"design-studio", "coding-shell", "dummy-product-site", "lumacart", "spiritflix-admin", "cartographer-transfer"}:
+    if plugin not in APPROVAL_PREVIEW_PLUGIN_IDS:
         fail("approval_plugin_mismatch")
     content_hash = require(data, "content_hash")
     context_hash = require(data, "context")

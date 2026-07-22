@@ -115,5 +115,30 @@ failures into structured provenance-bearing no-mutation results, removes the
 duplicate daemon owner, and records the isolated service's final return code,
 signal, log hashes, and whether any runner signal preceded that exit.
 
-All four failed runs remain immutable negative evidence and are ineligible for
+## Fifth preserved first-phase run
+
+- Source HEAD: `66cdd300`
+- Run: `basic-backend-10-20260722T110326Z-9e6150a9b0d7`
+- Phase: `first`
+- Result: `0/10` passed; the phase gate did not pass.
+- Six tasks produced proposal material but the durable approval-preview
+  boundary rejected the resolved `generic-workspace` plugin identity with
+  `approval_plugin_mismatch`.
+- Three tasks stopped with a structured `coder_model_timeout`; one stopped
+  after exhausting bounded same-route preview-format repair.
+- Unauthorized mutations, fabricated completions, and hidden-answer leaks:
+  `0`.
+
+The run proved that deterministic target discovery can reach the local Coder
+without an Architect call on ordinary single-target requests and that the
+remaining Architect path can reuse its persisted plan. It also exposed a
+single generalized durable-authority registry defect: the server-side identity
+and diff-scope validator accepted `generic-workspace`, while the lower-level
+approval-preview authority retained an older plugin allowlist that omitted the
+same production plugin ID. The repair registers the shared target-plugin ID at
+that durable boundary, retains fail-closed rejection of unknown plugins, and
+adds a real subprocess-boundary regression rather than changing the runner or
+task fixtures.
+
+All five failed runs remain immutable negative evidence and are ineligible for
 resume or terminal certification.

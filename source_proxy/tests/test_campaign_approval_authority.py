@@ -480,6 +480,52 @@ def test_generic_target_plugin_binds_fixture_head_and_every_changed_path(
         identity=identity,
     )
 
+    monkeypatch.setenv(
+        "SPIRITOS_APPROVAL_STATE_DIR",
+        str((tmp_path / "approval-state").resolve()),
+    )
+    preview = persist_coding_execution_preview(
+        task_id="generic-workspace-durable-preview",
+        action="update fixture value",
+        approved_diff=valid_diff,
+        target="src/value.py",
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        context_hash="generic-workspace-context-hash",
+        target_plugin_identity=identity,
+    )
+    persisted = authority._call(
+        "lookup-preview",
+        {"preview_id": str(preview["preview_id"])},
+    )
+    assert persisted["state"] == "previewed"
+    assert persisted["plugin"] == GENERIC_WORKSPACE_PLUGIN_ID
+    assert persisted["target"] == "src/value.py"
+
+    unknown = subprocess.run(
+        ["python3", "scripts/approval-authority.py", "persist-preview"],
+        input=json.dumps(
+            {
+                "repository": authority.REPOSITORY,
+                "worktree": authority.ROOT,
+                "root": authority.ROOT,
+                "target": "src/value.py",
+                "plugin": "unknown-target-plugin",
+                "content_hash": "unknown-plugin-content",
+                "context": "unknown-plugin-context",
+                "source_head": authority.current_head(),
+            }
+        ),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert unknown.returncode != 0
+    assert json.loads(unknown.stdout) == {
+        "ready": False,
+        "reason": "approval_plugin_mismatch",
+        "secretExposed": False,
+    }
+
     outside_diff = """diff --git a/outside.py b/outside.py
 --- a/outside.py
 +++ b/outside.py
