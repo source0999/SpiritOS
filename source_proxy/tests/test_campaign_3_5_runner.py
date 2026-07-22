@@ -69,6 +69,11 @@ def test_raw_model_output_is_private_but_its_hash_is_receipted(tmp_path: Path) -
 def test_public_repair_artifacts_bind_visible_failure_to_each_lane() -> None:
     prepared = prepare_campaign_3_5_run("S01")
     try:
+        source_path = prepared.fixture_root / "src" / "api" / "items.py"
+        source_path.write_text(
+            source_path.read_text(encoding="utf-8") + "\nHTTPException(status_code=422)\n",
+            encoding="utf-8",
+        )
         artifacts = _public_repair_artifacts(
             prepared.task,
             prepared.fixture_root,
@@ -88,5 +93,6 @@ def test_public_repair_artifacts_bind_visible_failure_to_each_lane() -> None:
     assert any("raising" in finding for finding in artifacts["diagnostics"]["findings"])
     assert artifacts["debugger"]["reproduction_command"] == "python -m pytest -q"
     assert any("endpoint now returns" in finding for finding in artifacts["debugger"]["findings"])
+    assert any("without importing it" in finding for finding in artifacts["reviewer"]["findings"])
     assert all(len(payload["content_sha256"]) == 64 for payload in artifacts.values())
     assert "http_range_contract_failed" not in json.dumps(artifacts)

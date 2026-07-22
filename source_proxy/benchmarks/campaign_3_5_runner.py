@@ -274,6 +274,17 @@ def _public_repair_artifacts(task: dict[str, Any], fixture_root: Path, tests: di
         debugger_findings.append(
             "The endpoint now returns the task-required default of 20, while the visible baseline assertion still requires at least 100 items; repair the public test contract and add public limit-boundary coverage."
         )
+    reviewer_findings = ["Visible tests are failing; repair implementation and public tests together without changing scope."]
+    for relative_path in changed:
+        candidate = fixture_root / relative_path
+        if candidate.suffix != ".py" or not candidate.is_file():
+            continue
+        source = candidate.read_text(encoding="utf-8", errors="replace")
+        fastapi_imports = [line for line in source.splitlines() if line.startswith("from fastapi import ")]
+        if "HTTPException(" in source and not any("HTTPException" in line for line in fastapi_imports):
+            reviewer_findings.append(
+                f"{relative_path} references HTTPException without importing it from fastapi; add the public import before relying on range-error behavior."
+            )
     planner = {
         "identity": "campaign-3.5-public-planner/v1",
         "task": task["prompt"],
@@ -281,7 +292,12 @@ def _public_repair_artifacts(task: dict[str, Any], fixture_root: Path, tests: di
         "public_test_command": "python -m pytest -q",
     }
     architect = {"identity": "campaign-3.5-scope-architect/v1", "changed_paths": changed, "allowed_paths": ["src/", "tests/", "migrations/", "config/", "docs/", "pyproject.toml"]}
-    reviewer = {"identity": "campaign-3.5-visible-test-reviewer/v1", "finding": "Visible tests are failing; repair implementation and public tests together without changing scope.", "changed_paths": changed}
+    reviewer = {
+        "identity": "campaign-3.5-visible-test-reviewer/v1",
+        "finding": " ".join(reviewer_findings),
+        "findings": reviewer_findings,
+        "changed_paths": changed,
+    }
     verifier = {"identity": "campaign-3.5-private-verifier-boundary/v1", "finding": "Independent verification has not approved the applied tree. Re-evaluate the public contract; no private oracle detail is disclosed."}
     diagnostics_payload = {"identity": "campaign-3.5-visible-test-diagnostics/v1", "findings": diagnostics, "test_output": test_output}
     debugger = {
