@@ -58,6 +58,10 @@ def test_repair_failure_kinds_cover_required_backend_distinctions() -> None:
 def test_repair_failure_classification_prefers_stage_and_diagnostic_code() -> None:
     cases = [
         ("coder_response_not_json", "coder", "patch_format_error"),
+        ("coder_model_timeout", "coder", "model_error"),
+        ("architect_llm_timeout", "architect", "model_error"),
+        ("coder_model_router_error", "coder", "model_error"),
+        ("architect_llm_router_error", "architect", "model_error"),
         ("architect_target_missing", "architect", "prompt_context_error"),
         ("pytest_missing_module", "tests", "test_environment_error"),
         ("fixture_manifest_invalid", "fixture", "fixture_error"),
@@ -78,6 +82,26 @@ def test_repair_failure_classification_prefers_stage_and_diagnostic_code() -> No
         )
         assert result.failure_kind.value == expected
         assert result.diagnostic_code == code
+
+
+def test_model_timeout_is_not_misclassified_as_test_environment_failure() -> None:
+    coder = classify_repair_failure(
+        diagnostic_code="coder_model_timeout",
+        stage="coder",
+        reason="TimeoutError",
+    )
+    architect = classify_repair_failure(
+        diagnostic_code="architect_llm_timeout",
+        stage="architect",
+        reason="TimeoutError",
+    )
+
+    assert coder.failure_kind is RepairFailureKind.MODEL_ERROR
+    assert coder.failure_class is FailureClass.RESOURCE_PRESSURE
+    assert coder.retry_owner == "coder_model_router"
+    assert architect.failure_kind is RepairFailureKind.MODEL_ERROR
+    assert architect.failure_class is FailureClass.RESOURCE_PRESSURE
+    assert architect.retry_owner == "architect_model_router"
 
 
 def test_receipt_safe_serialization_preserves_legacy_string() -> None:

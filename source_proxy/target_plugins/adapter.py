@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import time
 from typing import Any
 
 from source_proxy.approval.runtime_identity import (
@@ -211,6 +212,8 @@ def execute_target_plugin_command(
         )
     )
     model_calls: list[dict[str, Any]] = []
+    route_timeout_seconds = _target_plugin_route_timeout_seconds()
+    route_started_monotonic = _monotonic()
 
     def provenance_model_call(prompt: str, alias: str, *, stage: str = "coder") -> str:
         requested_alias = alias
@@ -222,12 +225,29 @@ def execute_target_plugin_command(
                 or requested_alias
                 or selected_alias
             )
-        elif stage == "coder" and any(
-            call.get("stage") == "coder" for call in model_calls
-        ):
-            alias = os.getenv("SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS", "").strip() or selected_alias
         else:
             alias = selected_alias
+        configured_timeout_seconds = (
+            _architect_model_timeout_seconds()
+            if stage == "architect"
+            else _dummy_product_site_model_timeout_seconds()
+        )
+        route_elapsed_seconds = max(
+            0.0,
+            _monotonic() - route_started_monotonic,
+        )
+        route_remaining_seconds = max(
+            0.0,
+            route_timeout_seconds - route_elapsed_seconds,
+        )
+        if route_remaining_seconds <= 1.0:
+            raise TargetPluginResolutionError(
+                "target_plugin_model_execution_budget_exhausted"
+            )
+        timeout_seconds = min(
+            configured_timeout_seconds,
+            route_remaining_seconds,
+        )
         call_record: dict[str, Any] = {
             "call_index": len(model_calls) + 1,
             "stage": stage,
@@ -237,6 +257,11 @@ def execute_target_plugin_command(
             "raw_response_sha256": None,
             "raw_response_observed": False,
             "transport_kind": configured_transport_kind,
+            "configured_timeout_seconds": configured_timeout_seconds,
+            "timeout_seconds": timeout_seconds,
+            "route_timeout_seconds": route_timeout_seconds,
+            "route_elapsed_seconds_before_call": route_elapsed_seconds,
+            "route_remaining_seconds_before_call": route_remaining_seconds,
         }
         if configured_transport_kind == "injected_callback":
             call_record.update(
@@ -264,6 +289,7 @@ def execute_target_plugin_command(
                     {
                         "completed": False,
                         "error_type": "ModelAliasConfigurationError",
+                        "failure_origin": "model_alias_configuration",
                         "model_call_authority": {
                             "central_gate_check_passed": False,
                             "reason_code": role_alias_error[0],
@@ -300,7 +326,7 @@ def execute_target_plugin_command(
                 raw_response = _call_dummy_product_site_llm_with_wall_timeout(
                     prompt,
                     alias,
-                    _dummy_product_site_model_timeout_seconds(),
+                    timeout_seconds,
                     model_call_run_id=authority_run_id,
                     authority_observer=lambda authority: call_record.__setitem__(
                         "model_call_authority",
@@ -323,6 +349,15 @@ def execute_target_plugin_command(
                 {
                     "completed": False,
                     "error_type": type(error).__name__,
+                    "failure_origin": (
+                        "provider_transport"
+                        if isinstance(call_record.get("model_call_authority"), Mapping)
+                        and call_record["model_call_authority"].get(
+                            "central_gate_check_passed"
+                        )
+                        is True
+                        else "authority_or_routing"
+                    ),
                 }
             )
             raise
@@ -431,7 +466,50 @@ def execute_target_plugin_command(
         configured_transport_kind=configured_transport_kind,
         model_calls=model_calls,
         reviewer_model_configured=bool(reviewer_model_alias),
+        route_timeout_seconds=route_timeout_seconds,
+        route_started_monotonic=route_started_monotonic,
     )
+
+
+def _architect_model_timeout_seconds() -> float:
+    """Use the Architect's configured budget at the injected provider boundary."""
+
+    raw = os.getenv("SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS", "20").strip()
+    try:
+        timeout = float(raw)
+    except ValueError as error:
+        raise ValueError(
+            "SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS must be numeric."
+        ) from error
+    if timeout <= 0:
+        raise ValueError(
+            "SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS must be greater than 0."
+        )
+    return timeout
+
+
+def _target_plugin_route_timeout_seconds() -> float:
+    """Return the monotonic aggregate model budget for one adapter route."""
+
+    raw = os.getenv(
+        "SOURCE_PROXY_TARGET_PLUGIN_ROUTE_TIMEOUT_SECONDS",
+        "450",
+    ).strip()
+    try:
+        timeout = float(raw)
+    except ValueError as error:
+        raise ValueError(
+            "SOURCE_PROXY_TARGET_PLUGIN_ROUTE_TIMEOUT_SECONDS must be numeric."
+        ) from error
+    if timeout <= 1:
+        raise ValueError(
+            "SOURCE_PROXY_TARGET_PLUGIN_ROUTE_TIMEOUT_SECONDS must be greater than 1."
+        )
+    return timeout
+
+
+def _monotonic() -> float:
+    return time.monotonic()
 
 
 def _execute_generic_unified_diff(plugin: ResolvedTargetPlugin, task: str, root: Path, model_call: Callable[[str, str], str] | None, alias: str) -> dict[str, Any]:
@@ -685,6 +763,8 @@ def _attach_target_adapter_provenance(
     configured_transport_kind: str,
     model_calls: list[dict[str, Any]],
     reviewer_model_configured: bool = False,
+    route_timeout_seconds: float = 450.0,
+    route_started_monotonic: float | None = None,
 ) -> dict[str, Any]:
     from source_proxy.routing.litellm_router import (
         route_model_for_alias,
@@ -887,6 +967,12 @@ def _attach_target_adapter_provenance(
         "routed_model": producer_call.get("routed_model") if producer_call else model,
         "producer_call_index": producer_call.get("call_index"),
         "producer_identity_bound": producer_identity_bound,
+        "route_timeout_seconds": route_timeout_seconds,
+        "route_elapsed_seconds": (
+            max(0.0, _monotonic() - route_started_monotonic)
+            if route_started_monotonic is not None
+            else 0.0
+        ),
         "call_count": len(model_calls),
         "calls": [dict(call) for call in model_calls],
     }
@@ -904,6 +990,8 @@ def _attach_target_adapter_provenance(
             "reviewer_model_call_count_observed": len(reviewer_calls),
             "generation_source": generation_source,
             "target_adapter_trust_status": trust_status,
+            "route_timeout_seconds": provenance["route_timeout_seconds"],
+            "route_elapsed_seconds": provenance["route_elapsed_seconds"],
             "execution_path": execution_path,
             "rich_path_proven": rich_path_proven,
             "terminal_proof_eligible": terminal_proof_eligible,

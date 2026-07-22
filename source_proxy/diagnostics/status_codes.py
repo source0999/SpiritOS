@@ -174,6 +174,42 @@ def classify_repair_failure(
         retryable = True
         retry_owner = "fixture_harness"
         genuine_stop = False
+    elif normalized_stage in {"architect", "coder", "model", "reviewer"} and any(
+        token in combined
+        for token in (
+            "llm_timeout",
+            "model_timeout",
+            "provider_timeout",
+            "model_execution_budget_exhausted",
+        )
+    ):
+        kind = RepairFailureKind.MODEL_ERROR
+        failure_class = FailureClass.RESOURCE_PRESSURE
+        retryable = True
+        retry_owner = (
+            "architect_model_router"
+            if normalized_stage == "architect"
+            else "coder_model_router"
+        )
+        genuine_stop = False
+    elif normalized_stage in {"architect", "coder", "model", "reviewer"} and any(
+        token in combined
+        for token in (
+            "llm_router_error",
+            "model_router_error",
+            "model_not_configured",
+            "provider_transport",
+        )
+    ):
+        kind = RepairFailureKind.MODEL_ERROR
+        failure_class = FailureClass.ROUTING_FAILURE
+        retryable = True
+        retry_owner = (
+            "architect_model_router"
+            if normalized_stage == "architect"
+            else "coder_model_router"
+        )
+        genuine_stop = False
     elif any(
         token in combined
         for token in (

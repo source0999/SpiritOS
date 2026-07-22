@@ -214,6 +214,71 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
     assert "diff --git a/tests/test_service.py b/tests/test_service.py" in result["proposed_diff"]
 
 
+def test_coder_provider_timeout_returns_structured_no_mutation_result(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+
+    def timed_out_coder(_prompt: str, _alias: str) -> str:
+        raise TimeoutError("local provider timed out")
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_server_persisted_timeout_plan",
+            reason="test_timeout_plan_ready",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_timeout_coder_dispatch",
+            reason="test_timeout_provider_boundary",
+        )
+
+    result = execute_generic_workspace_rich(
+        task="Target file: src/service.py\nFix `existing` without changing its signature.",
+        workspace_root=root,
+        allowed_paths=("src/",),
+        readable_paths=("src/", "tests/"),
+        model_call=timed_out_coder,
+        coder_model_call=timed_out_coder,
+        model_alias="coder",
+        canonical_context={},
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["proposed_diff"] == ""
+    assert result["coder_blocked"] is True
+    assert result["reason_code"] == "coder_model_timeout"
+    diagnostics = result["coder_diagnostics"]
+    assert diagnostics["generation_source"] == "model"
+    assert diagnostics["provider_exception_type"] == "TimeoutError"
+    assert len(diagnostics["attempts"]) == 1
+    attempt = diagnostics["attempts"][0]
+    assert attempt["attempt_index"] == 1
+    assert attempt["strategy"] == "architect_packet_initial"
+    assert attempt["changed_files"] == []
+    assert attempt["coder_reason_code"] == "coder_model_timeout"
+    assert attempt["coder_validation_status"] == "coder_model_timeout"
+    assert attempt["provider_exception_type"] == "TimeoutError"
+    assert attempt["failure_kind"] == "model_error"
+    assert attempt["failure_class"] == "RESOURCE_PRESSURE"
+    assert attempt["failure_classification"]["retry_owner"] == "coder_model_router"
+    assert diagnostics["coder_context_binding"]["consumed"] is True
+    assert _git(root, "status", "--short") == ""
+
+
 def test_reused_server_plan_skips_architect_and_dispatches_coder(
     tmp_path: Path,
 ) -> None:

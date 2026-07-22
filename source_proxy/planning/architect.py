@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
@@ -17,7 +18,11 @@ from source_proxy.decision.proposal_task import (
     merge_proposal_forbidden_paths,
     parse_bounded_proposal_task,
 )
-from source_proxy.decision.router import resolve_target_from_task, unsafe_target_for_route
+from source_proxy.decision.router import (
+    ResolvedTarget,
+    resolve_target_from_task,
+    unsafe_target_for_route,
+)
 from source_proxy.planning.plan import (
     PLAN_SCHEMA_VERSION,
     AcceptanceCriterion,
@@ -183,6 +188,45 @@ _RISKY_COMMAND_RE = re.compile(
     r"\b(run|execute|shell|terminal|command|script|npm|python|pytest|curl|powershell|bash)\b",
     re.IGNORECASE,
 )
+_QUOTED_CODE_TOKEN_RE = re.compile(
+    r"`([A-Za-z_][A-Za-z0-9_]*|/[A-Za-z0-9_(){}./-]+)`"
+)
+_DECLARATION_PREFIXES = (
+    "async def",
+    "def",
+    "class",
+    "function",
+    "const",
+    "let",
+    "var",
+    "func",
+    "fn",
+)
+_PRIMARY_SOURCE_SUFFIXES = {
+    ".go",
+    ".java",
+    ".js",
+    ".jsx",
+    ".py",
+    ".rs",
+    ".ts",
+    ".tsx",
+}
+_MAX_TARGET_DISCOVERY_BYTES = 256_000
+_MAX_TARGET_DISCOVERY_FILES = 400
+_TARGET_DISCOVERY_IGNORED_DIRS = {
+    ".git",
+    ".next",
+    ".pytest_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "build",
+    "data",
+    "dist",
+    "node_modules",
+    "venv",
+}
 
 
 class ArchitectLLMError(ValueError):
@@ -201,6 +245,7 @@ def plan_bounded_proposal_create_deterministically(
     *,
     proposal: BoundedProposal | None = None,
     allowed_paths: tuple[str, ...] | None = None,
+    readable_paths: tuple[str, ...] | None = None,
 ) -> Plan | FallthroughToLLM | Block:
     root = workspace_root.resolve()
     bounded = proposal or parse_bounded_proposal_task(task)
@@ -233,12 +278,13 @@ def plan_bounded_proposal_create_deterministically(
         target_content = target_abs.read_text(encoding="utf-8", errors="replace")
         context_slices.append(_context_slice(target_path, "target", target_content))
     reference_page = root / BOUNDED_CREATE_REFERENCE_PAGE
+    context_paths = readable_paths if readable_paths is not None else allowed_paths
     if reference_page.is_file() and (
-        allowed_paths is None
+        context_paths is None
         or _resolved_path_allowed_by_scope(
             root,
             BOUNDED_CREATE_REFERENCE_PAGE,
-            allowed_paths,
+            context_paths,
         )
     ):
         reference_content = reference_page.read_text(encoding="utf-8", errors="replace")
@@ -291,7 +337,7 @@ def plan_bounded_proposal_create_deterministically(
         verification_plan=_verification_plan(target_path),
         budget=PlanBudget(
             max_coder_attempts=3,
-            max_total_seconds=120,
+            max_total_seconds=450,
             cloud_escalation_allowed=True,
         ),
     )
@@ -304,22 +350,43 @@ def plan_task_deterministically(
     workspace_root: Path,
     *,
     allowed_paths: tuple[str, ...] | None = None,
+    readable_paths: tuple[str, ...] | None = None,
 ) -> DeterministicPlanResult:
     clean_task = (task or "").strip()
     root = workspace_root.resolve()
+    context_paths = readable_paths if readable_paths is not None else allowed_paths
     planning_text = effective_planning_task_text(clean_task)
     bounded_create = plan_bounded_proposal_create_deterministically(
         task,
         task_id,
         root,
         allowed_paths=allowed_paths,
+        readable_paths=context_paths,
     )
     if isinstance(bounded_create, (Plan, Block)):
         return bounded_create
     if len(planning_text) > 500:
         return FallthroughToLLM("task_too_long")
 
-    resolved = resolve_target_from_task(clean_task, root)
+    resolved, inferred_target_ambiguity = _resolve_writable_task_target(
+        clean_task,
+        root,
+        allowed_paths=allowed_paths,
+    )
+    if not resolved.path and not inferred_target_ambiguity:
+        inferred_target = _resolve_ordinary_workspace_target(
+            planning_text,
+            root,
+            allowed_paths=allowed_paths,
+        )
+        if inferred_target:
+            resolved = ResolvedTarget(
+                path=inferred_target,
+                exists=True,
+                source="inferred",
+            )
+    if inferred_target_ambiguity:
+        return FallthroughToLLM(inferred_target_ambiguity)
     unsafe_target = unsafe_target_for_route(clean_task, resolved, root)
     if unsafe_target is not None:
         return Block(unsafe_target.reason_code)
@@ -360,7 +427,7 @@ def plan_task_deterministically(
             root,
             resolved.path,
             target_content,
-            allowed_paths=allowed_paths,
+            allowed_paths=context_paths,
         ),
     ]
 
@@ -388,11 +455,372 @@ def plan_task_deterministically(
         verification_plan=_verification_plan(resolved.path),
         budget=PlanBudget(
             max_coder_attempts=3,
-            max_total_seconds=120,
+            max_total_seconds=450,
             cloud_escalation_allowed=True,
         ),
     )
     return Plan(plan)
+
+
+def _resolve_ordinary_workspace_target(
+    task: str,
+    root: Path,
+    *,
+    allowed_paths: tuple[str, ...] | None,
+) -> str:
+    """Resolve a unique ordinary-code target from repository evidence.
+
+    Human backend requests commonly name a function, setting, or route rather
+    than a file.  A local model adds no value when one writable source file
+    uniquely contains or declares that exact request token.  This search is
+    bounded, repository-only, and deliberately contains no fixture names,
+    benchmark IDs, or answer data. Ambiguity still falls through to the
+    Architect model.
+    """
+
+    candidates, scan_complete = _ordinary_source_candidates(
+        root,
+        allowed_paths=allowed_paths,
+    )
+    if not scan_complete:
+        return ""
+    if not candidates:
+        return ""
+
+    tokens = _ordinary_target_tokens(task)
+    contents: dict[str, str] = {}
+    for path in candidates:
+        target = root / path
+        try:
+            if target.stat().st_size > _MAX_TARGET_DISCOVERY_BYTES:
+                return ""
+            contents[path] = target.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return ""
+
+    route_tokens = tuple(token for token in tokens if token.startswith("/"))
+    route_matches = {
+        path
+        for path, content in contents.items()
+        if any(
+            _ordinary_code_literal_present(path, content, token)
+            for token in route_tokens
+        )
+    }
+    if len(route_matches) == 1:
+        route_target = next(iter(route_matches))
+    elif route_matches:
+        return ""
+    else:
+        route_target = ""
+
+    identifier_tokens = tuple(token for token in tokens if not token.startswith("/"))
+    if not identifier_tokens:
+        return route_target
+
+    primary_token = identifier_tokens[0]
+    primary_declarations = {
+        path
+        for path, content in contents.items()
+        if _ordinary_target_declared(path, content, primary_token)
+    }
+    if route_target:
+        if primary_declarations and primary_declarations != {route_target}:
+            return ""
+        if primary_declarations == {route_target}:
+            return route_target
+    elif len(primary_declarations) == 1:
+        return next(iter(primary_declarations))
+    elif primary_declarations:
+        return ""
+
+    primary_literals = {
+        path
+        for path, content in contents.items()
+        if _ordinary_code_literal_present(path, content, primary_token)
+    }
+    if route_target:
+        if primary_literals and primary_literals != {route_target}:
+            return ""
+        return route_target
+    if len(primary_literals) == 1:
+        return next(iter(primary_literals))
+    if primary_literals:
+        return ""
+
+    secondary_tokens = identifier_tokens[1:]
+    evidence_counts = {
+        path: sum(
+            1
+            for token in secondary_tokens
+            if _ordinary_target_declared(path, content, token)
+            or _ordinary_code_literal_present(path, content, token)
+        )
+        for path, content in contents.items()
+    }
+    best_count = max(evidence_counts.values(), default=0)
+    best_paths = sorted(
+        path for path, count in evidence_counts.items() if count == best_count
+    )
+    if best_count > 0 and len(best_paths) == 1:
+        return best_paths[0]
+
+    return ""
+
+
+def _resolve_writable_task_target(
+    task: str,
+    root: Path,
+    *,
+    allowed_paths: tuple[str, ...] | None,
+) -> tuple[ResolvedTarget, str]:
+    """Skip inferred read-only mentions while preserving explicit authority."""
+
+    first = resolve_target_from_task(task, root)
+    if first.source == "explicit_line":
+        return first, ""
+
+    remaining = task
+    skipped_read_only = False
+    writable: list[ResolvedTarget] = []
+    scan_complete = False
+    for _attempt in range(10):
+        resolved = resolve_target_from_task(remaining, root)
+        if not resolved.path:
+            scan_complete = True
+            break
+        if allowed_paths is None or _resolved_path_allowed_by_scope(
+            root,
+            resolved.path,
+            allowed_paths,
+        ):
+            writable.append(resolved)
+        else:
+            skipped_read_only = True
+        updated_remaining = remaining.replace(resolved.path, " ")
+        if updated_remaining == remaining:
+            break
+        remaining = updated_remaining
+    if not scan_complete:
+        return (
+            ResolvedTarget(path="", exists=False, source="inferred"),
+            "inferred_target_scan_incomplete",
+        )
+    unique_writable = {item.path: item for item in writable}
+    if len(unique_writable) == 1:
+        return next(iter(unique_writable.values())), ""
+    if len(unique_writable) > 1:
+        return (
+            ResolvedTarget(path="", exists=False, source="inferred"),
+            "multiple_inferred_writable_targets",
+        )
+    return (
+        ResolvedTarget(path="", exists=False, source="inferred"),
+        "inferred_target_outside_writable_scope" if skipped_read_only else "",
+    )
+
+
+def _ordinary_source_candidates(
+    root: Path,
+    *,
+    allowed_paths: tuple[str, ...] | None,
+) -> tuple[list[str], bool]:
+    """Return a complete bounded source-file set or decline deterministic use."""
+
+    candidates: list[str] = []
+    scan_errors: list[OSError] = []
+    for directory, child_directories, filenames in os.walk(
+        root,
+        topdown=True,
+        onerror=scan_errors.append,
+        followlinks=False,
+    ):
+        directory_path = Path(directory)
+        child_directories[:] = sorted(
+            name
+            for name in child_directories
+            if name not in _TARGET_DISCOVERY_IGNORED_DIRS
+            and not (directory_path / name).is_symlink()
+        )
+        for filename in sorted(filenames):
+            candidate = directory_path / filename
+            try:
+                path = candidate.relative_to(root).as_posix()
+            except ValueError:
+                return [], False
+            if (
+                candidate.is_symlink()
+                or candidate.suffix.lower() not in _PRIMARY_SOURCE_SUFFIXES
+                or _test_like_path(path)
+            ):
+                continue
+            if allowed_paths is not None:
+                if not _resolved_path_allowed_by_scope(root, path, allowed_paths):
+                    continue
+            elif unsafe_target_finding(path, workspace_root=root) is not None:
+                continue
+            candidates.append(path)
+            if len(candidates) > _MAX_TARGET_DISCOVERY_FILES:
+                return [], False
+    if scan_errors:
+        return [], False
+    return sorted(candidates), True
+
+
+def _ordinary_target_tokens(task: str) -> tuple[str, ...]:
+    tokens: list[str] = []
+    for raw in _QUOTED_CODE_TOKEN_RE.findall(task or ""):
+        value = str(raw).strip()
+        if not value or value.isdigit():
+            continue
+        if value.startswith("/") or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
+            tokens.append(value)
+    return tuple(_dedupe(tokens))
+
+
+def _ordinary_target_declared(path: str, content: str, token: str) -> bool:
+    if Path(path).suffix.lower() == ".py":
+        try:
+            tree = ast.parse(content)
+        except SyntaxError:
+            return False
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.AsyncFunctionDef, ast.ClassDef, ast.FunctionDef)):
+                if node.name == token:
+                    return True
+            elif isinstance(node, (ast.Assign, ast.NamedExpr)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                if any(isinstance(target, ast.Name) and target.id == token for target in targets):
+                    return True
+            elif isinstance(node, ast.AnnAssign):
+                if isinstance(node.target, ast.Name) and node.target.id == token:
+                    return True
+        return False
+    code = _ordinary_non_python_code(content, preserve_strings=False)
+    word = re.escape(token)
+    return any(
+        re.search(
+            rf"(?m)^[ \t]*{re.escape(prefix)}\s+{word}\b",
+            code,
+        )
+        is not None
+        for prefix in _DECLARATION_PREFIXES
+    )
+
+
+def _ordinary_code_literal_present(path: str, content: str, token: str) -> bool:
+    if Path(path).suffix.lower() == ".py":
+        try:
+            tree = ast.parse(content)
+        except SyntaxError:
+            return False
+        docstrings: set[int] = set()
+        for node in ast.walk(tree):
+            body = getattr(node, "body", None)
+            if not isinstance(body, list) or not body:
+                continue
+            first = body[0]
+            if (
+                isinstance(first, ast.Expr)
+                and isinstance(first.value, ast.Constant)
+                and isinstance(first.value.value, str)
+            ):
+                docstrings.add(id(first.value))
+        return any(
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and node.value == token
+            and id(node) not in docstrings
+            for node in ast.walk(tree)
+        )
+
+    code = _ordinary_non_python_code(content)
+    return (
+        re.search(
+            rf"(?P<quote>['\"`]){re.escape(token)}(?P=quote)",
+            code,
+        )
+        is not None
+    )
+
+
+def _ordinary_non_python_code(
+    content: str,
+    *,
+    preserve_strings: bool = True,
+) -> str:
+    """Remove C-style comments while preserving quoted literals and newlines."""
+
+    output: list[str] = []
+    index = 0
+    quote = ""
+    escaped = False
+    in_block_comment = False
+    in_line_comment = False
+    while index < len(content):
+        character = content[index]
+        following = content[index + 1] if index + 1 < len(content) else ""
+        if in_line_comment:
+            if character == "\n":
+                in_line_comment = False
+                output.append(character)
+            index += 1
+            continue
+        if in_block_comment:
+            if character == "*" and following == "/":
+                in_block_comment = False
+                index += 2
+                continue
+            if character == "\n":
+                output.append(character)
+            index += 1
+            continue
+        if quote:
+            output.append(
+                character if preserve_strings or character == "\n" else " "
+            )
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = ""
+            index += 1
+            continue
+        if character in {"'", '"', "`"}:
+            quote = character
+            output.append(character if preserve_strings else " ")
+            index += 1
+            continue
+        if character == "/" and following == "/":
+            in_line_comment = True
+            index += 2
+            continue
+        if character == "/" and following == "*":
+            in_block_comment = True
+            index += 2
+            continue
+        output.append(character)
+        index += 1
+    return "".join(output)
+
+
+def _test_like_path(path: str) -> bool:
+    normalized = "/" + path.replace("\\", "/").lower().strip("/")
+    name = Path(path).name.lower()
+    stem = Path(path).stem.lower()
+    return (
+        "/tests/" in normalized
+        or "/test/" in normalized
+        or "/spec/" in normalized
+        or "/specs/" in normalized
+        or "/__tests__/" in normalized
+        or name.startswith("test_")
+        or stem in {"conftest", "spec", "specs", "test", "tests"}
+        or "_test." in name
+        or ".test." in name
+        or ".spec." in name
+    )
 
 
 def plan_markdown_append_deterministically(
@@ -522,7 +950,7 @@ def plan_markdown_append_deterministically(
         ),
         budget=PlanBudget(
             max_coder_attempts=1,
-            max_total_seconds=30,
+            max_total_seconds=450,
             cloud_escalation_allowed=False,
         ),
     )
@@ -537,6 +965,7 @@ def plan_task_with_llm(
     llm_call: Callable[[str, str], str] | None = None,
     rejection_feedback: list[dict[str, Any]] | None = None,
     allowed_paths: tuple[str, ...] | None = None,
+    readable_paths: tuple[str, ...] | None = None,
 ) -> ArchitectPlan:
     root = workspace_root.resolve()
     clean_task = (task or "").strip()
@@ -567,6 +996,9 @@ def plan_task_with_llm(
                 task=clean_task,
                 workspace_root=root,
                 allowed_paths=allowed_paths,
+                readable_paths=(
+                    readable_paths if readable_paths is not None else allowed_paths
+                ),
             )
         except ExternalGateError as error:
             # A closed or mismatched approval gate is an intentional policy
@@ -585,6 +1017,8 @@ def plan_task_with_llm(
             last_error = str(error)
             if isinstance(error, ArchitectLLMError):
                 last_reason_code = error.reason_code
+            else:
+                last_reason_code = "architect_llm_router_error"
             prompt = (
                 f"{prompt}\n\nYour previous response was invalid: {last_error}\n"
                 "Retry with one valid JSON object only."
@@ -599,6 +1033,7 @@ def _architect_plan_from_llm_payload(
     task: str,
     workspace_root: Path,
     allowed_paths: tuple[str, ...] | None = None,
+    readable_paths: tuple[str, ...] | None = None,
 ) -> ArchitectPlan:
     if payload.get("status") == "blocked":
         reason = str(payload.get("reason_code") or payload.get("reason") or "task_too_vague_for_plan")
@@ -658,7 +1093,9 @@ def _architect_plan_from_llm_payload(
                 workspace_root,
                 target_path,
                 target_content,
-                allowed_paths=allowed_paths,
+                allowed_paths=(
+                    readable_paths if readable_paths is not None else allowed_paths
+                ),
             ),
         ]
         if target_exists
@@ -708,7 +1145,7 @@ def _architect_plan_from_llm_payload(
         verification_plan=_verification_plan(target_path),
         budget=PlanBudget(
             max_coder_attempts=3,
-            max_total_seconds=120,
+            max_total_seconds=450,
             cloud_escalation_allowed=True,
         ),
     )
@@ -1320,7 +1757,13 @@ def _parse_json_object(raw_response: str) -> dict[str, Any]:
     end = raw.rfind("}")
     if start == -1 or end == -1 or end < start:
         raise ArchitectLLMError("architect_llm_invalid_json", "response did not contain a JSON object")
-    parsed = json.loads(raw[start : end + 1])
+    try:
+        parsed = json.loads(raw[start : end + 1])
+    except json.JSONDecodeError as error:
+        raise ArchitectLLMError(
+            "architect_llm_invalid_json",
+            "response did not contain valid JSON",
+        ) from error
     if not isinstance(parsed, dict):
         raise ArchitectLLMError("architect_llm_invalid_json", "response JSON must be an object")
     return parsed

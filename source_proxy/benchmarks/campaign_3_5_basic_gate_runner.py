@@ -299,7 +299,7 @@ class BasicBackendGateConfig:
     phases: tuple[str, ...] = ("first",)
     resume_first: Path | None = None
     startup_timeout_seconds: float = 45.0
-    request_timeout_seconds: float = 360.0
+    request_timeout_seconds: float = 1200.0
     sandbox_image: str = "scout-scout-api:latest"
     retain_workspaces: bool = True
 
@@ -613,6 +613,8 @@ class ProductionGateServiceFactory:
                 "task_local_state_root": str(spec.state_root),
                 "health_response_sha256": health.response_sha256,
                 "service_process_per_task": True,
+                "identity_verified": True,
+                "startup_completed": True,
             }
             _write_private_json(spec.evidence_root / "service-process.json", receipt)
             yield RunningGateService(
@@ -621,20 +623,80 @@ class ProductionGateServiceFactory:
                 process_receipt=receipt,
             )
         finally:
-            _request_service_import_audit_snapshot(
-                process,
-                import_audit_log,
-                import_audit_owner,
-            )
+            returncode_before_runner_actions = process.poll()
+            import_audit_snapshot_signal_sent = False
+            if returncode_before_runner_actions is None:
+                import_audit_snapshot_signal_sent = bool(
+                    _request_service_import_audit_snapshot(
+                        process,
+                        import_audit_log,
+                        import_audit_owner,
+                    )
+                )
+            returncode_after_import_audit_snapshot = process.poll()
             _stop_process(process)
-            if receipt is not None:
-                receipt["import_attestation"] = _finalize_service_import_audit(
-                    import_audit_log
-                )
-                _write_private_json(
-                    spec.evidence_root / "service-process.json",
-                    receipt,
-                )
+            if receipt is None:
+                receipt = {
+                    "schema_version": "source-proxy-basic-backend-10-service-process/v1",
+                    "task_label": spec.task_label,
+                    "pid": process.pid,
+                    "cwd": None,
+                    "branch": None,
+                    "head": None,
+                    "expected_cwd": str(spec.source_root),
+                    "expected_branch": spec.expected_branch,
+                    "expected_head": spec.expected_head,
+                    "loopback_port": port,
+                    "command_sha256": _sha256_json(command),
+                    "environment_names": sorted(environment),
+                    "model_aliases": _service_model_aliases(environment),
+                    "hosted_credentials_inherited": False,
+                    "direct_ollama_bypass_enabled": False,
+                    "sandbox_image_id": spec.sandbox_image_id,
+                    "model_inventory_sha256": spec.model_inventory_sha256,
+                    "verifier_runtime_sha256": spec.verifier_runtime_sha256,
+                    "fixture_manifest_sha256": _sha256_file(
+                        spec.authority_manifest_path
+                    ),
+                    "task_local_state_root": str(spec.state_root),
+                    "service_process_per_task": True,
+                    "identity_verified": False,
+                    "startup_completed": False,
+                }
+            final_returncode = process.poll()
+            receipt["service_exit"] = {
+                "observed_before_runner_actions": (
+                    returncode_before_runner_actions is not None
+                ),
+                "observed_before_runner_stop": (
+                    returncode_before_runner_actions is not None
+                ),
+                "import_audit_snapshot_signal_sent": (
+                    import_audit_snapshot_signal_sent
+                ),
+                "observed_after_import_audit_snapshot": (
+                    returncode_after_import_audit_snapshot is not None
+                ),
+                "runner_stop_requested": (
+                    returncode_after_import_audit_snapshot is None
+                ),
+                "return_code": final_returncode,
+                "termination_signal": (
+                    -final_returncode
+                    if isinstance(final_returncode, int)
+                    and final_returncode < 0
+                    else None
+                ),
+                "stdout_sha256": _sha256_file(stdout_path),
+                "stderr_sha256": _sha256_file(stderr_path),
+            }
+            receipt["import_attestation"] = _finalize_service_import_audit(
+                import_audit_log
+            )
+            _write_private_json(
+                spec.evidence_root / "service-process.json",
+                receipt,
+            )
 
 
 def run_private_oracle_container(
@@ -2486,6 +2548,13 @@ class BasicBackendGateRunner:
                 "final_readback": {},
                 "trace_reconciliation": _empty_trace_reconciliation("service_or_workflow_failed"),
             }
+        if not service_receipt:
+            retained_service_receipt = _load_retained_service_process_receipt(
+                evidence_root / "service-process.json",
+                spec=spec,
+            )
+            if retained_service_receipt:
+                service_receipt = retained_service_receipt
         workflow_attempts = [
             item for item in workflow.get("attempts", []) if isinstance(item, Mapping)
         ]
@@ -3330,7 +3399,6 @@ def _attempt_model_provenance_verified(
         for role, alias in aliases.items()
     ):
         return False
-    coder_ordinal = 0
     evidence_guided_repair = int(attempt.get("attempt_number") or 0) > 1
     for call in calls:
         stage = str(call.get("stage") or "")
@@ -3339,10 +3407,9 @@ def _attempt_model_provenance_verified(
         elif stage == "reviewer":
             permitted_roles = ("reviewer",)
         else:
-            coder_ordinal += 1
             permitted_roles = (
-                ("coder_repair",)
-                if evidence_guided_repair or coder_ordinal > 1
+                ("coder_repair", "coder_fallback")
+                if evidence_guided_repair
                 else ("coder_primary", "coder_fallback")
             )
         matched = False
@@ -5464,6 +5531,34 @@ def _compare_phases(phases: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _load_retained_service_process_receipt(
+    path: Path,
+    *,
+    spec: ServiceLaunchSpec,
+) -> dict[str, Any]:
+    """Bind a pre-yield startup failure receipt back into the task evidence."""
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    if (
+        payload.get("schema_version")
+        != "source-proxy-basic-backend-10-service-process/v1"
+        or payload.get("task_label") != spec.task_label
+        or payload.get("fixture_manifest_sha256")
+        != _sha256_file(spec.authority_manifest_path)
+        or payload.get("sandbox_image_id") != spec.sandbox_image_id
+        or payload.get("model_inventory_sha256") != spec.model_inventory_sha256
+        or payload.get("verifier_runtime_sha256") != spec.verifier_runtime_sha256
+        or not isinstance(payload.get("service_exit"), Mapping)
+    ):
+        return {}
+    return dict(payload)
+
+
 def _empty_trace_reconciliation(reason: str) -> dict[str, Any]:
     return {
         "schema_version": TRACE_SCHEMA,
@@ -5511,7 +5606,6 @@ def _service_environment(
         "SOURCE_PROXY_OLLAMA_MODEL",
         "OLLAMA_MODEL",
         "SOURCE_PROXY_CODER_OLLAMA_MODEL",
-        "SOURCE_PROXY_REVIEWER_MODEL_ALIAS",
     ):
         if inherited.get(key):
             environment[key] = str(inherited[key])
@@ -5537,11 +5631,16 @@ def _service_environment(
             "SPIRITOS_APPROVAL_ROOT": str(spec.source_root),
             "SPIRITOS_APPROVAL_STATE_DIR": str(spec.state_root / "approval"),
             "SOURCE_PROXY_ARCHITECT_MODEL_ALIAS": model_aliases["architect"],
-            # The pinned Hermes architect reliably completes on this local host
-            # but exceeds the library's generic 20-second default while cold.
-            # Keep the bound model/digest unchanged and give the production
-            # HTTP request a measured, still-bounded local inference budget.
-            "SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS": "90",
+            # These are provider-owned bounds.  The HTTP lifecycle budget is
+            # deliberately larger than the bounded Architect plus preview and
+            # controlled-fallback attempts, so it cannot race the model layer.
+            "SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS": "150",
+            "SOURCE_PROXY_DUMMY_PRODUCT_SITE_MODEL_TIMEOUT_SECONDS": "150",
+            "SOURCE_PROXY_REQUEST_TIMEOUT_SECONDS": "150",
+            "SOURCE_PROXY_CODER_TIMEOUT_SECONDS": "150",
+            "SOURCE_PROXY_CODER_MAX_COMPLETION_TOKENS": "1600",
+            "SOURCE_PROXY_CODER_SYNC_DEADLINE_SEC": "450",
+            "SOURCE_PROXY_TARGET_PLUGIN_ROUTE_TIMEOUT_SECONDS": "450",
             "SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS": model_aliases["coder_repair"],
             "SPIRITOS_CODING_PRIMARY_MODEL_ALIAS": model_aliases["coder_primary"],
             "SPIRITOS_CODING_FALLBACK_MODEL_ALIAS": model_aliases["coder_fallback"],
@@ -5562,7 +5661,7 @@ def _service_model_aliases(environment: Mapping[str, str]) -> dict[str, str]:
     aliases = {
         "architect": "local",
         "coder_primary": "coder",
-        "coder_repair": "local",
+        "coder_repair": "coder",
         "coder_fallback": "local",
     }
     reviewer = str(environment.get("SOURCE_PROXY_REVIEWER_MODEL_ALIAS") or "").strip()
@@ -5683,7 +5782,7 @@ def _request_service_import_audit_snapshot(
     process: subprocess.Popen[bytes],
     log_path: Path,
     owner_path: Path,
-) -> None:
+) -> bool:
     """Ask the owner interpreter to seal its final module snapshot.
 
     The audit hook claims ``owner_path`` before application imports begin, so
@@ -5696,13 +5795,13 @@ def _request_service_import_audit_snapshot(
         or not hasattr(signal, "SIGUSR1")
         or process.poll() is not None
     ):
-        return
+        return False
     try:
         owner_pid = int(owner_path.read_text(encoding="ascii").strip())
     except (OSError, UnicodeDecodeError, ValueError):
-        return
+        return False
     if owner_pid != process.pid:
-        return
+        return False
     try:
         started_records = [
             json.loads(line)
@@ -5710,18 +5809,18 @@ def _request_service_import_audit_snapshot(
             if line.strip()
         ]
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return
+        return False
     if not any(
         isinstance(item, Mapping)
         and item.get("event") == "hook_started"
         and item.get("pid") == process.pid
         for item in started_records
     ):
-        return
+        return False
     try:
         os.kill(process.pid, signal.SIGUSR1)
     except OSError:
-        return
+        return False
     deadline = time.monotonic() + 2.0
     while time.monotonic() < deadline:
         try:
@@ -5738,8 +5837,9 @@ def _request_service_import_audit_snapshot(
             and item.get("pid") == process.pid
             for item in records
         ):
-            return
+            return True
         time.sleep(0.02)
+    return True
 
 
 def _process_cwd(pid: int) -> Path:

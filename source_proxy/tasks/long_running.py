@@ -5,7 +5,6 @@ import hashlib
 import html
 import json
 import os
-import queue
 import re
 import sqlite3
 import shutil
@@ -8122,30 +8121,23 @@ def _call_dummy_product_site_llm_with_wall_timeout(
     model_call_run_id: str | None = None,
     authority_observer: Callable[[dict[str, Any]], None] | None = None,
 ) -> str:
-    result_queue: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
+    """Run through the provider's bounded timeout without an orphan daemon.
 
-    def worker() -> None:
-        try:
-            result = _call_dummy_product_site_llm_raw(
-                prompt,
-                selected_alias,
-                timeout_seconds,
-                model_call_run_id=model_call_run_id,
-                authority_observer=authority_observer,
-            )
-            result_queue.put(("ok", result), block=False)
-        except Exception as error:  # noqa: BLE001
-            result_queue.put(("error", error), block=False)
+    Both canonical LiteLLM and the legacy direct-Ollama transport receive the
+    same explicit request timeout below.  The former extra daemon thread raced
+    that provider timeout, could not cancel its in-flight request, and could
+    still be tearing down Python objects while an isolated gate service exited.
+    Keeping one synchronous, bounded owner makes completion and failure
+    provenance exact and removes that native-shutdown hazard.
+    """
 
-    thread = threading.Thread(target=worker, name="dummy-product-site-coder", daemon=True)
-    thread.start()
-    try:
-        status, value = result_queue.get(timeout=timeout_seconds)
-    except queue.Empty as error:
-        raise TimeoutError(f"Dummy product site Coder model call timed out after {timeout_seconds:g}s") from error
-    if status == "error":
-        raise value
-    return str(value or "")
+    return _call_dummy_product_site_llm_raw(
+        prompt,
+        selected_alias,
+        timeout_seconds,
+        model_call_run_id=model_call_run_id,
+        authority_observer=authority_observer,
+    )
 
 
 def _call_dummy_product_site_llm_raw(

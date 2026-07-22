@@ -79,5 +79,41 @@ invocation identity, and reuses the persisted Architect plan for replacement
 Coder dispatch. Independent proof also rederives scope, source hashes, workspace
 manifest spans, prompt commitments, and campaign fixture authority.
 
-All three failed runs remain immutable negative evidence and are ineligible for
+## Fourth preserved first-phase run
+
+- Source HEAD: `b0aad62a`
+- Run: `basic-backend-10-20260722T093638Z-37c1f754cab5`
+- Phase: `first`
+- Result: `0/10` passed; the phase gate did not pass.
+- Seven tasks returned a structured `architect_llm_timeout` after the adapter's
+  effective 45-second provider wrapper expired.
+- Two tasks persisted a valid plan and reached the primary local Coder. Their
+  first preview output was rejected, the in-proposal correction silently
+  changed from the selected Coder route to the repair route, and that call's
+  uncaught timeout became a non-JSON HTTP 500.
+- One task's isolated service ended abruptly during its first planning request.
+  Its retained service logs contain no traceback, graceful shutdown, return
+  code, or signal, so the exact process-exit cause is not claimed.
+- Unauthorized mutations and fabricated completions: `0`.
+- Confirmed forbidden imports, private-seed matches, benchmark-ID disclosures,
+  and raw hidden-answer leaks: `0`. The abruptly ended service has one
+  conservative incomplete-audit count; it is not evidence of a confirmed
+  hidden-answer disclosure.
+
+This run proved the context, plan-persistence, and fallback-plan-reuse blockers
+from the third run were gone. It isolated a shared timeout/route-lifecycle
+defect instead: the generic adapter applied the legacy Coder wrapper's
+45-second budget to every role despite the configured Architect budget, used
+an uncancellable daemon thread around an already bounded provider request, and
+changed model route inside a preview retry. The generalized repair performs
+bounded repository-only symbol/route target discovery before using an LLM
+Architect, separates writable target authority from read-only context, keeps
+in-proposal corrections on the selected Coder route, applies the Architect's
+actual stage budget, and enforces a 450-second monotonic budget per local model
+route beneath the 1,200-second HTTP lifecycle. It also converts provider
+failures into structured provenance-bearing no-mutation results, removes the
+duplicate daemon owner, and records the isolated service's final return code,
+signal, log hashes, and whether any runner signal preceded that exit.
+
+All four failed runs remain immutable negative evidence and are ineligible for
 resume or terminal certification.

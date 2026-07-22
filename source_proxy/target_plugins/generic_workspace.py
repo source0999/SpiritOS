@@ -143,7 +143,8 @@ def execute_generic_workspace_rich(
             task,
             task_id,
             root,
-            allowed_paths=read_scope,
+            allowed_paths=scope,
+            readable_paths=read_scope,
         )
         if isinstance(deterministic, Block):
             base_diagnostics.update(
@@ -170,7 +171,8 @@ def execute_generic_workspace_rich(
                     task_id,
                     root,
                     llm_call=architect_call,
-                    allowed_paths=read_scope,
+                    allowed_paths=scope,
+                    readable_paths=read_scope,
                 )
                 planning_mode = "local_model"
         except ArchitectLLMError as error:
@@ -371,12 +373,13 @@ def execute_generic_workspace_rich(
     coder_context_ready = False
     coder_context_error = ""
     coder_callback_exception: BaseException | None = None
+    coder_provider_exception: Exception | None = None
     multi_file_requested = _task_requests_multi_file_capability(task)
     base_diagnostics["multi_file_capability_requested"] = multi_file_requested
 
     def observed_coder_call(prompt: str, alias: str) -> str:
         nonlocal context_report, coder_context_ready, coder_context_error
-        nonlocal coder_callback_exception
+        nonlocal coder_callback_exception, coder_provider_exception
         prompt_sha256 = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
         if coder_callback_exception is not None or coder_context_error:
             return _context_callback_block_response(
@@ -413,7 +416,13 @@ def execute_generic_workspace_rich(
                 "canonical_report_hash"
             )
         observed_coder_prompts.append(prompt_sha256)
-        return coder_call(prompt, alias)
+        try:
+            return coder_call(prompt, alias)
+        except Exception as error:  # noqa: BLE001 - normalized at provider boundary
+            coder_provider_exception = error
+            return _context_callback_block_response(
+                "generic_workspace_coder_provider_failed"
+            )
 
     for attempt_index in range(1, _MAX_PREVIEW_ATTEMPTS + 1):
         attempt_strategy = {
@@ -478,6 +487,56 @@ def execute_generic_workspace_rich(
             base_diagnostics["coder_context_binding"] = bindings[-1]
             base_diagnostics["coder_rendered_prompt_sha256"] = (
                 observed_coder_prompts[-1]
+            )
+        if coder_provider_exception is not None:
+            provider_reason = str(
+                getattr(coder_provider_exception, "reason_code", "") or ""
+            )
+            if provider_reason == "target_plugin_model_execution_budget_exhausted":
+                reason_code = "coder_model_execution_budget_exhausted"
+            elif _is_timeout_exception(coder_provider_exception):
+                reason_code = "coder_model_timeout"
+            else:
+                reason_code = "coder_model_router_error"
+            failure = classify_repair_failure(
+                diagnostic_code=reason_code,
+                stage="coder",
+                reason=type(coder_provider_exception).__name__,
+                details={
+                    "diagnostic_code": reason_code,
+                    "stage": "coder",
+                    "exception_type": type(coder_provider_exception).__name__,
+                },
+            ).to_dict()
+            base_diagnostics["attempts"].append(
+                {
+                    "attempt_index": attempt_index,
+                    "strategy": attempt_strategy,
+                    "feedback": list(feedback or []),
+                    "proposed_diff_sha256": hashlib.sha256(b"").hexdigest(),
+                    "changed_files": [],
+                    "coder_reason_code": reason_code,
+                    "coder_validation_status": reason_code,
+                    "failure_class": failure["failure_class"],
+                    "failure_kind": failure["failure_kind"],
+                    "failure_classification": failure,
+                    "provider_exception_type": type(
+                        coder_provider_exception
+                    ).__name__,
+                }
+            )
+            base_diagnostics["provider_exception_type"] = type(
+                coder_provider_exception
+            ).__name__
+            return _blocked_result(
+                reason_code,
+                (
+                    "The authorized local Coder call exceeded its bounded provider timeout."
+                    if reason_code == "coder_model_timeout"
+                    else "The authorized local Coder route failed before returning usable output."
+                ),
+                base_diagnostics,
+                stage="coder",
             )
         diagnostics = _mapping(result.get("coder_diagnostics"))
         proposed_diff = str(result.get("proposed_diff") or "")
@@ -1521,6 +1580,12 @@ def _blocked_result(
         "coderDiagnostics": payload_diagnostics,
         "execution_path": GENERIC_RICH_EXECUTION_PATH,
     }
+
+
+def _is_timeout_exception(error: BaseException) -> bool:
+    name = type(error).__name__.lower()
+    message = str(error).lower()
+    return "timeout" in name or "timed out" in message or "timeout" in message
 
 
 def _preview_feedback(preview: Mapping[str, Any]) -> list[str]:

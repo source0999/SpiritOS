@@ -47,6 +47,7 @@ from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
     _generic_plugin_declaration,
     _hidden_answer_leak_audit,
     _load_and_validate_first_phase_manifest,
+    _load_retained_service_process_receipt,
     _parse_neutral_probe_output,
     _prepare_service_import_audit,
     _private_probe_spec,
@@ -108,7 +109,7 @@ def _fake_model_inventory() -> dict[str, Any]:
             ("architect", "local", "ollama_chat/fake-local", "1" * 64),
             ("coder_fallback", "local", "ollama_chat/fake-local", "1" * 64),
             ("coder_primary", "coder", "ollama_chat/fake-coder", "2" * 64),
-            ("coder_repair", "local", "ollama_chat/fake-local", "1" * 64),
+            ("coder_repair", "coder", "ollama_chat/fake-coder", "2" * 64),
         )
     ]
     body = {
@@ -2204,11 +2205,56 @@ def test_service_environment_pins_local_adapter_aliases_and_drops_hosted_credent
     )
 
     assert environment["SOURCE_PROXY_ARCHITECT_MODEL_ALIAS"] == "local"
-    assert environment["SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS"] == "90"
-    assert environment["SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS"] == "local"
+    assert environment["SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS"] == "150"
+    assert environment["SOURCE_PROXY_DUMMY_PRODUCT_SITE_MODEL_TIMEOUT_SECONDS"] == "150"
+    assert environment["SOURCE_PROXY_REQUEST_TIMEOUT_SECONDS"] == "150"
+    assert environment["SOURCE_PROXY_CODER_TIMEOUT_SECONDS"] == "150"
+    assert environment["SOURCE_PROXY_CODER_MAX_COMPLETION_TOKENS"] == "1600"
+    assert environment["SOURCE_PROXY_CODER_SYNC_DEADLINE_SEC"] == "450"
+    assert environment["SOURCE_PROXY_TARGET_PLUGIN_ROUTE_TIMEOUT_SECONDS"] == "450"
+    assert environment["SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS"] == "coder"
+    assert "SOURCE_PROXY_REVIEWER_MODEL_ALIAS" not in environment
     assert environment["SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA"] == "0"
     assert "OPENAI_API_KEY" not in environment
     assert "ANTHROPIC_API_KEY" not in environment
+
+
+def test_retained_startup_failure_receipt_is_bound_only_to_exact_launch_spec(
+    tmp_path: Path,
+) -> None:
+    authority = tmp_path / "authority.json"
+    authority.write_text("{}", encoding="utf-8")
+    receipt_path = tmp_path / "service-process.json"
+    spec = SimpleNamespace(
+        task_label="task-seed:opaque",
+        authority_manifest_path=authority,
+        sandbox_image_id=TEST_IMAGE_ID,
+        model_inventory_sha256="1" * 64,
+        verifier_runtime_sha256="2" * 64,
+    )
+    payload = {
+        "schema_version": "source-proxy-basic-backend-10-service-process/v1",
+        "task_label": spec.task_label,
+        "fixture_manifest_sha256": _sha256_file(authority),
+        "sandbox_image_id": spec.sandbox_image_id,
+        "model_inventory_sha256": spec.model_inventory_sha256,
+        "verifier_runtime_sha256": spec.verifier_runtime_sha256,
+        "identity_verified": False,
+        "startup_completed": False,
+        "service_exit": {
+            "observed_before_runner_actions": True,
+            "return_code": 1,
+            "stdout_sha256": "3" * 64,
+            "stderr_sha256": "4" * 64,
+        },
+    }
+    receipt_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert _load_retained_service_process_receipt(receipt_path, spec=spec) == payload
+
+    payload["task_label"] = "task-seed:substituted"
+    receipt_path.write_text(json.dumps(payload), encoding="utf-8")
+    assert _load_retained_service_process_receipt(receipt_path, spec=spec) == {}
 
 
 def test_proposal_material_requires_exact_persisted_diff_hash() -> None:

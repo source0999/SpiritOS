@@ -335,6 +335,283 @@ def test_generic_adapter_forwards_both_context_lifecycle_callbacks(
     assert observed["readable_paths"] == ("src/", "tests/")
 
 
+def test_generic_adapter_uses_architect_budget_and_keeps_preview_retry_route(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import source_proxy.tasks.long_running as long_running
+
+    transport_calls: list[dict[str, object]] = []
+
+    def fake_transport(
+        _prompt: str,
+        alias: str,
+        timeout: float,
+        *,
+        model_call_run_id: str | None = None,
+        authority_observer=None,
+    ) -> str:
+        assert model_call_run_id
+        assert authority_observer is not None
+        authority_observer(
+            {
+                "central_gate_check_passed": True,
+                "run_id": model_call_run_id,
+                "gate": "model_call",
+                "model_alias": alias,
+            }
+        )
+        transport_calls.append(
+            {
+                "alias": alias,
+                "timeout": timeout,
+                "run_id": model_call_run_id,
+            }
+        )
+        return "provider-output"
+
+    def fake_generic(**kwargs: object) -> dict[str, object]:
+        kwargs["architect_model_call"]("architect prompt", "local")
+        kwargs["coder_model_call"]("coder prompt one", "coder")
+        kwargs["coder_model_call"]("coder prompt two", "coder")
+        return {
+            "proposed_diff": "diff --git a/src/a.py b/src/a.py\n",
+            "coder_blocked": False,
+            "execution_path": "architect_coder_packet/v1",
+            "coder_diagnostics": {"changed_files": ["src/a.py"]},
+        }
+
+    monkeypatch.setenv("SOURCE_PROXY_ARCHITECT_MODEL_ALIAS", "local")
+    monkeypatch.setenv("SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS", "123")
+    monkeypatch.setenv("SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS", "local")
+    monkeypatch.setattr(
+        long_running,
+        "_coder_model_alias_configuration_error",
+        lambda _alias: None,
+    )
+    monkeypatch.setattr(
+        long_running,
+        "_dummy_product_site_direct_ollama_enabled",
+        lambda _alias: False,
+    )
+    monkeypatch.setattr(
+        long_running,
+        "_dummy_product_site_model_timeout_seconds",
+        lambda: 77.0,
+    )
+    monkeypatch.setattr(
+        long_running,
+        "_call_dummy_product_site_llm_with_wall_timeout",
+        fake_transport,
+    )
+    monkeypatch.setattr(
+        generic_workspace_module,
+        "execute_generic_workspace_rich",
+        fake_generic,
+    )
+    plugin = ResolvedTargetPlugin(
+        schema_version=TARGET_PLUGIN_SCHEMA_VERSION,
+        plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+        repository_id="repo",
+        worktree_id="worktree",
+        workspace_root=str(tmp_path.resolve()),
+        branch="test",
+        state_namespace="namespace",
+        fixture_root=".",
+        source_head="a" * 40,
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID,
+        execution_profile=GENERIC_WORKSPACE_PROFILE,
+        allowed_actions=("src/",),
+        readable_actions=("src/", "tests/"),
+        result_identity="generic-timeout-test",
+    )
+
+    result = execute_target_plugin_command(
+        plugin,
+        task="Implement the requested behavior.",
+        workspace_root=tmp_path,
+        canonical_context={},
+        canonical_context_text="",
+        model_alias="coder",
+        model_call_run_id="run:attempt:invocation",
+    )
+
+    assert [call["alias"] for call in transport_calls] == [
+        "local",
+        "coder",
+        "coder",
+    ]
+    assert [call["timeout"] for call in transport_calls] == [123.0, 77.0, 77.0]
+    assert [call["timeout_seconds"] for call in result["target_adapter_provenance"]["calls"]] == [
+        123.0,
+        77.0,
+        77.0,
+    ]
+
+
+def test_generic_adapter_enforces_monotonic_route_model_budget(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import source_proxy.target_plugins.adapter as adapter_module
+    import source_proxy.tasks.long_running as long_running
+
+    clock = iter((0.0, 0.0, 2.0, 4.5, 4.5))
+    transport_timeouts: list[float] = []
+    exhausted_reason = ""
+
+    def fake_transport(
+        _prompt: str,
+        alias: str,
+        timeout: float,
+        *,
+        model_call_run_id: str | None = None,
+        authority_observer=None,
+    ) -> str:
+        assert alias == "coder"
+        assert model_call_run_id
+        assert authority_observer is not None
+        authority_observer(
+            {
+                "central_gate_check_passed": True,
+                "run_id": model_call_run_id,
+                "gate": "model_call",
+                "model_alias": alias,
+            }
+        )
+        transport_timeouts.append(timeout)
+        return "provider-output"
+
+    def fake_generic(**kwargs: object) -> dict[str, object]:
+        nonlocal exhausted_reason
+        coder_call = kwargs["coder_model_call"]
+        coder_call("coder prompt one", "coder")
+        coder_call("coder prompt two", "coder")
+        try:
+            coder_call("coder prompt three", "coder")
+        except TargetPluginResolutionError as error:
+            exhausted_reason = error.reason_code
+        return {
+            "proposed_diff": "",
+            "coder_blocked": True,
+            "reason_code": "coder_model_execution_budget_exhausted",
+            "execution_path": "architect_coder_packet/v1",
+            "coder_diagnostics": {"changed_files": []},
+        }
+
+    monkeypatch.setenv("SOURCE_PROXY_TARGET_PLUGIN_ROUTE_TIMEOUT_SECONDS", "5")
+    monkeypatch.setattr(adapter_module, "_monotonic", lambda: next(clock))
+    monkeypatch.setattr(
+        long_running,
+        "_coder_model_alias_configuration_error",
+        lambda _alias: None,
+    )
+    monkeypatch.setattr(
+        long_running,
+        "_dummy_product_site_direct_ollama_enabled",
+        lambda _alias: False,
+    )
+    monkeypatch.setattr(
+        long_running,
+        "_dummy_product_site_model_timeout_seconds",
+        lambda: 3.0,
+    )
+    monkeypatch.setattr(
+        long_running,
+        "_call_dummy_product_site_llm_with_wall_timeout",
+        fake_transport,
+    )
+    monkeypatch.setattr(
+        generic_workspace_module,
+        "execute_generic_workspace_rich",
+        fake_generic,
+    )
+    plugin = ResolvedTargetPlugin(
+        schema_version=TARGET_PLUGIN_SCHEMA_VERSION,
+        plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+        repository_id="repo",
+        worktree_id="worktree",
+        workspace_root=str(tmp_path.resolve()),
+        branch="test",
+        state_namespace="namespace",
+        fixture_root=".",
+        source_head="a" * 40,
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID,
+        execution_profile=GENERIC_WORKSPACE_PROFILE,
+        allowed_actions=("src/",),
+        readable_actions=("src/", "tests/"),
+        result_identity="generic-route-budget-test",
+    )
+
+    result = execute_target_plugin_command(
+        plugin,
+        task="Implement the requested behavior.",
+        workspace_root=tmp_path,
+        canonical_context={},
+        canonical_context_text="",
+        model_alias="coder",
+        model_call_run_id="run:attempt:invocation",
+    )
+
+    assert transport_timeouts == [3.0, 3.0]
+    assert exhausted_reason == "target_plugin_model_execution_budget_exhausted"
+    provenance = result["target_adapter_provenance"]
+    assert provenance["route_timeout_seconds"] == 5.0
+    assert provenance["route_elapsed_seconds"] == 4.5
+    assert provenance["call_count"] == 2
+    assert [call["route_remaining_seconds_before_call"] for call in provenance["calls"]] == [
+        5.0,
+        3.0,
+    ]
+
+
+def test_model_timeout_wrapper_has_one_synchronous_provider_owner(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import threading
+
+    import source_proxy.tasks.long_running as long_running
+
+    owner_thread = threading.get_ident()
+    observed: dict[str, object] = {}
+
+    def fake_raw(
+        prompt: str,
+        alias: str,
+        timeout: float,
+        **kwargs: object,
+    ) -> str:
+        observed.update(
+            {
+                "thread": threading.get_ident(),
+                "prompt": prompt,
+                "alias": alias,
+                "timeout": timeout,
+                "kwargs": kwargs,
+            }
+        )
+        return "bounded-output"
+
+    monkeypatch.setattr(
+        long_running,
+        "_call_dummy_product_site_llm_raw",
+        fake_raw,
+    )
+
+    result = long_running._call_dummy_product_site_llm_with_wall_timeout(
+        "prompt",
+        "coder",
+        31.0,
+        model_call_run_id="run-id",
+    )
+
+    assert result == "bounded-output"
+    assert observed["thread"] == owner_thread
+    assert observed["timeout"] == 31.0
+
+
 def _workspace(tmp_path: Path, files: dict[str, str]) -> Path:
     subprocess.run(["git", "init", "--quiet"], cwd=tmp_path, check=True)
     for path, content in files.items():
