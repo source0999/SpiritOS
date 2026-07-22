@@ -59,6 +59,11 @@ def test_raw_model_output_is_private_but_its_hash_is_receipted(tmp_path: Path) -
     assert all(path.stat().st_mode & 0o777 == stat.S_IRUSR | stat.S_IWUSR for path in private_files)
     assert raw_output not in json.dumps(stored)
     assert len(stored["raw_model_output"]["call_hashes"]) == 3
+    private_inputs = list((tmp_path / ".campaign-3-5-private-model-input").glob("*.txt"))
+    assert receipt["model_input"]["captured_privately"] is True
+    assert len(private_inputs) == 3
+    assert all(path.stat().st_mode & 0o777 == stat.S_IRUSR | stat.S_IWUSR for path in private_inputs)
+    assert "Repository context" not in json.dumps(stored)
 
 
 def test_public_repair_artifacts_bind_visible_failure_to_each_lane() -> None:
@@ -68,16 +73,20 @@ def test_public_repair_artifacts_bind_visible_failure_to_each_lane() -> None:
             prepared.task,
             prepared.fixture_root,
             {
-                "stdout_excerpt": "FAILED tests/test_items.py::test_limit - NameError: HTTPException",
+                "command": "python -m pytest -q",
+                "exit_code": 1,
+                "stdout_excerpt": "FAILED tests/test_items.py::test_limit - NameError: HTTPException\nAssertionError: assert 20 >= 100",
                 "stderr_excerpt": "",
             },
         )
     finally:
         shutil.rmtree(prepared.fixture_root.parent.parent)
 
-    assert set(artifacts) == {"planner", "architect", "diagnostics", "reviewer", "verifier"}
+    assert set(artifacts) == {"planner", "architect", "diagnostics", "debugger", "reviewer", "verifier"}
     assert "NameError" in artifacts["diagnostics"]["test_output"]
     assert any("undefined" in finding for finding in artifacts["diagnostics"]["findings"])
     assert any("raising" in finding for finding in artifacts["diagnostics"]["findings"])
+    assert artifacts["debugger"]["reproduction_command"] == "python -m pytest -q"
+    assert any("endpoint now returns" in finding for finding in artifacts["debugger"]["findings"])
     assert all(len(payload["content_sha256"]) == 64 for payload in artifacts.values())
     assert "http_range_contract_failed" not in json.dumps(artifacts)

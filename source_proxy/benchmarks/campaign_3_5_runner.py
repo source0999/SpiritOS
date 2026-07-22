@@ -269,6 +269,11 @@ def _public_repair_artifacts(task: dict[str, Any], fixture_root: Path, tests: di
         diagnostics.append("A referenced name is undefined; inspect imports and declarations in the changed source.")
     if "HTTPException" in test_output:
         diagnostics.append("Use FastAPI HTTPException by raising it, not returning it.")
+    debugger_findings = ["Reproduced the failure with the declared public pytest command on the current applied tree."]
+    if "AssertionError: assert 20 >= 100" in test_output:
+        debugger_findings.append(
+            "The endpoint now returns the task-required default of 20, while the visible baseline assertion still requires at least 100 items; repair the public test contract and add public limit-boundary coverage."
+        )
     planner = {
         "identity": "campaign-3.5-public-planner/v1",
         "task": task["prompt"],
@@ -279,10 +284,52 @@ def _public_repair_artifacts(task: dict[str, Any], fixture_root: Path, tests: di
     reviewer = {"identity": "campaign-3.5-visible-test-reviewer/v1", "finding": "Visible tests are failing; repair implementation and public tests together without changing scope.", "changed_paths": changed}
     verifier = {"identity": "campaign-3.5-private-verifier-boundary/v1", "finding": "Independent verification has not approved the applied tree. Re-evaluate the public contract; no private oracle detail is disclosed."}
     diagnostics_payload = {"identity": "campaign-3.5-visible-test-diagnostics/v1", "findings": diagnostics, "test_output": test_output}
-    artifacts = {"planner": planner, "architect": architect, "diagnostics": diagnostics_payload, "reviewer": reviewer, "verifier": verifier}
+    debugger = {
+        "identity": "campaign-3.5-visible-test-debugger/v1",
+        "reproduction_command": tests.get("command"),
+        "exit_code": tests.get("exit_code"),
+        "findings": debugger_findings,
+        "test_output": test_output,
+    }
+    artifacts = {"planner": planner, "architect": architect, "diagnostics": diagnostics_payload, "debugger": debugger, "reviewer": reviewer, "verifier": verifier}
     for payload in artifacts.values():
         payload["content_sha256"] = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
     return artifacts
+
+
+class _PrivateModelInputCapture:
+    """Persist exact rendered prompts outside receipts for a bounded audit."""
+
+    def __init__(self, evidence_dir: Path, run_id: str, phase: str) -> None:
+        self._root = evidence_dir / ".campaign-3-5-private-model-input"
+        self._root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        os.chmod(self._root, 0o700)
+        self._run_id = run_id
+        self._phase = phase
+        self.entries: list[dict[str, Any]] = []
+
+    def __call__(self, call_record: dict[str, Any], rendered_prompt: str) -> None:
+        provider_call_index = int(call_record["call_index"])
+        capture_index = len(self.entries) + 1
+        path = self._root / f"{self._run_id}-{self._phase}-prompt-{capture_index}-provider-call-{provider_call_index}.txt"
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+                output.write(rendered_prompt)
+        except BaseException:
+            try:
+                path.unlink(missing_ok=True)
+            finally:
+                raise
+        os.chmod(path, 0o600)
+        self.entries.append(
+            {
+                "phase": self._phase,
+                "capture_index": capture_index,
+                "provider_call_index": provider_call_index,
+                "sha256": hashlib.sha256(rendered_prompt.encode("utf-8")).hexdigest(),
+            }
+        )
 
 
 class _PrivateModelOutputCapture:
@@ -333,6 +380,8 @@ def run_campaign_3_5_task(
     """
     prepared = prepare_campaign_3_5_run(task_id, run_root=run_root)
     receipt_path = _receipt_path(evidence_dir, prepared.run_id)
+    initial_input_capture = _PrivateModelInputCapture(evidence_dir, prepared.run_id, "initial")
+    repair_input_capture = _PrivateModelInputCapture(evidence_dir, prepared.run_id, "repair")
     raw_output_capture = _PrivateModelOutputCapture(evidence_dir, prepared.run_id)
     adapter_result: dict[str, Any] = {}
     apply_receipt: dict[str, Any] | None = None
@@ -359,6 +408,7 @@ def run_campaign_3_5_task(
                 canonical_context_text="",
                 llm_call=llm_call,
                 model_alias=model_alias,
+                model_input_observer=initial_input_capture,
                 model_output_observer=raw_output_capture,
             )
             provenance = adapter_result.get("target_adapter_provenance", {})
@@ -405,6 +455,7 @@ def run_campaign_3_5_task(
         _stage_event(trace_events, "planner_invoked", content_sha256=repair_artifacts["planner"]["content_sha256"])
         _stage_event(trace_events, "architect_invoked", content_sha256=repair_artifacts["architect"]["content_sha256"])
         _stage_event(trace_events, "diagnostics_completed", content_sha256=repair_artifacts["diagnostics"]["content_sha256"])
+        _stage_event(trace_events, "debugger_invoked", content_sha256=repair_artifacts["debugger"]["content_sha256"])
         _stage_event(trace_events, "reviewer_completed", phase="pre_repair", content_sha256=repair_artifacts["reviewer"]["content_sha256"])
         _stage_event(trace_events, "verifier_completed", phase="pre_repair", content_sha256=repair_artifacts["verifier"]["content_sha256"])
         _stage_event(trace_events, "visible_test_repair_requested", evidence_sha256=hashlib.sha256(json.dumps(repair_artifacts, sort_keys=True).encode("utf-8")).hexdigest())
@@ -430,6 +481,7 @@ def run_campaign_3_5_task(
                     canonical_context_text="",
                     llm_call=llm_call,
                     model_alias=model_alias,
+                    model_input_observer=repair_input_capture,
                     model_output_observer=raw_output_capture,
                 )
                 repair_provenance = repair_result.get("target_adapter_provenance", {})
@@ -509,6 +561,11 @@ def run_campaign_3_5_task(
         "raw_model_output": {
             "captured_privately": bool(raw_output_capture.entries),
             "call_hashes": raw_output_capture.entries,
+            "public_receipt_contains_raw_text": False,
+        },
+        "model_input": {
+            "captured_privately": bool(initial_input_capture.entries or repair_input_capture.entries),
+            "call_hashes": initial_input_capture.entries + repair_input_capture.entries,
             "public_receipt_contains_raw_text": False,
         },
         "apply_authority": apply_receipt,

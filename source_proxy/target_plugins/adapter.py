@@ -139,6 +139,7 @@ def execute_target_plugin_command(
     canonical_context_text: str,
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
+    model_input_observer: Callable[[dict[str, Any], str], None] | None = None,
     model_output_observer: Callable[[dict[str, Any], str], None] | None = None,
 ) -> dict[str, Any]:
     """The generic route delegates target-specific execution; it cannot choose a target."""
@@ -175,6 +176,16 @@ def execute_target_plugin_command(
             "transport_kind": configured_transport_kind,
         }
         model_calls.append(call_record)
+        if model_input_observer is not None:
+            try:
+                # The full rendered prompt is retained only by an explicitly
+                # supplied harness-private observer.  Provenance continues to
+                # expose just its commitment in normal diagnostics.
+                model_input_observer(dict(call_record), prompt)
+                call_record["rendered_prompt_captured"] = True
+            except Exception as error:  # noqa: BLE001
+                call_record["rendered_prompt_captured"] = False
+                call_record["rendered_prompt_capture_error"] = type(error).__name__
         try:
             raw_response = (
                 llm_call(prompt, alias)
