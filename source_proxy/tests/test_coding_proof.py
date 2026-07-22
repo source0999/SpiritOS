@@ -30,7 +30,12 @@ from source_proxy.coding.recovery import (
     target_plugin_model_input_sha256,
 )
 from source_proxy.coding.runtime_lane_boundary import RuntimeLaneBoundary
+from source_proxy.context.canonical_broker import (
+    acknowledge_context_consumer,
+    build_context_broker_report,
+)
 from source_proxy.contracts.coding_lane_contracts import canonical_coding_lane_contracts
+from source_proxy.planning.plan import ArchitectPlan
 from source_proxy.tasks.long_running import LongRunningTaskError
 
 
@@ -38,6 +43,8 @@ SOURCE_HEAD = "a" * 40
 TASK_ID = "task-production-proof"
 RUN_ID = "run-production-proof"
 TARGET = "tests/ui-agent-trials/fixtures/dummy-product-site/index.html"
+SOURCE_SLICE_CONTENT = "old\n"
+SOURCE_SLICE_SHA256 = hashlib.sha256(SOURCE_SLICE_CONTENT.encode("utf-8")).hexdigest()
 APPROVED_DIFF = (
     f"diff --git a/{TARGET} b/{TARGET}\n"
     f"--- a/{TARGET}\n"
@@ -116,6 +123,12 @@ def _model_participant(*, fallback: bool, repair: bool = False) -> dict[str, Any
     output_provenance = _model_output_provenance(
         provider=provider,
         model=model,
+        attempt_id=(
+            "attempt-repair"
+            if repair
+            else ("attempt-fallback" if fallback else "attempt-primary")
+        ),
+        invocation_id=f"model-{suffix}",
     )
     return {
         "schema_version": "coding.recovery-participant/v1",
@@ -170,6 +183,8 @@ def _adapter_provenance(
     *,
     provider: str = "provider-primary",
     model: str = "model-primary",
+    attempt_id: str = "attempt-primary",
+    invocation_id: str = "model-primary",
 ) -> dict[str, Any]:
     producer_call = {
         "call_index": 1,
@@ -182,6 +197,10 @@ def _adapter_provenance(
         "provider": provider,
         "model": model,
         "routed_model": model,
+        "model_call_authority": {
+            "central_gate_check_passed": True,
+            "run_id": f"{RUN_ID}:{attempt_id}:{invocation_id}:coder:1",
+        },
     }
     return {
         "schema_version": "spiritos-target-adapter-provenance/v1",
@@ -208,6 +227,8 @@ def _model_output_provenance(
     *,
     provider: str = "provider-primary",
     model: str = "model-primary",
+    attempt_id: str = "attempt-primary",
+    invocation_id: str = "model-primary",
 ) -> dict[str, Any]:
     return {
         "schema_version": "coding.target-plugin-model-output-provenance/v1",
@@ -218,6 +239,8 @@ def _model_output_provenance(
         "target_adapter_provenance": _adapter_provenance(
             provider=provider,
             model=model,
+            attempt_id=attempt_id,
+            invocation_id=invocation_id,
         ),
     }
 
@@ -245,7 +268,7 @@ def _semantic_plan_payload() -> dict[str, Any]:
             "target_file": {
                 "path": TARGET,
                 "exists": True,
-                "sha256_before": "4" * 64,
+                "sha256_before": SOURCE_SLICE_SHA256,
             },
             "operation": "edit",
             "acceptance_criteria": [
@@ -267,8 +290,8 @@ def _semantic_plan_payload() -> dict[str, Any]:
                 {
                     "path": TARGET,
                     "kind": "target",
-                    "sha256": "4" * 64,
-                    "content": "old\n",
+                    "sha256": SOURCE_SLICE_SHA256,
+                    "content": SOURCE_SLICE_CONTENT,
                     "line_range": None,
                 }
             ],
@@ -310,6 +333,7 @@ def _adapter_semantic_review_binding() -> dict[str, Any]:
     plan_payload = _semantic_plan_payload()
     acceptance = copy.deepcopy(plan_payload["coder_packet"]["acceptance_criteria"])
     diff_sha256 = hashlib.sha256(APPROVED_DIFF.encode("utf-8")).hexdigest()
+    canonical_context = _adapter_canonical_context()
     return orchestrator_module._build_semantic_review_binding(
         task_id=TASK_ID,
         run_id=RUN_ID,
@@ -328,6 +352,22 @@ def _adapter_semantic_review_binding() -> dict[str, Any]:
                 ).encode("utf-8")
             ).hexdigest(),
             "acceptance_criteria": acceptance,
+            "canonical_context_broker": copy.deepcopy(canonical_context),
+            "canonical_context_report_hash": canonical_context[
+                "canonical_report_hash"
+            ],
+            "rendered_prompt_sha256": "1" * 64,
+            "coder_context_binding": {
+                "schema_version": "source-proxy-coder-context-binding/v1",
+                "call_index": 1,
+                "canonical_context_report_hash": canonical_context[
+                    "canonical_report_hash"
+                ],
+                "rendered_prompt_sha256": "1" * 64,
+                "selected_sources": list(canonical_context["selected_sources"]),
+                "consumed_sources": list(canonical_context["consumed_sources"]),
+                "consumed": True,
+            },
             "attempts": [
                 {
                     "proposed_diff_sha256": diff_sha256,
@@ -338,6 +378,196 @@ def _adapter_semantic_review_binding() -> dict[str, Any]:
         },
         adapter_architect_plan_required=True,
         repair_request=None,
+        canonical_context=canonical_context,
+    )
+
+
+def _adapter_canonical_context() -> dict[str, Any]:
+    plan_payload = _semantic_plan_payload()
+    rendered_file = f"--- {TARGET} ---\n{SOURCE_SLICE_CONTENT[:3_000]}\n"
+    workspace_prefix = "ADDITIONAL CURRENT AUTHORIZED FILES:\n"
+    workspace_context = f"{workspace_prefix}{rendered_file}"
+    rendered_start = len(workspace_prefix)
+    report = build_context_broker_report(
+        [
+            {
+                "source": "http-task-description",
+                "considered": True,
+                "status": "used",
+                "reason": "authenticated_request_bound",
+                "required": True,
+                "selected": True,
+                "included": True,
+                "packet": {},
+            },
+            {
+                "source": "architect_repository_context",
+                "considered": True,
+                "status": "used",
+                "reason": "architect_selected_current_scoped_source",
+                "required": True,
+                "selected": True,
+                "included": True,
+                "packet": {
+                    "plan_id": plan_payload["plan_id"],
+                    "target": TARGET,
+                    "allowed_paths": [TARGET],
+                    "context_slices": [
+                        {
+                            "path": TARGET,
+                            "kind": "target",
+                            "sha256": SOURCE_SLICE_SHA256,
+                            "line_range": [],
+                        }
+                    ],
+                    "scoped_workspace_context_manifest": [
+                        {
+                            "path": TARGET,
+                            "sha256": SOURCE_SLICE_SHA256,
+                            "size": len(SOURCE_SLICE_CONTENT.encode("utf-8")),
+                            "rendered_sha256": hashlib.sha256(
+                                rendered_file.encode("utf-8")
+                            ).hexdigest(),
+                            "rendered_chars": len(rendered_file),
+                            "truncated": False,
+                            "rendered_start": rendered_start,
+                            "rendered_end": rendered_start + len(rendered_file),
+                        }
+                    ],
+                    "scoped_workspace_context": workspace_context,
+                    "scoped_workspace_context_sha256": hashlib.sha256(
+                        workspace_context.encode("utf-8")
+                    ).hexdigest(),
+                    "scoped_workspace_context_char_count": len(workspace_context),
+                },
+                "authority": {
+                    "schema_version": "source-proxy-derived-architect-context-authority/v1",
+                    "kind": "derived_planner_output",
+                    "producer": "source_proxy.planning.architect",
+                    "separately_bound_by": [
+                        "planner_runtime_output",
+                        "adapter_plan_sha256",
+                        "semantic_review_binding",
+                    ],
+                },
+            },
+        ],
+        downstream_consumers={
+            "planner": {
+                "applicable": True,
+                "acknowledged": True,
+                "sources": [
+                    "http-task-description",
+                    "architect_repository_context",
+                ],
+                "evidence": "planner_consumed_authenticated_task",
+                "reason": "planner_built_task_spec",
+            }
+        },
+        applicable_consumers=("planner",),
+    )
+    rendered_coder_context = proof_module._render_independent_adapter_coder_context(
+        ArchitectPlan.from_dict(plan_payload),
+        report,
+        workspace_context,
+    )
+    architect_source = next(
+        item
+        for item in report["sources_considered"]
+        if item["source"] == "architect_repository_context"
+    )
+    architect_source["packet"].update(
+        {
+            "rendered_coder_context": rendered_coder_context,
+            "rendered_coder_context_sha256": hashlib.sha256(
+                rendered_coder_context.encode("utf-8")
+            ).hexdigest(),
+            "rendered_coder_context_char_count": len(rendered_coder_context),
+        }
+    )
+    report = _rebuild_context_report(report)
+    return acknowledge_context_consumer(
+        report,
+        consumer="coder",
+        evidence="coder_prompt_bound_to_context",
+        reason="coder_consumed_selected_context",
+    )
+
+
+def _production_canonical_context() -> dict[str, Any]:
+    report = build_context_broker_report(
+        [
+            {
+                "source": "http-task-description",
+                "considered": True,
+                "status": "used",
+                "reason": "authenticated_request_bound",
+                "required": True,
+                "selected": True,
+                "included": True,
+                "packet": {},
+            }
+        ],
+        downstream_consumers={
+            "planner": {
+                "applicable": True,
+                "acknowledged": True,
+                "sources": ["http-task-description"],
+                "evidence": "planner_consumed_authenticated_task",
+                "reason": "planner_built_task_spec",
+            }
+        },
+        applicable_consumers=("planner",),
+    )
+    return acknowledge_context_consumer(
+        report,
+        consumer="coder",
+        evidence="coder_prompt_bound_to_context",
+        reason="coder_consumed_selected_context",
+    )
+
+
+def _reseal_adapter_context_evidence(
+    binding: dict[str, Any],
+    canonical_context: dict[str, Any],
+) -> None:
+    receipt = binding["preview_review_receipt"]
+    evidence = receipt["adapter_preview_evidence"]
+    context_hash = canonical_context["canonical_report_hash"]
+    evidence["canonical_context_report_hash"] = context_hash
+    evidence["canonical_context_report_sha256"] = _sha256_json(
+        canonical_context
+    )
+    evidence["canonical_context_selected_sources"] = list(
+        canonical_context["selected_sources"]
+    )
+    evidence["canonical_context_consumed_sources"] = list(
+        canonical_context["consumed_sources"]
+    )
+    coder_binding = evidence["coder_context_binding"]
+    coder_binding["canonical_context_report_hash"] = context_hash
+    coder_binding["selected_sources"] = list(canonical_context["selected_sources"])
+    coder_binding["consumed_sources"] = list(canonical_context["consumed_sources"])
+    receipt["adapter_preview_evidence_sha256"] = _sha256_json(evidence)
+    receipt_body = dict(receipt)
+    receipt_body.pop("receipt_sha256")
+    receipt["receipt_sha256"] = _sha256_json(receipt_body)
+    binding["preview_review_receipt_sha256"] = receipt["receipt_sha256"]
+    binding_body = dict(binding)
+    binding_body.pop("semantic_review_binding_sha256")
+    binding["semantic_review_binding_sha256"] = _sha256_json(binding_body)
+
+
+def _rebuild_context_report(report: dict[str, Any]) -> dict[str, Any]:
+    sources: list[dict[str, Any]] = []
+    for raw_source in report["sources_considered"]:
+        source = copy.deepcopy(raw_source)
+        source["consumed"] = source.get("consumed_claimed") is True
+        sources.append(source)
+    return build_context_broker_report(
+        sources,
+        downstream_consumers=copy.deepcopy(report["downstream_acknowledgements"]),
+        applicable_consumers=list(report["applicable_consumers"]),
     )
 
 
@@ -565,21 +795,17 @@ def _production_state(
         consumptions.append(consumption_payload)
         return acknowledgement_payload, consumption_payload
 
-    canonical_context_report = {
-        "schema_version": "canonical-context-broker/v1",
-        "canonical": True,
-        "canonical_report_hash": "context-hash",
-        "go_eligible": True,
-    }
+    canonical_context_report = _production_canonical_context()
+    context_hash = canonical_context_report["canonical_report_hash"]
     context_output = issue(
         "context-broker",
         "context-producer",
-        {"context_hash": "context-hash", "verdict": "GO"},
+        {"context_hash": context_hash, "verdict": "GO"},
     )
     planner_context_output = issue(
         "context-broker",
         "planner-context-producer",
-        {"context_hash": "context-hash", "verdict": "GO"},
+        {"context_hash": context_hash, "verdict": "GO"},
     )
     planner_output = issue(
         "planner",
@@ -607,32 +833,34 @@ def _production_state(
     model_output_provenance = _model_output_provenance(
         provider=selected_model["provider"],
         model=selected_model["model"],
+        attempt_id=selected_model["attempt_id"],
+        invocation_id=selected_model["invocation_id"],
     )
     adapter_provenance = model_output_provenance["target_adapter_provenance"]
     model_context_output = issue(
         "context-broker",
         "model-context-producer",
-        {"context_hash": "context-hash", "verdict": "GO"},
+        {"context_hash": context_hash, "verdict": "GO"},
     )
     consume(
         context_output,
         consumer="context-refresh-consumer",
-        payload={"consumer": "context-refresh", "context_hash": "context-hash"},
+        payload={"consumer": "context-refresh", "context_hash": context_hash},
     )
     consume(
         planner_context_output,
         consumer="planner-consumer",
-        payload={"consumer": "planner", "context_hash": "context-hash"},
+        payload={"consumer": "planner", "context_hash": context_hash},
     )
     model_context_ack, model_context_consumption = consume(
         model_context_output,
         consumer=selected_model["invocation_id"],
-        payload={"consumer": "coder", "context_hash": "context-hash"},
+        payload={"consumer": "coder", "context_hash": context_hash},
     )
     planner_ack, planner_consumption = consume(
         planner_output,
         consumer=selected_model["invocation_id"],
-        payload={"context_hash": "context-hash"},
+        payload={"context_hash": context_hash},
     )
     coder_output = issue(
         "coder",
@@ -671,7 +899,7 @@ def _production_state(
         },
         "selected_prompt_id": "coder-004-add-search-filter",
         "selected_context_id": "search-filter",
-        "context_hash": "context-hash",
+        "context_hash": context_hash,
         "canonical_context_report": canonical_context_report,
         "canonical_context_report_sha256": _sha256_json(canonical_context_report),
         "context_runtime_output_id": model_context_output["output_id"],
@@ -1085,6 +1313,8 @@ def test_semantic_review_builder_requires_generic_adapter_plan_evidence() -> Non
         "architect_plan_id",
         "architect_plan_sha256",
         "acceptance_criteria",
+        "canonical_context_report_hash",
+        "producer_rendered_prompt_sha256",
         "removed",
         "object_removed",
     ],
@@ -1125,7 +1355,197 @@ def test_independent_semantic_review_rejects_rehashed_adapter_plan_drift(
         changed_files=[TARGET],
         adapter_architect_plan_required=True,
         repair_request=None,
+        canonical_context=_adapter_canonical_context(),
+        target_plugin_identity={
+            "readable_actions": [TARGET],
+            "allowed_actions": [TARGET],
+        },
+        adapter_provenance={"rendered_prompt_sha256": "1" * 64},
     ) is False
+
+
+def test_independent_semantic_review_rejects_resealed_stale_context_hash() -> None:
+    binding = _adapter_semantic_review_binding()
+    canonical_context = _adapter_canonical_context()
+    task_source = next(
+        item
+        for item in canonical_context["sources_considered"]
+        if item["source"] == "http-task-description"
+    )
+    task_source["packet"] = {"forged": "replacement task material"}
+    # The attacker updates every enclosing receipt seal but cannot make the
+    # stale decision-bearing broker hash truthful without rebuilding it.
+    _reseal_adapter_context_evidence(binding, canonical_context)
+
+    assert proof_module._canonical_context_report_truth_valid(canonical_context) is False
+    assert proof_module._valid_semantic_review_binding(
+        binding,
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        proposed_diff=APPROVED_DIFF,
+        changed_files=[TARGET],
+        adapter_architect_plan_required=True,
+        repair_request=None,
+        canonical_context=canonical_context,
+        target_plugin_identity={
+            "readable_actions": [TARGET],
+            "allowed_actions": [TARGET],
+        },
+        adapter_provenance={"rendered_prompt_sha256": "1" * 64},
+    ) is False
+
+
+def test_independent_semantic_review_rejects_rehashed_architect_scope_drift() -> None:
+    binding = _adapter_semantic_review_binding()
+    canonical_context = _adapter_canonical_context()
+    architect_source = next(
+        item
+        for item in canonical_context["sources_considered"]
+        if item["source"] == "architect_repository_context"
+    )
+    architect_source["packet"]["target"] = "forged/outside-plan.py"
+    architect_source["packet"]["allowed_paths"] = ["forged/outside-plan.py"]
+    canonical_context = _rebuild_context_report(canonical_context)
+    _reseal_adapter_context_evidence(binding, canonical_context)
+
+    assert proof_module._canonical_context_report_truth_valid(canonical_context) is True
+    assert proof_module._valid_semantic_review_binding(
+        binding,
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        proposed_diff=APPROVED_DIFF,
+        changed_files=[TARGET],
+        adapter_architect_plan_required=True,
+        repair_request=None,
+        canonical_context=canonical_context,
+        target_plugin_identity={
+            "readable_actions": [TARGET],
+            "allowed_actions": [TARGET],
+        },
+        adapter_provenance={"rendered_prompt_sha256": "1" * 64},
+    ) is False
+
+
+def test_independent_semantic_review_rejects_rehashed_nonplan_manifest_claim() -> None:
+    binding = _adapter_semantic_review_binding()
+    canonical_context = _adapter_canonical_context()
+    plan = ArchitectPlan.from_dict(_semantic_plan_payload())
+    extra_path = "tests/support.py"
+    extra_content = "VALUE = 'bound'\n"
+    extra_rendered = f"--- {extra_path} ---\n{extra_content}\n"
+    architect_source = next(
+        item
+        for item in canonical_context["sources_considered"]
+        if item["source"] == "architect_repository_context"
+    )
+    packet = architect_source["packet"]
+    rendered_start = len(packet["scoped_workspace_context"])
+    packet["allowed_paths"] = [TARGET, extra_path]
+    packet["scoped_workspace_context"] += extra_rendered
+    packet["scoped_workspace_context_manifest"].append(
+        {
+            "path": extra_path,
+            "sha256": hashlib.sha256(extra_content.encode("utf-8")).hexdigest(),
+            "size": len(extra_content.encode("utf-8")),
+            "rendered_sha256": hashlib.sha256(
+                extra_rendered.encode("utf-8")
+            ).hexdigest(),
+            "rendered_chars": len(extra_rendered),
+            "truncated": False,
+            "rendered_start": rendered_start,
+            "rendered_end": rendered_start + len(extra_rendered),
+        }
+    )
+    packet["scoped_workspace_context_sha256"] = hashlib.sha256(
+        packet["scoped_workspace_context"].encode("utf-8")
+    ).hexdigest()
+    packet["scoped_workspace_context_char_count"] = len(
+        packet["scoped_workspace_context"]
+    )
+    rendered_coder_context = proof_module._render_independent_adapter_coder_context(
+        plan,
+        canonical_context,
+        packet["scoped_workspace_context"],
+    )
+    packet.update(
+        {
+            "rendered_coder_context": rendered_coder_context,
+            "rendered_coder_context_sha256": hashlib.sha256(
+                rendered_coder_context.encode("utf-8")
+            ).hexdigest(),
+            "rendered_coder_context_char_count": len(rendered_coder_context),
+        }
+    )
+    canonical_context = _rebuild_context_report(canonical_context)
+    _reseal_adapter_context_evidence(binding, canonical_context)
+    identity = {
+        "readable_actions": [TARGET, extra_path],
+        "allowed_actions": [TARGET, extra_path],
+    }
+    arguments = {
+        "task_id": TASK_ID,
+        "run_id": RUN_ID,
+        "attempt_id": "attempt-primary",
+        "proposed_diff": APPROVED_DIFF,
+        "changed_files": [TARGET],
+        "adapter_architect_plan_required": True,
+        "repair_request": None,
+        "canonical_context": canonical_context,
+        "target_plugin_identity": identity,
+        "adapter_provenance": {"rendered_prompt_sha256": "1" * 64},
+    }
+    assert proof_module._valid_semantic_review_binding(binding, **arguments) is True
+
+    architect_source = next(
+        item
+        for item in canonical_context["sources_considered"]
+        if item["source"] == "architect_repository_context"
+    )
+    extra_entry = architect_source["packet"][
+        "scoped_workspace_context_manifest"
+    ][1]
+    extra_entry["sha256"] = "f" * 64
+    extra_entry["size"] += 7
+    canonical_context = _rebuild_context_report(canonical_context)
+    _reseal_adapter_context_evidence(binding, canonical_context)
+    arguments["canonical_context"] = canonical_context
+
+    assert proof_module._canonical_context_report_truth_valid(canonical_context) is True
+    assert proof_module._valid_semantic_review_binding(binding, **arguments) is False
+
+
+def test_independent_semantic_review_accepts_server_owned_directory_prefix_scope() -> None:
+    binding = _adapter_semantic_review_binding()
+    canonical_context = _adapter_canonical_context()
+    prefix = "tests/ui-agent-trials/fixtures/dummy-product-site/"
+    architect_source = next(
+        item
+        for item in canonical_context["sources_considered"]
+        if item["source"] == "architect_repository_context"
+    )
+    architect_source["packet"]["allowed_paths"] = [prefix]
+    canonical_context = _rebuild_context_report(canonical_context)
+    _reseal_adapter_context_evidence(binding, canonical_context)
+
+    assert proof_module._is_canonical_repo_path(prefix) is True
+    assert proof_module._valid_semantic_review_binding(
+        binding,
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        proposed_diff=APPROVED_DIFF,
+        changed_files=[TARGET],
+        adapter_architect_plan_required=True,
+        repair_request=None,
+        canonical_context=canonical_context,
+        target_plugin_identity={
+            "readable_actions": [prefix],
+            "allowed_actions": [prefix],
+        },
+        adapter_provenance={"rendered_prompt_sha256": "1" * 64},
+    ) is True
 
 
 def test_production_proof_rejects_unconsumed_repair_blocked_reasons() -> None:
@@ -1475,6 +1895,18 @@ def test_production_proof_rejects_rehashed_adapter_plugin_identity_drift() -> No
 
     assert proof["terminal_proof_eligible"] is False
     assert "canonical_model_provenance_invalid" in proof["failures"]
+
+
+def test_production_proof_rejects_model_call_authority_from_another_run() -> None:
+    state = _production_state()
+    state["target_plugin_proposal"]["target_adapter_provenance"]["calls"][0][
+        "model_call_authority"
+    ]["run_id"] = "unrelated-run:attempt-primary:model-primary:coder:1"
+
+    proof = derive_production_proof(state, expected_source_head=SOURCE_HEAD)
+
+    assert proof["terminal_proof_eligible"] is False
+    assert "model_call_authority_binding_invalid" in proof["failures"]
 
 
 def test_production_proof_rejects_rehashed_planner_handoff_drift() -> None:

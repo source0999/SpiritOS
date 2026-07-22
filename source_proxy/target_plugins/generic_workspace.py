@@ -15,7 +15,12 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
-from source_proxy.context.canonical_broker import build_context_broker_report
+from source_proxy.context.canonical_broker import (
+    ARCHITECT_REPOSITORY_CONTEXT_SOURCE,
+    build_context_broker_report,
+    derived_architect_context_authority,
+    is_derived_architect_context_source,
+)
 from source_proxy.diagnostics.status_codes import classify_repair_failure
 from source_proxy.planning.architect import (
     ArchitectLLMError,
@@ -41,6 +46,7 @@ GENERIC_RICH_EXECUTION_PATH = "architect_coder_packet/v1"
 _MAX_PREVIEW_ATTEMPTS = 3
 _MAX_MULTI_FILE_COUNT = 8
 _MAX_MULTI_FILE_CONTENT_CHARS = 120_000
+_BOUNDED_CONTEXT_PACKET_SCHEMA = "source-proxy-bounded-context-packet/v1"
 
 
 def execute_generic_workspace_rich(
@@ -56,8 +62,20 @@ def execute_generic_workspace_rich(
     model_alias: str,
     canonical_context: Mapping[str, Any] | None = None,
     architect_task_id: str | None = None,
+    prevalidated_plan: ArchitectPlan | None = None,
     plan_ready_callback: (
-        Callable[[ArchitectPlan], Mapping[str, Any] | None] | None
+        Callable[
+            [ArchitectPlan, Mapping[str, Any]],
+            Mapping[str, Any] | None,
+        ]
+        | None
+    ) = None,
+    coder_ready_callback: (
+        Callable[
+            [ArchitectPlan, Mapping[str, Any], str],
+            Mapping[str, Any] | None,
+        ]
+        | None
     ) = None,
 ) -> dict[str, Any]:
     """Plan, inspect, code, review, and validate one scoped model-authored diff."""
@@ -87,7 +105,7 @@ def execute_generic_workspace_rich(
         "reviewer_model_call_required": False,
         "reviewer_model_call_count_expected": 0,
     }
-    if architect_call is None or coder_call is None:
+    if coder_call is None or (prevalidated_plan is None and architect_call is None):
         return _blocked_result(
             "generic_workspace_model_alias_unavailable",
             "The configured local model alias is unavailable.",
@@ -108,54 +126,67 @@ def execute_generic_workspace_rich(
             f"{root}\n{task}".encode("utf-8", errors="replace")
         ).hexdigest()[:24]
     )
-    deterministic = plan_task_deterministically(
-        task,
-        task_id,
-        root,
-        allowed_paths=read_scope,
-    )
-    if isinstance(deterministic, Block):
-        base_diagnostics.update(
-            {
-                "architect_status": "blocked",
-                "planner_status": "blocked",
-                "architect_reason": deterministic.reason,
-            }
-        )
-        return _blocked_result(
-            deterministic.reason,
-            "The deterministic architect rejected the requested target or scope.",
-            base_diagnostics,
-            stage="architect",
-        )
-
-    try:
-        if isinstance(deterministic, Plan):
-            plan = deterministic.plan
-            planning_mode = "deterministic"
-        else:
-            plan = plan_task_with_llm(
-                task,
-                task_id,
-                root,
-                llm_call=architect_call,
-                allowed_paths=read_scope,
+    if prevalidated_plan is not None:
+        if not isinstance(prevalidated_plan, ArchitectPlan) or (
+            prevalidated_plan.task_id != task_id
+        ):
+            return _blocked_result(
+                "generic_workspace_prevalidated_plan_identity_mismatch",
+                "The server-owned fallback plan did not match this exact task.",
+                base_diagnostics,
+                stage="architect",
             )
-            planning_mode = "local_model"
-    except ArchitectLLMError as error:
-        base_diagnostics.update(
-            {
-                "architect_status": "blocked",
-                "planner_status": "blocked",
-                "architect_reason": error.reason_code,
-            }
+        plan = prevalidated_plan
+        planning_mode = "server_persisted_plan_reuse"
+    else:
+        deterministic = plan_task_deterministically(
+            task,
+            task_id,
+            root,
+            allowed_paths=read_scope,
         )
-        return _blocked_result(
-            error.reason_code,
-            str(error),
-            base_diagnostics,
-            stage="architect",
-        )
+        if isinstance(deterministic, Block):
+            base_diagnostics.update(
+                {
+                    "architect_status": "blocked",
+                    "planner_status": "blocked",
+                    "architect_reason": deterministic.reason,
+                }
+            )
+            return _blocked_result(
+                deterministic.reason,
+                "The deterministic architect rejected the requested target or scope.",
+                base_diagnostics,
+                stage="architect",
+            )
+
+        try:
+            if isinstance(deterministic, Plan):
+                plan = deterministic.plan
+                planning_mode = "deterministic"
+            else:
+                plan = plan_task_with_llm(
+                    task,
+                    task_id,
+                    root,
+                    llm_call=architect_call,
+                    allowed_paths=read_scope,
+                )
+                planning_mode = "local_model"
+        except ArchitectLLMError as error:
+            base_diagnostics.update(
+                {
+                    "architect_status": "blocked",
+                    "planner_status": "blocked",
+                    "architect_reason": error.reason_code,
+                }
+            )
+            return _blocked_result(
+                error.reason_code,
+                str(error),
+                base_diagnostics,
+                stage="architect",
+            )
 
     plan_error = _validate_plan_scope(
         plan,
@@ -178,47 +209,127 @@ def execute_generic_workspace_rich(
             stage="architect",
         )
 
-    # The canonical orchestrator uses this exact plan as its authoritative
-    # planner output before the first coder provider call.  Keeping the hook
-    # here avoids a second, unaccounted architect call and guarantees that the
-    # semantic reviewer later binds the proposal to the plan that actually
-    # shaped the coder prompt.
-    if plan_ready_callback is not None:
-        refreshed_context = plan_ready_callback(plan)
-        if isinstance(refreshed_context, Mapping):
-            canonical_context = refreshed_context
-    planner_context_report = _build_context_report(
-        plan,
-        allowed_paths=read_scope,
-        existing=canonical_context,
-        coder_prompt_sha256=None,
-    )
-    if planner_context_report.get("go_eligible") is not True:
-        base_diagnostics["canonical_context_broker"] = planner_context_report
-        return _blocked_result(
-            "generic_workspace_context_not_go_eligible",
-            "; ".join(
-                str(value)
-                for value in planner_context_report.get("required_context_blockers", [])
+    try:
+        workspace_context_text, workspace_context_manifest = (
+            _render_scoped_workspace_context(
+                root,
+                read_scope,
             )
-            or "Canonical context was not eligible for planner consumption.",
+        )
+    except RuntimeError as error:
+        return _blocked_result(
+            "generic_workspace_repository_index_unavailable",
+            str(error),
             base_diagnostics,
             stage="context",
         )
-    workspace_context_text, workspace_context_manifest = _render_scoped_workspace_context(
-        root,
-        read_scope,
+    staged_planner_context_report = _build_context_report(
+        plan,
+        allowed_paths=read_scope,
+        existing=canonical_context,
+        scoped_workspace_context=workspace_context_text,
+        scoped_workspace_context_manifest=workspace_context_manifest,
     )
-    context_text = "\n".join(
-        part
-        for part in (
-            _render_current_context(plan, planner_context_report),
-            workspace_context_text,
+    if prevalidated_plan is not None:
+        if plan_ready_callback is not None or coder_ready_callback is None:
+            base_diagnostics["canonical_context_broker"] = (
+                staged_planner_context_report
+            )
+            return _blocked_result(
+                "generic_workspace_reused_plan_callback_contract_invalid",
+                "A reused server plan requires only the coder dispatch callback.",
+                base_diagnostics,
+                stage="context",
+            )
+        reuse_error = _validate_coder_context_report(
+            staged_planner_context_report,
+            canonical_context or {},
         )
-        if part
-    )[:24_000]
+        if reuse_error:
+            base_diagnostics["canonical_context_broker"] = dict(
+                canonical_context or {}
+            )
+            return _blocked_result(
+                "generic_workspace_reused_plan_context_invalid",
+                reuse_error,
+                base_diagnostics,
+                stage="context",
+            )
+        planner_context_report = json.loads(
+            json.dumps(dict(canonical_context or {}), sort_keys=True, default=str)
+        )
+    else:
+        planner_context_report = staged_planner_context_report
+        if (plan_ready_callback is None) != (coder_ready_callback is None):
+            base_diagnostics["canonical_context_broker"] = planner_context_report
+            return _blocked_result(
+                "generic_workspace_context_callback_pair_incomplete",
+                "Planner-ready and coder-ready context callbacks must be supplied together.",
+                base_diagnostics,
+                stage="context",
+            )
+
+        if planner_context_report.get("go_eligible") is not True and not (
+            plan_ready_callback is not None
+            and _is_staged_planner_context_report(planner_context_report)
+        ):
+            base_diagnostics["canonical_context_broker"] = planner_context_report
+            return _blocked_result(
+                "generic_workspace_context_not_go_eligible",
+                "; ".join(
+                    str(value)
+                    for value in planner_context_report.get(
+                        "required_context_blockers", []
+                    )
+                )
+                or "Canonical context was not eligible for planner consumption.",
+                base_diagnostics,
+                stage="context",
+            )
+
+        # The first hook persists the exact expanded report and Architect plan.
+        # It deliberately does not claim that Coder ran; the second hook is
+        # invoked only from the real provider-call boundary below.
+        refreshed_context = (
+            plan_ready_callback(plan, planner_context_report)
+            if plan_ready_callback is not None
+            else planner_context_report
+        )
+        if not isinstance(refreshed_context, Mapping):
+            base_diagnostics["canonical_context_broker"] = planner_context_report
+            return _blocked_result(
+                "generic_workspace_context_refresh_missing",
+                "The canonical orchestrator did not return the persisted context report.",
+                base_diagnostics,
+                stage="context",
+            )
+        refresh_error = _validate_persisted_planner_context_report(
+            planner_context_report,
+            refreshed_context,
+        )
+        if refresh_error:
+            base_diagnostics["canonical_context_broker"] = dict(refreshed_context)
+            return _blocked_result(
+                refresh_error,
+                "The persisted context report did not bind the exact adapter source material.",
+                base_diagnostics,
+                stage="context",
+            )
+        planner_context_report = json.loads(
+            json.dumps(dict(refreshed_context), sort_keys=True, default=str)
+        )
+        canonical_context = planner_context_report
+    context_text = _bound_coder_context_text(planner_context_report)
+    if context_text is None:
+        base_diagnostics["canonical_context_broker"] = planner_context_report
+        return _blocked_result(
+            "generic_workspace_bound_coder_context_missing",
+            "The persisted Architect source did not retain the exact rendered coder context.",
+            base_diagnostics,
+            stage="context",
+        )
     context_text_sha256 = hashlib.sha256(context_text.encode("utf-8")).hexdigest()
-    context_report = planner_context_report
+    context_report: Mapping[str, Any] = planner_context_report
     base_diagnostics.update(
         {
             "architect_status": "completed",
@@ -241,7 +352,7 @@ def execute_generic_workspace_rich(
                     "path": item.path,
                     "kind": item.kind,
                     "sha256": item.sha256,
-                    "line_range": list(item.line_range),
+                    "line_range": list(item.line_range or ()),
                 }
                 for item in plan.coder_packet.context_slices
             ],
@@ -257,11 +368,51 @@ def execute_generic_workspace_rich(
     feedback: list[str] | None = None
     final_result: dict[str, Any] | None = None
     observed_coder_prompts: list[str] = []
+    coder_context_ready = False
+    coder_context_error = ""
+    coder_callback_exception: BaseException | None = None
     multi_file_requested = _task_requests_multi_file_capability(task)
     base_diagnostics["multi_file_capability_requested"] = multi_file_requested
 
     def observed_coder_call(prompt: str, alias: str) -> str:
-        observed_coder_prompts.append(hashlib.sha256(prompt.encode("utf-8")).hexdigest())
+        nonlocal context_report, coder_context_ready, coder_context_error
+        nonlocal coder_callback_exception
+        prompt_sha256 = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        if coder_callback_exception is not None or coder_context_error:
+            return _context_callback_block_response(
+                coder_context_error
+                or "generic_workspace_coder_context_callback_failed"
+            )
+        if coder_ready_callback is not None and not coder_context_ready:
+            try:
+                refreshed_context = coder_ready_callback(
+                    plan,
+                    planner_context_report,
+                    prompt_sha256,
+                )
+            except Exception as error:  # re-raised outside model wrappers
+                coder_callback_exception = error
+                return _context_callback_block_response(
+                    "generic_workspace_coder_context_callback_failed"
+                )
+            if not isinstance(refreshed_context, Mapping):
+                coder_context_error = "generic_workspace_coder_context_refresh_missing"
+                return _context_callback_block_response(coder_context_error)
+            coder_context_error = _validate_coder_context_report(
+                planner_context_report,
+                refreshed_context,
+            )
+            if coder_context_error:
+                return _context_callback_block_response(coder_context_error)
+            context_report = json.loads(
+                json.dumps(dict(refreshed_context), sort_keys=True, default=str)
+            )
+            coder_context_ready = True
+            base_diagnostics["canonical_context_broker"] = context_report
+            base_diagnostics["canonical_context_report_hash"] = context_report.get(
+                "canonical_report_hash"
+            )
+        observed_coder_prompts.append(prompt_sha256)
         return coder_call(prompt, alias)
 
     for attempt_index in range(1, _MAX_PREVIEW_ATTEMPTS + 1):
@@ -292,18 +443,42 @@ def execute_generic_workspace_rich(
                 canonical_context=planner_context_report,
                 canonical_context_text=context_text,
             )
+        if coder_callback_exception is not None:
+            raise coder_callback_exception
+        if coder_context_error:
+            return _blocked_result(
+                coder_context_error,
+                "The coder-ready context acknowledgement did not bind the persisted planner material.",
+                base_diagnostics,
+                stage="context",
+            )
         if observed_coder_prompts:
-            context_report = _build_context_report(
-                plan,
-                allowed_paths=scope,
-                existing=canonical_context,
-                coder_prompt_sha256=observed_coder_prompts[-1],
+            bindings = [
+                {
+                    "schema_version": "source-proxy-coder-context-binding/v1",
+                    "call_index": index,
+                    "canonical_context_report_hash": context_report.get(
+                        "canonical_report_hash"
+                    ),
+                    "rendered_prompt_sha256": prompt_sha256,
+                    "selected_sources": list(
+                        context_report.get("selected_sources") or []
+                    ),
+                    "consumed_sources": list(
+                        context_report.get("consumed_sources") or []
+                    ),
+                    "consumed": True,
+                }
+                for index, prompt_sha256 in enumerate(
+                    observed_coder_prompts,
+                    start=1,
+                )
+            ]
+            base_diagnostics["coder_context_bindings"] = bindings
+            base_diagnostics["coder_context_binding"] = bindings[-1]
+            base_diagnostics["coder_rendered_prompt_sha256"] = (
+                observed_coder_prompts[-1]
             )
-            base_diagnostics["canonical_context_broker"] = context_report
-            base_diagnostics["canonical_context_report_hash"] = context_report.get(
-                "canonical_report_hash"
-            )
-            base_diagnostics["coder_rendered_prompt_sha256"] = observed_coder_prompts[-1]
         diagnostics = _mapping(result.get("coder_diagnostics"))
         proposed_diff = str(result.get("proposed_diff") or "")
         changed_files = _diff_files(proposed_diff, root=root)
@@ -746,16 +921,25 @@ def _render_scoped_workspace_context(
     allowed_paths: tuple[str, ...],
 ) -> tuple[str, list[dict[str, Any]]]:
     listed = subprocess.run(
-        ["git", "ls-files", "-z"],
+        [
+            "git",
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ],
         cwd=root,
         capture_output=True,
         check=False,
         timeout=15,
     )
     if listed.returncode:
-        return "", []
-    remaining = 12_000
-    sections = ["ADDITIONAL CURRENT AUTHORIZED FILES:"]
+        raise RuntimeError(
+            "The authorized Git file index could not be read for context binding."
+        )
+    rendered_context = "ADDITIONAL CURRENT AUTHORIZED FILES:\n"
+    remaining = 12_000 - len(rendered_context)
     manifest: list[dict[str, Any]] = []
     for path in listed.stdout.decode("utf-8", errors="strict").split("\0"):
         if not path or not _path_resolves_in_scope(root, path, allowed_paths):
@@ -765,19 +949,28 @@ def _render_scoped_workspace_context(
             continue
         raw = candidate.read_bytes()
         content = raw.decode("utf-8", errors="replace")
+        rendered = f"--- {path} ---\n{content[:3_000]}\n"
+        if len(rendered) > remaining:
+            continue
+        rendered_start = len(rendered_context)
+        rendered_context += rendered
+        rendered_end = len(rendered_context)
         manifest.append(
             {
                 "path": path,
                 "sha256": hashlib.sha256(raw).hexdigest(),
                 "size": len(raw),
+                "rendered_sha256": hashlib.sha256(
+                    rendered.encode("utf-8")
+                ).hexdigest(),
+                "rendered_chars": len(rendered),
+                "truncated": len(content) > 3_000,
+                "rendered_start": rendered_start,
+                "rendered_end": rendered_end,
             }
         )
-        rendered = f"--- {path} ---\n{content[:3_000]}\n"
-        if len(rendered) > remaining:
-            continue
-        sections.append(rendered)
         remaining -= len(rendered)
-    return "\n".join(sections) if manifest else "", manifest
+    return rendered_context if manifest else "", manifest
 
 
 def _attempt_signature(
@@ -823,12 +1016,37 @@ def _validate_plan_scope(
         return "generic_workspace_architect_target_outside_root"
     if packet.operation == "edit" and not candidate.is_file():
         return "generic_workspace_architect_edit_target_missing"
+    target_exists = candidate.is_file()
+    if target_exists is not packet.target_file.exists:
+        return "generic_workspace_architect_target_state_mismatch"
+    current_target_sha256 = (
+        hashlib.sha256(candidate.read_bytes()).hexdigest()
+        if target_exists
+        else None
+    )
+    if current_target_sha256 != packet.target_file.sha256_before:
+        return "generic_workspace_architect_target_hash_mismatch"
     for context_slice in packet.context_slices:
-        if not _path_allowed(
+        effective_read_scope = readable_paths or allowed_paths
+        if not _path_resolves_in_scope(
+            root,
             context_slice.path,
-            readable_paths or allowed_paths,
+            effective_read_scope,
         ):
             return "generic_workspace_architect_context_outside_scope"
+        context_candidate = root / context_slice.path
+        if not context_candidate.is_file() or context_candidate.is_symlink():
+            return "generic_workspace_architect_context_missing"
+        current_content = context_candidate.read_text(
+            encoding="utf-8",
+            errors="replace",
+        )
+        if (
+            context_slice.sha256
+            != hashlib.sha256(context_slice.content.encode("utf-8")).hexdigest()
+            or context_slice.content != current_content
+        ):
+            return "generic_workspace_architect_context_hash_mismatch"
     return ""
 
 
@@ -837,7 +1055,8 @@ def _build_context_report(
     *,
     allowed_paths: tuple[str, ...],
     existing: Mapping[str, Any] | None,
-    coder_prompt_sha256: str | None,
+    scoped_workspace_context: str,
+    scoped_workspace_context_manifest: list[dict[str, Any]],
 ) -> dict[str, Any]:
     sources: list[dict[str, Any]] = []
     for raw in (existing or {}).get("sources_considered", []):
@@ -847,30 +1066,18 @@ def _build_context_report(
         source["consumed"] = False
         packet = source.get("packet")
         if source.get("selected") is True and source.get("included") is True:
-            if not isinstance(packet, Mapping) or not packet:
-                source["selected"] = False
-                source["included"] = False
-            else:
-                packet_json = json.dumps(
-                    dict(packet),
-                    sort_keys=True,
-                    separators=(",", ":"),
-                    default=str,
-                )
-                source["packet"] = {
-                    "bounded_context": packet_json[:4_000],
-                    "packet_sha256": hashlib.sha256(packet_json.encode("utf-8")).hexdigest(),
-                    "truncated": len(packet_json) > 4_000,
-                }
+            source["packet"] = _normalize_selected_context_packet(packet)
+        elif not isinstance(packet, Mapping):
+            source["packet"] = {}
         sources.append(source)
     sources = [
         source
         for source in sources
-        if str(source.get("source") or "") != "architect_repository_context"
+        if not is_derived_architect_context_source(source)
     ]
     sources.append(
         {
-            "source": "architect_repository_context",
+            "source": ARCHITECT_REPOSITORY_CONTEXT_SOURCE,
             "considered": True,
             "status": "used",
             "reason": "architect_selected_current_scoped_source",
@@ -887,11 +1094,26 @@ def _build_context_report(
                         "path": item.path,
                         "kind": item.kind,
                         "sha256": item.sha256,
-                        "line_range": list(item.line_range),
+                            "line_range": list(item.line_range or ()),
                     }
                     for item in plan.coder_packet.context_slices
                 ],
+                "scoped_workspace_context": scoped_workspace_context,
+                "scoped_workspace_context_manifest": json.loads(
+                    json.dumps(
+                        scoped_workspace_context_manifest,
+                        sort_keys=True,
+                        default=str,
+                    )
+                ),
+                "scoped_workspace_context_sha256": hashlib.sha256(
+                    scoped_workspace_context.encode("utf-8")
+                ).hexdigest(),
+                "scoped_workspace_context_char_count": len(
+                    scoped_workspace_context
+                ),
             },
+            "authority": derived_architect_context_authority(),
         }
     )
     selected = [
@@ -899,29 +1121,317 @@ def _build_context_report(
         for source in sources
         if source.get("selected") is True and source.get("included") is True
     ]
-    acknowledgements: dict[str, dict[str, Any]] = {
-        "planner": {
-            "applicable": True,
-            "acknowledged": True,
-            "sources": selected,
-            "evidence": "architect_selected_server_scoped_repository_context",
-            "reason": "planner_built_current_scoped_context_manifest",
-        },
-    }
-    applicable_consumers = ["planner"]
-    if coder_prompt_sha256:
-        acknowledgements["coder"] = {
-            "applicable": True,
-            "acknowledged": True,
-            "sources": selected,
-            "evidence": f"rendered_context_sha256:{coder_prompt_sha256}",
-            "reason": "coder_consumed_current_scoped_context_before_generation",
-        }
-        applicable_consumers.append("coder")
-    return build_context_broker_report(
+    # This is deliberately staged as unacknowledged.  The adapter can assemble
+    # the late-bound packet, but only the server-owned callback may attest that
+    # the planner lane validated it and durably persisted the exact plan.
+    acknowledgements: dict[str, dict[str, Any]] = {}
+    report = build_context_broker_report(
         sources,
         downstream_consumers=acknowledgements,
-        applicable_consumers=applicable_consumers,
+        applicable_consumers=("planner",),
+    )
+    rendered_coder_context = "\n".join(
+        part
+        for part in (
+            _render_current_context(plan, report),
+            scoped_workspace_context,
+        )
+        if part
+    )[:24_000]
+    architect_packet = sources[-1]["packet"]
+    architect_packet.update(
+        {
+            "rendered_coder_context": rendered_coder_context,
+            "rendered_coder_context_sha256": hashlib.sha256(
+                rendered_coder_context.encode("utf-8")
+            ).hexdigest(),
+            "rendered_coder_context_char_count": len(rendered_coder_context),
+        }
+    )
+    report = build_context_broker_report(
+        sources,
+        downstream_consumers=acknowledgements,
+        applicable_consumers=("planner",),
+    )
+    for field_name in ("task_id", "trace_id", "explicit_target", "finalized"):
+        if field_name in (existing or {}):
+            report[field_name] = (existing or {})[field_name]
+    return report
+
+
+def _is_staged_planner_context_report(report: Mapping[str, Any]) -> bool:
+    """Recognize the sole NO-GO state permitted before the server callback."""
+
+    selected_sources = [
+        source
+        for source in report.get("sources_considered", [])
+        if isinstance(source, Mapping)
+        and source.get("selected") is True
+        and source.get("included") is True
+    ]
+    expected_blockers: list[str] = []
+    for source in selected_sources:
+        source_name = str(source.get("source") or "")
+        if source.get("required") is True:
+            expected_blockers.append(
+                f"required_context_unacknowledged:{source_name}:planner"
+            )
+        expected_blockers.append(
+            f"selected_context_unacknowledged:{source_name}:planner"
+        )
+    planner = (report.get("downstream_acknowledgements") or {}).get("planner")
+    coder = (report.get("downstream_acknowledgements") or {}).get("coder")
+    return bool(
+        selected_sources
+        and report.get("canonical") is True
+        and report.get("go_eligible") is False
+        and list(report.get("required_context_blockers") or []) == expected_blockers
+        and list(report.get("applicable_consumers") or []) == ["planner"]
+        and isinstance(planner, Mapping)
+        and planner.get("applicable") is True
+        and planner.get("acknowledged") is False
+        and list(planner.get("sources") or []) == []
+        and isinstance(coder, Mapping)
+        and coder.get("applicable") is False
+        and coder.get("acknowledged") is False
+    )
+
+
+def _bound_coder_context_text(report: Mapping[str, Any]) -> str | None:
+    architect_sources = [
+        source
+        for source in report.get("sources_considered", [])
+        if isinstance(source, Mapping)
+        and str(source.get("source") or "")
+        == ARCHITECT_REPOSITORY_CONTEXT_SOURCE
+    ]
+    if len(architect_sources) != 1:
+        return None
+    packet = architect_sources[0].get("packet")
+    rendered = (
+        packet.get("rendered_coder_context")
+        if isinstance(packet, Mapping)
+        else None
+    )
+    return rendered if isinstance(rendered, str) and rendered else None
+
+
+def _normalize_selected_context_packet(packet: Any) -> dict[str, Any]:
+    """Bound non-empty packets once while preserving an empty packet's truth."""
+
+    if not isinstance(packet, Mapping) or not packet:
+        return {}
+    bounded_context = packet.get("bounded_context")
+    packet_sha256 = packet.get("packet_sha256")
+    bounded_context_sha256 = packet.get("bounded_context_sha256")
+    truncated = packet.get("truncated")
+    expected_keys = {
+        "schema_version",
+        "bounded_context",
+        "packet_sha256",
+        "bounded_context_sha256",
+        "truncated",
+    }
+    if (
+        set(packet) == expected_keys
+        and packet.get("schema_version") == _BOUNDED_CONTEXT_PACKET_SCHEMA
+        and isinstance(bounded_context, str)
+        and len(bounded_context) <= 4_000
+        and isinstance(packet_sha256, str)
+        and re.fullmatch(r"[0-9a-f]{64}", packet_sha256) is not None
+        and isinstance(bounded_context_sha256, str)
+        and re.fullmatch(r"[0-9a-f]{64}", bounded_context_sha256) is not None
+        and bounded_context_sha256
+        == hashlib.sha256(bounded_context.encode("utf-8")).hexdigest()
+        and isinstance(truncated, bool)
+        and (
+            (truncated and len(bounded_context) == 4_000)
+            or (
+                not truncated
+                and packet_sha256
+                == hashlib.sha256(bounded_context.encode("utf-8")).hexdigest()
+            )
+        )
+    ):
+        return json.loads(json.dumps(dict(packet), sort_keys=True, default=str))
+    packet_json = json.dumps(
+        dict(packet),
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+    bounded_context = packet_json[:4_000]
+    return {
+        "schema_version": _BOUNDED_CONTEXT_PACKET_SCHEMA,
+        "bounded_context": bounded_context,
+        "packet_sha256": hashlib.sha256(packet_json.encode("utf-8")).hexdigest(),
+        "bounded_context_sha256": hashlib.sha256(
+            bounded_context.encode("utf-8")
+        ).hexdigest(),
+        "truncated": len(packet_json) > 4_000,
+    }
+
+
+def _context_source_material_sha256(report: Mapping[str, Any]) -> str:
+    sources: list[dict[str, Any]] = []
+    for raw in report.get("sources_considered", []):
+        if not isinstance(raw, Mapping):
+            continue
+        sources.append(
+            {
+                "source": str(raw.get("source") or ""),
+                "considered": raw.get("considered") is not False,
+                "status": str(raw.get("status") or ""),
+                "reason": str(raw.get("reason") or ""),
+                "required": raw.get("required") is True,
+                "selected": raw.get("selected") is True,
+                "included": raw.get("included") is True,
+                "packet": (
+                    dict(raw["packet"])
+                    if isinstance(raw.get("packet"), Mapping)
+                    else {}
+                ),
+                "authority": (
+                    dict(raw["authority"])
+                    if isinstance(raw.get("authority"), Mapping)
+                    else {}
+                ),
+            }
+        )
+    return _sha256_json(sources)
+
+
+def _validate_persisted_planner_context_report(
+    planned: Mapping[str, Any],
+    refreshed: Mapping[str, Any],
+) -> str:
+    common_error = _validate_refreshed_context_common(planned, refreshed)
+    if common_error:
+        return common_error
+    selected = [str(value) for value in refreshed.get("selected_sources", [])]
+    planner = (refreshed.get("downstream_acknowledgements") or {}).get(
+        "planner"
+    )
+    coder = (refreshed.get("downstream_acknowledgements") or {}).get("coder")
+    if not (
+        list(refreshed.get("applicable_consumers") or []) == ["planner"]
+        and isinstance(planner, Mapping)
+        and planner.get("applicable") is True
+        and planner.get("acknowledged") is True
+        and list(planner.get("sources") or []) == selected
+        and isinstance(coder, Mapping)
+        and coder.get("applicable") is False
+        and coder.get("acknowledged") is False
+    ):
+        return "generic_workspace_refreshed_context_planner_acknowledgement_invalid"
+    return ""
+
+
+def _validate_coder_context_report(
+    planned: Mapping[str, Any],
+    refreshed: Mapping[str, Any],
+) -> str:
+    common_error = _validate_refreshed_context_common(planned, refreshed)
+    if common_error:
+        return common_error
+    selected = [str(value) for value in refreshed.get("selected_sources", [])]
+    planner = (refreshed.get("downstream_acknowledgements") or {}).get(
+        "planner"
+    )
+    coder = (refreshed.get("downstream_acknowledgements") or {}).get("coder")
+    if not (
+        list(refreshed.get("applicable_consumers") or []) == [
+            "planner",
+            "coder",
+        ]
+        and isinstance(planner, Mapping)
+        and planner.get("applicable") is True
+        and planner.get("acknowledged") is True
+        and list(planner.get("sources") or []) == selected
+        and isinstance(coder, Mapping)
+        and coder.get("applicable") is True
+        and coder.get("acknowledged") is True
+        and list(coder.get("sources") or []) == selected
+        and list(refreshed.get("consumed_sources") or []) == selected
+    ):
+        return "generic_workspace_refreshed_context_coder_acknowledgement_missing"
+    return ""
+
+
+def _validate_refreshed_context_common(
+    planned: Mapping[str, Any],
+    refreshed: Mapping[str, Any],
+) -> str:
+    if (
+        refreshed.get("canonical") is not True
+        or refreshed.get("go_eligible") is not True
+        or re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(refreshed.get("canonical_report_hash") or "").removeprefix(
+                "sha256:"
+            ),
+        )
+        is None
+        or not _canonical_context_report_self_consistent(refreshed)
+    ):
+        return "generic_workspace_refreshed_context_invalid"
+    if [str(value) for value in refreshed.get("selected_sources", [])] != [
+        str(value) for value in planned.get("selected_sources", [])
+    ]:
+        return "generic_workspace_refreshed_context_selection_mismatch"
+    if _context_source_material_sha256(planned) != _context_source_material_sha256(
+        refreshed
+    ):
+        return "generic_workspace_refreshed_context_material_mismatch"
+    return ""
+
+
+def _canonical_context_report_self_consistent(report: Mapping[str, Any]) -> bool:
+    sources: list[dict[str, Any]] = []
+    for raw in report.get("sources_considered", []):
+        if not isinstance(raw, Mapping):
+            return False
+        source = dict(raw)
+        source["consumed"] = raw.get("consumed_claimed") is True
+        sources.append(source)
+    rebuilt = build_context_broker_report(
+        sources,
+        downstream_consumers=(
+            report.get("downstream_acknowledgements")
+            if isinstance(report.get("downstream_acknowledgements"), Mapping)
+            else {}
+        ),
+        applicable_consumers=list(report.get("applicable_consumers") or []),
+    )
+    decision_fields = (
+        "schema_version",
+        "canonical",
+        "sources_considered",
+        "source_status",
+        "selected_sources",
+        "included_sources",
+        "consumed_sources",
+        "applicable_consumers",
+        "downstream_acknowledgements",
+        "required_context_blockers",
+        "go_eligible",
+        "verdict",
+        "canonical_report_hash",
+    )
+    return all(rebuilt.get(field) == report.get(field) for field in decision_fields)
+
+
+def _context_callback_block_response(reason_code: str) -> str:
+    return json.dumps(
+        {
+            "action": "blocked",
+            "reason_code": reason_code,
+            "reason": "Canonical context binding failed before provider dispatch.",
+            "needed_context": [
+                "Persist and acknowledge the exact canonical context report."
+            ],
+        },
+        sort_keys=True,
     )
 
 

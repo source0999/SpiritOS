@@ -35,3 +35,49 @@ oracle checks against non-behavioral false positives.
 
 This failed run remains preserved as negative evidence. It is not eligible for
 resume or terminal certification.
+
+## Second preserved first-phase run
+
+- Source HEAD: `b8fa9871`
+- Run: `basic-backend-10-20260722T072053Z-c050ad7f813b`
+- Phase: `first`
+- Result: `0/10` passed; the phase gate did not pass.
+- Shared terminal reason: the local Architect did not complete and persist an
+  authoritative plan before the Coder boundary.
+- Unauthorized mutations, fabricated completions, and raw private-data leaks:
+  `0`.
+
+The bounded local Architect call was measured independently and completed just
+outside the then-configured wall-clock budget. The generalized correction kept
+the same pinned local model and digest, enlarged only the bounded runtime budget,
+and preserved the requirement that no Coder invocation may be claimed before
+the exact plan is durable.
+
+## Third preserved first-phase run
+
+- Source HEAD: `94108a91`
+- Run: `basic-backend-10-20260722T073856Z-fe870b3effd6`
+- Phase: `first`
+- Result: `0/10` passed; the phase gate did not pass.
+- Eight attempts stopped because selected request context was normalized into a
+  shape that the canonical broker could no longer recognize as selected.
+- One replacement-model attempt reran the same Architect instead of reusing the
+  already persisted plan, then stopped before the replacement Coder boundary.
+- One controlled-recovery attempt rejected a copied replacement output rather
+  than accepting an unrelated rerun.
+- Unauthorized mutations, fabricated completions, and raw private-data leaks:
+  `0`.
+
+This run isolated three shared bridge defects: empty selected packets were not
+preserved exactly, planner/Coder lifecycle callbacks did not bind the precise
+rendered context at the real provider boundary, and a Coder route fallback
+replanned instead of reusing server-owned planning state. The generalized repair
+now preserves empty packets, stages late-bound context until the server validates
+and persists it, reconstructs authorized tracked and untracked workspace text on
+both sides of the boundary, binds every routed call to the exact run/attempt/
+invocation identity, and reuses the persisted Architect plan for replacement
+Coder dispatch. Independent proof also rederives scope, source hashes, workspace
+manifest spans, prompt commitments, and campaign fixture authority.
+
+All three failed runs remain immutable negative evidence and are ineligible for
+resume or terminal certification.

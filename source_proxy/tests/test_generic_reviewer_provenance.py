@@ -11,6 +11,7 @@ import pytest
 import source_proxy.planning.reviewer as reviewer
 import source_proxy.tasks.long_running as long_running
 from source_proxy.benchmarks.campaign_3_5_fixture_authority import ENV_MANIFEST
+from source_proxy.context.canonical_broker import acknowledge_context_consumer
 from source_proxy.target_plugins.adapter import (
     GENERIC_RICH_EXECUTION_PATH,
     GENERIC_WORKSPACE_CONTEXT_ID,
@@ -165,6 +166,26 @@ def test_configured_reviewer_uses_adapter_authority_and_call_accounting(
         fake_transport,
     )
 
+    def plan_ready(_plan: object, staged: dict[str, object]) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged,
+            consumer="planner",
+            evidence="test_server_validated_adapter_plan",
+            reason="test_server_persisted_adapter_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_coder_dispatch_bound_context",
+            reason="test_coder_provider_boundary",
+        )
+
     result = execute_target_plugin_command(
         plugin,
         task=(
@@ -177,6 +198,8 @@ def test_configured_reviewer_uses_adapter_authority_and_call_accounting(
         llm_call=None,
         model_alias="coder",
         model_call_run_id="reviewer-provenance-test",
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
     )
 
     assert result.get("coder_blocked") is not True

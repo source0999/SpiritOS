@@ -17,6 +17,10 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
+from source_proxy.context.canonical_broker import (
+    is_derived_architect_context_source,
+)
+
 
 CONTROLLED_RECOVERY_SCHEMA = "coding.controlled-recovery/v1"
 RECOVERY_POLICY_SCHEMA = "coding.recovery-policy/v1"
@@ -90,6 +94,9 @@ def canonical_context_material_sha256(report: Mapping[str, Any]) -> str:
         for raw_source in raw_sources:
             if not isinstance(raw_source, Mapping):
                 continue
+            derived_architect_context = is_derived_architect_context_source(
+                raw_source
+            )
             sources.append(
                 {
                     "source": str(raw_source.get("source") or ""),
@@ -100,9 +107,13 @@ def canonical_context_material_sha256(report: Mapping[str, Any]) -> str:
                     "selected": raw_source.get("selected") is True,
                     "included": raw_source.get("included") is True,
                     "packet": (
-                        dict(raw_source["packet"])
-                        if isinstance(raw_source.get("packet"), Mapping)
-                        else {}
+                        {"derived_planner_output_bound_separately": True}
+                        if derived_architect_context
+                        else (
+                            dict(raw_source["packet"])
+                            if isinstance(raw_source.get("packet"), Mapping)
+                            else {}
+                        )
                     ),
                     "authority": (
                         dict(raw_source["authority"])

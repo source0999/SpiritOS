@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Mapping
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from source_proxy.coding.participants import (
@@ -17,11 +18,19 @@ from source_proxy.coding.recovery import (
     target_plugin_model_input_sha256,
 )
 from source_proxy.coding.runtime_lane_boundary import RuntimeLaneBoundary
+from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
+    Campaign35FixtureAuthorityError,
+    load_campaign_3_5_fixture_authority,
+)
+from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.diagnostics.status_codes import classify_repair_failure
 from source_proxy.planning.plan import ArchitectPlan, task_spec_from_plan
 from source_proxy.planning.reviewer import review_diff_deterministically
 from source_proxy.target_plugins.adapter import (
+    GENERIC_WORKSPACE_CONTEXT_ID,
     GENERIC_WORKSPACE_PLUGIN_ID,
+    GENERIC_WORKSPACE_PROFILE,
+    GENERIC_WORKSPACE_PROMPT_ID,
     target_adapter_producer_identity_valid,
 )
 from source_proxy.target_plugins.selection import expected_target_plugin_id
@@ -87,6 +96,55 @@ MODEL_INVOCATION_FIELDS = {
     "started_at",
     "completed_at",
     "passed",
+}
+CONTEXT_REPORT_DECISION_FIELDS = (
+    "schema_version",
+    "canonical",
+    "sources_considered",
+    "source_status",
+    "selected_sources",
+    "included_sources",
+    "consumed_sources",
+    "applicable_consumers",
+    "downstream_acknowledgements",
+    "required_context_blockers",
+    "go_eligible",
+    "verdict",
+    "canonical_report_hash",
+)
+ARCHITECT_CONTEXT_SOURCE = "architect_repository_context"
+ARCHITECT_CONTEXT_PACKET_FIELDS = {
+    "plan_id",
+    "target",
+    "allowed_paths",
+    "context_slices",
+    "scoped_workspace_context_manifest",
+    "scoped_workspace_context",
+    "scoped_workspace_context_sha256",
+    "scoped_workspace_context_char_count",
+    "rendered_coder_context",
+    "rendered_coder_context_sha256",
+    "rendered_coder_context_char_count",
+}
+ARCHITECT_WORKSPACE_MANIFEST_FIELDS = {
+    "path",
+    "sha256",
+    "size",
+    "rendered_sha256",
+    "rendered_chars",
+    "truncated",
+    "rendered_start",
+    "rendered_end",
+}
+ARCHITECT_CONTEXT_AUTHORITY = {
+    "schema_version": "source-proxy-derived-architect-context-authority/v1",
+    "kind": "derived_planner_output",
+    "producer": "source_proxy.planning.architect",
+    "separately_bound_by": [
+        "planner_runtime_output",
+        "adapter_plan_sha256",
+        "semantic_review_binding",
+    ],
 }
 
 
@@ -160,6 +218,12 @@ def derive_production_proof(
         if isinstance(plugin_identity, Mapping) and plugin_identity.get(
             "plugin_id"
         ) == "generic-workspace":
+            if not _generic_target_identity_matches_server_authority(
+                plugin_identity
+            ):
+                failures.append(
+                    "target_plugin_generic_server_authority_mismatch"
+                )
             workspace_state = str(
                 plugin_identity.get("target_workspace_state_sha256") or ""
             )
@@ -340,6 +404,12 @@ def derive_production_proof(
         and selected_model.get("model") == proposal.get("producer_model_name")
     ):
         failures.append("model_adapter_producer_identity_binding_invalid")
+    if not _target_adapter_model_call_authority_matches(
+        adapter,
+        run_id=run_id,
+        participant=selected_model,
+    ):
+        failures.append("model_call_authority_binding_invalid")
     output_provenance = proposal.get("model_output_provenance")
     if not isinstance(output_provenance, Mapping) or (
         output_provenance.get("target_adapter_provenance") != adapter
@@ -460,6 +530,7 @@ def derive_production_proof(
     )
     if not (
         isinstance(context_report, Mapping)
+        and _canonical_context_report_truth_valid(context_report)
         and context_report.get("canonical") is True
         and context_report.get("canonical_report_hash") == proposal.get("context_hash")
         and _sha256_json(context_report)
@@ -597,9 +668,30 @@ def derive_production_proof(
                 and proposal["target_plugin_identity"].get("plugin_id")
                 == GENERIC_WORKSPACE_PLUGIN_ID
             ),
+            target_plugin_identity=(
+                proposal.get("target_plugin_identity")
+                if isinstance(proposal.get("target_plugin_identity"), Mapping)
+                else None
+            ),
             repair_request=(
                 state.get("repair_request")
                 if isinstance(state.get("repair_request"), Mapping)
+                else None
+            ),
+            canonical_context=(
+                proposal.get("canonical_context_report")
+                if isinstance(
+                    proposal.get("canonical_context_report"),
+                    Mapping,
+                )
+                else None
+            ),
+            adapter_provenance=(
+                proposal.get("target_adapter_provenance")
+                if isinstance(
+                    proposal.get("target_adapter_provenance"),
+                    Mapping,
+                )
                 else None
             ),
         )
@@ -1340,6 +1432,41 @@ def _mapping_list(value: Any) -> list[dict[str, Any]]:
     return [dict(item) for item in value if isinstance(item, Mapping)]
 
 
+def _generic_target_identity_matches_server_authority(
+    identity: Mapping[str, Any],
+) -> bool:
+    """Re-resolve immutable generic scope instead of trusting proposal claims."""
+
+    try:
+        authority = load_campaign_3_5_fixture_authority()
+    except Campaign35FixtureAuthorityError:
+        return False
+    scope = authority.adapter_scope()
+    manifest_namespace = authority.manifest_sha256[:24]
+    readable = list(authority.readable_paths or authority.allowed_paths)
+    writable = list(authority.writable_paths or authority.allowed_paths)
+    return bool(
+        identity.get("plugin_id") == GENERIC_WORKSPACE_PLUGIN_ID
+        and identity.get("repository_id") == "campaign-3.5-fixture"
+        and identity.get("worktree_id") == manifest_namespace
+        and identity.get("state_namespace") == manifest_namespace
+        and Path(str(identity.get("workspace_root") or "")).resolve()
+        == authority.workspace_root.resolve()
+        and identity.get("fixture_root") == "."
+        and identity.get("selected_prompt_id") == GENERIC_WORKSPACE_PROMPT_ID
+        and identity.get("selected_context_id") == GENERIC_WORKSPACE_CONTEXT_ID
+        and identity.get("execution_profile") == GENERIC_WORKSPACE_PROFILE
+        and list(identity.get("allowed_actions") or []) == writable
+        and list(identity.get("readable_actions") or []) == readable
+        and identity.get("result_identity")
+        == f"generic-workspace:{authority.manifest_sha256[:12]}"
+        and (
+            authority.baseline_commit is None
+            or identity.get("target_source_head") == scope.get("baseline_commit")
+        )
+    )
+
+
 def _stable_target_plugin_identity(identity: object) -> dict[str, Any]:
     if not isinstance(identity, Mapping):
         return {}
@@ -1677,6 +1804,7 @@ def _valid_deterministic_debugger_trace(
         and isinstance(findings, Mapping)
     ):
         return False
+
     try:
         parsed_stdout = json.loads(stdout)
     except json.JSONDecodeError:
@@ -2005,6 +2133,9 @@ def _valid_semantic_review_binding(
     changed_files: list[str],
     adapter_architect_plan_required: bool,
     repair_request: Mapping[str, Any] | None,
+    target_plugin_identity: Mapping[str, Any] | None = None,
+    canonical_context: Mapping[str, Any] | None = None,
+    adapter_provenance: Mapping[str, Any] | None = None,
 ) -> bool:
     if not isinstance(binding, Mapping):
         return False
@@ -2049,6 +2180,20 @@ def _valid_semantic_review_binding(
             plan_id=plan.plan_id,
             acceptance_criteria=expected_acceptance,
             required=adapter_architect_plan_required,
+        )
+        and (
+            not adapter_architect_plan_required
+            or _adapter_context_evidence_matches(
+                adapter_evidence,
+                canonical_context=canonical_context,
+                plan=plan,
+                target_plugin_identity=target_plugin_identity,
+                producer_rendered_prompt_sha256=(
+                    str(adapter_provenance.get("rendered_prompt_sha256") or "")
+                    if isinstance(adapter_provenance, Mapping)
+                    else None
+                ),
+            )
         )
         and receipt.get("adapter_preview_evidence_sha256")
         == _sha256_json(adapter_evidence)
@@ -2154,6 +2299,401 @@ def _adapter_architect_plan_evidence_matches(
         == json.loads(
             json.dumps(acceptance_criteria, sort_keys=True, default=str)
         )
+    )
+
+
+def _canonical_context_report_truth_valid(report: Mapping[str, Any]) -> bool:
+    """Rebuild broker decisions from source and acknowledgement evidence.
+
+    A persisted canonical hash is only a claim.  Independent proof recreates
+    the decision-bearing report from the primitive source material and
+    lifecycle acknowledgements, then requires every derived field to match.
+    """
+
+    raw_sources = report.get("sources_considered")
+    raw_acknowledgements = report.get("downstream_acknowledgements")
+    raw_applicable_consumers = report.get("applicable_consumers")
+    if not (
+        isinstance(raw_sources, list)
+        and all(isinstance(item, Mapping) for item in raw_sources)
+        and isinstance(raw_acknowledgements, Mapping)
+        and all(
+            isinstance(name, str) and isinstance(value, Mapping)
+            for name, value in raw_acknowledgements.items()
+        )
+        and isinstance(raw_applicable_consumers, list)
+        and all(
+            isinstance(name, str) and name and name == name.strip()
+            for name in raw_applicable_consumers
+        )
+        and len(raw_applicable_consumers) == len(set(raw_applicable_consumers))
+    ):
+        return False
+
+    sources: list[dict[str, Any]] = []
+    for raw_source in raw_sources:
+        source = dict(raw_source)
+        # ``consumed`` is a derived field in a persisted broker report.  Only
+        # the separately retained caller claim may be replayed into a rebuild.
+        source["consumed"] = raw_source.get("consumed_claimed") is True
+        sources.append(source)
+    try:
+        rebuilt = build_context_broker_report(
+            sources,
+            downstream_consumers={
+                str(name): dict(value)
+                for name, value in raw_acknowledgements.items()
+            },
+            applicable_consumers=raw_applicable_consumers,
+        )
+    except Exception:
+        return False
+    return all(
+        rebuilt.get(field_name) == report.get(field_name)
+        for field_name in CONTEXT_REPORT_DECISION_FIELDS
+    )
+
+
+def _architect_context_source_matches_plan(
+    report: Mapping[str, Any],
+    *,
+    plan: ArchitectPlan,
+    readable_paths: list[str],
+    writable_paths: list[str],
+) -> bool:
+    """Bind generic-workspace context claims to exact plan and scoped text."""
+
+    raw_sources = report.get("sources_considered")
+    if not isinstance(raw_sources, list):
+        return False
+    architect_sources = [
+        item
+        for item in raw_sources
+        if isinstance(item, Mapping)
+        and item.get("source") == ARCHITECT_CONTEXT_SOURCE
+    ]
+    if len(architect_sources) != 1:
+        return False
+    source = architect_sources[0]
+    packet = source.get("packet")
+    if not (
+        source.get("considered") is True
+        and source.get("status") == "used"
+        and source.get("reason") == "architect_selected_current_scoped_source"
+        and source.get("required") is True
+        and source.get("selected") is True
+        and source.get("included") is True
+        and source.get("included_in_packet") is True
+        and source.get("consumed") is True
+        and source.get("authority") == ARCHITECT_CONTEXT_AUTHORITY
+        and isinstance(packet, Mapping)
+        and set(packet) == ARCHITECT_CONTEXT_PACKET_FIELDS
+    ):
+        return False
+
+    allowed_paths = packet.get("allowed_paths")
+    if not (
+        isinstance(allowed_paths, list)
+        and allowed_paths == readable_paths
+        and writable_paths
+        and all(_is_canonical_repo_path(path) for path in allowed_paths)
+        and len(allowed_paths) == len(set(allowed_paths))
+    ):
+        return False
+    target = plan.coder_packet.target_file.path
+    if not (
+        packet.get("plan_id") == plan.plan_id
+        and packet.get("target") == target
+        and _repo_path_in_scope(target, allowed_paths)
+        and _repo_path_in_scope(target, writable_paths)
+    ):
+        return False
+
+    expected_slices: list[dict[str, Any]] = []
+    slice_by_path: dict[str, Any] = {}
+    for context_slice in plan.coder_packet.context_slices:
+        if not (
+            _is_canonical_repo_path(context_slice.path)
+            and _repo_path_in_scope(context_slice.path, allowed_paths)
+            and _plain_sha256(context_slice.sha256)
+            == hashlib.sha256(context_slice.content.encode("utf-8")).hexdigest()
+        ):
+            return False
+        expected_slices.append(
+            {
+                "path": context_slice.path,
+                "kind": context_slice.kind,
+                "sha256": context_slice.sha256,
+                "line_range": list(context_slice.line_range or ()),
+            }
+        )
+        slice_by_path[context_slice.path] = context_slice
+    if packet.get("context_slices") != expected_slices:
+        return False
+
+    workspace_context = packet.get("scoped_workspace_context")
+    workspace_sha256 = packet.get("scoped_workspace_context_sha256")
+    workspace_char_count = packet.get("scoped_workspace_context_char_count")
+    manifest = packet.get("scoped_workspace_context_manifest")
+    if not (
+        isinstance(workspace_context, str)
+        and len(workspace_context) <= 12_000
+        and _plain_sha256(workspace_sha256)
+        == hashlib.sha256(workspace_context.encode("utf-8")).hexdigest()
+        and isinstance(workspace_char_count, int)
+        and not isinstance(workspace_char_count, bool)
+        and workspace_char_count == len(workspace_context)
+        and isinstance(manifest, list)
+        and all(isinstance(item, Mapping) for item in manifest)
+        and bool(workspace_context) is bool(manifest)
+    ):
+        return False
+
+    workspace_header = "ADDITIONAL CURRENT AUTHORIZED FILES:\n"
+    if manifest and not workspace_context.startswith(workspace_header):
+        return False
+    previous_end = len(workspace_header) if manifest else 0
+    manifest_paths: list[str] = []
+    for entry in manifest:
+        path = entry.get("path")
+        rendered_start = entry.get("rendered_start")
+        rendered_end = entry.get("rendered_end")
+        size = entry.get("size")
+        rendered_chars = entry.get("rendered_chars")
+        if not (
+            set(entry) == ARCHITECT_WORKSPACE_MANIFEST_FIELDS
+            and _is_canonical_repo_path(path)
+            and _repo_path_in_scope(path, allowed_paths)
+            and _plain_sha256(entry.get("sha256")) is not None
+            and isinstance(size, int)
+            and not isinstance(size, bool)
+            and size >= 0
+            and _plain_sha256(entry.get("rendered_sha256")) is not None
+            and isinstance(rendered_chars, int)
+            and not isinstance(rendered_chars, bool)
+            and rendered_chars > 0
+            and isinstance(entry.get("truncated"), bool)
+            and isinstance(rendered_start, int)
+            and not isinstance(rendered_start, bool)
+            and isinstance(rendered_end, int)
+            and not isinstance(rendered_end, bool)
+            and previous_end == rendered_start < rendered_end <= len(workspace_context)
+        ):
+            return False
+        rendered = workspace_context[rendered_start:rendered_end]
+        rendered_prefix = f"--- {path} ---\n"
+        if not (
+            len(rendered) == rendered_chars
+            and _plain_sha256(entry.get("rendered_sha256"))
+            == hashlib.sha256(rendered.encode("utf-8")).hexdigest()
+            and rendered.startswith(rendered_prefix)
+            and rendered.endswith("\n")
+        ):
+            return False
+        visible_content = rendered[len(rendered_prefix) : -1]
+        visible_bytes = visible_content.encode("utf-8")
+        truncated = entry.get("truncated")
+        if truncated is False and not (
+            len(visible_content) <= 3_000
+            and size == len(visible_bytes)
+            and _plain_sha256(entry.get("sha256"))
+            == hashlib.sha256(visible_bytes).hexdigest()
+        ):
+            return False
+        if truncated is True and not (
+            len(visible_content) == 3_000
+            and size >= len(visible_bytes)
+        ):
+            return False
+        planned_slice = slice_by_path.get(str(path))
+        if planned_slice is not None and not (
+            _plain_sha256(entry.get("sha256"))
+            == _plain_sha256(planned_slice.sha256)
+            and size == len(planned_slice.content.encode("utf-8"))
+        ):
+            return False
+        manifest_paths.append(str(path))
+        previous_end = rendered_end
+    rendered_coder_context = packet.get("rendered_coder_context")
+    if not (
+        isinstance(rendered_coder_context, str)
+        and rendered_coder_context
+        and len(rendered_coder_context) <= 24_000
+        and _plain_sha256(packet.get("rendered_coder_context_sha256"))
+        == hashlib.sha256(rendered_coder_context.encode("utf-8")).hexdigest()
+        and isinstance(packet.get("rendered_coder_context_char_count"), int)
+        and not isinstance(packet.get("rendered_coder_context_char_count"), bool)
+        and packet.get("rendered_coder_context_char_count")
+        == len(rendered_coder_context)
+        and rendered_coder_context
+        == _render_independent_adapter_coder_context(
+            plan,
+            report,
+            workspace_context,
+        )
+    ):
+        return False
+    return bool(
+        len(manifest_paths) == len(set(manifest_paths))
+        and previous_end == len(workspace_context)
+    )
+
+
+def _is_canonical_repo_path(value: Any) -> bool:
+    if not isinstance(value, str) or not value or value != value.strip():
+        return False
+    if "\\" in value or "\x00" in value or ":" in value:
+        return False
+    directory_prefix = value.endswith("/")
+    canonical_value = value[:-1] if directory_prefix else value
+    if not canonical_value:
+        return False
+    candidate = PurePosixPath(canonical_value)
+    return bool(
+        not candidate.is_absolute()
+        and candidate.parts
+        and all(part not in {"", ".", ".."} for part in candidate.parts)
+        and candidate.as_posix() == canonical_value
+    )
+
+
+def _render_independent_adapter_coder_context(
+    plan: ArchitectPlan,
+    report: Mapping[str, Any],
+    workspace_context: str,
+) -> str:
+    sections = ["CURRENT SERVER-SCOPED SOURCE STATE (read before editing):"]
+    for item in plan.coder_packet.context_slices:
+        sections.extend(
+            [
+                f"--- {item.path} ({item.kind}; sha256={item.sha256}) ---",
+                item.content,
+            ]
+        )
+    for source in report.get("sources_considered", []):
+        if not isinstance(source, Mapping):
+            continue
+        if str(source.get("source") or "") == ARCHITECT_CONTEXT_SOURCE:
+            continue
+        if source.get("selected") is not True or source.get("included") is not True:
+            continue
+        packet = source.get("packet")
+        bounded = (
+            str(packet.get("bounded_context") or "")
+            if isinstance(packet, Mapping)
+            else ""
+        )
+        if bounded:
+            sections.extend(
+                [
+                    f"--- selected context packet: {source.get('source')} ---",
+                    bounded,
+                ]
+            )
+    sections.extend(
+        [
+            "CANONICAL CONTEXT MANIFEST:",
+            json.dumps(
+                {
+                    "selected_sources": report.get("selected_sources", []),
+                    "target": plan.coder_packet.target_file.path,
+                },
+                sort_keys=True,
+            ),
+        ]
+    )
+    current_context = "\n".join(sections)[:24_000]
+    return "\n".join(
+        part for part in (current_context, workspace_context) if part
+    )[:24_000]
+
+
+def _repo_path_in_scope(path: str, allowed_paths: list[str]) -> bool:
+    return any(
+        path == allowed_path.rstrip("/")
+        or path.startswith(allowed_path.rstrip("/") + "/")
+        for allowed_path in allowed_paths
+    )
+
+
+def _plain_sha256(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    plain = value.removeprefix("sha256:")
+    return plain if re.fullmatch(r"[0-9a-f]{64}", plain) is not None else None
+
+
+def _adapter_context_evidence_matches(
+    evidence: Mapping[str, Any],
+    *,
+    canonical_context: Mapping[str, Any] | None,
+    plan: ArchitectPlan,
+    target_plugin_identity: Mapping[str, Any] | None,
+    producer_rendered_prompt_sha256: str | None = None,
+) -> bool:
+    """Independently bind adapter prompt context to the proposal report."""
+
+    if not (
+        isinstance(canonical_context, Mapping)
+        and isinstance(target_plugin_identity, Mapping)
+    ):
+        return False
+    readable_paths = list(
+        target_plugin_identity.get("readable_actions")
+        or target_plugin_identity.get("allowed_actions")
+        or []
+    )
+    writable_paths = list(target_plugin_identity.get("allowed_actions") or [])
+    if not (
+        all(_is_canonical_repo_path(path) for path in readable_paths)
+        and all(_is_canonical_repo_path(path) for path in writable_paths)
+    ):
+        return False
+    context_hash = str(canonical_context.get("canonical_report_hash") or "")
+    selected = [str(value) for value in canonical_context.get("selected_sources", [])]
+    consumed = [str(value) for value in canonical_context.get("consumed_sources", [])]
+    coder = (canonical_context.get("downstream_acknowledgements") or {}).get(
+        "coder"
+    )
+    binding = evidence.get("coder_context_binding")
+    return bool(
+        _canonical_context_report_truth_valid(canonical_context)
+        and _architect_context_source_matches_plan(
+            canonical_context,
+            plan=plan,
+            readable_paths=readable_paths,
+            writable_paths=writable_paths,
+        )
+        and context_hash
+        and evidence.get("canonical_context_report_hash") == context_hash
+        and evidence.get("canonical_context_report_sha256")
+        == _sha256_json(canonical_context)
+        and list(evidence.get("canonical_context_selected_sources") or [])
+        == selected
+        and list(evidence.get("canonical_context_consumed_sources") or [])
+        == consumed
+        and consumed == selected
+        and isinstance(coder, Mapping)
+        and coder.get("applicable") is True
+        and coder.get("acknowledged") is True
+        and list(coder.get("sources") or []) == selected
+        and isinstance(binding, Mapping)
+        and binding.get("canonical_context_report_hash") == context_hash
+        and binding.get("rendered_prompt_sha256")
+        == evidence.get("producer_rendered_prompt_sha256")
+        and (
+            producer_rendered_prompt_sha256 is None
+            or evidence.get("producer_rendered_prompt_sha256")
+            == producer_rendered_prompt_sha256
+        )
+        and binding.get("consumed") is True
+        and list(binding.get("selected_sources") or []) == selected
+        and list(binding.get("consumed_sources") or []) == selected
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(binding.get("rendered_prompt_sha256") or ""),
+        )
+        is not None
     )
 
 
@@ -2278,6 +2818,44 @@ def _valid_model_invocation(
             or _is_sha256(record.get("artifact_sha256"))
         )
     )
+
+
+def _target_adapter_model_call_authority_matches(
+    adapter: Mapping[str, Any],
+    *,
+    run_id: str,
+    participant: Mapping[str, Any],
+) -> bool:
+    """Bind every routed call receipt to this exact run, attempt, and invocation."""
+
+    calls = adapter.get("calls")
+    attempt_id = str(participant.get("attempt_id") or "")
+    invocation_id = str(participant.get("invocation_id") or "")
+    if not (
+        isinstance(calls, list)
+        and calls
+        and attempt_id
+        and invocation_id
+        and adapter.get("call_count", len(calls)) == len(calls)
+    ):
+        return False
+    for index, call in enumerate(calls, start=1):
+        if not isinstance(call, Mapping):
+            return False
+        stage = str(call.get("stage") or "")
+        authority = call.get("model_call_authority")
+        expected_authority_run_id = (
+            f"{run_id}:{attempt_id}:{invocation_id}:{stage}:{index}"
+        )
+        if not (
+            stage in {"architect", "coder", "reviewer"}
+            and call.get("call_index") == index
+            and isinstance(authority, Mapping)
+            and authority.get("central_gate_check_passed") is True
+            and authority.get("run_id") == expected_authority_run_id
+        ):
+            return False
+    return True
 
 
 def _runtime_output_matches_participant(

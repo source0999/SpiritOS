@@ -17,6 +17,50 @@ CANONICAL_CONTEXT_CONSUMERS = (
     "repair_loop",
     "final_receipt_builder",
 )
+ARCHITECT_REPOSITORY_CONTEXT_SOURCE = "architect_repository_context"
+DERIVED_ARCHITECT_CONTEXT_AUTHORITY_SCHEMA = (
+    "source-proxy-derived-architect-context-authority/v1"
+)
+
+
+def derived_architect_context_authority() -> dict[str, Any]:
+    """Return the stable authority marker for plan-derived repository context.
+
+    The packet itself is bound by the authoritative planner runtime output and
+    semantic review.  This marker lets recovery identity distinguish that
+    per-attempt derived material from stable upstream task/source material.
+    """
+
+    return {
+        "schema_version": DERIVED_ARCHITECT_CONTEXT_AUTHORITY_SCHEMA,
+        "kind": "derived_planner_output",
+        "producer": "source_proxy.planning.architect",
+        "separately_bound_by": [
+            "planner_runtime_output",
+            "adapter_plan_sha256",
+            "semantic_review_binding",
+        ],
+    }
+
+
+def is_derived_architect_context_source(source: Mapping[str, Any]) -> bool:
+    """Recognize only the server-owned architect source eligible for projection."""
+
+    authority = source.get("authority")
+    return bool(
+        str(source.get("source") or "") == ARCHITECT_REPOSITORY_CONTEXT_SOURCE
+        and isinstance(authority, Mapping)
+        and authority.get("schema_version")
+        == DERIVED_ARCHITECT_CONTEXT_AUTHORITY_SCHEMA
+        and authority.get("kind") == "derived_planner_output"
+        and authority.get("producer") == "source_proxy.planning.architect"
+        and list(authority.get("separately_bound_by") or [])
+        == [
+            "planner_runtime_output",
+            "adapter_plan_sha256",
+            "semantic_review_binding",
+        ]
+    )
 
 
 def build_context_broker_report(

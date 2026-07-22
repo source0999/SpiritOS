@@ -6,11 +6,17 @@ import subprocess
 
 import pytest
 
+import source_proxy.target_plugins.generic_workspace as generic_workspace_module
 from source_proxy.target_plugins.adapter import (
     EXECUTION_PROFILE,
     FIXTURE_ROOT,
+    GENERIC_WORKSPACE_CONTEXT_ID,
+    GENERIC_WORKSPACE_PLUGIN_ID,
+    GENERIC_WORKSPACE_PROFILE,
+    GENERIC_WORKSPACE_PROMPT_ID,
     LUMACART_PLUGIN_ID,
     PROMPT_CONTEXTS,
+    ResolvedTargetPlugin,
     TARGET_PLUGIN_SCHEMA_VERSION,
     TargetPluginResolutionError,
     execute_target_plugin_command,
@@ -261,6 +267,72 @@ def test_prompts_one_to_three_keep_their_existing_execution_paths(
     assert provenance["provider_call_made"] is True
     assert provenance["provider_call_authorized"] is False
     assert provenance["terminal_proof_eligible"] is False
+
+
+def test_generic_adapter_forwards_both_context_lifecycle_callbacks(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    observed: dict[str, object] = {}
+
+    def plan_ready(_plan: object, context: dict[str, object]) -> dict[str, object]:
+        return context
+
+    def coder_ready(
+        _plan: object,
+        context: dict[str, object],
+        _prompt_sha256: str,
+    ) -> dict[str, object]:
+        return context
+
+    def fake_generic(**kwargs: object) -> dict[str, object]:
+        observed.update(kwargs)
+        return {
+            "proposed_diff": "",
+            "coder_blocked": True,
+            "reason_code": "test_generic_forwarding_complete",
+            "coder_diagnostics": {"changed_files": []},
+        }
+
+    monkeypatch.setattr(
+        generic_workspace_module,
+        "execute_generic_workspace_rich",
+        fake_generic,
+    )
+    plugin = ResolvedTargetPlugin(
+        schema_version=TARGET_PLUGIN_SCHEMA_VERSION,
+        plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+        repository_id="repo",
+        worktree_id="worktree",
+        workspace_root=str(tmp_path.resolve()),
+        branch="test",
+        state_namespace="namespace",
+        fixture_root=".",
+        source_head="a" * 40,
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID,
+        execution_profile=GENERIC_WORKSPACE_PROFILE,
+        allowed_actions=("src/",),
+        readable_actions=("src/", "tests/"),
+        result_identity="generic-test",
+    )
+
+    execute_target_plugin_command(
+        plugin,
+        task="Implement the requested behavior.",
+        workspace_root=tmp_path,
+        canonical_context={},
+        canonical_context_text="",
+        llm_call=lambda _prompt, _alias: "unused",
+        model_alias="coder",
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert observed["plan_ready_callback"] is plan_ready
+    assert observed["coder_ready_callback"] is coder_ready
+    assert observed["allowed_paths"] == ("src/",)
+    assert observed["readable_paths"] == ("src/", "tests/")
 
 
 def _workspace(tmp_path: Path, files: dict[str, str]) -> Path:

@@ -13,6 +13,7 @@ from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
     Campaign35FixtureAuthorityError,
     load_campaign_3_5_fixture_authority,
 )
+from source_proxy.context.canonical_broker import acknowledge_context_consumer
 from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_CONTEXT_ID,
     GENERIC_WORKSPACE_PLUGIN_ID,
@@ -30,6 +31,28 @@ from source_proxy.target_plugins.adapter import (
 
 def _git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
+
+
+def _plan_ready(_plan: object, staged: dict[str, object]) -> dict[str, object]:
+    return acknowledge_context_consumer(
+        staged,
+        consumer="planner",
+        evidence="test_server_validated_generic_plan",
+        reason="test_server_persisted_generic_plan",
+    )
+
+
+def _coder_ready(
+    _plan: object,
+    planner_context: dict[str, object],
+    _prompt_sha256: str,
+) -> dict[str, object]:
+    return acknowledge_context_consumer(
+        planner_context,
+        consumer="coder",
+        evidence="test_generic_coder_dispatch_bound_context",
+        reason="test_generic_coder_provider_boundary",
+    )
 
 
 def _manifest(root: Path) -> dict[str, object]:
@@ -207,6 +230,8 @@ def test_generic_adapter_uses_architect_packet_and_backend_generated_diff(
         canonical_context_text="",
         llm_call=model_call,
         model_alias="coder",
+        plan_ready_callback=_plan_ready,
+        coder_ready_callback=_coder_ready,
     )
 
     assert result.get("coder_blocked") is not True
@@ -286,7 +311,17 @@ def test_generic_adapter_retries_malformed_coder_output_on_the_rich_path(
             return _architect_response("src/label.go")
         return next(coder_responses)
 
-    result = execute_target_plugin_command(plugin, task="Return ready.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=model_call, model_alias="coder")
+    result = execute_target_plugin_command(
+        plugin,
+        task="Return ready.",
+        workspace_root=root,
+        canonical_context={},
+        canonical_context_text="",
+        llm_call=model_call,
+        model_alias="coder",
+        plan_ready_callback=_plan_ready,
+        coder_ready_callback=_coder_ready,
+    )
 
     assert result.get("coder_blocked") is not True
     assert result["execution_path"] == GENERIC_RICH_EXECUTION_PATH

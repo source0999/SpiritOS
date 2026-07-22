@@ -6,10 +6,11 @@ import hashlib
 import inspect
 import json
 import os
+import re
 import subprocess
 import sys
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -37,13 +38,18 @@ from source_proxy.coding.participants import (
 from source_proxy.coding.runtime_lane_boundary import RuntimeLaneBoundary
 from source_proxy.coding.recovery import (
     RECOVERY_PARTICIPANT_SCHEMA,
+    ControlledRecoveryError,
     ControlledRecoveryLineage,
     RecoveryPolicy,
     build_failed_participant_event,
     render_evidence_guided_repair_model_task,
     target_plugin_model_input_sha256,
 )
-from source_proxy.context.canonical_broker import build_context_broker_report
+from source_proxy.context.canonical_broker import (
+    ARCHITECT_REPOSITORY_CONTEXT_SOURCE,
+    build_context_broker_report,
+    is_derived_architect_context_source,
+)
 from source_proxy.contracts.coding_lane_contracts import canonical_coding_lane_contracts
 from source_proxy.diagnostics.status_codes import classify_repair_failure
 from source_proxy.approval.campaign_authority import (
@@ -59,6 +65,7 @@ from source_proxy.planning.plan import (
 )
 from source_proxy.planning.reviewer import review_diff_deterministically
 from source_proxy.routing.litellm_router import route_model_for_alias, route_provider_for_alias
+from source_proxy.safety.paths import normalize_repo_path_candidate, path_escapes_workspace
 from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_PLUGIN_ID,
     ResolvedTargetPlugin,
@@ -675,14 +682,51 @@ class CodingOrchestrator:
         self,
         task_id: str,
         plan: ArchitectPlan,
+        *,
+        context_report: Mapping[str, Any],
+        readable_paths: Sequence[str],
+        writable_paths: Sequence[str],
+        workspace_root: Path,
     ) -> dict[str, Any]:
-        """Persist the exact generic-adapter plan before its coder provider call."""
+        """Persist the exact expanded context and plan before the coder call."""
 
         if not isinstance(plan, ArchitectPlan) or plan.task_id != task_id:
             raise CodingOrchestratorError(
                 "target_plugin_architect_plan_identity_mismatch"
             )
         run = self._restore(task_id)
+        context_payload = json.loads(
+            json.dumps(dict(context_report), sort_keys=True, default=str)
+        )
+        previous_context = canonical_context_broker_for_task(task_id)
+        if not isinstance(previous_context, Mapping):
+            raise CodingOrchestratorError(
+                "target_plugin_upstream_context_missing"
+            )
+        _validate_adapter_architect_context_report(
+            plan,
+            context_payload,
+            previous_report=previous_context,
+            expected_readable_paths=readable_paths,
+            expected_writable_paths=writable_paths,
+            workspace_root=workspace_root,
+        )
+        recorded_context = record_canonical_context_broker_for_task(
+            task_id,
+            report=context_payload,
+            orchestrator_run_id=run.run_id,
+        )
+        persisted_context = canonical_context_broker_for_task(task_id)
+        if (
+            dict(recorded_context) != context_payload
+            or not isinstance(persisted_context, Mapping)
+            or dict(persisted_context) != context_payload
+            or persisted_context.get("canonical_report_hash")
+            != context_payload.get("canonical_report_hash")
+        ):
+            raise CodingOrchestratorError(
+                "target_plugin_architect_context_not_persisted"
+            )
         if run.lane_states["planner"] != "completed":
             save_plan(task_id, plan)
             return self.acknowledge_planner(task_id)
@@ -690,8 +734,8 @@ class CodingOrchestrator:
         report = self._acknowledge_persisted_context(
             task_id,
             consumer="planner",
-            evidence="generic_adapter_architect_plan_ready",
-            reason="planner_consumed_context_for_generic_adapter_attempt",
+            evidence="generic_adapter_server_validated_late_bound_plan_context",
+            reason="planner_lane_persisted_exact_architect_plan_and_context",
         )
         if report.get("go_eligible") is not True:
             raise CodingOrchestratorError(
@@ -878,9 +922,28 @@ class CodingOrchestrator:
         primary_context_binding: dict[str, Any] | None = None
         invocation_event: dict[str, Any] | None = None
 
-        def begin_coder_invocation() -> None:
+        def begin_coder_invocation(
+            *,
+            expected_context: Mapping[str, Any] | None = None,
+            rendered_prompt_sha256: str = "",
+        ) -> Mapping[str, Any]:
             nonlocal run, context, primary_context_binding, invocation_event
             run = self._restore(task_id)
+            if expected_context is not None:
+                persisted_before_coder = canonical_context_broker_for_task(task_id)
+                if not (
+                    isinstance(persisted_before_coder, Mapping)
+                    and dict(persisted_before_coder) == dict(expected_context)
+                ):
+                    raise CodingOrchestratorError(
+                        "target_plugin_coder_context_changed_before_invocation"
+                    )
+            if rendered_prompt_sha256 and re.fullmatch(
+                r"[0-9a-f]{64}", rendered_prompt_sha256
+            ) is None:
+                raise CodingOrchestratorError(
+                    "target_plugin_coder_prompt_hash_invalid"
+                )
             context = self._acknowledge_persisted_context(
                 task_id,
                 consumer="coder",
@@ -909,25 +972,90 @@ class CodingOrchestrator:
                         "acknowledgement_id"
                     ],
                     "context_consumption_id": primary_context_binding["consumption_id"],
+                    "rendered_prompt_sha256": rendered_prompt_sha256 or None,
                 },
             )
             self._persist(run, "target-plugin model invocation started")
+            return context
 
-        plan_ready_callback: Callable[[ArchitectPlan], Mapping[str, Any]] | None = None
+        plan_ready_callback: (
+            Callable[
+                [ArchitectPlan, Mapping[str, Any]],
+                Mapping[str, Any],
+            ]
+            | None
+        ) = None
+        coder_ready_callback: (
+            Callable[
+                [ArchitectPlan, Mapping[str, Any], str],
+                Mapping[str, Any],
+            ]
+            | None
+        ) = None
         primary_plan_ready = False
+        primary_coder_ready = False
+        primary_ready_plan: dict[str, Any] | None = None
         if generic_adapter_plan_required:
-            def persist_adapter_plan(plan: ArchitectPlan) -> Mapping[str, Any]:
-                nonlocal primary_plan_ready
+            def persist_adapter_plan(
+                plan: ArchitectPlan,
+                expanded_context: Mapping[str, Any],
+            ) -> Mapping[str, Any]:
+                nonlocal primary_plan_ready, primary_ready_plan, context
                 if primary_plan_ready:
                     raise CodingOrchestratorError(
                         "target_plugin_architect_plan_callback_repeated"
                     )
                 primary_plan_ready = True
-                self._persist_adapter_architect_plan(task_id, plan)
-                begin_coder_invocation()
+                primary_ready_plan = plan.to_dict()
+                self._persist_adapter_architect_plan(
+                    task_id,
+                    plan,
+                    context_report=expanded_context,
+                    readable_paths=(
+                        plugin.readable_actions or plugin.allowed_actions
+                    ),
+                    writable_paths=plugin.allowed_actions,
+                    workspace_root=Path(plugin.workspace_root),
+                )
+                persisted_planner_context = canonical_context_broker_for_task(task_id)
+                if not isinstance(persisted_planner_context, Mapping):
+                    raise CodingOrchestratorError(
+                        "target_plugin_architect_context_not_persisted"
+                    )
+                context = persisted_planner_context
                 return context
 
             plan_ready_callback = persist_adapter_plan
+
+            def bind_adapter_coder_context(
+                plan: ArchitectPlan,
+                persisted_planner_context: Mapping[str, Any],
+                rendered_prompt_sha256: str,
+            ) -> Mapping[str, Any]:
+                nonlocal primary_coder_ready
+                if not primary_plan_ready:
+                    raise CodingOrchestratorError(
+                        "target_plugin_coder_callback_before_plan"
+                    )
+                if primary_coder_ready:
+                    raise CodingOrchestratorError(
+                        "target_plugin_coder_callback_repeated"
+                    )
+                if (
+                    plan.task_id != task_id
+                    or primary_ready_plan is None
+                    or plan.to_dict() != primary_ready_plan
+                ):
+                    raise CodingOrchestratorError(
+                        "target_plugin_coder_plan_identity_mismatch"
+                    )
+                primary_coder_ready = True
+                return begin_coder_invocation(
+                    expected_context=persisted_planner_context,
+                    rendered_prompt_sha256=rendered_prompt_sha256,
+                )
+
+            coder_ready_callback = bind_adapter_coder_context
         else:
             begin_coder_invocation()
 
@@ -947,8 +1075,16 @@ class CodingOrchestrator:
             model_alias=primary_alias,
             architect_task_id=task_id,
             plan_ready_callback=plan_ready_callback,
+            coder_ready_callback=coder_ready_callback,
+            model_call_run_id=(
+                f"{run.run_id}:{run.attempt_id}:{primary_invocation_id}"
+            ),
         )
         primary_completed_at = _utc_now()
+        # Plan/context callbacks persist through a separately restored state
+        # object.  Always continue from that durable snapshot, including when
+        # an adapter blocks after planning but before the Coder boundary.
+        run = self._restore(task_id)
         if _is_truthful_non_mutating_target_result(primary_result):
             outcome = {
                 "schema_version": "coding.target-plugin-outcome/v1",
@@ -959,7 +1095,10 @@ class CodingOrchestrator:
                 "selected_context_id": plugin.selected_context_id,
                 "context_hash": str(context.get("canonical_report_hash") or ""),
                 "source_head": current_head(),
-                "invocation_id": primary_invocation_id,
+                "invocation_id": (
+                    primary_invocation_id if invocation_event is not None else None
+                ),
+                "coder_invoked": invocation_event is not None,
                 "outcome": (
                     "noop"
                     if bool(
@@ -987,7 +1126,11 @@ class CodingOrchestrator:
                 lane_id="coder" if invocation_event is not None else "planner",
                 detail={
                     "selected_prompt_id": plugin.selected_prompt_id,
-                    "invocation_id": primary_invocation_id,
+                    "invocation_id": (
+                        primary_invocation_id
+                        if invocation_event is not None
+                        else None
+                    ),
                     "outcome": outcome["outcome"],
                     "reason_code": outcome["reason_code"],
                 },
@@ -1008,6 +1151,7 @@ class CodingOrchestrator:
                     "reason_code": blocked_reason,
                     "plugin_id": plugin.plugin_id,
                     "selected_prompt_id": plugin.selected_prompt_id,
+                    **_sanitized_target_adapter_provenance(primary_result),
                 },
             )
             self._persist(
@@ -1050,6 +1194,31 @@ class CodingOrchestrator:
                 self._persist(run, "target-plugin model failed without proof-eligible recovery")
                 raise CodingOrchestratorError(str(primary_participant["error_code"]))
 
+            fallback_prevalidated_plan: ArchitectPlan | None = None
+            if generic_adapter_plan_required:
+                loaded_fallback_plan = self._planner_loader(task_id)
+                if not (
+                    isinstance(loaded_fallback_plan, ArchitectPlan)
+                    and primary_ready_plan is not None
+                    and loaded_fallback_plan.to_dict() == primary_ready_plan
+                ):
+                    run.record_event(
+                        event_type="target_plugin_fallback_plan_reuse_blocked",
+                        lane_id="planner",
+                        detail={
+                            "reason_code": "target_plugin_fallback_persisted_plan_mismatch",
+                            "primary_invocation_id": primary_invocation_id,
+                        },
+                    )
+                    self._persist(
+                        run,
+                        "fallback blocked before authorization because persisted plan drifted",
+                    )
+                    raise CodingOrchestratorError(
+                        "target_plugin_fallback_persisted_plan_mismatch"
+                    )
+                fallback_prevalidated_plan = loaded_fallback_plan
+
             failure_event = build_failed_participant_event(
                 primary_participant,
                 parent_event_id=invocation_event["event_id"],
@@ -1082,10 +1251,31 @@ class CodingOrchestrator:
             fallback_context_binding: dict[str, Any] | None = None
             fallback_invocation_event: dict[str, Any] | None = None
 
-            def begin_fallback_invocation() -> None:
+            def begin_fallback_invocation(
+                *,
+                expected_context: Mapping[str, Any] | None = None,
+                rendered_prompt_sha256: str = "",
+            ) -> Mapping[str, Any]:
                 nonlocal run, fallback_context, fallback_context_binding
                 nonlocal fallback_invocation_event
                 run = self._restore(task_id)
+                if expected_context is not None:
+                    persisted_before_coder = canonical_context_broker_for_task(
+                        task_id
+                    )
+                    if not (
+                        isinstance(persisted_before_coder, Mapping)
+                        and dict(persisted_before_coder) == dict(expected_context)
+                    ):
+                        raise CodingOrchestratorError(
+                            "target_plugin_fallback_context_changed_before_invocation"
+                        )
+                if rendered_prompt_sha256 and re.fullmatch(
+                    r"[0-9a-f]{64}", rendered_prompt_sha256
+                ) is None:
+                    raise CodingOrchestratorError(
+                        "target_plugin_fallback_prompt_hash_invalid"
+                    )
                 fallback_context = self._acknowledge_persisted_context(
                     task_id,
                     consumer="coder",
@@ -1122,6 +1312,7 @@ class CodingOrchestrator:
                         "context_consumption_id": fallback_context_binding[
                             "consumption_id"
                         ],
+                        "rendered_prompt_sha256": rendered_prompt_sha256 or None,
                         "recovery_id": authorization.to_payload()["recovery_id"],
                     },
                 )
@@ -1129,26 +1320,59 @@ class CodingOrchestrator:
                     run,
                     "fallback context consumption persisted before replacement call",
                 )
+                return fallback_context
 
             fallback_plan_ready_callback: (
-                Callable[[ArchitectPlan], Mapping[str, Any]] | None
+                Callable[
+                    [ArchitectPlan, Mapping[str, Any]],
+                    Mapping[str, Any],
+                ]
+                | None
             ) = None
-            fallback_plan_ready = False
+            fallback_coder_ready_callback: (
+                Callable[
+                    [ArchitectPlan, Mapping[str, Any], str],
+                    Mapping[str, Any],
+                ]
+                | None
+            ) = None
+            fallback_plan_ready = bool(fallback_prevalidated_plan is not None)
+            fallback_coder_ready = False
+            fallback_ready_plan: dict[str, Any] | None = (
+                fallback_prevalidated_plan.to_dict()
+                if fallback_prevalidated_plan is not None
+                else None
+            )
             if generic_adapter_plan_required:
-                def persist_fallback_adapter_plan(
+                def bind_fallback_coder_context(
                     plan: ArchitectPlan,
+                    persisted_planner_context: Mapping[str, Any],
+                    rendered_prompt_sha256: str,
                 ) -> Mapping[str, Any]:
-                    nonlocal fallback_plan_ready
-                    if fallback_plan_ready:
+                    nonlocal fallback_coder_ready
+                    if not fallback_plan_ready:
                         raise CodingOrchestratorError(
-                            "target_plugin_fallback_plan_callback_repeated"
+                            "target_plugin_fallback_coder_callback_before_plan"
                         )
-                    fallback_plan_ready = True
-                    self._persist_adapter_architect_plan(task_id, plan)
-                    begin_fallback_invocation()
-                    return fallback_context
+                    if fallback_coder_ready:
+                        raise CodingOrchestratorError(
+                            "target_plugin_fallback_coder_callback_repeated"
+                        )
+                    if (
+                        plan.task_id != task_id
+                        or fallback_ready_plan is None
+                        or plan.to_dict() != fallback_ready_plan
+                    ):
+                        raise CodingOrchestratorError(
+                            "target_plugin_fallback_coder_plan_identity_mismatch"
+                        )
+                    fallback_coder_ready = True
+                    return begin_fallback_invocation(
+                        expected_context=persisted_planner_context,
+                        rendered_prompt_sha256=rendered_prompt_sha256,
+                    )
 
-                fallback_plan_ready_callback = persist_fallback_adapter_plan
+                fallback_coder_ready_callback = bind_fallback_coder_context
             else:
                 begin_fallback_invocation()
 
@@ -1165,16 +1389,41 @@ class CodingOrchestrator:
                 ),
                 model_alias=fallback_alias,
                 architect_task_id=task_id,
+                prevalidated_plan=fallback_prevalidated_plan,
                 plan_ready_callback=fallback_plan_ready_callback,
+                coder_ready_callback=fallback_coder_ready_callback,
+                model_call_run_id=(
+                    f"{run.run_id}:{replacement_attempt_id}:"
+                    f"{fallback_invocation_id}"
+                ),
             )
             fallback_completed_at = _utc_now()
+            run = self._restore(task_id)
             if (
                 fallback_context_binding is None
                 or fallback_invocation_event is None
             ):
-                raise CodingOrchestratorError(
-                    "target_plugin_fallback_plan_not_persisted_before_coder"
+                blocked_reason = str(
+                    fallback_result.get("reason_code")
+                    or fallback_result.get("reasonCode")
+                    or "target_plugin_fallback_plan_not_persisted_before_coder"
                 )
+                run.record_event(
+                    event_type="target_plugin_fallback_pre_plan_blocked",
+                    lane_id="planner",
+                    detail={
+                        "reason_code": blocked_reason,
+                        "plugin_id": plugin.plugin_id,
+                        "selected_prompt_id": plugin.selected_prompt_id,
+                        "recovery_id": authorization.to_payload()["recovery_id"],
+                        **_sanitized_target_adapter_provenance(fallback_result),
+                    },
+                )
+                self._persist(
+                    run,
+                    "authorized fallback returned a structured block before plan persistence",
+                )
+                raise CodingOrchestratorError(blocked_reason)
             fallback_input_sha256 = _target_plugin_model_input_sha256(
                 task=model_task,
                 target_plugin_identity=plugin_identity,
@@ -1191,10 +1440,27 @@ class CodingOrchestrator:
                 started_at=fallback_started_at,
                 completed_at=fallback_completed_at,
             )
-            completed_recovery = authorization.complete(
-                replacement_participant=fallback_participant,
-                recorded_at=_utc_now(),
-            )
+            try:
+                completed_recovery = authorization.complete(
+                    replacement_participant=fallback_participant,
+                    recorded_at=_utc_now(),
+                )
+            except ControlledRecoveryError as error:
+                run.model_invocations.append(fallback_participant)
+                run.record_event(
+                    event_type="target_plugin_recovery_integrity_rejected",
+                    lane_id="coder",
+                    detail={
+                        "invocation_id": fallback_participant["invocation_id"],
+                        "recovery_id": authorization.to_payload()["recovery_id"],
+                        "reason_code": error.reason_code,
+                    },
+                )
+                self._persist(
+                    run,
+                    "authorized fallback outcome failed controlled-recovery integrity",
+                )
+                raise CodingOrchestratorError(error.reason_code) from error
             run.model_invocations.append(fallback_participant)
             self._upsert_controlled_recovery(run, completed_recovery)
             selected_result = fallback_result
@@ -1210,6 +1476,19 @@ class CodingOrchestrator:
 
         proposed_diff = str(selected_result.get("proposed_diff") or "")
         diagnostics = _coder_diagnostics(selected_result)
+        if generic_adapter_plan_required:
+            _validate_generic_adapter_coder_context(
+                diagnostics,
+                canonical_context=selected_context,
+                adapter_provenance=(
+                    selected_result.get("target_adapter_provenance")
+                    if isinstance(
+                        selected_result.get("target_adapter_provenance"),
+                        Mapping,
+                    )
+                    else {}
+                ),
+            )
         changed_files = [str(value) for value in diagnostics.get("changed_files", [])]
         if not proposed_diff.strip():
             run.record_event(
@@ -1267,6 +1546,7 @@ class CodingOrchestrator:
             changed_files=changed_files,
             adapter_diagnostics=diagnostics,
             adapter_architect_plan_required=generic_adapter_plan_required,
+            canonical_context=selected_context,
             repair_request=(
                 run.repair_request
                 if isinstance(run.repair_request, Mapping)
@@ -3287,6 +3567,22 @@ class CodingOrchestrator:
                     if isinstance(run.repair_request, Mapping)
                     else None
                 ),
+                canonical_context=(
+                    proposal.get("canonical_context_report")
+                    if isinstance(
+                        proposal.get("canonical_context_report"),
+                        Mapping,
+                    )
+                    else None
+                ),
+                adapter_provenance=(
+                    proposal.get("target_adapter_provenance")
+                    if isinstance(
+                        proposal.get("target_adapter_provenance"),
+                        Mapping,
+                    )
+                    else None
+                ),
             )
         ):
             raise CodingOrchestratorError(
@@ -4482,6 +4778,543 @@ def _sealed_approval_ids(run: CodingLaneStateMachine) -> set[str]:
     }
 
 
+def _validate_adapter_architect_context_report(
+    plan: ArchitectPlan,
+    report: Mapping[str, Any],
+    *,
+    previous_report: Mapping[str, Any],
+    expected_readable_paths: Sequence[str],
+    expected_writable_paths: Sequence[str],
+    workspace_root: Path,
+) -> None:
+    """Validate the adapter's late-bound source before durable persistence."""
+
+    if report.get("canonical") is not True or report.get("go_eligible") is not False:
+        raise CodingOrchestratorError(
+            "target_plugin_architect_context_not_staged"
+        )
+    raw_sources = report.get("sources_considered")
+    sources = (
+        [dict(item) for item in raw_sources if isinstance(item, Mapping)]
+        if isinstance(raw_sources, list)
+        else []
+    )
+    architect_sources = [
+        item
+        for item in sources
+        if str(item.get("source") or "")
+        == ARCHITECT_REPOSITORY_CONTEXT_SOURCE
+    ]
+    if len(architect_sources) != 1:
+        raise CodingOrchestratorError(
+            "target_plugin_architect_context_source_invalid"
+        )
+    architect_source = architect_sources[0]
+    packet = architect_source.get("packet")
+    readable_scope = _normalized_adapter_scope(expected_readable_paths)
+    writable_scope = _normalized_adapter_scope(expected_writable_paths)
+    if not readable_scope or not writable_scope:
+        raise CodingOrchestratorError(
+            "target_plugin_architect_context_server_scope_invalid"
+        )
+    target = normalize_repo_path_candidate(plan.coder_packet.target_file.path)
+    if not (
+        target == plan.coder_packet.target_file.path
+        and _adapter_path_in_scope(target, readable_scope)
+        and _adapter_path_in_scope(target, writable_scope)
+    ):
+        raise CodingOrchestratorError(
+            "target_plugin_architect_target_scope_mismatch"
+        )
+    resolved_workspace = workspace_root.resolve()
+    target_candidate = _resolved_adapter_workspace_path(
+        resolved_workspace,
+        target,
+    )
+    target_exists = bool(
+        target_candidate is not None and target_candidate.is_file()
+    )
+    target_sha256 = (
+        hashlib.sha256(target_candidate.read_bytes()).hexdigest()
+        if target_exists and target_candidate is not None
+        else None
+    )
+    if (
+        target_exists is not plan.coder_packet.target_file.exists
+        or target_sha256 != plan.coder_packet.target_file.sha256_before
+    ):
+        raise CodingOrchestratorError(
+            "target_plugin_architect_target_state_mismatch"
+        )
+    expected_slices: list[dict[str, Any]] = []
+    for item in plan.coder_packet.context_slices:
+        slice_candidate = _resolved_adapter_workspace_path(
+            resolved_workspace,
+            item.path,
+        )
+        current_slice_content = (
+            slice_candidate.read_text(encoding="utf-8", errors="replace")
+            if slice_candidate is not None and slice_candidate.is_file()
+            else None
+        )
+        if not (
+            normalize_repo_path_candidate(item.path) == item.path
+            and _adapter_path_in_scope(item.path, readable_scope)
+            and current_slice_content == item.content
+            and re.fullmatch(r"[0-9a-f]{64}", str(item.sha256 or ""))
+            is not None
+            and item.sha256
+            == hashlib.sha256(item.content.encode("utf-8")).hexdigest()
+        ):
+            raise CodingOrchestratorError(
+                "target_plugin_architect_context_slice_invalid"
+            )
+        expected_slices.append(
+            {
+                "path": item.path,
+                "kind": item.kind,
+                "sha256": item.sha256,
+                "line_range": list(item.line_range or ()),
+            }
+        )
+    expected_workspace_text, expected_workspace_manifest = (
+        _render_server_scoped_workspace_context(
+            workspace_root.resolve(),
+            tuple(readable_scope),
+        )
+    )
+    expected_rendered_coder_context = _render_server_adapter_coder_context(
+        plan,
+        report,
+        expected_workspace_text,
+    )
+    expected_packet = {
+        "plan_id": plan.plan_id,
+        "target": target,
+        "allowed_paths": readable_scope,
+        "context_slices": expected_slices,
+        "scoped_workspace_context": expected_workspace_text,
+        "scoped_workspace_context_manifest": expected_workspace_manifest,
+        "scoped_workspace_context_sha256": hashlib.sha256(
+            expected_workspace_text.encode("utf-8")
+        ).hexdigest(),
+        "scoped_workspace_context_char_count": len(expected_workspace_text),
+        "rendered_coder_context": expected_rendered_coder_context,
+        "rendered_coder_context_sha256": hashlib.sha256(
+            expected_rendered_coder_context.encode("utf-8")
+        ).hexdigest(),
+        "rendered_coder_context_char_count": len(
+            expected_rendered_coder_context
+        ),
+    }
+    if not (
+        architect_source.get("considered") is True
+        and architect_source.get("status") == "used"
+        and architect_source.get("reason")
+        == "architect_selected_current_scoped_source"
+        and architect_source.get("required") is True
+        and architect_source.get("selected") is True
+        and architect_source.get("included") is True
+        and is_derived_architect_context_source(architect_source)
+        and isinstance(packet, Mapping)
+        and dict(packet) == expected_packet
+    ):
+        raise CodingOrchestratorError(
+            "target_plugin_architect_context_plan_mismatch"
+        )
+    expected_blockers: list[str] = []
+    for source in sources:
+        if source.get("selected") is not True or source.get("included") is not True:
+            continue
+        source_name = str(source.get("source") or "")
+        if source.get("required") is True:
+            expected_blockers.append(
+                f"required_context_unacknowledged:{source_name}:planner"
+            )
+        expected_blockers.append(
+            f"selected_context_unacknowledged:{source_name}:planner"
+        )
+    planner = (report.get("downstream_acknowledgements") or {}).get("planner")
+    coder = (report.get("downstream_acknowledgements") or {}).get("coder")
+    if not (
+        list(report.get("applicable_consumers") or []) == ["planner"]
+        and list(report.get("required_context_blockers") or []) == expected_blockers
+        and isinstance(planner, Mapping)
+        and planner.get("applicable") is True
+        and planner.get("acknowledged") is False
+        and list(planner.get("sources") or []) == []
+        and isinstance(coder, Mapping)
+        and coder.get("applicable") is False
+        and coder.get("acknowledged") is False
+    ):
+        raise CodingOrchestratorError(
+            "target_plugin_architect_context_lifecycle_invalid"
+        )
+
+    rebuilt_sources: list[dict[str, Any]] = []
+    for source in sources:
+        normalized = dict(source)
+        normalized["consumed"] = source.get("consumed_claimed") is True
+        rebuilt_sources.append(normalized)
+    rebuilt = build_context_broker_report(
+        rebuilt_sources,
+        downstream_consumers=(
+            report.get("downstream_acknowledgements")
+            if isinstance(report.get("downstream_acknowledgements"), Mapping)
+            else {}
+        ),
+        applicable_consumers=list(report.get("applicable_consumers") or []),
+    )
+    decision_fields = (
+        "schema_version",
+        "canonical",
+        "sources_considered",
+        "source_status",
+        "selected_sources",
+        "included_sources",
+        "consumed_sources",
+        "applicable_consumers",
+        "downstream_acknowledgements",
+        "required_context_blockers",
+        "go_eligible",
+        "verdict",
+        "canonical_report_hash",
+    )
+    if any(rebuilt.get(field) != report.get(field) for field in decision_fields):
+        raise CodingOrchestratorError(
+            "target_plugin_architect_context_hash_invalid"
+        )
+    _validate_adapter_upstream_context_continuity(
+        previous_report,
+        report,
+    )
+
+
+def _normalized_adapter_scope(values: Sequence[str]) -> list[str]:
+    normalized = [
+        normalize_repo_path_candidate(str(value or ""))
+        for value in values
+        if str(value or "").strip()
+    ]
+    if (
+        not normalized
+        or len(normalized) != len(set(normalized))
+        or any(not value or path_escapes_workspace(value) for value in normalized)
+    ):
+        return []
+    return normalized
+
+
+def _adapter_path_in_scope(path: str, scopes: Sequence[str]) -> bool:
+    normalized = normalize_repo_path_candidate(path)
+    if not normalized or normalized != path or path_escapes_workspace(normalized):
+        return False
+    return any(
+        normalized == scope.rstrip("/")
+        or normalized.startswith(scope.rstrip("/") + "/")
+        for scope in scopes
+    )
+
+
+def _resolved_adapter_workspace_path(root: Path, path: str) -> Path | None:
+    candidate = root
+    for part in Path(path).parts:
+        candidate = candidate / part
+        if candidate.is_symlink():
+            return None
+    resolved = candidate.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError:
+        return None
+    return resolved
+
+
+def _render_server_scoped_workspace_context(
+    root: Path,
+    allowed_paths: tuple[str, ...],
+) -> tuple[str, list[dict[str, Any]]]:
+    """Independently reconstruct the exact bounded text the adapter may send."""
+
+    listed = subprocess.run(
+        [
+            "git",
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ],
+        cwd=root,
+        capture_output=True,
+        check=False,
+        timeout=15,
+    )
+    if listed.returncode:
+        raise CodingOrchestratorError(
+            "target_plugin_workspace_git_index_unavailable"
+        )
+    rendered_context = "ADDITIONAL CURRENT AUTHORIZED FILES:\n"
+    remaining = 12_000 - len(rendered_context)
+    manifest: list[dict[str, Any]] = []
+    for path in listed.stdout.decode("utf-8", errors="strict").split("\0"):
+        if not path or not _adapter_path_in_scope(path, allowed_paths):
+            continue
+        candidate = root
+        unsafe = False
+        for part in Path(path).parts:
+            candidate = candidate / part
+            if candidate.is_symlink():
+                unsafe = True
+                break
+        if unsafe or not candidate.is_file():
+            continue
+        try:
+            candidate.resolve().relative_to(root)
+        except ValueError:
+            continue
+        raw = candidate.read_bytes()
+        content = raw.decode("utf-8", errors="replace")
+        rendered = f"--- {path} ---\n{content[:3_000]}\n"
+        if len(rendered) > remaining:
+            continue
+        rendered_start = len(rendered_context)
+        rendered_context += rendered
+        rendered_end = len(rendered_context)
+        manifest.append(
+            {
+                "path": path,
+                "sha256": hashlib.sha256(raw).hexdigest(),
+                "size": len(raw),
+                "rendered_sha256": hashlib.sha256(
+                    rendered.encode("utf-8")
+                ).hexdigest(),
+                "rendered_chars": len(rendered),
+                "truncated": len(content) > 3_000,
+                "rendered_start": rendered_start,
+                "rendered_end": rendered_end,
+            }
+        )
+        remaining -= len(rendered)
+    return rendered_context if manifest else "", manifest
+
+
+def _render_server_adapter_coder_context(
+    plan: ArchitectPlan,
+    report: Mapping[str, Any],
+    workspace_context: str,
+) -> str:
+    sections = ["CURRENT SERVER-SCOPED SOURCE STATE (read before editing):"]
+    for item in plan.coder_packet.context_slices:
+        sections.extend(
+            [
+                f"--- {item.path} ({item.kind}; sha256={item.sha256}) ---",
+                item.content,
+            ]
+        )
+    for source in report.get("sources_considered", []):
+        if not isinstance(source, Mapping):
+            continue
+        if str(source.get("source") or "") == ARCHITECT_REPOSITORY_CONTEXT_SOURCE:
+            continue
+        if source.get("selected") is not True or source.get("included") is not True:
+            continue
+        packet = source.get("packet")
+        bounded = (
+            str(packet.get("bounded_context") or "")
+            if isinstance(packet, Mapping)
+            else ""
+        )
+        if bounded:
+            sections.extend(
+                [
+                    f"--- selected context packet: {source.get('source')} ---",
+                    bounded,
+                ]
+            )
+    sections.extend(
+        [
+            "CANONICAL CONTEXT MANIFEST:",
+            json.dumps(
+                {
+                    "selected_sources": report.get("selected_sources", []),
+                    "target": plan.coder_packet.target_file.path,
+                },
+                sort_keys=True,
+            ),
+        ]
+    )
+    current_context = "\n".join(sections)[:24_000]
+    return "\n".join(
+        part for part in (current_context, workspace_context) if part
+    )[:24_000]
+
+
+def _validate_adapter_upstream_context_continuity(
+    previous: Mapping[str, Any],
+    incoming: Mapping[str, Any],
+) -> None:
+    for field_name in ("task_id", "trace_id", "explicit_target", "finalized"):
+        if field_name in previous and incoming.get(field_name) != previous.get(
+            field_name
+        ):
+            raise CodingOrchestratorError(
+                "target_plugin_upstream_context_correlation_changed"
+            )
+    previous_sources = _adapter_upstream_source_material(previous)
+    incoming_sources = _adapter_upstream_source_material(incoming)
+    if previous_sources != incoming_sources:
+        raise CodingOrchestratorError(
+            "target_plugin_upstream_context_material_changed"
+        )
+
+
+def _adapter_upstream_source_material(
+    report: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    material: list[dict[str, Any]] = []
+    for raw in report.get("sources_considered", []):
+        if not isinstance(raw, Mapping):
+            continue
+        if is_derived_architect_context_source(raw):
+            continue
+        selected = raw.get("selected") is True
+        included = raw.get("included") is True
+        packet = raw.get("packet")
+        if selected and included:
+            normalized_packet = _normalize_adapter_upstream_packet(packet)
+        elif isinstance(packet, Mapping):
+            normalized_packet = json.loads(
+                json.dumps(dict(packet), sort_keys=True, default=str)
+            )
+        else:
+            normalized_packet = {}
+        material.append(
+            {
+                "source": str(raw.get("source") or ""),
+                "considered": raw.get("considered") is not False,
+                "status": str(raw.get("status") or ""),
+                "reason": str(raw.get("reason") or ""),
+                "required": raw.get("required") is True,
+                "selected": selected,
+                "included": included,
+                "packet": normalized_packet,
+                "diagnostics": (
+                    json.loads(
+                        json.dumps(
+                            dict(raw["diagnostics"]),
+                            sort_keys=True,
+                            default=str,
+                        )
+                    )
+                    if isinstance(raw.get("diagnostics"), Mapping)
+                    else {}
+                ),
+                "authority": (
+                    json.loads(
+                        json.dumps(
+                            dict(raw["authority"]),
+                            sort_keys=True,
+                            default=str,
+                        )
+                    )
+                    if isinstance(raw.get("authority"), Mapping)
+                    else {}
+                ),
+            }
+        )
+    return material
+
+
+def _normalize_adapter_upstream_packet(packet: Any) -> dict[str, Any]:
+    if not isinstance(packet, Mapping) or not packet:
+        return {}
+    expected_keys = {
+        "schema_version",
+        "bounded_context",
+        "packet_sha256",
+        "bounded_context_sha256",
+        "truncated",
+    }
+    bounded = packet.get("bounded_context")
+    packet_sha256 = packet.get("packet_sha256")
+    bounded_sha256 = packet.get("bounded_context_sha256")
+    truncated = packet.get("truncated")
+    if (
+        set(packet) == expected_keys
+        and packet.get("schema_version")
+        == "source-proxy-bounded-context-packet/v1"
+        and isinstance(bounded, str)
+        and len(bounded) <= 4_000
+        and isinstance(packet_sha256, str)
+        and re.fullmatch(r"[0-9a-f]{64}", packet_sha256) is not None
+        and isinstance(bounded_sha256, str)
+        and bounded_sha256 == hashlib.sha256(bounded.encode("utf-8")).hexdigest()
+        and isinstance(truncated, bool)
+        and (
+            (truncated and len(bounded) == 4_000)
+            or (
+                not truncated
+                and packet_sha256
+                == hashlib.sha256(bounded.encode("utf-8")).hexdigest()
+            )
+        )
+    ):
+        return json.loads(json.dumps(dict(packet), sort_keys=True, default=str))
+    packet_json = json.dumps(
+        dict(packet),
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+    bounded = packet_json[:4_000]
+    return {
+        "schema_version": "source-proxy-bounded-context-packet/v1",
+        "bounded_context": bounded,
+        "packet_sha256": hashlib.sha256(packet_json.encode("utf-8")).hexdigest(),
+        "bounded_context_sha256": hashlib.sha256(
+            bounded.encode("utf-8")
+        ).hexdigest(),
+        "truncated": len(packet_json) > 4_000,
+    }
+
+
+def _validate_generic_adapter_coder_context(
+    diagnostics: Mapping[str, Any],
+    *,
+    canonical_context: Mapping[str, Any],
+    adapter_provenance: Mapping[str, Any],
+) -> None:
+    diagnostic_context = diagnostics.get("canonical_context_broker")
+    binding = diagnostics.get("coder_context_binding")
+    selected = [str(value) for value in canonical_context.get("selected_sources", [])]
+    coder = (canonical_context.get("downstream_acknowledgements") or {}).get(
+        "coder"
+    )
+    if not (
+        isinstance(diagnostic_context, Mapping)
+        and dict(diagnostic_context) == dict(canonical_context)
+        and diagnostics.get("canonical_context_report_hash")
+        == canonical_context.get("canonical_report_hash")
+        and isinstance(binding, Mapping)
+        and binding.get("canonical_context_report_hash")
+        == canonical_context.get("canonical_report_hash")
+        and binding.get("rendered_prompt_sha256")
+        == adapter_provenance.get("rendered_prompt_sha256")
+        and binding.get("consumed") is True
+        and list(binding.get("selected_sources") or []) == selected
+        and list(binding.get("consumed_sources") or []) == selected
+        and isinstance(coder, Mapping)
+        and coder.get("applicable") is True
+        and coder.get("acknowledged") is True
+        and list(coder.get("sources") or []) == selected
+        and list(canonical_context.get("consumed_sources") or []) == selected
+    ):
+        raise CodingOrchestratorError(
+            "target_plugin_adapter_context_binding_invalid"
+        )
+
+
 def _build_semantic_review_binding(
     *,
     task_id: str,
@@ -4493,6 +5326,7 @@ def _build_semantic_review_binding(
     adapter_diagnostics: Mapping[str, Any],
     adapter_architect_plan_required: bool,
     repair_request: Mapping[str, Any] | None,
+    canonical_context: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     planner_payload = planner_output.get("payload")
     serialized_plan = (
@@ -4535,17 +5369,25 @@ def _build_semantic_review_binding(
         adapter_diagnostics,
         proposed_diff_sha256=diff_sha256,
     )
-    if not (
-        isinstance(adapter_preview_evidence, Mapping)
-        and _adapter_architect_plan_evidence_matches(
+    if adapter_architect_plan_required or adapter_preview_evidence is not None:
+        if not (
+            isinstance(adapter_preview_evidence, Mapping)
+            and _adapter_architect_plan_evidence_matches(
+                adapter_preview_evidence,
+                plan_payload=plan_payload,
+                plan_id=plan.plan_id,
+                acceptance_criteria=acceptance_criteria,
+                required=adapter_architect_plan_required,
+            )
+        ):
+            raise CodingOrchestratorError(
+                "coding_adapter_architect_plan_mismatch"
+            )
+        if adapter_architect_plan_required and not _adapter_context_evidence_matches(
             adapter_preview_evidence,
-            plan_payload=plan_payload,
-            plan_id=plan.plan_id,
-            acceptance_criteria=acceptance_criteria,
-            required=adapter_architect_plan_required,
-        )
-    ) and (adapter_architect_plan_required or adapter_preview_evidence is not None):
-        raise CodingOrchestratorError("coding_adapter_architect_plan_mismatch")
+            canonical_context=canonical_context,
+        ):
+            raise CodingOrchestratorError("coding_adapter_context_mismatch")
     repair_feedback_binding = _semantic_repair_feedback_binding(repair_request)
     receipt_body = {
         "schema_version": "coding.preview-review-receipt/v1",
@@ -4627,6 +5469,13 @@ def _adapter_preview_evidence(
         or git_apply_check.get("passed") is not True
     ):
         raise CodingOrchestratorError("coding_adapter_preview_receipt_invalid")
+    canonical_context = diagnostics.get("canonical_context_broker")
+    canonical_context = (
+        dict(canonical_context)
+        if isinstance(canonical_context, Mapping)
+        else {}
+    )
+    coder_context_binding = diagnostics.get("coder_context_binding")
     return {
         "architect_plan_id": diagnostics.get("architect_plan_id"),
         "architect_plan_sha256": diagnostics.get("architect_plan_sha256"),
@@ -4636,6 +5485,32 @@ def _adapter_preview_evidence(
                 sort_keys=True,
                 default=str,
             )
+        ),
+        "canonical_context_report_hash": diagnostics.get(
+            "canonical_context_report_hash"
+        ),
+        "canonical_context_report_sha256": (
+            _sha256_json(canonical_context) if canonical_context else None
+        ),
+        "canonical_context_selected_sources": list(
+            canonical_context.get("selected_sources") or []
+        ),
+        "canonical_context_consumed_sources": list(
+            canonical_context.get("consumed_sources") or []
+        ),
+        "producer_rendered_prompt_sha256": diagnostics.get(
+            "rendered_prompt_sha256"
+        ),
+        "coder_context_binding": (
+            json.loads(
+                json.dumps(
+                    dict(coder_context_binding),
+                    sort_keys=True,
+                    default=str,
+                )
+            )
+            if isinstance(coder_context_binding, Mapping)
+            else None
         ),
         "attempt": json.loads(
             json.dumps(dict(matching), sort_keys=True, default=str)
@@ -4673,6 +5548,55 @@ def _adapter_architect_plan_evidence_matches(
         == json.loads(
             json.dumps(list(acceptance_criteria), sort_keys=True, default=str)
         )
+    )
+
+
+def _adapter_context_evidence_matches(
+    evidence: Mapping[str, Any],
+    *,
+    canonical_context: Mapping[str, Any] | None,
+    producer_rendered_prompt_sha256: str | None = None,
+) -> bool:
+    if not isinstance(canonical_context, Mapping):
+        return False
+    context_hash = str(canonical_context.get("canonical_report_hash") or "")
+    selected = [str(value) for value in canonical_context.get("selected_sources", [])]
+    consumed = [str(value) for value in canonical_context.get("consumed_sources", [])]
+    coder = (canonical_context.get("downstream_acknowledgements") or {}).get(
+        "coder"
+    )
+    binding = evidence.get("coder_context_binding")
+    return bool(
+        context_hash
+        and evidence.get("canonical_context_report_hash") == context_hash
+        and evidence.get("canonical_context_report_sha256")
+        == _sha256_json(canonical_context)
+        and list(evidence.get("canonical_context_selected_sources") or [])
+        == selected
+        and list(evidence.get("canonical_context_consumed_sources") or [])
+        == consumed
+        and consumed == selected
+        and isinstance(coder, Mapping)
+        and coder.get("applicable") is True
+        and coder.get("acknowledged") is True
+        and list(coder.get("sources") or []) == selected
+        and isinstance(binding, Mapping)
+        and binding.get("canonical_context_report_hash") == context_hash
+        and binding.get("rendered_prompt_sha256")
+        == evidence.get("producer_rendered_prompt_sha256")
+        and (
+            producer_rendered_prompt_sha256 is None
+            or evidence.get("producer_rendered_prompt_sha256")
+            == producer_rendered_prompt_sha256
+        )
+        and binding.get("consumed") is True
+        and list(binding.get("selected_sources") or []) == selected
+        and list(binding.get("consumed_sources") or []) == selected
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(binding.get("rendered_prompt_sha256") or ""),
+        )
+        is not None
     )
 
 
@@ -4719,6 +5643,8 @@ def _valid_semantic_review_binding(
     changed_files: list[str],
     adapter_architect_plan_required: bool = False,
     repair_request: Mapping[str, Any] | None = None,
+    canonical_context: Mapping[str, Any] | None = None,
+    adapter_provenance: Mapping[str, Any] | None = None,
 ) -> bool:
     if not isinstance(binding, Mapping):
         return False
@@ -4768,6 +5694,21 @@ def _valid_semantic_review_binding(
         )
         if isinstance(adapter_evidence, Mapping)
         else not adapter_architect_plan_required
+    )
+    adapter_context_matches = bool(
+        not adapter_architect_plan_required
+        or (
+            isinstance(adapter_evidence, Mapping)
+            and _adapter_context_evidence_matches(
+                adapter_evidence,
+                canonical_context=canonical_context,
+                producer_rendered_prompt_sha256=(
+                    str(adapter_provenance.get("rendered_prompt_sha256") or "")
+                    if isinstance(adapter_provenance, Mapping)
+                    else None
+                ),
+            )
+        )
     )
     return bool(
         plan.task_id == task_id
@@ -4819,6 +5760,7 @@ def _valid_semantic_review_binding(
             else None
         )
         and adapter_plan_matches
+        and adapter_context_matches
         and (
             (
                 isinstance(adapter_evidence, Mapping)
@@ -5078,6 +6020,30 @@ def _coder_diagnostics(result: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         value = result.get("coderDiagnostics")
     return dict(value) if isinstance(value, Mapping) else {}
+
+
+def _sanitized_target_adapter_provenance(
+    result: Mapping[str, Any],
+) -> dict[str, Any]:
+    provenance = result.get("target_adapter_provenance")
+    if not isinstance(provenance, Mapping):
+        return {
+            "target_adapter_provenance_present": False,
+            "target_adapter_model_call_count": 0,
+            "target_adapter_model_call_stages": [],
+        }
+    calls = _mapping_list(provenance.get("calls"))
+    return {
+        "target_adapter_provenance_present": True,
+        "target_adapter_provenance_sha256": _sha256_json(dict(provenance)),
+        "target_adapter_model_call_count": len(calls),
+        "target_adapter_model_call_stages": [
+            str(call.get("stage") or "unknown") for call in calls
+        ],
+        "target_adapter_completed_model_call_count": sum(
+            call.get("completed") is True for call in calls
+        ),
+    }
 
 
 def _sha256_json(value: Any) -> str:
