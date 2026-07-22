@@ -35,6 +35,20 @@ class FailureClass(str, Enum):
     UNKNOWN_NEEDS_INVESTIGATION = "UNKNOWN_NEEDS_INVESTIGATION"
 
 
+class RepairFailureKind(str, Enum):
+    """Orthogonal repair routing; public FailureClass vocabulary stays stable."""
+
+    MODEL_ERROR = "model_error"
+    PROMPT_CONTEXT_ERROR = "prompt_context_error"
+    PATCH_FORMAT_ERROR = "patch_format_error"
+    TEST_ENVIRONMENT_ERROR = "test_environment_error"
+    FIXTURE_ERROR = "fixture_error"
+    RUNTIME_ERROR = "runtime_error"
+    REVIEWER_REJECTION = "reviewer_rejection"
+    VERIFIER_REJECTION = "verifier_rejection"
+    TASK_IMPOSSIBLE = "task_impossible"
+
+
 _FAILURE_STATUS_VALUES = {"blocked", "failed", "timed_out", "config_blocked"}
 
 
@@ -75,6 +89,34 @@ class ReceiptFailureClassification:
         }
 
 
+@dataclass(frozen=True)
+class RepairFailureClassification:
+    failure_kind: RepairFailureKind
+    failure_class: FailureClass
+    diagnostic_code: str
+    stage: str
+    retryable: bool
+    retry_owner: str
+    strategy_change_required: bool
+    genuine_stop: bool
+    legacy_compat_string: str
+    details: dict[str, Any] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "failure_kind": self.failure_kind.value,
+            "failure_class": self.failure_class.value,
+            "diagnostic_code": self.diagnostic_code,
+            "stage": self.stage,
+            "retryable": self.retryable,
+            "retry_owner": self.retry_owner,
+            "strategy_change_required": self.strategy_change_required,
+            "genuine_stop": self.genuine_stop,
+            "legacy_compat_string": self.legacy_compat_string,
+            "details": dict(self.details or {}),
+        }
+
+
 def is_failure_status(status: str) -> bool:
     return status.strip().lower() in _FAILURE_STATUS_VALUES
 
@@ -102,6 +144,140 @@ def classify_failure(
         legacy_compat_string=legacy,
         status=str(status or "failed"),
         source=str(source or "unknown"),
+        details=details or {},
+    )
+
+
+def classify_repair_failure(
+    *,
+    diagnostic_code: str,
+    stage: str,
+    reason: str = "",
+    details: dict[str, Any] | None = None,
+) -> RepairFailureClassification:
+    """Classify a repair decision from structured stage/code before free text."""
+
+    code = str(diagnostic_code or "unknown_failure").strip().lower()
+    normalized_stage = str(stage or "unknown").strip().lower()
+    legacy = str(reason or diagnostic_code or "unknown_failure").strip()
+    combined = f"{code} {legacy.lower()}"
+
+    if any(token in combined for token in ("task_impossible", "irreconcilable_contract")):
+        kind = RepairFailureKind.TASK_IMPOSSIBLE
+        failure_class = FailureClass.POLICY_BLOCKED
+        retryable = False
+        retry_owner = "terminal"
+        genuine_stop = True
+    elif any(token in combined for token in ("fixture", "oracle_execution", "reference_validation")):
+        kind = RepairFailureKind.FIXTURE_ERROR
+        failure_class = FailureClass.BRIDGE_INTEGRATION_FAILURE
+        retryable = True
+        retry_owner = "fixture_harness"
+        genuine_stop = False
+    elif any(
+        token in combined
+        for token in (
+            "not_json",
+            "invalid_json",
+            "response_repair_exhausted",
+            "wrong_format",
+            "parse",
+            "schema",
+            "diff_apply_check",
+            "patch",
+            "replacement_payload",
+        )
+    ):
+        kind = RepairFailureKind.PATCH_FORMAT_ERROR
+        failure_class = FailureClass.MODEL_FORMATTING_FAILURE
+        retryable = True
+        retry_owner = "parser_then_coder"
+        genuine_stop = False
+    elif any(
+        token in combined
+        for token in (
+            "environment",
+            "missing_module",
+            "dependency_unavailable",
+            "service_unavailable",
+            "timeout",
+            "tool_missing",
+            "command_not_found",
+        )
+    ):
+        kind = RepairFailureKind.TEST_ENVIRONMENT_ERROR
+        failure_class = classify_failure(
+            reason=legacy,
+            status="failed",
+            source=f"repair.{normalized_stage}",
+        ).failure_class
+        if failure_class not in {
+            FailureClass.ENVIRONMENT_FAILURE,
+            FailureClass.SERVICE_UNAVAILABLE,
+            FailureClass.RESOURCE_PRESSURE,
+            FailureClass.TOOL_FAILURE,
+        }:
+            failure_class = FailureClass.ENVIRONMENT_FAILURE
+        retryable = True
+        retry_owner = "environment_recovery"
+        genuine_stop = False
+    elif normalized_stage in {"runtime", "tests", "debugger"} or any(
+        token in combined
+        for token in ("runtime", "visible_tests_failed", "test_failed", "assertion")
+    ):
+        kind = RepairFailureKind.RUNTIME_ERROR
+        failure_class = FailureClass.VALIDATOR_FAILURE
+        retryable = True
+        retry_owner = "debugger_then_coder"
+        genuine_stop = False
+    elif normalized_stage == "reviewer" or "reviewer_reject" in combined:
+        kind = RepairFailureKind.REVIEWER_REJECTION
+        failure_class = FailureClass.VALIDATOR_FAILURE
+        retryable = True
+        retry_owner = "coder"
+        genuine_stop = False
+    elif normalized_stage == "verifier" or "verifier_reject" in combined:
+        kind = RepairFailureKind.VERIFIER_REJECTION
+        failure_class = FailureClass.VALIDATOR_FAILURE
+        retryable = True
+        retry_owner = "debugger_then_coder"
+        genuine_stop = False
+    elif normalized_stage in {"architect", "context", "routing", "scope"} or any(
+        token in combined
+        for token in ("context", "architect", "target_missing", "prompt_ambigu")
+    ):
+        kind = RepairFailureKind.PROMPT_CONTEXT_ERROR
+        failure_class = (
+            FailureClass.POLICY_BLOCKED
+            if any(token in combined for token in ("outside_scope", "forbidden", "policy"))
+            else FailureClass.BRIDGE_INTEGRATION_FAILURE
+        )
+        retryable = failure_class is not FailureClass.POLICY_BLOCKED
+        retry_owner = "architect_context_selector"
+        genuine_stop = False
+    else:
+        kind = RepairFailureKind.MODEL_ERROR
+        failure_class = classify_failure(
+            reason=legacy,
+            status="failed",
+            source=f"repair.{normalized_stage}",
+        ).failure_class
+        if failure_class is FailureClass.UNKNOWN_NEEDS_INVESTIGATION:
+            failure_class = FailureClass.MODEL_CAPABILITY_LIMIT
+        retryable = True
+        retry_owner = "coder_model_router"
+        genuine_stop = False
+
+    return RepairFailureClassification(
+        failure_kind=kind,
+        failure_class=failure_class,
+        diagnostic_code=str(diagnostic_code or "unknown_failure"),
+        stage=normalized_stage,
+        retryable=retryable,
+        retry_owner=retry_owner,
+        strategy_change_required=retryable,
+        genuine_stop=genuine_stop,
+        legacy_compat_string=legacy,
         details=details or {},
     )
 

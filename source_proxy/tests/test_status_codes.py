@@ -4,7 +4,9 @@ from source_proxy.api import decision
 from source_proxy.decision import model_lanes
 from source_proxy.diagnostics.status_codes import (
     FailureClass,
+    RepairFailureKind,
     classify_failure,
+    classify_repair_failure,
     no_failure_classification,
     receipt_failure_classification_from_lanes,
     serialize_failure_classification,
@@ -37,6 +39,45 @@ ALL_CLASSES = [
 def test_all_19_failure_classes_are_stable_strings() -> None:
     assert [item.value for item in FailureClass] == ALL_CLASSES
     assert len(FailureClass) == 19
+
+
+def test_repair_failure_kinds_cover_required_backend_distinctions() -> None:
+    assert {item.value for item in RepairFailureKind} == {
+        "model_error",
+        "prompt_context_error",
+        "patch_format_error",
+        "test_environment_error",
+        "fixture_error",
+        "runtime_error",
+        "reviewer_rejection",
+        "verifier_rejection",
+        "task_impossible",
+    }
+
+
+def test_repair_failure_classification_prefers_stage_and_diagnostic_code() -> None:
+    cases = [
+        ("coder_response_not_json", "coder", "patch_format_error"),
+        ("architect_target_missing", "architect", "prompt_context_error"),
+        ("pytest_missing_module", "tests", "test_environment_error"),
+        ("fixture_manifest_invalid", "fixture", "fixture_error"),
+        ("visible_tests_failed", "runtime", "runtime_error"),
+        ("visible_tests_failed", "verifier", "runtime_error"),
+        ("diff_apply_check_failed", "verifier", "patch_format_error"),
+        ("pytest_missing_module", "verifier", "test_environment_error"),
+        ("fixture_manifest_invalid", "verifier", "fixture_error"),
+        ("reviewer_rejected", "reviewer", "reviewer_rejection"),
+        ("verifier_rejected", "verifier", "verifier_rejection"),
+        ("task_impossible", "verifier", "task_impossible"),
+    ]
+    for code, stage, expected in cases:
+        result = classify_repair_failure(
+            diagnostic_code=code,
+            stage=stage,
+            reason=code,
+        )
+        assert result.failure_kind.value == expected
+        assert result.diagnostic_code == code
 
 
 def test_receipt_safe_serialization_preserves_legacy_string() -> None:
