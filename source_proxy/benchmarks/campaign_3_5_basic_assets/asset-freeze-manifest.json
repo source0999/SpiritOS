@@ -2,19 +2,19 @@
   "asset_version": "source_proxy_basic_backend_10_assets_v1.0.0",
   "definition_version": "source_proxy_basic_backend_10_v1",
   "private_implementation_files": {
-    "source_proxy/benchmarks/campaign_3_5_basic_assets/__init__.py": "1eb281d90c65deb26aefc2e93d36070672b49cfadd59064c5aa3e4eba5108a5a",
+    "source_proxy/benchmarks/campaign_3_5_basic_assets/__init__.py": "ba8ed45c5a6157df95aa3ce7eab3031286f2a4b8dc52dceb683cbbd540b9076b",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/catalog.py": "a0bdce8db72edca0e0b7a1f69fd28ea88cb38f1c6b81e79413892c328acc7735",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/fixtures.py": "efc3f6e4d8e00a8e9f1648dda46721253bf65126770420a47e3a0c4ef05847f6",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/freeze.py": "60c3439f154172800e07e7a0e056ec6e51608b438da5a9e1328d5806abfcc04c",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/oracles.py": "d52048f4083f40220fd25cceee5779e93d266ab5427a67c2a4b756975c30cc57",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/reference_validation.py": "2bf068740dbcb7aa4cc48ea4a8a68bad666b3ec9415c75f80b3f1f71115b4924",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/references.py": "14a63ecc10ce6fc7ef48fa4c765c855c536ef3ce06b543811efa0d6521ec67d4",
-    "source_proxy/benchmarks/campaign_3_5_basic_assets/seeding.py": "51452fc6a0b84fda72bc4d767736ed8cc59479e56d1584e9ecf95435c197997d"
+    "source_proxy/benchmarks/campaign_3_5_basic_assets/seeding.py": "2333d5815b718cd09f857ff92c65d3f6e5f77910f2468be22b76b318875dc28f"
   },
   "production_import_boundary_passed": true,
   "public_files": {
-    "benchmarks/source-proxy-basic-backend-10/v1/README.md": "8070e2ee31310fda47bfd9d2e41699e248bf18bf878d0eb363c6e440096cac47",
-    "benchmarks/source-proxy-basic-backend-10/v1/manifest.json": "7549c3a1c7c88fca70c17d0729c2ade2b6dfbca8d886f4a0550606014822068f",
+    "benchmarks/source-proxy-basic-backend-10/v1/README.md": "abe3e2ae1938197d8d12026187d989ef7e6a45f81da9440b4384f9d481959b64",
+    "benchmarks/source-proxy-basic-backend-10/v1/manifest.json": "1c17b6c56def2c9acf752e2504a44135a3aa645e46d79cb3846a5733f58e87b7",
     "benchmarks/source-proxy-basic-backend-10/v1/seed-contract.json": "3cd63815ee021eef6ce4fd5fedbc905c0361a160280cb4fe0fd11a41e089cd75",
     "benchmarks/source-proxy-basic-backend-10/v1/tasks.json": "140f2f9a85951aacd6fa6769073561ccc5b6265f0ea196b7704e0c3330570d6c"
   },
@@ -33,5 +33,5 @@
     "BT09",
     "BT10"
   ],
-  "validation_control_plane_commit": "ece589de003a779b9f9b4c41afa41a65f51afba9"
+  "validation_control_plane_commit": "970e1cf3a3ea60251dab985722dff6658e1117ca"
 }
