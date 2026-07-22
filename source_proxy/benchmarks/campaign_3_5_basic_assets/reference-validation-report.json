@@ -1,0 +1,98 @@
+{
+  "definition_version": "source_proxy_basic_backend_10_v1",
+  "passed": true,
+  "schema_version": "source-proxy-basic-backend-10-reference-validation/v1",
+  "task_count": 10,
+  "tasks": [
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "0751764e309688ff6c308d404dc14e4bdb3bd26dc9807a53afd220d5ff5837df",
+      "public_tests_passed": true,
+      "task_id": "BT01",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "0751764e309688ff6c308d404dc14e4bdb3bd26dc9807a53afd220d5ff5837df",
+      "public_tests_passed": true,
+      "task_id": "BT02",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "34228c18c2ad807c4dc2316187c1808588cb8b6f2a2d28ea340165807c5fc6b3",
+      "public_tests_passed": true,
+      "task_id": "BT03",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "0751764e309688ff6c308d404dc14e4bdb3bd26dc9807a53afd220d5ff5837df",
+      "public_tests_passed": true,
+      "task_id": "BT04",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "0751764e309688ff6c308d404dc14e4bdb3bd26dc9807a53afd220d5ff5837df",
+      "public_tests_passed": true,
+      "task_id": "BT05",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "0751764e309688ff6c308d404dc14e4bdb3bd26dc9807a53afd220d5ff5837df",
+      "public_tests_passed": true,
+      "task_id": "BT06",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "34228c18c2ad807c4dc2316187c1808588cb8b6f2a2d28ea340165807c5fc6b3",
+      "public_tests_passed": true,
+      "task_id": "BT07",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "0751764e309688ff6c308d404dc14e4bdb3bd26dc9807a53afd220d5ff5837df",
+      "public_tests_passed": true,
+      "task_id": "BT08",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "34228c18c2ad807c4dc2316187c1808588cb8b6f2a2d28ea340165807c5fc6b3",
+      "public_tests_passed": true,
+      "task_id": "BT09",
+      "writable_scope_passed": true
+    },
+    {
+      "authority_passed": true,
+      "passed": true,
+      "private_oracle_passed": true,
+      "public_test_output_sha256": "0751764e309688ff6c308d404dc14e4bdb3bd26dc9807a53afd220d5ff5837df",
+      "public_tests_passed": true,
+      "task_id": "BT10",
+      "writable_scope_passed": true
+    }
+  ]
+}

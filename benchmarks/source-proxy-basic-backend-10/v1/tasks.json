@@ -1,0 +1,168 @@
+{
+  "schema_version": "source-proxy-basic-backend-10/v1",
+  "definition_version": "source_proxy_basic_backend_10_v1",
+  "task_count": 10,
+  "tasks": [
+    {
+      "task_id": "BT01",
+      "category": "optional_query_parameter",
+      "fixture_family": "python_function_backend",
+      "prompt_template": "Could you add an optional `{limit_parameter}` query parameter to the existing `{route}` endpoint? When it is omitted, keep today's response unchanged. When it is present, accept a whole number from 1 through {maximum_limit}, return a 400 response with a useful message for invalid values, and limit the returned items without changing stored data.",
+      "randomized_fields": [
+        {"name": "limit_parameter", "kind": "identifier", "prefix": "max_"},
+        {"name": "resource_name", "kind": "identifier", "prefix": "item_"},
+        {"name": "maximum_limit", "kind": "integer", "minimum": 4, "maximum": 9}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT02",
+      "category": "straightforward_backend_bug",
+      "fixture_family": "python_function_backend",
+      "prompt_template": "The `{function_name}` helper is dropping the last value, which is why the new test is red. Please fix the bug without changing the function's public signature or mutating the input list.",
+      "randomized_fields": [
+        {"name": "function_name", "kind": "identifier", "prefix": "total_"},
+        {"name": "sample_value", "kind": "integer", "minimum": 7, "maximum": 31}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT03",
+      "category": "json_response_field",
+      "fixture_family": "python_function_backend",
+      "prompt_template": "Please include a `{response_field}` field in the JSON returned by `get_status`. Its value should be the service instance ID already defined in the module. Keep every existing response field and the function signature intact so current clients continue to work.",
+      "randomized_fields": [
+        {"name": "response_field", "kind": "identifier", "prefix": "node_"},
+        {"name": "instance_value", "kind": "identifier", "prefix": "instance_"}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT04",
+      "category": "input_validation",
+      "fixture_family": "python_function_backend",
+      "prompt_template": "`create_account` needs to validate the `{field_name}` input before saving anything. Treat a missing, non-string, or blank value as a 422 response with a clear error, and preserve the current 201 response for valid input. Invalid requests must not add a record.",
+      "randomized_fields": [
+        {"name": "field_name", "kind": "identifier", "prefix": "handle_"},
+        {"name": "valid_value", "kind": "identifier", "prefix": "user_"}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT05",
+      "category": "pagination_without_mutation",
+      "fixture_family": "python_function_backend",
+      "prompt_template": "Add pagination to `list_records` with optional `offset` and `limit` arguments. Defaults should still return all records, both values must be non-negative integers (with `limit` at least 1 when provided), and the function must never mutate the module's stored records. Raise `ValueError` for invalid pagination values.",
+      "randomized_fields": [
+        {"name": "record_prefix", "kind": "identifier", "prefix": "record_"},
+        {"name": "record_count", "kind": "integer", "minimum": 6, "maximum": 11}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT06",
+      "category": "service_layer_function",
+      "fixture_family": "python_service_backend",
+      "prompt_template": "Please add a small `count_{status_name}_orders` service function that returns the number of orders whose `status` exactly matches `{status_value}`. Keep the existing order lookup behavior and add focused tests for the new function.",
+      "randomized_fields": [
+        {"name": "status_name", "kind": "identifier", "prefix": "state_"},
+        {"name": "status_value", "kind": "identifier", "prefix": "ready_"}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/", "tests/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT07",
+      "category": "behavior_preserving_refactor",
+      "fixture_family": "python_service_backend",
+      "prompt_template": "`normalize_username` in `src/users.py` and `normalize_email` in `src/contacts.py` repeat the same whitespace-and-lowercase cleanup. Refactor that duplicated logic into one small shared helper while preserving both public functions and their current behavior.",
+      "randomized_fields": [
+        {"name": "sample_user", "kind": "identifier", "prefix": "member_"},
+        {"name": "sample_domain", "kind": "identifier", "prefix": "domain_"}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT08",
+      "category": "configuration_default",
+      "fixture_family": "python_config_backend",
+      "prompt_template": "The `{environment_name}` setting falls back correctly when it is missing, but an empty or whitespace-only environment value currently disables the default. Fix `load_timeout` so blank values use {default_value}, valid positive integers are accepted, and invalid or non-positive values raise `ValueError`.",
+      "randomized_fields": [
+        {"name": "environment_name", "kind": "identifier", "prefix": "SERVICE_TIMEOUT_"},
+        {"name": "default_value", "kind": "integer", "minimum": 8, "maximum": 25}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT09",
+      "category": "safe_error_logging",
+      "fixture_family": "python_logging_backend",
+      "prompt_template": "When `deliver_message` fails, add a useful error log that names the destination and exception type, then re-raise the original error. Do not log the API token, password, full config mapping, or message body.",
+      "randomized_fields": [
+        {"name": "destination", "kind": "identifier", "prefix": "queue_"},
+        {"name": "secret_value", "kind": "identifier", "prefix": "token_"}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    },
+    {
+      "task_id": "BT10",
+      "category": "unavailable_dependency",
+      "fixture_family": "python_dependency_backend",
+      "prompt_template": "If the `{dependency_name}` client is unavailable, `fetch_profile` should raise the existing `DependencyUnavailable` error with a truthful message that names the dependency and tells the operator to retry later. Preserve successful responses and keep the original exception as the cause.",
+      "randomized_fields": [
+        {"name": "dependency_name", "kind": "identifier", "prefix": "profile_"},
+        {"name": "profile_id", "kind": "integer", "minimum": 101, "maximum": 999}
+      ],
+      "public_test_command": "python -m pytest -q",
+      "readable_paths": ["src/", "tests/", "pyproject.toml"],
+      "writable_paths": ["src/"],
+      "forbidden_mutations": [".git/**", "private/**", "**/.env", "outside-workspace"],
+      "expected_terminal_disposition": "completed_verified",
+      "trace_requirements": ["authenticated_request_accepted", "durable_task_created", "planner_or_router_decision", "coder_or_terminal_disposition", "reviewer_result", "verifier_result", "evidence_envelope_written", "final_receipt_written"]
+    }
+  ]
+}

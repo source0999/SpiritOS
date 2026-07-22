@@ -1,0 +1,26 @@
+{
+  "schema_version": "source-proxy-basic-backend-10-public-freeze/v1",
+  "definition_version": "source_proxy_basic_backend_10_v1",
+  "task_count": 10,
+  "required_task_ids": [
+    "BT01",
+    "BT02",
+    "BT03",
+    "BT04",
+    "BT05",
+    "BT06",
+    "BT07",
+    "BT08",
+    "BT09",
+    "BT10"
+  ],
+  "files": {
+    "README.md": "8070e2ee31310fda47bfd9d2e41699e248bf18bf878d0eb363c6e440096cac47",
+    "seed-contract.json": "3cd63815ee021eef6ce4fd5fedbc905c0361a160280cb4fe0fd11a41e089cd75",
+    "tasks.json": "140f2f9a85951aacd6fa6769073561ccc5b6265f0ea196b7704e0c3330570d6c"
+  },
+  "boundary": {
+    "production_visible": ["rendered human prompt", "disposable repository", "public tests", "normal diagnostics"],
+    "private_only": ["raw run secret", "hidden behavioral oracle", "known-good reference", "oracle detail"]
+  }
+}

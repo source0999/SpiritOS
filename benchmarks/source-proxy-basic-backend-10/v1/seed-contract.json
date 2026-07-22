@@ -1,0 +1,22 @@
+{
+  "schema_version": "source-proxy-basic-backend-10-seeding/v1",
+  "definition_version": "source_proxy_basic_backend_10_v1",
+  "algorithm": "HMAC-SHA256",
+  "task_hmac_key": "private run secret bytes",
+  "field_hmac_key": "task digest bytes",
+  "private_run_secret_bytes": 32,
+  "public_commitment": "SHA256(private_run_secret)",
+  "task_scope": "source-proxy-basic-backend-10/v1\\u0000{run_nonce}\\u0000{task_id}",
+  "field_scope": "source-proxy-basic-backend-10/v1/field\\u0000{task_digest}\\u0000{field_name}",
+  "rendering": {
+    "identifier": "configured lowercase prefix plus the first 8 lowercase hex characters of the field HMAC",
+    "integer": "inclusive minimum plus the unsigned field HMAC modulo the configured span",
+    "port": "20000 plus the unsigned field HMAC modulo 30000"
+  },
+  "isolation_rules": [
+    "The private run secret is never written into a fixture, prompt, trace, or public receipt.",
+    "Each task and randomized field has a distinct HMAC domain.",
+    "Only rendered ordinary names, values, and a one-way task-seed commitment may be public.",
+    "Clean reruns use a new private run secret and a new run nonce."
+  ]
+}
