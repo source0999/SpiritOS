@@ -236,6 +236,24 @@ class DeterministicReviewerTests(unittest.TestCase):
         self.assertFalse(report.passed)
         self.assertEqual(report.findings[0].id, "literal_acceptance_missing")
 
+    def test_literal_kind_without_an_explicit_literal_is_not_treated_as_source_text(self) -> None:
+        plan = _plan(
+            criteria=[
+                AcceptanceCriterion(
+                    "behavior-worded-as-literal",
+                    "Render OK.",
+                    "literal",
+                )
+            ],
+        )
+
+        report = review_diff_deterministically(
+            plan,
+            _diff("+export default function Page() { return <main>OK</main>; }"),
+        )
+
+        self.assertTrue(report.passed)
+
     def test_class_fragment_literal_acceptance_checks_fragment_only(self) -> None:
         plan = _plan(
             criteria=[

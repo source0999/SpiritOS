@@ -24,7 +24,11 @@ from source_proxy.coding.participants import (
 )
 
 
-def _artifact(tmp_path: Path) -> dict:
+def _artifact(
+    tmp_path: Path,
+    *,
+    semantic_review_identity: dict | None = None,
+) -> dict:
     target = tmp_path / "fixture.txt"
     target.write_text("after\n", encoding="utf-8")
     approved_diff = "diff --git a/fixture.txt b/fixture.txt\n"
@@ -53,7 +57,90 @@ def _artifact(tmp_path: Path) -> dict:
         generation=1,
         approved_diff=approved_diff,
         execution=execution,
+        provenance={
+            "semantic_review_identity": semantic_review_identity or {},
+        },
     )
+
+
+def _semantic_review_binding(*, invalid_blocked_reasons: bool = False) -> dict:
+    acceptance = [
+        {
+            "id": "response_semantics",
+            "description": "The requested response semantics are implemented.",
+            "kind": "behavioral",
+        }
+    ]
+    plan = {"plan_id": "plan-task-1", "task_id": "task-1"}
+    task_spec = {"task_id": "task-1", "target": "fixture.txt"}
+    exact_feedback = {
+        "blocked_reasons": ["expected status 204 but received 200"],
+    }
+    repair_body = {
+        "schema_version": "coding.semantic-repair-feedback/v1",
+        "parent_attempt_id": "attempt-1",
+        "parent_attempt_seal_sha256": "sha256:" + "1" * 64,
+        "failure_class": "verifier_rejection",
+        "source_lane": "verifier",
+        "exact_feedback": exact_feedback,
+        "feedback_sha256": participant_module._sha256_json(exact_feedback),
+        "blocked_reasons": (
+            ["forged pass"]
+            if invalid_blocked_reasons
+            else exact_feedback["blocked_reasons"]
+        ),
+        "repair_diagnostic_sha256": "sha256:" + "2" * 64,
+    }
+    repair_feedback = dict(repair_body)
+    repair_feedback["repair_feedback_sha256"] = participant_module._sha256_json(
+        repair_body
+    )
+    review_report = {"passed": True, "findings": []}
+    receipt_body = {
+        "schema_version": "coding.preview-review-receipt/v1",
+        "reviewer": "source-proxy.planning.reviewer.deterministic/v1",
+        "task_id": "task-1",
+        "run_id": "run-1",
+        "attempt_id": "attempt-2",
+        "server_plan_id": "plan-task-1",
+        "server_plan_sha256": participant_module._sha256_json(plan),
+        "server_task_spec_sha256": participant_module._sha256_json(task_spec),
+        "acceptance_criteria_sha256": participant_module._sha256_json(acceptance),
+        "acceptance_criterion_ids": ["response_semantics"],
+        "proposed_diff_sha256": hashlib.sha256(
+            b"diff --git a/fixture.txt b/fixture.txt\n"
+        ).hexdigest(),
+        "changed_files": ["fixture.txt"],
+        "deterministic_review_report": review_report,
+        "deterministic_review_report_sha256": participant_module._sha256_json(
+            review_report
+        ),
+        "adapter_preview_evidence": None,
+        "adapter_preview_evidence_sha256": None,
+        "repair_feedback_sha256": repair_feedback["repair_feedback_sha256"],
+        "blocked_reasons": [],
+        "status": "passed",
+    }
+    receipt = dict(receipt_body)
+    receipt["receipt_sha256"] = participant_module._sha256_json(receipt_body)
+    binding_body = {
+        "schema_version": "coding.semantic-review-binding/v1",
+        "server_plan": plan,
+        "server_plan_sha256": participant_module._sha256_json(plan),
+        "server_task_spec": task_spec,
+        "server_task_spec_sha256": participant_module._sha256_json(task_spec),
+        "acceptance_criteria": acceptance,
+        "acceptance_criteria_sha256": participant_module._sha256_json(acceptance),
+        "preview_review_receipt": receipt,
+        "preview_review_receipt_sha256": receipt["receipt_sha256"],
+        "repair_feedback": repair_feedback,
+        "repair_feedback_sha256": repair_feedback["repair_feedback_sha256"],
+    }
+    binding = dict(binding_body)
+    binding["semantic_review_binding_sha256"] = participant_module._sha256_json(
+        binding_body
+    )
+    return binding
 
 
 def _executor_record(artifact: dict) -> dict:
@@ -157,6 +244,50 @@ def test_independent_participants_consume_one_immutable_artifact(tmp_path: Path)
         for path in source_root.rglob("*.pyc")
     }
     assert bytecode_after == bytecode_before
+
+
+def test_reviewer_consumes_bound_acceptance_and_exact_repair_blockers(
+    tmp_path: Path,
+) -> None:
+    semantic = _semantic_review_binding()
+    artifact = _artifact(tmp_path, semantic_review_identity=semantic)
+
+    reviewer = run_coding_reviewer(artifact)
+
+    assert reviewer["passed"] is True
+    assert reviewer["result"]["blocked_reasons"] == []
+    assert reviewer["result"]["semantic_review_input_sha256"] == (
+        participant_module._sha256_json(semantic)
+    )
+    consumed = reviewer["result"]["semantic_review"]
+    assert consumed["status"] == "passed"
+    assert consumed["acceptance_criteria"] == [
+        {
+            "id": "response_semantics",
+            "kind": "behavioral",
+            "description": "The requested response semantics are implemented.",
+            "status": "consumed_from_successful_preview",
+        }
+    ]
+    assert consumed["repair_feedback"] == {
+        "status": "consumed",
+        "source_lane": "verifier",
+        "feedback_sha256": semantic["repair_feedback"]["feedback_sha256"],
+        "repair_feedback_sha256": semantic["repair_feedback_sha256"],
+        "blocked_reasons": ["expected status 204 but received 200"],
+    }
+
+
+def test_reviewer_rejects_rehashed_repair_blocker_drift(tmp_path: Path) -> None:
+    semantic = _semantic_review_binding(invalid_blocked_reasons=True)
+    artifact = _artifact(tmp_path, semantic_review_identity=semantic)
+
+    reviewer = run_coding_reviewer(artifact)
+
+    assert reviewer["passed"] is False
+    assert "semantic_repair_feedback_binding_invalid" in reviewer["result"][
+        "blocked_reasons"
+    ]
 
 
 def test_executor_creates_its_output_and_orchestrator_creates_the_acknowledgement(

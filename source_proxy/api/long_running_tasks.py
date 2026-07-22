@@ -28,6 +28,7 @@ from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_PROMPT_ID,
     TargetPluginResolutionError,
     resolve_target_plugin,
+    server_owned_target_plugin_workspace,
 )
 from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
 from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
@@ -419,7 +420,7 @@ async def long_running_task_target_plugin_proposal(
                 "target_plugin": request.target_plugin,
                 "selected_prompt_id": request.selected_prompt_id,
             },
-            Path.cwd(),
+            server_owned_target_plugin_workspace(request.target_plugin),
         )
         return get_coding_orchestrator().propose_target_plugin(
             task_id,
@@ -470,14 +471,14 @@ async def long_running_task_approval_preview(
                         "target_plugin": request.target_plugin,
                         "selected_prompt_id": request.selected_prompt_id,
                     },
-                    Path.cwd(),
+                    server_owned_target_plugin_workspace(request.target_plugin),
                 ).evidence_identity()
                 if requested_identity != target_plugin_identity:
                     raise CodingOrchestratorError("target_plugin_preview_identity_mismatch")
         elif request.target_plugin is not None:
             target_plugin_identity = resolve_target_plugin(
                 {"target_plugin": request.target_plugin, "selected_prompt_id": request.selected_prompt_id},
-                Path.cwd(),
+                server_owned_target_plugin_workspace(request.target_plugin),
             ).evidence_identity()
         preview = persist_coding_execution_preview(
             task_id=task_id, action=request.action, approved_diff=approved_diff,

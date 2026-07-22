@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from source_proxy.coding.participants import (
@@ -12,9 +13,21 @@ from source_proxy.coding.participants import (
 )
 from source_proxy.coding.recovery import ControlledRecoveryLineage
 from source_proxy.coding.runtime_lane_boundary import RuntimeLaneBoundary
+from source_proxy.diagnostics.status_codes import classify_repair_failure
+from source_proxy.planning.plan import ArchitectPlan, task_spec_from_plan
+from source_proxy.planning.reviewer import review_diff_deterministically
+from source_proxy.target_plugins.adapter import target_adapter_producer_identity_valid
+from source_proxy.target_plugins.selection import expected_target_plugin_id
 
 
 PRODUCTION_PROOF_SCHEMA = "coding.production-proof/v1"
+MAX_CODING_ATTEMPTS = 3
+REPAIR_APPROVAL_DISPOSITION_SCHEMA = "coding.repair-approval-disposition/v1"
+REPAIR_DIAGNOSTIC_SCHEMA = "coding.deterministic-repair-diagnostic/v1"
+REPAIR_DEBUGGER_TRACE_SCHEMA = "coding.deterministic-debugger-trace/v1"
+REPAIR_DEBUGGER_SCRIPT_SHA256 = (
+    "sha256:75a086ea2f8d9a0d6155bdb99eb9024f493ed6657a40580f33fd24c329700b50"
+)
 REQUIRED_ROLES = {
     "coding-executor",
     "coding-reviewer",
@@ -115,6 +128,41 @@ def derive_production_proof(
             failures.append("target_plugin_proposal_run_binding_mismatch")
         if proposal.get("source_head") != expected_source_head:
             failures.append("target_plugin_proposal_source_head_mismatch")
+        plugin_identity = proposal.get("target_plugin_identity")
+        expected_target_source_head = (
+            str(
+                plugin_identity.get("target_source_head")
+                or plugin_identity.get("source_head")
+                or ""
+            )
+            if isinstance(plugin_identity, Mapping)
+            else ""
+        )
+        if (
+            not expected_target_source_head
+            or proposal.get("target_source_head") != expected_target_source_head
+            or expected_target_plugin_id(str(proposal.get("selected_prompt_id") or ""))
+            != (
+                plugin_identity.get("plugin_id")
+                if isinstance(plugin_identity, Mapping)
+                else None
+            )
+        ):
+            failures.append("target_plugin_proposal_target_identity_mismatch")
+        if isinstance(plugin_identity, Mapping) and plugin_identity.get(
+            "plugin_id"
+        ) == "generic-workspace":
+            workspace_state = str(
+                plugin_identity.get("target_workspace_state_sha256") or ""
+            )
+            workspace_paths = plugin_identity.get("target_workspace_state_paths")
+            if (
+                not workspace_state
+                or not isinstance(workspace_paths, list)
+                or proposal.get("target_workspace_state_sha256") != workspace_state
+                or proposal.get("target_workspace_state_paths") != workspace_paths
+            ):
+                failures.append("target_plugin_workspace_state_binding_invalid")
         if proposal.get("status") != "ready_for_approval_preview":
             failures.append("target_plugin_proposal_not_applied_candidate")
     prompt_identity = artifact.get("prompt_identity")
@@ -177,6 +225,15 @@ def derive_production_proof(
         failures.extend(proposal_identity_failures)
         failures.append("immutable_artifact_proposal_identity_mismatch")
 
+    attempt_history, archived_model_invocation_ids = _validated_attempt_history(
+        state,
+        task_id=task_id,
+        run_id=run_id,
+        proposal=proposal,
+        artifact=artifact,
+        failures=failures,
+    )
+
     model_invocations = _state_mapping_list(
         state,
         "model_invocations",
@@ -211,6 +268,8 @@ def derive_production_proof(
     if not isinstance(selected_model, Mapping) or selected_model.get("passed") is not True:
         failures.append("model_invocation_success_missing")
         selected_model = {}
+    if attempt_history and selected_model.get("attempt_id") != state.get("attempt_id"):
+        failures.append("repair_current_model_attempt_binding_invalid")
     if [
         str(item.get("invocation_id") or "")
         for item in model_invocations
@@ -226,9 +285,22 @@ def derive_production_proof(
         and adapter.get("generation_source") == "model"
         and _is_sha256(adapter.get("rendered_prompt_sha256"))
         and _is_sha256(adapter.get("raw_response_sha256"))
+        and target_adapter_producer_identity_valid(adapter)
     ):
         failures.append("canonical_model_provenance_invalid")
         adapter = {}
+    if not (
+        proposal.get("producer_model_alias")
+        == adapter.get("selected_model_alias")
+        and proposal.get("producer_model_provider") == adapter.get("provider")
+        and proposal.get("producer_model_name") == adapter.get("model")
+        and proposal.get("producer_adapter_call_index")
+        == adapter.get("producer_call_index")
+        and selected_model.get("provider")
+        == proposal.get("producer_model_provider")
+        and selected_model.get("model") == proposal.get("producer_model_name")
+    ):
+        failures.append("model_adapter_producer_identity_binding_invalid")
     output_provenance = proposal.get("model_output_provenance")
     if not isinstance(output_provenance, Mapping) or (
         output_provenance.get("target_adapter_provenance") != adapter
@@ -394,6 +466,44 @@ def derive_production_proof(
         )
     ):
         failures.append("model_runtime_output_binding_mismatch")
+    semantic_review_binding = proposal.get("semantic_review_binding")
+    planner_runtime_output = next(
+        (item for item in outputs if item.get("lane_id") == "planner"),
+        None,
+    )
+    planner_runtime_payload = (
+        planner_runtime_output.get("payload")
+        if isinstance(planner_runtime_output, Mapping)
+        and isinstance(planner_runtime_output.get("payload"), Mapping)
+        else None
+    )
+    if not (
+        isinstance(semantic_review_binding, Mapping)
+        and proposal.get("semantic_review_binding_sha256")
+        == semantic_review_binding.get("semantic_review_binding_sha256")
+        and isinstance(planner_runtime_payload, Mapping)
+        and isinstance(semantic_review_binding.get("server_plan"), Mapping)
+        and planner_runtime_payload.get("task_spec")
+        == semantic_review_binding.get("server_plan")
+        and planner_runtime_payload.get("plan_id")
+        == semantic_review_binding.get("server_plan", {}).get("plan_id")
+        and _valid_semantic_review_binding(
+            semantic_review_binding,
+            task_id=task_id,
+            run_id=run_id,
+            attempt_id=str(state.get("attempt_id") or ""),
+            proposed_diff=exact_diff,
+            changed_files=exact_changed_files,
+            repair_request=(
+                state.get("repair_request")
+                if isinstance(state.get("repair_request"), Mapping)
+                else None
+            ),
+        )
+    ):
+        failures.append("semantic_review_binding_invalid")
+    if artifact.get("semantic_review_identity") != semantic_review_binding:
+        failures.append("immutable_artifact_semantic_review_binding_mismatch")
     coder_consumption = next(
         (item for item in consumptions if item.get("output_id") == output_id),
         None,
@@ -411,13 +521,29 @@ def derive_production_proof(
         cartographer_finalization = {}
     acknowledgement = cartographer_finalization.get("downstream_acknowledgement")
     authority_receipt = cartographer_finalization.get("authority_receipt")
+    cartographer_model: Mapping[str, Any] = selected_model
+    if attempt_history and isinstance(acknowledgement, Mapping):
+        archived_cartographer_model = next(
+            (
+                model
+                for seal in attempt_history
+                for attempt_state in [seal.get("attempt_state")]
+                if isinstance(attempt_state, Mapping)
+                for model in _mapping_list(attempt_state.get("model_invocations"))
+                if model.get("invocation_id")
+                == acknowledgement.get("consumer_invocation_id")
+            ),
+            None,
+        )
+        if isinstance(archived_cartographer_model, Mapping):
+            cartographer_model = archived_cartographer_model
     actual_invocation_ids = {
         str(item.get("invocation_id") or "") for item in model_invocations
     } | {
         str(item.get("invocation_id") or "")
         for item in _mapping_list(state.get("participant_records"))
         if item.get("role") == "coding-executor"
-    }
+    } | archived_model_invocation_ids
     if not (
         cartographer_finalization.get("state") == "consumed"
         and isinstance(acknowledgement, Mapping)
@@ -428,13 +554,13 @@ def derive_production_proof(
         and acknowledgement.get("schema_version")
         == "cartographer.downstream-acknowledgement/v2"
         and acknowledgement.get("consumer_output_id")
-        == selected_model.get("output_id")
+        == cartographer_model.get("output_id")
         and acknowledgement.get("consumer_output_sha256")
-        == selected_model.get("output_sha256")
+        == cartographer_model.get("output_sha256")
         and acknowledgement.get("consumer_artifact_sha256")
-        == selected_model.get("artifact_sha256")
+        == cartographer_model.get("artifact_sha256")
         and acknowledgement.get("consumer_completed_at")
-        == selected_model.get("completed_at")
+        == cartographer_model.get("completed_at")
         and acknowledgement.get("consumer_passed") is True
         and acknowledgement.get("transfer_event_id") == transfer.get("transfer_event_id")
         and isinstance(authority_receipt, Mapping)
@@ -538,6 +664,11 @@ def derive_production_proof(
     participants_by_role = {
         str(item.get("role") or ""): item for item in participant_records
     }
+    if not _reviewer_consumed_semantic_review(
+        participants_by_role.get("coding-reviewer"),
+        semantic_review_binding,
+    ):
+        failures.append("reviewer_semantic_review_consumption_invalid")
     for role, lane_id in PARTICIPANT_RUNTIME_LANES.items():
         participant = participants_by_role.get(role)
         lane_output = next(
@@ -639,7 +770,7 @@ def derive_production_proof(
         "reviewer": "completed",
         "verifier": "completed",
         "anti-cheat": "completed",
-        "repair": "skipped",
+        "repair": "completed" if attempt_history else "skipped",
     }
     if (
         state.get("lane_sequence") != list(EXPECTED_LANE_SEQUENCE)
@@ -670,6 +801,21 @@ def derive_production_proof(
         ],
         "artifact_sha256": artifact.get("artifact_sha256"),
         "approval_id": artifact.get("approval_id"),
+        "attempt_id": state.get("attempt_id"),
+        "attempt_count": len(attempt_history) + 1,
+        "failed_attempt_seal_sha256s": [
+            item.get("seal_sha256") for item in attempt_history
+        ],
+        "failed_attempt_repair_diagnostic_sha256s": [
+            item.get("repair_diagnostic", {}).get("diagnostic_sha256")
+            if isinstance(item.get("repair_diagnostic"), Mapping)
+            else None
+            for item in attempt_history
+        ],
+        "failed_attempt_approval_disposition_sha256s": [
+            item.get("disposition_sha256")
+            for item in _mapping_list(state.get("attempt_dispositions"))
+        ],
         "failures": sorted(set(failures)),
         "terminal_proof_eligible": not failures,
         "claim_ceiling": claim_ceiling if not failures else "production_proof_not_established",
@@ -678,10 +824,1246 @@ def derive_production_proof(
     return body
 
 
+def _validated_attempt_history(
+    state: Mapping[str, Any],
+    *,
+    task_id: str,
+    run_id: str,
+    proposal: Mapping[str, Any],
+    artifact: Mapping[str, Any],
+    failures: list[str],
+) -> tuple[list[dict[str, Any]], set[str]]:
+    raw_history = state.get("attempt_history", [])
+    history = _mapping_list(raw_history)
+    raw_dispositions = state.get("attempt_dispositions", [])
+    dispositions = _mapping_list(raw_dispositions)
+    if not isinstance(raw_history, list) or len(history) != len(raw_history):
+        failures.append("repair_attempt_history_invalid")
+        return history, set()
+    repair_request = state.get("repair_request")
+    if not history:
+        if repair_request is not None:
+            failures.append("repair_context_binding_invalid")
+        if raw_dispositions not in (None, []):
+            failures.append("repair_approval_disposition_invalid")
+        return history, set()
+    if len(history) >= MAX_CODING_ATTEMPTS:
+        failures.append("repair_attempt_history_invalid")
+    disposition_invalid = False
+    if (
+        not isinstance(raw_dispositions, list)
+        or len(dispositions) != len(raw_dispositions)
+        or len(dispositions) != len(history)
+    ):
+        failures.append("repair_approval_disposition_invalid")
+        disposition_invalid = True
+
+    invalid = False
+    approval_reused = False
+    strategy_reused = False
+    archived_model_invocation_ids: set[str] = set()
+    approval_ids: list[str] = []
+    repair_strategy_signatures: list[str] = []
+    previous_attempt_id: str | None = None
+    previous_next_attempt_id: str | None = None
+    inherited_cartographer_transfer: Mapping[str, Any] | None = None
+    inherited_cartographer_finalization: Mapping[str, Any] | None = None
+    dispositions_by_seal: dict[str, dict[str, Any]] = {}
+    for disposition in dispositions:
+        body = dict(disposition)
+        recorded = str(body.pop("disposition_sha256", ""))
+        seal_sha256 = str(disposition.get("attempt_seal_sha256") or "")
+        if (
+            disposition.get("schema_version")
+            != REPAIR_APPROVAL_DISPOSITION_SCHEMA
+            or disposition.get("task_id") != task_id
+            or disposition.get("run_id") != run_id
+            or disposition.get("authority_state") != "invalidated"
+            or not seal_sha256
+            or seal_sha256 in dispositions_by_seal
+            or not recorded
+            or _sha256_json(body) != recorded
+        ):
+            invalid = True
+            disposition_invalid = True
+            continue
+        dispositions_by_seal[seal_sha256] = disposition
+    for index, seal in enumerate(history, start=1):
+        body = dict(seal)
+        recorded_seal_sha256 = str(body.pop("seal_sha256", ""))
+        failure = seal.get("failure")
+        repair_diagnostic = seal.get("repair_diagnostic")
+        manifest = seal.get("current_state_manifest")
+        binding = seal.get("approval_binding")
+        attempt_state = seal.get("attempt_state")
+        archived_artifact = (
+            attempt_state.get("immutable_artifact")
+            if isinstance(attempt_state, Mapping)
+            else None
+        )
+        archived_proposal = (
+            attempt_state.get("target_plugin_proposal")
+            if isinstance(attempt_state, Mapping)
+            else None
+        )
+        archived_cartographer_transfer = (
+            attempt_state.get("cartographer_transfer")
+            if isinstance(attempt_state, Mapping)
+            else None
+        )
+        archived_cartographer_finalization = (
+            attempt_state.get("cartographer_finalization")
+            if isinstance(attempt_state, Mapping)
+            else None
+        )
+        attempt_id = str(seal.get("attempt_id") or "")
+        parent_attempt_id = seal.get("parent_attempt_id")
+        if (
+            seal.get("schema_version") != "coding.repair-attempt-seal/v1"
+            or seal.get("task_id") != task_id
+            or seal.get("run_id") != run_id
+            or seal.get("attempt_number") != index
+            or not attempt_id
+            or (index > 1 and parent_attempt_id != previous_attempt_id)
+            or (index > 1 and previous_next_attempt_id != attempt_id)
+            or (index == 1 and parent_attempt_id not in {None, ""})
+            or not recorded_seal_sha256
+            or _sha256_json(body) != recorded_seal_sha256
+            or not isinstance(failure, Mapping)
+            or failure.get("failure_class")
+            not in {"reviewer_rejection", "verifier_rejection"}
+            or failure.get("source_lane") not in {"reviewer", "verifier"}
+            or not isinstance(failure.get("exact_feedback"), Mapping)
+            or _sha256_json(failure.get("exact_feedback"))
+            != failure.get("feedback_sha256")
+            or not isinstance(manifest, Mapping)
+            or _sha256_json(manifest)
+            != seal.get("current_state_manifest_sha256")
+            or not _valid_repair_diagnostic(
+                repair_diagnostic,
+                task_id=task_id,
+                run_id=run_id,
+                attempt_id=attempt_id,
+                failure=failure,
+                current_state_manifest=manifest,
+                current_state_manifest_sha256=str(
+                    seal.get("current_state_manifest_sha256") or ""
+                ),
+                attempt_state=attempt_state,
+            )
+            or not isinstance(binding, Mapping)
+            or not isinstance(attempt_state, Mapping)
+            or not isinstance(archived_artifact, Mapping)
+            or not isinstance(archived_proposal, Mapping)
+            or not isinstance(archived_cartographer_transfer, Mapping)
+            or not isinstance(archived_cartographer_finalization, Mapping)
+        ):
+            invalid = True
+            previous_attempt_id = attempt_id or previous_attempt_id
+            previous_next_attempt_id = str(seal.get("next_attempt_id") or "") or None
+            continue
+        disposition = dispositions_by_seal.get(recorded_seal_sha256)
+        if (
+            not isinstance(disposition, Mapping)
+            or disposition.get("attempt_id") != attempt_id
+            or disposition.get("approval_id") != binding.get("approval_id")
+            or disposition.get("generation") != binding.get("generation")
+        ):
+            invalid = True
+            disposition_invalid = True
+        if index == 1:
+            inherited_cartographer_transfer = archived_cartographer_transfer
+            inherited_cartographer_finalization = archived_cartographer_finalization
+        elif (
+            archived_cartographer_transfer != inherited_cartographer_transfer
+            or archived_cartographer_finalization != inherited_cartographer_finalization
+        ):
+            invalid = True
+        if (
+            manifest.get("schema_version")
+            != "coding.current-applied-state-manifest/v1"
+            or manifest.get("artifact_sha256")
+            != archived_artifact.get("artifact_sha256")
+            or manifest.get("approval_id") != archived_artifact.get("approval_id")
+            or manifest.get("approved_diff_sha256")
+            != archived_artifact.get("approved_diff_sha256")
+            or binding.get("approval_id") != archived_artifact.get("approval_id")
+            or binding.get("generation") != archived_artifact.get("generation")
+            or binding.get("approved_diff_sha256")
+            != archived_artifact.get("approved_diff_sha256")
+            or binding.get("artifact_sha256")
+            != archived_artifact.get("artifact_sha256")
+            or not str(binding.get("proposal_binding_sha256") or "")
+            or binding.get("proposal_binding_sha256")
+            != archived_proposal.get("proposal_binding_sha256")
+            or binding.get("approved_diff_sha256")
+            != archived_proposal.get("approved_diff_sha256")
+            or archived_proposal.get("attempt_id") != attempt_id
+            or not str(archived_proposal.get("original_task") or "").strip()
+        ):
+            invalid = True
+        archived_identity = archived_proposal.get("target_plugin_identity")
+        if manifest.get("live_state_captured") is True:
+            archived_changed = {
+                str(item.get("path") or ""): item
+                for item in archived_artifact.get("changed_files", [])
+                if isinstance(item, Mapping)
+            }
+            live_changed = manifest.get("changed_files")
+            expected_target_head = (
+                str(
+                    archived_identity.get("target_source_head")
+                    or archived_identity.get("source_head")
+                    or ""
+                )
+                if isinstance(archived_identity, Mapping)
+                else ""
+            )
+            if (
+                manifest.get("generation") != archived_artifact.get("generation")
+                or manifest.get("result_sha256")
+                != archived_artifact.get("result_sha256")
+                or manifest.get("workspace_root")
+                != archived_artifact.get("workspace_root")
+                or manifest.get("stable_target_plugin_identity")
+                != _stable_target_plugin_identity(archived_identity)
+                or manifest.get("target_source_head") != expected_target_head
+                or not isinstance(live_changed, list)
+                or any(
+                    not isinstance(item, Mapping)
+                    or str(item.get("path") or "") not in archived_changed
+                    or item.get("expected_sha256_after")
+                    != archived_changed[str(item.get("path") or "")].get(
+                        "sha256_after"
+                    )
+                    or not isinstance(item.get("current_exists"), bool)
+                    or (
+                        item.get("current_exists") is True
+                        and not _is_sha256(item.get("current_sha256"))
+                    )
+                    or (
+                        item.get("current_exists") is False
+                        and item.get("current_sha256") is not None
+                    )
+                    for item in live_changed
+                )
+                or not _valid_archived_failure_evidence(
+                    failure,
+                    attempt_state=attempt_state,
+                )
+            ):
+                invalid = True
+            if isinstance(archived_identity, Mapping) and archived_identity.get(
+                "plugin_id"
+            ) == "generic-workspace" and (
+                not str(manifest.get("target_workspace_state_sha256") or "")
+                or not isinstance(manifest.get("target_workspace_state_paths"), list)
+            ):
+                invalid = True
+        approval_id = str(binding.get("approval_id") or "")
+        if not approval_id or approval_id in approval_ids:
+            approval_reused = True
+        approval_ids.append(approval_id)
+        strategy_signature = str(seal.get("repair_strategy_signature") or "")
+        if index == 1 and strategy_signature:
+            invalid = True
+            repair_strategy_signatures.append(strategy_signature)
+        elif index > 1:
+            if not strategy_signature or strategy_signature in repair_strategy_signatures:
+                strategy_reused = True
+            repair_strategy_signatures.append(strategy_signature)
+        for model in _mapping_list(attempt_state.get("model_invocations")):
+            invocation_id = str(model.get("invocation_id") or "")
+            if invocation_id:
+                archived_model_invocation_ids.add(invocation_id)
+        previous_attempt_id = attempt_id
+        previous_next_attempt_id = str(seal.get("next_attempt_id") or "") or None
+
+    for index, seal in enumerate(history):
+        manifest = seal.get("current_state_manifest")
+        if not isinstance(manifest, Mapping) or manifest.get("live_state_captured") is not True:
+            continue
+        if index + 1 < len(history):
+            next_state = history[index + 1].get("attempt_state")
+            next_proposal = (
+                next_state.get("target_plugin_proposal")
+                if isinstance(next_state, Mapping)
+                else None
+            )
+        else:
+            next_proposal = proposal
+        next_identity = (
+            next_proposal.get("target_plugin_identity")
+            if isinstance(next_proposal, Mapping)
+            else None
+        )
+        if (
+            not isinstance(next_identity, Mapping)
+            or _stable_target_plugin_identity(next_identity)
+            != manifest.get("stable_target_plugin_identity")
+            or str(
+                next_identity.get("target_source_head")
+                or next_identity.get("source_head")
+                or ""
+            )
+            != manifest.get("target_source_head")
+        ):
+            invalid = True
+            continue
+        if next_identity.get("plugin_id") == "generic-workspace" and (
+            next_identity.get("target_workspace_state_sha256")
+            != manifest.get("target_workspace_state_sha256")
+            or list(next_identity.get("target_workspace_state_paths") or [])
+            != list(manifest.get("target_workspace_state_paths") or [])
+        ):
+            invalid = True
+
+    current_attempt_id = str(state.get("attempt_id") or "")
+    current_attempt_number = state.get("attempt_number")
+    if (
+        current_attempt_number != len(history) + 1
+        or current_attempt_number > MAX_CODING_ATTEMPTS
+        or state.get("max_attempts", MAX_CODING_ATTEMPTS) != MAX_CODING_ATTEMPTS
+        or state.get("parent_attempt_id") != previous_attempt_id
+        or history[-1].get("next_attempt_id") != current_attempt_id
+        or not isinstance(repair_request, Mapping)
+    ):
+        invalid = True
+    else:
+        repair_body = dict(repair_request)
+        recorded_repair_sha256 = str(repair_body.pop("repair_input_sha256", ""))
+        latest_failure = history[-1].get("failure")
+        latest_attempt_state = history[-1].get("attempt_state")
+        latest_proposal = (
+            latest_attempt_state.get("target_plugin_proposal")
+            if isinstance(latest_attempt_state, Mapping)
+            else None
+        )
+        latest_disposition = dispositions_by_seal.get(
+            str(history[-1].get("seal_sha256") or "")
+        )
+        if (
+            repair_request.get("schema_version")
+            != "coding.evidence-guided-repair-request/v1"
+            or repair_request.get("task_id") != task_id
+            or repair_request.get("run_id") != run_id
+            or repair_request.get("attempt_id") != current_attempt_id
+            or repair_request.get("parent_attempt_id") != previous_attempt_id
+            or repair_request.get("attempt_number") != current_attempt_number
+            or repair_request.get("max_attempts") != MAX_CODING_ATTEMPTS
+            or repair_request.get("parent_attempt_seal_sha256")
+            != history[-1].get("seal_sha256")
+            or not recorded_repair_sha256
+            or _sha256_json(repair_body) != recorded_repair_sha256
+            or not isinstance(latest_failure, Mapping)
+            or repair_request.get("failure_class")
+            != latest_failure.get("failure_class")
+            or repair_request.get("source_lane") != latest_failure.get("source_lane")
+            or repair_request.get("exact_feedback")
+            != latest_failure.get("exact_feedback")
+            or repair_request.get("feedback_sha256")
+            != latest_failure.get("feedback_sha256")
+            or repair_request.get("current_state_manifest")
+            != history[-1].get("current_state_manifest")
+            or repair_request.get("current_state_manifest_sha256")
+            != history[-1].get("current_state_manifest_sha256")
+            or repair_request.get("repair_diagnostic")
+            != history[-1].get("repair_diagnostic")
+            or repair_request.get("repair_diagnostic_sha256")
+            != (
+                history[-1].get("repair_diagnostic", {}).get(
+                    "diagnostic_sha256"
+                )
+                if isinstance(history[-1].get("repair_diagnostic"), Mapping)
+                else None
+            )
+            or repair_request.get("prior_approval_disposition")
+            != latest_disposition
+            or repair_request.get("prior_approval_disposition_sha256")
+            != (
+                latest_disposition.get("disposition_sha256")
+                if isinstance(latest_disposition, Mapping)
+                else None
+            )
+            or repair_request.get("original_task")
+            != (
+                latest_proposal.get("original_task")
+                if isinstance(latest_proposal, Mapping)
+                else None
+            )
+            or proposal.get("attempt_id") != current_attempt_id
+            or proposal.get("parent_attempt_id") != previous_attempt_id
+            or proposal.get("attempt_number") != current_attempt_number
+            or proposal.get("repair_context") != repair_request
+            or proposal.get("repair_input_sha256") != recorded_repair_sha256
+            or proposal.get("original_task") != repair_request.get("original_task")
+        ):
+            invalid = True
+
+    current_approval_id = str(artifact.get("approval_id") or "")
+    if not current_approval_id or current_approval_id in approval_ids:
+        approval_reused = True
+    current_strategy_signature = str(proposal.get("repair_strategy_signature") or "")
+    if (
+        not current_strategy_signature
+        or current_strategy_signature in repair_strategy_signatures
+    ):
+        strategy_reused = True
+    if artifact.get("approved_diff_sha256") != proposal.get("approved_diff_sha256"):
+        invalid = True
+    if (
+        state.get("cartographer_transfer") != inherited_cartographer_transfer
+        or state.get("cartographer_finalization")
+        != inherited_cartographer_finalization
+    ):
+        invalid = True
+
+    if invalid:
+        failures.append("repair_attempt_history_invalid")
+    if disposition_invalid and "repair_approval_disposition_invalid" not in failures:
+        failures.append("repair_approval_disposition_invalid")
+    if approval_reused:
+        failures.append("repair_approval_reuse_detected")
+    if strategy_reused:
+        failures.append("repair_attempt_strategy_reused")
+    if invalid or approval_reused or strategy_reused:
+        failures.append("repair_context_binding_invalid")
+    return history, archived_model_invocation_ids
+
+
 def _mapping_list(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [dict(item) for item in value if isinstance(item, Mapping)]
+
+
+def _stable_target_plugin_identity(identity: object) -> dict[str, Any]:
+    if not isinstance(identity, Mapping):
+        return {}
+    mutable = {
+        "target_workspace_state_sha256",
+        "target_workspace_state_paths",
+        "approval_id",
+        "approval_generation",
+        "evidence_pointer",
+        "failure_reason",
+        "acknowledgement_status",
+    }
+    return {
+        str(key): json.loads(json.dumps(value, sort_keys=True, default=str))
+        for key, value in identity.items()
+        if str(key) not in mutable
+    }
+
+
+def _structured_repair_diagnostic_input(
+    *,
+    failure_class: str,
+    source_lane: str,
+    exact_feedback: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Recompute the structured diagnostic selection sealed by the orchestrator."""
+
+    def selected(
+        code: str,
+        stage: str,
+        source: str,
+        evidence: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        normalized_code = str(code or failure_class).strip() or failure_class
+        normalized_stage = str(stage or source_lane).strip().lower() or source_lane
+        return {
+            "diagnostic_code": normalized_code,
+            "stage": normalized_stage,
+            "reason": normalized_code,
+            "input_source": source,
+            "structured_evidence": json.loads(
+                json.dumps(dict(evidence), sort_keys=True, default=str)
+            ),
+        }
+
+    def structured_code(record: Mapping[str, Any]) -> str:
+        for key in (
+            "diagnostic_code",
+            "reason_code",
+            "error_code",
+            "failure_kind",
+            "failure_class",
+        ):
+            value = record.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return ""
+
+    def structured_stage(record: Mapping[str, Any], default: str) -> str:
+        for key in ("diagnostic_stage", "failure_stage", "stage"):
+            value = record.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip().lower()
+        category = str(
+            record.get("failure_category")
+            or record.get("category")
+            or record.get("failure_kind")
+            or record.get("failure_class")
+            or ""
+        ).strip().lower()
+        if any(
+            token in category
+            for token in ("environment", "dependency", "service", "tool")
+        ):
+            return "environment"
+        if "runtime" in category:
+            return "runtime"
+        if any(token in category for token in ("test", "assertion", "fixture")):
+            return "tests"
+        return default
+
+    direct_code = structured_code(exact_feedback)
+    if direct_code:
+        return selected(
+            direct_code,
+            structured_stage(exact_feedback, source_lane),
+            "exact_feedback",
+            exact_feedback,
+        )
+
+    post_apply = exact_feedback.get("post_apply_verification")
+    if isinstance(post_apply, Mapping):
+        post_code = structured_code(post_apply)
+        generic_post_codes = {
+            "post_apply_verification_failed",
+            "verification_failed",
+            "server_verification_not_verified",
+        }
+        if post_code and post_code.lower() not in generic_post_codes:
+            return selected(
+                post_code,
+                structured_stage(post_apply, source_lane),
+                "post_apply_verification",
+                post_apply,
+            )
+        checks = post_apply.get("checks")
+        if isinstance(checks, list):
+            for index, check in enumerate(checks):
+                if not isinstance(check, Mapping) or str(
+                    check.get("status") or ""
+                ).strip().lower() != "failed":
+                    continue
+                check_code = structured_code(check)
+                check_stage = structured_stage(check, "tests")
+                if not check_code:
+                    exit_code = check.get("exit_code")
+                    check_id = str(
+                        check.get("id") or check.get("command_text") or "unknown"
+                    ).strip()
+                    if isinstance(exit_code, int) and not isinstance(exit_code, bool) and exit_code == 124:
+                        check_code = f"test_timeout:{check_id}"
+                        check_stage = "environment"
+                    else:
+                        check_code = f"visible_tests_failed:{check_id}"
+                return selected(
+                    check_code,
+                    check_stage,
+                    f"post_apply_verification.checks[{index}]",
+                    check,
+                )
+        browser = post_apply.get("browser_evidence")
+        if isinstance(browser, Mapping) and any(
+            str(browser.get(key) or "").strip().lower() == "failed"
+            for key in (
+                "status",
+                "browser_verification_status",
+                "storefront_runtime_status",
+            )
+        ):
+            return selected(
+                structured_code(browser) or "browser_runtime_failed",
+                structured_stage(browser, "runtime"),
+                "post_apply_verification.browser_evidence",
+                browser,
+            )
+        snapshot = post_apply.get("snapshot_verification")
+        if isinstance(snapshot, Mapping):
+            issue_key = next(
+                (
+                    str(key)
+                    for key, value in snapshot.items()
+                    if str(key).endswith("_issue")
+                    and isinstance(value, str)
+                    and value.strip()
+                ),
+                "",
+            )
+            if issue_key:
+                return selected(
+                    str(snapshot[issue_key]),
+                    "tests",
+                    f"post_apply_verification.snapshot_verification.{issue_key}",
+                    {issue_key: snapshot[issue_key]},
+                )
+        if post_code:
+            return selected(
+                post_code,
+                structured_stage(post_apply, source_lane),
+                "post_apply_verification",
+                post_apply,
+            )
+
+    participant_result = exact_feedback.get("participant_result")
+    if isinstance(participant_result, Mapping):
+        result_code = structured_code(participant_result)
+        if result_code:
+            return selected(
+                result_code,
+                structured_stage(participant_result, source_lane),
+                "participant_result",
+                participant_result,
+            )
+        findings = participant_result.get("findings")
+        if isinstance(findings, list):
+            finding = next(
+                (
+                    item.strip()
+                    for item in findings
+                    if isinstance(item, str)
+                    and item.strip()
+                    and not any(character.isspace() for character in item.strip())
+                ),
+                "",
+            )
+            if finding:
+                return selected(
+                    finding,
+                    source_lane,
+                    "participant_result.findings[0]",
+                    {"finding": finding},
+                )
+
+    return selected(
+        failure_class,
+        source_lane,
+        "orchestrator_failure_binding",
+        {"failure_class": failure_class, "source_lane": source_lane},
+    )
+
+
+def _repair_classification_details(
+    classification_input: Mapping[str, Any],
+    *,
+    feedback_sha256: str,
+    current_state_manifest_sha256: str,
+) -> dict[str, Any]:
+    return {
+        "feedback_sha256": feedback_sha256,
+        "current_state_manifest_sha256": current_state_manifest_sha256,
+        "classification_input_sha256": _sha256_json(classification_input),
+        "input_source": classification_input.get("input_source"),
+        "structured_evidence_sha256": _sha256_json(
+            classification_input.get("structured_evidence")
+        ),
+    }
+
+
+def _expected_debugger_input_payload(
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    classification_input: Mapping[str, Any],
+    exact_failure_output: Mapping[str, Any],
+    feedback_sha256: str,
+    current_state_manifest: Mapping[str, Any],
+    current_state_manifest_sha256: str,
+) -> tuple[str, dict[str, Any]] | None:
+    workspace_text = str(current_state_manifest.get("workspace_root") or "").strip()
+    changed_files = current_state_manifest.get("changed_files")
+    if (
+        not workspace_text
+        or not isinstance(changed_files, list)
+        or len(changed_files) > 128
+    ):
+        return None
+    workspace = Path(workspace_text).resolve()
+    files: list[dict[str, Any]] = []
+    for item in changed_files:
+        if not isinstance(item, Mapping):
+            return None
+        relative = str(item.get("path") or "").replace("\\", "/").strip()
+        if not relative or Path(relative).is_absolute() or ".." in Path(relative).parts:
+            return None
+        resolved = (workspace / relative).resolve()
+        try:
+            resolved.relative_to(workspace)
+        except ValueError:
+            return None
+        files.append(
+            {
+                "path": relative,
+                "absolute_path": str(resolved),
+                "expected_exists": item.get("current_exists") is True,
+                "expected_sha256": item.get("current_sha256"),
+            }
+        )
+    return str(workspace), {
+        "schema_version": "coding.deterministic-debugger-input/v1",
+        "task_id": task_id,
+        "run_id": run_id,
+        "attempt_id": attempt_id,
+        "classification_input": json.loads(
+            json.dumps(dict(classification_input), sort_keys=True, default=str)
+        ),
+        "exact_failure_output": json.loads(
+            json.dumps(dict(exact_failure_output), sort_keys=True, default=str)
+        ),
+        "feedback_sha256": feedback_sha256,
+        "current_state_manifest_sha256": current_state_manifest_sha256,
+        "files": files,
+    }
+
+
+def _valid_deterministic_debugger_trace(
+    trace: object,
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    classification_input: Mapping[str, Any],
+    exact_failure_output: Mapping[str, Any],
+    feedback_sha256: str,
+    current_state_manifest: Mapping[str, Any],
+    current_state_manifest_sha256: str,
+) -> bool:
+    if not isinstance(trace, Mapping):
+        return False
+    expected = _expected_debugger_input_payload(
+        task_id=task_id,
+        run_id=run_id,
+        attempt_id=attempt_id,
+        classification_input=classification_input,
+        exact_failure_output=exact_failure_output,
+        feedback_sha256=feedback_sha256,
+        current_state_manifest=current_state_manifest,
+        current_state_manifest_sha256=current_state_manifest_sha256,
+    )
+    if expected is None:
+        return False
+    workspace, expected_payload = expected
+    body = dict(trace)
+    recorded_sha256 = str(body.pop("trace_sha256", ""))
+    argv = trace.get("argv")
+    stdout = trace.get("stdout")
+    stderr = trace.get("stderr")
+    findings = trace.get("findings")
+    stdin_text = json.dumps(
+        expected_payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    if not (
+        isinstance(argv, list)
+        and len(argv) == 4
+        and isinstance(argv[0], str)
+        and bool(argv[0])
+        and argv[1:3] == ["-I", "-c"]
+        and isinstance(argv[3], str)
+        and _sha256_text(argv[3]) == REPAIR_DEBUGGER_SCRIPT_SHA256
+        and isinstance(stdout, str)
+        and isinstance(stderr, str)
+        and isinstance(findings, Mapping)
+    ):
+        return False
+    try:
+        parsed_stdout = json.loads(stdout)
+    except json.JSONDecodeError:
+        return False
+    post_apply = exact_failure_output.get("post_apply_verification")
+    expected_failed_checks = [
+        dict(check)
+        for check in (
+            post_apply.get("checks", []) if isinstance(post_apply, Mapping) else []
+        )
+        if isinstance(check, Mapping)
+        and str(check.get("status") or "").strip().lower() == "failed"
+    ]
+    finding_files = findings.get("files")
+    expected_files = expected_payload["files"]
+    if not isinstance(finding_files, list) or len(finding_files) != len(expected_files):
+        return False
+    for result, expected_file in zip(finding_files, expected_files, strict=True):
+        if (
+            not isinstance(result, Mapping)
+            or result.get("path") != expected_file.get("path")
+            or result.get("expected_exists")
+            != expected_file.get("expected_exists")
+            or result.get("expected_sha256")
+            != expected_file.get("expected_sha256")
+            or result.get("state_matches") is not True
+            or result.get("python_syntax")
+            not in {"passed", "failed", "not_applicable"}
+        ):
+            return False
+    exit_status = trace.get("exit_status")
+    probe_passed = findings.get("probe_passed")
+    return bool(
+        trace.get("schema_version") == REPAIR_DEBUGGER_TRACE_SCHEMA
+        and trace.get("tool_kind") == "deterministic_python_ast_state_probe"
+        and trace.get("deterministic_debugger_invoked") is True
+        and trace.get("model_debugger_invoked") is False
+        and trace.get("task_id") == task_id
+        and trace.get("run_id") == run_id
+        and trace.get("attempt_id") == attempt_id
+        and trace.get("argv_sha256") == _sha256_json(argv)
+        and trace.get("tool_script_sha256") == REPAIR_DEBUGGER_SCRIPT_SHA256
+        and trace.get("cwd") == workspace
+        and trace.get("input_payload") == expected_payload
+        and trace.get("input_sha256") == _sha256_text(stdin_text)
+        and trace.get("feedback_sha256") == feedback_sha256
+        and trace.get("current_state_manifest_sha256")
+        == current_state_manifest_sha256
+        and isinstance(exit_status, int)
+        and not isinstance(exit_status, bool)
+        and exit_status in {0, 1}
+        and trace.get("timed_out") is False
+        and isinstance(trace.get("duration_ms"), int)
+        and not isinstance(trace.get("duration_ms"), bool)
+        and trace.get("duration_ms") >= 0
+        and trace.get("stdout_sha256") == _sha256_text(stdout)
+        and trace.get("stderr_sha256") == _sha256_text(stderr)
+        and parsed_stdout == findings
+        and findings.get("schema_version")
+        == "coding.deterministic-debugger-findings/v1"
+        and findings.get("classification_input") == classification_input
+        and findings.get("failed_checks") == expected_failed_checks
+        and isinstance(probe_passed, bool)
+        and probe_passed is (exit_status == 0)
+        and trace.get("findings_sha256") == _sha256_json(findings)
+        and recorded_sha256
+        and _sha256_json(body) == recorded_sha256
+    )
+
+
+def _valid_repair_diagnostic(
+    diagnostic: object,
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    failure: Mapping[str, Any],
+    current_state_manifest: Mapping[str, Any],
+    current_state_manifest_sha256: str,
+    attempt_state: object,
+) -> bool:
+    if not isinstance(diagnostic, Mapping) or not isinstance(attempt_state, Mapping):
+        return False
+    body = dict(diagnostic)
+    recorded_sha256 = str(body.pop("diagnostic_sha256", ""))
+    feedback_sha256 = str(failure.get("feedback_sha256") or "")
+    failure_class = str(failure.get("failure_class") or "")
+    source_lane = str(failure.get("source_lane") or "")
+    feedback = failure.get("exact_feedback")
+    if not isinstance(feedback, Mapping):
+        return False
+    expected_input = _structured_repair_diagnostic_input(
+        failure_class=failure_class,
+        source_lane=source_lane,
+        exact_feedback=feedback,
+    )
+    expected_classification = classify_repair_failure(
+        diagnostic_code=expected_input["diagnostic_code"],
+        stage=expected_input["stage"],
+        reason=expected_input["reason"],
+        details=_repair_classification_details(
+            expected_input,
+            feedback_sha256=feedback_sha256,
+            current_state_manifest_sha256=current_state_manifest_sha256,
+        ),
+    ).to_dict()
+    debugger_required = expected_classification.get("failure_kind") in {
+        "runtime_error",
+        "test_environment_error",
+    }
+    debugger_trace = diagnostic.get("debugger_trace")
+    debugger_trace_valid = (
+        _valid_deterministic_debugger_trace(
+            debugger_trace,
+            task_id=task_id,
+            run_id=run_id,
+            attempt_id=attempt_id,
+            classification_input=expected_input,
+            exact_failure_output=feedback,
+            feedback_sha256=feedback_sha256,
+            current_state_manifest=current_state_manifest,
+            current_state_manifest_sha256=current_state_manifest_sha256,
+        )
+        if debugger_required
+        else debugger_trace is None
+    )
+    debugger_events = [
+        item
+        for item in _mapping_list(attempt_state.get("causal_events"))
+        if item.get("event_type") == "deterministic_debugger_executed"
+        and item.get("lane_id") == source_lane
+    ]
+    debugger_event_valid = not debugger_events and not debugger_required
+    if debugger_required and len(debugger_events) == 1 and isinstance(
+        debugger_trace, Mapping
+    ):
+        debugger_detail = debugger_events[0].get("detail")
+        debugger_event_valid = bool(
+            isinstance(debugger_detail, Mapping)
+            and debugger_detail.get("trace_sha256")
+            == debugger_trace.get("trace_sha256")
+            and debugger_detail.get("argv_sha256")
+            == debugger_trace.get("argv_sha256")
+            and debugger_detail.get("input_sha256")
+            == debugger_trace.get("input_sha256")
+            and debugger_detail.get("stdout_sha256")
+            == debugger_trace.get("stdout_sha256")
+            and debugger_detail.get("stderr_sha256")
+            == debugger_trace.get("stderr_sha256")
+            and debugger_detail.get("findings_sha256")
+            == debugger_trace.get("findings_sha256")
+            and debugger_detail.get("exit_status")
+            == debugger_trace.get("exit_status")
+            and debugger_detail.get("timed_out")
+            == debugger_trace.get("timed_out")
+            and debugger_detail.get("duration_ms")
+            == debugger_trace.get("duration_ms")
+            and debugger_detail.get("model_debugger_invoked") is False
+        )
+    event = next(
+        (
+            item
+            for item in _mapping_list(attempt_state.get("causal_events"))
+            if item.get("event_type")
+            == "deterministic_repair_diagnostic_recorded"
+            and item.get("lane_id") == source_lane
+            and isinstance(item.get("detail"), Mapping)
+            and item["detail"].get("diagnostic_sha256") == recorded_sha256
+        ),
+        None,
+    )
+    detail = event.get("detail") if isinstance(event, Mapping) else None
+    return bool(
+        diagnostic.get("schema_version") == REPAIR_DIAGNOSTIC_SCHEMA
+        and diagnostic.get("hook") == "deterministic_failure_classifier"
+        and diagnostic.get("model_debugger_invoked") is False
+        and diagnostic.get("task_id") == task_id
+        and diagnostic.get("run_id") == run_id
+        and diagnostic.get("attempt_id") == attempt_id
+        and diagnostic.get("failure_class") == failure_class
+        and diagnostic.get("source_lane") == source_lane
+        and diagnostic.get("classification_input") == expected_input
+        and diagnostic.get("classification") == expected_classification
+        and diagnostic.get("deterministic_debugger_invoked")
+        is debugger_required
+        and debugger_trace_valid
+        and debugger_event_valid
+        and diagnostic.get("exact_failure_output")
+        == failure.get("exact_feedback")
+        and diagnostic.get("exact_failure_output_sha256") == feedback_sha256
+        and diagnostic.get("current_state_manifest") == current_state_manifest
+        and diagnostic.get("current_state_manifest_sha256")
+        == current_state_manifest_sha256
+        and _sha256_json(current_state_manifest)
+        == current_state_manifest_sha256
+        and recorded_sha256
+        and _sha256_json(body) == recorded_sha256
+        and isinstance(detail, Mapping)
+        and detail.get("failure_kind")
+        == expected_classification.get("failure_kind")
+        and detail.get("failure_class")
+        == expected_classification.get("failure_class")
+        and detail.get("feedback_sha256") == feedback_sha256
+        and detail.get("current_state_manifest_sha256")
+        == current_state_manifest_sha256
+        and detail.get("deterministic_debugger_invoked")
+        is debugger_required
+        and detail.get("debugger_trace_sha256")
+        == (
+            debugger_trace.get("trace_sha256")
+            if isinstance(debugger_trace, Mapping)
+            else None
+        )
+        and detail.get("model_debugger_invoked") is False
+    )
+
+
+def _valid_archived_failure_evidence(
+    failure: Mapping[str, Any],
+    *,
+    attempt_state: Mapping[str, Any],
+) -> bool:
+    feedback = failure.get("exact_feedback")
+    if not isinstance(feedback, Mapping):
+        return False
+    source_lane = str(failure.get("source_lane") or "")
+    expected_role = {
+        "reviewer": "coding-reviewer",
+        "verifier": "coding-verifier",
+    }.get(source_lane)
+    participant_id = str(feedback.get("participant_invocation_id") or "")
+    runtime_output_id = str(feedback.get("runtime_output_id") or "")
+    participant = next(
+        (
+            item
+            for item in _mapping_list(attempt_state.get("participant_records"))
+            if item.get("role") == expected_role
+            and item.get("invocation_id") == participant_id
+        ),
+        None,
+    )
+    runtime_output = next(
+        (
+            item
+            for item in _mapping_list(attempt_state.get("runtime_outputs"))
+            if item.get("lane_id") == source_lane
+            and item.get("output_id") == runtime_output_id
+        ),
+        None,
+    )
+    if (
+        not expected_role
+        or not participant_id
+        or not runtime_output_id
+        or not isinstance(participant, Mapping)
+        or not isinstance(runtime_output, Mapping)
+        or runtime_output.get("producer_invocation_id") != participant_id
+        or feedback.get("participant_result") != participant.get("result")
+    ):
+        return False
+    result = participant.get("result")
+    payload = runtime_output.get("payload")
+    if not isinstance(result, Mapping) or not isinstance(payload, Mapping):
+        return False
+    if source_lane == "reviewer":
+        return (
+            list(feedback.get("findings") or []) == list(result.get("findings") or [])
+            and list(feedback.get("blocked_reasons") or [])
+            == list(result.get("blocked_reasons") or [])
+            and list(payload.get("findings") or []) == list(result.get("findings") or [])
+            and list(payload.get("blocked_reasons") or [])
+            == list(result.get("blocked_reasons") or [])
+            and payload.get("semantic_review") == result.get("semantic_review")
+            and payload.get("semantic_review_input_sha256")
+            == result.get("semantic_review_input_sha256")
+            and payload.get("passed") is False
+        )
+    return (
+        str(feedback.get("verdict") or "") == str(result.get("verdict") or "")
+        and list(feedback.get("checks") or []) == list(result.get("checks") or [])
+        and str(payload.get("verdict") or "") == str(result.get("verdict") or "")
+        and list(payload.get("checks") or []) == list(result.get("checks") or [])
+    )
+
+
+def _semantic_repair_feedback_binding(
+    repair_request: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(repair_request, Mapping):
+        return None
+    exact_feedback = repair_request.get("exact_feedback")
+    if (
+        not isinstance(exact_feedback, Mapping)
+        or repair_request.get("feedback_sha256") != _sha256_json(exact_feedback)
+    ):
+        raise ValueError("semantic_repair_feedback_invalid")
+    body = {
+        "schema_version": "coding.semantic-repair-feedback/v1",
+        "parent_attempt_id": repair_request.get("parent_attempt_id"),
+        "parent_attempt_seal_sha256": repair_request.get(
+            "parent_attempt_seal_sha256"
+        ),
+        "failure_class": repair_request.get("failure_class"),
+        "source_lane": repair_request.get("source_lane"),
+        "exact_feedback": json.loads(
+            json.dumps(dict(exact_feedback), sort_keys=True, default=str)
+        ),
+        "feedback_sha256": repair_request.get("feedback_sha256"),
+        "blocked_reasons": list(exact_feedback.get("blocked_reasons") or []),
+        "repair_diagnostic_sha256": repair_request.get(
+            "repair_diagnostic_sha256"
+        ),
+    }
+    binding = dict(body)
+    binding["repair_feedback_sha256"] = _sha256_json(body)
+    return binding
+
+
+def _valid_semantic_review_binding(
+    binding: object,
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    proposed_diff: str,
+    changed_files: list[str],
+    repair_request: Mapping[str, Any] | None,
+) -> bool:
+    if not isinstance(binding, Mapping):
+        return False
+    body = dict(binding)
+    recorded_binding_sha256 = str(
+        body.pop("semantic_review_binding_sha256", "")
+    )
+    plan_payload = binding.get("server_plan")
+    task_spec = binding.get("server_task_spec")
+    acceptance = binding.get("acceptance_criteria")
+    receipt = binding.get("preview_review_receipt")
+    repair_feedback = binding.get("repair_feedback")
+    if not (
+        isinstance(plan_payload, Mapping)
+        and isinstance(task_spec, Mapping)
+        and isinstance(acceptance, list)
+        and acceptance
+        and isinstance(receipt, Mapping)
+    ):
+        return False
+    try:
+        plan = ArchitectPlan.from_dict(dict(plan_payload))
+        expected_task_spec = task_spec_from_plan(plan).to_dict()
+        review_report = review_diff_deterministically(plan, proposed_diff).to_dict()
+        expected_repair_feedback = _semantic_repair_feedback_binding(
+            repair_request
+        )
+    except Exception:
+        return False
+    expected_acceptance = [
+        {"id": item.id, "description": item.description, "kind": item.kind}
+        for item in plan.coder_packet.acceptance_criteria
+    ]
+    receipt_body = dict(receipt)
+    recorded_receipt_sha256 = str(receipt_body.pop("receipt_sha256", ""))
+    adapter_evidence = receipt.get("adapter_preview_evidence")
+    adapter_evidence_valid = (
+        isinstance(adapter_evidence, Mapping)
+        and receipt.get("adapter_preview_evidence_sha256")
+        == _sha256_json(adapter_evidence)
+        and isinstance(adapter_evidence.get("attempt"), Mapping)
+        and adapter_evidence["attempt"].get("proposed_diff_sha256")
+        == receipt.get("proposed_diff_sha256")
+        and adapter_evidence["attempt"].get("preview_status") != "blocked"
+        and isinstance(
+            adapter_evidence["attempt"].get("git_apply_check"), Mapping
+        )
+        and adapter_evidence["attempt"]["git_apply_check"].get("passed")
+        is True
+    ) or (
+        adapter_evidence is None
+        and receipt.get("adapter_preview_evidence_sha256") is None
+    )
+    expected_repair_sha256 = (
+        expected_repair_feedback.get("repair_feedback_sha256")
+        if isinstance(expected_repair_feedback, Mapping)
+        else None
+    )
+    return bool(
+        binding.get("schema_version") == "coding.semantic-review-binding/v1"
+        and plan.task_id == task_id
+        and plan.coder_packet.target_file.path in changed_files
+        and list(acceptance) == expected_acceptance
+        and dict(task_spec) == expected_task_spec
+        and binding.get("server_plan_sha256") == _sha256_json(plan_payload)
+        and binding.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and binding.get("acceptance_criteria_sha256")
+        == _sha256_json(acceptance)
+        and receipt.get("schema_version")
+        == "coding.preview-review-receipt/v1"
+        and receipt.get("reviewer")
+        == "source-proxy.planning.reviewer.deterministic/v1"
+        and receipt.get("task_id") == task_id
+        and receipt.get("run_id") == run_id
+        and receipt.get("attempt_id") == attempt_id
+        and receipt.get("server_plan_id") == plan.plan_id
+        and receipt.get("server_plan_sha256") == _sha256_json(plan_payload)
+        and receipt.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and receipt.get("acceptance_criteria_sha256")
+        == _sha256_json(acceptance)
+        and receipt.get("acceptance_criterion_ids")
+        == [str(item.get("id") or "") for item in acceptance]
+        and receipt.get("proposed_diff_sha256")
+        == hashlib.sha256(proposed_diff.encode("utf-8")).hexdigest()
+        and receipt.get("changed_files") == changed_files
+        and receipt.get("deterministic_review_report") == review_report
+        and receipt.get("deterministic_review_report_sha256")
+        == _sha256_json(review_report)
+        and receipt.get("repair_feedback_sha256") == expected_repair_sha256
+        and receipt.get("status") == "passed"
+        and receipt.get("blocked_reasons") == []
+        and review_report.get("passed") is True
+        and repair_feedback == expected_repair_feedback
+        and binding.get("repair_feedback_sha256") == expected_repair_sha256
+        and adapter_evidence_valid
+        and recorded_receipt_sha256
+        and _sha256_json(receipt_body) == recorded_receipt_sha256
+        and binding.get("preview_review_receipt_sha256")
+        == recorded_receipt_sha256
+        and recorded_binding_sha256
+        and _sha256_json(body) == recorded_binding_sha256
+    )
+
+
+def _reviewer_consumed_semantic_review(
+    participant: Mapping[str, Any] | None,
+    binding: object,
+) -> bool:
+    if not isinstance(participant, Mapping) or not isinstance(binding, Mapping):
+        return False
+    result = participant.get("result")
+    acceptance = binding.get("acceptance_criteria")
+    if not isinstance(result, Mapping) or not isinstance(acceptance, list):
+        return False
+    repair_feedback = binding.get("repair_feedback")
+    consumed_repair_feedback: dict[str, Any] | None = None
+    if isinstance(repair_feedback, Mapping):
+        exact_feedback = repair_feedback.get("exact_feedback")
+        if not isinstance(exact_feedback, Mapping):
+            return False
+        consumed_repair_feedback = {
+            "status": "consumed",
+            "source_lane": repair_feedback.get("source_lane"),
+            "feedback_sha256": repair_feedback.get("feedback_sha256"),
+            "repair_feedback_sha256": repair_feedback.get(
+                "repair_feedback_sha256"
+            ),
+            "blocked_reasons": list(exact_feedback.get("blocked_reasons") or []),
+        }
+    expected_semantic_review = {
+        "bound": True,
+        "status": "passed",
+        "semantic_review_binding_sha256": binding.get(
+            "semantic_review_binding_sha256"
+        ),
+        "server_plan_sha256": binding.get("server_plan_sha256"),
+        "server_task_spec_sha256": binding.get("server_task_spec_sha256"),
+        "acceptance_criteria_sha256": binding.get(
+            "acceptance_criteria_sha256"
+        ),
+        "preview_review_receipt_sha256": binding.get(
+            "preview_review_receipt_sha256"
+        ),
+        "acceptance_criteria": [
+            {
+                "id": str(item.get("id") or ""),
+                "kind": str(item.get("kind") or ""),
+                "description": str(item.get("description") or ""),
+                "status": "consumed_from_successful_preview",
+            }
+            for item in acceptance
+            if isinstance(item, Mapping)
+        ],
+        "repair_feedback": consumed_repair_feedback,
+    }
+    return bool(
+        participant.get("passed") is True
+        and result.get("passed") is True
+        and result.get("findings") == []
+        and result.get("blocked_reasons") == []
+        and result.get("semantic_review_input_sha256") == _sha256_json(binding)
+        and result.get("semantic_review") == expected_semantic_review
+    )
 
 
 def _state_mapping_list(
@@ -764,6 +2146,11 @@ def _runtime_output_matches_participant(
         expected = {
             "passed": bool(participant.get("passed")),
             "findings": list(result.get("findings") or []),
+            "blocked_reasons": list(result.get("blocked_reasons") or []),
+            "semantic_review": dict(result.get("semantic_review") or {}),
+            "semantic_review_input_sha256": result.get(
+                "semantic_review_input_sha256"
+            ),
         }
     elif role == "coding-verifier":
         expected = {
@@ -867,3 +2254,7 @@ def _sha256_json(value: Any) -> str:
         sort_keys=True,
     ).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _sha256_text(value: str) -> str:
+    return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"

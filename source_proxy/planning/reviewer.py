@@ -90,7 +90,10 @@ def review_diff_deterministically(plan: ArchitectPlan, diff: str) -> ReviewRepor
     for criterion in plan.coder_packet.acceptance_criteria:
         if criterion.kind != "literal":
             continue
-        if not any(required in new_content for required in _literal_needles(criterion.description)):
+        literal_needles = _literal_needles(criterion.description)
+        if literal_needles and not any(
+            required in new_content for required in literal_needles
+        ):
             findings.append(
                 ReviewFinding("literal_acceptance_missing", criterion.description, target_path)
             )
@@ -296,7 +299,11 @@ def _literal_needles(description: str) -> list[str]:
         value = class_fragment.group("value").strip("`'\" ")
         if value:
             values.append(value)
-    return values or [description]
+    # A literal criterion must encode the literal explicitly (quoted text or
+    # the established ``class fragment`` form).  Treating an imperative such
+    # as "Render OK." as the required source bytes confuses behavior wording
+    # with a literal contract and creates an impossible reviewer retry.
+    return values
 
 
 def _import_is_preserved(content: str, import_name: str) -> bool:

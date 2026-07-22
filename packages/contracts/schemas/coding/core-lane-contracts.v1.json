@@ -44,7 +44,7 @@
     "owner": "source-proxy-review",
     "authority_class": "review",
     "input_schema": {"type": "object", "properties": {"plan_id": {"type": "string"}, "diff_hash": {"type": "string"}}, "required": ["plan_id", "diff_hash"], "additionalProperties": false},
-    "output_schema": {"type": "object", "properties": {"passed": {"type": "boolean"}, "findings": {"type": "array"}}, "required": ["passed", "findings"], "additionalProperties": false},
+    "output_schema": {"type": "object", "properties": {"passed": {"type": "boolean"}, "findings": {"type": "array"}, "blocked_reasons": {"type": "array"}, "semantic_review": {"type": "object"}, "semantic_review_input_sha256": {"type": ["string", "null"]}}, "required": ["passed", "findings", "blocked_reasons", "semantic_review", "semantic_review_input_sha256"], "additionalProperties": false},
     "failure_schema": {"type": "object", "properties": {"reason_code": {"type": "string"}}, "required": ["reason_code"], "additionalProperties": false},
     "acknowledgement_schema": {"type": "object", "properties": {"approval_id": {"type": "string"}, "generation": {"type": "integer"}}, "required": ["approval_id", "generation"], "additionalProperties": false},
     "evidence_schema": {"type": "object", "properties": {"review_hash": {"type": "string"}}, "required": ["review_hash"], "additionalProperties": false},

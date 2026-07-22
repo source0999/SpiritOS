@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -573,6 +574,18 @@ def test_target_plugin_model_failure_and_noncanonical_fallback_share_one_durable
 
 
 def _canonical_target_plugin_result(target: str) -> dict[str, Any]:
+    producer_call = {
+        "call_index": 1,
+        "stage": "coder",
+        "completed": True,
+        "raw_response_observed": True,
+        "rendered_prompt_sha256": "1" * 64,
+        "raw_response_sha256": "2" * 64,
+        "model_alias": "openai",
+        "provider": "openai",
+        "model": "openai/test-coder",
+        "routed_model": "openai/test-coder",
+    }
     provenance = {
         "schema_version": "spiritos-target-adapter-provenance/v1",
         "rendered_prompt_sha256": "1" * 64,
@@ -583,8 +596,13 @@ def _canonical_target_plugin_result(target: str) -> dict[str, Any]:
         "generation_source": "model",
         "trust_status": "canonical_router_model_output_validated",
         "terminal_proof_eligible": True,
+        "producer_call_index": 1,
+        "producer_identity_bound": True,
+        "selected_model_alias": "openai",
         "provider": "openai",
         "model": "openai/test-coder",
+        "routed_model": "openai/test-coder",
+        "calls": [producer_call],
     }
     return {
         "proposed_diff": (
@@ -606,17 +624,65 @@ def _canonical_target_plugin_result(target: str) -> dict[str, Any]:
     }
 
 
+def test_model_participant_uses_adapter_final_producer_identity_not_configured_alias() -> None:
+    target = "tests/ui-agent-trials/fixtures/dummy-product-site/index.html"
+    result = _canonical_target_plugin_result(target)
+    provenance = result["target_adapter_provenance"]
+    producer = provenance["calls"][0]
+    producer.update(
+        {
+            "model_alias": "repair",
+            "provider": "ollama",
+            "model": "ollama_chat/repair-coder",
+            "routed_model": "ollama_chat/repair-coder",
+        }
+    )
+    provenance.update(
+        {
+            "selected_model_alias": "repair",
+            "provider": "ollama",
+            "model": "ollama_chat/repair-coder",
+            "routed_model": "ollama_chat/repair-coder",
+        }
+    )
+    result["coder_diagnostics"].update(
+        {
+            "selected_model_alias": "primary",
+            "provider": "stale-provider",
+            "model": "stale-model",
+        }
+    )
+
+    participant = orchestrator_module._target_plugin_model_participant(
+        run=CodingLaneStateMachine(task_id="task-producer", run_id="run-producer"),
+        task_id="task-producer",
+        attempt_id="attempt-producer",
+        input_sha256="a" * 64,
+        result=result,
+        configured_alias="primary",
+        started_at="2026-07-22T00:00:00Z",
+        completed_at="2026-07-22T00:00:01Z",
+    )
+
+    assert participant["provider"] == "ollama"
+    assert participant["model"] == "ollama_chat/repair-coder"
+
+
 def _propose_canonical_target_plugin(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> tuple[CodingOrchestrator, list[dict[str, object]], dict[str, Any]]:
     persisted: list[dict[str, object]] = []
+    target = "tests/ui-agent-trials/fixtures/dummy-product-site/index.html"
     state = CodingLaneStateMachine(task_id="task-binding", run_id="run-binding")
     state.lane_states["context-broker"] = "completed"
     state.lane_states["planner"] = "completed"
-    _seed_consumed_context_output(state, context_hash="planner-context-hash")
+    _seed_consumed_context_output(
+        state,
+        context_hash="planner-context-hash",
+        target=target,
+    )
     source_head = "a" * 40
-    target = "tests/ui-agent-trials/fixtures/dummy-product-site/index.html"
     plugin = ResolvedTargetPlugin(
         schema_version="spiritos-target-plugin/v1",
         plugin_id="lumacart",
@@ -632,6 +698,7 @@ def _propose_canonical_target_plugin(
         execution_profile="coder-10",
         allowed_actions=("propose_diff",),
         result_identity="result",
+        target_source_head="b" * 40,
     )
     monkeypatch.setenv("SPIRITOS_CODING_PRIMARY_MODEL_ALIAS", "openai")
     monkeypatch.delenv("SPIRITOS_CODING_FALLBACK_MODEL_ALIAS", raising=False)
@@ -679,10 +746,77 @@ def _canonical_context_report() -> dict[str, Any]:
     }
 
 
+def _semantic_plan_payload(*, task_id: str, target: str) -> dict[str, Any]:
+    return {
+        "plan_id": f"plan-{task_id}",
+        "task_id": task_id,
+        "schema_version": 1,
+        "created_at": "2026-07-21T00:00:00Z",
+        "source_task": "Implement the requested behavior.",
+        "bundle_snapshot": {
+            "bundle_path": "repomix-output.xml",
+            "bundle_sha256": "a" * 64,
+            "workspace_root": "/tmp/test-workspace",
+            "generated_at": "2026-07-21T00:00:00Z",
+        },
+        "classification": {
+            "task_class": "fix",
+            "visual_change": False,
+            "designer_required": False,
+            "estimated_complexity": "small",
+        },
+        "coder_packet": {
+            "target_file": {
+                "path": target,
+                "exists": True,
+                "sha256_before": "b" * 64,
+            },
+            "operation": "edit",
+            "acceptance_criteria": [
+                {
+                    "id": "requested_behavior",
+                    "description": "The requested behavior is implemented.",
+                    "kind": "behavioral",
+                }
+            ],
+            "constraints": {
+                "must_contain": [],
+                "must_not_contain": [],
+                "preserve_imports": [],
+                "preserve_exports": [],
+                "max_added_lines": None,
+                "max_removed_lines": None,
+            },
+            "context_slices": [
+                {
+                    "path": target,
+                    "kind": "target",
+                    "sha256": "b" * 64,
+                    "content": "old\n",
+                    "line_range": None,
+                }
+            ],
+            "forbidden_paths": [],
+            "style_directives": [],
+        },
+        "verification_plan": {
+            "required_checks": [],
+            "designer_review_required": False,
+            "architect_review_required": True,
+        },
+        "budget": {
+            "max_coder_attempts": 3,
+            "max_total_seconds": 300,
+            "cloud_escalation_allowed": False,
+        },
+    }
+
+
 def _seed_consumed_context_output(
     state: CodingLaneStateMachine,
     *,
     context_hash: str,
+    target: str = "index.html",
 ) -> None:
     orchestrator = CodingOrchestrator()
     output = orchestrator._enforce_runtime_contract_output(
@@ -696,6 +830,18 @@ def _seed_consumed_context_output(
         output_id=output["output_id"],
         consumer_invocation_id="planner-test-consumer",
         payload={"consumer": "planner", "context_hash": context_hash},
+    )
+    orchestrator._enforce_runtime_contract_output(
+        state,
+        lane_id="planner",
+        producer_invocation_id="planner-test-consumer",
+        payload={
+            "plan_id": f"plan-{state.task_id}",
+            "task_spec": _semantic_plan_payload(
+                task_id=state.task_id,
+                target=target,
+            ),
+        },
     )
 
 
@@ -711,6 +857,12 @@ def test_canonical_target_plugin_proposal_binds_adapter_model_and_runtime_output
     participant = receipt["model_invocations"][0]
 
     assert proposal["target_adapter_provenance"]["terminal_proof_eligible"] is True
+    assert proposal["producer_model_alias"] == "openai"
+    assert proposal["producer_model_provider"] == participant["provider"] == "openai"
+    assert proposal["producer_model_name"] == participant["model"] == "openai/test-coder"
+    assert proposal["producer_adapter_call_index"] == 1
+    assert proposal["source_head"] == "a" * 40
+    assert proposal["target_source_head"] == "b" * 40
     assert (
         proposal["model_output_provenance"]["target_adapter_provenance"]
         == proposal["target_adapter_provenance"]
@@ -720,6 +872,15 @@ def test_canonical_target_plugin_proposal_binds_adapter_model_and_runtime_output
         == participant["output_sha256"]
         == proposal["producer_model_output_sha256"]
     )
+    semantic = proposal["semantic_review_binding"]
+    assert semantic["acceptance_criteria"][0]["id"] == "requested_behavior"
+    assert semantic["preview_review_receipt"]["status"] == "passed"
+    assert semantic["preview_review_receipt"]["proposed_diff_sha256"] == proposal[
+        "approved_diff_sha256"
+    ]
+    assert semantic["semantic_review_binding_sha256"] == proposal[
+        "semantic_review_binding_sha256"
+    ]
     material = orchestrator.target_plugin_approval_material(
         "task-binding",
         runtime_output_id=proposal["runtime_output_id"],
@@ -795,3 +956,688 @@ def test_resealed_target_plugin_proposal_cannot_break_model_provenance_binding(
             runtime_output_id=proposal["runtime_output_id"],
             selected_prompt_id=proposal["selected_prompt_id"],
         )
+
+
+def _repair_test_artifact(
+    *,
+    task_id: str,
+    run_id: str,
+    approval_id: str,
+    workspace_root: Path,
+    target_plugin_identity: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    diff = "diff --git a/index.html b/index.html\n--- a/index.html\n+++ b/index.html\n"
+    workspace_root.mkdir(parents=True, exist_ok=True)
+    current = workspace_root / "index.html"
+    current.write_text("current applied state\n", encoding="utf-8")
+    current_sha256 = orchestrator_module.hashlib.sha256(current.read_bytes()).hexdigest()
+    return {
+        "schema_version": "coding.immutable-applied-artifact/v2",
+        "task_id": task_id,
+        "run_id": run_id,
+        "approval_id": approval_id,
+        "generation": 1,
+        "approved_diff_sha256": orchestrator_module.hashlib.sha256(
+            diff.encode("utf-8")
+        ).hexdigest(),
+        "result_sha256": "sha256:" + "4" * 64,
+        "workspace_root": str(workspace_root.resolve()),
+        "changed_files": [
+            {
+                "path": "index.html",
+                "sha256_before": "1" * 64,
+                "sha256_after": current_sha256,
+                "missing_before_apply": False,
+            }
+        ],
+        "target_plugin_identity": copy.deepcopy(target_plugin_identity or {}),
+        "artifact_sha256": "sha256:" + "3" * 64,
+    }
+
+
+def _invalidated_attempt_finalizer(
+    *,
+    approval_id: str,
+    generation: int = 1,
+) -> Any:
+    def finalize(task_id: str, *, reason_code: str, participant_records: list[dict[str, Any]]) -> dict[str, Any]:
+        return {
+            "task": {
+                "id": task_id,
+                "ast_snapshot": {
+                    "campaign_2_approval": {
+                        "approval_id": approval_id,
+                        "generation": generation,
+                        "state": "invalidated",
+                        "failure_reason": reason_code,
+                        "participant_records": copy.deepcopy(participant_records),
+                    }
+                },
+            }
+        }
+
+    return finalize
+
+
+def _repair_ready_state(
+    *,
+    task_id: str,
+    run_id: str,
+    target: str = "index.html",
+) -> CodingLaneStateMachine:
+    state = CodingLaneStateMachine(task_id=task_id, run_id=run_id)
+    state.lane_states["context-broker"] = "completed"
+    state.lane_states["planner"] = "completed"
+    boundary_owner = CodingOrchestrator()
+    context_output = boundary_owner._enforce_runtime_contract_output(
+        state,
+        lane_id="context-broker",
+        producer_invocation_id="repair-context-producer",
+        payload={"context_hash": "context-hash", "verdict": "GO_ELIGIBLE"},
+    )
+    boundary_owner._consume_output(
+        state,
+        output_id=context_output["output_id"],
+        consumer_invocation_id="repair-planner-invocation",
+        payload={"consumer": "planner", "context_hash": "context-hash"},
+    )
+    boundary_owner._enforce_runtime_contract_output(
+        state,
+        lane_id="planner",
+        producer_invocation_id="repair-planner-invocation",
+        payload={
+            "plan_id": f"plan-{task_id}",
+            "task_spec": _semantic_plan_payload(task_id=task_id, target=target),
+        },
+    )
+    return state
+
+
+def test_reviewer_failure_seals_attempt_and_reenters_coder_with_exact_current_state(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    task_id = "task-reviewer-repair"
+    run_id = "run-reviewer-repair"
+    original_attempt_id = "coding-attempt-original"
+    original_approval_id = "approval-original"
+    repair_target = "tests/ui-agent-trials/fixtures/dummy-product-site/index.html"
+    state = _repair_ready_state(
+        task_id=task_id,
+        run_id=run_id,
+        target=repair_target,
+    )
+    state.attempt_id = original_attempt_id
+    persisted: list[dict[str, Any]] = []
+    approved_diff = "diff --git a/index.html b/index.html\n--- a/index.html\n+++ b/index.html\n"
+    source_head = "a" * 40
+    plugin = ResolvedTargetPlugin(
+        schema_version="spiritos-target-plugin/v1",
+        plugin_id="lumacart",
+        repository_id="repo",
+        worktree_id="worktree",
+        workspace_root=str(tmp_path.resolve()),
+        branch="test",
+        state_namespace="namespace",
+        fixture_root="tests/ui-agent-trials/fixtures/dummy-product-site/",
+        source_head=source_head,
+        selected_prompt_id="coder-004-add-search-filter",
+        selected_context_id="search-filter",
+        execution_profile="coder-10",
+        allowed_actions=("propose_diff",),
+        result_identity="result",
+    )
+    artifact = _repair_test_artifact(
+        task_id=task_id,
+        run_id=run_id,
+        approval_id=original_approval_id,
+        workspace_root=tmp_path,
+        target_plugin_identity=plugin.evidence_identity(),
+    )
+    executor_record = {
+        "role": "coding-executor",
+        "invocation_id": "executor-original",
+        "output_id": "executor-original-output",
+        "passed": True,
+    }
+    reviewer_record = {
+        "role": "coding-reviewer",
+        "invocation_id": "reviewer-original",
+        "output_id": "reviewer-original-output",
+        "passed": False,
+        "result": {
+            "passed": False,
+            "findings": ["fix the exact response/status mismatch"],
+        },
+    }
+    canonical_report = _canonical_context_report()
+    monkeypatch.setattr(
+        orchestrator_module,
+        "acknowledge_task_context_consumer",
+        lambda *_args, **_kwargs: copy.deepcopy(canonical_report),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "canonical_context_broker_for_task",
+        lambda _task_id: copy.deepcopy(canonical_report),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+    orchestrator = CodingOrchestrator(
+        executor=lambda _task_id, **_kwargs: {
+            "execution": {
+                "generation": 1,
+                "changed_files": ["index.html"],
+                "artifact": copy.deepcopy(artifact),
+                "executor_participant": copy.deepcopy(executor_record),
+            }
+        },
+        reviewer=lambda _artifact: copy.deepcopy(reviewer_record),
+        state_loader=lambda _task_id: (
+            copy.deepcopy(persisted[-1])
+            if persisted
+            else state.receipt(summary="repair ready")
+        ),
+        attempt_failure_finalizer=_invalidated_attempt_finalizer(
+            approval_id=original_approval_id
+        ),
+    )
+    monkeypatch.setattr(
+        orchestrator,
+        "_append_participant",
+        lambda run, record: run.participant_records.append(copy.deepcopy(dict(record))),
+    )
+
+    with pytest.raises(
+        CodingOrchestratorError,
+        match="independent_review_failed_repair_required",
+    ):
+        orchestrator.execute_approved(
+            task_id,
+            approved_diff=approved_diff,
+            action="apply",
+            approval_id=original_approval_id,
+            selected_prompt_id="coder-001-generic-lab-trial",
+            context_hash="context-hash",
+        )
+
+    sealed_state = next(
+        item for item in persisted if item["attempt_id"] == original_attempt_id and item["attempt_history"]
+    )
+    repair_state = persisted[-1]
+    seal = repair_state["attempt_history"][0]
+    unsigned_seal = dict(seal)
+    recorded_seal_hash = unsigned_seal.pop("seal_sha256")
+    assert orchestrator_module._sha256_json(unsigned_seal) == recorded_seal_hash
+    assert sealed_state["attempt_history"][0] == seal
+    assert repair_state["run_id"] == run_id
+    assert repair_state["attempt_id"] != original_attempt_id
+    assert repair_state["parent_attempt_id"] == original_attempt_id
+    assert repair_state["attempt_number"] == 2
+    assert repair_state["attempt_dispositions"][0]["authority_state"] == "invalidated"
+    assert repair_state["immutable_artifact"] is None
+    assert repair_state["target_plugin_proposal"] is None
+    assert repair_state["participant_records"] == []
+    assert repair_state["repair_request"]["exact_feedback"]["findings"] == [
+        "fix the exact response/status mismatch"
+    ]
+    diagnostic = seal["repair_diagnostic"]
+    assert diagnostic["hook"] == "deterministic_failure_classifier"
+    assert diagnostic["model_debugger_invoked"] is False
+    assert diagnostic["deterministic_debugger_invoked"] is False
+    assert diagnostic["debugger_trace"] is None
+    assert diagnostic["classification"]["failure_kind"] == "reviewer_rejection"
+    assert diagnostic["exact_failure_output"] == seal["failure"]["exact_feedback"]
+    assert repair_state["repair_request"]["repair_diagnostic"] == diagnostic
+    assert repair_state["repair_request"]["repair_diagnostic_sha256"] == diagnostic[
+        "diagnostic_sha256"
+    ]
+    assert any(
+        event["event_type"] == "deterministic_repair_diagnostic_recorded"
+        and event["detail"]["diagnostic_sha256"] == diagnostic["diagnostic_sha256"]
+        for event in seal["attempt_state"]["causal_events"]
+    )
+    current_manifest = repair_state["repair_request"]["current_state_manifest"]
+    assert current_manifest["artifact_sha256"] == artifact["artifact_sha256"]
+    assert current_manifest["changed_files"][0]["current_sha256"] == artifact[
+        "changed_files"
+    ][0]["sha256_after"]
+    target = repair_target
+    monkeypatch.setattr(orchestrator_module, "current_head", lambda: source_head)
+    current_file = tmp_path / "index.html"
+    original_bytes = current_file.read_bytes()
+    current_file.write_text("unrecorded drift\n", encoding="utf-8")
+    with pytest.raises(CodingOrchestratorError, match="repair_current_state_changed"):
+        orchestrator.propose_target_plugin(
+            task_id,
+            plugin=plugin,
+            task="Repair the backend behavior.",
+        )
+    current_file.write_bytes(original_bytes)
+    with pytest.raises(
+        CodingOrchestratorError,
+        match="repair_target_plugin_identity_changed",
+    ):
+        orchestrator.propose_target_plugin(
+            task_id,
+            plugin=replace(plugin, repository_id="substituted-repository"),
+            task="Repair the backend behavior.",
+        )
+    dispatched_tasks: list[str] = []
+    dispatched_aliases: list[str | None] = []
+    monkeypatch.setenv("SPIRITOS_CODING_PRIMARY_MODEL_ALIAS", "openai")
+    monkeypatch.setenv("SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS", "local")
+    monkeypatch.delenv("SPIRITOS_CODING_FALLBACK_MODEL_ALIAS", raising=False)
+    monkeypatch.setattr(
+        orchestrator_module,
+        "execute_target_plugin_command",
+        lambda _plugin, *, task, model_alias=None, **_kwargs: (
+            dispatched_tasks.append(task),
+            dispatched_aliases.append(model_alias),
+            _canonical_target_plugin_result(target),
+        )[-1],
+    )
+
+    proposal_receipt = orchestrator.propose_target_plugin(
+        task_id,
+        plugin=plugin,
+        task="Repair the backend behavior.",
+    )
+    proposal = proposal_receipt["target_plugin_proposal"]
+    assert dispatched_tasks and "fix the exact response/status mismatch" in dispatched_tasks[0]
+    assert dispatched_aliases == ["local"]
+    assert artifact["artifact_sha256"] in dispatched_tasks[0]
+    assert proposal["attempt_id"] == repair_state["attempt_id"]
+    assert proposal["repair_context"] == repair_state["repair_request"]
+    assert proposal["repair_strategy_signature"].startswith("sha256:")
+    assert proposal_receipt["model_invocations"][0]["role"] == "target-plugin-model"
+    assert proposal_receipt["model_invocations"][0]["provider"] == "openai"
+    assert proposal_receipt["model_invocations"][0]["model"] == "openai/test-coder"
+    approval_material = orchestrator.target_plugin_approval_material(
+        task_id,
+        runtime_output_id=proposal["runtime_output_id"],
+        selected_prompt_id=proposal["selected_prompt_id"],
+    )
+    assert approval_material["proposal_binding"] == proposal
+    assert "approval_id" not in approval_material
+
+    with pytest.raises(CodingOrchestratorError, match="repair_approval_reuse_detected"):
+        orchestrator.execute_approved(
+            task_id,
+            approved_diff=proposal_receipt["target_plugin_result"]["proposed_diff"],
+            action="apply",
+            approval_id=original_approval_id,
+            selected_prompt_id=proposal["selected_prompt_id"],
+            context_hash=proposal["context_hash"],
+            runtime_output_id=proposal["runtime_output_id"],
+            target=proposal["target"],
+        )
+
+
+def test_verifier_failure_queues_fresh_attempt_with_blocked_reasons(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    task_id = "task-verifier-repair"
+    run_id = "run-verifier-repair"
+    state = _repair_ready_state(task_id=task_id, run_id=run_id)
+    state.lane_states["coder"] = "completed"
+    state.lane_states["reviewer"] = "completed"
+    state.immutable_artifact = _repair_test_artifact(
+        task_id=task_id,
+        run_id=run_id,
+        approval_id="approval-verifier-original",
+        workspace_root=tmp_path,
+    )
+    state.participant_records = [
+        {"role": "coding-executor", "invocation_id": "executor-verifier"},
+        {"role": "coding-reviewer", "invocation_id": "reviewer-verifier"},
+    ]
+    persisted: list[dict[str, Any]] = []
+    canonical_report = _canonical_context_report()
+    verification = {
+        "verdict": "FAIL",
+        "blocked_reasons": ["public test expected 204 but received 200"],
+        "status": "verification_failed",
+        "checks": [
+            {
+                "id": "public_api_contract",
+                "required": True,
+                "status": "failed",
+                "exit_code": 1,
+                "output_tail": "expected status 204 but received 200",
+            }
+        ],
+    }
+    monkeypatch.setattr(
+        orchestrator_module,
+        "acknowledge_task_context_consumer",
+        lambda *_args, **_kwargs: copy.deepcopy(canonical_report),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "canonical_context_broker_for_task",
+        lambda _task_id: copy.deepcopy(canonical_report),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+    orchestrator = CodingOrchestrator(
+        post_apply_verifier=lambda task_id, **_kwargs: {
+            "task": {
+                "id": task_id,
+                "ast_snapshot": {"post_apply_verification": copy.deepcopy(verification)},
+            }
+        },
+        verifier=lambda _artifact, _verification: {
+            "role": "coding-verifier",
+            "invocation_id": "verifier-failed",
+            "output_id": "verifier-failed-output",
+            "passed": False,
+            "result": {
+                "passed": False,
+                "verdict": "FAIL",
+                "checks": ["public-tests"],
+            },
+        },
+        state_loader=lambda _task_id: (
+            copy.deepcopy(persisted[-1])
+            if persisted
+            else state.receipt(summary="verifier repair ready")
+        ),
+        attempt_failure_finalizer=_invalidated_attempt_finalizer(
+            approval_id="approval-verifier-original"
+        ),
+    )
+    monkeypatch.setattr(
+        orchestrator,
+        "_append_participant",
+        lambda run, record: run.participant_records.append(copy.deepcopy(dict(record))),
+    )
+
+    response = orchestrator.complete_post_apply(task_id)
+
+    assert response["repair_required"] is True
+    receipt = response["coding_orchestrator"]
+    assert receipt["run_id"] == run_id
+    assert receipt["attempt_number"] == 2
+    assert receipt["repair_request"]["failure_class"] == "verifier_rejection"
+    assert receipt["repair_request"]["exact_feedback"]["blocked_reasons"] == [
+        "public test expected 204 but received 200"
+    ]
+    assert receipt["attempt_history"][0]["failure"]["source_lane"] == "verifier"
+    assert receipt["attempt_dispositions"][0]["authority_state"] == "invalidated"
+    diagnostic = receipt["repair_request"]["repair_diagnostic"]
+    assert diagnostic["classification_input"] == {
+        "diagnostic_code": "visible_tests_failed:public_api_contract",
+        "stage": "tests",
+        "reason": "visible_tests_failed:public_api_contract",
+        "input_source": "post_apply_verification.checks[0]",
+        "structured_evidence": verification["checks"][0],
+    }
+    assert diagnostic["classification"]["failure_kind"] == "runtime_error"
+    assert diagnostic["classification"]["retry_owner"] == "debugger_then_coder"
+    assert diagnostic["exact_failure_output"]["post_apply_verification"] == verification
+    assert diagnostic["model_debugger_invoked"] is False
+    assert diagnostic["deterministic_debugger_invoked"] is True
+    trace = diagnostic["debugger_trace"]
+    assert trace["schema_version"] == "coding.deterministic-debugger-trace/v1"
+    assert trace["tool_kind"] == "deterministic_python_ast_state_probe"
+    assert trace["model_debugger_invoked"] is False
+    assert trace["timed_out"] is False
+    assert trace["exit_status"] == 0
+    assert trace["argv"][1:3] == ["-I", "-c"]
+    assert trace["argv_sha256"] == orchestrator_module._sha256_json(trace["argv"])
+    assert trace["input_payload"]["exact_failure_output"] == diagnostic[
+        "exact_failure_output"
+    ]
+    assert trace["input_payload"]["current_state_manifest_sha256"] == diagnostic[
+        "current_state_manifest_sha256"
+    ]
+    assert trace["findings"]["failed_checks"] == verification["checks"]
+    assert trace["findings"]["files"][0]["state_matches"] is True
+    assert trace["stdout_sha256"] == orchestrator_module._sha256_text(
+        trace["stdout"]
+    )
+    assert trace["trace_sha256"] == orchestrator_module._sha256_json(
+        {key: value for key, value in trace.items() if key != "trace_sha256"}
+    )
+    assert any(
+        event["event_type"] == "deterministic_debugger_executed"
+        and event["detail"]["trace_sha256"] == trace["trace_sha256"]
+        for event in receipt["attempt_history"][0]["attempt_state"]["causal_events"]
+    )
+
+
+def test_structured_repair_diagnostic_distinguishes_runtime_from_environment() -> None:
+    runtime_input = orchestrator_module._structured_repair_diagnostic_input(
+        failure_class="verifier_rejection",
+        source_lane="verifier",
+        exact_feedback={
+            "post_apply_verification": {
+                "checks": [
+                    {
+                        "id": "public_tests",
+                        "status": "failed",
+                        "required": True,
+                        "exit_code": 1,
+                    }
+                ]
+            }
+        },
+    )
+    environment_input = orchestrator_module._structured_repair_diagnostic_input(
+        failure_class="verifier_rejection",
+        source_lane="verifier",
+        exact_feedback={
+            "post_apply_verification": {
+                "checks": [
+                    {
+                        "id": "public_tests",
+                        "status": "failed",
+                        "required": True,
+                        "reason_code": "dependency_unavailable",
+                        "failure_category": "environment",
+                    }
+                ]
+            }
+        },
+    )
+
+    runtime = orchestrator_module.classify_repair_failure(
+        diagnostic_code=runtime_input["diagnostic_code"],
+        stage=runtime_input["stage"],
+        reason=runtime_input["reason"],
+    ).to_dict()
+    environment = orchestrator_module.classify_repair_failure(
+        diagnostic_code=environment_input["diagnostic_code"],
+        stage=environment_input["stage"],
+        reason=environment_input["reason"],
+    ).to_dict()
+
+    assert runtime["failure_kind"] == "runtime_error"
+    assert runtime["retry_owner"] == "debugger_then_coder"
+    assert environment_input["stage"] == "environment"
+    assert environment["failure_kind"] == "test_environment_error"
+    assert environment["retry_owner"] == "environment_recovery"
+
+
+def test_repair_strategy_signature_ignores_attempt_identity_but_changes_with_evidence() -> None:
+    common = {
+        "feedback_sha256": "sha256:" + "1" * 64,
+        "current_state_manifest_sha256": "sha256:" + "2" * 64,
+        "original_task": "Fix the backend response.",
+    }
+    participant = {"provider": "ollama", "model": "qwen-coder"}
+    first = orchestrator_module._repair_strategy_signature(
+        repair_request={**common, "repair_input_sha256": "sha256:" + "3" * 64},
+        approved_diff="diff --git a/a.py b/a.py\n",
+        participant=participant,
+        selected_prompt_id="generic-architect-coder-packet",
+        selected_context_id="generic-workspace-context",
+    )
+    same_evidence_new_attempt = orchestrator_module._repair_strategy_signature(
+        repair_request={**common, "repair_input_sha256": "sha256:" + "4" * 64},
+        approved_diff="diff --git a/a.py b/a.py\n",
+        participant=participant,
+        selected_prompt_id="generic-architect-coder-packet",
+        selected_context_id="generic-workspace-context",
+    )
+    changed_evidence = orchestrator_module._repair_strategy_signature(
+        repair_request={
+            **common,
+            "feedback_sha256": "sha256:" + "5" * 64,
+            "repair_input_sha256": "sha256:" + "6" * 64,
+        },
+        approved_diff="diff --git a/a.py b/a.py\n",
+        participant=participant,
+        selected_prompt_id="generic-architect-coder-packet",
+        selected_context_id="generic-workspace-context",
+    )
+
+    assert first == same_evidence_new_attempt
+    assert changed_evidence != first
+
+
+def test_third_failed_attempt_is_terminally_sealed_at_the_bound(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    task_id = "task-repair-limit"
+    run_id = "run-repair-limit"
+    state = CodingLaneStateMachine(
+        task_id=task_id,
+        run_id=run_id,
+        attempt_id="attempt-3",
+        parent_attempt_id="attempt-2",
+        attempt_number=3,
+        attempt_history=[
+            {"attempt_id": "attempt-1", "approval_binding": {"approval_id": "approval-1"}},
+            {"attempt_id": "attempt-2", "approval_binding": {"approval_id": "approval-2"}},
+        ],
+        repair_request={"schema_version": "test-repair-request"},
+    )
+    state.lane_states["repair"] = "running"
+    state.immutable_artifact = _repair_test_artifact(
+        task_id=task_id,
+        run_id=run_id,
+        approval_id="approval-3",
+        workspace_root=tmp_path,
+    )
+    state.target_plugin_proposal = {"repair_strategy_signature": "sha256:" + "7" * 64}
+    persisted: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+    orchestrator = CodingOrchestrator(
+        state_loader=lambda _task_id: state.receipt(summary="repair limit state"),
+        attempt_failure_finalizer=_invalidated_attempt_finalizer(
+            approval_id="approval-3"
+        ),
+    )
+
+    with pytest.raises(CodingOrchestratorError, match="repair_attempt_limit_exhausted"):
+        orchestrator._queue_evidence_guided_repair(
+            state,
+            failure_class="reviewer_rejection",
+            source_lane="reviewer",
+            exact_feedback={"findings": ["still failing"]},
+        )
+    orchestrator._mark_repair_exhausted(
+        state,
+        reason_code="independent_review_failed",
+        failure_class="reviewer_rejection",
+        source_lane="reviewer",
+        exact_feedback={"findings": ["still failing"]},
+    )
+
+    receipt = state.receipt(summary="bounded repair exhausted")
+    assert receipt["attempt_number"] == 3
+    assert len(receipt["attempt_history"]) == 3
+    assert receipt["attempt_history"][-1]["next_attempt_id"] is None
+    assert receipt["attempt_dispositions"][-1]["authority_state"] == "invalidated"
+    assert receipt["lane_states"]["repair"] == "failed"
+    assert receipt["repair_request"] is None
+    restored = orchestrator._restore(task_id)
+    assert restored.attempt_id == "attempt-3"
+
+
+@pytest.mark.parametrize("disposition_persisted_before_crash", [False, True])
+def test_sealed_repair_attempt_resumes_without_reusing_or_refinalizing_approval(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    disposition_persisted_before_crash: bool,
+) -> None:
+    task_id = f"task-seal-resume-{int(disposition_persisted_before_crash)}"
+    run = _repair_ready_state(task_id=task_id, run_id="run-seal-resume")
+    run.attempt_id = "attempt-before-crash"
+    run.lane_states["reviewer"] = "failed"
+    run.immutable_artifact = _repair_test_artifact(
+        task_id=task_id,
+        run_id=run.run_id,
+        approval_id="approval-before-crash",
+        workspace_root=tmp_path,
+    )
+    run.target_plugin_proposal = {
+        "original_task": "Repair after a durable seal.",
+        "proposal_binding_sha256": "sha256:" + "8" * 64,
+    }
+    persisted: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "canonical_context_broker_for_task",
+        lambda _task_id: copy.deepcopy(_canonical_context_report()),
+    )
+    finalization_calls: list[str] = []
+    base_finalizer = _invalidated_attempt_finalizer(
+        approval_id="approval-before-crash"
+    )
+
+    def finalizer(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        finalization_calls.append(str(kwargs.get("reason_code") or ""))
+        return base_finalizer(*args, **kwargs)
+
+    first = CodingOrchestrator(
+        state_loader=lambda _task_id: copy.deepcopy(persisted[-1]),
+        attempt_failure_finalizer=finalizer,
+    )
+    seal = first._seal_failed_attempt(
+        run,
+        failure_class="reviewer_rejection",
+        source_lane="reviewer",
+        exact_feedback={"findings": ["failed immediately before crash"]},
+        next_attempt_id="attempt-after-crash",
+        terminal=False,
+    )
+    assert len(run.attempt_history) == run.attempt_number == 1
+    if disposition_persisted_before_crash:
+        first._finalize_sealed_attempt_approval(run, seal)
+
+    resumed_owner = CodingOrchestrator(
+        state_loader=lambda _task_id: copy.deepcopy(persisted[-1]),
+        attempt_failure_finalizer=finalizer,
+    )
+    resumed = resumed_owner._restore(task_id)
+    assert orchestrator_module._sealed_attempt_awaits_disposition(resumed) is True
+    receipt = resumed_owner._resume_sealed_attempt_disposition(resumed)
+
+    assert receipt["run_id"] == run.run_id
+    assert receipt["attempt_id"] == "attempt-after-crash"
+    assert receipt["parent_attempt_id"] == "attempt-before-crash"
+    assert receipt["attempt_number"] == 2
+    assert len(receipt["attempt_history"]) == 1
+    assert len(receipt["attempt_dispositions"]) == 1
+    assert receipt["repair_request"]["prior_approval_id"] == "approval-before-crash"
+    assert len(finalization_calls) == 1

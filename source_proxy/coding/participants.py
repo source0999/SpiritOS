@@ -135,6 +135,11 @@ def build_applied_artifact(
             if isinstance(bound_provenance.get("cartographer_identity"), Mapping)
             else {}
         ),
+        "semantic_review_identity": dict(
+            bound_provenance.get("semantic_review_identity")
+            if isinstance(bound_provenance.get("semantic_review_identity"), Mapping)
+            else {}
+        ),
         "claim_ceiling": str(
             bound_provenance.get("claim_ceiling")
             or "applied_diff_only_no_production_provenance"
@@ -145,20 +150,32 @@ def build_applied_artifact(
 
 
 def run_coding_reviewer(artifact: Mapping[str, Any]) -> dict[str, Any]:
-    """Independently review scope and exact on-disk result hashes."""
+    """Independently review disk state and the bound semantic acceptance input."""
 
+    semantic = artifact.get("semantic_review_identity")
+    semantic_binding = dict(semantic) if isinstance(semantic, Mapping) else {}
     consumed_input = {
-        "operation": "review_applied_artifact_disk_state",
+        "operation": "review_applied_artifact_disk_and_semantic_acceptance",
         "artifact_sha256": str(artifact.get("artifact_sha256") or ""),
+        "semantic_review_binding": semantic_binding,
+        "semantic_review_binding_sha256": _sha256_json(semantic_binding),
     }
 
     def review() -> dict[str, Any]:
         findings = _artifact_disk_findings(artifact)
+        semantic_findings, semantic_result = _semantic_review_findings(
+            artifact,
+            semantic_binding,
+        )
+        findings.extend(semantic_findings)
         return {
             "passed": not findings,
             "findings": findings,
             "reviewed_diff_sha256": str(artifact.get("approved_diff_sha256") or ""),
             "reviewed_result_sha256": str(artifact.get("result_sha256") or ""),
+            "semantic_review": semantic_result,
+            "semantic_review_input_sha256": _sha256_json(semantic_binding),
+            "blocked_reasons": list(semantic_findings),
         }
 
     return _invoke(
@@ -977,6 +994,7 @@ def _validate_artifact(artifact: Mapping[str, Any]) -> dict[str, Any]:
         "context_identity",
         "model_output_identity",
         "cartographer_identity",
+        "semantic_review_identity",
         "claim_ceiling",
         "artifact_sha256",
     }
@@ -1050,6 +1068,163 @@ def _require_sha256(value: Any, reason_code: str) -> str:
     if not _is_sha256(value):
         raise CodingParticipantError(reason_code)
     return str(value)
+
+
+def _semantic_review_findings(
+    artifact: Mapping[str, Any],
+    semantic: Mapping[str, Any],
+) -> tuple[list[str], dict[str, Any]]:
+    """Consume a proposal-bound successful preview without reusing its verdict blindly."""
+
+    if not semantic:
+        return [], {
+            "bound": False,
+            "status": "legacy_semantic_review_not_bound",
+            "acceptance_criteria": [],
+        }
+    findings: list[str] = []
+    body = dict(semantic)
+    recorded_binding_sha256 = str(
+        body.pop("semantic_review_binding_sha256", "")
+    )
+    plan = semantic.get("server_plan")
+    task_spec = semantic.get("server_task_spec")
+    acceptance = semantic.get("acceptance_criteria")
+    receipt = semantic.get("preview_review_receipt")
+    if not isinstance(plan, Mapping) or semantic.get("server_plan_sha256") != _sha256_json(
+        plan
+    ):
+        findings.append("semantic_server_plan_binding_invalid")
+    if not isinstance(task_spec, Mapping) or semantic.get(
+        "server_task_spec_sha256"
+    ) != _sha256_json(task_spec):
+        findings.append("semantic_task_spec_binding_invalid")
+    if (
+        not isinstance(acceptance, list)
+        or not acceptance
+        or semantic.get("acceptance_criteria_sha256")
+        != _sha256_json(acceptance)
+    ):
+        findings.append("semantic_acceptance_criteria_binding_invalid")
+        acceptance = []
+    receipt_body: dict[str, Any] = {}
+    recorded_receipt_sha256 = ""
+    if isinstance(receipt, Mapping):
+        receipt_body = dict(receipt)
+        recorded_receipt_sha256 = str(receipt_body.pop("receipt_sha256", ""))
+    if (
+        not isinstance(receipt, Mapping)
+        or receipt.get("schema_version") != "coding.preview-review-receipt/v1"
+        or receipt.get("status") != "passed"
+        or receipt.get("blocked_reasons") != []
+        or receipt.get("proposed_diff_sha256")
+        != artifact.get("approved_diff_sha256")
+        or receipt.get("changed_files")
+        != [
+            str(item.get("path") or "")
+            for item in artifact.get("changed_files", [])
+            if isinstance(item, Mapping)
+        ]
+        or receipt.get("acceptance_criteria_sha256")
+        != semantic.get("acceptance_criteria_sha256")
+        or receipt.get("acceptance_criterion_ids")
+        != [
+            str(item.get("id") or "")
+            for item in acceptance
+            if isinstance(item, Mapping)
+        ]
+        or not isinstance(receipt.get("deterministic_review_report"), Mapping)
+        or receipt["deterministic_review_report"].get("passed") is not True
+        or receipt.get("deterministic_review_report_sha256")
+        != _sha256_json(receipt.get("deterministic_review_report"))
+        or not recorded_receipt_sha256
+        or _sha256_json(receipt_body) != recorded_receipt_sha256
+        or semantic.get("preview_review_receipt_sha256")
+        != recorded_receipt_sha256
+    ):
+        findings.append("semantic_preview_review_receipt_invalid")
+    adapter_evidence = (
+        receipt.get("adapter_preview_evidence")
+        if isinstance(receipt, Mapping)
+        else None
+    )
+    if isinstance(adapter_evidence, Mapping) and receipt.get(
+        "adapter_preview_evidence_sha256"
+    ) != _sha256_json(adapter_evidence):
+        findings.append("semantic_adapter_preview_evidence_invalid")
+    repair_feedback = semantic.get("repair_feedback")
+    consumed_repair_feedback: dict[str, Any] | None = None
+    if isinstance(repair_feedback, Mapping):
+        repair_body = dict(repair_feedback)
+        repair_sha256 = str(repair_body.pop("repair_feedback_sha256", ""))
+        exact_feedback = repair_feedback.get("exact_feedback")
+        blocked_reasons = (
+            list(exact_feedback.get("blocked_reasons") or [])
+            if isinstance(exact_feedback, Mapping)
+            else []
+        )
+        if (
+            repair_feedback.get("schema_version")
+            != "coding.semantic-repair-feedback/v1"
+            or not isinstance(exact_feedback, Mapping)
+            or repair_feedback.get("feedback_sha256")
+            != _sha256_json(exact_feedback)
+            or repair_feedback.get("blocked_reasons") != blocked_reasons
+            or semantic.get("repair_feedback_sha256") != repair_sha256
+            or receipt.get("repair_feedback_sha256") != repair_sha256
+            or not repair_sha256
+            or _sha256_json(repair_body) != repair_sha256
+        ):
+            findings.append("semantic_repair_feedback_binding_invalid")
+        consumed_repair_feedback = {
+            "status": (
+                "consumed" if "semantic_repair_feedback_binding_invalid" not in findings
+                else "invalid"
+            ),
+            "source_lane": repair_feedback.get("source_lane"),
+            "feedback_sha256": repair_feedback.get("feedback_sha256"),
+            "repair_feedback_sha256": repair_sha256,
+            "blocked_reasons": blocked_reasons,
+        }
+    elif (
+        semantic.get("repair_feedback_sha256") is not None
+        or receipt.get("repair_feedback_sha256") is not None
+    ):
+        findings.append("semantic_repair_feedback_binding_invalid")
+    if (
+        not recorded_binding_sha256
+        or _sha256_json(body) != recorded_binding_sha256
+    ):
+        findings.append("semantic_review_binding_hash_invalid")
+    criteria_result = [
+        {
+            "id": str(item.get("id") or ""),
+            "kind": str(item.get("kind") or ""),
+            "description": str(item.get("description") or ""),
+            "status": (
+                "consumed_from_successful_preview"
+                if not findings
+                else "binding_invalid"
+            ),
+        }
+        for item in acceptance
+        if isinstance(item, Mapping)
+    ]
+    return list(dict.fromkeys(findings)), {
+        "bound": True,
+        "status": "passed" if not findings else "failed",
+        "semantic_review_binding_sha256": recorded_binding_sha256,
+        "server_plan_sha256": semantic.get("server_plan_sha256"),
+        "server_task_spec_sha256": semantic.get("server_task_spec_sha256"),
+        "acceptance_criteria_sha256": semantic.get(
+            "acceptance_criteria_sha256"
+        ),
+        "preview_review_receipt_sha256": semantic.get(
+            "preview_review_receipt_sha256"
+        ),
+        "acceptance_criteria": criteria_result,
+        "repair_feedback": consumed_repair_feedback,
+    }
 
 
 def _artifact_disk_findings(artifact: Mapping[str, Any]) -> list[str]:

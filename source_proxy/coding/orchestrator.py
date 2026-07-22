@@ -6,6 +6,9 @@ import hashlib
 import inspect
 import json
 import os
+import subprocess
+import sys
+import time
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -40,18 +43,24 @@ from source_proxy.coding.recovery import (
 )
 from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.contracts.coding_lane_contracts import canonical_coding_lane_contracts
+from source_proxy.diagnostics.status_codes import classify_repair_failure
 from source_proxy.approval.campaign_authority import (
     CampaignApprovalError,
     current_head,
     finalize_coding_execution_approval,
 )
-from source_proxy.planning.plan import load_plan
+from source_proxy.planning.plan import ArchitectPlan, load_plan, task_spec_from_plan
+from source_proxy.planning.reviewer import review_diff_deterministically
 from source_proxy.routing.litellm_router import route_model_for_alias, route_provider_for_alias
 from source_proxy.target_plugins.adapter import (
     ResolvedTargetPlugin,
     execute_target_plugin_command,
+    target_adapter_producer_identity_valid,
 )
-from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
+from source_proxy.target_plugins.selection import (
+    expected_target_plugin_id,
+    is_target_plugin_prompt_id,
+)
 from source_proxy.tasks.long_running import (
     acknowledge_task_context_consumer,
     advance_long_running_task,
@@ -70,6 +79,79 @@ from source_proxy.tasks.long_running import (
 
 ORCHESTRATOR_SCHEMA = "coding-orchestrator/v2"
 ORCHESTRATOR_CONSUMER_VERSION = "coding-orchestrator/v1"
+REPAIR_ATTEMPT_SEAL_SCHEMA = "coding.repair-attempt-seal/v1"
+REPAIR_REQUEST_SCHEMA = "coding.evidence-guided-repair-request/v1"
+REPAIR_APPROVAL_DISPOSITION_SCHEMA = "coding.repair-approval-disposition/v1"
+REPAIR_DIAGNOSTIC_SCHEMA = "coding.deterministic-repair-diagnostic/v1"
+REPAIR_DEBUGGER_TRACE_SCHEMA = "coding.deterministic-debugger-trace/v1"
+MAX_CODING_ATTEMPTS = 3
+MAX_REPAIR_DEBUGGER_FILES = 128
+REPAIR_DEBUGGER_TIMEOUT_SECONDS = 10
+_DETERMINISTIC_DEBUGGER_SCRIPT = r'''import ast
+import hashlib
+import json
+import pathlib
+import sys
+
+payload = json.loads(sys.stdin.read())
+files = []
+probe_failed = False
+for item in payload.get("files", []):
+    path = pathlib.Path(item["absolute_path"])
+    exists = path.is_file()
+    expected_exists = item.get("expected_exists") is True
+    result = {
+        "path": item.get("path"),
+        "exists": exists,
+        "expected_exists": expected_exists,
+        "sha256": None,
+        "expected_sha256": item.get("expected_sha256"),
+        "state_matches": exists == expected_exists,
+        "python_syntax": "not_applicable",
+        "syntax_error": None,
+    }
+    data = b""
+    if exists:
+        data = path.read_bytes()
+        result["sha256"] = hashlib.sha256(data).hexdigest()
+        result["state_matches"] = (
+            result["state_matches"]
+            and result["sha256"] == item.get("expected_sha256")
+        )
+    if exists and path.suffix.lower() == ".py":
+        try:
+            ast.parse(data.decode("utf-8"), filename=str(item.get("path") or path))
+            result["python_syntax"] = "passed"
+        except (SyntaxError, UnicodeDecodeError) as error:
+            result["python_syntax"] = "failed"
+            result["syntax_error"] = {
+                "type": type(error).__name__,
+                "message": str(error),
+                "line": getattr(error, "lineno", None),
+                "offset": getattr(error, "offset", None),
+            }
+    if not result["state_matches"] or result["python_syntax"] == "failed":
+        probe_failed = True
+    files.append(result)
+
+feedback = payload.get("exact_failure_output")
+post_apply = feedback.get("post_apply_verification", {}) if isinstance(feedback, dict) else {}
+checks = post_apply.get("checks", []) if isinstance(post_apply, dict) else []
+failed_checks = [
+    dict(check)
+    for check in checks
+    if isinstance(check, dict) and str(check.get("status", "")).lower() == "failed"
+]
+findings = {
+    "schema_version": "coding.deterministic-debugger-findings/v1",
+    "classification_input": payload.get("classification_input"),
+    "failed_checks": failed_checks,
+    "files": files,
+    "probe_passed": not probe_failed,
+}
+print(json.dumps(findings, ensure_ascii=False, allow_nan=False, separators=(",", ":"), sort_keys=True))
+raise SystemExit(1 if probe_failed else 0)
+'''
 LANE_SEQUENCE = CORE_CODING_LANE_IDS
 REQUIRED_PARTICIPANT_ROLES = (
     "coding-executor",
@@ -119,6 +201,10 @@ class CodingLaneStateMachine:
     run_id: str
     attempt_id: str = dataclasses.field(default_factory=lambda: f"coding-attempt-{uuid4().hex}")
     parent_attempt_id: str | None = None
+    attempt_number: int = 1
+    attempt_history: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    attempt_dispositions: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    repair_request: dict[str, Any] | None = None
     lane_states: dict[str, str] = dataclasses.field(
         default_factory=lambda: {lane_id: "pending" for lane_id in LANE_SEQUENCE}
     )
@@ -195,6 +281,11 @@ class CodingLaneStateMachine:
             "run_id": self.run_id,
             "attempt_id": self.attempt_id,
             "parent_attempt_id": self.parent_attempt_id,
+            "attempt_number": self.attempt_number,
+            "max_attempts": MAX_CODING_ATTEMPTS,
+            "attempt_history": list(self.attempt_history),
+            "attempt_dispositions": list(self.attempt_dispositions),
+            "repair_request": dict(self.repair_request) if self.repair_request else None,
             "task_id": self.task_id,
             "lane_sequence": list(LANE_SEQUENCE),
             "lane_states": dict(self.lane_states),
@@ -244,6 +335,7 @@ class CodingOrchestrator:
         verifier: Callable[[Mapping[str, Any], Mapping[str, Any]], dict[str, Any]] = run_coding_verifier,
         anti_cheat: Callable[..., dict[str, Any]] = run_coding_anti_cheat,
         evidence_recorder: Callable[..., dict[str, Any]] = run_coding_evidence_recorder,
+        attempt_failure_finalizer: Callable[..., dict[str, Any]] | None = None,
     ) -> None:
         self._executor = executor
         self._planner_loader = planner_loader
@@ -253,6 +345,9 @@ class CodingOrchestrator:
         self._verifier = verifier
         self._anti_cheat = anti_cheat
         self._evidence_recorder = evidence_recorder
+        self._attempt_failure_finalizer = (
+            attempt_failure_finalizer or fail_orchestrated_coding_execution
+        )
 
     def start(self, task_id: str, *, sources: list[dict[str, Any]]) -> dict[str, Any]:
         if not task_id.strip():
@@ -375,11 +470,37 @@ class CodingOrchestrator:
         finalization = run.cartographer_finalization
         if isinstance(finalization, Mapping) and finalization.get("state") == "consumed":
             acknowledgement = finalization.get("downstream_acknowledgement")
-            if not isinstance(acknowledgement, Mapping) or (
-                acknowledgement.get("consumer_invocation_id") != consumer_invocation_id
-            ):
+            if not isinstance(acknowledgement, Mapping):
                 raise CodingOrchestratorError(
                     "cartographer_transfer_consumer_invocation_mismatch"
+                )
+            if acknowledgement.get("consumer_invocation_id") != consumer_invocation_id:
+                if not isinstance(run.repair_request, Mapping):
+                    raise CodingOrchestratorError(
+                        "cartographer_transfer_consumer_invocation_mismatch"
+                    )
+                if (
+                    str(transfer.get("target") or "") != target
+                    or not run.attempt_history
+                    or run.repair_request.get("parent_attempt_seal_sha256")
+                    != run.attempt_history[-1].get("seal_sha256")
+                ):
+                    raise CodingOrchestratorError(
+                        "cartographer_repair_scope_inheritance_invalid"
+                    )
+                run.record_event(
+                    event_type="cartographer_scope_inherited_by_repair_attempt",
+                    lane_id="coder",
+                    detail={
+                        "original_consumer_invocation_id": acknowledgement.get(
+                            "consumer_invocation_id"
+                        ),
+                        "repair_consumer_invocation_id": consumer_invocation_id,
+                        "target": target,
+                        "parent_attempt_seal_sha256": run.repair_request.get(
+                            "parent_attempt_seal_sha256"
+                        ),
+                    },
                 )
             return
         selection = run.cartographer_selection_consumption
@@ -600,11 +721,54 @@ class CodingOrchestrator:
         """Run a real target-owned model proposal and persist any controlled fallback."""
 
         run = self._restore(task_id)
+        if _sealed_attempt_awaits_disposition(run):
+            self._resume_sealed_attempt_disposition(run)
+            run = self._restore(task_id)
         if run.lane_states["planner"] != "completed":
             self.acknowledge_planner(task_id)
             run = self._restore(task_id)
+        if isinstance(run.target_plugin_proposal, Mapping) and run.target_plugin_proposal.get(
+            "status"
+        ) == "ready_for_approval_preview":
+            raise CodingOrchestratorError("target_plugin_proposal_already_pending")
         if str(plugin.source_head or "") != current_head():
             raise CodingOrchestratorError("target_plugin_source_head_mismatch")
+        if expected_target_plugin_id(plugin.selected_prompt_id) != plugin.plugin_id:
+            raise CodingOrchestratorError("target_plugin_prompt_identity_mismatch")
+        target_source_head = str(plugin.target_source_head or plugin.source_head or "")
+        if not target_source_head:
+            raise CodingOrchestratorError("target_plugin_target_source_head_missing")
+        plugin_identity = plugin.evidence_identity()
+        if isinstance(run.repair_request, Mapping):
+            _validate_repair_target_baseline(
+                repair_request=run.repair_request,
+                target_plugin_identity=plugin_identity,
+            )
+        original_task = (
+            str(run.repair_request.get("original_task") or task)
+            if isinstance(run.repair_request, Mapping)
+            else task
+        )
+        model_task, repair_prompt_sha256 = _model_task_with_repair_context(run, task)
+        if isinstance(run.repair_request, Mapping):
+            if run.lane_states["repair"] == "pending":
+                run.transition(
+                    "repair",
+                    "running",
+                    reason="evidence_guided_repair_model_dispatch_started",
+                )
+            elif run.lane_states["repair"] != "running":
+                raise CodingOrchestratorError("repair_lane_not_dispatchable")
+            run.record_event(
+                event_type="repair_prompt_built",
+                lane_id="repair",
+                detail={
+                    "repair_input_sha256": run.repair_request.get("repair_input_sha256"),
+                    "repair_prompt_sha256": repair_prompt_sha256,
+                    "parent_attempt_id": run.parent_attempt_id,
+                },
+            )
+            self._persist(run, "evidence-guided repair prompt persisted before model dispatch")
         primary_invocation_id = f"target-plugin-model-invocation-{uuid4().hex}"
         context = self._acknowledge_persisted_context(
             task_id,
@@ -627,7 +791,7 @@ class CodingOrchestrator:
                 "invocation_id": primary_invocation_id,
                 "plugin_id": plugin.plugin_id,
                 "selected_prompt_id": plugin.selected_prompt_id,
-                "target_plugin_identity": plugin.evidence_identity(),
+                "target_plugin_identity": plugin_identity,
                 "canonical_context_report_hash": context["canonical_report_hash"],
                 "context_runtime_output_id": primary_context_binding["output_id"],
                 "context_consumer_acknowledgement_id": primary_context_binding[
@@ -640,17 +804,22 @@ class CodingOrchestrator:
 
         input_sha256 = _sha256_json(
             {
-                "task": task,
-                "target_plugin_identity": plugin.evidence_identity(),
+                "task": model_task,
+                "target_plugin_identity": plugin_identity,
                 "canonical_context_report_hash": context.get("canonical_report_hash"),
                 "canonical_context_report": context,
             }
         )
-        primary_alias = os.getenv("SPIRITOS_CODING_PRIMARY_MODEL_ALIAS", "").strip() or None
+        primary_alias_variable = (
+            "SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS"
+            if isinstance(run.repair_request, Mapping)
+            else "SPIRITOS_CODING_PRIMARY_MODEL_ALIAS"
+        )
+        primary_alias = os.getenv(primary_alias_variable, "").strip() or None
         primary_started_at = _utc_now()
         primary_result = execute_target_plugin_command(
             plugin,
-            task=task,
+            task=model_task,
             workspace_root=Path(plugin.workspace_root),
             canonical_context=context,
             canonical_context_text=json.dumps(context, sort_keys=True),
@@ -662,7 +831,7 @@ class CodingOrchestrator:
                 "schema_version": "coding.target-plugin-outcome/v1",
                 "task_id": task_id,
                 "run_id": run.run_id,
-                "target_plugin_identity": plugin.evidence_identity(),
+                "target_plugin_identity": plugin_identity,
                 "selected_prompt_id": plugin.selected_prompt_id,
                 "selected_context_id": plugin.selected_context_id,
                 "context_hash": str(context.get("canonical_report_hash") or ""),
@@ -774,7 +943,7 @@ class CodingOrchestrator:
                     "invocation_id": fallback_invocation_id,
                     "plugin_id": plugin.plugin_id,
                     "selected_prompt_id": plugin.selected_prompt_id,
-                    "target_plugin_identity": plugin.evidence_identity(),
+                    "target_plugin_identity": plugin_identity,
                     "canonical_context_report_hash": context["canonical_report_hash"],
                     "context_runtime_output_id": fallback_context_binding["output_id"],
                     "context_consumer_acknowledgement_id": fallback_context_binding[
@@ -787,7 +956,7 @@ class CodingOrchestrator:
             self._persist(run, "fallback context consumption persisted before replacement call")
             fallback_result = execute_target_plugin_command(
                 plugin,
-                task=task,
+                task=model_task,
                 workspace_root=Path(plugin.workspace_root),
                 canonical_context=context,
                 canonical_context_text=json.dumps(context, sort_keys=True),
@@ -842,9 +1011,72 @@ class CodingOrchestrator:
             raise CodingOrchestratorError("cartographer_transfer_proposal_target_mismatch")
         if not changed_files:
             raise CodingOrchestratorError("target_plugin_changed_files_missing")
+        planner_output = self._latest_output(run, "planner")
+        semantic_review_binding = _build_semantic_review_binding(
+            task_id=task_id,
+            run_id=run.run_id,
+            attempt_id=run.attempt_id,
+            planner_output=planner_output,
+            proposed_diff=proposed_diff,
+            changed_files=changed_files,
+            adapter_diagnostics=diagnostics,
+            repair_request=(
+                run.repair_request
+                if isinstance(run.repair_request, Mapping)
+                else None
+            ),
+        )
+        run.record_event(
+            event_type="semantic_preview_review_passed",
+            lane_id="reviewer",
+            detail={
+                "server_plan_sha256": semantic_review_binding[
+                    "server_plan_sha256"
+                ],
+                "acceptance_criteria_sha256": semantic_review_binding[
+                    "acceptance_criteria_sha256"
+                ],
+                "preview_review_receipt_sha256": semantic_review_binding[
+                    "preview_review_receipt_sha256"
+                ],
+                "semantic_review_binding_sha256": semantic_review_binding[
+                    "semantic_review_binding_sha256"
+                ],
+            },
+        )
+        repair_strategy_signature: str | None = None
+        if isinstance(run.repair_request, Mapping):
+            repair_strategy_signature = _repair_strategy_signature(
+                repair_request=run.repair_request,
+                approved_diff=proposed_diff,
+                participant=selected_participant,
+                selected_prompt_id=plugin.selected_prompt_id,
+                selected_context_id=plugin.selected_context_id,
+            )
+            prior_signatures = {
+                str(item.get("repair_strategy_signature") or "")
+                for item in run.attempt_history
+                if str(item.get("repair_strategy_signature") or "")
+            }
+            if repair_strategy_signature in prior_signatures:
+                run.record_event(
+                    event_type="repair_strategy_rejected",
+                    lane_id="repair",
+                    detail={
+                        "repair_strategy_signature": repair_strategy_signature,
+                        "reason_code": "repair_attempt_requires_new_evidence_or_strategy",
+                    },
+                )
+                self._persist(run, "duplicate evidence-guided repair strategy rejected")
+                raise CodingOrchestratorError(
+                    "repair_attempt_requires_new_evidence_or_strategy"
+                )
         if isinstance(run.cartographer_transfer, dict):
             transfer_target = str(run.cartographer_transfer.get("target") or "")
-            if not transfer_target.startswith(str(plugin.fixture_root or "")):
+            fixture_root = str(plugin.fixture_root or "").strip().strip("/")
+            if fixture_root not in {"", "."} and not transfer_target.startswith(
+                f"{fixture_root}/"
+            ):
                 raise CodingOrchestratorError("cartographer_target_plugin_scope_mismatch")
             self._finalize_cartographer_transfer_after_invocation(
                 run,
@@ -866,18 +1098,42 @@ class CodingOrchestrator:
             "schema_version": "coding.target-plugin-proposal/v1",
             "task_id": task_id,
             "run_id": run.run_id,
+            "attempt_id": run.attempt_id,
+            "parent_attempt_id": run.parent_attempt_id,
+            "attempt_number": run.attempt_number,
+            "original_task": original_task,
             "runtime_output_id": output["output_id"],
             "runtime_output_artifact_sha256": output["artifact_hash"],
             "producer_model_invocation_id": selected_participant["invocation_id"],
             "producer_model_output_sha256": selected_participant["output_sha256"],
             "producer_model_artifact_sha256": selected_participant["artifact_sha256"],
+            "producer_model_alias": (
+                selected_result.get("target_adapter_provenance", {}).get(
+                    "selected_model_alias"
+                )
+                if isinstance(
+                    selected_result.get("target_adapter_provenance"), Mapping
+                )
+                else diagnostics.get("selected_model_alias")
+            ),
+            "producer_model_provider": selected_participant["provider"],
+            "producer_model_name": selected_participant["model"],
+            "producer_adapter_call_index": (
+                selected_result.get("target_adapter_provenance", {}).get(
+                    "producer_call_index"
+                )
+                if isinstance(
+                    selected_result.get("target_adapter_provenance"), Mapping
+                )
+                else None
+            ),
             "model_output_provenance": _target_plugin_model_output_provenance(
                 selected_result
             ),
             "target_adapter_provenance": dict(
                 selected_result.get("target_adapter_provenance") or {}
             ),
-            "target_plugin_identity": plugin.evidence_identity(),
+            "target_plugin_identity": plugin_identity,
             "selected_prompt_id": plugin.selected_prompt_id,
             "selected_context_id": plugin.selected_context_id,
             "context_hash": str(context.get("canonical_report_hash") or ""),
@@ -890,11 +1146,33 @@ class CodingOrchestrator:
             ],
             "context_consumption_id": selected_context_binding["consumption_id"],
             "source_head": current_head(),
+            "target_source_head": target_source_head,
+            "target_workspace_state_sha256": plugin_identity.get(
+                "target_workspace_state_sha256"
+            ),
+            "target_workspace_state_paths": list(
+                plugin_identity.get("target_workspace_state_paths") or []
+            ),
             "target": proposal_target,
             "approved_diff_sha256": hashlib.sha256(proposed_diff.encode("utf-8")).hexdigest(),
             "changed_files": changed_files,
+            "semantic_review_binding": semantic_review_binding,
+            "semantic_review_binding_sha256": semantic_review_binding[
+                "semantic_review_binding_sha256"
+            ],
             "status": "ready_for_approval_preview",
         }
+        if isinstance(run.repair_request, Mapping):
+            proposal_body.update(
+                {
+                    "repair_context": json.loads(
+                        json.dumps(dict(run.repair_request), sort_keys=True, default=str)
+                    ),
+                    "repair_input_sha256": run.repair_request["repair_input_sha256"],
+                    "repair_prompt_sha256": repair_prompt_sha256,
+                    "repair_strategy_signature": repair_strategy_signature,
+                }
+            )
         proposal_body["proposal_binding_sha256"] = _sha256_json(proposal_body)
         run.target_plugin_proposal = proposal_body
         run.record_event(
@@ -903,7 +1181,7 @@ class CodingOrchestrator:
             detail={
                 "output_id": output["output_id"],
                 "selected_prompt_id": plugin.selected_prompt_id,
-                "target_plugin_identity": plugin.evidence_identity(),
+                "target_plugin_identity": plugin_identity,
                 "model_invocation_id": selected_participant["invocation_id"],
                 "proposal_binding_sha256": proposal_body["proposal_binding_sha256"],
             },
@@ -960,9 +1238,16 @@ class CodingOrchestrator:
             self.acknowledge_planner(task_id)
             run = self._restore(task_id)
         proposal: dict[str, Any] | None = None
-        if is_lumacart_prompt_id(selected_prompt_id):
+        repair_execution = isinstance(run.repair_request, Mapping)
+        if repair_execution and approval_id in _sealed_approval_ids(run):
+            raise CodingOrchestratorError("repair_approval_reuse_detected")
+        if repair_execution or is_target_plugin_prompt_id(selected_prompt_id):
             if not runtime_output_id:
-                raise CodingOrchestratorError("target_plugin_runtime_output_id_missing")
+                raise CodingOrchestratorError(
+                    "repair_target_plugin_runtime_output_id_missing"
+                    if repair_execution
+                    else "target_plugin_runtime_output_id_missing"
+                )
             proposal, _ = self._require_target_plugin_proposal(
                 run,
                 runtime_output_id=runtime_output_id,
@@ -1030,8 +1315,22 @@ class CodingOrchestrator:
                 generation=int(execution_payload.get("generation") or 1),
                 approved_diff=approved_diff,
                 execution=execution_payload,
+                provenance=_artifact_provenance_for_run(run),
             )
         run.immutable_artifact = dict(artifact)
+        expected_diff_sha256 = hashlib.sha256(approved_diff.encode("utf-8")).hexdigest()
+        if (
+            run.immutable_artifact.get("approval_id") != approval_id
+            or run.immutable_artifact.get("approved_diff_sha256") != expected_diff_sha256
+        ):
+            raise CodingOrchestratorError("coding_artifact_approval_binding_mismatch")
+        if isinstance(proposal, Mapping) and (
+            run.immutable_artifact.get("semantic_review_identity")
+            != proposal.get("semantic_review_binding")
+        ):
+            raise CodingOrchestratorError(
+                "coding_artifact_semantic_review_binding_mismatch"
+            )
         executor_record = execution_payload.get("executor_participant")
         if not isinstance(executor_record, Mapping):
             raise CodingOrchestratorError("coding_executor_participant_record_missing")
@@ -1046,7 +1345,7 @@ class CodingOrchestrator:
             )
         coder_output = self._matching_unconsumed_coder_output(run, approved_diff)
         if coder_output is None:
-            if is_lumacart_prompt_id(selected_prompt_id):
+            if is_target_plugin_prompt_id(selected_prompt_id):
                 raise CodingOrchestratorError("target_plugin_model_output_missing_before_apply")
             coder_output = self._enforce_runtime_contract_output(
                 run,
@@ -1081,6 +1380,15 @@ class CodingOrchestrator:
             payload={
                 "passed": bool(reviewer_record["passed"]),
                 "findings": list(reviewer_record.get("result", {}).get("findings") or []),
+                "blocked_reasons": list(
+                    reviewer_record.get("result", {}).get("blocked_reasons") or []
+                ),
+                "semantic_review": dict(
+                    reviewer_record.get("result", {}).get("semantic_review") or {}
+                ),
+                "semantic_review_input_sha256": reviewer_record.get(
+                    "result", {}
+                ).get("semantic_review_input_sha256"),
             },
         )
         self._consume_output(
@@ -1094,13 +1402,37 @@ class CodingOrchestrator:
         )
         if reviewer_record.get("passed") is not True:
             run.transition("reviewer", "failed", reason="independent_review_failed")
-            fail_orchestrated_coding_execution(
-                task_id,
+            reviewer_feedback = {
+                "source_lane": "reviewer",
+                "participant_invocation_id": str(reviewer_record.get("invocation_id") or ""),
+                "runtime_output_id": str(reviewer_output.get("output_id") or ""),
+                "findings": list(reviewer_record.get("result", {}).get("findings") or []),
+                "blocked_reasons": list(
+                    reviewer_record.get("result", {}).get("blocked_reasons") or []
+                ),
+                "participant_result": dict(reviewer_record.get("result") or {}),
+            }
+            if run.attempt_number < MAX_CODING_ATTEMPTS:
+                self._queue_evidence_guided_repair(
+                    run,
+                    failure_class="reviewer_rejection",
+                    source_lane="reviewer",
+                    exact_feedback=reviewer_feedback,
+                )
+                raise CodingOrchestratorError(
+                    "independent_review_failed_repair_required"
+                )
+            self._mark_repair_exhausted(
+                run,
                 reason_code="independent_review_failed",
-                participant_records=run.participant_records,
+                failure_class="reviewer_rejection",
+                source_lane="reviewer",
+                exact_feedback=reviewer_feedback,
             )
-            self._persist(run, "independent reviewer failed")
-            raise CodingOrchestratorError("independent_review_failed")
+            self._persist(run, "independent reviewer failed after bounded repair attempts")
+            raise CodingOrchestratorError(
+                "repair_attempt_limit_exhausted:independent_review_failed"
+            )
         run.transition("reviewer", "completed", reason="independent_review_passed")
         receipt = self._persist(run, "approved execution and independent review completed")
         receipt["artifact"] = dict(run.immutable_artifact)
@@ -1174,14 +1506,44 @@ class CodingOrchestrator:
         )
         if verifier_record.get("passed") is not True:
             run.transition("verifier", "failed", reason="independent_verification_failed")
-            fail_orchestrated_coding_execution(
-                task_id,
-                reason_code="independent_verification_failed",
-                participant_records=run.participant_records,
-            )
-            receipt = self._persist(run, "independent verifier failed")
+            verifier_feedback = {
+                "source_lane": "verifier",
+                "participant_invocation_id": str(verifier_record.get("invocation_id") or ""),
+                "runtime_output_id": str(verifier_output.get("output_id") or ""),
+                "verdict": str(verifier_record.get("result", {}).get("verdict") or "FAIL"),
+                "checks": list(verifier_record.get("result", {}).get("checks") or []),
+                "blocked_reasons": list(
+                    verification.get("blocked_reasons")
+                    or verifier_record.get("result", {}).get("blocked_reasons")
+                    or []
+                ),
+                "participant_result": dict(verifier_record.get("result") or {}),
+                "post_apply_verification": dict(verification),
+            }
+            if run.attempt_number < MAX_CODING_ATTEMPTS:
+                receipt = self._queue_evidence_guided_repair(
+                    run,
+                    failure_class="verifier_rejection",
+                    source_lane="verifier",
+                    exact_feedback=verifier_feedback,
+                )
+            else:
+                self._mark_repair_exhausted(
+                    run,
+                    reason_code="independent_verification_failed",
+                    failure_class="verifier_rejection",
+                    source_lane="verifier",
+                    exact_feedback=verifier_feedback,
+                )
+                receipt = self._persist(
+                    run,
+                    "independent verifier failed after bounded repair attempts",
+                )
             response = dict(result)
             response["coding_orchestrator"] = receipt
+            response["repair_required"] = isinstance(
+                receipt.get("repair_request"), Mapping
+            )
             return response
         run.transition("verifier", "completed", reason="independent_verification_passed")
 
@@ -1218,7 +1580,16 @@ class CodingOrchestrator:
             self._persist(run, "independent anti-cheat failed")
             raise CodingOrchestratorError("independent_anti_cheat_failed")
         run.transition("anti-cheat", "completed", reason="independent_anti_cheat_passed")
-        run.transition("repair", "skipped", reason="verification_passed_no_repair_needed")
+        if run.attempt_history:
+            if run.lane_states["repair"] != "running":
+                raise CodingOrchestratorError("repair_lane_success_state_invalid")
+            run.transition(
+                "repair",
+                "completed",
+                reason="evidence_guided_repair_verified",
+            )
+        else:
+            run.transition("repair", "skipped", reason="verification_passed_no_repair_needed")
 
         run.transition("evidence-recorder", "running", reason="independent_evidence_recording_started")
         evidence_context = acknowledge_task_context_consumer(
@@ -1300,6 +1671,582 @@ class CodingOrchestrator:
             "all participant outputs consumed; canonical state frozen for authority finalization",
         )
         return self._resume_authority_finalization(run)
+
+    def _queue_evidence_guided_repair(
+        self,
+        run: CodingLaneStateMachine,
+        *,
+        failure_class: str,
+        source_lane: str,
+        exact_feedback: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Seal one failed apply attempt, then open a fresh approval-bound attempt."""
+
+        if run.attempt_number >= MAX_CODING_ATTEMPTS:
+            raise CodingOrchestratorError("repair_attempt_limit_exhausted")
+        next_attempt_id = f"coding-attempt-{uuid4().hex}"
+        self._seal_failed_attempt(
+            run,
+            failure_class=failure_class,
+            source_lane=source_lane,
+            exact_feedback=exact_feedback,
+            next_attempt_id=next_attempt_id,
+            terminal=False,
+        )
+        return self._resume_sealed_attempt_disposition(run)
+
+    def _resume_sealed_attempt_disposition(
+        self,
+        run: CodingLaneStateMachine,
+    ) -> dict[str, Any]:
+        """Finalize a sealed approval, then deterministically open its linked attempt."""
+
+        if not run.attempt_history:
+            raise CodingOrchestratorError("repair_attempt_seal_missing")
+        seal = run.attempt_history[-1]
+        if (
+            seal.get("attempt_id") != run.attempt_id
+            or seal.get("attempt_number") != run.attempt_number
+        ):
+            raise CodingOrchestratorError("repair_attempt_seal_resume_binding_invalid")
+        disposition = self._finalize_sealed_attempt_approval(run, seal)
+        next_attempt_id = str(seal.get("next_attempt_id") or "")
+        if not next_attempt_id:
+            return self._persist(
+                run,
+                "terminal failed attempt approval invalidated after durable seal",
+            )
+
+        attempt_state = seal.get("attempt_state")
+        if not isinstance(attempt_state, Mapping):
+            raise CodingOrchestratorError("repair_attempt_state_missing")
+        planner_output = next(
+            (
+                item
+                for item in _mapping_list(attempt_state.get("runtime_outputs"))
+                if item.get("lane_id") == "planner"
+            ),
+            None,
+        )
+        planner_payload = (
+            planner_output.get("payload")
+            if isinstance(planner_output, Mapping)
+            else None
+        )
+        if not isinstance(planner_payload, Mapping):
+            raise CodingOrchestratorError("repair_planner_output_invalid")
+        report = canonical_context_broker_for_task(run.task_id)
+        if (
+            not isinstance(report, Mapping)
+            or report.get("canonical") is not True
+            or not str(report.get("canonical_report_hash") or "")
+        ):
+            raise CodingOrchestratorError("repair_canonical_context_missing")
+
+        failed_attempt_id = run.attempt_id
+        sealed_attempt_state = seal.get("attempt_state")
+        sealed_proposal = (
+            sealed_attempt_state.get("target_plugin_proposal")
+            if isinstance(sealed_attempt_state, Mapping)
+            else None
+        )
+        sealed_failure = seal.get("failure")
+        if not isinstance(sealed_failure, Mapping):
+            raise CodingOrchestratorError("repair_failure_evidence_missing")
+        repair_diagnostic = seal.get("repair_diagnostic")
+        if not _valid_repair_diagnostic(
+            repair_diagnostic,
+            task_id=run.task_id,
+            run_id=run.run_id,
+            attempt_id=failed_attempt_id,
+            failure=sealed_failure,
+            current_state_manifest=seal.get("current_state_manifest"),
+            current_state_manifest_sha256=str(
+                seal.get("current_state_manifest_sha256") or ""
+            ),
+        ):
+            raise CodingOrchestratorError("repair_diagnostic_invalid")
+        repair_request_body = {
+            "schema_version": REPAIR_REQUEST_SCHEMA,
+            "task_id": run.task_id,
+            "run_id": run.run_id,
+            "attempt_id": next_attempt_id,
+            "parent_attempt_id": failed_attempt_id,
+            "attempt_number": run.attempt_number + 1,
+            "max_attempts": MAX_CODING_ATTEMPTS,
+            "failure_class": sealed_failure.get("failure_class"),
+            "source_lane": sealed_failure.get("source_lane"),
+            "exact_feedback": seal["failure"]["exact_feedback"],
+            "feedback_sha256": seal["failure"]["feedback_sha256"],
+            "current_state_manifest": seal["current_state_manifest"],
+            "current_state_manifest_sha256": seal[
+                "current_state_manifest_sha256"
+            ],
+            "repair_diagnostic": repair_diagnostic,
+            "repair_diagnostic_sha256": repair_diagnostic[
+                "diagnostic_sha256"
+            ],
+            "parent_attempt_seal_sha256": seal["seal_sha256"],
+            "prior_approval_id": seal["approval_binding"]["approval_id"],
+            "prior_approved_diff_sha256": seal["approval_binding"][
+                "approved_diff_sha256"
+            ],
+            "prior_approval_disposition": disposition,
+            "prior_approval_disposition_sha256": disposition[
+                "disposition_sha256"
+            ],
+            "original_task": (
+                str(sealed_proposal.get("original_task") or "")
+                if isinstance(sealed_proposal, Mapping)
+                else ""
+            ),
+            "requirements": {
+                "fresh_proposal_required": True,
+                "fresh_approval_required": True,
+                "current_applied_state_is_baseline": True,
+                "new_evidence_or_changed_strategy_required": True,
+            },
+        }
+        repair_request = dict(repair_request_body)
+        repair_request["repair_input_sha256"] = _sha256_json(repair_request_body)
+
+        run.attempt_id = next_attempt_id
+        run.parent_attempt_id = failed_attempt_id
+        run.attempt_number += 1
+        run.lane_states = {lane_id: "pending" for lane_id in LANE_SEQUENCE}
+        run.lane_states["context-broker"] = "completed"
+        run.lane_states["planner"] = "completed"
+        run.lane_reasons = {
+            "context-broker": "canonical_context_reissued_for_repair",
+            "planner": "authoritative_plan_reissued_for_repair",
+        }
+        run.causal_events = []
+        run.runtime_outputs = []
+        run.runtime_acknowledgements = []
+        run.runtime_consumptions = []
+        run.required_output_ids = []
+        run.participant_records = []
+        run.immutable_artifact = None
+        run.target_plugin_proposal = None
+        run.authority_finalization = None
+        run.recovery_lineage = []
+        run.model_invocations = []
+        run.repair_request = repair_request
+        run.record_event(
+            event_type="repair_attempt_created",
+            lane_id="repair",
+            status_after="pending",
+            detail={
+                "parent_attempt_id": failed_attempt_id,
+                "parent_attempt_seal_sha256": seal["seal_sha256"],
+                "failure_class": sealed_failure.get("failure_class"),
+                "repair_input_sha256": repair_request["repair_input_sha256"],
+                "attempt_number": run.attempt_number,
+                "max_attempts": MAX_CODING_ATTEMPTS,
+            },
+        )
+        context_invocation_id = f"context-broker-repair-{uuid4().hex}"
+        context_output = self._enforce_runtime_contract_output(
+            run,
+            lane_id="context-broker",
+            producer_invocation_id=context_invocation_id,
+            payload={
+                "context_hash": str(report["canonical_report_hash"]),
+                "verdict": str(report.get("verdict") or "UNKNOWN"),
+            },
+        )
+        planner_invocation_id = f"planner-repair-{uuid4().hex}"
+        self._consume_output(
+            run,
+            output_id=str(context_output["output_id"]),
+            consumer_invocation_id=planner_invocation_id,
+            payload={
+                "consumer": "planner",
+                "context_hash": str(report["canonical_report_hash"]),
+            },
+        )
+        self._enforce_runtime_contract_output(
+            run,
+            lane_id="planner",
+            producer_invocation_id=planner_invocation_id,
+            payload=json.loads(json.dumps(dict(planner_payload), sort_keys=True, default=str)),
+        )
+        return self._persist(
+            run,
+            "failed attempt sealed; fresh evidence-guided repair attempt awaiting proposal",
+        )
+
+    def _finalize_sealed_attempt_approval(
+        self,
+        run: CodingLaneStateMachine,
+        seal: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        seal_sha256 = str(seal.get("seal_sha256") or "")
+        existing = next(
+            (
+                item
+                for item in run.attempt_dispositions
+                if item.get("attempt_seal_sha256") == seal_sha256
+            ),
+            None,
+        )
+        if isinstance(existing, Mapping):
+            body = dict(existing)
+            recorded = str(body.pop("disposition_sha256", ""))
+            if (
+                existing.get("schema_version") != REPAIR_APPROVAL_DISPOSITION_SCHEMA
+                or existing.get("authority_state") != "invalidated"
+                or not recorded
+                or _sha256_json(body) != recorded
+            ):
+                raise CodingOrchestratorError(
+                    "repair_approval_disposition_invalid"
+                )
+            return dict(existing)
+
+        attempt_state = seal.get("attempt_state")
+        participant_records = (
+            _mapping_list(attempt_state.get("participant_records"))
+            if isinstance(attempt_state, Mapping)
+            else []
+        )
+        failure = seal.get("failure")
+        failure_class = (
+            str(failure.get("failure_class") or "")
+            if isinstance(failure, Mapping)
+            else ""
+        )
+        result = self._attempt_failure_finalizer(
+            run.task_id,
+            reason_code=f"repair_attempt_superseded:{failure_class}",
+            participant_records=participant_records,
+        )
+        task = result.get("task") if isinstance(result, Mapping) else None
+        snapshot = task.get("ast_snapshot") if isinstance(task, Mapping) else None
+        approval = (
+            snapshot.get("campaign_2_approval")
+            if isinstance(snapshot, Mapping)
+            else None
+        )
+        binding = seal.get("approval_binding")
+        if (
+            not isinstance(approval, Mapping)
+            or not isinstance(binding, Mapping)
+            or approval.get("approval_id") != binding.get("approval_id")
+            or int(approval.get("generation") or 0)
+            != int(binding.get("generation") or 0)
+            or approval.get("state") != "invalidated"
+        ):
+            raise CodingOrchestratorError("repair_approval_finalization_failed")
+        body = {
+            "schema_version": REPAIR_APPROVAL_DISPOSITION_SCHEMA,
+            "task_id": run.task_id,
+            "run_id": run.run_id,
+            "attempt_id": seal.get("attempt_id"),
+            "attempt_seal_sha256": seal_sha256,
+            "approval_id": binding.get("approval_id"),
+            "generation": binding.get("generation"),
+            "authority_state": "invalidated",
+            "failure_reason": approval.get("failure_reason"),
+        }
+        disposition = dict(body)
+        disposition["disposition_sha256"] = _sha256_json(body)
+        run.attempt_dispositions.append(disposition)
+        run.record_event(
+            event_type="repair_approval_invalidated",
+            lane_id=str(failure.get("source_lane") or "repair")
+            if isinstance(failure, Mapping)
+            else "repair",
+            detail={
+                "attempt_seal_sha256": seal_sha256,
+                "approval_id": binding.get("approval_id"),
+                "disposition_sha256": disposition["disposition_sha256"],
+            },
+        )
+        self._persist(
+            run,
+            "sealed failed-attempt approval invalidated before repair attempt opened",
+        )
+        return disposition
+
+    def _seal_failed_attempt(
+        self,
+        run: CodingLaneStateMachine,
+        *,
+        failure_class: str,
+        source_lane: str,
+        exact_feedback: Mapping[str, Any],
+        next_attempt_id: str | None,
+        terminal: bool,
+    ) -> dict[str, Any]:
+        if failure_class not in {"reviewer_rejection", "verifier_rejection"}:
+            raise CodingOrchestratorError("repair_failure_class_invalid")
+        if source_lane not in {"reviewer", "verifier"}:
+            raise CodingOrchestratorError("repair_failure_source_invalid")
+        if len(run.attempt_history) != run.attempt_number - 1:
+            raise CodingOrchestratorError("repair_attempt_history_not_appendable")
+        if not isinstance(run.immutable_artifact, Mapping):
+            raise CodingOrchestratorError("repair_current_artifact_missing")
+
+        if terminal:
+            if run.lane_states["repair"] == "pending":
+                run.transition("repair", "blocked", reason="repair_attempt_limit_exhausted")
+            elif run.lane_states["repair"] == "running":
+                run.transition("repair", "failed", reason="repair_attempt_limit_exhausted")
+        elif run.lane_states["repair"] == "pending":
+            run.transition("repair", "running", reason="evidence_guided_repair_queued")
+        elif run.lane_states["repair"] == "running":
+            run.transition("repair", "failed", reason="evidence_guided_repair_attempt_failed")
+        else:
+            raise CodingOrchestratorError("repair_lane_failure_state_invalid")
+
+        feedback = json.loads(
+            json.dumps(dict(exact_feedback), sort_keys=True, default=str)
+        )
+        feedback_sha256 = _sha256_json(feedback)
+        current_state_manifest = _current_applied_state_manifest(run.immutable_artifact)
+        current_state_manifest_sha256 = _sha256_json(current_state_manifest)
+        classification_input = _structured_repair_diagnostic_input(
+            failure_class=failure_class,
+            source_lane=source_lane,
+            exact_feedback=feedback,
+        )
+        classification_details = _repair_classification_details(
+            classification_input,
+            feedback_sha256=feedback_sha256,
+            current_state_manifest_sha256=current_state_manifest_sha256,
+        )
+        classification = classify_repair_failure(
+            diagnostic_code=classification_input["diagnostic_code"],
+            stage=classification_input["stage"],
+            reason=classification_input["reason"],
+            details=classification_details,
+        ).to_dict()
+        debugger_trace: dict[str, Any] | None = None
+        if classification.get("failure_kind") in {
+            "runtime_error",
+            "test_environment_error",
+        }:
+            debugger_trace = _run_deterministic_repair_debugger(
+                task_id=run.task_id,
+                run_id=run.run_id,
+                attempt_id=run.attempt_id,
+                classification_input=classification_input,
+                exact_failure_output=feedback,
+                feedback_sha256=feedback_sha256,
+                current_state_manifest=current_state_manifest,
+                current_state_manifest_sha256=current_state_manifest_sha256,
+            )
+            run.record_event(
+                event_type="deterministic_debugger_executed",
+                lane_id=source_lane,
+                detail={
+                    "trace_sha256": debugger_trace["trace_sha256"],
+                    "argv_sha256": debugger_trace["argv_sha256"],
+                    "input_sha256": debugger_trace["input_sha256"],
+                    "stdout_sha256": debugger_trace["stdout_sha256"],
+                    "stderr_sha256": debugger_trace["stderr_sha256"],
+                    "findings_sha256": debugger_trace["findings_sha256"],
+                    "exit_status": debugger_trace["exit_status"],
+                    "timed_out": debugger_trace["timed_out"],
+                    "duration_ms": debugger_trace["duration_ms"],
+                    "model_debugger_invoked": False,
+                },
+            )
+        diagnostic_body = {
+            "schema_version": REPAIR_DIAGNOSTIC_SCHEMA,
+            "hook": "deterministic_failure_classifier",
+            "model_debugger_invoked": False,
+            "task_id": run.task_id,
+            "run_id": run.run_id,
+            "attempt_id": run.attempt_id,
+            "failure_class": failure_class,
+            "source_lane": source_lane,
+            "classification_input": classification_input,
+            "classification": classification,
+            "deterministic_debugger_invoked": debugger_trace is not None,
+            "debugger_trace": debugger_trace,
+            "exact_failure_output": feedback,
+            "exact_failure_output_sha256": feedback_sha256,
+            "current_state_manifest": current_state_manifest,
+            "current_state_manifest_sha256": current_state_manifest_sha256,
+        }
+        repair_diagnostic = dict(diagnostic_body)
+        repair_diagnostic["diagnostic_sha256"] = _sha256_json(diagnostic_body)
+        proposal = run.target_plugin_proposal
+        approval_binding = {
+            "approval_id": str(run.immutable_artifact.get("approval_id") or ""),
+            "generation": int(run.immutable_artifact.get("generation") or 0),
+            "approved_diff_sha256": str(
+                run.immutable_artifact.get("approved_diff_sha256") or ""
+            ),
+            "artifact_sha256": str(run.immutable_artifact.get("artifact_sha256") or ""),
+            "proposal_binding_sha256": (
+                str(proposal.get("proposal_binding_sha256") or "")
+                if isinstance(proposal, Mapping)
+                else ""
+            ),
+        }
+        if not approval_binding["approval_id"] or approval_binding["approval_id"] in {
+            str(item.get("approval_binding", {}).get("approval_id") or "")
+            for item in run.attempt_history
+            if isinstance(item.get("approval_binding"), Mapping)
+        }:
+            raise CodingOrchestratorError("repair_approval_reuse_detected")
+        failure = {
+            "failure_class": failure_class,
+            "source_lane": source_lane,
+            "exact_feedback": feedback,
+            "feedback_sha256": feedback_sha256,
+        }
+        run.record_event(
+            event_type="deterministic_repair_diagnostic_recorded",
+            lane_id=source_lane,
+            detail={
+                "diagnostic_sha256": repair_diagnostic["diagnostic_sha256"],
+                "failure_kind": classification["failure_kind"],
+                "failure_class": classification["failure_class"],
+                "feedback_sha256": feedback_sha256,
+                "current_state_manifest_sha256": current_state_manifest_sha256,
+                "deterministic_debugger_invoked": debugger_trace is not None,
+                "debugger_trace_sha256": (
+                    debugger_trace["trace_sha256"] if debugger_trace else None
+                ),
+                "model_debugger_invoked": False,
+            },
+        )
+        run.record_event(
+            event_type="repair_attempt_seal_requested",
+            lane_id=source_lane,
+            detail={
+                "failure_class": failure_class,
+                "feedback_sha256": feedback_sha256,
+                "current_state_manifest_sha256": current_state_manifest_sha256,
+                "next_attempt_id": next_attempt_id,
+                "terminal": terminal,
+            },
+        )
+        attempt_state = {
+            "lane_states": dict(run.lane_states),
+            "lane_reasons": dict(run.lane_reasons),
+            "causal_events": json.loads(
+                json.dumps(run.causal_events, sort_keys=True, default=str)
+            ),
+            "runtime_outputs": json.loads(
+                json.dumps(run.runtime_outputs, sort_keys=True, default=str)
+            ),
+            "runtime_acknowledgements": json.loads(
+                json.dumps(run.runtime_acknowledgements, sort_keys=True, default=str)
+            ),
+            "runtime_consumptions": json.loads(
+                json.dumps(run.runtime_consumptions, sort_keys=True, default=str)
+            ),
+            "required_output_ids": list(run.required_output_ids),
+            "participant_records": json.loads(
+                json.dumps(run.participant_records, sort_keys=True, default=str)
+            ),
+            "immutable_artifact": json.loads(
+                json.dumps(dict(run.immutable_artifact), sort_keys=True, default=str)
+            ),
+            "target_plugin_proposal": (
+                json.loads(json.dumps(dict(proposal), sort_keys=True, default=str))
+                if isinstance(proposal, Mapping)
+                else None
+            ),
+            "cartographer_selection_consumption": (
+                json.loads(
+                    json.dumps(
+                        dict(run.cartographer_selection_consumption),
+                        sort_keys=True,
+                        default=str,
+                    )
+                )
+                if isinstance(run.cartographer_selection_consumption, Mapping)
+                else None
+            ),
+            "cartographer_transfer": (
+                json.loads(
+                    json.dumps(dict(run.cartographer_transfer), sort_keys=True, default=str)
+                )
+                if isinstance(run.cartographer_transfer, Mapping)
+                else None
+            ),
+            "cartographer_finalization": (
+                json.loads(
+                    json.dumps(
+                        dict(run.cartographer_finalization),
+                        sort_keys=True,
+                        default=str,
+                    )
+                )
+                if isinstance(run.cartographer_finalization, Mapping)
+                else None
+            ),
+            "recovery_lineage": json.loads(
+                json.dumps(run.recovery_lineage, sort_keys=True, default=str)
+            ),
+            "model_invocations": json.loads(
+                json.dumps(run.model_invocations, sort_keys=True, default=str)
+            ),
+        }
+        seal_body = {
+            "schema_version": REPAIR_ATTEMPT_SEAL_SCHEMA,
+            "task_id": run.task_id,
+            "run_id": run.run_id,
+            "attempt_id": run.attempt_id,
+            "parent_attempt_id": run.parent_attempt_id,
+            "attempt_number": run.attempt_number,
+            "next_attempt_id": next_attempt_id,
+            "outcome": f"{failure_class}_terminal" if terminal else failure_class,
+            "failure": failure,
+            "repair_diagnostic": repair_diagnostic,
+            "current_state_manifest": current_state_manifest,
+            "current_state_manifest_sha256": current_state_manifest_sha256,
+            "approval_binding": approval_binding,
+            "repair_strategy_signature": (
+                str(proposal.get("repair_strategy_signature") or "") or None
+                if isinstance(proposal, Mapping)
+                else None
+            ),
+            "attempt_state": attempt_state,
+            "sealed_at": _utc_now(),
+        }
+        seal = dict(seal_body)
+        seal["seal_sha256"] = _sha256_json(seal_body)
+        run.attempt_history.append(seal)
+        self._persist(run, "failed coding attempt durably sealed before disposition")
+        return seal
+
+    def _mark_repair_exhausted(
+        self,
+        run: CodingLaneStateMachine,
+        *,
+        reason_code: str,
+        failure_class: str,
+        source_lane: str,
+        exact_feedback: Mapping[str, Any],
+    ) -> None:
+        seal = self._seal_failed_attempt(
+            run,
+            failure_class=failure_class,
+            source_lane=source_lane,
+            exact_feedback=exact_feedback,
+            next_attempt_id=None,
+            terminal=True,
+        )
+        self._finalize_sealed_attempt_approval(run, seal)
+        run.repair_request = None
+        run.record_event(
+            event_type="repair_attempt_limit_exhausted",
+            lane_id="repair",
+            status_after=run.lane_states["repair"],
+            detail={
+                "reason_code": reason_code,
+                "attempt_number": run.attempt_number,
+                "max_attempts": MAX_CODING_ATTEMPTS,
+                "terminal_attempt_seal_sha256": seal["seal_sha256"],
+            },
+        )
 
     def _resume_authority_finalization(
         self,
@@ -1491,6 +2438,14 @@ class CodingOrchestrator:
             parent_attempt_id=(
                 str(state.get("parent_attempt_id")) if state.get("parent_attempt_id") else None
             ),
+            attempt_number=int(state.get("attempt_number") or 1),
+            attempt_history=_mapping_list(state.get("attempt_history")),
+            attempt_dispositions=_mapping_list(state.get("attempt_dispositions")),
+            repair_request=(
+                dict(state["repair_request"])
+                if isinstance(state.get("repair_request"), Mapping)
+                else None
+            ),
             lane_states={lane_id: str(lane_states[lane_id]) for lane_id in LANE_SEQUENCE},
             lane_reasons=dict(lane_reasons) if isinstance(lane_reasons, Mapping) else {},
             causal_events=_mapping_list(state.get("causal_events")),
@@ -1536,6 +2491,18 @@ class CodingOrchestrator:
         )
         if not run.run_id:
             raise CodingOrchestratorError("coding_orchestrator_state_invalid")
+        history_count_valid = len(run.attempt_history) == run.attempt_number - 1 or (
+            len(run.attempt_history) == run.attempt_number
+            and run.lane_states["repair"] in {"running", "failed", "blocked"}
+            and run.attempt_history[-1].get("attempt_id") == run.attempt_id
+        )
+        if (
+            run.attempt_number < 1
+            or run.attempt_number > MAX_CODING_ATTEMPTS
+            or not history_count_valid
+            or len(run.attempt_dispositions) > len(run.attempt_history)
+        ):
+            raise CodingOrchestratorError("coding_orchestrator_attempt_state_invalid")
         self._boundary(run)
         return run
 
@@ -1940,10 +2907,42 @@ class CodingOrchestrator:
         if (
             proposal.get("task_id") != run.task_id
             or proposal.get("run_id") != run.run_id
+            or proposal.get("attempt_id") != run.attempt_id
             or proposal.get("runtime_output_id") != runtime_output_id
             or proposal.get("selected_prompt_id") != selected_prompt_id
         ):
             raise CodingOrchestratorError("target_plugin_proposal_binding_mismatch")
+        if isinstance(run.repair_request, Mapping):
+            if (
+                proposal.get("parent_attempt_id") != run.parent_attempt_id
+                or proposal.get("attempt_number") != run.attempt_number
+                or proposal.get("repair_context") != run.repair_request
+                or proposal.get("repair_input_sha256")
+                != run.repair_request.get("repair_input_sha256")
+                or not str(proposal.get("repair_prompt_sha256") or "")
+                or not str(proposal.get("repair_strategy_signature") or "")
+            ):
+                raise CodingOrchestratorError(
+                    "target_plugin_repair_context_binding_invalid"
+                )
+            _validate_repair_target_baseline(
+                repair_request=run.repair_request,
+                target_plugin_identity=(
+                    proposal.get("target_plugin_identity")
+                    if isinstance(proposal.get("target_plugin_identity"), Mapping)
+                    else {}
+                ),
+            )
+        elif any(
+            key in proposal
+            for key in (
+                "repair_context",
+                "repair_input_sha256",
+                "repair_prompt_sha256",
+                "repair_strategy_signature",
+            )
+        ):
+            raise CodingOrchestratorError("unexpected_target_plugin_repair_context")
         if proposal.get("status") != "ready_for_approval_preview":
             raise CodingOrchestratorError("target_plugin_proposal_not_actionable")
         if proposal.get("source_head") != current_head():
@@ -1952,6 +2951,18 @@ class CodingOrchestrator:
         if not isinstance(plugin_identity, Mapping) or (
             plugin_identity.get("source_head") != proposal.get("source_head")
             or plugin_identity.get("selected_prompt_id") != selected_prompt_id
+            or expected_target_plugin_id(selected_prompt_id)
+            != plugin_identity.get("plugin_id")
+            or str(
+                plugin_identity.get("target_source_head")
+                or plugin_identity.get("source_head")
+                or ""
+            )
+            != proposal.get("target_source_head")
+            or proposal.get("target_workspace_state_sha256")
+            != plugin_identity.get("target_workspace_state_sha256")
+            or list(proposal.get("target_workspace_state_paths") or [])
+            != list(plugin_identity.get("target_workspace_state_paths") or [])
         ):
             raise CodingOrchestratorError("target_plugin_proposal_identity_mismatch")
         context_report = proposal.get("canonical_context_report")
@@ -1993,6 +3004,31 @@ class CodingOrchestrator:
             or proposal.get("target") not in changed_files
         ):
             raise CodingOrchestratorError("target_plugin_proposal_payload_mismatch")
+        semantic_review_binding = proposal.get("semantic_review_binding")
+        if (
+            proposal.get("semantic_review_binding_sha256")
+            != (
+                semantic_review_binding.get("semantic_review_binding_sha256")
+                if isinstance(semantic_review_binding, Mapping)
+                else None
+            )
+            or not _valid_semantic_review_binding(
+                semantic_review_binding,
+                task_id=run.task_id,
+                run_id=run.run_id,
+                attempt_id=run.attempt_id,
+                proposed_diff=exact_diff,
+                changed_files=changed_files,
+                repair_request=(
+                    run.repair_request
+                    if isinstance(run.repair_request, Mapping)
+                    else None
+                ),
+            )
+        ):
+            raise CodingOrchestratorError(
+                "target_plugin_semantic_review_binding_invalid"
+            )
         producer_invocation_id = str(output.get("producer_invocation_id") or "")
         if producer_invocation_id != proposal.get("producer_model_invocation_id"):
             raise CodingOrchestratorError("target_plugin_proposal_producer_mismatch")
@@ -2065,8 +3101,20 @@ class CodingOrchestrator:
             or participant.get("artifact_sha256")
             != proposal.get("producer_model_artifact_sha256")
             or participant.get("artifact_sha256") != expected_model_artifact_sha256
+            or participant.get("provider")
+            != proposal.get("producer_model_provider")
+            or participant.get("model") != proposal.get("producer_model_name")
             or not isinstance(model_output_provenance, Mapping)
             or not isinstance(adapter_provenance, Mapping)
+            or not target_adapter_producer_identity_valid(adapter_provenance)
+            or proposal.get("producer_model_alias")
+            != adapter_provenance.get("selected_model_alias")
+            or proposal.get("producer_model_provider")
+            != adapter_provenance.get("provider")
+            or proposal.get("producer_model_name")
+            != adapter_provenance.get("model")
+            or proposal.get("producer_adapter_call_index")
+            != adapter_provenance.get("producer_call_index")
             or model_output_provenance.get("schema_version")
             != "coding.target-plugin-model-output-provenance/v1"
             or model_output_provenance.get("approved_diff_sha256")
@@ -2209,6 +3257,7 @@ def _model_evidence_for_run(run: CodingLaneStateMachine) -> dict[str, Any]:
         and adapter.get("provider_call_made") is True
         and adapter.get("provider_call_authorized") is True
         and adapter.get("generation_source") == "model"
+        and target_adapter_producer_identity_valid(adapter)
     )
     output_provenance_valid = isinstance(output_provenance, Mapping) and isinstance(
         selected, Mapping
@@ -2279,6 +3328,1169 @@ def _model_evidence_for_run(run: CodingLaneStateMachine) -> dict[str, Any]:
     }
 
 
+def _model_task_with_repair_context(
+    run: CodingLaneStateMachine,
+    task: str,
+) -> tuple[str, str | None]:
+    repair_request = run.repair_request
+    if not isinstance(repair_request, Mapping):
+        return task, None
+    if (
+        repair_request.get("schema_version") != REPAIR_REQUEST_SCHEMA
+        or repair_request.get("task_id") != run.task_id
+        or repair_request.get("run_id") != run.run_id
+        or repair_request.get("attempt_id") != run.attempt_id
+        or repair_request.get("parent_attempt_id") != run.parent_attempt_id
+        or repair_request.get("attempt_number") != run.attempt_number
+        or not run.attempt_history
+        or repair_request.get("parent_attempt_seal_sha256")
+        != run.attempt_history[-1].get("seal_sha256")
+    ):
+        raise CodingOrchestratorError("repair_request_binding_invalid")
+    request_body = dict(repair_request)
+    recorded_repair_input_sha256 = str(
+        request_body.pop("repair_input_sha256", "")
+    )
+    if (
+        not recorded_repair_input_sha256
+        or _sha256_json(request_body) != recorded_repair_input_sha256
+    ):
+        raise CodingOrchestratorError("repair_request_hash_mismatch")
+    bound_original_task = str(repair_request.get("original_task") or "").strip()
+    if bound_original_task and task.strip() != bound_original_task:
+        raise CodingOrchestratorError("repair_original_task_mismatch")
+    original_task = bound_original_task or task.strip()
+    prompt_payload = {
+        "schema_version": "coding.evidence-guided-repair-prompt/v1",
+        "original_task": original_task,
+        "repair_request": dict(repair_request),
+    }
+    rendered = (
+        f"{original_task}\n\n"
+        "SERVER-OWNED EVIDENCE-GUIDED REPAIR INPUT\n"
+        "Treat the current applied files as the baseline. Address the exact failure "
+        "evidence below. Return a fresh proposal; do not reuse the prior patch or "
+        "approval.\n"
+        f"{json.dumps(prompt_payload, ensure_ascii=False, sort_keys=True)}"
+    )
+    return rendered, _sha256_json(prompt_payload)
+
+
+def _repair_strategy_signature(
+    *,
+    repair_request: Mapping[str, Any],
+    approved_diff: str,
+    participant: Mapping[str, Any],
+    selected_prompt_id: str,
+    selected_context_id: str,
+) -> str:
+    return _sha256_json(
+        {
+            "feedback_sha256": repair_request.get("feedback_sha256"),
+            "current_state_manifest_sha256": repair_request.get(
+                "current_state_manifest_sha256"
+            ),
+            "original_task_sha256": hashlib.sha256(
+                str(repair_request.get("original_task") or "").encode("utf-8")
+            ).hexdigest(),
+            "approved_diff_sha256": hashlib.sha256(
+                approved_diff.encode("utf-8")
+            ).hexdigest(),
+            "provider": participant.get("provider"),
+            "model": participant.get("model"),
+            "selected_prompt_id": selected_prompt_id,
+            "selected_context_id": selected_context_id,
+        }
+    )
+
+
+def _current_applied_state_manifest(artifact: Mapping[str, Any]) -> dict[str, Any]:
+    changed_files = artifact.get("changed_files")
+    workspace_root_text = str(artifact.get("workspace_root") or "").strip()
+    workspace_root = Path(workspace_root_text).resolve()
+    if not workspace_root_text or not workspace_root.is_dir():
+        raise CodingOrchestratorError("repair_current_state_workspace_invalid")
+    normalized_files: list[dict[str, Any]] = []
+    for item in (changed_files if isinstance(changed_files, list) else []):
+        if not isinstance(item, Mapping):
+            continue
+        relative = str(item.get("path") or "").replace("\\", "/").strip()
+        candidate = workspace_root / relative
+        if (
+            not relative
+            or Path(relative).is_absolute()
+            or ".." in Path(relative).parts
+            or candidate.is_symlink()
+        ):
+            raise CodingOrchestratorError("repair_current_state_path_invalid")
+        resolved = candidate.resolve()
+        try:
+            resolved.relative_to(workspace_root)
+        except ValueError as error:
+            raise CodingOrchestratorError("repair_current_state_path_invalid") from error
+        current_exists = resolved.is_file()
+        current_sha256 = (
+            hashlib.sha256(resolved.read_bytes()).hexdigest()
+            if current_exists
+            else None
+        )
+        normalized_files.append(
+            {
+                "path": relative,
+                "sha256_before": item.get("sha256_before"),
+                "sha256_after": item.get("sha256_after"),
+                "expected_sha256_after": item.get("sha256_after"),
+                "current_sha256": current_sha256,
+                "current_exists": current_exists,
+                "missing_before_apply": bool(item.get("missing_before_apply")),
+            }
+        )
+    normalized_files.sort(key=lambda item: item["path"])
+    target_identity = artifact.get("target_plugin_identity")
+    stable_target_identity = _stable_target_plugin_identity(target_identity)
+    target_source_head = str(
+        target_identity.get("target_source_head")
+        or target_identity.get("source_head")
+        or ""
+    ) if isinstance(target_identity, Mapping) else ""
+    target_workspace_state_sha256: str | None = None
+    target_workspace_state_paths: list[str] = []
+    if stable_target_identity.get("plugin_id") == "generic-workspace":
+        try:
+            actual_target_head = subprocess.check_output(
+                ["git", "-C", str(workspace_root), "rev-parse", "HEAD"],
+                text=True,
+                timeout=15,
+            ).strip()
+            from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
+                Campaign35FixtureAuthorityError,
+                campaign_3_5_workspace_state_commitment,
+            )
+
+            state_sha256, state_paths = campaign_3_5_workspace_state_commitment(
+                workspace_root,
+                writable_paths=tuple(
+                    str(value)
+                    for value in target_identity.get("allowed_actions", ())
+                ),
+            )
+        except (
+            OSError,
+            subprocess.SubprocessError,
+            Campaign35FixtureAuthorityError,
+        ) as error:
+            raise CodingOrchestratorError(
+                "repair_current_workspace_state_invalid"
+            ) from error
+        if actual_target_head != target_source_head:
+            raise CodingOrchestratorError(
+                "repair_current_target_source_head_mismatch"
+            )
+        target_workspace_state_sha256 = str(state_sha256)
+        target_workspace_state_paths = [str(value) for value in state_paths]
+    manifest = {
+        "schema_version": "coding.current-applied-state-manifest/v1",
+        "live_state_captured": True,
+        "artifact_sha256": str(artifact.get("artifact_sha256") or ""),
+        "approval_id": str(artifact.get("approval_id") or ""),
+        "generation": int(artifact.get("generation") or 0),
+        "approved_diff_sha256": str(artifact.get("approved_diff_sha256") or ""),
+        "result_sha256": str(artifact.get("result_sha256") or ""),
+        "workspace_root": str(workspace_root),
+        "changed_files": normalized_files,
+        "stable_target_plugin_identity": stable_target_identity,
+        "target_source_head": target_source_head,
+        "target_workspace_state_sha256": target_workspace_state_sha256,
+        "target_workspace_state_paths": target_workspace_state_paths,
+    }
+    if not manifest["artifact_sha256"] or not manifest["approved_diff_sha256"]:
+        raise CodingOrchestratorError("repair_current_state_manifest_invalid")
+    return manifest
+
+
+def _stable_target_plugin_identity(identity: object) -> dict[str, Any]:
+    if not isinstance(identity, Mapping):
+        return {}
+    mutable = {
+        "target_workspace_state_sha256",
+        "target_workspace_state_paths",
+        "approval_id",
+        "approval_generation",
+        "evidence_pointer",
+        "failure_reason",
+        "acknowledgement_status",
+    }
+    return {
+        str(key): json.loads(json.dumps(value, sort_keys=True, default=str))
+        for key, value in identity.items()
+        if str(key) not in mutable
+    }
+
+
+def _structured_repair_diagnostic_input(
+    *,
+    failure_class: str,
+    source_lane: str,
+    exact_feedback: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Select a structured failure signal without inferring from prose output."""
+
+    def selected(
+        code: str,
+        stage: str,
+        source: str,
+        evidence: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        normalized_code = str(code or failure_class).strip() or failure_class
+        normalized_stage = str(stage or source_lane).strip().lower() or source_lane
+        return {
+            "diagnostic_code": normalized_code,
+            "stage": normalized_stage,
+            "reason": normalized_code,
+            "input_source": source,
+            "structured_evidence": json.loads(
+                json.dumps(dict(evidence), sort_keys=True, default=str)
+            ),
+        }
+
+    def structured_code(record: Mapping[str, Any]) -> str:
+        for key in (
+            "diagnostic_code",
+            "reason_code",
+            "error_code",
+            "failure_kind",
+            "failure_class",
+        ):
+            value = record.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return ""
+
+    def structured_stage(record: Mapping[str, Any], default: str) -> str:
+        for key in ("diagnostic_stage", "failure_stage", "stage"):
+            value = record.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip().lower()
+        category = str(
+            record.get("failure_category")
+            or record.get("category")
+            or record.get("failure_kind")
+            or record.get("failure_class")
+            or ""
+        ).strip().lower()
+        if any(
+            token in category
+            for token in ("environment", "dependency", "service", "tool")
+        ):
+            return "environment"
+        if "runtime" in category:
+            return "runtime"
+        if any(token in category for token in ("test", "assertion", "fixture")):
+            return "tests"
+        return default
+
+    direct_code = structured_code(exact_feedback)
+    if direct_code:
+        return selected(
+            direct_code,
+            structured_stage(exact_feedback, source_lane),
+            "exact_feedback",
+            exact_feedback,
+        )
+
+    post_apply = exact_feedback.get("post_apply_verification")
+    if isinstance(post_apply, Mapping):
+        post_code = structured_code(post_apply)
+        generic_post_codes = {
+            "post_apply_verification_failed",
+            "verification_failed",
+            "server_verification_not_verified",
+        }
+        if post_code and post_code.lower() not in generic_post_codes:
+            return selected(
+                post_code,
+                structured_stage(post_apply, source_lane),
+                "post_apply_verification",
+                post_apply,
+            )
+        checks = post_apply.get("checks")
+        if isinstance(checks, list):
+            for index, check in enumerate(checks):
+                if not isinstance(check, Mapping) or str(
+                    check.get("status") or ""
+                ).strip().lower() != "failed":
+                    continue
+                check_code = structured_code(check)
+                check_stage = structured_stage(check, "tests")
+                if not check_code:
+                    exit_code = check.get("exit_code")
+                    check_id = str(
+                        check.get("id") or check.get("command_text") or "unknown"
+                    ).strip()
+                    if isinstance(exit_code, int) and not isinstance(exit_code, bool) and exit_code == 124:
+                        check_code = f"test_timeout:{check_id}"
+                        check_stage = "environment"
+                    else:
+                        check_code = f"visible_tests_failed:{check_id}"
+                return selected(
+                    check_code,
+                    check_stage,
+                    f"post_apply_verification.checks[{index}]",
+                    check,
+                )
+        browser = post_apply.get("browser_evidence")
+        if isinstance(browser, Mapping) and any(
+            str(browser.get(key) or "").strip().lower() == "failed"
+            for key in (
+                "status",
+                "browser_verification_status",
+                "storefront_runtime_status",
+            )
+        ):
+            return selected(
+                structured_code(browser) or "browser_runtime_failed",
+                structured_stage(browser, "runtime"),
+                "post_apply_verification.browser_evidence",
+                browser,
+            )
+        snapshot = post_apply.get("snapshot_verification")
+        if isinstance(snapshot, Mapping):
+            issue_key = next(
+                (
+                    str(key)
+                    for key, value in snapshot.items()
+                    if str(key).endswith("_issue")
+                    and isinstance(value, str)
+                    and value.strip()
+                ),
+                "",
+            )
+            if issue_key:
+                return selected(
+                    str(snapshot[issue_key]),
+                    "tests",
+                    f"post_apply_verification.snapshot_verification.{issue_key}",
+                    {issue_key: snapshot[issue_key]},
+                )
+        if post_code:
+            return selected(
+                post_code,
+                structured_stage(post_apply, source_lane),
+                "post_apply_verification",
+                post_apply,
+            )
+
+    participant_result = exact_feedback.get("participant_result")
+    if isinstance(participant_result, Mapping):
+        result_code = structured_code(participant_result)
+        if result_code:
+            return selected(
+                result_code,
+                structured_stage(participant_result, source_lane),
+                "participant_result",
+                participant_result,
+            )
+        findings = participant_result.get("findings")
+        if isinstance(findings, list):
+            finding = next(
+                (
+                    item.strip()
+                    for item in findings
+                    if isinstance(item, str)
+                    and item.strip()
+                    and not any(character.isspace() for character in item.strip())
+                ),
+                "",
+            )
+            if finding:
+                return selected(
+                    finding,
+                    source_lane,
+                    "participant_result.findings[0]",
+                    {"finding": finding},
+                )
+
+    return selected(
+        failure_class,
+        source_lane,
+        "orchestrator_failure_binding",
+        {"failure_class": failure_class, "source_lane": source_lane},
+    )
+
+
+def _repair_classification_details(
+    classification_input: Mapping[str, Any],
+    *,
+    feedback_sha256: str,
+    current_state_manifest_sha256: str,
+) -> dict[str, Any]:
+    return {
+        "feedback_sha256": feedback_sha256,
+        "current_state_manifest_sha256": current_state_manifest_sha256,
+        "classification_input_sha256": _sha256_json(classification_input),
+        "input_source": classification_input.get("input_source"),
+        "structured_evidence_sha256": _sha256_json(
+            classification_input.get("structured_evidence")
+        ),
+    }
+
+
+def _deterministic_debugger_input_payload(
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    classification_input: Mapping[str, Any],
+    exact_failure_output: Mapping[str, Any],
+    feedback_sha256: str,
+    current_state_manifest: Mapping[str, Any],
+    current_state_manifest_sha256: str,
+) -> tuple[Path, dict[str, Any]]:
+    workspace_text = str(current_state_manifest.get("workspace_root") or "").strip()
+    workspace = Path(workspace_text).resolve()
+    changed_files = current_state_manifest.get("changed_files")
+    if (
+        not workspace_text
+        or not workspace.is_dir()
+        or not isinstance(changed_files, list)
+        or len(changed_files) > MAX_REPAIR_DEBUGGER_FILES
+    ):
+        raise CodingOrchestratorError("repair_debugger_input_invalid")
+    files: list[dict[str, Any]] = []
+    for item in changed_files:
+        if not isinstance(item, Mapping):
+            raise CodingOrchestratorError("repair_debugger_input_invalid")
+        relative = str(item.get("path") or "").replace("\\", "/").strip()
+        candidate = workspace / relative
+        if not relative or Path(relative).is_absolute() or ".." in Path(relative).parts:
+            raise CodingOrchestratorError("repair_debugger_input_invalid")
+        resolved = candidate.resolve()
+        try:
+            resolved.relative_to(workspace)
+        except ValueError as error:
+            raise CodingOrchestratorError("repair_debugger_input_invalid") from error
+        files.append(
+            {
+                "path": relative,
+                "absolute_path": str(resolved),
+                "expected_exists": item.get("current_exists") is True,
+                "expected_sha256": item.get("current_sha256"),
+            }
+        )
+    return workspace, {
+        "schema_version": "coding.deterministic-debugger-input/v1",
+        "task_id": task_id,
+        "run_id": run_id,
+        "attempt_id": attempt_id,
+        "classification_input": json.loads(
+            json.dumps(dict(classification_input), sort_keys=True, default=str)
+        ),
+        "exact_failure_output": json.loads(
+            json.dumps(dict(exact_failure_output), sort_keys=True, default=str)
+        ),
+        "feedback_sha256": feedback_sha256,
+        "current_state_manifest_sha256": current_state_manifest_sha256,
+        "files": files,
+    }
+
+
+def _run_deterministic_repair_debugger(
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    classification_input: Mapping[str, Any],
+    exact_failure_output: Mapping[str, Any],
+    feedback_sha256: str,
+    current_state_manifest: Mapping[str, Any],
+    current_state_manifest_sha256: str,
+) -> dict[str, Any]:
+    """Run a bounded non-model state/syntax probe for test and runtime failures."""
+
+    workspace, input_payload = _deterministic_debugger_input_payload(
+        task_id=task_id,
+        run_id=run_id,
+        attempt_id=attempt_id,
+        classification_input=classification_input,
+        exact_failure_output=exact_failure_output,
+        feedback_sha256=feedback_sha256,
+        current_state_manifest=current_state_manifest,
+        current_state_manifest_sha256=current_state_manifest_sha256,
+    )
+    stdin_text = json.dumps(
+        input_payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    argv = [sys.executable, "-I", "-c", _DETERMINISTIC_DEBUGGER_SCRIPT]
+    started = time.perf_counter()
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=workspace,
+            input=stdin_text,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=REPAIR_DEBUGGER_TIMEOUT_SECONDS,
+            env={
+                "PATH": os.environ.get("PATH", ""),
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONIOENCODING": "utf-8",
+            },
+        )
+        exit_status = int(completed.returncode)
+        stdout = str(completed.stdout or "")
+        stderr = str(completed.stderr or "")
+        timed_out = False
+    except subprocess.TimeoutExpired as error:
+        exit_status = 124
+        stdout = _subprocess_output_text(error.stdout)
+        stderr = _subprocess_output_text(error.stderr)
+        timed_out = True
+    except OSError as error:
+        raise CodingOrchestratorError("repair_debugger_execution_failed") from error
+    duration_ms = int((time.perf_counter() - started) * 1000)
+    if len(stdout.encode("utf-8")) > 1_000_000 or len(stderr.encode("utf-8")) > 1_000_000:
+        raise CodingOrchestratorError("repair_debugger_output_too_large")
+    try:
+        findings = json.loads(stdout)
+    except json.JSONDecodeError as error:
+        raise CodingOrchestratorError("repair_debugger_output_invalid") from error
+    if not isinstance(findings, Mapping):
+        raise CodingOrchestratorError("repair_debugger_output_invalid")
+    finding_files = findings.get("files")
+    if not isinstance(finding_files, list) or any(
+        not isinstance(item, Mapping) or item.get("state_matches") is not True
+        for item in finding_files
+    ):
+        raise CodingOrchestratorError("repair_debugger_state_changed")
+    trace_body = {
+        "schema_version": REPAIR_DEBUGGER_TRACE_SCHEMA,
+        "tool_kind": "deterministic_python_ast_state_probe",
+        "deterministic_debugger_invoked": True,
+        "model_debugger_invoked": False,
+        "task_id": task_id,
+        "run_id": run_id,
+        "attempt_id": attempt_id,
+        "argv": argv,
+        "argv_sha256": _sha256_json(argv),
+        "tool_script_sha256": _sha256_text(_DETERMINISTIC_DEBUGGER_SCRIPT),
+        "cwd": str(workspace),
+        "input_payload": input_payload,
+        "input_sha256": _sha256_text(stdin_text),
+        "feedback_sha256": feedback_sha256,
+        "current_state_manifest_sha256": current_state_manifest_sha256,
+        "exit_status": exit_status,
+        "timed_out": timed_out,
+        "duration_ms": duration_ms,
+        "stdout": stdout,
+        "stdout_sha256": _sha256_text(stdout),
+        "stderr": stderr,
+        "stderr_sha256": _sha256_text(stderr),
+        "findings": dict(findings),
+        "findings_sha256": _sha256_json(findings),
+    }
+    trace = dict(trace_body)
+    trace["trace_sha256"] = _sha256_json(trace_body)
+    return trace
+
+
+def _subprocess_output_text(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _valid_deterministic_debugger_trace(
+    trace: object,
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    classification_input: Mapping[str, Any],
+    exact_failure_output: Mapping[str, Any],
+    feedback_sha256: str,
+    current_state_manifest: Mapping[str, Any],
+    current_state_manifest_sha256: str,
+) -> bool:
+    if not isinstance(trace, Mapping):
+        return False
+    try:
+        workspace, expected_payload = _deterministic_debugger_input_payload(
+            task_id=task_id,
+            run_id=run_id,
+            attempt_id=attempt_id,
+            classification_input=classification_input,
+            exact_failure_output=exact_failure_output,
+            feedback_sha256=feedback_sha256,
+            current_state_manifest=current_state_manifest,
+            current_state_manifest_sha256=current_state_manifest_sha256,
+        )
+    except CodingOrchestratorError:
+        return False
+    body = dict(trace)
+    recorded_sha256 = str(body.pop("trace_sha256", ""))
+    argv = trace.get("argv")
+    stdout = trace.get("stdout")
+    stderr = trace.get("stderr")
+    findings = trace.get("findings")
+    stdin_text = json.dumps(
+        expected_payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    if not (
+        isinstance(argv, list)
+        and len(argv) == 4
+        and isinstance(argv[0], str)
+        and bool(argv[0])
+        and argv[1:] == ["-I", "-c", _DETERMINISTIC_DEBUGGER_SCRIPT]
+        and isinstance(stdout, str)
+        and isinstance(stderr, str)
+        and isinstance(findings, Mapping)
+    ):
+        return False
+    try:
+        parsed_stdout = json.loads(stdout)
+    except json.JSONDecodeError:
+        return False
+    feedback_post_apply = exact_failure_output.get("post_apply_verification")
+    expected_failed_checks = [
+        dict(check)
+        for check in (
+            feedback_post_apply.get("checks", [])
+            if isinstance(feedback_post_apply, Mapping)
+            else []
+        )
+        if isinstance(check, Mapping)
+        and str(check.get("status") or "").strip().lower() == "failed"
+    ]
+    finding_files = findings.get("files")
+    expected_files = expected_payload["files"]
+    if not isinstance(finding_files, list) or len(finding_files) != len(expected_files):
+        return False
+    for result, expected in zip(finding_files, expected_files, strict=True):
+        if (
+            not isinstance(result, Mapping)
+            or result.get("path") != expected.get("path")
+            or result.get("expected_exists") != expected.get("expected_exists")
+            or result.get("expected_sha256") != expected.get("expected_sha256")
+            or result.get("state_matches") is not True
+            or result.get("python_syntax")
+            not in {"passed", "failed", "not_applicable"}
+        ):
+            return False
+    exit_status = trace.get("exit_status")
+    probe_passed = findings.get("probe_passed")
+    return bool(
+        trace.get("schema_version") == REPAIR_DEBUGGER_TRACE_SCHEMA
+        and trace.get("tool_kind") == "deterministic_python_ast_state_probe"
+        and trace.get("deterministic_debugger_invoked") is True
+        and trace.get("model_debugger_invoked") is False
+        and trace.get("task_id") == task_id
+        and trace.get("run_id") == run_id
+        and trace.get("attempt_id") == attempt_id
+        and trace.get("argv_sha256") == _sha256_json(argv)
+        and trace.get("tool_script_sha256")
+        == _sha256_text(_DETERMINISTIC_DEBUGGER_SCRIPT)
+        and trace.get("cwd") == str(workspace)
+        and trace.get("input_payload") == expected_payload
+        and trace.get("input_sha256") == _sha256_text(stdin_text)
+        and trace.get("feedback_sha256") == feedback_sha256
+        and trace.get("current_state_manifest_sha256")
+        == current_state_manifest_sha256
+        and isinstance(exit_status, int)
+        and not isinstance(exit_status, bool)
+        and exit_status in {0, 1}
+        and trace.get("timed_out") is False
+        and isinstance(trace.get("duration_ms"), int)
+        and not isinstance(trace.get("duration_ms"), bool)
+        and trace.get("duration_ms") >= 0
+        and trace.get("stdout_sha256") == _sha256_text(stdout)
+        and trace.get("stderr_sha256") == _sha256_text(stderr)
+        and parsed_stdout == findings
+        and findings.get("schema_version")
+        == "coding.deterministic-debugger-findings/v1"
+        and findings.get("classification_input") == classification_input
+        and findings.get("failed_checks") == expected_failed_checks
+        and isinstance(probe_passed, bool)
+        and probe_passed is (exit_status == 0)
+        and trace.get("findings_sha256") == _sha256_json(findings)
+        and recorded_sha256
+        and _sha256_json(body) == recorded_sha256
+    )
+
+
+def _valid_repair_diagnostic(
+    diagnostic: object,
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    failure: Mapping[str, Any],
+    current_state_manifest: object,
+    current_state_manifest_sha256: str,
+) -> bool:
+    """Verify the deterministic, non-model failure record consumed by repair."""
+
+    if not isinstance(diagnostic, Mapping) or not isinstance(
+        current_state_manifest, Mapping
+    ):
+        return False
+    body = dict(diagnostic)
+    recorded_sha256 = str(body.pop("diagnostic_sha256", ""))
+    feedback = failure.get("exact_feedback")
+    feedback_sha256 = str(failure.get("feedback_sha256") or "")
+    failure_class = str(failure.get("failure_class") or "")
+    source_lane = str(failure.get("source_lane") or "")
+    expected_input = _structured_repair_diagnostic_input(
+        failure_class=failure_class,
+        source_lane=source_lane,
+        exact_feedback=(feedback if isinstance(feedback, Mapping) else {}),
+    )
+    expected_classification = classify_repair_failure(
+        diagnostic_code=expected_input["diagnostic_code"],
+        stage=expected_input["stage"],
+        reason=expected_input["reason"],
+        details=_repair_classification_details(
+            expected_input,
+            feedback_sha256=feedback_sha256,
+            current_state_manifest_sha256=current_state_manifest_sha256,
+        ),
+    ).to_dict()
+    debugger_required = expected_classification.get("failure_kind") in {
+        "runtime_error",
+        "test_environment_error",
+    }
+    debugger_trace = diagnostic.get("debugger_trace")
+    debugger_trace_valid = (
+        _valid_deterministic_debugger_trace(
+            debugger_trace,
+            task_id=task_id,
+            run_id=run_id,
+            attempt_id=attempt_id,
+            classification_input=expected_input,
+            exact_failure_output=(
+                feedback if isinstance(feedback, Mapping) else {}
+            ),
+            feedback_sha256=feedback_sha256,
+            current_state_manifest=current_state_manifest,
+            current_state_manifest_sha256=current_state_manifest_sha256,
+        )
+        if debugger_required
+        else debugger_trace is None
+    )
+    return bool(
+        diagnostic.get("schema_version") == REPAIR_DIAGNOSTIC_SCHEMA
+        and diagnostic.get("hook") == "deterministic_failure_classifier"
+        and diagnostic.get("model_debugger_invoked") is False
+        and diagnostic.get("task_id") == task_id
+        and diagnostic.get("run_id") == run_id
+        and diagnostic.get("attempt_id") == attempt_id
+        and diagnostic.get("failure_class") == failure_class
+        and diagnostic.get("source_lane") == source_lane
+        and diagnostic.get("classification_input") == expected_input
+        and diagnostic.get("classification") == expected_classification
+        and diagnostic.get("deterministic_debugger_invoked")
+        is debugger_required
+        and debugger_trace_valid
+        and diagnostic.get("exact_failure_output") == feedback
+        and diagnostic.get("exact_failure_output_sha256") == feedback_sha256
+        and diagnostic.get("current_state_manifest") == current_state_manifest
+        and diagnostic.get("current_state_manifest_sha256")
+        == current_state_manifest_sha256
+        and current_state_manifest_sha256 == _sha256_json(current_state_manifest)
+        and recorded_sha256
+        and _sha256_json(body) == recorded_sha256
+    )
+
+
+def _validate_repair_target_baseline(
+    *,
+    repair_request: Mapping[str, Any],
+    target_plugin_identity: Mapping[str, Any],
+) -> None:
+    manifest = repair_request.get("current_state_manifest")
+    if not isinstance(manifest, Mapping) or manifest.get("live_state_captured") is not True:
+        raise CodingOrchestratorError("repair_current_state_manifest_invalid")
+    stable = manifest.get("stable_target_plugin_identity")
+    if (
+        not isinstance(stable, Mapping)
+        or dict(stable) != _stable_target_plugin_identity(target_plugin_identity)
+    ):
+        raise CodingOrchestratorError("repair_target_plugin_identity_changed")
+    expected_head = str(manifest.get("target_source_head") or "")
+    actual_head = str(
+        target_plugin_identity.get("target_source_head")
+        or target_plugin_identity.get("source_head")
+        or ""
+    )
+    if not expected_head or actual_head != expected_head:
+        raise CodingOrchestratorError("repair_target_source_head_changed")
+    for item in manifest.get("changed_files", []):
+        if not isinstance(item, Mapping):
+            raise CodingOrchestratorError("repair_current_state_manifest_invalid")
+        root = Path(str(manifest.get("workspace_root") or "")).resolve()
+        relative = str(item.get("path") or "")
+        candidate = (root / relative).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError as error:
+            raise CodingOrchestratorError("repair_current_state_path_invalid") from error
+        exists = candidate.is_file()
+        current_sha256 = (
+            hashlib.sha256(candidate.read_bytes()).hexdigest() if exists else None
+        )
+        if (
+            exists is not bool(item.get("current_exists"))
+            or current_sha256 != item.get("current_sha256")
+        ):
+            raise CodingOrchestratorError("repair_current_state_changed")
+    if stable.get("plugin_id") == "generic-workspace":
+        if (
+            target_plugin_identity.get("target_workspace_state_sha256")
+            != manifest.get("target_workspace_state_sha256")
+            or list(target_plugin_identity.get("target_workspace_state_paths") or [])
+            != list(manifest.get("target_workspace_state_paths") or [])
+        ):
+            raise CodingOrchestratorError("repair_target_workspace_state_changed")
+
+
+def _sealed_attempt_awaits_disposition(run: CodingLaneStateMachine) -> bool:
+    if len(run.attempt_history) != run.attempt_number or not run.attempt_history:
+        return False
+    seal = run.attempt_history[-1]
+    if seal.get("attempt_id") != run.attempt_id:
+        return False
+    seal_hash = str(seal.get("seal_sha256") or "")
+    disposition_exists = any(
+        item.get("attempt_seal_sha256") == seal_hash
+        for item in run.attempt_dispositions
+    )
+    return bool(seal.get("next_attempt_id")) or not disposition_exists
+
+
+def _sealed_approval_ids(run: CodingLaneStateMachine) -> set[str]:
+    return {
+        str(binding.get("approval_id") or "")
+        for item in run.attempt_history
+        for binding in [item.get("approval_binding")]
+        if isinstance(binding, Mapping) and str(binding.get("approval_id") or "")
+    }
+
+
+def _build_semantic_review_binding(
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    planner_output: Mapping[str, Any],
+    proposed_diff: str,
+    changed_files: list[str],
+    adapter_diagnostics: Mapping[str, Any],
+    repair_request: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    planner_payload = planner_output.get("payload")
+    serialized_plan = (
+        planner_payload.get("task_spec")
+        if isinstance(planner_payload, Mapping)
+        else None
+    )
+    if not isinstance(serialized_plan, Mapping):
+        raise CodingOrchestratorError("coding_semantic_plan_missing")
+    try:
+        plan = ArchitectPlan.from_dict(dict(serialized_plan))
+    except (TypeError, ValueError) as error:
+        raise CodingOrchestratorError("coding_semantic_plan_invalid") from error
+    if plan.task_id != task_id:
+        raise CodingOrchestratorError("coding_semantic_plan_task_mismatch")
+    acceptance_criteria = [
+        {
+            "id": item.id,
+            "description": item.description,
+            "kind": item.kind,
+        }
+        for item in plan.coder_packet.acceptance_criteria
+    ]
+    if not acceptance_criteria:
+        raise CodingOrchestratorError("coding_acceptance_criteria_missing")
+    target = str(plan.coder_packet.target_file.path or "")
+    if target not in changed_files:
+        raise CodingOrchestratorError("coding_semantic_plan_target_mismatch")
+    review_report = review_diff_deterministically(plan, proposed_diff).to_dict()
+    if review_report.get("passed") is not True:
+        raise CodingOrchestratorError("coding_preview_semantic_review_failed")
+    plan_payload = json.loads(
+        json.dumps(dict(serialized_plan), sort_keys=True, default=str)
+    )
+    task_spec = task_spec_from_plan(plan).to_dict()
+    diff_sha256 = hashlib.sha256(proposed_diff.encode("utf-8")).hexdigest()
+    plan_sha256 = _sha256_json(plan_payload)
+    acceptance_sha256 = _sha256_json(acceptance_criteria)
+    adapter_preview_evidence = _adapter_preview_evidence(
+        adapter_diagnostics,
+        proposed_diff_sha256=diff_sha256,
+    )
+    repair_feedback_binding = _semantic_repair_feedback_binding(repair_request)
+    receipt_body = {
+        "schema_version": "coding.preview-review-receipt/v1",
+        "reviewer": "source-proxy.planning.reviewer.deterministic/v1",
+        "task_id": task_id,
+        "run_id": run_id,
+        "attempt_id": attempt_id,
+        "server_plan_id": plan.plan_id,
+        "server_plan_sha256": plan_sha256,
+        "server_task_spec_sha256": _sha256_json(task_spec),
+        "acceptance_criteria_sha256": acceptance_sha256,
+        "acceptance_criterion_ids": [
+            str(item["id"]) for item in acceptance_criteria
+        ],
+        "proposed_diff_sha256": diff_sha256,
+        "changed_files": list(changed_files),
+        "deterministic_review_report": review_report,
+        "deterministic_review_report_sha256": _sha256_json(review_report),
+        "adapter_preview_evidence": adapter_preview_evidence,
+        "adapter_preview_evidence_sha256": (
+            _sha256_json(adapter_preview_evidence)
+            if isinstance(adapter_preview_evidence, Mapping)
+            else None
+        ),
+        "repair_feedback_sha256": (
+            repair_feedback_binding["repair_feedback_sha256"]
+            if repair_feedback_binding
+            else None
+        ),
+        "blocked_reasons": [],
+        "status": "passed",
+    }
+    receipt = dict(receipt_body)
+    receipt["receipt_sha256"] = _sha256_json(receipt_body)
+    binding_body = {
+        "schema_version": "coding.semantic-review-binding/v1",
+        "server_plan": plan_payload,
+        "server_plan_sha256": plan_sha256,
+        "server_task_spec": task_spec,
+        "server_task_spec_sha256": _sha256_json(task_spec),
+        "acceptance_criteria": acceptance_criteria,
+        "acceptance_criteria_sha256": acceptance_sha256,
+        "preview_review_receipt": receipt,
+        "preview_review_receipt_sha256": receipt["receipt_sha256"],
+        "repair_feedback": repair_feedback_binding,
+        "repair_feedback_sha256": (
+            repair_feedback_binding["repair_feedback_sha256"]
+            if repair_feedback_binding
+            else None
+        ),
+    }
+    binding = dict(binding_body)
+    binding["semantic_review_binding_sha256"] = _sha256_json(binding_body)
+    return binding
+
+
+def _adapter_preview_evidence(
+    diagnostics: Mapping[str, Any],
+    *,
+    proposed_diff_sha256: str,
+) -> dict[str, Any] | None:
+    attempts = _mapping_list(diagnostics.get("attempts"))
+    matching = next(
+        (
+            item
+            for item in reversed(attempts)
+            if item.get("proposed_diff_sha256") == proposed_diff_sha256
+        ),
+        None,
+    )
+    if not isinstance(matching, Mapping):
+        return None
+    git_apply_check = matching.get("git_apply_check")
+    if (
+        str(matching.get("preview_status") or "") == "blocked"
+        or not isinstance(git_apply_check, Mapping)
+        or git_apply_check.get("passed") is not True
+    ):
+        raise CodingOrchestratorError("coding_adapter_preview_receipt_invalid")
+    return {
+        "architect_plan_id": diagnostics.get("architect_plan_id"),
+        "architect_plan_sha256": diagnostics.get("architect_plan_sha256"),
+        "acceptance_criteria": json.loads(
+            json.dumps(
+                list(diagnostics.get("acceptance_criteria") or []),
+                sort_keys=True,
+                default=str,
+            )
+        ),
+        "attempt": json.loads(
+            json.dumps(dict(matching), sort_keys=True, default=str)
+        ),
+    }
+
+
+def _semantic_repair_feedback_binding(
+    repair_request: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(repair_request, Mapping):
+        return None
+    exact_feedback = repair_request.get("exact_feedback")
+    if (
+        not isinstance(exact_feedback, Mapping)
+        or _sha256_json(exact_feedback) != repair_request.get("feedback_sha256")
+    ):
+        raise CodingOrchestratorError("coding_semantic_repair_feedback_invalid")
+    body = {
+        "schema_version": "coding.semantic-repair-feedback/v1",
+        "parent_attempt_id": repair_request.get("parent_attempt_id"),
+        "parent_attempt_seal_sha256": repair_request.get(
+            "parent_attempt_seal_sha256"
+        ),
+        "failure_class": repair_request.get("failure_class"),
+        "source_lane": repair_request.get("source_lane"),
+        "exact_feedback": json.loads(
+            json.dumps(dict(exact_feedback), sort_keys=True, default=str)
+        ),
+        "feedback_sha256": repair_request.get("feedback_sha256"),
+        "blocked_reasons": list(exact_feedback.get("blocked_reasons") or []),
+        "repair_diagnostic_sha256": repair_request.get(
+            "repair_diagnostic_sha256"
+        ),
+    }
+    binding = dict(body)
+    binding["repair_feedback_sha256"] = _sha256_json(body)
+    return binding
+
+
+def _valid_semantic_review_binding(
+    binding: object,
+    *,
+    task_id: str,
+    run_id: str,
+    attempt_id: str,
+    proposed_diff: str,
+    changed_files: list[str],
+    repair_request: Mapping[str, Any] | None = None,
+) -> bool:
+    if not isinstance(binding, Mapping):
+        return False
+    body = dict(binding)
+    recorded_binding_sha256 = str(
+        body.pop("semantic_review_binding_sha256", "")
+    )
+    plan_payload = binding.get("server_plan")
+    task_spec = binding.get("server_task_spec")
+    acceptance = binding.get("acceptance_criteria")
+    receipt = binding.get("preview_review_receipt")
+    repair_feedback = binding.get("repair_feedback")
+    try:
+        expected_repair_feedback = _semantic_repair_feedback_binding(
+            repair_request
+        )
+    except CodingOrchestratorError:
+        return False
+    if not (
+        isinstance(plan_payload, Mapping)
+        and isinstance(task_spec, Mapping)
+        and isinstance(acceptance, list)
+        and acceptance
+        and isinstance(receipt, Mapping)
+    ):
+        return False
+    try:
+        plan = ArchitectPlan.from_dict(dict(plan_payload))
+    except (TypeError, ValueError):
+        return False
+    expected_acceptance = [
+        {"id": item.id, "description": item.description, "kind": item.kind}
+        for item in plan.coder_packet.acceptance_criteria
+    ]
+    expected_task_spec = task_spec_from_plan(plan).to_dict()
+    review_report = review_diff_deterministically(plan, proposed_diff).to_dict()
+    receipt_body = dict(receipt)
+    recorded_receipt_sha256 = str(receipt_body.pop("receipt_sha256", ""))
+    adapter_evidence = receipt.get("adapter_preview_evidence")
+    return bool(
+        plan.task_id == task_id
+        and plan.coder_packet.target_file.path in changed_files
+        and list(acceptance) == expected_acceptance
+        and dict(task_spec) == expected_task_spec
+        and binding.get("server_plan_sha256") == _sha256_json(plan_payload)
+        and binding.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and binding.get("acceptance_criteria_sha256")
+        == _sha256_json(acceptance)
+        and receipt.get("schema_version")
+        == "coding.preview-review-receipt/v1"
+        and receipt.get("reviewer")
+        == "source-proxy.planning.reviewer.deterministic/v1"
+        and receipt.get("task_id") == task_id
+        and receipt.get("run_id") == run_id
+        and receipt.get("attempt_id") == attempt_id
+        and receipt.get("server_plan_id") == plan.plan_id
+        and receipt.get("server_plan_sha256") == _sha256_json(plan_payload)
+        and receipt.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and receipt.get("acceptance_criteria_sha256")
+        == _sha256_json(acceptance)
+        and receipt.get("acceptance_criterion_ids")
+        == [str(item.get("id") or "") for item in acceptance]
+        and receipt.get("proposed_diff_sha256")
+        == hashlib.sha256(proposed_diff.encode("utf-8")).hexdigest()
+        and receipt.get("changed_files") == changed_files
+        and receipt.get("deterministic_review_report") == review_report
+        and receipt.get("deterministic_review_report_sha256")
+        == _sha256_json(review_report)
+        and receipt.get("repair_feedback_sha256")
+        == (
+            expected_repair_feedback.get("repair_feedback_sha256")
+            if isinstance(expected_repair_feedback, Mapping)
+            else None
+        )
+        and receipt.get("status") == "passed"
+        and receipt.get("blocked_reasons") == []
+        and review_report.get("passed") is True
+        and repair_feedback == expected_repair_feedback
+        and binding.get("repair_feedback_sha256")
+        == (
+            expected_repair_feedback.get("repair_feedback_sha256")
+            if isinstance(expected_repair_feedback, Mapping)
+            else None
+        )
+        and (
+            (
+                isinstance(adapter_evidence, Mapping)
+                and receipt.get("adapter_preview_evidence_sha256")
+                == _sha256_json(adapter_evidence)
+                and isinstance(adapter_evidence.get("attempt"), Mapping)
+                and adapter_evidence["attempt"].get("proposed_diff_sha256")
+                == receipt.get("proposed_diff_sha256")
+                and adapter_evidence["attempt"].get("preview_status")
+                != "blocked"
+                and isinstance(
+                    adapter_evidence["attempt"].get("git_apply_check"), Mapping
+                )
+                and adapter_evidence["attempt"]["git_apply_check"].get(
+                    "passed"
+                )
+                is True
+            )
+            or (
+                adapter_evidence is None
+                and receipt.get("adapter_preview_evidence_sha256") is None
+            )
+        )
+        and recorded_receipt_sha256
+        and _sha256_json(receipt_body) == recorded_receipt_sha256
+        and binding.get("preview_review_receipt_sha256")
+        == recorded_receipt_sha256
+        and recorded_binding_sha256
+        and _sha256_json(body) == recorded_binding_sha256
+    )
+
+
 def _artifact_provenance_for_run(run: CodingLaneStateMachine) -> dict[str, Any]:
     transfer = run.cartographer_transfer
     finalization = run.cartographer_finalization
@@ -2329,6 +4541,18 @@ def _artifact_provenance_for_run(run: CodingLaneStateMachine) -> dict[str, Any]:
     ) is True
     return {
         "cartographer_identity": cartographer_identity,
+        "semantic_review_identity": (
+            json.loads(
+                json.dumps(
+                    dict(proposal.get("semantic_review_binding") or {}),
+                    sort_keys=True,
+                    default=str,
+                )
+            )
+            if isinstance(proposal, Mapping)
+            and isinstance(proposal.get("semantic_review_binding"), Mapping)
+            else {}
+        ),
         "claim_ceiling": (
             "model_authored_diff_pending_independent_verification"
             if model_bound
@@ -2350,13 +4574,28 @@ def _target_plugin_model_participant(
     invocation_id: str | None = None,
 ) -> dict[str, Any]:
     diagnostics = _coder_diagnostics(result)
+    adapter = result.get("target_adapter_provenance")
+    adapter = adapter if isinstance(adapter, Mapping) else {}
     alias = str(
-        configured_alias
+        adapter.get("selected_model_alias")
         or diagnostics.get("selected_model_alias")
+        or configured_alias
         or "server-selected-model"
     )
-    provider = str(diagnostics.get("provider") or route_provider_for_alias(alias) or "model-router")
-    model = str(diagnostics.get("model") or route_model_for_alias(alias) or alias)
+    provider = str(
+        adapter.get("provider")
+        or diagnostics.get("provider")
+        or route_provider_for_alias(alias)
+        or "model-router"
+    )
+    model = str(
+        adapter.get("model")
+        or diagnostics.get("model")
+        or adapter.get("routed_model")
+        or diagnostics.get("routed_model")
+        or route_model_for_alias(alias)
+        or alias
+    )
     proposed_diff = str(result.get("proposed_diff") or "")
     blocked = bool(result.get("coder_blocked") or result.get("coderBlocked"))
     passed = bool(proposed_diff.strip()) and not blocked
@@ -2466,6 +4705,10 @@ def _sha256_json(value: Any) -> str:
         default=str,
     ).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _sha256_text(value: str) -> str:
+    return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"
 
 
 def _mapping_list(value: Any) -> list[dict[str, Any]]:

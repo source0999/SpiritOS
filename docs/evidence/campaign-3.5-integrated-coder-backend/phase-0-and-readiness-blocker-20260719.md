@@ -49,3 +49,26 @@ These are integration/readiness blockers, not failed benchmark tasks. The 30-tas
 ## Current terminal assessment
 
 `CAMPAIGN_3_5_BLOCKED_INTEGRATION_INCOMPLETE`
+
+## Supersession correction - 2026-07-22
+
+This is a historical receipt for the first failed smoke attempt. Its two
+**Blocking conditions** were re-verified against the current campaign checkout:
+
+1. Model-call authority is now an explicit operator precondition, not a genuine
+   external blocker. `source_proxy/api/campaign_3_5_authority.py` exposes the
+   authenticated issue/revoke route; `source_proxy/approval/model_call_authority.py`
+   binds the grant to campaign, branch, worktree, source head, clean state, and
+   expiry. Source Proxy must not self-issue it.
+2. The trace-map statement is stale. Version 2 of
+   `benchmarks/coder-backend-100/v1.1/trace-event-contract-map.json` has status
+   `MAPPED_RUNTIME_CONFIRMED_PHASE_0`, twelve non-empty mappings, and a bound
+   runtime-confirmation receipt. Both the standalone validator and focused test
+   pass on the current checkout.
+
+The map's runtime proof remains scoped to its named authenticated disposable
+LumaCart Phase 0 run. This correction does not retroactively turn the failed
+smoke attempt described above into a benchmark pass, does not validate a direct
+adapter harness, and does not prove the Core 30 or Full 100. The historical
+terminal token above records the earlier attempt only; it is not the current
+Campaign 3.5 verdict.

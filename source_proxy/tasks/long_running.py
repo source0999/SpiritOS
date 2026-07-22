@@ -9,7 +9,9 @@ import queue
 import re
 import sqlite3
 import shutil
+import stat
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -20,7 +22,7 @@ from collections.abc import Mapping
 from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Literal, TypedDict
 from uuid import uuid4
 
@@ -49,6 +51,7 @@ from source_proxy.approval.campaign_authority import (
     current_head,
     enter_coding_execution_consuming,
     finalize_coding_execution_approval,
+    lookup_coding_execution_approval,
     validate_coding_execution_approval,
 )
 from source_proxy.approval.campaign_evidence import (
@@ -105,6 +108,13 @@ _GIT_APPLY_FLAG_CHAINS: tuple[tuple[str, ...], ...] = (
 )
 
 _active_coder_timing: dict[str, Any] = {}
+
+_BACKUP_STORAGE_SCHEMA_V2 = "source-proxy-backup-storage/v2"
+_BACKUP_STORAGE_KIND_SERVER_STATE = "server_state"
+_BACKUP_STORAGE_DIRECTORY = "approved-diff-backups"
+_BACKUP_STORAGE_FILE_MODE = 0o600
+_BACKUP_STORAGE_DIRECTORY_MODE = 0o700
+_SERVER_STATE_LOCATOR_PREFIX = "server-state:"
 
 
 def reset_coder_timing_diagnostics() -> None:
@@ -205,6 +215,116 @@ def _workspace_root() -> Path:
         if root.is_dir():
             return root
     return _workspace_root_from_package_walk()
+
+
+def _authoritative_generic_workspace(
+    identity: Mapping[str, Any],
+) -> tuple[Path, Any]:
+    """Bind a generic identity to the current server-owned fixture manifest."""
+
+    try:
+        from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
+            Campaign35FixtureAuthorityError,
+            load_campaign_3_5_fixture_authority,
+        )
+
+        authority = load_campaign_3_5_fixture_authority()
+    except Campaign35FixtureAuthorityError as error:
+        raise LongRunningTaskError(
+            "Generic target-plugin fixture authority is unavailable.",
+            error.reason_code,
+        ) from error
+
+    raw_root = str(identity.get("workspace_root") or "").strip()
+    supplied_root = Path(raw_root)
+    authoritative_root = authority.workspace_root.resolve()
+    if (
+        not raw_root
+        or not supplied_root.is_absolute()
+        or supplied_root.resolve() != supplied_root
+        or supplied_root != authoritative_root
+        or not authoritative_root.is_dir()
+    ):
+        raise LongRunningTaskError(
+            "Generic target-plugin workspace does not match server fixture authority.",
+            "target_plugin_workspace_authority_mismatch",
+        )
+
+    writable = list(authority.writable_paths or authority.allowed_paths)
+    readable = list(authority.readable_paths or authority.allowed_paths)
+    manifest_namespace = authority.manifest_sha256[:24]
+    expected_manifest_identity = {
+        "schema_version": "spiritos-target-plugin/v1",
+        "plugin_id": "generic-workspace",
+        "repository_id": "campaign-3.5-fixture",
+        "worktree_id": manifest_namespace,
+        "workspace_root": str(authoritative_root),
+        "state_namespace": manifest_namespace,
+        "fixture_root": ".",
+        "selected_prompt_id": "generic-architect-coder-packet",
+        "selected_context_id": "server-scoped-architect-context",
+        "execution_profile": authority.execution_profile,
+        "allowed_actions": writable,
+        "readable_actions": readable,
+        "result_identity": f"generic-workspace:{authority.manifest_sha256[:12]}",
+    }
+    if any(
+        identity.get(key) != expected
+        for key, expected in expected_manifest_identity.items()
+    ):
+        raise LongRunningTaskError(
+            "Generic target-plugin identity no longer matches server fixture authority.",
+            "target_plugin_identity_authority_mismatch",
+        )
+
+    target_head = str(authority.baseline_commit or "").strip()
+    if not target_head:
+        try:
+            target_head = subprocess.check_output(
+                ["git", "-C", str(authoritative_root), "rev-parse", "HEAD"],
+                text=True,
+                timeout=15,
+            ).strip()
+        except (OSError, subprocess.SubprocessError) as error:
+            raise LongRunningTaskError(
+                "Generic target-plugin fixture HEAD is unavailable.",
+                "target_plugin_target_source_unavailable",
+            ) from error
+    if str(identity.get("target_source_head") or "") != target_head:
+        raise LongRunningTaskError(
+            "Generic target-plugin fixture HEAD changed after proposal.",
+            "target_plugin_target_source_head_mismatch",
+        )
+    return authoritative_root, authority
+
+
+def _target_plugin_execution_workspace(
+    identity: Mapping[str, Any] | None,
+    *,
+    require_state_match: bool = True,
+) -> Path | None:
+    """Return the server-resolved target workspace for generic plugin state."""
+
+    if not isinstance(identity, Mapping):
+        return None
+    if str(identity.get("plugin_id") or "") != "generic-workspace":
+        return None
+    root, authority = _authoritative_generic_workspace(identity)
+    if require_state_match:
+        state_sha256 = str(authority.current_state_sha256 or "")
+        state_paths = tuple(authority.current_state_paths)
+        if str(identity.get("target_workspace_state_sha256") or "") != state_sha256:
+            raise LongRunningTaskError(
+                "Generic target-plugin workspace changed after proposal.",
+                "target_plugin_workspace_state_mismatch",
+            )
+        raw_paths = identity.get("target_workspace_state_paths")
+        if not isinstance(raw_paths, (list, tuple)) or tuple(raw_paths) != state_paths:
+            raise LongRunningTaskError(
+                "Generic target-plugin changed-path state no longer matches the proposal.",
+                "target_plugin_workspace_state_paths_mismatch",
+            )
+    return root
 
 
 def _ordered_workspace_roots_for_apply() -> list[Path]:
@@ -450,6 +570,7 @@ def _pick_apply_workspace_root_and_candidate(
     patch_candidates: list[str],
     check_failures: list[str],
     require_existing_targets: bool = True,
+    workspace_roots: list[Path] | None = None,
 ) -> tuple[Path, str, tuple[str, ...]] | None:
     """First (root, candidate, ws_flags) where ``git apply --check`` passes.
 
@@ -466,7 +587,7 @@ def _pick_apply_workspace_root_and_candidate(
     rels = _rels_for_apply(changed_files, unified_diff)
     new_file_only = _new_file_relpaths_from_unified_diff(unified_diff)
     rels_must_exist = [r for r in rels if r.replace("\\", "/") not in new_file_only]
-    for root in _ordered_workspace_roots_for_apply():
+    for root in workspace_roots or _ordered_workspace_roots_for_apply():
         root = root.resolve()
         if require_existing_targets and rels_must_exist:
             missing: list[str] = []
@@ -507,13 +628,15 @@ def _pick_apply_workspace_root_and_candidate(
 def git_apply_check_for_preview(
     unified_diff: str,
     changed_files: list[dict[str, Any]],
+    *,
+    workspace_roots: list[Path] | None = None,
 ) -> tuple[bool, str]:
     """Dry-run ``git apply --check`` for approval gating (read-only).
 
     Uses ``require_existing_targets=False`` so ``new file`` patches can be checked
     before the destination blob exists on disk.
     """
-    roots = _ordered_workspace_roots_for_apply()
+    roots = workspace_roots or _ordered_workspace_roots_for_apply()
     changed_files, unified_diff, _did_remap = _normalize_next_app_router_diff_targets(
         roots,
         [dict(x) for x in changed_files],
@@ -529,6 +652,7 @@ def git_apply_check_for_preview(
         patch_candidates=patch_candidates,
         check_failures=check_failures,
         require_existing_targets=False,
+        workspace_roots=roots,
     )
     if picked is not None:
         return True, ""
@@ -564,9 +688,9 @@ AGENT_INTERNAL_FORBIDDEN_PATHS: tuple[str, ...] = (
     "backend/searxng_data/",
 )
 ContextMode = Literal["user_app", "agent_internal"]
-CODER_SYSTEM_PROMPT = """You are Codex, an expert senior full-stack React/TypeScript/Tailwind engineer working inside SpiritOS.
+CODER_SYSTEM_PROMPT = """You are Codex, an expert senior software engineer working inside a repository.
 
-You are given repomix-backed workspace context for SpiritOS.
+You are given repository-backed workspace context selected by the Source Proxy Architect.
 
 TASK:
 {task}
@@ -598,17 +722,17 @@ INSTRUCTIONS (NEVER violate):
 - Target must exactly match the explicit Target file line and TaskSpec.target.
 - Only edit files in TaskSpec.allowed_files.
 - Include all imports needed by the final file.
-- Use only real repo components and imports from context.
+- Follow the target file's existing language, framework, module, and formatting conventions.
+- Use only real repository symbols, modules, components, packages, and imports from context.
 - Do not include explanations.
 - Before outputting JSON, verify:
   1. target path matches the explicit Target file line, when present
-  2. route path maps correctly if this is a Next App Router page
-  3. all quoted UI text from the user appears exactly if requested
-  4. all requested className fragments appear exactly if requested
-  5. required existing components are imported from real repo paths
-  6. TSX is syntactically valid
-  7. no raw task text appears in code
-  8. the file block content is the full replacement file, not a diff hunk
+  2. all acceptance criteria and deterministic TaskSpec constraints are satisfied
+  3. required symbols are imported or declared using real repository paths
+  4. syntax is valid for the target language
+  5. no raw task text appears in code unless the task explicitly requires that literal
+  6. unrelated public behavior and interfaces are preserved
+  7. the file block content is the full replacement file, not a diff hunk
 
 Preferred output shape:
 <file path="REPO_RELATIVE_PATH">
@@ -1222,9 +1346,9 @@ def execute_approved_long_running_task(
         if isinstance(persisted_proposal_binding, dict)
         else None
     )
-    from source_proxy.target_plugins.lumacart import is_lumacart_prompt_id
+    from source_proxy.target_plugins.selection import is_target_plugin_prompt_id
 
-    if is_lumacart_prompt_id(selected_prompt_id):
+    if is_target_plugin_prompt_id(selected_prompt_id):
         if not isinstance(target_plugin_identity, dict):
             raise LongRunningTaskError(
                 "Selected Coder execution requires the server-resolved target-plugin identity.",
@@ -1362,7 +1486,7 @@ def execute_approved_long_running_task(
             diagnostics=approval_binding_diagnostic,
         )
     if (
-        is_lumacart_prompt_id(selected_prompt_id)
+        is_target_plugin_prompt_id(selected_prompt_id)
         and durable_approval.get("target_plugin_identity")
         != proposal_target_plugin_identity
     ):
@@ -1400,6 +1524,7 @@ def execute_approved_long_running_task(
         ),
         architect_plan=None if is_reversible_live_trial else architect_plan,
         task_spec=trial_task_spec,
+        workspace_root=_target_plugin_execution_workspace(target_plugin_identity),
     )
     if verification["status"] == "blocked":
         before_blocked = task.status
@@ -1524,7 +1649,13 @@ def execute_approved_long_running_task(
     _save_task(task)
 
     try:
-        apply_result = _apply_verified_diff(approved_diff, verification)
+        apply_result = _apply_verified_diff(
+            approved_diff,
+            verification,
+            workspace_root=_target_plugin_execution_workspace(target_plugin_identity),
+            target_plugin_identity=target_plugin_identity,
+            backup_binding=f"{task.id}:{approval_id}",
+        )
     except LongRunningTaskError as apply_error:
         before_failure = task.status
         task.status = "failed_needs_human"
@@ -1571,6 +1702,7 @@ def execute_approved_long_running_task(
         "changed_files": [file["path"] for file in verification["changed_files"]],
         "backup_manifest": apply_result["manifest_path"],
         "backup_root": apply_result["backup_root"],
+        "backup_storage": apply_result.get("backup_storage"),
         "changed_file_snapshots": apply_result["changed_file_snapshots"],
         "approved_diff_path": apply_result["approved_diff_path"],
         "risk": verification["risk"],
@@ -1591,6 +1723,7 @@ def execute_approved_long_running_task(
     backup_manifest_applied_sha256 = _finalize_backup_manifest(
         workspace_root=Path(apply_result["workspace_root"]),
         manifest_path=apply_result["manifest_path"],
+        backup_storage=apply_result.get("backup_storage"),
         audit_record=audit_record,
     )
     audit_record["backup_manifest_applied_sha256"] = (
@@ -1601,6 +1734,7 @@ def execute_approved_long_running_task(
         "backup_manifest": audit_record["backup_manifest"],
         "backup_manifest_applied_sha256": backup_manifest_applied_sha256,
         "backup_root": audit_record["backup_root"],
+        "backup_storage": audit_record.get("backup_storage"),
         "task_id": task.id,
         "workspace_root": apply_result["workspace_root"],
     }
@@ -1658,6 +1792,9 @@ def execute_approved_long_running_task(
             else {},
             "cartographer_identity": dict(
                 (artifact_provenance or {}).get("cartographer_identity") or {}
+            ),
+            "semantic_review_identity": dict(
+                (artifact_provenance or {}).get("semantic_review_identity") or {}
             ),
             "claim_ceiling": str(
                 (artifact_provenance or {}).get("claim_ceiling")
@@ -1722,6 +1859,7 @@ def execute_approved_long_running_task(
         {
             "audit": audit_record,
             "backup_root": apply_result["backup_root"],
+            "backup_storage": apply_result.get("backup_storage"),
             "post_apply_verification": post_apply_verification,
             "verification_plan": verification["verification_plan"],
         },
@@ -1753,6 +1891,7 @@ def execute_approved_long_running_task(
         "audit": audit_record,
         "acceptance": acceptance,
         "backup_root": apply_result["backup_root"],
+        "backup_storage": apply_result.get("backup_storage"),
         "changed_file_snapshots": apply_result["changed_file_snapshots"],
         "changed_files": verification["changed_files"],
         "trace_id": trace_id,
@@ -2356,6 +2495,20 @@ def record_post_apply_verification(
         verification_note = (
             verification_note
             or "Server verified the bounded dummy-product-site snapshot and browser evidence."
+        )
+    elif profile == "generic_backend":
+        checks, profile_evidence = _run_generic_backend_post_apply_verification(
+            task,
+            changed_files=changed_files,
+        )
+        verification["checks"] = [dict(check) for check in checks]
+        verification["verification_profile"] = profile
+        verification["backend_verification"] = profile_evidence
+        run_code_verification = True
+        manual_browser_check_done = True
+        verification_note = (
+            verification_note
+            or "Server ran the generic backend public tests in a restricted container."
         )
     elif run_code_verification:
         if docs_only:
@@ -3052,31 +3205,87 @@ def fail_orchestrated_coding_execution(
             "Cannot fail an orchestrated execution without its approval and artifact.",
             "coding_failure_binding_missing",
         )
-    if campaign_approval.get("state") == "consuming":
+    if campaign_approval.get("state") == "failure_finalization_failed":
+        persisted_records = campaign_approval.get("participant_records")
+        if (
+            campaign_approval.get("failure_reason") != reason_code
+            or not isinstance(persisted_records, list)
+            or persisted_records != [dict(record) for record in participant_records]
+        ):
+            raise LongRunningTaskError(
+                "Failure-finalization recovery did not match the persisted failure payload.",
+                "approval_failure_resume_payload_mismatch",
+            )
+    if campaign_approval.get("state") in {
+        "consuming",
+        "failure_finalization_failed",
+    }:
         approval = {
             "approval_id": campaign_approval["approval_id"],
             "generation": int(campaign_approval["generation"]),
             "target_plugin_identity": dict(campaign_approval.get("target_plugin_identity") or {}),
             "binding": dict(campaign_approval["binding"]),
         }
+        result_id = f"coding-execution-{task.id}-failed"
+        failure_evidence = {
+            "schema_version": "coding.approval-failure-evidence/v1",
+            "task_id": task.id,
+            "run_id": artifact.get("run_id"),
+            "artifact_sha256": artifact.get("artifact_sha256"),
+            "reason_code": reason_code,
+            "participant_invocation_ids": [
+                str(record.get("invocation_id") or "")
+                for record in participant_records
+            ],
+        }
         try:
-            finalize_coding_execution_approval(
+            authoritative = lookup_coding_execution_approval(approval)
+            authority_state_before = str(authoritative.get("state") or "")
+            if authority_state_before not in {"consuming", "invalidated"}:
+                raise CampaignApprovalError(
+                    "approval_failure_finalization_state_invalid"
+                )
+            receipt = finalize_coding_execution_approval(
                 approval,
-                result_id=f"coding-execution-{task.id}-failed",
-                evidence={
-                    "schema_version": "coding.approval-failure-evidence/v1",
-                    "task_id": task.id,
-                    "run_id": artifact.get("run_id"),
-                    "artifact_sha256": artifact.get("artifact_sha256"),
-                    "reason_code": reason_code,
-                    "participant_invocation_ids": [
-                        str(record.get("invocation_id") or "")
-                        for record in participant_records
-                    ],
-                },
+                result_id=result_id,
+                evidence=failure_evidence,
                 status="failed",
             )
+            if (
+                str(receipt.get("approval_id") or "")
+                != str(approval["approval_id"])
+                or str(receipt.get("generation") or "")
+                != str(approval["generation"])
+                or receipt.get("state") != "invalidated"
+                or receipt.get("result_id") != result_id
+                or not isinstance(receipt.get("idempotent"), bool)
+                or (
+                    authority_state_before == "invalidated"
+                    and receipt.get("idempotent") is not True
+                )
+            ):
+                raise CampaignApprovalError(
+                    "approval_finalization_receipt_mismatch"
+                )
+            campaign_approval["failure_finalization_receipt"] = {
+                "schema_version": "coding.approval-failure-finalization-receipt/v1",
+                "approval_id": receipt["approval_id"],
+                "generation": int(receipt["generation"]),
+                "state": receipt["state"],
+                "result_id": receipt["result_id"],
+                "idempotent": receipt["idempotent"],
+                "authority_state_before_finalization": authority_state_before,
+                "evidence_sha256": hashlib.sha256(
+                    json.dumps(
+                        failure_evidence,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        ensure_ascii=True,
+                    ).encode("utf-8")
+                ).hexdigest(),
+            }
             campaign_approval["state"] = "invalidated"
+            campaign_approval.pop("finalization_error", None)
         except CampaignApprovalError as error:
             campaign_approval["state"] = "failure_finalization_failed"
             campaign_approval["finalization_error"] = error.reason_code
@@ -3181,6 +3390,7 @@ def _record_approved_execution_evidence(
     snapshot["approved_execution_evidence"] = {
         "audit": audit_record,
         "backup_root": backup_root,
+        "backup_storage": audit_record.get("backup_storage"),
         "backup_manifest": audit_record.get("backup_manifest"),
         "backup_manifest_sha256": backup_manifest_sha256,
         "backup_manifest_applied_sha256": backup_manifest_sha256,
@@ -3519,6 +3729,188 @@ def _run_code_post_apply_verification(
     return results
 
 
+def _task_target_plugin_identity(task: LongRunningTask) -> dict[str, Any]:
+    snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
+    for key in ("campaign_2_approval", "campaign_2_pending_preview"):
+        record = snapshot.get(key)
+        identity = (
+            record.get("target_plugin_identity")
+            if isinstance(record, Mapping)
+            else None
+        )
+        if isinstance(identity, Mapping):
+            return dict(identity)
+    artifact = snapshot.get("coding_artifact")
+    if isinstance(artifact, Mapping):
+        provenance = artifact.get("provenance")
+        identity = (
+            provenance.get("target_plugin_identity")
+            if isinstance(provenance, Mapping)
+            else None
+        )
+        if isinstance(identity, Mapping):
+            return dict(identity)
+    return {}
+
+
+def _run_generic_backend_post_apply_verification(
+    task: LongRunningTask,
+    *,
+    changed_files: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    identity = _task_target_plugin_identity(task)
+    if identity.get("plugin_id") != "generic-workspace":
+        raise LongRunningTaskError(
+            "The generic backend verifier requires a server-resolved generic workspace.",
+            "generic_backend_target_plugin_identity_missing",
+        )
+    root = _approved_execution_workspace_root(task, reason_prefix="generic_backend")
+    identity_root = _target_plugin_execution_workspace(
+        identity,
+        require_state_match=False,
+    )
+    if identity_root is None or identity_root != root.resolve():
+        raise LongRunningTaskError(
+            "The applied workspace does not match the generic target-plugin identity.",
+            "generic_backend_workspace_identity_mismatch",
+        )
+    if not changed_files or not any(
+        Path(path).suffix.lower() == ".py"
+        for path in _changed_file_paths(changed_files)
+    ):
+        raise LongRunningTaskError(
+            "The generic backend profile currently requires Python source or test changes.",
+            "generic_backend_verification_not_applicable",
+        )
+    docker = shutil.which("docker")
+    site_packages = next(
+        iter(sorted(Path(sys.prefix).resolve().glob("lib/python*/site-packages"))),
+        None,
+    )
+    if docker is None or site_packages is None or not site_packages.is_dir():
+        raise LongRunningTaskError(
+            "The restricted backend verification runtime is unavailable.",
+            "generic_backend_sandbox_unavailable",
+        )
+    image = os.getenv(
+        "SOURCE_PROXY_GENERIC_BACKEND_SANDBOX_IMAGE",
+        "scout-scout-api:latest",
+    ).strip()
+    if not image:
+        raise LongRunningTaskError(
+            "The generic backend sandbox image is not configured.",
+            "generic_backend_sandbox_image_missing",
+        )
+    container_name = f"source-proxy-backend-{uuid4().hex}"
+    command = [
+        docker,
+        "run",
+        "--rm",
+        "--name",
+        container_name,
+        "--network",
+        "none",
+        "--read-only",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges=true",
+        "--pids-limit",
+        "128",
+        "--memory",
+        "1g",
+        "--cpus",
+        "2",
+        "--user",
+        f"{getattr(os, 'getuid', lambda: 1000)()}:{getattr(os, 'getgid', lambda: 1000)()}",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,noexec,size=128m",
+        "--mount",
+        f"type=bind,src={root},dst=/workspace,readonly",
+        "--mount",
+        f"type=bind,src={site_packages},dst=/host-site,readonly",
+        "--workdir",
+        "/workspace",
+        "--env",
+        "HOME=/tmp",
+        "--env",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "--env",
+        "PYTHONPATH=/workspace:/host-site",
+        "--env",
+        "PYTEST_ADDOPTS=-p no:cacheprovider",
+        "--env",
+        "LANG=C.UTF-8",
+        "--entrypoint",
+        "python",
+        image,
+        "-m",
+        "pytest",
+        "-q",
+    ]
+    started = time.perf_counter()
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=90,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+        )
+        exit_code = int(completed.returncode)
+        output_tail = _tail_output(
+            completed.stdout or "",
+            completed.stderr or "",
+        )
+    except subprocess.TimeoutExpired as error:
+        subprocess.run(
+            [docker, "rm", "-f", container_name],
+            capture_output=True,
+            check=False,
+            timeout=15,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+        )
+        exit_code = 124
+        output_tail = _tail_output(
+            str(error.stdout or ""),
+            str(error.stderr or ""),
+        )
+    duration_ms = int((time.perf_counter() - started) * 1000)
+    check = {
+        "id": "generic_backend_pytest",
+        "command": ["sandboxed", "python", "-m", "pytest", "-q"],
+        "command_text": "sandboxed python -m pytest -q",
+        "duration_ms": duration_ms,
+        "exit_code": exit_code,
+        "output_tail": output_tail,
+        "required": True,
+        "status": "passed" if exit_code == 0 else "failed",
+        "summary": "Restricted server-owned Python backend test suite.",
+    }
+    evidence = {
+        "runtime": "restricted_container",
+        "image": image,
+        "host_runtime_inventory_sha256": os.getenv(
+            "SOURCE_PROXY_GATE_VERIFIER_RUNTIME_SHA256",
+            "",
+        ).strip()
+        or None,
+        "network": "none",
+        "workspace_mount": "read_only",
+        "host_environment_inherited": False,
+        "workspace_root_sha256": hashlib.sha256(str(root).encode("utf-8")).hexdigest(),
+        "changed_files": _changed_file_paths(changed_files),
+        "command_sha256": hashlib.sha256(
+            json.dumps(command, separators=(",", ":")).encode("utf-8")
+        ).hexdigest(),
+        "exit_code": exit_code,
+        "duration_ms": duration_ms,
+    }
+    return [check], evidence
+
+
 def _managed_dummy_storefront_origin() -> str:
     """Return the production origin, or an explicitly isolated E2E candidate origin.
 
@@ -3655,35 +4047,38 @@ def _run_dummy_product_site_post_apply_verification(
         else {}
     )
     manifest_rel = str(execution_evidence.get("backup_manifest") or "")
-    manifest_path = (workspace_root / manifest_rel).resolve() if manifest_rel else workspace_root
-    manifest_safe = bool(
-        manifest_rel
-        and _is_relative_to(manifest_path, workspace_root)
-        and manifest_path.is_file()
-    )
-    manifest: dict[str, Any] = {}
-    if manifest_safe:
-        try:
-            loaded = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest = loaded if isinstance(loaded, dict) else {}
-        except (OSError, json.JSONDecodeError):
-            manifest = {}
     expected_manifest_sha256 = str(
         execution_evidence.get("backup_manifest_sha256") or ""
     )
-    actual_manifest_sha256 = (
-        _sha256_file(manifest_path) if manifest_safe else ""
+    manifest_path, manifest, actual_manifest_sha256 = (
+        _load_hash_bound_backup_manifest(task, reason_prefix="post_apply")
     )
-    approved_diff_rel = str(execution_evidence.get("approved_diff_path") or "")
-    approved_diff_path = (
-        (workspace_root / approved_diff_rel).resolve()
-        if approved_diff_rel
-        else workspace_root
+    manifest_safe = True
+    raw_backup_storage = execution_evidence.get("backup_storage")
+    backup_storage = (
+        dict(raw_backup_storage)
+        if isinstance(raw_backup_storage, Mapping)
+        else None
+    )
+    approved_diff_rel = str(manifest.get("approved_diff_path") or "")
+    approved_diff_path = _resolve_backup_artifact_path(
+        workspace_root=workspace_root,
+        manifest_path=manifest_path,
+        relative_path=approved_diff_rel,
+        backup_storage=backup_storage,
+        reason_prefix="post_apply",
+    )
+    expected_approved_diff_locator = (
+        _server_state_locator(
+            backup_storage,
+            str(backup_storage["approved_diff_rel"]),
+        )
+        if backup_storage is not None
+        else approved_diff_rel
     )
     approved_diff_hash_ok = bool(
-        approved_diff_rel
-        and _is_relative_to(approved_diff_path, workspace_root)
-        and approved_diff_path.is_file()
+        str(execution_evidence.get("approved_diff_path") or "")
+        == expected_approved_diff_locator
         and _sha256_file(approved_diff_path)
         == str(execution_evidence.get("approved_diff_sha256") or "")
     )
@@ -4090,12 +4485,31 @@ def undo_last_approved_change(
             "undo_not_verified",
         )
 
+    raw_backup_storage = evidence.get("backup_storage")
+    backup_storage = (
+        dict(raw_backup_storage)
+        if isinstance(raw_backup_storage, Mapping)
+        else None
+    )
     approved_diff_rel = str(manifest.get("approved_diff_path") or "")
-    approved_diff_path = (workspace_root / approved_diff_rel).resolve()
+    approved_diff_path = _resolve_backup_artifact_path(
+        workspace_root=workspace_root,
+        manifest_path=manifest_path,
+        relative_path=approved_diff_rel,
+        backup_storage=backup_storage,
+        reason_prefix="undo",
+    )
+    expected_approved_diff_locator = (
+        _server_state_locator(
+            backup_storage,
+            str(backup_storage["approved_diff_rel"]),
+        )
+        if backup_storage is not None
+        else approved_diff_rel
+    )
     if (
-        not approved_diff_rel
-        or not _is_relative_to(approved_diff_path, workspace_root)
-        or not approved_diff_path.is_file()
+        str(evidence.get("approved_diff_path") or "")
+        != expected_approved_diff_locator
         or _sha256_file(approved_diff_path)
         != str(manifest.get("approved_diff_sha256") or "")
         or str(manifest.get("approved_diff_sha256") or "")
@@ -4151,12 +4565,19 @@ def undo_last_approved_change(
         backup_rel = backup.get("backup_path")
         backup_hash_ok = True
         if backup_rel:
-            backup_path = (workspace_root / str(backup_rel)).resolve()
+            backup_path = _resolve_backup_artifact_path(
+                workspace_root=workspace_root,
+                manifest_path=manifest_path,
+                relative_path=str(backup_rel),
+                backup_storage=backup_storage,
+                reason_prefix="undo",
+            )
             backup_hash_ok = bool(
                 _is_relative_to(backup_path, manifest_path.parent)
                 and backup_path.is_file()
                 and _sha256_file(backup_path) == record.get("sha256_before")
                 and record.get("sha256_before") == backup.get("sha256")
+                and record.get("mode_before") == backup.get("mode_before")
             )
         elif not record.get("missing_before_apply"):
             backup_hash_ok = False
@@ -4184,19 +4605,41 @@ def undo_last_approved_change(
         if record.get("missing_before_apply"):
             current_path.unlink()
         else:
-            backup_path = (workspace_root / str(backup.get("backup_path") or "")).resolve()
+            backup_path = _resolve_backup_artifact_path(
+                workspace_root=workspace_root,
+                manifest_path=manifest_path,
+                relative_path=str(backup.get("backup_path") or ""),
+                backup_storage=backup_storage,
+                reason_prefix="undo",
+            )
             current_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(backup_path, current_path)
+            mode_before = record.get("mode_before")
+            if isinstance(mode_before, int):
+                os.chmod(current_path, mode_before)
         actual_before = _sha256_file(current_path) if current_path.is_file() else None
         expected_before = record.get("sha256_before")
+        expected_mode_before = record.get("mode_before")
+        actual_mode = (
+            stat.S_IMODE(current_path.stat().st_mode)
+            if current_path.is_file()
+            else None
+        )
         restored.append(
             {
                 "path": rel_path,
                 "expected_sha256_before": expected_before,
                 "actual_sha256": actual_before,
+                "expected_mode_before": expected_mode_before,
+                "actual_mode": actual_mode,
                 "absent": not current_path.exists(),
                 "verified": (
                     actual_before == expected_before
+                    and (
+                        actual_mode == expected_mode_before
+                        if isinstance(expected_mode_before, int)
+                        else True
+                    )
                     if expected_before
                     else not current_path.exists()
                 ),
@@ -4226,12 +4669,20 @@ def undo_last_approved_change(
         "final_truth_status": "UNDO_FILESYSTEM_VERIFIED",
     }
     receipt_path = manifest_path.parent / "undo-receipt.json"
-    receipt["receipt_path"] = str(receipt_path.relative_to(workspace_root)).replace("\\", "/")
+    receipt["receipt_path"] = (
+        _server_state_locator(backup_storage, "undo-receipt.json")
+        if backup_storage is not None
+        else str(receipt_path.relative_to(workspace_root)).replace("\\", "/")
+    )
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if backup_storage is not None:
+        _seal_server_state_file(receipt_path)
     manifest["stage"] = "undone"
     manifest["undo_receipt"] = receipt
     manifest["undo_receipt_path"] = receipt["receipt_path"]
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if backup_storage is not None:
+        _seal_server_state_file(manifest_path)
     undone_manifest_sha256 = _sha256_file(manifest_path)
     evidence["backup_manifest_sha256"] = undone_manifest_sha256
     evidence["backup_manifest_undone_sha256"] = undone_manifest_sha256
@@ -5324,10 +5775,18 @@ def _first_space_prefixed_line_in_first_hunk(diff: str, rel_posix: str) -> str |
 def _apply_verified_diff(
     unified_diff: str,
     verification: dict[str, Any],
+    *,
+    workspace_root: Path | None = None,
+    target_plugin_identity: Mapping[str, Any] | None = None,
+    backup_binding: str = "",
 ) -> dict[str, Any]:
     raw_cf = verification.get("changed_files") or []
     changed_files = [dict(x) for x in raw_cf if isinstance(x, dict)]
-    roots = _ordered_workspace_roots_for_apply()
+    roots = (
+        [workspace_root.resolve()]
+        if workspace_root is not None
+        else _ordered_workspace_roots_for_apply()
+    )
     changed_files, unified_diff, _did_remap = _normalize_next_app_router_diff_targets(
         roots,
         changed_files,
@@ -5346,21 +5805,22 @@ def _apply_verified_diff(
         patch_candidates=patch_candidates,
         check_failures=check_failures,
         require_existing_targets=True,
+        workspace_roots=roots,
     )
 
     if picked is None:
-        workspace_root = _workspace_root().resolve()
+        diagnostic_root = roots[0] if roots else _workspace_root().resolve()
         rel = _first_target_rel_from_changed_or_diff(changed_files, unified_diff)
-        target_path = (workspace_root / rel.replace("\\", "/")) if rel else None
+        target_path = (diagnostic_root / rel.replace("\\", "/")) if rel else None
         disk_first = _read_text_first_line(target_path) if target_path else None
         ctx_line = _first_space_prefixed_line_in_first_hunk(unified_diff, rel) if rel else None
         spirit_first = os.getenv("SPIRIT_PROJECT_PATH", "").strip().split(",")[0].strip()
-        roots_tried = [str(p) for p in _ordered_workspace_roots_for_apply()]
+        roots_tried = [str(p) for p in roots]
         ctx_matches = None
         if disk_first is not None and ctx_line is not None:
             ctx_matches = disk_first == ctx_line
         hint_parts: list[str] = []
-        hint_parts.append(f"workspace_root={workspace_root}")
+        hint_parts.append(f"workspace_root={diagnostic_root}")
         hint_parts.append(f"roots_tried={repr(roots_tried)[:400]}")
         if spirit_first:
             hint_parts.append(f"SPIRIT_PROJECT_PATH[0]={spirit_first!r}")
@@ -5368,7 +5828,7 @@ def _apply_verified_diff(
             hint_parts.append(
                 f"Configured project root not found on this host (fix mount or path): {bad!r}",
             )
-        route_hint = _next_app_router_route_hint(workspace_root, rel)
+        route_hint = _next_app_router_route_hint(diagnostic_root, rel)
         if route_hint:
             hint_parts.append(route_hint)
         if rel:
@@ -5395,13 +5855,46 @@ def _apply_verified_diff(
 
     workspace_root, _winning, _win_ws = picked
     workspace_root = workspace_root.resolve()
-    backup_root = _backup_root_for(workspace_root)
-    backup_root.mkdir(parents=True, exist_ok=True)
+    generic_server_state = bool(
+        isinstance(target_plugin_identity, Mapping)
+        and str(target_plugin_identity.get("plugin_id") or "")
+        == "generic-workspace"
+    )
+    backup_storage: dict[str, Any] | None = None
+    if generic_server_state:
+        backup_root, backup_storage = _new_server_state_backup_root(
+            workspace_root=workspace_root,
+            identity=target_plugin_identity,
+            backup_binding=backup_binding,
+        )
+        backup_root_locator = _server_state_locator(backup_storage)
+        manifest_locator = _server_state_locator(
+            backup_storage,
+            str(backup_storage["manifest_rel"]),
+        )
+        approved_diff_locator = _server_state_locator(
+            backup_storage,
+            str(backup_storage["approved_diff_rel"]),
+        )
+    else:
+        backup_root = _backup_root_for(workspace_root)
+        backup_root.mkdir(parents=True, exist_ok=True)
+        backup_root_locator = str(backup_root.relative_to(workspace_root)).replace(
+            "\\", "/"
+        )
+        manifest_locator = str(
+            (backup_root / "manifest.json").relative_to(workspace_root)
+        ).replace("\\", "/")
+        approved_diff_locator = str(
+            (backup_root / "approved.diff").relative_to(workspace_root)
+        ).replace("\\", "/")
     approved_diff_path = backup_root / "approved.diff"
     # The approval id and audit bind the exact UTF-8 diff bytes.  Disable host
     # newline translation so the durable artifact has the same hash on Windows
     # and Linux.
     approved_diff_path.write_text(unified_diff, encoding="utf-8", newline="")
+    if generic_server_state:
+        _seal_server_state_file(approved_diff_path)
     backed_up_files: list[dict[str, Any]] = []
 
     for file in changed_files:
@@ -5413,14 +5906,28 @@ def _apply_verified_diff(
                 "path_escape",
             )
         if resolved.exists() and resolved.is_file():
-            backup_path = backup_root / rel_path
-            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            backup_path = (
+                backup_root / "files" / rel_path
+                if generic_server_state
+                else backup_root / rel_path
+            )
+            if generic_server_state:
+                _mkdir_server_state_directory(backup_path.parent, root=backup_root)
+            else:
+                backup_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(resolved, backup_path)
+            if generic_server_state:
+                _seal_server_state_file(backup_path)
             backed_up_files.append(
                 {
                     "path": rel_path,
-                    "backup_path": str(backup_path.relative_to(workspace_root)).replace("\\", "/"),
+                    "backup_path": str(
+                        backup_path.relative_to(
+                            backup_root if generic_server_state else workspace_root
+                        )
+                    ).replace("\\", "/"),
                     "sha256": _sha256_file(resolved),
+                    "mode_before": stat.S_IMODE(resolved.stat().st_mode),
                 }
             )
         else:
@@ -5441,6 +5948,7 @@ def _apply_verified_diff(
         changed_files=changed_files,
         backed_up_files=backed_up_files,
         stage="before_apply",
+        backup_storage=backup_storage,
     )
 
     chosen: str | None = None
@@ -5523,15 +6031,17 @@ def _apply_verified_diff(
                 "backup_path": before.get("backup_path"),
                 "sha256_before": before.get("sha256"),
                 "sha256_after": _sha256_file(resolved) if resolved.exists() and resolved.is_file() else None,
+                "mode_before": before.get("mode_before"),
                 "missing_before_apply": bool(before.get("missing_before_apply")),
             }
         )
 
     return {
-        "backup_root": str(backup_root.relative_to(workspace_root)).replace("\\", "/"),
+        "backup_root": backup_root_locator,
+        "backup_storage": backup_storage,
         "workspace_root": str(workspace_root),
-        "manifest_path": str(manifest_path.relative_to(workspace_root)).replace("\\", "/"),
-        "approved_diff_path": str(approved_diff_path.relative_to(workspace_root)).replace("\\", "/"),
+        "manifest_path": manifest_locator,
+        "approved_diff_path": approved_diff_locator,
         "changed_file_snapshots": changed_file_snapshots,
     }
 
@@ -5547,6 +6057,334 @@ def _backup_root() -> Path:
     return _backup_root_for(_workspace_root())
 
 
+def _server_state_backup_base(
+    *,
+    workspace_root: Path,
+    create: bool,
+) -> Path:
+    raw = os.getenv("SOURCE_PROXY_DATA_DIR", "").strip()
+    supplied = Path(raw).expanduser() if raw else Path()
+    if (
+        not raw
+        or not supplied.is_absolute()
+        or Path(os.path.realpath(supplied)) != supplied
+    ):
+        raise LongRunningTaskError(
+            "Generic backup storage requires a canonical absolute SOURCE_PROXY_DATA_DIR.",
+            "backup_storage_data_dir_invalid",
+        )
+    base = supplied / _BACKUP_STORAGE_DIRECTORY
+    control_source_root = _workspace_root_from_package_walk().resolve()
+    if (
+        Path(os.path.realpath(base)) != base
+        or _is_relative_to(base, workspace_root.resolve())
+        or _is_relative_to(base, control_source_root)
+    ):
+        raise LongRunningTaskError(
+            "Generic backup storage must be canonical and outside target and control workspaces.",
+            "backup_storage_scope_invalid",
+        )
+    try:
+        if create:
+            supplied.mkdir(
+                parents=True,
+                exist_ok=True,
+                mode=_BACKUP_STORAGE_DIRECTORY_MODE,
+            )
+            os.chmod(supplied, _BACKUP_STORAGE_DIRECTORY_MODE)
+        _validate_server_state_directory(supplied)
+        if create:
+            base.mkdir(exist_ok=True, mode=_BACKUP_STORAGE_DIRECTORY_MODE)
+            os.chmod(base, _BACKUP_STORAGE_DIRECTORY_MODE)
+        _validate_server_state_directory(base)
+    except OSError as error:
+        raise LongRunningTaskError(
+            f"Generic backup storage is unavailable: {error}",
+            "backup_storage_unavailable",
+        ) from error
+    return base
+
+
+def _validate_server_state_directory(path: Path) -> None:
+    metadata = path.lstat()
+    if (
+        path.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or stat.S_IMODE(metadata.st_mode) != _BACKUP_STORAGE_DIRECTORY_MODE
+        or Path(os.path.realpath(path)) != path
+    ):
+        raise OSError(f"unsafe server-state directory: {path}")
+
+
+def _mkdir_server_state_directory(path: Path, *, root: Path) -> None:
+    root = root.resolve(strict=True)
+    if path == root:
+        _validate_server_state_directory(root)
+        return
+    try:
+        relative = path.relative_to(root)
+    except ValueError as error:
+        raise LongRunningTaskError(
+            "Backup directory escaped server-state storage.",
+            "backup_storage_scope_invalid",
+        ) from error
+    current = root
+    for component in relative.parts:
+        if component in {"", ".", ".."}:
+            raise LongRunningTaskError(
+                "Backup directory is not canonical.",
+                "backup_storage_scope_invalid",
+            )
+        current = current / component
+        try:
+            current.mkdir(mode=_BACKUP_STORAGE_DIRECTORY_MODE)
+        except FileExistsError:
+            pass
+        try:
+            os.chmod(current, _BACKUP_STORAGE_DIRECTORY_MODE)
+            _validate_server_state_directory(current)
+        except OSError as error:
+            raise LongRunningTaskError(
+                f"Backup directory is unsafe: {error}",
+                "backup_storage_scope_invalid",
+            ) from error
+
+
+def _validate_server_state_file(path: Path) -> None:
+    metadata = path.lstat()
+    if (
+        path.is_symlink()
+        or not stat.S_ISREG(metadata.st_mode)
+        or stat.S_IMODE(metadata.st_mode) != _BACKUP_STORAGE_FILE_MODE
+        or Path(os.path.realpath(path)) != path
+    ):
+        raise OSError(f"unsafe server-state file: {path}")
+
+
+def _seal_server_state_file(path: Path) -> None:
+    try:
+        metadata = path.lstat()
+        if (
+            path.is_symlink()
+            or not stat.S_ISREG(metadata.st_mode)
+            or Path(os.path.realpath(path)) != path
+        ):
+            raise OSError(f"unsafe server-state file: {path}")
+        os.chmod(path, _BACKUP_STORAGE_FILE_MODE)
+        _validate_server_state_file(path)
+    except OSError as error:
+        raise LongRunningTaskError(
+            f"Backup artifact could not be secured: {error}",
+            "backup_storage_file_unsafe",
+        ) from error
+
+
+def _new_server_state_backup_root(
+    *,
+    workspace_root: Path,
+    identity: Mapping[str, Any],
+    backup_binding: str,
+) -> tuple[Path, dict[str, Any]]:
+    base = _server_state_backup_base(
+        workspace_root=workspace_root,
+        create=True,
+    )
+    namespace_seed = {
+        "backup_binding": str(backup_binding),
+        "manifest_namespace": str(identity.get("state_namespace") or ""),
+        "result_identity": str(identity.get("result_identity") or ""),
+        "workspace_root": str(workspace_root.resolve()),
+        "nonce": uuid4().hex,
+    }
+    namespace = hashlib.sha256(
+        json.dumps(
+            namespace_seed,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    root = base / namespace
+    try:
+        root.mkdir(mode=_BACKUP_STORAGE_DIRECTORY_MODE)
+        os.chmod(root, _BACKUP_STORAGE_DIRECTORY_MODE)
+        _validate_server_state_directory(root)
+    except OSError as error:
+        raise LongRunningTaskError(
+            f"Generic backup namespace could not be created: {error}",
+            "backup_storage_namespace_unavailable",
+        ) from error
+    storage = {
+        "schema_version": _BACKUP_STORAGE_SCHEMA_V2,
+        "kind": _BACKUP_STORAGE_KIND_SERVER_STATE,
+        "namespace": namespace,
+        "manifest_rel": "manifest.json",
+        "approved_diff_rel": "approved.diff",
+        "storage_root_sha256": hashlib.sha256(
+            str(base).encode("utf-8")
+        ).hexdigest(),
+    }
+    return root, storage
+
+
+def _server_state_locator(
+    storage: Mapping[str, Any],
+    relative_path: str = "",
+) -> str:
+    namespace = str(storage.get("namespace") or "")
+    suffix = f"/{relative_path}" if relative_path else ""
+    return f"{_SERVER_STATE_LOCATOR_PREFIX}{namespace}{suffix}"
+
+
+def _validate_backup_storage_locator(
+    storage: Mapping[str, Any],
+    *,
+    workspace_root: Path,
+    reason_prefix: str,
+) -> Path:
+    expected_keys = {
+        "schema_version",
+        "kind",
+        "namespace",
+        "manifest_rel",
+        "approved_diff_rel",
+        "storage_root_sha256",
+    }
+    namespace = str(storage.get("namespace") or "")
+    storage_root_sha256 = str(storage.get("storage_root_sha256") or "")
+    if (
+        set(storage) != expected_keys
+        or storage.get("schema_version") != _BACKUP_STORAGE_SCHEMA_V2
+        or storage.get("kind") != _BACKUP_STORAGE_KIND_SERVER_STATE
+        or re.fullmatch(r"[0-9a-f]{64}", namespace) is None
+        or storage.get("manifest_rel") != "manifest.json"
+        or storage.get("approved_diff_rel") != "approved.diff"
+        or re.fullmatch(r"[0-9a-f]{64}", storage_root_sha256) is None
+    ):
+        raise LongRunningTaskError(
+            "Backup storage locator is invalid.",
+            f"{reason_prefix}_backup_storage_invalid",
+        )
+    base = _server_state_backup_base(
+        workspace_root=workspace_root,
+        create=False,
+    )
+    actual_root_sha256 = hashlib.sha256(str(base).encode("utf-8")).hexdigest()
+    if actual_root_sha256 != storage_root_sha256:
+        raise LongRunningTaskError(
+            "Backup storage root hash binding failed.",
+            f"{reason_prefix}_backup_storage_root_mismatch",
+        )
+    root = base / namespace
+    try:
+        _validate_server_state_directory(root)
+    except OSError as error:
+        raise LongRunningTaskError(
+            f"Backup storage namespace is unavailable: {error}",
+            f"{reason_prefix}_backup_storage_unavailable",
+        ) from error
+    if root.parent != base or not _is_relative_to(root, base):
+        raise LongRunningTaskError(
+            "Backup storage namespace escaped its configured root.",
+            f"{reason_prefix}_backup_storage_scope_invalid",
+        )
+    return root
+
+
+def _resolve_backup_manifest_path(
+    *,
+    workspace_root: Path,
+    manifest_locator: str,
+    backup_storage: Mapping[str, Any] | None,
+    reason_prefix: str,
+) -> Path:
+    if isinstance(backup_storage, Mapping):
+        root = _validate_backup_storage_locator(
+            backup_storage,
+            workspace_root=workspace_root,
+            reason_prefix=reason_prefix,
+        )
+        expected_locator = _server_state_locator(
+            backup_storage,
+            str(backup_storage["manifest_rel"]),
+        )
+        path = root / str(backup_storage["manifest_rel"])
+        if manifest_locator != expected_locator:
+            raise LongRunningTaskError(
+                "Backup manifest does not match its server-state locator.",
+                f"{reason_prefix}_manifest_locator_mismatch",
+            )
+        try:
+            _validate_server_state_file(path)
+        except OSError as error:
+            raise LongRunningTaskError(
+                f"Backup manifest is unsafe: {error}",
+                f"{reason_prefix}_manifest_unavailable",
+            ) from error
+        return path
+
+    path = (
+        (workspace_root / manifest_locator).resolve()
+        if manifest_locator
+        else workspace_root
+    )
+    if (
+        not manifest_locator
+        or not _is_relative_to(path, workspace_root)
+        or not path.is_file()
+    ):
+        raise LongRunningTaskError(
+            "Backup manifest is unavailable.",
+            f"{reason_prefix}_manifest_unavailable",
+        )
+    return path
+
+
+def _resolve_backup_artifact_path(
+    *,
+    workspace_root: Path,
+    manifest_path: Path,
+    relative_path: str,
+    backup_storage: Mapping[str, Any] | None,
+    reason_prefix: str,
+) -> Path:
+    normalized = str(relative_path or "").replace("\\", "/")
+    pure_path = PurePosixPath(normalized)
+    if (
+        not normalized
+        or pure_path.is_absolute()
+        or any(part in {"", ".", ".."} for part in pure_path.parts)
+    ):
+        raise LongRunningTaskError(
+            "Backup artifact path is invalid.",
+            f"{reason_prefix}_backup_artifact_invalid",
+        )
+    base = manifest_path.parent if isinstance(backup_storage, Mapping) else workspace_root
+    supplied_path = base / Path(*pure_path.parts)
+    path = supplied_path.resolve()
+    if (
+        not _is_relative_to(path, base)
+        or not path.is_file()
+        or (
+            isinstance(backup_storage, Mapping)
+            and Path(os.path.realpath(supplied_path)) != supplied_path
+        )
+    ):
+        raise LongRunningTaskError(
+            "Backup artifact is unavailable.",
+            f"{reason_prefix}_backup_artifact_unavailable",
+        )
+    if isinstance(backup_storage, Mapping):
+        try:
+            _validate_server_state_file(path)
+        except OSError as error:
+            raise LongRunningTaskError(
+                f"Backup artifact is unsafe: {error}",
+                f"{reason_prefix}_backup_artifact_unavailable",
+            ) from error
+    return path
+
+
 def _write_backup_manifest(
     *,
     manifest_path: Path,
@@ -5555,6 +6393,7 @@ def _write_backup_manifest(
     changed_files: list[dict[str, Any]],
     backed_up_files: list[dict[str, Any]],
     stage: str,
+    backup_storage: Mapping[str, Any] | None = None,
 ) -> None:
     directory_state_before: list[dict[str, Any]] = []
     seen_directories: set[str] = set()
@@ -5576,7 +6415,13 @@ def _write_backup_manifest(
         "created_at": _now_iso(),
         "stage": stage,
         "workspace_root": str(workspace_root),
-        "approved_diff_path": str(approved_diff_path.relative_to(workspace_root)).replace("\\", "/"),
+        "approved_diff_path": str(
+            approved_diff_path.relative_to(
+                manifest_path.parent
+                if isinstance(backup_storage, Mapping)
+                else workspace_root
+            )
+        ).replace("\\", "/"),
         "approved_diff_sha256": _sha256_file(approved_diff_path),
         "changed_files": changed_files,
         "backed_up_files": backed_up_files,
@@ -5586,21 +6431,32 @@ def _write_backup_manifest(
         ),
         "rollback_hint": "Rollback by restoring backed_up_files from backup_path after reviewing approved.diff and current git diff.",
     }
+    if isinstance(backup_storage, Mapping):
+        payload["backup_storage"] = dict(backup_storage)
     manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if isinstance(backup_storage, Mapping):
+        _seal_server_state_file(manifest_path)
 
 
 def _finalize_backup_manifest(
     *,
     workspace_root: Path,
     manifest_path: str,
+    backup_storage: Mapping[str, Any] | None = None,
     audit_record: dict[str, Any],
 ) -> str:
-    path = (workspace_root / manifest_path).resolve()
-    if not _is_relative_to(path, workspace_root) or not path.is_file():
+    try:
+        path = _resolve_backup_manifest_path(
+            workspace_root=workspace_root.resolve(),
+            manifest_locator=manifest_path,
+            backup_storage=backup_storage,
+            reason_prefix="backup_manifest_finalize",
+        )
+    except LongRunningTaskError as error:
         raise LongRunningTaskError(
             "Backup manifest could not be finalized because its path is unavailable.",
             "backup_manifest_finalize_failed",
-        )
+        ) from error
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -5611,6 +6467,13 @@ def _finalize_backup_manifest(
     if not isinstance(payload, dict):
         raise LongRunningTaskError(
             "Backup manifest could not be finalized because it is not an object.",
+            "backup_manifest_finalize_failed",
+        )
+    if isinstance(backup_storage, Mapping) and payload.get("backup_storage") != dict(
+        backup_storage
+    ):
+        raise LongRunningTaskError(
+            "Backup manifest storage binding changed before finalization.",
             "backup_manifest_finalize_failed",
         )
     payload.update(
@@ -5624,6 +6487,8 @@ def _finalize_backup_manifest(
         }
     )
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if isinstance(backup_storage, Mapping):
+        _seal_server_state_file(path)
     return _sha256_file(path)
 
 
@@ -5640,16 +6505,36 @@ def _load_hash_bound_backup_manifest(
     )
     manifest_rel = str(evidence.get("backup_manifest") or "")
     expected_sha256 = str(evidence.get("backup_manifest_sha256") or "")
+    raw_backup_storage = evidence.get("backup_storage")
+    if raw_backup_storage is not None and not isinstance(raw_backup_storage, Mapping):
+        raise LongRunningTaskError(
+            "Backup storage evidence is invalid.",
+            f"{reason_prefix}_backup_storage_invalid",
+        )
+    backup_storage = (
+        dict(raw_backup_storage)
+        if isinstance(raw_backup_storage, Mapping)
+        else None
+    )
+    generic_identity = (
+        str(_task_target_plugin_identity(task).get("plugin_id") or "")
+        == "generic-workspace"
+    )
+    if generic_identity != (backup_storage is not None):
+        raise LongRunningTaskError(
+            "Backup storage kind does not match the approved target plugin.",
+            f"{reason_prefix}_backup_storage_kind_mismatch",
+        )
     workspace_root = _approved_execution_workspace_root(
         task,
         reason_prefix=reason_prefix,
     )
-    path = (workspace_root / manifest_rel).resolve() if manifest_rel else workspace_root
-    if not manifest_rel or not _is_relative_to(path, workspace_root) or not path.is_file():
-        raise LongRunningTaskError(
-            "Backup manifest is unavailable.",
-            f"{reason_prefix}_manifest_unavailable",
-        )
+    path = _resolve_backup_manifest_path(
+        workspace_root=workspace_root,
+        manifest_locator=manifest_rel,
+        backup_storage=backup_storage,
+        reason_prefix=reason_prefix,
+    )
     if not expected_sha256:
         raise LongRunningTaskError(
             "Backup manifest has no persisted hash binding.",
@@ -5673,15 +6558,56 @@ def _load_hash_bound_backup_manifest(
             "Backup manifest must be an object.",
             f"{reason_prefix}_manifest_invalid",
         )
+    if backup_storage is not None and payload.get("backup_storage") != backup_storage:
+        raise LongRunningTaskError(
+            "Backup manifest storage binding failed.",
+            f"{reason_prefix}_backup_storage_mismatch",
+        )
     if payload.get("task_id") != task.id:
         raise LongRunningTaskError(
             "Backup manifest task binding failed.",
             f"{reason_prefix}_task_mismatch",
         )
-    if Path(str(payload.get("workspace_root") or "")).resolve() != workspace_root:
+    raw_payload_root = str(payload.get("workspace_root") or "").strip()
+    payload_root = Path(raw_payload_root).expanduser()
+    if (
+        not raw_payload_root
+        or not payload_root.is_absolute()
+        or payload_root.resolve() != payload_root
+        or payload_root != workspace_root
+    ):
         raise LongRunningTaskError(
             "Backup manifest workspace binding failed.",
             f"{reason_prefix}_workspace_mismatch",
+        )
+    approved_diff_rel = str(payload.get("approved_diff_path") or "")
+    approved_diff_path = _resolve_backup_artifact_path(
+        workspace_root=workspace_root,
+        manifest_path=path,
+        relative_path=approved_diff_rel,
+        backup_storage=backup_storage,
+        reason_prefix=reason_prefix,
+    )
+    expected_approved_diff_locator = (
+        _server_state_locator(
+            backup_storage,
+            str(backup_storage["approved_diff_rel"]),
+        )
+        if backup_storage is not None
+        else approved_diff_rel
+    )
+    manifest_diff_sha256 = str(payload.get("approved_diff_sha256") or "")
+    evidence_diff_sha256 = str(evidence.get("approved_diff_sha256") or "")
+    if (
+        str(evidence.get("approved_diff_path") or "")
+        != expected_approved_diff_locator
+        or not manifest_diff_sha256
+        or manifest_diff_sha256 != evidence_diff_sha256
+        or _sha256_file(approved_diff_path) != manifest_diff_sha256
+    ):
+        raise LongRunningTaskError(
+            "Approved-diff backup hash binding failed.",
+            f"{reason_prefix}_approved_diff_hash_mismatch",
         )
     return path, payload, actual_sha256
 
@@ -5703,6 +6629,30 @@ def _approved_execution_workspace_root(
     recorded_root = str(
         evidence.get("workspace_root") or audit.get("workspace_root") or ""
     ).strip()
+    identity = _task_target_plugin_identity(task)
+    if str(identity.get("plugin_id") or "") == "generic-workspace":
+        if not recorded_root:
+            raise LongRunningTaskError(
+                "Generic approved execution has no recorded workspace root.",
+                f"{reason_prefix}_workspace_root_unavailable",
+            )
+        authoritative_root = _target_plugin_execution_workspace(
+            identity,
+            require_state_match=False,
+        )
+        candidate = Path(recorded_root).expanduser()
+        if (
+            authoritative_root is None
+            or not candidate.is_absolute()
+            or candidate.resolve() != candidate
+            or candidate != authoritative_root
+            or not candidate.is_dir()
+        ):
+            raise LongRunningTaskError(
+                "Generic approved execution root no longer matches server fixture authority.",
+                f"{reason_prefix}_workspace_root_authority_mismatch",
+            )
+        return candidate
     if not recorded_root:
         return _workspace_root().resolve()
 
@@ -5781,6 +6731,8 @@ def _finalize_post_apply_backup_manifest(
         }
     )
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if isinstance(evidence.get("backup_storage"), Mapping):
+        _seal_server_state_file(path)
     finalized_sha256 = _sha256_file(path)
     evidence.setdefault("backup_manifest_applied_sha256", prior_sha256)
     evidence["backup_manifest_sha256"] = finalized_sha256
@@ -7162,12 +8114,25 @@ def _dummy_product_site_product_data_already_satisfied_payload(
     })
 
 
-def _call_dummy_product_site_llm_with_wall_timeout(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
+def _call_dummy_product_site_llm_with_wall_timeout(
+    prompt: str,
+    selected_alias: str,
+    timeout_seconds: float,
+    *,
+    model_call_run_id: str | None = None,
+    authority_observer: Callable[[dict[str, Any]], None] | None = None,
+) -> str:
     result_queue: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
 
     def worker() -> None:
         try:
-            result = _call_dummy_product_site_llm_raw(prompt, selected_alias, timeout_seconds)
+            result = _call_dummy_product_site_llm_raw(
+                prompt,
+                selected_alias,
+                timeout_seconds,
+                model_call_run_id=model_call_run_id,
+                authority_observer=authority_observer,
+            )
             result_queue.put(("ok", result), block=False)
         except Exception as error:  # noqa: BLE001
             result_queue.put(("error", error), block=False)
@@ -7183,14 +8148,29 @@ def _call_dummy_product_site_llm_with_wall_timeout(prompt: str, selected_alias: 
     return str(value or "")
 
 
-def _call_dummy_product_site_llm_raw(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
+def _call_dummy_product_site_llm_raw(
+    prompt: str,
+    selected_alias: str,
+    timeout_seconds: float,
+    *,
+    model_call_run_id: str | None = None,
+    authority_observer: Callable[[dict[str, Any]], None] | None = None,
+) -> str:
     if _dummy_product_site_direct_ollama_enabled(selected_alias):
-        return _call_dummy_product_site_ollama_direct(prompt, selected_alias, timeout_seconds)
+        return _call_dummy_product_site_ollama_direct(
+            prompt,
+            selected_alias,
+            timeout_seconds,
+            model_call_run_id=model_call_run_id,
+            authority_observer=authority_observer,
+        )
     return _call_coder_llm(
         prompt,
         model_alias=selected_alias,
         timeout_seconds=timeout_seconds,
         num_retries=0,
+        model_call_run_id=model_call_run_id,
+        authority_observer=authority_observer,
     )
 
 
@@ -7201,12 +8181,21 @@ def _dummy_product_site_direct_ollama_enabled(selected_alias: str) -> bool:
     return provider in {"ollama", "local"} or selected_alias in {"coder", "local"}
 
 
-def _call_dummy_product_site_ollama_direct(prompt: str, selected_alias: str, timeout_seconds: float) -> str:
-    central_gate_check(
+def _call_dummy_product_site_ollama_direct(
+    prompt: str,
+    selected_alias: str,
+    timeout_seconds: float,
+    *,
+    model_call_run_id: str | None = None,
+    authority_observer: Callable[[dict[str, Any]], None] | None = None,
+) -> str:
+    authority = central_gate_check(
         "model_call",
-        run_id=f"dummy_product_site_ollama:{selected_alias}",
+        run_id=model_call_run_id or f"dummy_product_site_ollama:{selected_alias}",
         model_alias=selected_alias,
-    )
+    ).as_payload()
+    if authority_observer is not None:
+        authority_observer(authority)
     resolved_model = route_model_for_alias(selected_alias) or ""
     model = resolved_model.removeprefix("ollama_chat/") or resolve_coder_ollama_model_name(probe=False)
     route = resolve_ollama_route(probe=False)
@@ -10723,6 +11712,7 @@ def propose_coder_agent_diff_payload_from_plan(
         task=task,
         architect_plan=architect_plan,
         task_spec=task_spec.to_dict(),
+        workspace_root=root,
     )
     if reviewer_retry_preview is not None:
         feedback = _reviewer_retry_feedback(reviewer_retry_preview)
@@ -10786,6 +11776,7 @@ def _reviewer_blocked_retry_preview(
     task: str,
     architect_plan: Any,
     task_spec: dict[str, Any],
+    workspace_root: Path,
 ) -> dict[str, Any] | None:
     try:
         preview = preview_diff_verification(
@@ -10794,6 +11785,7 @@ def _reviewer_blocked_retry_preview(
             architect_plan=architect_plan,
             task_spec=task_spec,
             route_type="local_route",
+            workspace_root=workspace_root,
         )
     except DiffVerificationError:
         return None
@@ -11718,9 +12710,17 @@ def _call_coder_llm(
     model_alias: str | None = None,
     timeout_seconds: float | None = None,
     num_retries: int | None = None,
+    model_call_run_id: str | None = None,
+    authority_observer: Callable[[dict[str, Any]], None] | None = None,
 ) -> str:
     alias = model_alias or _coder_model_alias()
-    central_gate_check("model_call", run_id=f"coder_llm:{alias}", model_alias=alias)
+    authority = central_gate_check(
+        "model_call",
+        run_id=model_call_run_id or f"coder_llm:{alias}",
+        model_alias=alias,
+    ).as_payload()
+    if authority_observer is not None:
+        authority_observer(authority)
     resolved_model = route_model_for_alias(alias) or ""
     ollama_route = resolve_ollama_route(probe=False)
     coder_ollama_model = resolve_coder_ollama_model_name(probe=False)

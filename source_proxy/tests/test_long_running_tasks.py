@@ -125,6 +125,11 @@ def _finalize_pending_task_with_real_participants(
         "reviewer": {
             "passed": records[1]["passed"],
             "findings": records[1]["result"]["findings"],
+            "blocked_reasons": records[1]["result"]["blocked_reasons"],
+            "semantic_review": records[1]["result"]["semantic_review"],
+            "semantic_review_input_sha256": records[1]["result"][
+                "semantic_review_input_sha256"
+            ],
         },
         "verifier": {
             "verdict": records[2]["result"]["verdict"],
