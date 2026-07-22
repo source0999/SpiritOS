@@ -2204,6 +2204,7 @@ def test_service_environment_pins_local_adapter_aliases_and_drops_hosted_credent
     )
 
     assert environment["SOURCE_PROXY_ARCHITECT_MODEL_ALIAS"] == "local"
+    assert environment["SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS"] == "90"
     assert environment["SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS"] == "local"
     assert environment["SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA"] == "0"
     assert "OPENAI_API_KEY" not in environment

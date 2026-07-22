@@ -996,9 +996,25 @@ class CodingOrchestrator:
             receipt["target_plugin_result"] = primary_result
             return receipt
         if primary_context_binding is None or invocation_event is None:
-            raise CodingOrchestratorError(
-                "target_plugin_architect_plan_not_persisted_before_coder"
+            blocked_reason = str(
+                primary_result.get("reason_code")
+                or primary_result.get("reasonCode")
+                or "target_plugin_architect_plan_not_persisted_before_coder"
             )
+            run.record_event(
+                event_type="target_plugin_pre_plan_blocked",
+                lane_id="planner",
+                detail={
+                    "reason_code": blocked_reason,
+                    "plugin_id": plugin.plugin_id,
+                    "selected_prompt_id": plugin.selected_prompt_id,
+                },
+            )
+            self._persist(
+                run,
+                "target-plugin returned a structured block before authoritative plan persistence",
+            )
+            raise CodingOrchestratorError(blocked_reason)
         input_sha256 = _target_plugin_model_input_sha256(
             task=model_task,
             target_plugin_identity=plugin_identity,

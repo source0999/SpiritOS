@@ -5537,6 +5537,11 @@ def _service_environment(
             "SPIRITOS_APPROVAL_ROOT": str(spec.source_root),
             "SPIRITOS_APPROVAL_STATE_DIR": str(spec.state_root / "approval"),
             "SOURCE_PROXY_ARCHITECT_MODEL_ALIAS": model_aliases["architect"],
+            # The pinned Hermes architect reliably completes on this local host
+            # but exceeds the library's generic 20-second default while cold.
+            # Keep the bound model/digest unchanged and give the production
+            # HTTP request a measured, still-bounded local inference budget.
+            "SOURCE_PROXY_ARCHITECT_TIMEOUT_SECONDS": "90",
             "SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS": model_aliases["coder_repair"],
             "SPIRITOS_CODING_PRIMARY_MODEL_ALIAS": model_aliases["coder_primary"],
             "SPIRITOS_CODING_FALLBACK_MODEL_ALIAS": model_aliases["coder_fallback"],
