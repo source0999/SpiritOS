@@ -6,7 +6,7 @@
     "source_proxy/benchmarks/campaign_3_5_basic_assets/catalog.py": "a0bdce8db72edca0e0b7a1f69fd28ea88cb38f1c6b81e79413892c328acc7735",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/fixtures.py": "efc3f6e4d8e00a8e9f1648dda46721253bf65126770420a47e3a0c4ef05847f6",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/freeze.py": "60c3439f154172800e07e7a0e056ec6e51608b438da5a9e1328d5806abfcc04c",
-    "source_proxy/benchmarks/campaign_3_5_basic_assets/oracles.py": "d52048f4083f40220fd25cceee5779e93d266ab5427a67c2a4b756975c30cc57",
+    "source_proxy/benchmarks/campaign_3_5_basic_assets/oracles.py": "e9f958b6602a6f3b8219b5cc7eeaa3d5be516aa63ba4e88145251eaf2282bd23",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/reference_validation.py": "2bf068740dbcb7aa4cc48ea4a8a68bad666b3ec9415c75f80b3f1f71115b4924",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/references.py": "14a63ecc10ce6fc7ef48fa4c765c855c536ef3ce06b543811efa0d6521ec67d4",
     "source_proxy/benchmarks/campaign_3_5_basic_assets/seeding.py": "2333d5815b718cd09f857ff92c65d3f6e5f77910f2468be22b76b318875dc28f"
@@ -33,5 +33,5 @@
     "BT09",
     "BT10"
   ],
-  "validation_control_plane_commit": "970e1cf3a3ea60251dab985722dff6658e1117ca"
+  "validation_control_plane_commit": "36920dce4d0de7f3a9e804724368d3530614d470"
 }

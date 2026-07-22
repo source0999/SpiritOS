@@ -170,6 +170,8 @@ def execute_target_plugin_command(
     model_input_observer: Callable[[dict[str, Any], str], None] | None = None,
     model_output_observer: Callable[[dict[str, Any], str], None] | None = None,
     model_call_run_id: str | None = None,
+    architect_task_id: str | None = None,
+    plan_ready_callback: Callable[[Any], Mapping[str, Any] | None] | None = None,
 ) -> dict[str, Any]:
     """The generic route delegates target-specific execution; it cannot choose a target."""
     execution_root = workspace_root.resolve()
@@ -394,6 +396,8 @@ def execute_target_plugin_command(
             else None,
             model_alias=selected_alias,
             canonical_context=canonical_context,
+            architect_task_id=architect_task_id,
+            plan_ready_callback=plan_ready_callback,
         )
     elif command == "create_storefront":
         result = propose_dummy_product_site_create_diff(**kwargs)

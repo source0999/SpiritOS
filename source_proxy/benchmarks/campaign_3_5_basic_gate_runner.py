@@ -50,6 +50,7 @@ from source_proxy.benchmarks.campaign_3_5_basic_assets.seeding import (
     BasicBackendRunSeed,
 )
 from source_proxy.benchmarks.campaign_3_5_fixture_authority import ENV_MANIFEST
+from source_proxy.coding.proof import derive_production_proof
 from source_proxy.target_plugins.selection import (
     GENERIC_WORKSPACE_PLUGIN_ID,
     GENERIC_WORKSPACE_PROMPT_ID,
@@ -69,8 +70,33 @@ TARGET_PLUGIN_SCHEMA_VERSION = "spiritos-target-plugin/v1"
 GENERIC_WORKSPACE_CONTEXT_ID = "server-scoped-architect-context"
 GENERIC_WORKSPACE_PROFILE = "generic-architect-coder-packet-v1"
 CONTROL_TRACE_MAP = Path("benchmarks/coder-backend-100/v1.1/trace-event-contract-map.json")
+_EVALUATION_PRODUCTION_ROOTS = (Path("source_proxy"),)
+_EVALUATION_RUNTIME_CONFIG_ROOTS = (
+    Path("packages/contracts"),
+    Path("config"),
+)
+_EVALUATION_RUNTIME_CONFIG_FILES = (
+    Path(".python-version"),
+    Path("requirements.txt"),
+    Path("requirements.core.txt"),
+    Path("requirements.cuda.txt"),
+    Path("repomix.config.json"),
+    Path("repomix.repo-map.config.json"),
+    Path("repomix.source-proxy-min.config.json"),
+    Path("scripts/run-campaign-3-5-basic-backend-gate.py"),
+    Path("scripts/validate-campaign-3-5-basic-backend-gate.py"),
+)
+_EVALUATION_COMPONENT_EXCLUDED_PREFIXES = (
+    Path("source_proxy/tests"),
+    Path("source_proxy/cartographer/soak-logs"),
+)
+_EVALUATION_COMPONENT_EXCLUDED_PARTS = frozenset(
+    {"__pycache__", ".pytest_cache"}
+)
+_EVALUATION_COMPONENT_EXCLUDED_SUFFIXES = frozenset({".pyc", ".pyo"})
 _OPERATOR_TASK_ID = "campaign-3.5:model-call-authority"
 _OPERATOR_PREVIEW_ID = "campaign-3.5:model-call-authority:issue"
+_OPERATOR_ASSERTION_HEADER = "x-spiritos-operator-assertion"
 _PRIVATE_MARKERS = (
     "expected_patch",
     "hidden_check",
@@ -89,32 +115,44 @@ _VERIFIER_RUNTIME_DISTRIBUTIONS = (
     "packaging",
     "pygments",
     "fastapi",
+    "uvicorn",
     "starlette",
     "pydantic",
     "httpx",
     "httpcore",
     "anyio",
+    "litellm",
 )
 _IMPORT_AUDIT_SITECUSTOMIZE = '''\
 from __future__ import annotations
 import atexit
 import json
 import os
+import signal
 import sys
 
 _log_path = os.environ["SOURCE_PROXY_GATE_IMPORT_AUDIT_LOG"]
+_owner_path = os.environ["SOURCE_PROXY_GATE_IMPORT_AUDIT_OWNER"]
 _prefixes = tuple(
     value for value in os.environ["SOURCE_PROXY_GATE_FORBIDDEN_IMPORT_PREFIXES"].split(";")
     if value
 )
+
+try:
+    _owner_fd = os.open(_owner_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+except FileExistsError:
+    _is_owner = False
+else:
+    _is_owner = True
+    os.write(_owner_fd, str(os.getpid()).encode("ascii"))
+    os.fsync(_owner_fd)
+    os.close(_owner_fd)
 
 def _write(payload):
     with open(_log_path, "a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\\n")
         handle.flush()
         os.fsync(handle.fileno())
-
-_write({"event": "hook_started", "pid": os.getpid()})
 
 def _audit(event, args):
     if event != "import" or not args:
@@ -123,16 +161,29 @@ def _audit(event, args):
     if any(module == prefix or module.startswith(prefix + ".") for prefix in _prefixes):
         _write({"event": "forbidden_import", "module": module})
 
-sys.addaudithook(_audit)
+_completed = False
 
-def _complete():
+def _complete(reason="atexit"):
+    global _completed
+    if not _is_owner or _completed:
+        return
     loaded = sorted(
         name for name in sys.modules
         if any(name == prefix or name.startswith(prefix + ".") for prefix in _prefixes)
     )
-    _write({"event": "hook_completed", "forbidden_loaded": loaded, "pid": os.getpid()})
+    _write({"event": "hook_completed", "forbidden_loaded": loaded, "pid": os.getpid(), "reason": reason})
+    _completed = True
 
-atexit.register(_complete)
+if _is_owner:
+    sys.addaudithook(_audit)
+    atexit.register(_complete)
+    if hasattr(signal, "SIGUSR1"):
+        signal.signal(signal.SIGUSR1, lambda _signum, _frame: _complete("supervisor_snapshot"))
+    _write({"event": "hook_started", "pid": os.getpid()})
+else:
+    # Inherited helper interpreters contribute forbidden-import findings but
+    # cannot create competing lifecycle records or final module snapshots.
+    sys.addaudithook(_audit)
 '''
 
 
@@ -158,6 +209,7 @@ class HttpExchange:
     authenticated: bool
     elapsed_ms: int
     authentication: Mapping[str, Any] = field(default_factory=dict)
+    request: Mapping[str, Any] | None = None
 
     @property
     def ok(self) -> bool:
@@ -244,7 +296,7 @@ class BasicBackendGateConfig:
     python_executable: Path
     expected_branch: str = "codex/campaign-3-5-execution-20260719"
     expected_head: str | None = None
-    phases: tuple[str, ...] = PHASES
+    phases: tuple[str, ...] = ("first",)
     resume_first: Path | None = None
     startup_timeout_seconds: float = 45.0
     request_timeout_seconds: float = 360.0
@@ -264,10 +316,8 @@ class BasicBackendGateConfig:
             raise BasicBackendGateError("basic_gate_python_invalid")
         if output == source or source in output.parents:
             raise BasicBackendGateError("basic_gate_output_inside_source_worktree")
-        if not self.phases or any(phase not in PHASES for phase in self.phases):
+        if tuple(self.phases) not in {("first",), ("clean_rerun",)}:
             raise BasicBackendGateError("basic_gate_phase_invalid")
-        if len(self.phases) != len(set(self.phases)):
-            raise BasicBackendGateError("basic_gate_phase_duplicate")
         resume_first = (
             self.resume_first.expanduser().resolve(strict=True)
             if self.resume_first is not None
@@ -349,7 +399,7 @@ class JsonEvidenceHttpClient:
             ) from error
         if not isinstance(decoded, dict):
             raise BasicBackendGateError("basic_gate_http_response_not_object")
-        assertion_present = bool(request_headers.get("x-spiritos-operator-assertion", "").strip())
+        assertion_present = bool(request_headers.get(_OPERATOR_ASSERTION_HEADER, "").strip())
         server_acknowledged = _server_acknowledged_signed_operator_authority(
             path=path,
             status_code=status_code,
@@ -362,6 +412,8 @@ class JsonEvidenceHttpClient:
             "caller_claimed_authenticated": bool(authenticated),
         }
         authentication["authenticated"] = bool(assertion_present and server_acknowledged)
+        request_sha256 = _sha256_bytes(request_body)
+        response_sha256 = _sha256_bytes(raw_response)
         ordinal = len(self.exchanges) + 1
         evidence_name = f"http-{ordinal:03d}-{_safe_name(method)}-{_safe_name(path)}.json"
         evidence_path = self.evidence_root / "http" / evidence_name
@@ -377,7 +429,11 @@ class JsonEvidenceHttpClient:
                 "authentication": authentication,
                 "request_headers_present": sorted(request_headers),
                 "request": dict(payload) if payload is not None else None,
+                "request_sha256": request_sha256,
+                "request_body_base64": base64.b64encode(request_body).decode("ascii"),
                 "response": decoded,
+                "response_sha256": response_sha256,
+                "response_body_base64": base64.b64encode(raw_response).decode("ascii"),
                 "elapsed_ms": elapsed_ms,
             },
         )
@@ -386,13 +442,14 @@ class JsonEvidenceHttpClient:
             method=method.upper(),
             path=path,
             status_code=status_code,
-            request_sha256=_sha256_bytes(request_body),
-            response_sha256=_sha256_bytes(raw_response),
+            request_sha256=request_sha256,
+            response_sha256=response_sha256,
             response=decoded,
             evidence_file=str(evidence_path),
             authenticated=bool(authentication["authenticated"]),
             elapsed_ms=elapsed_ms,
             authentication=authentication,
+            request=(dict(payload) if payload is not None else None),
         )
         self.exchanges.append(exchange)
         if not exchange.ok and not allow_error:
@@ -470,9 +527,11 @@ class ProductionGateServiceFactory:
                 }
             },
         )
-        import_audit_root, import_audit_log = _prepare_service_import_audit(
-            spec.state_root
-        )
+        (
+            import_audit_root,
+            import_audit_log,
+            import_audit_owner,
+        ) = _prepare_service_import_audit(spec.state_root)
         environment = _service_environment(
             spec,
             port=port,
@@ -485,6 +544,9 @@ class ProductionGateServiceFactory:
             + str(environment.get("PYTHONPATH") or spec.source_root)
         )
         environment["SOURCE_PROXY_GATE_IMPORT_AUDIT_LOG"] = str(import_audit_log)
+        environment["SOURCE_PROXY_GATE_IMPORT_AUDIT_OWNER"] = str(
+            import_audit_owner
+        )
         environment["SOURCE_PROXY_GATE_FORBIDDEN_IMPORT_PREFIXES"] = ";".join(
             _FORBIDDEN_PRODUCTION_IMPORT_PREFIXES
         )
@@ -559,6 +621,11 @@ class ProductionGateServiceFactory:
                 process_receipt=receipt,
             )
         finally:
+            _request_service_import_audit_snapshot(
+                process,
+                import_audit_log,
+                import_audit_owner,
+            )
             _stop_process(process)
             if receipt is not None:
                 receipt["import_attestation"] = _finalize_service_import_audit(
@@ -1296,10 +1363,18 @@ def _trusted_private_oracle_decision(
         parameter_max = int(values["maximum_limit"])
         before = value("items_before")
         omitted = value("omitted")
+        one = value("one")
+        maximum = value("maximum")
         invalid = [value(f"invalid_{index}") for index in range(5)]
         return (
             ("omitted_compatibility", isinstance(before, list) and omitted == {"status": 200, "body": {"items": before}}),
-            ("inclusive_limits", _response_item_count(value("one")) == 1 and _response_item_count(value("maximum")) == parameter_max),
+            (
+                "inclusive_limits",
+                isinstance(before, list)
+                and one == {"status": 200, "body": {"items": before[:1]}}
+                and maximum
+                == {"status": 200, "body": {"items": before[:parameter_max]}},
+            ),
             ("invalid_values", all(isinstance(item, Mapping) and item.get("status") == 400 and bool(item.get("body", {}).get("error")) for item in invalid)),
             ("storage_immutable", before == value("items_after")),
         )
@@ -1340,19 +1415,29 @@ def _trusted_private_oracle_decision(
             ("exact_status_count", ok("count") and value("count") == 2),
             ("existing_lookup", value("find_two") == {"id": 2, "status": "pending"} and value("find_missing") is None),
             ("storage_immutable", value("before") == value("after")),
-            ("focused_test_added", f"{function}()" in source and "def test_" in source),
+            ("focused_test_added", _test_function_invoked_by_test(source, function)),
         )
     if task_id == "BT07":
         users_source = (workspace_root / "src/users.py").read_text(encoding="utf-8")
         contacts_source = (workspace_root / "src/contacts.py").read_text(encoding="utf-8")
-        shared = (_imported_names(users_source) & _imported_names(contacts_source)) - {"annotations"}
-        helper = any(
-            path.is_file() and path.name not in {"users.py", "contacts.py", "__init__.py"}
+        helper_modules = {
+            path.stem
             for path in (workspace_root / "src").glob("*.py")
+            if path.is_file()
+            and path.name not in {"users.py", "contacts.py", "__init__.py"}
+        }
+        shared_usage = _called_helper_imports(
+            users_source,
+            helper_modules,
+            function_name="normalize_username",
+        ) & _called_helper_imports(
+            contacts_source,
+            helper_modules,
+            function_name="normalize_email",
         )
         return (
             ("behavior_preserved", value("username") == "a.b" and value("email") == "x@y.test"),
-            ("shared_helper", helper and bool(shared)),
+            ("shared_helper", bool(helper_modules) and bool(shared_usage)),
         )
     if task_id == "BT08":
         default = int(values["default_value"])
@@ -1383,25 +1468,644 @@ def _trusted_private_oracle_decision(
     return (("task_known", False),)
 
 
-def _response_item_count(value: Any) -> int:
-    if not isinstance(value, Mapping):
-        return -1
-    body = value.get("body")
-    items = body.get("items") if isinstance(body, Mapping) else None
-    return len(items) if isinstance(items, list) else -1
-
-
-def _imported_names(source: str) -> set[str]:
-    names: set[str] = set()
+def _test_function_invoked_by_test(source: str, function_name: str) -> bool:
     try:
         tree = ast.parse(source)
     except SyntaxError:
-        return names
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom):
-            names.update(alias.name for alias in node.names)
-        elif isinstance(node, ast.Import):
-            names.update(alias.name for alias in node.names)
+        return False
+    for node in tree.body:
+        if (
+            not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            or not node.name.startswith("test_")
+            or not _test_function_statically_runnable(node)
+        ):
+            continue
+        if ("service", function_name) in _reachable_imported_calls(
+            tree,
+            node,
+            {"service"},
+        ):
+            return True
+    return False
+
+
+def _test_function_statically_runnable(
+    function: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> bool:
+    """Reject decorators that prove pytest will not execute the test body."""
+
+    for decorator in function.decorator_list:
+        target = decorator.func if isinstance(decorator, ast.Call) else decorator
+        name = _dotted_expression(target)
+        if not name:
+            continue
+        if name[-1] == "skip":
+            return False
+        if name[-1] == "skipif" and isinstance(decorator, ast.Call):
+            condition = decorator.args[0] if decorator.args else next(
+                (
+                    keyword.value
+                    for keyword in decorator.keywords
+                    if keyword.arg == "condition"
+                ),
+                None,
+            )
+            if condition is not None and _literal_truth(condition) is True:
+                return False
+        if name[-1] == "parametrize" and isinstance(decorator, ast.Call):
+            values = decorator.args[1] if len(decorator.args) > 1 else next(
+                (
+                    keyword.value
+                    for keyword in decorator.keywords
+                    if keyword.arg == "argvalues"
+                ),
+                None,
+            )
+            if values is not None and _literal_truth(values) is False:
+                return False
+    return True
+
+
+def _called_helper_imports(
+    source: str,
+    helper_modules: set[str],
+    *,
+    function_name: str,
+) -> set[tuple[str, str]]:
+    """Return helper calls made by one named top-level function only."""
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+    target = next(
+        (
+            node
+            for node in tree.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == function_name
+        ),
+        None,
+    )
+    if target is None:
+        return set()
+    return _reachable_imported_calls(
+        tree,
+        target,
+        helper_modules,
+    )
+
+
+_ImportEnvironment = tuple[
+    dict[str, tuple[str, str]],
+    dict[tuple[str, ...], str],
+]
+
+
+def _reachable_imported_calls(
+    tree: ast.Module,
+    function: ast.FunctionDef | ast.AsyncFunctionDef,
+    helper_modules: set[str],
+) -> set[tuple[str, str]]:
+    """Resolve calls against imports that are live on a reachable path.
+
+    Module bindings are evaluated to the end of the module because tests run
+    after collection.  Function-local bindings then follow Python's lexical
+    scoping rule: any local binder hides the module name even before that
+    binder executes.  The statement flow skips constant-dead branches and
+    stops paths after unconditional control transfer.
+    """
+
+    module_environments = _flow_statements(
+        tree.body,
+        [({}, {})],
+        helper_modules,
+        set(),
+    )
+    local_names = _function_local_names(function)
+    resolved: set[tuple[str, str]] = set()
+    for direct, modules in module_environments:
+        environment: _ImportEnvironment = (
+            {
+                name: binding
+                for name, binding in direct.items()
+                if name not in local_names
+            },
+            {
+                expression: module
+                for expression, module in modules.items()
+                if expression and expression[0] not in local_names
+            },
+        )
+        _flow_statements(
+            function.body,
+            [environment],
+            helper_modules,
+            resolved,
+        )
+    return resolved
+
+
+class _FunctionLocalBindingCollector(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self.names: set[str] = set()
+        self.global_names: set[str] = set()
+        self.nonlocal_names: set[str] = set()
+
+    def visit_Name(self, node: ast.Name) -> None:  # noqa: N802
+        if isinstance(node.ctx, (ast.Store, ast.Del)):
+            self.names.add(node.id)
+
+    def visit_Import(self, node: ast.Import) -> None:  # noqa: N802
+        for alias in node.names:
+            self.names.add(alias.asname or alias.name.split(".", 1)[0])
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
+        for alias in node.names:
+            if alias.name != "*":
+                self.names.add(alias.asname or alias.name)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: N802
+        self.names.add(node.name)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:  # noqa: N802
+        self.names.add(node.name)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802
+        self.names.add(node.name)
+
+    def visit_Lambda(self, node: ast.Lambda) -> None:  # noqa: N802
+        del node
+
+    def visit_Global(self, node: ast.Global) -> None:  # noqa: N802
+        self.global_names.update(node.names)
+
+    def visit_Nonlocal(self, node: ast.Nonlocal) -> None:  # noqa: N802
+        self.nonlocal_names.update(node.names)
+
+    def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:  # noqa: N802
+        if node.name:
+            self.names.add(node.name)
+        self.generic_visit(node)
+
+    def visit_MatchAs(self, node: ast.MatchAs) -> None:  # noqa: N802
+        if node.name:
+            self.names.add(node.name)
+        self.generic_visit(node)
+
+    def visit_MatchStar(self, node: ast.MatchStar) -> None:  # noqa: N802
+        if node.name:
+            self.names.add(node.name)
+
+    def visit_MatchMapping(self, node: ast.MatchMapping) -> None:  # noqa: N802
+        if node.rest:
+            self.names.add(node.rest)
+        self.generic_visit(node)
+
+
+def _function_local_names(
+    function: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> set[str]:
+    collector = _FunctionLocalBindingCollector()
+    arguments = (
+        *function.args.posonlyargs,
+        *function.args.args,
+        *function.args.kwonlyargs,
+    )
+    collector.names.update(argument.arg for argument in arguments)
+    if function.args.vararg is not None:
+        collector.names.add(function.args.vararg.arg)
+    if function.args.kwarg is not None:
+        collector.names.add(function.args.kwarg.arg)
+    for statement in function.body:
+        collector.visit(statement)
+    return collector.names - collector.global_names - collector.nonlocal_names
+
+
+def _flow_statements(
+    statements: Sequence[ast.stmt],
+    environments: list[_ImportEnvironment],
+    helper_modules: set[str],
+    resolved: set[tuple[str, str]],
+) -> list[_ImportEnvironment]:
+    active = environments
+    for statement in statements:
+        following: list[_ImportEnvironment] = []
+        for environment in active:
+            following.extend(
+                _flow_statement(statement, environment, helper_modules, resolved)
+            )
+        active = _deduplicate_environments(following)
+        if not active:
+            break
+    return active
+
+
+def _flow_statement(
+    statement: ast.stmt,
+    environment: _ImportEnvironment,
+    helper_modules: set[str],
+    resolved: set[tuple[str, str]],
+) -> list[_ImportEnvironment]:
+    if isinstance(statement, (ast.Import, ast.ImportFrom)):
+        _apply_import(environment, statement, helper_modules)
+        return [environment]
+    if isinstance(statement, ast.Expr):
+        return _scan_expression(statement.value, [environment], resolved)
+    if isinstance(statement, (ast.Return, ast.Raise)):
+        active = [environment]
+        if isinstance(statement, ast.Return):
+            active = _scan_expression(statement.value, active, resolved)
+        else:
+            active = _scan_expression(statement.exc, active, resolved)
+            active = _scan_expression(statement.cause, active, resolved)
+        return []
+    if isinstance(statement, (ast.Break, ast.Continue)):
+        return []
+    if isinstance(statement, ast.Assign):
+        active = _scan_expression(statement.value, [environment], resolved)
+        for current in active:
+            for target in statement.targets:
+                _invalidate_target(current, target)
+        return active
+    if isinstance(statement, ast.AnnAssign):
+        # A local variable annotation is not proof of a runtime invocation;
+        # with postponed annotations, annotations elsewhere are inert too.
+        active = _scan_expression(statement.value, [environment], resolved)
+        for current in active:
+            _invalidate_target(current, statement.target)
+        return active
+    if isinstance(statement, ast.AugAssign):
+        active = _scan_expression(statement.target, [environment], resolved)
+        active = _scan_expression(statement.value, active, resolved)
+        for current in active:
+            _invalidate_target(current, statement.target)
+        return active
+    if isinstance(statement, ast.Delete):
+        for target in statement.targets:
+            _invalidate_target(environment, target)
+        return [environment]
+    if isinstance(statement, ast.If):
+        active = _scan_expression(statement.test, [environment], resolved)
+        truth = _literal_truth(statement.test)
+        if truth is True:
+            return _flow_statements(statement.body, active, helper_modules, resolved)
+        if truth is False:
+            return _flow_statements(statement.orelse, active, helper_modules, resolved)
+        return _flow_statements(
+            statement.body,
+            [_copy_environment(item) for item in active],
+            helper_modules,
+            resolved,
+        ) + _flow_statements(
+            statement.orelse,
+            [_copy_environment(item) for item in active],
+            helper_modules,
+            resolved,
+        )
+    if isinstance(statement, (ast.For, ast.AsyncFor)):
+        active = _scan_expression(statement.iter, [environment], resolved)
+        if _literal_truth(statement.iter) is False:
+            return _flow_statements(
+                statement.orelse,
+                active,
+                helper_modules,
+                resolved,
+            )
+        loop_entries = [_copy_environment(item) for item in active]
+        for current in loop_entries:
+            _invalidate_target(current, statement.target)
+        loop_exits = _flow_statements(
+            statement.body,
+            loop_entries,
+            helper_modules,
+            resolved,
+        )
+        return _flow_statements(
+            statement.orelse,
+            [*active, *loop_exits],
+            helper_modules,
+            resolved,
+        )
+    if isinstance(statement, ast.While):
+        active = _scan_expression(statement.test, [environment], resolved)
+        truth = _literal_truth(statement.test)
+        if truth is False:
+            return _flow_statements(statement.orelse, active, helper_modules, resolved)
+        loop_exits = _flow_statements(
+            statement.body,
+            [_copy_environment(item) for item in active],
+            helper_modules,
+            resolved,
+        )
+        if truth is True:
+            return []
+        return _flow_statements(
+            statement.orelse,
+            [*active, *loop_exits],
+            helper_modules,
+            resolved,
+        )
+    if isinstance(statement, (ast.With, ast.AsyncWith)):
+        active = [environment]
+        for item in statement.items:
+            active = _scan_expression(item.context_expr, active, resolved)
+            if item.optional_vars is not None:
+                for current in active:
+                    _invalidate_target(current, item.optional_vars)
+        return _flow_statements(statement.body, active, helper_modules, resolved)
+    if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        active = [environment]
+        for decorator in statement.decorator_list:
+            active = _scan_expression(decorator, active, resolved)
+        if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            for default in (*statement.args.defaults, *statement.args.kw_defaults):
+                active = _scan_expression(default, active, resolved)
+        else:
+            for base in statement.bases:
+                active = _scan_expression(base, active, resolved)
+            for keyword in statement.keywords:
+                active = _scan_expression(keyword.value, active, resolved)
+        for current in active:
+            _invalidate_name(current, statement.name)
+        return active
+    if isinstance(statement, ast.Assert):
+        active = _scan_expression(statement.test, [environment], resolved)
+        truth = _literal_truth(statement.test)
+        if truth is True:
+            return active
+        _scan_expression(
+            statement.msg,
+            [_copy_environment(item) for item in active],
+            resolved,
+        )
+        return [] if truth is False else active
+    if isinstance(statement, (ast.Try, ast.TryStar)):
+        body_exits = _flow_statements(
+            statement.body,
+            [_copy_environment(environment)],
+            helper_modules,
+            resolved,
+        )
+        normal_exits = _flow_statements(
+            statement.orelse,
+            body_exits,
+            helper_modules,
+            resolved,
+        )
+        handler_exits: list[_ImportEnvironment] = []
+        for handler in statement.handlers:
+            entries = _scan_expression(
+                handler.type,
+                [_copy_environment(environment)],
+                resolved,
+            )
+            if handler.name:
+                for current in entries:
+                    _invalidate_name(current, handler.name)
+            handler_exits.extend(
+                _flow_statements(handler.body, entries, helper_modules, resolved)
+            )
+        exits = [*normal_exits, *handler_exits]
+        if statement.finalbody:
+            can_continue = bool(exits)
+            final_exits = _flow_statements(
+                statement.finalbody,
+                exits or [_copy_environment(environment)],
+                helper_modules,
+                resolved,
+            )
+            exits = final_exits if can_continue else []
+        return exits
+    if isinstance(statement, ast.Match):
+        active = _scan_expression(statement.subject, [environment], resolved)
+        exits: list[_ImportEnvironment] = []
+        unmatched = [_copy_environment(item) for item in active]
+        for case in statement.cases:
+            entries = [_copy_environment(item) for item in active]
+            for name in _pattern_bound_names(case.pattern):
+                for current in entries:
+                    _invalidate_name(current, name)
+            entries = _scan_expression(case.guard, entries, resolved)
+            exits.extend(
+                _flow_statements(case.body, entries, helper_modules, resolved)
+            )
+            if case.guard is None and isinstance(case.pattern, ast.MatchAs) and (
+                case.pattern.pattern is None
+            ):
+                unmatched = []
+                break
+        return [*exits, *unmatched]
+    active = [environment]
+    for child in ast.iter_child_nodes(statement):
+        if isinstance(child, ast.expr):
+            active = _scan_expression(child, active, resolved)
+    return active
+
+
+def _scan_expression(
+    expression: ast.expr | None,
+    environments: list[_ImportEnvironment],
+    resolved: set[tuple[str, str]],
+) -> list[_ImportEnvironment]:
+    if expression is None:
+        return environments
+    if isinstance(expression, ast.Lambda):
+        active = environments
+        for default in (*expression.args.defaults, *expression.args.kw_defaults):
+            active = _scan_expression(default, active, resolved)
+        return active
+    if isinstance(expression, ast.IfExp):
+        active = _scan_expression(expression.test, environments, resolved)
+        truth = _literal_truth(expression.test)
+        if truth is True:
+            return _scan_expression(expression.body, active, resolved)
+        if truth is False:
+            return _scan_expression(expression.orelse, active, resolved)
+        return _scan_expression(
+            expression.body,
+            [_copy_environment(item) for item in active],
+            resolved,
+        ) + _scan_expression(
+            expression.orelse,
+            [_copy_environment(item) for item in active],
+            resolved,
+        )
+    if isinstance(expression, ast.BoolOp):
+        active = environments
+        for value in expression.values:
+            active = _scan_expression(value, active, resolved)
+            truth = _literal_truth(value)
+            if isinstance(expression.op, ast.And) and truth is False:
+                break
+            if isinstance(expression.op, ast.Or) and truth is True:
+                break
+        return active
+    if isinstance(expression, ast.Call):
+        active = _scan_expression(expression.func, environments, resolved)
+        call = _dotted_expression(expression.func)
+        if call:
+            for direct, modules in active:
+                if len(call) == 1 and call[0] in direct:
+                    resolved.add(direct[call[0]])
+                elif len(call) > 1 and call[:-1] in modules:
+                    resolved.add((modules[call[:-1]], call[-1]))
+        for argument in expression.args:
+            active = _scan_expression(argument, active, resolved)
+        for keyword in expression.keywords:
+            active = _scan_expression(keyword.value, active, resolved)
+        return active
+    if isinstance(expression, ast.NamedExpr):
+        active = _scan_expression(expression.value, environments, resolved)
+        for current in active:
+            _invalidate_target(current, expression.target)
+        return active
+    if isinstance(expression, ast.GeneratorExp):
+        # Only the outer iterable is evaluated when a generator is created;
+        # its body is not proof that the enclosing function made the call.
+        return _scan_expression(expression.generators[0].iter, environments, resolved)
+    if isinstance(expression, (ast.ListComp, ast.SetComp, ast.DictComp)):
+        inner = [_copy_environment(item) for item in environments]
+        for generator in expression.generators:
+            inner = _scan_expression(generator.iter, inner, resolved)
+            if _literal_truth(generator.iter) is False:
+                return environments
+            for current in inner:
+                _invalidate_target(current, generator.target)
+            for condition in generator.ifs:
+                inner = _scan_expression(condition, inner, resolved)
+                if _literal_truth(condition) is False:
+                    return environments
+        if isinstance(expression, ast.DictComp):
+            inner = _scan_expression(expression.key, inner, resolved)
+            _scan_expression(expression.value, inner, resolved)
+        else:
+            _scan_expression(expression.elt, inner, resolved)
+        return environments
+    active = environments
+    for child in ast.iter_child_nodes(expression):
+        if isinstance(child, ast.expr):
+            active = _scan_expression(child, active, resolved)
+    return active
+
+
+def _dotted_expression(node: ast.expr) -> tuple[str, ...]:
+    if isinstance(node, ast.Name):
+        return (node.id,)
+    if isinstance(node, ast.Attribute):
+        parent = _dotted_expression(node.value)
+        return (*parent, node.attr) if parent else ()
+    return ()
+
+
+def _apply_import(
+    environment: _ImportEnvironment,
+    node: ast.Import | ast.ImportFrom,
+    helper_modules: set[str],
+) -> None:
+    direct, modules = environment
+    if isinstance(node, ast.ImportFrom):
+        module_parts = tuple(
+            part for part in str(node.module or "").split(".") if part
+        )
+        module = module_parts[-1] if module_parts else ""
+        for alias in node.names:
+            if alias.name == "*":
+                continue
+            local_name = alias.asname or alias.name
+            _invalidate_name(environment, local_name)
+            if module in helper_modules:
+                direct[local_name] = (module, alias.name)
+            elif alias.name in helper_modules:
+                modules[(local_name,)] = alias.name
+        return
+    for alias in node.names:
+        imported_parts = tuple(part for part in alias.name.split(".") if part)
+        if not imported_parts:
+            continue
+        local_name = alias.asname or imported_parts[0]
+        _invalidate_name(environment, local_name)
+        if imported_parts[-1] in helper_modules:
+            local_expression = (alias.asname,) if alias.asname else imported_parts
+            modules[local_expression] = imported_parts[-1]
+
+
+def _invalidate_target(environment: _ImportEnvironment, target: ast.expr) -> None:
+    if isinstance(target, ast.Name):
+        _invalidate_name(environment, target.id)
+        return
+    if isinstance(target, (ast.Tuple, ast.List)):
+        for item in target.elts:
+            _invalidate_target(environment, item)
+        return
+    if isinstance(target, ast.Starred):
+        _invalidate_target(environment, target.value)
+        return
+    if isinstance(target, ast.Attribute):
+        expression = _dotted_expression(target)
+        if expression:
+            modules = environment[1]
+            for key in tuple(modules):
+                if key[: len(expression)] == expression or expression[: len(key)] == key:
+                    modules.pop(key, None)
+
+
+def _invalidate_name(environment: _ImportEnvironment, name: str) -> None:
+    direct, modules = environment
+    direct.pop(name, None)
+    for expression in tuple(modules):
+        if expression and expression[0] == name:
+            modules.pop(expression, None)
+
+
+def _copy_environment(environment: _ImportEnvironment) -> _ImportEnvironment:
+    return dict(environment[0]), dict(environment[1])
+
+
+def _deduplicate_environments(
+    environments: list[_ImportEnvironment],
+) -> list[_ImportEnvironment]:
+    unique: dict[tuple[object, ...], _ImportEnvironment] = {}
+    for environment in environments:
+        key = (
+            tuple(sorted(environment[0].items())),
+            tuple(sorted(environment[1].items())),
+        )
+        unique[key] = environment
+    return list(unique.values())
+
+
+def _literal_truth(expression: ast.expr) -> bool | None:
+    if isinstance(expression, ast.Constant):
+        return bool(expression.value)
+    if isinstance(expression, (ast.Tuple, ast.List, ast.Set)):
+        return bool(expression.elts)
+    if isinstance(expression, ast.Dict):
+        return bool(expression.keys)
+    if isinstance(expression, ast.UnaryOp) and isinstance(expression.op, ast.Not):
+        truth = _literal_truth(expression.operand)
+        return None if truth is None else not truth
+    if isinstance(expression, ast.BoolOp):
+        values = [_literal_truth(item) for item in expression.values]
+        if isinstance(expression.op, ast.And):
+            if False in values:
+                return False
+            return True if all(value is True for value in values) else None
+        if True in values:
+            return True
+        return False if all(value is False for value in values) else None
+    return None
+
+
+def _pattern_bound_names(pattern: ast.pattern) -> set[str]:
+    names: set[str] = set()
+    for node in ast.walk(pattern):
+        if isinstance(node, ast.MatchAs) and node.name:
+            names.add(node.name)
+        elif isinstance(node, ast.MatchStar) and node.name:
+            names.add(node.name)
+        elif isinstance(node, ast.MatchMapping) and node.rest:
+            names.add(node.rest)
     return names
 
 
@@ -2137,11 +2841,15 @@ class BasicBackendGateRunner:
                     ),
                 },
                 "preview_id": preview_id,
+                "preview_generation": generation,
                 "approval_id": approval_id,
                 "proposal_response_sha256": proposal_exchange.response_sha256,
                 "preview_response_sha256": preview_exchange.response_sha256,
                 "approval_response_sha256": approval_exchange.response_sha256,
                 "execute_response_sha256": execute_exchange.response_sha256,
+                "preview_evidence_file": preview_exchange.evidence_file,
+                "approval_evidence_file": approval_exchange.evidence_file,
+                "execute_evidence_file": execute_exchange.evidence_file,
                 "execute_status_code": execute_exchange.status_code,
                 "reviewer_result_evidence_file": execute_exchange.evidence_file,
                 "resource_use": {
@@ -3176,7 +3884,7 @@ def _rederive_repair_succeeded(
         or workflow.get("fresh_approval_per_attempt") is not True
         or not isinstance(proof, Mapping)
         or proof.get("terminal_proof_eligible") is not True
-        or not _sha256_digest_present(proof.get("proof_sha256"))
+        or not _sha256_commitment_present(proof.get("proof_sha256"))
         or not isinstance(trace, Mapping)
         or trace.get("passed") is not True
         or _authenticated_execution_lifecycle_audit(workflow).get("crossed") is not True
@@ -3193,6 +3901,23 @@ def _rederive_repair_succeeded(
         return False
     if [item.get("attempt_number") for item in attempts] != list(
         range(1, len(attempts) + 1)
+    ):
+        return False
+    failed_attempt_seals = [
+        str(item.get("attempt_seal_sha256") or "")
+        for item in attempts[:-1]
+    ]
+    if (
+        proof.get("attempt_count") != len(attempts)
+        or proof.get("attempt_id")
+        != attempts[-1].get("orchestrator_attempt_id")
+        or proof.get("approval_id") != attempts[-1].get("approval_id")
+        or any(
+            not _sha256_commitment_present(value)
+            for value in failed_attempt_seals
+        )
+        or list(proof.get("failed_attempt_seal_sha256s") or [])
+        != failed_attempt_seals
     ):
         return False
     for key in (
@@ -3268,7 +3993,7 @@ def _rederive_repair_succeeded(
             != diagnostic_sha256
             or not _sha256_digest_present(diagnostic_sha256)
             or _sha256_json(diagnostic_body) != diagnostic_sha256
-            or not _sha256_digest_present(
+            or not _sha256_commitment_present(
                 repair_request.get("parent_attempt_seal_sha256")
             )
             or repair_request.get("parent_attempt_seal_sha256")
@@ -3288,6 +4013,491 @@ def _rederive_repair_succeeded(
             return False
         transition_count += 1
     return transition_count == len(attempts) - 1
+
+
+def _unique_loaded_exchange(
+    exchanges: Sequence[HttpExchange],
+    *,
+    method: str,
+    path: str,
+    response_sha256: object,
+    evidence_file: object,
+) -> HttpExchange | None:
+    matches = [
+        exchange
+        for exchange in exchanges
+        if exchange.method == method
+        and exchange.path == path
+        and exchange.response_sha256 == response_sha256
+        and exchange.evidence_file == evidence_file
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _exact_attempt_http_chain_valid(
+    *,
+    exchanges: Sequence[HttpExchange],
+    attempts: Sequence[Mapping[str, Any]],
+    task_id: str,
+    create_exchange: HttpExchange,
+    final_exchange: HttpExchange,
+) -> bool:
+    """Bind each raw proposal, preview, approval, and execution as one chain."""
+
+    create_request = create_exchange.request
+    human_prompt = (
+        str(create_request.get("description") or "")
+        if isinstance(create_request, Mapping)
+        else ""
+    )
+    if not human_prompt or set(create_request or {}) != {"description"}:
+        return False
+    route_prefix = f"/v1/tasks/long-running/{task_id}"
+    expected_plugin = _generic_plugin_declaration()
+    previous_ordinal = create_exchange.ordinal
+    approval_ids: list[str] = []
+    for expected_number, attempt in enumerate(attempts, start=1):
+        if attempt.get("attempt_number") != expected_number:
+            return False
+        proposal_exchange = _unique_loaded_exchange(
+            exchanges,
+            method="POST",
+            path=f"{route_prefix}/target-plugin-proposal",
+            response_sha256=attempt.get("proposal_response_sha256"),
+            evidence_file=attempt.get("proposed_patch_evidence_file"),
+        )
+        preview_exchange = _unique_loaded_exchange(
+            exchanges,
+            method="POST",
+            path=f"{route_prefix}/approval-preview",
+            response_sha256=attempt.get("preview_response_sha256"),
+            evidence_file=attempt.get("preview_evidence_file"),
+        )
+        approval_exchange = _unique_loaded_exchange(
+            exchanges,
+            method="POST",
+            path=f"{route_prefix}/operator-approval",
+            response_sha256=attempt.get("approval_response_sha256"),
+            evidence_file=attempt.get("approval_evidence_file"),
+        )
+        execute_exchange = _unique_loaded_exchange(
+            exchanges,
+            method="POST",
+            path=f"{route_prefix}/execute-approved",
+            response_sha256=attempt.get("execute_response_sha256"),
+            evidence_file=attempt.get("execute_evidence_file"),
+        )
+        chain = (
+            proposal_exchange,
+            preview_exchange,
+            approval_exchange,
+            execute_exchange,
+        )
+        if any(exchange is None for exchange in chain):
+            return False
+        proposal_exchange = proposal_exchange  # type: ignore[assignment]
+        preview_exchange = preview_exchange  # type: ignore[assignment]
+        approval_exchange = approval_exchange  # type: ignore[assignment]
+        execute_exchange = execute_exchange  # type: ignore[assignment]
+        if not (
+            previous_ordinal < proposal_exchange.ordinal
+            < preview_exchange.ordinal
+            < approval_exchange.ordinal
+            < execute_exchange.ordinal
+            and proposal_exchange.ok
+            and preview_exchange.ok
+            and approval_exchange.ok
+            and execute_exchange.status_code == attempt.get("execute_status_code")
+            and execute_exchange.status_code not in {401, 403}
+            and approval_exchange.authenticated is True
+            and _signed_operator_authority_acknowledged(approval_exchange)
+        ):
+            return False
+        previous_ordinal = execute_exchange.ordinal
+        if proposal_exchange.request != {
+            "task": human_prompt,
+            "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+            "target_plugin": expected_plugin,
+        }:
+            return False
+        proposal_state = _orchestrator_state(proposal_exchange.response)
+        proposal = proposal_state.get("target_plugin_proposal")
+        if not isinstance(proposal, Mapping):
+            return False
+        try:
+            material = _proposal_material(
+                proposal_state,
+                proposal_exchange.response,
+            )
+        except BasicBackendGateError:
+            return False
+        context_manifest = attempt.get("context_manifest")
+        if not isinstance(context_manifest, Mapping):
+            return False
+        if (
+            proposal.get("attempt_id") != attempt.get("orchestrator_attempt_id")
+            or proposal.get("parent_attempt_id") != attempt.get("parent_attempt_id")
+            or proposal.get("runtime_output_id") != attempt.get("runtime_output_id")
+            or proposal.get("proposal_binding_sha256")
+            != attempt.get("proposal_binding_sha256")
+            or proposal.get("approved_diff_sha256")
+            != attempt.get("approved_diff_sha256")
+            or _sha256_text(material["approved_diff"])
+            != attempt.get("approved_diff_sha256")
+            or material["runtime_output_id"] != attempt.get("runtime_output_id")
+            or material["context_hash"] != context_manifest.get("context_hash")
+        ):
+            return False
+        expected_preview_request = {
+            "action": ACTION,
+            "approved_diff": material["approved_diff"],
+            "target": material["target"],
+            "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+            "context_hash": material["context_hash"],
+            "runtime_output_id": material["runtime_output_id"],
+            "target_plugin": expected_plugin,
+        }
+        if preview_exchange.request != expected_preview_request:
+            return False
+        preview = preview_exchange.response.get("preview")
+        preview_id = str(attempt.get("preview_id") or "")
+        generation = attempt.get("preview_generation")
+        if (
+            not isinstance(preview, Mapping)
+            or not isinstance(generation, int)
+            or isinstance(generation, bool)
+            or generation < 1
+            or preview.get("state") != "previewed"
+            or preview.get("preview_id") != preview_id
+            or preview.get("generation") != generation
+            or approval_exchange.request
+            != {
+                "action": "approve",
+                "preview_id": preview_id,
+                "generation": generation,
+            }
+        ):
+            return False
+        approval = approval_exchange.response.get("approval")
+        approval_id = str(attempt.get("approval_id") or "")
+        if (
+            not isinstance(approval, Mapping)
+            or not approval_id
+            or approval.get("state") != "approved"
+            or approval.get("approval_id") != approval_id
+            or (
+                approval.get("generation") is not None
+                and approval.get("generation") != generation
+            )
+        ):
+            return False
+        approval_ids.append(approval_id)
+        if execute_exchange.request != {
+            "action": ACTION,
+            "approval_id": approval_id,
+            "approved_by": "spiritos-local-operator",
+            "approved_diff": material["approved_diff"],
+            "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+            "context_hash": material["context_hash"],
+            "runtime_output_id": material["runtime_output_id"],
+            "target": material["target"],
+            "test_command": ["python", "-m", "pytest", "-q"],
+        }:
+            return False
+    return bool(
+        attempts
+        and previous_ordinal < final_exchange.ordinal
+        and len(approval_ids) == len(set(approval_ids))
+        and all(attempt.get("fresh_exact_approval") is True for attempt in attempts)
+    )
+
+
+def _rederive_persisted_proof_and_trace(
+    workflow: Mapping[str, Any],
+    *,
+    receipt_proof: Mapping[str, Any],
+    leak: Mapping[str, Any],
+    expected_head: str,
+) -> dict[str, bool]:
+    """Reopen locked HTTP evidence and independently derive proof and trace."""
+
+    raw_exchanges = workflow.get("http_exchanges")
+    exchanges = [
+        item for item in raw_exchanges or [] if isinstance(item, Mapping)
+    ]
+    if (
+        not isinstance(raw_exchanges, list)
+        or not exchanges
+        or len(exchanges) != len(raw_exchanges)
+    ):
+        return {"proof_valid": False, "trace_valid": False}
+    scan = leak.get("production_evidence_scan")
+    scan = scan if isinstance(scan, Mapping) else {}
+    scanned_paths = {
+        str(item.get("path") or "")
+        for item in scan.get("files", [])
+        if isinstance(item, Mapping) and item.get("path")
+    }
+
+    def load_exchange(public: Mapping[str, Any]) -> HttpExchange | None:
+        evidence_text = str(public.get("evidence_file") or "")
+        if not evidence_text or evidence_text not in scanned_paths:
+            return None
+        evidence_path = Path(evidence_text)
+        try:
+            payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            return None
+        if not isinstance(payload, Mapping):
+            return None
+        response = payload.get("response")
+        authentication = payload.get("authentication")
+        raw_header_names = payload.get("request_headers_present")
+        if not isinstance(raw_header_names, list) or any(
+            not isinstance(item, str) for item in raw_header_names
+        ):
+            return None
+        header_names = [item.strip().lower() for item in raw_header_names]
+        if (
+            len(header_names) != len(set(header_names))
+            or any(
+                re.fullmatch(r"[!#$%&'*+\-.^_`|~0-9A-Za-z]+", item) is None
+                for item in header_names
+            )
+        ):
+            return None
+        try:
+            request_body = base64.b64decode(
+                str(payload.get("request_body_base64") or ""),
+                validate=True,
+            )
+            response_body = base64.b64decode(
+                str(payload.get("response_body_base64") or ""),
+                validate=True,
+            )
+            decoded_request = json.loads(request_body) if request_body else None
+            decoded_response = json.loads(response_body)
+        except (
+            ValueError,
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+        ):
+            return None
+        recorded_request = payload.get("request")
+        if request_body:
+            if (
+                not isinstance(decoded_request, Mapping)
+                or not isinstance(recorded_request, Mapping)
+                or dict(decoded_request) != dict(recorded_request)
+            ):
+                return None
+        elif recorded_request is not None or decoded_request is not None:
+            return None
+        method = str(payload.get("method") or "")
+        path = str(payload.get("path") or "")
+        signed_authority_path = bool(
+            method == "POST"
+            and (
+                path == "/v1/campaigns/campaign-3.5/model-call-authority"
+                or path.endswith("/operator-approval")
+            )
+        )
+        assertion_header_recorded = _OPERATOR_ASSERTION_HEADER in header_names
+        if assertion_header_recorded is not signed_authority_path:
+            return None
+        raw_status_code = payload.get("status_code")
+        if not isinstance(raw_status_code, int) or isinstance(raw_status_code, bool):
+            return None
+        server_acknowledged = _server_acknowledged_signed_operator_authority(
+            path=path,
+            status_code=raw_status_code,
+            response=response if isinstance(response, Mapping) else {},
+        )
+        authenticated = bool(assertion_header_recorded and server_acknowledged)
+        if (
+            payload.get("schema_version")
+            != "source-proxy-basic-backend-10-http-exchange/v1"
+            or not isinstance(response, Mapping)
+            or not isinstance(authentication, Mapping)
+            or payload.get("ordinal") != public.get("ordinal")
+            or payload.get("method") != public.get("method")
+            or payload.get("path") != public.get("path")
+            or payload.get("status_code") != public.get("status_code")
+            or payload.get("authenticated") != public.get("authenticated")
+            or dict(authentication) != dict(public.get("authentication") or {})
+            or authentication.get("scheme") != "signed_operator_assertion"
+            or authentication.get("assertion_present") is not assertion_header_recorded
+            or authentication.get("server_acknowledged") is not server_acknowledged
+            or authentication.get("authenticated") is not authenticated
+            or payload.get("authenticated") is not authenticated
+            or payload.get("elapsed_ms") != public.get("elapsed_ms")
+            or payload.get("request_sha256") != public.get("request_sha256")
+            or payload.get("response_sha256") != public.get("response_sha256")
+            or _sha256_bytes(request_body) != public.get("request_sha256")
+            or _sha256_bytes(response_body) != public.get("response_sha256")
+            or decoded_response != response
+        ):
+            return None
+        try:
+            return HttpExchange(
+                ordinal=int(public.get("ordinal")),
+                method=str(public.get("method") or ""),
+                path=str(public.get("path") or ""),
+                status_code=int(public.get("status_code")),
+                request_sha256=str(public.get("request_sha256") or ""),
+                response_sha256=str(public.get("response_sha256") or ""),
+                response=dict(response),
+                evidence_file=evidence_text,
+                authenticated=public.get("authenticated") is True,
+                elapsed_ms=int(public.get("elapsed_ms") or 0),
+                authentication=dict(authentication),
+                request=(
+                    dict(decoded_request)
+                    if isinstance(decoded_request, Mapping)
+                    else None
+                ),
+            )
+        except (TypeError, ValueError):
+            return None
+
+    authority_matches = [
+        item
+        for item in exchanges
+        if item.get("method") == "POST"
+        and item.get("path")
+        == "/v1/campaigns/campaign-3.5/model-call-authority"
+    ]
+    create_matches = [
+        item
+        for item in exchanges
+        if item.get("method") == "POST"
+        and item.get("path") == "/v1/tasks/long-running"
+    ]
+    authority_public = authority_matches[0] if len(authority_matches) == 1 else None
+    create_public = create_matches[0] if len(create_matches) == 1 else None
+    final_evidence = str(workflow.get("final_readback_evidence_file") or "")
+    final_public = next(
+        (
+            item
+            for item in exchanges
+            if item.get("method") == "GET"
+            and item.get("evidence_file") == final_evidence
+            and str(item.get("path") or "").startswith(
+                "/v1/tasks/long-running/"
+            )
+        ),
+        None,
+    )
+    if not all(
+        isinstance(item, Mapping)
+        for item in (authority_public, create_public, final_public)
+    ):
+        return {"proof_valid": False, "trace_valid": False}
+    loaded_by_evidence_file: dict[str, HttpExchange] = {}
+    for public in exchanges:
+        loaded = load_exchange(public)
+        evidence_file = str(public.get("evidence_file") or "")
+        if (
+            loaded is None
+            or not evidence_file
+            or evidence_file in loaded_by_evidence_file
+        ):
+            return {"proof_valid": False, "trace_valid": False}
+        loaded_by_evidence_file[evidence_file] = loaded
+    authority = loaded_by_evidence_file.get(
+        str(authority_public.get("evidence_file") or "")
+    )
+    created = loaded_by_evidence_file.get(
+        str(create_public.get("evidence_file") or "")
+    )
+    final = loaded_by_evidence_file.get(str(final_public.get("evidence_file") or ""))
+    if authority is None or created is None or final is None:
+        return {"proof_valid": False, "trace_valid": False}
+    if (
+        authority.request is not None
+        or not authority.ok
+        or not (authority.ordinal < created.ordinal < final.ordinal)
+    ):
+        return {"proof_valid": False, "trace_valid": False}
+    if final.response_sha256 != workflow.get("final_readback_response_sha256"):
+        return {"proof_valid": False, "trace_valid": False}
+    orchestrator = _orchestrator_state(final.response)
+    if not orchestrator:
+        return {"proof_valid": False, "trace_valid": False}
+    final_task_id = final.path.removeprefix("/v1/tasks/long-running/")
+    created_task = created.response.get("task")
+    final_task = final.response.get("task")
+    if (
+        not final_task_id
+        or "/" in final_task_id
+        or not isinstance(created_task, Mapping)
+        or not isinstance(final_task, Mapping)
+        or created_task.get("id") != final_task_id
+        or final_task.get("id") != final_task_id
+        or _sha256_text(final_task_id) != workflow.get("task_id_sha256")
+        or orchestrator.get("task_id") != final_task_id
+    ):
+        return {"proof_valid": False, "trace_valid": False}
+    raw_attempts = workflow.get("attempts")
+    if (
+        authority.authenticated is not True
+        or not isinstance(raw_attempts, list)
+        or not raw_attempts
+        or any(not isinstance(item, Mapping) for item in raw_attempts)
+        or not _exact_attempt_http_chain_valid(
+            exchanges=list(loaded_by_evidence_file.values()),
+            attempts=[dict(item) for item in raw_attempts],
+            task_id=final_task_id,
+            create_exchange=created,
+            final_exchange=final,
+        )
+    ):
+        return {"proof_valid": False, "trace_valid": False}
+    try:
+        derived_proof = derive_production_proof(
+            orchestrator,
+            expected_source_head=expected_head,
+        )
+        derived_trace = reconcile_basic_backend_trace(
+            task_id=final_task_id,
+            orchestrator=orchestrator,
+            authority_exchange=authority,
+            create_exchange=created,
+            final_exchange=final,
+        )
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return {"proof_valid": False, "trace_valid": False}
+    workflow_proof = workflow.get("production_proof")
+    workflow_trace = workflow.get("trace_reconciliation")
+    proof_body = dict(workflow_proof) if isinstance(workflow_proof, Mapping) else {}
+    recorded_proof_sha256 = str(proof_body.pop("proof_sha256", ""))
+    proof_digest = recorded_proof_sha256.removeprefix("sha256:")
+    try:
+        proof_body_digest = hashlib.sha256(
+            json.dumps(
+                proof_body,
+                ensure_ascii=False,
+                allow_nan=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+    except (TypeError, ValueError):
+        return {"proof_valid": False, "trace_valid": False}
+    return {
+        "proof_valid": bool(
+            _sha256_digest_present(proof_digest)
+            and proof_body_digest == proof_digest
+            and isinstance(workflow_proof, Mapping)
+            and dict(derived_proof) == dict(workflow_proof)
+            and dict(derived_proof) == dict(receipt_proof)
+        ),
+        "trace_valid": bool(
+            isinstance(workflow_trace, Mapping)
+            and dict(derived_trace) == dict(workflow_trace)
+            and derived_trace.get("passed") is True
+        ),
+    }
 
 
 def _aggregate_phase_receipts(
@@ -3499,16 +4709,26 @@ def _rederive_task_receipt_score(
     )
     proof = workflow.get("production_proof")
     receipt_proof = receipt.get("production_proof")
+    persisted_derivation = _rederive_persisted_proof_and_trace(
+        workflow,
+        receipt_proof=(
+            receipt_proof if isinstance(receipt_proof, Mapping) else {}
+        ),
+        leak=leak,
+        expected_head=expected_head,
+    )
     proof_bound = bool(
         isinstance(proof, Mapping)
         and isinstance(receipt_proof, Mapping)
         and dict(proof) == dict(receipt_proof)
         and proof.get("terminal_proof_eligible") is True
-        and _sha256_digest_present(proof.get("proof_sha256"))
+        and _sha256_commitment_present(proof.get("proof_sha256"))
+        and persisted_derivation["proof_valid"] is True
     )
     trace_passed = bool(
         isinstance(workflow.get("trace_reconciliation"), Mapping)
         and workflow["trace_reconciliation"].get("passed") is True
+        and persisted_derivation["trace_valid"] is True
     )
     verifier_runtime_valid = _verifier_runtime_evidence_valid(
         workflow.get("verifier_runtime_evidence"),
@@ -3624,6 +4844,8 @@ def _rederive_task_receipt_score(
         "hidden_answer_audit_valid": leak_validation["valid"],
         "proof_bound": proof_bound,
         "trace_passed": trace_passed,
+        "persisted_proof_rederived": persisted_derivation["proof_valid"],
+        "persisted_trace_rederived": persisted_derivation["trace_valid"],
         "runtime_identity_bound": runtime_identity_bound,
         "task_identity_bound": task_identity_bound,
         "verifier_runtime_valid": verifier_runtime_valid,
@@ -3827,29 +5049,133 @@ def _revalidate_hidden_answer_audit(leak: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _evaluation_contract(source_root: Path) -> dict[str, Any]:
-    """Hash the frozen benchmark plus the private oracle/scorer implementation."""
-
-    public_manifest = validate_public_contract()
-    relative_files = {
-        Path("source_proxy/benchmarks/campaign_3_5_basic_gate_runner.py"),
-        CONTROL_TRACE_MAP,
-    }
-    assets_root = source_root / "source_proxy/benchmarks/campaign_3_5_basic_assets"
-    relative_files.update(
-        path.relative_to(source_root)
-        for path in assets_root.rglob("*")
-        if path.is_file() and path.suffix in {".py", ".json"}
+def _evaluation_component_excluded(relative_path: Path) -> bool:
+    return bool(
+        any(part in _EVALUATION_COMPONENT_EXCLUDED_PARTS for part in relative_path.parts)
+        or relative_path.suffix.lower() in _EVALUATION_COMPONENT_EXCLUDED_SUFFIXES
+        or any(
+            relative_path == prefix or prefix in relative_path.parents
+            for prefix in _EVALUATION_COMPONENT_EXCLUDED_PREFIXES
+        )
     )
-    components = {
-        path.as_posix(): _sha256_file(source_root / path)
-        for path in sorted(relative_files, key=lambda item: item.as_posix())
+
+
+def _evaluation_tree_components(
+    source_root: Path,
+    relative_roots: Sequence[Path],
+) -> dict[str, str]:
+    components: dict[str, str] = {}
+    for relative_root in relative_roots:
+        absolute_root = source_root / relative_root
+        if not absolute_root.is_dir():
+            raise BasicBackendGateError(
+                "basic_gate_evaluation_contract_component_root_missing",
+                {"path_sha256": _sha256_text(relative_root.as_posix())},
+            )
+        for candidate in sorted(
+            absolute_root.rglob("*"),
+            key=lambda item: item.relative_to(source_root).as_posix(),
+        ):
+            relative = candidate.relative_to(source_root)
+            if _evaluation_component_excluded(relative):
+                continue
+            if candidate.is_symlink():
+                raise BasicBackendGateError(
+                    "basic_gate_evaluation_contract_symlink_invalid",
+                    {"path_sha256": _sha256_text(relative.as_posix())},
+                )
+            if candidate.is_file():
+                components[relative.as_posix()] = _sha256_file(candidate)
+    return components
+
+
+def _evaluation_file_components(
+    source_root: Path,
+    relative_files: Sequence[Path],
+) -> dict[str, str]:
+    components: dict[str, str] = {}
+    for relative in sorted(relative_files, key=lambda item: item.as_posix()):
+        candidate = source_root / relative
+        if candidate.is_symlink() or not candidate.is_file():
+            raise BasicBackendGateError(
+                "basic_gate_evaluation_contract_component_missing",
+                {"path_sha256": _sha256_text(relative.as_posix())},
+            )
+        components[relative.as_posix()] = _sha256_file(candidate)
+    return components
+
+
+def _component_set_receipt(components: Mapping[str, str]) -> dict[str, Any]:
+    normalized = {
+        str(path): str(digest)
+        for path, digest in sorted(components.items(), key=lambda item: item[0])
     }
     body = {
-        "schema_version": "source-proxy-basic-backend-10-evaluation-contract/v1",
+        "file_count": len(normalized),
+        "files_sha256": _sha256_json(normalized),
+    }
+    return {**body, "receipt_sha256": _sha256_json(body)}
+
+
+def _evaluation_contract(source_root: Path) -> dict[str, Any]:
+    """Bind the scorer, the complete production package, and runtime config."""
+
+    resolved_root = source_root.resolve(strict=True)
+    public_manifest = validate_public_contract()
+    production_components = _evaluation_tree_components(
+        resolved_root,
+        _EVALUATION_PRODUCTION_ROOTS,
+    )
+    runtime_config_components = {
+        **_evaluation_tree_components(
+            resolved_root,
+            _EVALUATION_RUNTIME_CONFIG_ROOTS,
+        ),
+        **_evaluation_file_components(
+            resolved_root,
+            _EVALUATION_RUNTIME_CONFIG_FILES,
+        ),
+    }
+    benchmark_components = _evaluation_file_components(
+        resolved_root,
+        (CONTROL_TRACE_MAP,),
+    )
+    components = {
+        **production_components,
+        **runtime_config_components,
+        **benchmark_components,
+    }
+    if not production_components or not runtime_config_components:
+        raise BasicBackendGateError("basic_gate_evaluation_contract_components_empty")
+    policy = {
+        "production_roots": [
+            path.as_posix() for path in _EVALUATION_PRODUCTION_ROOTS
+        ],
+        "runtime_config_roots": [
+            path.as_posix() for path in _EVALUATION_RUNTIME_CONFIG_ROOTS
+        ],
+        "runtime_config_files": [
+            path.as_posix() for path in _EVALUATION_RUNTIME_CONFIG_FILES
+        ],
+        "excluded_prefixes": [
+            path.as_posix() for path in _EVALUATION_COMPONENT_EXCLUDED_PREFIXES
+        ],
+        "excluded_parts": sorted(_EVALUATION_COMPONENT_EXCLUDED_PARTS),
+        "excluded_suffixes": sorted(_EVALUATION_COMPONENT_EXCLUDED_SUFFIXES),
+        "documentation_roots_included": False,
+    }
+    body = {
+        "schema_version": "source-proxy-basic-backend-10-evaluation-contract/v2",
         "definition_version": DEFINITION_VERSION,
         "public_manifest_sha256": _sha256_json(public_manifest),
+        "component_policy": policy,
+        "production_source_tree": _component_set_receipt(production_components),
+        "runtime_configuration": _component_set_receipt(
+            runtime_config_components
+        ),
+        "benchmark_control": _component_set_receipt(benchmark_components),
         "components": components,
+        "components_sha256": _sha256_json(components),
     }
     return {**body, "contract_sha256": _sha256_json(body)}
 
@@ -4240,7 +5566,7 @@ def _service_model_aliases(environment: Mapping[str, str]) -> dict[str, str]:
     return aliases
 
 
-def _prepare_service_import_audit(state_root: Path) -> tuple[Path, Path]:
+def _prepare_service_import_audit(state_root: Path) -> tuple[Path, Path, Path]:
     hook_root = state_root / "import-audit-hook"
     hook_root.mkdir(parents=True, mode=0o700, exist_ok=False)
     hook_path = hook_root / "sitecustomize.py"
@@ -4249,7 +5575,10 @@ def _prepare_service_import_audit(state_root: Path) -> tuple[Path, Path]:
     log_path = state_root / "import-audit.jsonl"
     log_path.touch(mode=0o600, exist_ok=False)
     os.chmod(log_path, 0o600)
-    return hook_root, log_path
+    owner_path = state_root / "import-audit-owner.pid"
+    if owner_path.exists():
+        raise BasicBackendGateError("basic_gate_import_audit_owner_exists")
+    return hook_root, log_path, owner_path
 
 
 def _finalize_service_import_audit(log_path: Path) -> dict[str, Any]:
@@ -4343,6 +5672,69 @@ def _stop_process(process: subprocess.Popen[bytes]) -> None:
             process.wait(timeout=5)
         except (OSError, subprocess.TimeoutExpired):
             pass
+
+
+def _request_service_import_audit_snapshot(
+    process: subprocess.Popen[bytes],
+    log_path: Path,
+    owner_path: Path,
+) -> None:
+    """Ask the owner interpreter to seal its final module snapshot.
+
+    The audit hook claims ``owner_path`` before application imports begin, so
+    approval/helper subprocesses that inherit PYTHONPATH cannot write to the
+    shared log.  SIGUSR1 is used only after that owner PID is verified.
+    """
+
+    if (
+        os.name != "posix"
+        or not hasattr(signal, "SIGUSR1")
+        or process.poll() is not None
+    ):
+        return
+    try:
+        owner_pid = int(owner_path.read_text(encoding="ascii").strip())
+    except (OSError, UnicodeDecodeError, ValueError):
+        return
+    if owner_pid != process.pid:
+        return
+    try:
+        started_records = [
+            json.loads(line)
+            for line in log_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return
+    if not any(
+        isinstance(item, Mapping)
+        and item.get("event") == "hook_started"
+        and item.get("pid") == process.pid
+        for item in started_records
+    ):
+        return
+    try:
+        os.kill(process.pid, signal.SIGUSR1)
+    except OSError:
+        return
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        try:
+            records = [
+                json.loads(line)
+                for line in log_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            records = []
+        if any(
+            isinstance(item, Mapping)
+            and item.get("event") == "hook_completed"
+            and item.get("pid") == process.pid
+            for item in records
+        ):
+            return
+        time.sleep(0.02)
 
 
 def _process_cwd(pid: int) -> Path:
@@ -4705,7 +6097,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_root=args.output_root,
         python_executable=args.python or _default_python(source_root),
         expected_head=args.expected_head,
-        phases=(args.phase,) if args.phase else PHASES,
+        phases=(args.phase or "first",),
         resume_first=args.resume_first,
         sandbox_image=args.sandbox_image,
     )

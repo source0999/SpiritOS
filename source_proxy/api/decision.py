@@ -43,6 +43,7 @@ from source_proxy.coding.orchestrator import (
     get_coding_orchestrator,
 )
 from source_proxy.target_plugins.adapter import (
+    GENERIC_WORKSPACE_PLUGIN_ID,
     TargetPluginResolutionError,
     execute_target_plugin_command,
     resolve_target_plugin,
@@ -859,11 +860,21 @@ def _run_production_target_plugin_proposal(
             report=pending_context,
             orchestrator_run_id=run_id,
         )
-        if load_plan(task_id) is None:
+        # The generic rich adapter owns repository-aware architecture.  It
+        # persists the exact plan through the orchestrator's plan-ready hook
+        # before its first coder call, avoiding both the legacy source-root
+        # planner and an unaccounted duplicate architect invocation.
+        generic_plan_deferred = (
+            getattr(target_plugin, "plugin_id", "")
+            == GENERIC_WORKSPACE_PLUGIN_ID
+            and load_plan(task_id) is None
+        )
+        if load_plan(task_id) is None and not generic_plan_deferred:
             orchestrator.advance(task_id)
-        if load_plan(task_id) is None:
+        if load_plan(task_id) is None and not generic_plan_deferred:
             raise CodingOrchestratorError("authoritative_plan_missing")
-        orchestrator.acknowledge_planner(task_id)
+        if not generic_plan_deferred:
+            orchestrator.acknowledge_planner(task_id)
     else:
         persisted_context = canonical_context_broker_for_task(task_id)
         if not isinstance(persisted_context, dict):

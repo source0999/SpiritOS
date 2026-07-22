@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import hashlib
 import contextlib
@@ -7,6 +8,7 @@ import copy
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Mapping
@@ -26,6 +28,8 @@ from source_proxy.benchmarks.campaign_3_5_basic_assets.seeding import (
     BasicBackendRunSeed,
 )
 from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
+    ACTION,
+    GENERIC_WORKSPACE_PROMPT_ID,
     BasicBackendGateConfig,
     BasicBackendGateError,
     BasicBackendGateRunner,
@@ -35,13 +39,16 @@ from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
     _NEUTRAL_PROBE_WORKER,
     _audit_fixture_mutations,
     _attempt_model_provenance_verified,
+    _called_helper_imports,
     _completion_claim_audit,
     _evaluation_contract,
     _finalize_service_import_audit,
     _git,
+    _generic_plugin_declaration,
     _hidden_answer_leak_audit,
     _load_and_validate_first_phase_manifest,
     _parse_neutral_probe_output,
+    _prepare_service_import_audit,
     _private_probe_spec,
     _private_oracle_evidence_valid,
     _proposal_material,
@@ -50,13 +57,18 @@ from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
     _sha256_json,
     _sha256_text,
     _trusted_private_oracle_decision,
+    _test_function_invoked_by_test,
     _rederive_repair_succeeded,
     _rederive_task_receipt_score,
+    _request_service_import_audit_snapshot,
+    _rederive_persisted_proof_and_trace,
     _scan_production_evidence,
     _workspace_diff,
     reconcile_basic_backend_trace,
     run_private_oracle_container,
 )
+from source_proxy.coding.proof import derive_production_proof
+from source_proxy.tests.test_coding_proof import _production_state
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -110,16 +122,50 @@ def _fake_model_inventory() -> dict[str, Any]:
     return {**body, "inventory_sha256": _sha256_json(body)}
 
 
-def _fake_preflight(*, head: str = TEST_FIRST_HEAD) -> dict[str, Any]:
+def _fake_preflight(
+    *,
+    head: str = TEST_FIRST_HEAD,
+    evaluation_contract: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     return {
         "passed": True,
         "branch": TEST_BRANCH,
         "head": head,
         "clean": True,
-        "evaluation_contract": _evaluation_contract(ROOT),
+        "evaluation_contract": dict(
+            evaluation_contract or _evaluation_contract(ROOT)
+        ),
         "sandbox_image": _fake_sandbox_image(),
         "model_inventory": _fake_model_inventory(),
     }
+
+
+def _materialize_evaluation_contract_source(tmp_path: Path) -> Path:
+    source_root = tmp_path / "contract-source"
+    tree_files = {
+        "source_proxy/main.py": "APP = 'baseline'\n",
+        "source_proxy/api/arbitrary.py": "VALUE = 'baseline'\n",
+        "source_proxy/benchmarks/campaign_3_5_basic_gate_runner.py": "# scorer\n",
+        "source_proxy/benchmarks/campaign_3_5_basic_assets/catalog.py": "# catalog\n",
+        "packages/contracts/openapi.yaml": "openapi: 3.1.0\n",
+        "config/runtime.json": "{}\n",
+        "benchmarks/coder-backend-100/v1.1/trace-event-contract-map.json": "{}\n",
+        ".python-version": "3.12\n",
+        "requirements.txt": "fastapi\n",
+        "requirements.core.txt": "fastapi\n",
+        "requirements.cuda.txt": "torch\n",
+        "repomix.config.json": "{}\n",
+        "repomix.repo-map.config.json": "{}\n",
+        "repomix.source-proxy-min.config.json": "{}\n",
+        "scripts/run-campaign-3-5-basic-backend-gate.py": "# runner\n",
+        "scripts/validate-campaign-3-5-basic-backend-gate.py": "# validator\n",
+        "docs/evidence/first-run.md": "initial evidence\n",
+    }
+    for relative, content in tree_files.items():
+        path = source_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    return source_root
 
 
 class FakeLifecycleClient:
@@ -379,11 +425,44 @@ def _fake_authenticated_execution_workflow(
     *,
     repair_succeeded: bool = False,
     workspace_root: Path | None = None,
+    evidence_root: Path | None = None,
+    source_head: str = TEST_FIRST_HEAD,
 ) -> dict[str, Any]:
-    durable_task_id = "production-" + _sha256_text(task_key)[:20]
+    orchestrator = _production_state(
+        repaired=repair_succeeded,
+        source_head=source_head,
+    )
+    durable_task_id = str(orchestrator["task_id"])
+    orchestrator["causal_events"] = [
+        {"event_type": "run_requested", "event_id": "event-run-requested"},
+        {
+            "event_type": "lane_transition",
+            "event_id": "event-planner-completed",
+            "lane_id": "planner",
+            "status_after": "completed",
+        },
+        {
+            "event_type": "target_plugin_proposal_ready",
+            "event_id": "event-proposal-ready",
+        },
+        {
+            "event_type": "post_apply_verification_requested",
+            "event_id": "event-post-apply-verification",
+        },
+        {"event_type": "final_result", "event_id": "event-final-result"},
+    ]
     task_id_sha256 = _sha256_text(durable_task_id)
     attempt_total = 2 if repair_succeeded else 1
+    attempt_states = [
+        dict(item["attempt_state"])
+        for item in orchestrator.get("attempt_history", [])
+        if isinstance(item, Mapping) and isinstance(item.get("attempt_state"), Mapping)
+    ] + [orchestrator]
+    assert len(attempt_states) == attempt_total
     exchanges: list[dict[str, Any]] = []
+    exchange_responses: dict[int, dict[str, Any]] = {}
+    if evidence_root is not None:
+        (evidence_root / "http").mkdir(parents=True, exist_ok=True)
 
     def digest(label: str) -> str:
         return _sha256_text(f"test-evidence:{task_key}:{label}")
@@ -393,7 +472,27 @@ def _fake_authenticated_execution_workflow(
         path: str,
         *,
         signed: bool = False,
+        method: str = "POST",
+        request: Mapping[str, Any] | None = None,
+        response: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
+        ordinal = len(exchanges) + 1
+        request_payload = dict(request) if request is not None else None
+        response_payload = dict(response or {"ok": True})
+        request_body = (
+            json.dumps(
+                request_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            if request_payload is not None
+            else b""
+        )
+        response_body = json.dumps(
+            response_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
         authentication = {
             "scheme": "signed_operator_assertion",
             "assertion_present": signed,
@@ -401,47 +500,168 @@ def _fake_authenticated_execution_workflow(
             "caller_claimed_authenticated": False,
             "authenticated": signed,
         }
+        request_header_names = {"accept"}
+        if request_payload is not None:
+            request_header_names.add("content-type")
+        if signed:
+            request_header_names.add("x-spiritos-operator-assertion")
+        evidence_file = (
+            evidence_root / "http" / f"http-{ordinal:03d}-{digest(label + ':file')}.json"
+            if evidence_root is not None
+            else Path("/evidence") / f"{digest(label + ':file')}.json"
+        )
         item = {
-            "ordinal": len(exchanges) + 1,
-            "method": "POST",
+            "ordinal": ordinal,
+            "method": method,
             "path": path,
             "status_code": 200,
-            "request_sha256": digest(label + ":request"),
-            "response_sha256": digest(label),
-            "evidence_file": "/evidence/" + digest(label + ":file") + ".json",
+            "request_sha256": hashlib.sha256(request_body).hexdigest(),
+            "response_sha256": hashlib.sha256(response_body).hexdigest(),
+            "evidence_file": str(evidence_file),
             "authenticated": signed,
             "authentication": authentication,
             "elapsed_ms": 1,
         }
+        if evidence_root is not None:
+            evidence_file.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "source-proxy-basic-backend-10-http-exchange/v1",
+                        "ordinal": ordinal,
+                        "method": method,
+                        "path": path,
+                        "status_code": 200,
+                        "authenticated": signed,
+                        "authentication": authentication,
+                        "request_headers_present": sorted(request_header_names),
+                        "request": request_payload,
+                        "request_sha256": item["request_sha256"],
+                        "request_body_base64": base64.b64encode(request_body).decode(
+                            "ascii"
+                        ),
+                        "response": response_payload,
+                        "response_sha256": item["response_sha256"],
+                        "response_body_base64": base64.b64encode(response_body).decode(
+                            "ascii"
+                        ),
+                        "elapsed_ms": 1,
+                    },
+                    sort_keys=True,
+                ),
+                encoding="utf-8",
+            )
         exchanges.append(item)
+        exchange_responses[ordinal] = response_payload
         return item
 
-    exchange(
+    authority_exchange = exchange(
         "authority",
         "/v1/campaigns/campaign-3.5/model-call-authority",
         signed=True,
+        response={"state": "approved", "authorization_id": "authority-test"},
     )
-    exchange("create", "/v1/tasks/long-running")
+    human_prompt = "ordinary backend task"
+    create_exchange = exchange(
+        "create",
+        "/v1/tasks/long-running",
+        request={"description": human_prompt},
+        response={"task": {"id": durable_task_id, "status": "running"}},
+    )
     prefix = f"/v1/tasks/long-running/{durable_task_id}"
     attempts: list[dict[str, Any]] = []
     prior_repair_request: dict[str, Any] | None = None
     for attempt_number in range(1, attempt_total + 1):
+        attempt_state = attempt_states[attempt_number - 1]
+        proposal_payload = attempt_state["target_plugin_proposal"]
+        assert isinstance(proposal_payload, Mapping)
+        runtime_output = next(
+            item
+            for item in attempt_state["runtime_outputs"]
+            if item["output_id"] == proposal_payload["runtime_output_id"]
+        )
+        approved_diff = str(runtime_output["payload"]["approved_diff"])
+        material = {
+            "runtime_output_id": str(proposal_payload["runtime_output_id"]),
+            "approved_diff": approved_diff,
+            "target": str(proposal_payload["target"]),
+            "context_hash": str(proposal_payload["context_hash"]),
+        }
+        preview_id = f"preview-{attempt_number}-{digest(task_key)[:8]}"
+        generation = attempt_number
+        artifact = attempt_state.get("immutable_artifact")
+        approval_id = (
+            str(artifact.get("approval_id") or "")
+            if isinstance(artifact, Mapping)
+            else f"approval-{attempt_number}-{digest(task_key)[:8]}"
+        )
         proposal = exchange(
             f"proposal-{attempt_number}",
             f"{prefix}/target-plugin-proposal",
+            request={
+                "task": human_prompt,
+                "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+                "target_plugin": _generic_plugin_declaration(),
+            },
+            response={
+                "coding_orchestrator": attempt_state,
+                "target_plugin_result": {"proposed_diff": approved_diff},
+            },
         )
         preview = exchange(
             f"preview-{attempt_number}",
             f"{prefix}/approval-preview",
+            request={
+                "action": ACTION,
+                "approved_diff": material["approved_diff"],
+                "target": material["target"],
+                "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+                "context_hash": material["context_hash"],
+                "runtime_output_id": material["runtime_output_id"],
+                "target_plugin": _generic_plugin_declaration(),
+            },
+            response={
+                "preview": {
+                    "preview_id": preview_id,
+                    "generation": generation,
+                    "state": "previewed",
+                }
+            },
         )
         approval = exchange(
             f"approval-{attempt_number}",
             f"{prefix}/operator-approval",
             signed=True,
+            request={
+                "action": "approve",
+                "preview_id": preview_id,
+                "generation": generation,
+            },
+            response={
+                "approval": {
+                    "state": "approved",
+                    "approval_id": approval_id,
+                    "generation": generation,
+                }
+            },
         )
         execute = exchange(
             f"execute-{attempt_number}",
             f"{prefix}/execute-approved",
+            request={
+                "action": ACTION,
+                "approval_id": approval_id,
+                "approved_by": "spiritos-local-operator",
+                "approved_diff": material["approved_diff"],
+                "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+                "context_hash": material["context_hash"],
+                "runtime_output_id": material["runtime_output_id"],
+                "target": material["target"],
+                "test_command": ["python", "-m", "pytest", "-q"],
+            },
+            response={
+                "task": {"id": durable_task_id, "status": "running"},
+                "coding_orchestrator": attempt_state,
+            },
         )
         alias = "local" if attempt_number > 1 else "coder"
         model = (
@@ -480,21 +700,35 @@ def _fake_authenticated_execution_workflow(
         }
         attempt: dict[str, Any] = {
             "attempt_number": attempt_number,
-            "orchestrator_attempt_id": f"attempt-{attempt_number}-{digest(task_key)[:8]}",
-            "parent_attempt_id": (
-                None
-                if attempt_number == 1
-                else attempts[-1]["orchestrator_attempt_id"]
-            ),
-            "proposal_binding_sha256": digest(f"binding-{attempt_number}"),
-            "approved_diff_sha256": digest(f"diff-{attempt_number}"),
-            "preview_id": f"preview-{attempt_number}-{digest(task_key)[:8]}",
-            "approval_id": f"approval-{attempt_number}-{digest(task_key)[:8]}",
+            "orchestrator_attempt_id": proposal_payload["attempt_id"],
+            "parent_attempt_id": proposal_payload.get("parent_attempt_id"),
+            "runtime_output_id": material["runtime_output_id"],
+            "proposal_binding_sha256": proposal_payload["proposal_binding_sha256"],
+            "approved_diff_sha256": _sha256_text(approved_diff),
+            "context_manifest": {
+                "context_hash": material["context_hash"],
+                "canonical_context_report_sha256": proposal_payload.get(
+                    "canonical_context_report_sha256"
+                ),
+                "context_runtime_artifact_sha256": proposal_payload.get(
+                    "context_runtime_artifact_sha256"
+                ),
+                "context_consumption_id": proposal_payload.get(
+                    "context_consumption_id"
+                ),
+            },
+            "preview_id": preview_id,
+            "preview_generation": generation,
+            "approval_id": approval_id,
             "fresh_exact_approval": True,
             "proposal_response_sha256": proposal["response_sha256"],
             "preview_response_sha256": preview["response_sha256"],
             "approval_response_sha256": approval["response_sha256"],
             "execute_response_sha256": execute["response_sha256"],
+            "proposed_patch_evidence_file": proposal["evidence_file"],
+            "preview_evidence_file": preview["evidence_file"],
+            "approval_evidence_file": approval["evidence_file"],
+            "execute_evidence_file": execute["evidence_file"],
             "execute_status_code": 200,
             "model_identity": {
                 "invocation_id": f"invocation-{attempt_number}",
@@ -597,6 +831,78 @@ def _fake_authenticated_execution_workflow(
             attempt["status"] = "repair_required_after_verifier"
         attempts.append(attempt)
     runtime_sha256 = _fake_model_inventory()["verifier_runtime_sha256"]
+    production_proof = derive_production_proof(
+        orchestrator,
+        expected_source_head=source_head,
+    )
+    assert production_proof["terminal_proof_eligible"] is True
+    if repair_succeeded:
+        failed_seals = production_proof["failed_attempt_seal_sha256s"]
+        assert len(failed_seals) == len(attempts) - 1
+        for index, seal_sha256 in enumerate(failed_seals):
+            failed_attempt = attempts[index]
+            successor = attempts[index + 1]
+            repair_request = dict(failed_attempt["repair_request"])
+            disposition = dict(repair_request["prior_approval_disposition"])
+            disposition["attempt_seal_sha256"] = seal_sha256
+            disposition_body = dict(disposition)
+            disposition_body.pop("disposition_sha256", None)
+            disposition["disposition_sha256"] = _sha256_json(disposition_body)
+            repair_request["parent_attempt_seal_sha256"] = seal_sha256
+            repair_request["prior_approval_disposition"] = disposition
+            repair_request["prior_approval_disposition_sha256"] = disposition[
+                "disposition_sha256"
+            ]
+            repair_body = dict(repair_request)
+            repair_body.pop("repair_input_sha256", None)
+            repair_request["repair_input_sha256"] = _sha256_json(repair_body)
+            failed_attempt["attempt_seal_sha256"] = seal_sha256
+            failed_attempt["repair_request"] = repair_request
+            successor["repair_evidence"] = {
+                **dict(successor["repair_evidence"]),
+                "repair_context": copy.deepcopy(repair_request),
+                "repair_input_sha256": repair_request["repair_input_sha256"],
+            }
+    final_response = {
+        "task": {
+            "id": durable_task_id,
+            "status": "completed",
+            "ast_snapshot": {
+                "coding_orchestrator": orchestrator,
+                "coding_production_proof": production_proof,
+            },
+        }
+    }
+    final_exchange = exchange(
+        "final-readback",
+        f"{prefix}",
+        method="GET",
+        response=final_response,
+    )
+
+    def http_exchange(item: Mapping[str, Any]) -> HttpExchange:
+        return HttpExchange(
+            ordinal=int(item["ordinal"]),
+            method=str(item["method"]),
+            path=str(item["path"]),
+            status_code=int(item["status_code"]),
+            request_sha256=str(item["request_sha256"]),
+            response_sha256=str(item["response_sha256"]),
+            response=exchange_responses[int(item["ordinal"])],
+            evidence_file=str(item["evidence_file"]),
+            authenticated=item["authenticated"] is True,
+            elapsed_ms=int(item["elapsed_ms"]),
+            authentication=dict(item["authentication"]),
+        )
+
+    trace = reconcile_basic_backend_trace(
+        task_id=durable_task_id,
+        orchestrator=orchestrator,
+        authority_exchange=http_exchange(authority_exchange),
+        create_exchange=http_exchange(create_exchange),
+        final_exchange=http_exchange(final_exchange),
+    )
+    assert trace["passed"] is True
     return {
         "task_id_sha256": task_id_sha256,
         "attempts": attempts,
@@ -612,11 +918,10 @@ def _fake_authenticated_execution_workflow(
         "terminal_disposition": "completed",
         "terminal_disposition_truthful": True,
         "repair_succeeded": repair_succeeded,
-        "production_proof": {
-            "terminal_proof_eligible": True,
-            "proof_sha256": digest("proof"),
-        },
-        "trace_reconciliation": {"passed": True},
+        "production_proof": production_proof,
+        "trace_reconciliation": trace,
+        "final_readback_evidence_file": final_exchange["evidence_file"],
+        "final_readback_response_sha256": final_exchange["response_sha256"],
         "verifier_runtime_evidence": {
             "runtime": "restricted_container",
             "image": TEST_IMAGE_ID,
@@ -690,6 +995,8 @@ def _persist_passing_task_receipt(
         rendered.definition.task_id,
         repair_succeeded=repair_succeeded,
         workspace_root=fixture.root,
+        evidence_root=evidence_root,
+        source_head=source_head,
     )
     leak = _hidden_answer_leak_audit(
         workflow,
@@ -803,6 +1110,67 @@ def _score_receipt(receipt: Mapping[str, Any], rendered: Any) -> dict[str, Any]:
     )
 
 
+def _raw_proof_trace_revalidation(receipt: Mapping[str, Any]) -> dict[str, bool]:
+    workflow = receipt["workflow"]
+    return _rederive_persisted_proof_and_trace(
+        workflow,
+        receipt_proof=receipt["production_proof"],
+        leak=receipt["hidden_answer_isolation"],
+        expected_head=str(receipt["source_head"]),
+    )
+
+
+def _raw_exchange_for_kind(
+    receipt: Mapping[str, Any],
+    kind: str,
+) -> tuple[dict[str, Any], Path, dict[str, Any]]:
+    exchanges = receipt["workflow"]["http_exchanges"]
+    if kind not in {"model_authority", "operator_approval", "create", "final"}:
+        raise AssertionError(f"unsupported exchange kind: {kind}")
+    final_file = receipt["workflow"]["final_readback_evidence_file"]
+
+    def matches(item: Mapping[str, Any]) -> bool:
+        if kind == "model_authority":
+            return item["path"] == "/v1/campaigns/campaign-3.5/model-call-authority"
+        if kind == "operator_approval":
+            return str(item["path"]).endswith("/operator-approval")
+        if kind == "create":
+            return item["path"] == "/v1/tasks/long-running"
+        return item["evidence_file"] == final_file
+
+    public = next(item for item in exchanges if matches(item))
+    evidence_path = Path(public["evidence_file"])
+    payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+    return public, evidence_path, payload
+
+
+def _rewrite_raw_exchange_with_consistent_hashes(
+    public: dict[str, Any],
+    evidence_path: Path,
+    payload: dict[str, Any],
+) -> None:
+    request = payload.get("request")
+    request_body = (
+        json.dumps(request, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        if request is not None
+        else b""
+    )
+    response_body = json.dumps(
+        payload["response"],
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    request_sha256 = hashlib.sha256(request_body).hexdigest()
+    response_sha256 = hashlib.sha256(response_body).hexdigest()
+    payload["request_body_base64"] = base64.b64encode(request_body).decode("ascii")
+    payload["request_sha256"] = request_sha256
+    payload["response_body_base64"] = base64.b64encode(response_body).decode("ascii")
+    payload["response_sha256"] = response_sha256
+    public["request_sha256"] = request_sha256
+    public["response_sha256"] = response_sha256
+    evidence_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+
+
 def test_authenticated_lifecycle_uses_fresh_exact_approval_for_repair(tmp_path: Path) -> None:
     client = FakeLifecycleClient(tmp_path / "http")
     service = RunningGateService(
@@ -842,7 +1210,7 @@ def test_authenticated_lifecycle_uses_fresh_exact_approval_for_repair(tmp_path: 
     assert not any("adapter" in path for path in paths)
 
 
-def test_two_phase_gate_runs_all_ten_in_order_with_fresh_seeds(
+def test_default_gate_runs_only_first_phase_and_cannot_issue_terminal_pass(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     seeds = iter(
@@ -886,15 +1254,86 @@ def test_two_phase_gate_runs_all_ten_in_order_with_fresh_seeds(
     monkeypatch.setattr(runner, "_run_task", fake_task)
     report = runner.run()
 
-    assert calls == [
-        *(('first', task_id) for task_id in EXPECTED_TASK_IDS),
-        *(('clean_rerun', task_id) for task_id in EXPECTED_TASK_IDS),
-    ]
-    assert report["all_ten_executed_per_phase"] is True
-    assert report["comparison"]["all_tasks_compared"] is True
-    assert report["comparison"]["fresh_seed_commitments"] is True
+    assert calls == [("first", task_id) for task_id in EXPECTED_TASK_IDS]
+    assert report["all_ten_executed_per_phase"] is False
+    assert report["phases"][0]["executed_task_count"] == 10
     assert report["first_phase_repaired_success_count"] == 1
-    assert report["gate_passed"] is True
+    assert report["phase_run_passed"] is True
+    assert report["gate_passed"] is False
+
+
+def test_combined_first_and_clean_rerun_configuration_is_rejected(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(BasicBackendGateError, match="basic_gate_phase_invalid"):
+        BasicBackendGateRunner(
+            BasicBackendGateConfig(
+                source_root=ROOT,
+                output_root=tmp_path / "gate-output",
+                python_executable=Path(sys.executable),
+                phases=("first", "clean_rerun"),
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "replacement", "component_set"),
+    (
+        (
+            "source_proxy/api/arbitrary.py",
+            "VALUE = 'changed'\n",
+            "production_source_tree",
+        ),
+        (
+            "source_proxy/new_runtime_module.py",
+            "ENABLED = True\n",
+            "production_source_tree",
+        ),
+        (
+            "packages/contracts/openapi.yaml",
+            "openapi: 3.1.1\n",
+            "runtime_configuration",
+        ),
+        ("requirements.txt", "fastapi\nuvicorn\n", "runtime_configuration"),
+    ),
+)
+def test_evaluation_contract_binds_complete_production_and_runtime_config_inputs(
+    tmp_path: Path,
+    relative_path: str,
+    replacement: str,
+    component_set: str,
+) -> None:
+    source_root = _materialize_evaluation_contract_source(tmp_path)
+    baseline = _evaluation_contract(source_root)
+    candidate = source_root / relative_path
+    candidate.parent.mkdir(parents=True, exist_ok=True)
+    candidate.write_text(replacement, encoding="utf-8")
+
+    changed = _evaluation_contract(source_root)
+
+    assert baseline["schema_version"].endswith("/v2")
+    assert relative_path in changed["components"]
+    assert baseline["contract_sha256"] != changed["contract_sha256"]
+    assert baseline["components_sha256"] != changed["components_sha256"]
+    assert baseline[component_set]["files_sha256"] != changed[component_set][
+        "files_sha256"
+    ]
+
+
+def test_evaluation_contract_excludes_evidence_documentation(tmp_path: Path) -> None:
+    source_root = _materialize_evaluation_contract_source(tmp_path)
+    baseline = _evaluation_contract(source_root)
+    evidence = source_root / "docs/evidence/first-run.md"
+    evidence.write_text("updated operator evidence\n", encoding="utf-8")
+    (source_root / "docs/evidence/second-run.md").write_text(
+        "new evidence\n",
+        encoding="utf-8",
+    )
+
+    after_evidence = _evaluation_contract(source_root)
+
+    assert not any(path.startswith("docs/") for path in baseline["components"])
+    assert after_evidence == baseline
 
 
 def test_receipt_count_cannot_substitute_for_authenticated_execution_lifecycle(
@@ -937,6 +1376,10 @@ def test_receipt_count_cannot_substitute_for_authenticated_execution_lifecycle(
         )
         if phase == "first" and rendered.definition.task_id == EXPECTED_TASK_IDS[-1]:
             receipt["workflow"] = {}
+            Path(receipt["receipt_file"]).write_text(
+                json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
         return receipt
 
     monkeypatch.setattr(runner, "_run_task", fake_task)
@@ -957,6 +1400,7 @@ def _create_first_phase_manifest(
     monkeypatch: pytest.MonkeyPatch,
     *,
     seed_bytes: bytes = b"5" * 32,
+    evaluation_contract: Mapping[str, Any] | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     runner = BasicBackendGateRunner(
         BasicBackendGateConfig(
@@ -970,7 +1414,9 @@ def _create_first_phase_manifest(
     monkeypatch.setattr(
         runner,
         "validate_preflight",
-        lambda **_kwargs: _fake_preflight(),
+        lambda **_kwargs: _fake_preflight(
+            evaluation_contract=evaluation_contract,
+        ),
     )
     monkeypatch.setattr(runner, "_assert_runtime_snapshot", lambda **_kwargs: None)
     monkeypatch.setattr(
@@ -1098,6 +1544,93 @@ def test_resume_rejects_evaluation_contract_change(
             current_model_inventory=_fake_model_inventory(),
             expected_task_ids=EXPECTED_TASK_IDS,
         )
+
+
+def test_resume_rejects_arbitrary_production_source_change(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract_source = _materialize_evaluation_contract_source(tmp_path)
+    first_contract = _evaluation_contract(contract_source)
+    manifest_path, _report = _create_first_phase_manifest(
+        tmp_path,
+        monkeypatch,
+        evaluation_contract=first_contract,
+    )
+    arbitrary_source = contract_source / "source_proxy/api/arbitrary.py"
+    arbitrary_source.write_text("VALUE = 'clean-rerun-change'\n", encoding="utf-8")
+    clean_rerun_contract = _evaluation_contract(contract_source)
+
+    assert clean_rerun_contract["contract_sha256"] != first_contract[
+        "contract_sha256"
+    ]
+    with pytest.raises(
+        BasicBackendGateError,
+        match="basic_gate_resume_evaluation_contract_changed",
+    ):
+        _load_and_validate_first_phase_manifest(
+            manifest_path,
+            source_root=ROOT,
+            expected_branch=TEST_BRANCH,
+            current_head="b" * 40,
+            current_contract=clean_rerun_contract,
+            current_sandbox_image=_fake_sandbox_image(),
+            current_model_inventory=_fake_model_inventory(),
+            expected_task_ids=EXPECTED_TASK_IDS,
+        )
+
+
+def test_evidence_document_change_does_not_invalidate_resume_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract_source = _materialize_evaluation_contract_source(tmp_path)
+    first_contract = _evaluation_contract(contract_source)
+    manifest_path, _report = _create_first_phase_manifest(
+        tmp_path,
+        monkeypatch,
+        evaluation_contract=first_contract,
+    )
+    evidence = contract_source / "docs/evidence/first-run.md"
+    evidence.write_text("clean-rerun evidence update\n", encoding="utf-8")
+    current_contract = _evaluation_contract(contract_source)
+    current_head = "b" * 40
+    real_subprocess_run = subprocess.run
+
+    def resume_subprocess_run(command: list[str], *args: Any, **kwargs: Any) -> Any:
+        if len(command) >= 5 and command[3:5] == ["merge-base", "--is-ancestor"]:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        return real_subprocess_run(command, *args, **kwargs)
+
+    monkeypatch.setattr(
+        "source_proxy.benchmarks.campaign_3_5_basic_gate_runner.subprocess.run",
+        resume_subprocess_run,
+    )
+    monkeypatch.setattr(
+        "source_proxy.benchmarks.campaign_3_5_basic_gate_runner._git",
+        lambda root, *args: (
+            current_head
+            if args[:2] == ("rev-list", "--reverse")
+            else _git(root, *args)
+        ),
+    )
+
+    first_phase, resume_evidence = _load_and_validate_first_phase_manifest(
+        manifest_path,
+        source_root=ROOT,
+        expected_branch=TEST_BRANCH,
+        current_head=current_head,
+        current_contract=current_contract,
+        current_sandbox_image=_fake_sandbox_image(),
+        current_model_inventory=_fake_model_inventory(),
+        expected_task_ids=EXPECTED_TASK_IDS,
+    )
+
+    assert current_contract == first_contract
+    assert first_phase["gate_passed"] is True
+    assert resume_evidence["evaluation_contract_sha256"] == first_contract[
+        "contract_sha256"
+    ]
 
 
 def test_resume_rejects_same_or_nonancestor_head(
@@ -1423,6 +1956,142 @@ def total_values(values):
     assert not all(passed for _name, passed in decision)
 
 
+@pytest.mark.parametrize(
+    ("one", "maximum"),
+    (
+        (
+            {"status": 200, "body": {"items": [{"id": 1}]}},
+            {"status": 200, "body": {"items": [{"id": 0}, {"id": 2}]}},
+        ),
+        (
+            {"status": 500, "body": {"items": [{"id": 0}]}},
+            {"status": 200, "body": {"items": [{"id": 0}, {"id": 1}]}},
+        ),
+    ),
+)
+def test_bt01_oracle_rejects_wrong_prefix_or_success_status(
+    tmp_path: Path,
+    one: Mapping[str, Any],
+    maximum: Mapping[str, Any],
+) -> None:
+    workspace = tmp_path / "fixture"
+    workspace.mkdir()
+    (workspace / ".git").mkdir()
+    before = [{"id": 0}, {"id": 1}, {"id": 2}]
+    operations = [
+        {"id": "items_before", "ok": True, "value": before},
+        {
+            "id": "omitted",
+            "ok": True,
+            "value": {"status": 200, "body": {"items": before}},
+        },
+        {"id": "one", "ok": True, "value": dict(one)},
+        {"id": "maximum", "ok": True, "value": dict(maximum)},
+        {"id": "items_after", "ok": True, "value": before},
+    ]
+    operations.extend(
+        {
+            "id": f"invalid_{index}",
+            "ok": True,
+            "value": {"status": 400, "body": {"error": "invalid"}},
+        }
+        for index in range(5)
+    )
+    checks = dict(
+        _trusted_private_oracle_decision(
+            task_id="BT01",
+            workspace_root=workspace,
+            values={"maximum_limit": 2},
+            observations={
+                "imports": {"backend": {"ok": True}},
+                "operations": operations,
+            },
+        )
+    )
+
+    assert checks["inclusive_limits"] is False
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        '''def test_count():
+    # count_pending_orders()
+    marker = "count_pending_orders()"
+''',
+        '''def test_count():
+    def nested():
+        count_pending_orders()
+''',
+        '''def test_count():
+    unrelated.count_pending_orders()
+''',
+        '''def test_count():
+    count_pending_orders()
+''',
+    ),
+)
+def test_bt06_focused_test_requires_a_top_level_target_call(source: str) -> None:
+    assert not _test_function_invoked_by_test(source, "count_pending_orders")
+
+
+def test_bt06_focused_test_accepts_direct_or_bound_service_call() -> None:
+    assert _test_function_invoked_by_test(
+        "from src import service as backend\n"
+        "def test_count():\n"
+        "    assert backend.count_pending_orders() == 2\n",
+        "count_pending_orders",
+    )
+    assert _test_function_invoked_by_test(
+        "from src.service import count_pending_orders\n"
+        "def test_count():\n"
+        "    assert count_pending_orders() == 2\n",
+        "count_pending_orders",
+    )
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        '''from .common import cleanup
+def normalize_username(value):
+    return value.strip().lower()
+def unrelated(value):
+    return cleanup(value)
+''',
+        '''from .common import cleanup
+def normalize_username(value):
+    def nested():
+        return cleanup(value)
+    return value.strip().lower()
+''',
+    ),
+)
+def test_bt07_shared_helper_must_be_called_by_named_normalizer(source: str) -> None:
+    assert _called_helper_imports(
+        source,
+        {"common"},
+        function_name="normalize_username",
+    ) == set()
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "from .common import cleanup\ndef normalize_username(value):\n    return cleanup(value)\n",
+        "from src import common\ndef normalize_username(value):\n    return common.cleanup(value)\n",
+        "import src.common\ndef normalize_username(value):\n    return src.common.cleanup(value)\n",
+        "import src.common as shared\ndef normalize_username(value):\n    return shared.cleanup(value)\n",
+    ),
+)
+def test_bt07_shared_helper_accepts_bound_import_styles(source: str) -> None:
+    assert _called_helper_imports(
+        source,
+        {"common"},
+        function_name="normalize_username",
+    ) == {("common", "cleanup")}
+
+
 def test_neutral_probe_and_trusted_decision_accept_all_private_references(tmp_path: Path) -> None:
     worker = tmp_path / "neutral-probe-worker.py"
     worker.write_text(_NEUTRAL_PROBE_WORKER, encoding="utf-8")
@@ -1707,6 +2376,249 @@ def test_rederived_score_binds_source_service_oracle_verifier_and_model(
         ] is False
 
 
+def test_rederived_score_reopens_proof_trace_and_raw_final_readback(
+    tmp_path: Path,
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"z" * 32),
+        run_nonce="persisted-proof-tamper",
+    )
+    phase_root = tmp_path / "first"
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    baseline = _score_receipt(receipt, rendered)
+    assert baseline["persisted_proof_rederived"] is True
+    assert baseline["persisted_trace_rederived"] is True
+
+    forged_proof = copy.deepcopy(receipt)
+    proof_body = dict(forged_proof["workflow"]["production_proof"])
+    proof_body.pop("proof_sha256")
+    proof_body["claim_ceiling"] = "forged_claim"
+    proof_body["proof_sha256"] = "sha256:" + _sha256_json(proof_body)
+    forged_proof["workflow"]["production_proof"] = proof_body
+    forged_proof["production_proof"] = dict(proof_body)
+    proof_score = _score_receipt(forged_proof, rendered)
+    assert proof_score["persisted_proof_rederived"] is False
+    assert proof_score["passed"] is False
+
+    forged_trace = copy.deepcopy(receipt)
+    forged_trace["workflow"]["trace_reconciliation"]["mode"] = "forged"
+    trace_score = _score_receipt(forged_trace, rendered)
+    assert trace_score["persisted_trace_rederived"] is False
+    assert trace_score["passed"] is False
+
+    final_path = Path(receipt["workflow"]["final_readback_evidence_file"])
+    final_payload = json.loads(final_path.read_text(encoding="utf-8"))
+    final_payload["response"]["task"]["status"] = "running"
+    final_path.write_text(json.dumps(final_payload, sort_keys=True), encoding="utf-8")
+    raw_score = _score_receipt(receipt, rendered)
+    assert raw_score["persisted_proof_rederived"] is False
+    assert raw_score["persisted_trace_rederived"] is False
+    assert raw_score["passed"] is False
+
+
+@pytest.mark.parametrize(
+    ("exchange_kind", "header_names"),
+    (
+        ("model_authority", ["accept", "content-type"]),
+        (
+            "model_authority",
+            [
+                "accept",
+                "content-type",
+                "x-spiritos-operator-assertion=redacted",
+            ],
+        ),
+        ("operator_approval", ["accept", "content-type"]),
+        (
+            "create",
+            ["accept", "content-type", "x-spiritos-operator-assertion"],
+        ),
+        ("final", ["accept", "x-spiritos-operator-assertion"]),
+    ),
+)
+def test_raw_exchange_revalidation_enforces_assertion_header_name_only(
+    tmp_path: Path,
+    exchange_kind: str,
+    header_names: list[str],
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"h" * 32),
+        run_nonce=f"raw-header-{exchange_kind}",
+    )
+    phase_root = tmp_path / exchange_kind
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    assert _raw_proof_trace_revalidation(receipt) == {
+        "proof_valid": True,
+        "trace_valid": True,
+    }
+
+    _public, evidence_path, payload = _raw_exchange_for_kind(
+        receipt,
+        exchange_kind,
+    )
+    payload["request_headers_present"] = header_names
+    evidence_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+
+    assert _raw_proof_trace_revalidation(receipt) == {
+        "proof_valid": False,
+        "trace_valid": False,
+    }
+
+
+def test_raw_exchange_revalidation_parses_and_matches_recorded_request(
+    tmp_path: Path,
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"q" * 32),
+        run_nonce="raw-request-consistency",
+    )
+    phase_root = tmp_path / "request"
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    assert _raw_proof_trace_revalidation(receipt)["proof_valid"] is True
+
+    _public, evidence_path, payload = _raw_exchange_for_kind(receipt, "create")
+    payload["request"] = {"description": "different non-secret task"}
+    evidence_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+
+    assert _raw_proof_trace_revalidation(receipt) == {
+        "proof_valid": False,
+        "trace_valid": False,
+    }
+
+
+def test_raw_exchange_revalidation_binds_created_task_id_to_final_task(
+    tmp_path: Path,
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"i" * 32),
+        run_nonce="created-final-identity",
+    )
+    phase_root = tmp_path / "task-identity"
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    assert _raw_proof_trace_revalidation(receipt)["trace_valid"] is True
+
+    public, evidence_path, payload = _raw_exchange_for_kind(receipt, "create")
+    payload["response"]["task"]["id"] = "different-created-task"
+    response_body = json.dumps(
+        payload["response"],
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    response_sha256 = hashlib.sha256(response_body).hexdigest()
+    payload["response_body_base64"] = base64.b64encode(response_body).decode("ascii")
+    payload["response_sha256"] = response_sha256
+    public["response_sha256"] = response_sha256
+    evidence_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+
+    assert _raw_proof_trace_revalidation(receipt) == {
+        "proof_valid": False,
+        "trace_valid": False,
+    }
+
+
+@pytest.mark.parametrize(
+    "drift",
+    (
+        "approval_response_id",
+        "preview_response_generation",
+        "approval_request_preview_id",
+        "execute_request_approval_id",
+        "execute_request_diff",
+    ),
+)
+def test_raw_attempt_chain_rejects_internally_rehashed_semantic_drift(
+    tmp_path: Path,
+    drift: str,
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"j" * 32),
+        run_nonce=f"raw-attempt-chain-{drift}",
+    )
+    phase_root = tmp_path / drift
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    assert _raw_proof_trace_revalidation(receipt) == {
+        "proof_valid": True,
+        "trace_valid": True,
+    }
+
+    attempt = receipt["workflow"]["attempts"][0]
+    if drift.startswith("approval_response") or drift.startswith("approval_request"):
+        suffix = "/operator-approval"
+        response_sha256_key = "approval_response_sha256"
+    elif drift.startswith("preview_response"):
+        suffix = "/approval-preview"
+        response_sha256_key = "preview_response_sha256"
+    else:
+        suffix = "/execute-approved"
+        response_sha256_key = "execute_response_sha256"
+    public = next(
+        item
+        for item in receipt["workflow"]["http_exchanges"]
+        if str(item["path"]).endswith(suffix)
+    )
+    evidence_path = Path(public["evidence_file"])
+    payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+
+    if drift == "approval_response_id":
+        payload["response"]["approval"]["approval_id"] = (
+            "unrelated-internally-rehashed-approval"
+        )
+    elif drift == "preview_response_generation":
+        payload["response"]["preview"]["generation"] += 1
+    elif drift == "approval_request_preview_id":
+        payload["request"]["preview_id"] = "unrelated-preview"
+    elif drift == "execute_request_approval_id":
+        payload["request"]["approval_id"] = "unrelated-approval"
+    else:
+        payload["request"]["approved_diff"] += "\n# unrelated drift\n"
+
+    _rewrite_raw_exchange_with_consistent_hashes(public, evidence_path, payload)
+    attempt[response_sha256_key] = public["response_sha256"]
+
+    assert payload["request_sha256"] == public["request_sha256"]
+    assert payload["response_sha256"] == public["response_sha256"]
+    assert attempt[response_sha256_key] == public["response_sha256"]
+    assert _raw_proof_trace_revalidation(receipt) == {
+        "proof_valid": False,
+        "trace_valid": False,
+    }
+
+
 def test_repair_success_is_rederived_and_rejects_forged_or_tampered_lineage(
     tmp_path: Path,
 ) -> None:
@@ -1735,6 +2647,19 @@ def test_repair_success_is_rederived_and_rejects_forged_or_tampered_lineage(
             request["prior_approval_disposition"]["authority_state"] = "approved"
         else:
             request["current_state_manifest"]["workspace_root"] = "/wrong/root"
+        assert not _rederive_repair_succeeded(
+            workflow,
+            expected_workspace_root=receipt["fixture_root"],
+        )
+
+    for proof_field, forged_value in (
+        ("attempt_count", 3),
+        ("attempt_id", "unrelated-terminal-attempt"),
+        ("approval_id", "unrelated-terminal-approval"),
+        ("failed_attempt_seal_sha256s", ["sha256:" + "f" * 64]),
+    ):
+        workflow = copy.deepcopy(receipt["workflow"])
+        workflow["production_proof"][proof_field] = forged_value
         assert not _rederive_repair_succeeded(
             workflow,
             expected_workspace_root=receipt["fixture_root"],
@@ -1858,6 +2783,79 @@ def test_import_attestation_rejects_forbidden_benchmark_import(tmp_path: Path) -
     assert attestation["forbidden_imports"] == [
         "source_proxy.benchmarks.campaign_3_5_basic_assets.oracles"
     ]
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX signal snapshot contract")
+@pytest.mark.parametrize(
+    ("forbidden_prefix", "expected_passed"),
+    (("private.forbidden", True), ("fractions", False)),
+)
+def test_import_attestation_has_one_owner_when_child_inherits_hook(
+    tmp_path: Path,
+    forbidden_prefix: str,
+    expected_passed: bool,
+) -> None:
+    state_root = tmp_path / "state"
+    state_root.mkdir()
+    hook_root, log_path, owner_path = _prepare_service_import_audit(state_root)
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = str(hook_root) + os.pathsep + environment.get(
+        "PYTHONPATH",
+        "",
+    )
+    environment["SOURCE_PROXY_GATE_IMPORT_AUDIT_LOG"] = str(log_path)
+    environment["SOURCE_PROXY_GATE_IMPORT_AUDIT_OWNER"] = str(owner_path)
+    environment["SOURCE_PROXY_GATE_FORBIDDEN_IMPORT_PREFIXES"] = forbidden_prefix
+    child_done = state_root / "child.done"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+                (
+                    "import subprocess,sys,time; "
+                    "subprocess.run([sys.executable,'-c','import fractions'],check=True); "
+                    f"open({str(child_done)!r},'w').close(); "
+                    "time.sleep(30)"
+                ),
+        ],
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline and (
+            not log_path.read_text(encoding="utf-8").strip()
+            or not child_done.exists()
+        ):
+            time.sleep(0.02)
+        assert owner_path.exists()
+        assert log_path.read_text(encoding="utf-8").strip()
+        assert child_done.exists()
+        _request_service_import_audit_snapshot(process, log_path, owner_path)
+    finally:
+        process.terminate()
+        process.wait(timeout=10)
+
+    attestation = _finalize_service_import_audit(log_path)
+    records = [
+        json.loads(line)
+        for line in log_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert attestation["passed"] is expected_passed
+    event_names = [item["event"] for item in records]
+    assert event_names.count("hook_started") == 1
+    assert event_names.count("hook_completed") == 1
+    lifecycle_records = [
+        item
+        for item in records
+        if item["event"] in {"hook_started", "hook_completed"}
+    ]
+    assert {item["pid"] for item in lifecycle_records} == {process.pid}
+    assert attestation["forbidden_imports"] == (
+        [] if expected_passed else ["fractions"]
+    )
 
 
 def test_retained_fixture_mutation_is_rerun_and_detects_post_receipt_change(

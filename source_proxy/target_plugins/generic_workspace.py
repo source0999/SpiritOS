@@ -55,6 +55,10 @@ def execute_generic_workspace_rich(
     reviewer_model_call: Callable[[str, str], str] | None = None,
     model_alias: str,
     canonical_context: Mapping[str, Any] | None = None,
+    architect_task_id: str | None = None,
+    plan_ready_callback: (
+        Callable[[ArchitectPlan], Mapping[str, Any] | None] | None
+    ) = None,
 ) -> dict[str, Any]:
     """Plan, inspect, code, review, and validate one scoped model-authored diff."""
 
@@ -98,9 +102,12 @@ def execute_generic_workspace_rich(
             stage="scope",
         )
 
-    task_id = "generic-plan-" + hashlib.sha256(
-        f"{root}\n{task}".encode("utf-8", errors="replace")
-    ).hexdigest()[:24]
+    task_id = str(architect_task_id or "").strip() or (
+        "generic-plan-"
+        + hashlib.sha256(
+            f"{root}\n{task}".encode("utf-8", errors="replace")
+        ).hexdigest()[:24]
+    )
     deterministic = plan_task_deterministically(
         task,
         task_id,
@@ -171,6 +178,15 @@ def execute_generic_workspace_rich(
             stage="architect",
         )
 
+    # The canonical orchestrator uses this exact plan as its authoritative
+    # planner output before the first coder provider call.  Keeping the hook
+    # here avoids a second, unaccounted architect call and guarantees that the
+    # semantic reviewer later binds the proposal to the plan that actually
+    # shaped the coder prompt.
+    if plan_ready_callback is not None:
+        refreshed_context = plan_ready_callback(plan)
+        if isinstance(refreshed_context, Mapping):
+            canonical_context = refreshed_context
     planner_context_report = _build_context_report(
         plan,
         allowed_paths=read_scope,

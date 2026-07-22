@@ -11,12 +11,19 @@ from source_proxy.coding.participants import (
     participant_record_sha256,
     validate_coding_participant_record,
 )
-from source_proxy.coding.recovery import ControlledRecoveryLineage
+from source_proxy.coding.recovery import (
+    ControlledRecoveryLineage,
+    render_evidence_guided_repair_model_task,
+    target_plugin_model_input_sha256,
+)
 from source_proxy.coding.runtime_lane_boundary import RuntimeLaneBoundary
 from source_proxy.diagnostics.status_codes import classify_repair_failure
 from source_proxy.planning.plan import ArchitectPlan, task_spec_from_plan
 from source_proxy.planning.reviewer import review_diff_deterministically
-from source_proxy.target_plugins.adapter import target_adapter_producer_identity_valid
+from source_proxy.target_plugins.adapter import (
+    GENERIC_WORKSPACE_PLUGIN_ID,
+    target_adapter_producer_identity_valid,
+)
 from source_proxy.target_plugins.selection import expected_target_plugin_id
 
 
@@ -115,6 +122,7 @@ def derive_production_proof(
     ):
         failures.append("immutable_artifact_repository_identity_missing")
 
+    plugin_identity: object = {}
     proposal = state.get("target_plugin_proposal")
     if not isinstance(proposal, Mapping):
         failures.append("target_plugin_proposal_missing")
@@ -276,6 +284,33 @@ def derive_production_proof(
         if item.get("passed") is True
     ] != [selected_invocation_id]:
         failures.append("model_invocation_success_set_invalid")
+    context_report_for_model = proposal.get("canonical_context_report")
+    repair_context_for_model = proposal.get("repair_context")
+    original_task_for_model = str(proposal.get("original_task") or "")
+    if isinstance(repair_context_for_model, Mapping):
+        model_task, _ = render_evidence_guided_repair_model_task(
+            original_task_for_model,
+            repair_context_for_model,
+        )
+    else:
+        model_task = original_task_for_model
+    if (
+        not model_task
+        or not isinstance(plugin_identity, Mapping)
+        or not isinstance(context_report_for_model, Mapping)
+    ):
+        failures.append("model_input_binding_material_missing")
+    else:
+        expected_model_input_sha256 = target_plugin_model_input_sha256(
+            task=model_task,
+            target_plugin_identity=plugin_identity,
+            canonical_context=context_report_for_model,
+        )
+        if any(
+            item.get("input_sha256") != expected_model_input_sha256
+            for item in model_invocations
+        ):
+            failures.append("model_input_binding_mismatch")
     adapter = proposal.get("target_adapter_provenance")
     if not isinstance(adapter, Mapping) or not (
         adapter.get("terminal_proof_eligible") is True
@@ -286,6 +321,10 @@ def derive_production_proof(
         and _is_sha256(adapter.get("rendered_prompt_sha256"))
         and _is_sha256(adapter.get("raw_response_sha256"))
         and target_adapter_producer_identity_valid(adapter)
+        and isinstance(plugin_identity, Mapping)
+        and adapter.get("plugin_id") == plugin_identity.get("plugin_id")
+        and adapter.get("selected_prompt_id")
+        == proposal.get("selected_prompt_id")
     ):
         failures.append("canonical_model_provenance_invalid")
         adapter = {}
@@ -366,11 +405,32 @@ def derive_production_proof(
     except Exception:
         failures.append("runtime_lane_boundary_invalid")
     runtime_lanes = [str(item.get("lane_id") or "") for item in outputs]
-    if set(runtime_lanes) != EXPECTED_RUNTIME_LANES or any(
-        runtime_lanes.count(lane_id) != 1
-        for lane_id in EXPECTED_RUNTIME_LANES - {"context-broker"}
+    if (
+        set(runtime_lanes) != EXPECTED_RUNTIME_LANES
+        or runtime_lanes.count("planner") < 1
+        or any(
+            runtime_lanes.count(lane_id) != 1
+            for lane_id in EXPECTED_RUNTIME_LANES
+            - {"context-broker", "planner"}
+        )
     ):
         failures.append("runtime_lane_output_set_invalid")
+    planner_outputs = [
+        item for item in outputs if item.get("lane_id") == "planner"
+    ]
+    for prior, successor in zip(planner_outputs, planner_outputs[1:], strict=False):
+        prior_consumptions = [
+            item
+            for item in consumptions
+            if item.get("output_id") == prior.get("output_id")
+        ]
+        if (
+            len(prior_consumptions) != 1
+            or prior_consumptions[0].get("consumer_invocation_id")
+            != successor.get("producer_invocation_id")
+        ):
+            failures.append("runtime_planner_refresh_chain_invalid")
+            break
 
     context_report = proposal.get("canonical_context_report")
     context_output = next(
@@ -468,7 +528,7 @@ def derive_production_proof(
         failures.append("model_runtime_output_binding_mismatch")
     semantic_review_binding = proposal.get("semantic_review_binding")
     planner_runtime_output = next(
-        (item for item in outputs if item.get("lane_id") == "planner"),
+        (item for item in reversed(outputs) if item.get("lane_id") == "planner"),
         None,
     )
     planner_runtime_payload = (
@@ -477,6 +537,44 @@ def derive_production_proof(
         and isinstance(planner_runtime_output.get("payload"), Mapping)
         else None
     )
+    planner_acknowledgement = next(
+        (
+            item
+            for item in runtime_acknowledgements
+            if item.get("acknowledgement_id")
+            == proposal.get("planner_consumer_acknowledgement_id")
+        ),
+        None,
+    )
+    planner_consumption = next(
+        (
+            item
+            for item in consumptions
+            if item.get("consumption_id")
+            == proposal.get("planner_consumption_id")
+        ),
+        None,
+    )
+    if not (
+        isinstance(planner_runtime_output, Mapping)
+        and planner_runtime_output.get("output_id")
+        == proposal.get("planner_runtime_output_id")
+        and planner_runtime_output.get("artifact_hash")
+        == proposal.get("planner_runtime_artifact_sha256")
+        and isinstance(planner_acknowledgement, Mapping)
+        and planner_acknowledgement.get("output_id")
+        == planner_runtime_output.get("output_id")
+        and planner_acknowledgement.get("consumer_invocation_id")
+        == selected_invocation_id
+        and isinstance(planner_consumption, Mapping)
+        and planner_consumption.get("output_id")
+        == planner_runtime_output.get("output_id")
+        and planner_consumption.get("acknowledgement_id")
+        == planner_acknowledgement.get("acknowledgement_id")
+        and planner_consumption.get("consumer_invocation_id")
+        == selected_invocation_id
+    ):
+        failures.append("model_planner_consumption_binding_invalid")
     if not (
         isinstance(semantic_review_binding, Mapping)
         and proposal.get("semantic_review_binding_sha256")
@@ -494,6 +592,11 @@ def derive_production_proof(
             attempt_id=str(state.get("attempt_id") or ""),
             proposed_diff=exact_diff,
             changed_files=exact_changed_files,
+            adapter_architect_plan_required=(
+                isinstance(proposal.get("target_plugin_identity"), Mapping)
+                and proposal["target_plugin_identity"].get("plugin_id")
+                == GENERIC_WORKSPACE_PLUGIN_ID
+            ),
             repair_request=(
                 state.get("repair_request")
                 if isinstance(state.get("repair_request"), Mapping)
@@ -1900,6 +2003,7 @@ def _valid_semantic_review_binding(
     attempt_id: str,
     proposed_diff: str,
     changed_files: list[str],
+    adapter_architect_plan_required: bool,
     repair_request: Mapping[str, Any] | None,
 ) -> bool:
     if not isinstance(binding, Mapping):
@@ -1939,6 +2043,13 @@ def _valid_semantic_review_binding(
     adapter_evidence = receipt.get("adapter_preview_evidence")
     adapter_evidence_valid = (
         isinstance(adapter_evidence, Mapping)
+        and _adapter_architect_plan_evidence_matches(
+            adapter_evidence,
+            plan_payload=plan_payload,
+            plan_id=plan.plan_id,
+            acceptance_criteria=expected_acceptance,
+            required=adapter_architect_plan_required,
+        )
         and receipt.get("adapter_preview_evidence_sha256")
         == _sha256_json(adapter_evidence)
         and isinstance(adapter_evidence.get("attempt"), Mapping)
@@ -1951,6 +2062,8 @@ def _valid_semantic_review_binding(
         and adapter_evidence["attempt"]["git_apply_check"].get("passed")
         is True
     ) or (
+        adapter_architect_plan_required is False
+        and
         adapter_evidence is None
         and receipt.get("adapter_preview_evidence_sha256") is None
     )
@@ -1983,6 +2096,8 @@ def _valid_semantic_review_binding(
         == _sha256_json(acceptance)
         and receipt.get("acceptance_criterion_ids")
         == [str(item.get("id") or "") for item in acceptance]
+        and receipt.get("adapter_architect_plan_required")
+        is adapter_architect_plan_required
         and receipt.get("proposed_diff_sha256")
         == hashlib.sha256(proposed_diff.encode("utf-8")).hexdigest()
         and receipt.get("changed_files") == changed_files
@@ -1994,6 +2109,8 @@ def _valid_semantic_review_binding(
         and receipt.get("blocked_reasons") == []
         and review_report.get("passed") is True
         and repair_feedback == expected_repair_feedback
+        and binding.get("adapter_architect_plan_required")
+        is adapter_architect_plan_required
         and binding.get("repair_feedback_sha256") == expected_repair_sha256
         and adapter_evidence_valid
         and recorded_receipt_sha256
@@ -2002,6 +2119,41 @@ def _valid_semantic_review_binding(
         == recorded_receipt_sha256
         and recorded_binding_sha256
         and _sha256_json(body) == recorded_binding_sha256
+    )
+
+
+def _adapter_architect_plan_evidence_matches(
+    evidence: Mapping[str, Any],
+    *,
+    plan_payload: Mapping[str, Any],
+    plan_id: str,
+    acceptance_criteria: list[dict[str, Any]],
+    required: bool,
+) -> bool:
+    """Independently bind claimed adapter planning evidence to the server plan."""
+
+    adapter_plan_id = str(evidence.get("architect_plan_id") or "")
+    adapter_plan_sha256 = str(evidence.get("architect_plan_sha256") or "")
+    adapter_criteria = evidence.get("acceptance_criteria")
+    claimed = bool(adapter_plan_id or adapter_plan_sha256 or adapter_criteria)
+    if not claimed:
+        return not required
+    expected_sha256 = hashlib.sha256(
+        json.dumps(
+            plan_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        ).encode("utf-8")
+    ).hexdigest()
+    return bool(
+        adapter_plan_id == plan_id
+        and adapter_plan_sha256.removeprefix("sha256:") == expected_sha256
+        and isinstance(adapter_criteria, list)
+        and adapter_criteria
+        == json.loads(
+            json.dumps(acceptance_criteria, sort_keys=True, default=str)
+        )
     )
 
 

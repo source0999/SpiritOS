@@ -26,6 +26,8 @@ from source_proxy.coding.recovery import (
     ControlledRecoveryLineage,
     RecoveryPolicy,
     build_failed_participant_event,
+    render_evidence_guided_repair_model_task,
+    target_plugin_model_input_sha256,
 )
 from source_proxy.coding.runtime_lane_boundary import RuntimeLaneBoundary
 from source_proxy.contracts.coding_lane_contracts import canonical_coding_lane_contracts
@@ -183,6 +185,8 @@ def _adapter_provenance(
     }
     return {
         "schema_version": "spiritos-target-adapter-provenance/v1",
+        "plugin_id": "lumacart",
+        "selected_prompt_id": "coder-004-add-search-filter",
         "rendered_prompt_sha256": "1" * 64,
         "raw_response_sha256": "2" * 64,
         "transport_kind": "canonical_litellm_router",
@@ -297,7 +301,43 @@ def _semantic_review_binding(
         proposed_diff=APPROVED_DIFF,
         changed_files=[TARGET],
         adapter_diagnostics={},
+        adapter_architect_plan_required=False,
         repair_request=repair_request,
+    )
+
+
+def _adapter_semantic_review_binding() -> dict[str, Any]:
+    plan_payload = _semantic_plan_payload()
+    acceptance = copy.deepcopy(plan_payload["coder_packet"]["acceptance_criteria"])
+    diff_sha256 = hashlib.sha256(APPROVED_DIFF.encode("utf-8")).hexdigest()
+    return orchestrator_module._build_semantic_review_binding(
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        planner_output={"payload": {"task_spec": plan_payload}},
+        proposed_diff=APPROVED_DIFF,
+        changed_files=[TARGET],
+        adapter_diagnostics={
+            "architect_plan_id": plan_payload["plan_id"],
+            "architect_plan_sha256": hashlib.sha256(
+                json.dumps(
+                    plan_payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    default=str,
+                ).encode("utf-8")
+            ).hexdigest(),
+            "acceptance_criteria": acceptance,
+            "attempts": [
+                {
+                    "proposed_diff_sha256": diff_sha256,
+                    "preview_status": "ready_for_approval_preview",
+                    "git_apply_check": {"passed": True},
+                }
+            ],
+        },
+        adapter_architect_plan_required=True,
+        repair_request=None,
     )
 
 
@@ -473,7 +513,12 @@ def _repair_attempt_lineage(
     return seal, request, disposition
 
 
-def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict[str, Any]:
+def _production_state(
+    *,
+    fallback: bool = False,
+    repaired: bool = False,
+    source_head: str = SOURCE_HEAD,
+) -> dict[str, Any]:
     prior_state = _production_state() if repaired else None
     attempt_history: list[dict[str, Any]] = []
     attempt_dispositions: list[dict[str, Any]] = []
@@ -542,6 +587,23 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
         {"plan_id": "plan-1", "task_spec": _semantic_plan_payload()},
     )
     selected_model = _model_participant(fallback=fallback, repair=repaired)
+    model_task = "Repair the backend response semantics."
+    if isinstance(repair_request, dict):
+        model_task, _ = render_evidence_guided_repair_model_task(
+            model_task,
+            repair_request,
+        )
+    selected_model["input_sha256"] = target_plugin_model_input_sha256(
+        task=model_task,
+        target_plugin_identity={
+            "plugin_id": "lumacart",
+            "repository_id": "repo",
+            "worktree_id": "worktree",
+            "source_head": source_head,
+            "selected_prompt_id": "coder-004-add-search-filter",
+        },
+        canonical_context=canonical_context_report,
+    )
     model_output_provenance = _model_output_provenance(
         provider=selected_model["provider"],
         model=selected_model["model"],
@@ -567,6 +629,11 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
         consumer=selected_model["invocation_id"],
         payload={"consumer": "coder", "context_hash": "context-hash"},
     )
+    planner_ack, planner_consumption = consume(
+        planner_output,
+        consumer=selected_model["invocation_id"],
+        payload={"context_hash": "context-hash"},
+    )
     coder_output = issue(
         "coder",
         selected_model["invocation_id"],
@@ -589,13 +656,17 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
         "producer_model_provider": selected_model["provider"],
         "producer_model_name": selected_model["model"],
         "producer_adapter_call_index": adapter_provenance["producer_call_index"],
+        "planner_runtime_output_id": planner_output["output_id"],
+        "planner_runtime_artifact_sha256": planner_output["artifact_hash"],
+        "planner_consumer_acknowledgement_id": planner_ack["acknowledgement_id"],
+        "planner_consumption_id": planner_consumption["consumption_id"],
         "model_output_provenance": model_output_provenance,
         "target_adapter_provenance": adapter_provenance,
         "target_plugin_identity": {
             "plugin_id": "lumacart",
             "repository_id": "repo",
             "worktree_id": "worktree",
-            "source_head": SOURCE_HEAD,
+            "source_head": source_head,
             "selected_prompt_id": "coder-004-add-search-filter",
         },
         "selected_prompt_id": "coder-004-add-search-filter",
@@ -609,8 +680,8 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
             "acknowledgement_id"
         ],
         "context_consumption_id": model_context_consumption["consumption_id"],
-        "source_head": SOURCE_HEAD,
-        "target_source_head": SOURCE_HEAD,
+        "source_head": source_head,
+        "target_source_head": source_head,
         "target": TARGET,
         "approved_diff_sha256": hashlib.sha256(APPROVED_DIFF.encode("utf-8")).hexdigest(),
         "changed_files": [TARGET],
@@ -653,7 +724,7 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
         "transfer_event_id": "cart-transfer-event",
         "downstream_consumer_invocation_id": cart_consumer,
         "target": TARGET,
-        "provenance": {"source_head": SOURCE_HEAD},
+        "provenance": {"source_head": source_head},
     }
     cart_ack = {
         "schema_version": "cartographer.downstream-acknowledgement/v2",
@@ -680,7 +751,7 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
         "consumer_invocation_id": cart_consumer,
         "acknowledgement_id": "cart-ack",
         "authority_state": "consumed",
-        "source_head": SOURCE_HEAD,
+        "source_head": source_head,
     }
     if isinstance(prior_state, dict):
         transfer = copy.deepcopy(prior_state["cartographer_transfer"])
@@ -708,7 +779,7 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
                 "missing_before_apply": False,
             }
         ],
-        "source_commit": SOURCE_HEAD,
+        "source_commit": source_head,
         "repository_identity": {
             "repository": "SpiritOS",
             "worktree": "foundation-r1",
@@ -834,11 +905,6 @@ def _production_state(*, fallback: bool = False, repaired: bool = False) -> dict
         },
     )
 
-    consume(
-        planner_output,
-        consumer="coder-plan-consumer",
-        payload={"context_hash": "context-hash"},
-    )
     consume(
         coder_output,
         consumer=executor["invocation_id"],
@@ -993,6 +1059,73 @@ def test_production_proof_rejects_rehashed_acceptance_criterion_drift() -> None:
 
     assert proof["terminal_proof_eligible"] is False
     assert "semantic_review_binding_invalid" in proof["failures"]
+
+
+def test_semantic_review_builder_requires_generic_adapter_plan_evidence() -> None:
+    with pytest.raises(
+        orchestrator_module.CodingOrchestratorError,
+        match="coding_adapter_architect_plan_mismatch",
+    ):
+        orchestrator_module._build_semantic_review_binding(
+            task_id=TASK_ID,
+            run_id=RUN_ID,
+            attempt_id="attempt-primary",
+            planner_output={"payload": {"task_spec": _semantic_plan_payload()}},
+            proposed_diff=APPROVED_DIFF,
+            changed_files=[TARGET],
+            adapter_diagnostics={},
+            adapter_architect_plan_required=True,
+            repair_request=None,
+        )
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "architect_plan_id",
+        "architect_plan_sha256",
+        "acceptance_criteria",
+        "removed",
+        "object_removed",
+    ],
+)
+def test_independent_semantic_review_rejects_rehashed_adapter_plan_drift(
+    field: str,
+) -> None:
+    binding = _adapter_semantic_review_binding()
+    receipt = binding["preview_review_receipt"]
+    evidence = receipt["adapter_preview_evidence"]
+    if field == "object_removed":
+        receipt["adapter_preview_evidence"] = None
+        receipt["adapter_preview_evidence_sha256"] = None
+    elif field == "removed":
+        evidence["architect_plan_id"] = None
+        evidence["architect_plan_sha256"] = None
+        evidence["acceptance_criteria"] = []
+    elif field == "acceptance_criteria":
+        evidence[field][0]["description"] = "Forged adapter criterion."
+    else:
+        evidence[field] = "forged"
+    if field != "object_removed":
+        receipt["adapter_preview_evidence_sha256"] = _sha256_json(evidence)
+    receipt_body = dict(receipt)
+    receipt_body.pop("receipt_sha256")
+    receipt["receipt_sha256"] = _sha256_json(receipt_body)
+    binding["preview_review_receipt_sha256"] = receipt["receipt_sha256"]
+    binding_body = dict(binding)
+    binding_body.pop("semantic_review_binding_sha256")
+    binding["semantic_review_binding_sha256"] = _sha256_json(binding_body)
+
+    assert proof_module._valid_semantic_review_binding(
+        binding,
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        proposed_diff=APPROVED_DIFF,
+        changed_files=[TARGET],
+        adapter_architect_plan_required=True,
+        repair_request=None,
+    ) is False
 
 
 def test_production_proof_rejects_unconsumed_repair_blocked_reasons() -> None:
@@ -1305,6 +1438,70 @@ def test_production_proof_binds_model_to_its_exact_context_consumption() -> None
     assert proof["terminal_proof_eligible"] is False
     assert "runtime_lane_boundary_invalid" not in proof["failures"]
     assert "model_context_consumption_binding_invalid" in proof["failures"]
+
+
+def test_production_proof_rejects_rehashed_adapter_plugin_identity_drift() -> None:
+    state = _production_state()
+    proposal = state["target_plugin_proposal"]
+    adapter = copy.deepcopy(proposal["target_adapter_provenance"])
+    adapter["plugin_id"] = "generic-workspace"
+    output_provenance = copy.deepcopy(proposal["model_output_provenance"])
+    output_provenance["target_adapter_provenance"] = adapter
+    output_sha256 = _sha256_json(output_provenance)
+    proposal["target_adapter_provenance"] = adapter
+    proposal["model_output_provenance"] = output_provenance
+    proposal["producer_model_output_sha256"] = output_sha256
+    selected = next(
+        item
+        for item in state["model_invocations"]
+        if item["invocation_id"] == proposal["producer_model_invocation_id"]
+    )
+    selected["output_sha256"] = output_sha256
+    state["cartographer_finalization"]["downstream_acknowledgement"][
+        "consumer_output_sha256"
+    ] = output_sha256
+    proposal_body = dict(proposal)
+    proposal_body.pop("proposal_binding_sha256", None)
+    proposal["proposal_binding_sha256"] = _sha256_json(proposal_body)
+    artifact = state["immutable_artifact"]
+    artifact["prompt_identity"]["proposal_binding_sha256"] = proposal[
+        "proposal_binding_sha256"
+    ]
+    artifact["model_output_identity"]["producer_model_output_sha256"] = (
+        output_sha256
+    )
+
+    proof = derive_production_proof(state, expected_source_head=SOURCE_HEAD)
+
+    assert proof["terminal_proof_eligible"] is False
+    assert "canonical_model_provenance_invalid" in proof["failures"]
+
+
+def test_production_proof_rejects_rehashed_planner_handoff_drift() -> None:
+    state = _production_state()
+    proposal = state["target_plugin_proposal"]
+    proposal["planner_runtime_output_id"] = proposal["context_runtime_output_id"]
+    proposal_body = dict(proposal)
+    proposal_body.pop("proposal_binding_sha256", None)
+    proposal["proposal_binding_sha256"] = _sha256_json(proposal_body)
+    state["immutable_artifact"]["prompt_identity"][
+        "proposal_binding_sha256"
+    ] = proposal["proposal_binding_sha256"]
+
+    proof = derive_production_proof(state, expected_source_head=SOURCE_HEAD)
+
+    assert proof["terminal_proof_eligible"] is False
+    assert "model_planner_consumption_binding_invalid" in proof["failures"]
+
+
+def test_production_proof_independently_rederives_model_input_binding() -> None:
+    state = _production_state()
+    state["model_invocations"][0]["input_sha256"] = "sha256:" + "f" * 64
+
+    proof = derive_production_proof(state, expected_source_head=SOURCE_HEAD)
+
+    assert proof["terminal_proof_eligible"] is False
+    assert "model_input_binding_mismatch" in proof["failures"]
 
 
 def test_production_proof_rejects_semantically_nonterminal_evidence_after_reseal() -> None:

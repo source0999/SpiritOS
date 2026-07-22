@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 
+import pytest
+
 from source_proxy.benchmarks.campaign_3_5_basic_assets.catalog import (
     EXPECTED_TASK_IDS,
     PUBLIC_ROOT,
@@ -12,10 +14,18 @@ from source_proxy.benchmarks.campaign_3_5_basic_assets.catalog import (
 )
 from source_proxy.benchmarks.campaign_3_5_basic_assets.fixtures import materialize_basic_backend_fixture
 from source_proxy.benchmarks.campaign_3_5_basic_assets.freeze import validate_freeze
+from source_proxy.benchmarks.campaign_3_5_basic_assets.oracles import (
+    _called_helper_imports as _private_called_helper_imports,
+    _test_function_invoked_by_test as _private_test_function_invoked_by_test,
+)
 from source_proxy.benchmarks.campaign_3_5_basic_assets.reference_validation import validate_references
 from source_proxy.benchmarks.campaign_3_5_basic_assets.seeding import (
     BasicBackendRunSeed,
     derive_task_digest,
+)
+from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
+    _called_helper_imports as _public_called_helper_imports,
+    _test_function_invoked_by_test as _public_test_function_invoked_by_test,
 )
 from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
     ENV_MANIFEST,
@@ -104,6 +114,324 @@ def test_all_private_references_pass_public_tests_authority_and_oracles() -> Non
     assert all(record["private_oracle_passed"] for record in report["tasks"])
     assert all(record["authority_passed"] for record in report["tasks"])
     assert all(record["writable_scope_passed"] for record in report["tasks"])
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "from .common import cleanup\ndef normalize_email(value):\n    return cleanup(value)\n",
+        "from src import common\ndef normalize_email(value):\n    return common.cleanup(value)\n",
+        "import src.common\ndef normalize_email(value):\n    return src.common.cleanup(value)\n",
+        "import src.common as shared\ndef normalize_email(value):\n    return shared.cleanup(value)\n",
+    ),
+)
+def test_public_and_private_bt07_helper_match_supported_import_styles(
+    source: str,
+) -> None:
+    private = _private_called_helper_imports(
+        source,
+        {"common"},
+        function_name="normalize_email",
+    )
+    public = _public_called_helper_imports(
+        source,
+        {"common"},
+        function_name="normalize_email",
+    )
+
+    assert private == public == {("common", "cleanup")}
+
+
+def test_private_structural_checks_ignore_unrelated_nested_calls() -> None:
+    helper_source = (
+        "from .common import cleanup\n"
+        "def normalize_email(value):\n"
+        "    def nested():\n"
+        "        return cleanup(value)\n"
+        "    return value.strip().lower()\n"
+    )
+    test_source = (
+        "def test_count():\n"
+        "    def nested():\n"
+        "        count_pending_orders()\n"
+        "    unrelated.count_pending_orders()\n"
+    )
+
+    assert _private_called_helper_imports(
+        helper_source,
+        {"common"},
+        function_name="normalize_email",
+    ) == set()
+    assert _public_called_helper_imports(
+        helper_source,
+        {"common"},
+        function_name="normalize_email",
+    ) == set()
+    assert not _private_test_function_invoked_by_test(
+        test_source,
+        "count_pending_orders",
+    )
+    assert not _public_test_function_invoked_by_test(
+        test_source,
+        "count_pending_orders",
+    )
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    if False:\n"
+            "        return cleanup(value)\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    return value.strip().lower()\n"
+            "    cleanup(value)\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    False and cleanup(value)\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    assert True, cleanup(value)\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    marker: cleanup(value)\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    [cleanup(item) for item in ()]\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    [cleanup(item) for item in [1] if False]\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    for item in []:\n"
+            "        cleanup(item)\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    if not True:\n"
+            "        return cleanup(value)\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    if True and False:\n"
+            "        return cleanup(value)\n"
+            "    return value.strip().lower()\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    match value:\n"
+            "        case _:\n"
+            "            return value.strip().lower()\n"
+            "    cleanup(value)\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    try:\n"
+            "        return value.strip().lower()\n"
+            "    finally:\n"
+            "        pass\n"
+            "    cleanup(value)\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "def normalize_email(value):\n"
+            "    cleanup = lambda raw: raw.strip().lower()\n"
+            "    return cleanup(value)\n"
+        ),
+        (
+            "import src.common as shared\n"
+            "def normalize_email(value):\n"
+            "    shared = lambda raw: raw.strip().lower()\n"
+            "    return shared.cleanup(value)\n"
+        ),
+        (
+            "from .common import cleanup\n"
+            "cleanup = lambda raw: raw.strip().lower()\n"
+            "def normalize_email(value):\n"
+            "    return cleanup(value)\n"
+        ),
+    ),
+)
+def test_public_and_private_bt07_reject_dead_or_shadowed_helper_calls(
+    source: str,
+) -> None:
+    private = _private_called_helper_imports(
+        source,
+        {"common"},
+        function_name="normalize_email",
+    )
+    public = _public_called_helper_imports(
+        source,
+        {"common"},
+        function_name="normalize_email",
+    )
+
+    assert private == public == set()
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    if False:\n"
+            "        count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    return\n"
+            "    count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    True or count_pending_orders()\n"
+        ),
+        (
+            "import pytest\n"
+            "from src.service import count_pending_orders\n"
+            "@pytest.mark.skip(reason='structurally present only')\n"
+            "def test_count():\n"
+            "    count_pending_orders()\n"
+        ),
+        (
+            "import pytest\n"
+            "from src.service import count_pending_orders\n"
+            "@pytest.mark.parametrize('case', [])\n"
+            "def test_count(case):\n"
+            "    count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    [count_pending_orders() for item in [1] if False]\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    for item in ():\n"
+            "        count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    if not True:\n"
+            "        count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    if True and False:\n"
+            "        count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    try:\n"
+            "        return\n"
+            "    finally:\n"
+            "        pass\n"
+            "    count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    count_pending_orders = lambda: 2\n"
+            "    assert count_pending_orders() == 2\n"
+        ),
+        (
+            "import src.service as service\n"
+            "def test_count():\n"
+            "    service = object()\n"
+            "    service.count_pending_orders()\n"
+        ),
+        (
+            "from src.service import count_pending_orders\n"
+            "count_pending_orders = lambda: 2\n"
+            "def test_count():\n"
+            "    assert count_pending_orders() == 2\n"
+        ),
+    ),
+)
+def test_public_and_private_bt06_reject_dead_or_shadowed_service_calls(
+    source: str,
+) -> None:
+    private = _private_test_function_invoked_by_test(
+        source,
+        "count_pending_orders",
+    )
+    public = _public_test_function_invoked_by_test(
+        source,
+        "count_pending_orders",
+    )
+
+    assert private is public is False
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        (
+            "from src.service import count_pending_orders\n"
+            "def test_count():\n"
+            "    assert count_pending_orders() == 2\n"
+        ),
+        (
+            "import src.service as service\n"
+            "def test_count():\n"
+            "    assert service.count_pending_orders() == 2\n"
+        ),
+        (
+            "from src import service\n"
+            "def test_count():\n"
+            "    assert service.count_pending_orders() == 2\n"
+        ),
+    ),
+)
+def test_public_and_private_bt06_accept_live_imported_service_calls(
+    source: str,
+) -> None:
+    private = _private_test_function_invoked_by_test(
+        source,
+        "count_pending_orders",
+    )
+    public = _public_test_function_invoked_by_test(
+        source,
+        "count_pending_orders",
+    )
+
+    assert private is public is True
 
 
 def test_public_and_private_asset_freeze_is_current_and_import_isolated() -> None:

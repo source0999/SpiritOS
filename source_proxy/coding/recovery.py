@@ -22,6 +22,7 @@ CONTROLLED_RECOVERY_SCHEMA = "coding.controlled-recovery/v1"
 RECOVERY_POLICY_SCHEMA = "coding.recovery-policy/v1"
 RECOVERY_PARTICIPANT_SCHEMA = "coding.recovery-participant/v1"
 ORCHESTRATOR_EVENT_SCHEMA = "coding.orchestrator-event/v1"
+TARGET_PLUGIN_MODEL_INPUT_SCHEMA = "coding.target-plugin-model-input/v1"
 
 RETRY_DECISION = "retry"
 FALLBACK_DECISION = "fallback"
@@ -33,6 +34,89 @@ RETRY_SUCCESS_CLAIM_CEILING = "recovered_after_retry_only"
 FALLBACK_SUCCESS_CLAIM_CEILING = "recovered_via_declared_fallback_only"
 
 _SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+
+def render_evidence_guided_repair_model_task(
+    original_task: str,
+    repair_request: Mapping[str, Any],
+) -> tuple[str, str]:
+    """Render the exact repair task passed to a replacement model."""
+
+    prompt_payload = {
+        "schema_version": "coding.evidence-guided-repair-prompt/v1",
+        "original_task": original_task,
+        "repair_request": dict(repair_request),
+    }
+    rendered = (
+        f"{original_task}\n\n"
+        "SERVER-OWNED EVIDENCE-GUIDED REPAIR INPUT\n"
+        "Treat the current applied files as the baseline. Address the exact failure "
+        "evidence below. Return a fresh proposal; do not reuse the prior patch or "
+        "approval.\n"
+        f"{json.dumps(prompt_payload, ensure_ascii=False, sort_keys=True)}"
+    )
+    return rendered, _sha256_json(prompt_payload)
+
+
+def target_plugin_model_input_sha256(
+    *,
+    task: str,
+    target_plugin_identity: Mapping[str, Any],
+    canonical_context: Mapping[str, Any],
+) -> str:
+    """Derive the stable, independently verifiable recovery input identity."""
+
+    return _sha256_json(
+        {
+            "schema_version": TARGET_PLUGIN_MODEL_INPUT_SCHEMA,
+            "call": "execute_target_plugin_command",
+            "task_sha256": hashlib.sha256(task.encode("utf-8")).hexdigest(),
+            "target_plugin_identity_sha256": _sha256_json(
+                target_plugin_identity
+            ),
+            "canonical_context_material_sha256": (
+                canonical_context_material_sha256(canonical_context)
+            ),
+        }
+    )
+
+
+def canonical_context_material_sha256(report: Mapping[str, Any]) -> str:
+    """Hash stable source material while excluding acknowledgement churn."""
+
+    sources: list[dict[str, Any]] = []
+    raw_sources = report.get("sources_considered")
+    if isinstance(raw_sources, list):
+        for raw_source in raw_sources:
+            if not isinstance(raw_source, Mapping):
+                continue
+            sources.append(
+                {
+                    "source": str(raw_source.get("source") or ""),
+                    "considered": raw_source.get("considered") is not False,
+                    "status": str(raw_source.get("status") or ""),
+                    "reason": str(raw_source.get("reason") or ""),
+                    "required": raw_source.get("required") is True,
+                    "selected": raw_source.get("selected") is True,
+                    "included": raw_source.get("included") is True,
+                    "packet": (
+                        dict(raw_source["packet"])
+                        if isinstance(raw_source.get("packet"), Mapping)
+                        else {}
+                    ),
+                    "authority": (
+                        dict(raw_source["authority"])
+                        if isinstance(raw_source.get("authority"), Mapping)
+                        else {}
+                    ),
+                }
+            )
+    return _sha256_json(
+        {
+            "explicit_target": str(report.get("explicit_target") or ""),
+            "sources": sources,
+        }
+    )
 
 
 class ControlledRecoveryError(ValueError):

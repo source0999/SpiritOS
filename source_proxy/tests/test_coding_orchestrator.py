@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -15,8 +17,15 @@ from source_proxy.coding.orchestrator import (
     CodingOrchestratorError,
     LANE_SEQUENCE,
 )
+from source_proxy.planning.plan import ArchitectPlan
 from source_proxy.tasks.long_running import execute_approved_long_running_task
-from source_proxy.target_plugins.adapter import ResolvedTargetPlugin
+from source_proxy.target_plugins.adapter import (
+    GENERIC_WORKSPACE_CONTEXT_ID,
+    GENERIC_WORKSPACE_PLUGIN_ID,
+    GENERIC_WORKSPACE_PROFILE,
+    GENERIC_WORKSPACE_PROMPT_ID,
+    ResolvedTargetPlugin,
+)
 
 
 def test_lane_state_machine_has_explicit_dependency_order_and_terminal_states() -> None:
@@ -502,15 +511,27 @@ def test_target_plugin_model_failure_and_noncanonical_fallback_share_one_durable
     monkeypatch.setenv("SPIRITOS_CODING_PRIMARY_MODEL_ALIAS", "primary")
     monkeypatch.setenv("SPIRITOS_CODING_FALLBACK_MODEL_ALIAS", "fallback")
     monkeypatch.setattr(orchestrator_module, "current_head", lambda: source_head)
+    latest_context_report = _canonical_context_report()
+    acknowledgement_count = 0
+
+    def acknowledge_context(*_args: object, **_kwargs: object) -> dict[str, Any]:
+        nonlocal acknowledgement_count, latest_context_report
+        acknowledgement_count += 1
+        latest_context_report = _canonical_context_report()
+        latest_context_report["canonical_report_hash"] = (
+            f"context-hash-{acknowledgement_count}"
+        )
+        return copy.deepcopy(latest_context_report)
+
     monkeypatch.setattr(
         orchestrator_module,
         "acknowledge_task_context_consumer",
-        lambda *_args, **_kwargs: _canonical_context_report(),
+        acknowledge_context,
     )
     monkeypatch.setattr(
         orchestrator_module,
         "canonical_context_broker_for_task",
-        lambda _task_id: _canonical_context_report(),
+        lambda _task_id: copy.deepcopy(latest_context_report),
     )
     monkeypatch.setattr(
         orchestrator_module,
@@ -573,7 +594,12 @@ def test_target_plugin_model_failure_and_noncanonical_fallback_share_one_durable
     )
 
 
-def _canonical_target_plugin_result(target: str) -> dict[str, Any]:
+def _canonical_target_plugin_result(
+    target: str,
+    *,
+    plugin_id: str = "lumacart",
+    selected_prompt_id: str = "coder-004-add-search-filter",
+) -> dict[str, Any]:
     producer_call = {
         "call_index": 1,
         "stage": "coder",
@@ -588,6 +614,8 @@ def _canonical_target_plugin_result(target: str) -> dict[str, Any]:
     }
     provenance = {
         "schema_version": "spiritos-target-adapter-provenance/v1",
+        "plugin_id": plugin_id,
+        "selected_prompt_id": selected_prompt_id,
         "rendered_prompt_sha256": "1" * 64,
         "raw_response_sha256": "2" * 64,
         "transport_kind": "canonical_litellm_router",
@@ -746,6 +774,71 @@ def _canonical_context_report() -> dict[str, Any]:
     }
 
 
+def test_target_plugin_recovery_input_identity_allows_only_context_lifecycle_refresh() -> None:
+    plugin_identity = {
+        "plugin_id": "lumacart",
+        "selected_prompt_id": "coder-004-add-search-filter",
+        "selected_context_id": "search-filter",
+    }
+    initial_context = {
+        **_canonical_context_report(),
+        "explicit_target": "index.html",
+        "sources_considered": [
+            {
+                "source": "workspace",
+                "considered": True,
+                "status": "used",
+                "reason": "selected",
+                "required": True,
+                "selected": True,
+                "included": True,
+                "packet": {"path": "index.html", "sha256": "a" * 64},
+                "authority": {"owner": "source-proxy"},
+            }
+        ],
+        "downstream_acknowledgements": {
+            "coder": {"evidence": "primary", "acknowledged": True}
+        },
+    }
+    refreshed_context = copy.deepcopy(initial_context)
+    refreshed_context["canonical_report_hash"] = "refreshed-context-hash"
+    refreshed_context["downstream_acknowledgements"]["coder"] = {
+        "evidence": "authorized-fallback",
+        "acknowledged": True,
+    }
+
+    initial = orchestrator_module._target_plugin_model_input_sha256(
+        task="Add a model-authored product search filter.",
+        target_plugin_identity=plugin_identity,
+        canonical_context=initial_context,
+    )
+
+    assert initial == orchestrator_module._target_plugin_model_input_sha256(
+        task="Add a model-authored product search filter.",
+        target_plugin_identity=plugin_identity,
+        canonical_context=refreshed_context,
+    )
+    assert initial != orchestrator_module._target_plugin_model_input_sha256(
+        task="Change an unrelated task.",
+        target_plugin_identity=plugin_identity,
+        canonical_context=refreshed_context,
+    )
+    changed_plugin = dict(plugin_identity)
+    changed_plugin["selected_prompt_id"] = "coder-005-unrelated"
+    assert initial != orchestrator_module._target_plugin_model_input_sha256(
+        task="Add a model-authored product search filter.",
+        target_plugin_identity=changed_plugin,
+        canonical_context=refreshed_context,
+    )
+    changed_material = copy.deepcopy(refreshed_context)
+    changed_material["sources_considered"][0]["packet"]["sha256"] = "b" * 64
+    assert initial != orchestrator_module._target_plugin_model_input_sha256(
+        task="Add a model-authored product search filter.",
+        target_plugin_identity=plugin_identity,
+        canonical_context=changed_material,
+    )
+
+
 def _semantic_plan_payload(*, task_id: str, target: str) -> dict[str, Any]:
     return {
         "plan_id": f"plan-{task_id}",
@@ -843,6 +936,440 @@ def _seed_consumed_context_output(
             ),
         },
     )
+
+
+def test_generic_adapter_persists_exact_architect_plan_before_coder_invocation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    persisted: list[dict[str, object]] = []
+    plan_store: dict[str, ArchitectPlan] = {}
+    task_id = "task-generic-plan-bridge"
+    target = "src/service.py"
+    source_head = "a" * 40
+    state = CodingLaneStateMachine(task_id=task_id, run_id="run-generic-plan-bridge")
+    state.lane_states["context-broker"] = "running"
+    bootstrap = CodingOrchestrator()
+    context_output = bootstrap._enforce_runtime_contract_output(
+        state,
+        lane_id="context-broker",
+        producer_invocation_id="context-bootstrap",
+        payload={"context_hash": "context-hash", "verdict": "GO_ELIGIBLE"},
+    )
+    bootstrap._consume_output(
+        state,
+        output_id=context_output["output_id"],
+        consumer_invocation_id="context-refresh-bootstrap",
+        payload={"consumer": "context-broker", "context_hash": "context-hash"},
+    )
+    plugin = ResolvedTargetPlugin(
+        schema_version="spiritos-target-plugin/v1",
+        plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+        repository_id="repo",
+        worktree_id="worktree",
+        workspace_root=str(tmp_path),
+        branch="test",
+        state_namespace="namespace",
+        fixture_root=".",
+        source_head=source_head,
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID,
+        execution_profile=GENERIC_WORKSPACE_PROFILE,
+        allowed_actions=("propose_diff",),
+        result_identity="result",
+    )
+    plan = ArchitectPlan.from_dict(
+        _semantic_plan_payload(task_id=task_id, target=target)
+    )
+
+    monkeypatch.setenv("SPIRITOS_CODING_PRIMARY_MODEL_ALIAS", "openai")
+    monkeypatch.delenv("SPIRITOS_CODING_FALLBACK_MODEL_ALIAS", raising=False)
+    monkeypatch.setattr(orchestrator_module, "current_head", lambda: source_head)
+    monkeypatch.setattr(
+        orchestrator_module,
+        "acknowledge_task_context_consumer",
+        lambda *_args, **_kwargs: _canonical_context_report(),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "canonical_context_broker_for_task",
+        lambda _task_id: _canonical_context_report(),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "load_plan",
+        lambda requested: plan_store.get(requested),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "save_plan",
+        lambda requested, value: plan_store.__setitem__(requested, value),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+
+    def execute_adapter(*_args: object, **kwargs: object) -> dict[str, Any]:
+        before = persisted[-1] if persisted else state.receipt(summary="initial")
+        assert before["lane_states"]["planner"] == "pending"
+        assert not any(
+            event.get("event_type") == "target_plugin_model_invocation"
+            for event in before["causal_events"]
+        )
+        assert kwargs["architect_task_id"] == task_id
+        callback = kwargs["plan_ready_callback"]
+        assert callable(callback)
+        callback(plan)
+        after = persisted[-1]
+        assert after["lane_states"]["planner"] == "completed"
+        assert any(
+            event.get("event_type") == "target_plugin_model_invocation"
+            for event in after["causal_events"]
+        )
+        result = _canonical_target_plugin_result(
+            target,
+            plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+            selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        )
+        proposed_diff = str(result["proposed_diff"])
+        result["coder_diagnostics"].update(
+            {
+                "architect_plan_id": plan.plan_id,
+                "architect_plan_sha256": hashlib.sha256(
+                    json.dumps(
+                        plan.to_dict(),
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        default=str,
+                    ).encode("utf-8")
+                ).hexdigest(),
+                "acceptance_criteria": [
+                    {
+                        "id": item.id,
+                        "description": item.description,
+                        "kind": item.kind,
+                    }
+                    for item in plan.coder_packet.acceptance_criteria
+                ],
+                "attempts": [
+                    {
+                        "proposed_diff_sha256": hashlib.sha256(
+                            proposed_diff.encode("utf-8")
+                        ).hexdigest(),
+                        "preview_status": "ready_for_approval_preview",
+                        "git_apply_check": {"passed": True},
+                    }
+                ],
+            }
+        )
+        return result
+
+    monkeypatch.setattr(
+        orchestrator_module,
+        "execute_target_plugin_command",
+        execute_adapter,
+    )
+    orchestrator = CodingOrchestrator(
+        planner_loader=lambda requested: plan_store.get(requested),
+        state_loader=lambda _task_id: (
+            persisted[-1] if persisted else state.receipt(summary="initial")
+        ),
+    )
+
+    receipt = orchestrator.propose_target_plugin(
+        task_id,
+        plugin=plugin,
+        task="Implement the requested service behavior.",
+    )
+
+    assert plan_store[task_id] == plan
+    assert receipt["lane_states"]["planner"] == "completed"
+    planner_output = next(
+        item for item in receipt["runtime_outputs"] if item["lane_id"] == "planner"
+    )
+    assert planner_output["payload"]["task_spec"] == plan.to_dict()
+    assert receipt["model_invocations"][0]["passed"] is True
+
+
+def test_generic_adapter_refreshes_completed_planner_with_exact_attempt_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task_id = "task-generic-plan-refresh"
+    target = "src/service.py"
+    state = CodingLaneStateMachine(task_id=task_id, run_id="run-generic-plan-refresh")
+    state.lane_states["context-broker"] = "completed"
+    state.lane_states["planner"] = "completed"
+    _seed_consumed_context_output(state, context_hash="context-hash", target=target)
+    persisted = [state.receipt(summary="old plan completed")]
+    saved: dict[str, ArchitectPlan] = {}
+    fresh_payload = _semantic_plan_payload(task_id=task_id, target=target)
+    fresh_payload["plan_id"] = "plan-fresh-adapter-attempt"
+    fresh_payload["source_task"] = "Repair using current diagnostics."
+    fresh_plan = ArchitectPlan.from_dict(fresh_payload)
+
+    monkeypatch.setattr(
+        orchestrator_module,
+        "acknowledge_task_context_consumer",
+        lambda *_args, **_kwargs: _canonical_context_report(),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "canonical_context_broker_for_task",
+        lambda _task_id: _canonical_context_report(),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "save_plan",
+        lambda requested, value: saved.__setitem__(requested, value),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+    orchestrator = CodingOrchestrator(
+        state_loader=lambda _task_id: copy.deepcopy(persisted[-1]),
+    )
+
+    receipt = orchestrator._persist_adapter_architect_plan(task_id, fresh_plan)
+
+    planner_outputs = [
+        item for item in receipt["runtime_outputs"] if item["lane_id"] == "planner"
+    ]
+    assert len(planner_outputs) == 2
+    assert planner_outputs[-1]["payload"]["task_spec"] == fresh_plan.to_dict()
+    assert saved[task_id] == fresh_plan
+    assert any(
+        event["event_type"] == "generic_adapter_architect_plan_persisted"
+        and event["detail"]["plan_id"] == fresh_plan.plan_id
+        for event in receipt["causal_events"]
+    )
+
+
+def test_generic_fallback_persists_fresh_plan_before_replacement_coder(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    task_id = "task-generic-fallback-plan"
+    target = "src/service.py"
+    source_head = "a" * 40
+    state = CodingLaneStateMachine(task_id=task_id, run_id="run-generic-fallback-plan")
+    state.lane_states["context-broker"] = "running"
+    bootstrap = CodingOrchestrator()
+    context_output = bootstrap._enforce_runtime_contract_output(
+        state,
+        lane_id="context-broker",
+        producer_invocation_id="context-bootstrap",
+        payload={"context_hash": "context-hash", "verdict": "GO_ELIGIBLE"},
+    )
+    bootstrap._consume_output(
+        state,
+        output_id=context_output["output_id"],
+        consumer_invocation_id="context-refresh-bootstrap",
+        payload={"consumer": "context-broker", "context_hash": "context-hash"},
+    )
+    persisted: list[dict[str, Any]] = []
+    plan_store: dict[str, ArchitectPlan] = {}
+    plans: list[ArchitectPlan] = []
+    for suffix in ("primary", "fallback"):
+        payload = _semantic_plan_payload(task_id=task_id, target=target)
+        payload["plan_id"] = f"plan-{suffix}"
+        payload["source_task"] = f"{suffix.title()} attempt plan."
+        plans.append(ArchitectPlan.from_dict(payload))
+    plugin = ResolvedTargetPlugin(
+        schema_version="spiritos-target-plugin/v1",
+        plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+        repository_id="repo",
+        worktree_id="worktree",
+        workspace_root=str(tmp_path),
+        branch="test",
+        state_namespace="namespace",
+        fixture_root=".",
+        source_head=source_head,
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID,
+        execution_profile=GENERIC_WORKSPACE_PROFILE,
+        allowed_actions=("propose_diff",),
+        result_identity="result",
+    )
+    call_index = 0
+
+    def execute_adapter(*_args: object, **kwargs: object) -> dict[str, Any]:
+        nonlocal call_index
+        plan = plans[call_index]
+        call_index += 1
+        callback = kwargs["plan_ready_callback"]
+        assert callable(callback)
+        callback(plan)
+        latest = persisted[-1]
+        assert [
+            item["payload"]["task_spec"]["plan_id"]
+            for item in latest["runtime_outputs"]
+            if item["lane_id"] == "planner"
+        ][-1] == plan.plan_id
+        assert len(
+            [
+                event
+                for event in latest["causal_events"]
+                if event["event_type"] == "target_plugin_model_invocation"
+            ]
+        ) == call_index
+        if call_index == 1:
+            return {
+                "proposed_diff": "",
+                "coder_blocked": True,
+                "reason_code": "coder_model_timeout",
+                "blocked_reason": "primary provider timed out",
+                "coder_diagnostics": {
+                    "provider_call_made": True,
+                    "selected_model_alias": "primary",
+                    "provider": "primary-provider",
+                    "model": "primary-model",
+                    "changed_files": [],
+                },
+            }
+        result = _canonical_target_plugin_result(
+            target,
+            plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+            selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        )
+        proposed_diff = str(result["proposed_diff"])
+        result["coder_diagnostics"].update(
+            {
+                "architect_plan_id": plan.plan_id,
+                "architect_plan_sha256": hashlib.sha256(
+                    json.dumps(
+                        plan.to_dict(),
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        default=str,
+                    ).encode("utf-8")
+                ).hexdigest(),
+                "acceptance_criteria": [
+                    {
+                        "id": item.id,
+                        "description": item.description,
+                        "kind": item.kind,
+                    }
+                    for item in plan.coder_packet.acceptance_criteria
+                ],
+                "attempts": [
+                    {
+                        "proposed_diff_sha256": hashlib.sha256(
+                            proposed_diff.encode("utf-8")
+                        ).hexdigest(),
+                        "preview_status": "ready_for_approval_preview",
+                        "git_apply_check": {"passed": True},
+                    }
+                ],
+            }
+        )
+        return result
+
+    monkeypatch.setenv("SPIRITOS_CODING_PRIMARY_MODEL_ALIAS", "primary")
+    monkeypatch.setenv("SPIRITOS_CODING_FALLBACK_MODEL_ALIAS", "openai")
+    monkeypatch.setattr(orchestrator_module, "current_head", lambda: source_head)
+    latest_context_report = _canonical_context_report()
+    acknowledgement_count = 0
+
+    def acknowledge_generic_context(
+        *_args: object,
+        **_kwargs: object,
+    ) -> dict[str, Any]:
+        nonlocal acknowledgement_count, latest_context_report
+        acknowledgement_count += 1
+        latest_context_report = _canonical_context_report()
+        latest_context_report["canonical_report_hash"] = (
+            f"context-hash-{acknowledgement_count}"
+        )
+        return copy.deepcopy(latest_context_report)
+
+    monkeypatch.setattr(
+        orchestrator_module,
+        "acknowledge_task_context_consumer",
+        acknowledge_generic_context,
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "canonical_context_broker_for_task",
+        lambda _task_id: copy.deepcopy(latest_context_report),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "load_plan",
+        lambda requested: plan_store.get(requested),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "save_plan",
+        lambda requested, value: plan_store.__setitem__(requested, value),
+    )
+    monkeypatch.setattr(orchestrator_module, "execute_target_plugin_command", execute_adapter)
+    monkeypatch.setattr(
+        orchestrator_module,
+        "route_provider_for_alias",
+        lambda alias: "openai" if alias == "openai" else "primary-provider",
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "route_model_for_alias",
+        lambda alias: "openai/test-coder" if alias == "openai" else "primary-model",
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+    orchestrator = CodingOrchestrator(
+        planner_loader=lambda requested: plan_store.get(requested),
+        state_loader=lambda _task_id: (
+            copy.deepcopy(persisted[-1])
+            if persisted
+            else state.receipt(summary="initial")
+        ),
+    )
+
+    receipt = orchestrator.propose_target_plugin(
+        task_id,
+        plugin=plugin,
+        task="Implement the requested service behavior.",
+    )
+
+    planner_plan_ids = [
+        item["payload"]["task_spec"]["plan_id"]
+        for item in receipt["runtime_outputs"]
+        if item["lane_id"] == "planner"
+    ]
+    assert planner_plan_ids == ["plan-primary", "plan-fallback"]
+    assert len(receipt["model_invocations"]) == 2
+    proposal = receipt["target_plugin_proposal"]
+    assert proposal["context_hash"] == "context-hash-4"
+    assert proposal["canonical_context_report"]["canonical_report_hash"] == (
+        "context-hash-4"
+    )
+    planner_outputs = [
+        item for item in receipt["runtime_outputs"] if item["lane_id"] == "planner"
+    ]
+    predecessor_consumption = next(
+        item
+        for item in receipt["runtime_consumptions"]
+        if item["output_id"] == planner_outputs[0]["output_id"]
+    )
+    assert predecessor_consumption["consumer_invocation_id"] == planner_outputs[1][
+        "producer_invocation_id"
+    ]
+    adapter_evidence = proposal["semantic_review_binding"][
+        "preview_review_receipt"
+    ]["adapter_preview_evidence"]
+    assert adapter_evidence["architect_plan_id"] == "plan-fallback"
+    material = orchestrator.target_plugin_approval_material(
+        task_id,
+        runtime_output_id=proposal["runtime_output_id"],
+        selected_prompt_id=proposal["selected_prompt_id"],
+    )
+    assert material["proposal_binding"] == proposal
 
 
 def test_canonical_target_plugin_proposal_binds_adapter_model_and_runtime_output(
@@ -1140,6 +1667,9 @@ def test_reviewer_failure_seals_attempt_and_reenters_coder_with_exact_current_st
             copy.deepcopy(persisted[-1])
             if persisted
             else state.receipt(summary="repair ready")
+        ),
+        planner_loader=lambda requested: ArchitectPlan.from_dict(
+            _semantic_plan_payload(task_id=requested, target=repair_target)
         ),
         attempt_failure_finalizer=_invalidated_attempt_finalizer(
             approval_id=original_approval_id

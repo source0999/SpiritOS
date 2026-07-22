@@ -102,6 +102,24 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
             }
         )
 
+    def plan_ready(plan: object) -> dict[str, object]:
+        calls.append("plan_ready")
+        assert getattr(plan, "task_id") == "production-task-123"
+        assert getattr(plan, "coder_packet").target_file.path == "src/service.py"
+        return {
+            "sources_considered": [
+                {
+                    "source": "refreshed_orchestrator_context",
+                    "considered": True,
+                    "status": "used",
+                    "required": True,
+                    "selected": True,
+                    "included": True,
+                    "packet": {"fresh": True},
+                }
+            ]
+        }
+
     result = execute_generic_workspace_rich(
         task="Add a normalize_name service function and focused tests.",
         workspace_root=root,
@@ -111,12 +129,18 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
         coder_model_call=coder_call,
         model_alias="coder",
         canonical_context={},
+        architect_task_id="production-task-123",
+        plan_ready_callback=plan_ready,
     )
 
     assert result.get("coder_blocked") is not True
     assert result["execution_path"] == GENERIC_RICH_EXECUTION_PATH
-    assert calls == ["architect", "coder"]
+    assert calls == ["architect", "plan_ready", "coder"]
     diagnostics = result["coder_diagnostics"]
+    assert any(
+        item.get("source") == "refreshed_orchestrator_context"
+        for item in diagnostics["canonical_context_broker"]["sources_considered"]
+    )
     assert diagnostics["multi_file_capability_requested"] is True
     assert diagnostics["changed_files"] == ["src/service.py", "tests/test_service.py"]
     assert "diff --git a/src/service.py b/src/service.py" in result["proposed_diff"]

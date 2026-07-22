@@ -243,7 +243,13 @@ def test_durable_records_rehydrate_with_exact_bindings() -> None:
         lane_id="reviewer",
         contract_version="coding.lane-contract/v1.0.0",
         producer_invocation_id="reviewer-invocation-1",
-        payload={"passed": True, "findings": []},
+        payload={
+            "passed": True,
+            "findings": [],
+            "blocked_reasons": [],
+            "semantic_review": {},
+            "semantic_review_input_sha256": None,
+        },
     )
     acknowledgement = boundary.record_consumer_acknowledgement(
         output_id=output.output_id,
