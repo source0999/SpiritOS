@@ -1,5 +1,6 @@
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 import subprocess
 
@@ -290,8 +291,9 @@ def _execute(
     workspace: Path,
     llm_call,
 ) -> dict:
+    plugin = resolve_target_plugin(packet(prompt_id), ROOT)
     return execute_target_plugin_command(
-        resolve_target_plugin(packet(prompt_id), ROOT),
+        replace(plugin, workspace_root=str(workspace.resolve())),
         task=f"execute {prompt_id}",
         workspace_root=workspace,
         canonical_context={"canonical_report_hash": "test-report"},
@@ -459,8 +461,25 @@ def test_default_model_transport_provenance_distinguishes_canonical_router_from_
     )
     calls: list[dict[str, str]] = []
 
-    def fake_default_transport(prompt: str, alias: str, _timeout: float) -> str:
+    def fake_default_transport(
+        prompt: str,
+        alias: str,
+        _timeout: float,
+        *,
+        model_call_run_id: str | None = None,
+        authority_observer=None,
+    ) -> str:
         calls.append({"prompt": prompt, "alias": alias})
+        assert model_call_run_id
+        assert authority_observer is not None
+        authority_observer(
+            {
+                "central_gate_check_passed": True,
+                "run_id": model_call_run_id,
+                "gate": "model_call",
+                "model_alias": alias,
+            }
+        )
         return response
 
     monkeypatch.setattr(

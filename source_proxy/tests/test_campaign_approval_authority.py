@@ -356,7 +356,7 @@ def test_coding_approval_rejects_wrong_plugin_worktree_and_content(
                 "source_head": authority.current_head(),
             },
         )
-    assert plugin.value.reason_code == "approval_plugin_mismatch"
+    assert plugin.value.reason_code == "target_plugin_identity_mismatch"
 
     monkeypatch.undo()
     worktree_preview = coding_preview(task_id="campaign1-test-worktree")
@@ -374,6 +374,143 @@ def test_coding_approval_rejects_wrong_plugin_worktree_and_content(
     with pytest.raises(CampaignApprovalError) as content:
         consume(content_id, task_id="campaign1-test-content", approved_diff="diff --git a/a b/a\n+stale\n")
     assert content.value.reason_code == "approval_content_hash_mismatch"
+
+
+def test_generic_target_plugin_binds_fixture_head_and_every_changed_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "fixture"
+    (root / "src").mkdir(parents=True)
+    (root / "src" / "value.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (root / "outside.py").write_text("OUTSIDE = 0\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "fixture@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "Fixture"], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "src/value.py", "outside.py"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "baseline"], check=True)
+    fixture_head = subprocess.check_output(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        text=True,
+    ).strip()
+    fixture_tree = subprocess.check_output(
+        ["git", "-C", str(root), "rev-parse", "HEAD^{tree}"],
+        text=True,
+    ).strip()
+    from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
+        ENV_MANIFEST,
+        MANIFEST_SCHEMA_V2,
+    )
+    from source_proxy.target_plugins.adapter import (
+        GENERIC_WORKSPACE_CONTEXT_ID,
+        GENERIC_WORKSPACE_PLUGIN_ID,
+        GENERIC_WORKSPACE_PROFILE,
+        GENERIC_WORKSPACE_PROMPT_ID,
+        TARGET_PLUGIN_SCHEMA_VERSION,
+        resolve_target_plugin,
+    )
+
+    manifest = tmp_path / "fixture-authority.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": MANIFEST_SCHEMA_V2,
+                "fixture_id": "approval-authority-fixture",
+                "workspace_root": str(root.resolve()),
+                "baseline_commit": fixture_head,
+                "baseline_tree": fixture_tree,
+                "readable_paths": ["src/"],
+                "writable_paths": ["src/"],
+                "execution_profile": GENERIC_WORKSPACE_PROFILE,
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    manifest.chmod(0o600)
+    monkeypatch.setenv(ENV_MANIFEST, str(manifest.resolve()))
+    packet = {
+        "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+        "target_plugin": {
+            "schema_version": TARGET_PLUGIN_SCHEMA_VERSION,
+            "id": GENERIC_WORKSPACE_PLUGIN_ID,
+            "fixture_root": ".",
+            "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID,
+            "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID,
+            "execution_profile": GENERIC_WORKSPACE_PROFILE,
+        },
+    }
+    identity = resolve_target_plugin(packet, root).evidence_identity()
+    plugin, bound = authority._target_plugin_binding(
+        target="src/value.py",
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        identity=identity,
+    )
+    assert plugin == "generic-workspace"
+    assert bound == identity
+
+    fabricated = dict(identity)
+    fabricated["workspace_root"] = str(tmp_path.resolve())
+    with pytest.raises(CampaignApprovalError, match="workspace_authority_mismatch"):
+        authority._target_plugin_binding(
+            target="src/value.py",
+            selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+            identity=fabricated,
+        )
+
+    widened = dict(identity)
+    widened["allowed_actions"] = ["src/", "outside.py"]
+    with pytest.raises(CampaignApprovalError, match="identity_authority_mismatch"):
+        authority._target_plugin_binding(
+            target="src/value.py",
+            selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+            identity=widened,
+        )
+
+    valid_diff = """diff --git a/src/value.py b/src/value.py
+--- a/src/value.py
++++ b/src/value.py
+@@ -1 +1 @@
+-VALUE = 1
++VALUE = 2
+"""
+    authority._validate_target_plugin_diff_scope(
+        valid_diff,
+        plugin=plugin,
+        identity=identity,
+    )
+
+    outside_diff = """diff --git a/outside.py b/outside.py
+--- a/outside.py
++++ b/outside.py
+@@ -1 +1 @@
+-OUTSIDE = 0
++OUTSIDE = 1
+"""
+    with pytest.raises(CampaignApprovalError, match="target_plugin_diff_scope_violation"):
+        authority._validate_target_plugin_diff_scope(
+            outside_diff,
+            plugin=plugin,
+            identity=identity,
+        )
+
+    (root / "src" / "value.py").write_text("VALUE = 9\n", encoding="utf-8")
+    with pytest.raises(CampaignApprovalError, match="target_plugin_workspace_state_mismatch"):
+        authority._target_plugin_binding(
+            target="src/value.py",
+            selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+            identity=identity,
+        )
+    (root / "src" / "value.py").write_text("VALUE = 1\n", encoding="utf-8")
+
+    stale = dict(identity)
+    stale["target_source_head"] = "0" * 40
+    with pytest.raises(CampaignApprovalError, match="target_plugin_target_source_head_mismatch"):
+        authority._target_plugin_binding(
+            target="src/value.py",
+            selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+            identity=stale,
+        )
 
 
 def test_coding_approval_consumption_is_transactionally_single_winner() -> None:

@@ -93,7 +93,7 @@ def materialize_git_fixture(
     files: Mapping[str, str],
     seed_commitment: str,
     allowed_paths: list[str],
-    execution_profile: str = "generic-unified-diff-v1",
+    execution_profile: str = "generic-architect-coder-packet-v1",
 ) -> FixtureMaterialization:
     """Create an owned fixture repository and return non-secret authority data.
 

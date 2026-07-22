@@ -9,6 +9,7 @@ from unittest.mock import patch
 from source_proxy.approval.external_gate import ExternalGateError
 from source_proxy.planning.architect import (
     ArchitectLLMError,
+    Block,
     FallthroughToLLM,
     Plan,
     plan_task_deterministically,
@@ -19,6 +20,56 @@ from source_proxy.planning.plan import task_spec_from_plan, validate_task_spec_f
 
 
 class DeterministicArchitectTests(unittest.TestCase):
+    def test_python_relative_import_is_included_in_scoped_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = root / "src" / "orders"
+            package.mkdir(parents=True)
+            (package / "service.py").write_text(
+                "def total():\n    return 1\n",
+                encoding="utf-8",
+            )
+            (package / "api.py").write_text(
+                "from .service import total\n\ndef endpoint():\n    return total()\n",
+                encoding="utf-8",
+            )
+
+            result = plan_task_deterministically(
+                "Target file: src/orders/api.py\nFix the endpoint bug.",
+                "task-python-context",
+                root,
+                allowed_paths=("src/",),
+            )
+
+        self.assertIsInstance(result, Plan)
+        self.assertIn(
+            "src/orders/service.py",
+            [item.path for item in result.plan.coder_packet.context_slices],
+        )
+
+    def test_scoped_target_symlink_cannot_read_outside_resolved_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "outside").mkdir()
+            secret = root / "outside" / "secret.py"
+            secret.write_text("SECRET = 'must-not-enter-context'\n", encoding="utf-8")
+            link = root / "src" / "linked.py"
+            try:
+                link.symlink_to(secret)
+            except OSError as error:
+                self.skipTest(f"symlinks unavailable: {error}")
+
+            result = plan_task_deterministically(
+                "Target file: src/linked.py\nFix the bug.",
+                "task-symlink-scope",
+                root,
+                allowed_paths=("src/",),
+            )
+
+        self.assertIsInstance(result, Block)
+        self.assertEqual(result.reason, "architect_target_outside_allowed_scope")
+
     def test_existing_explicit_target_produces_plan_with_context_and_literal(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -216,6 +267,100 @@ class DeterministicArchitectTests(unittest.TestCase):
                 ["src/components/dashboard/DashboardInternalSidebar.tsx"],
             )
             self.assertIn("source_proxy/", plan.coder_packet.forbidden_paths)
+
+    def test_llm_architect_scopes_file_index_and_context_to_server_allowed_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            allowed_files = {
+                "src/service.py": "VALUE = 1\n",
+                "src/worker.go": "package worker\n",
+                "src/State.java": "class State {}\n",
+                "src/lib.rs": "pub const VALUE: i32 = 1;\n",
+                "src/query.sql": "SELECT 1;\n",
+            }
+            for relative, content in allowed_files.items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            private = root / "private/answer.py"
+            private.parent.mkdir()
+            private.write_text("HIDDEN = True\n", encoding="utf-8")
+            seen_prompts: list[str] = []
+
+            def fake_llm(prompt: str, _alias: str) -> str:
+                seen_prompts.append(prompt)
+                return json.dumps(
+                    {
+                        "classification": {
+                            "task_class": "fix",
+                            "visual_change": False,
+                            "designer_required": False,
+                            "estimated_complexity": "small",
+                        },
+                        "coder_packet": {
+                            "target_file": {"path": "src/service.py", "exists": True},
+                            "operation": "edit",
+                            "acceptance_criteria": [],
+                            "constraints": {},
+                            "context_slices": [],
+                            "forbidden_paths": [],
+                            "style_directives": [],
+                        },
+                    }
+                )
+
+            plan = plan_task_with_llm(
+                "Fix the backend service",
+                "task-scoped-index",
+                root,
+                llm_call=fake_llm,
+                allowed_paths=("src/",),
+            )
+
+            for relative in allowed_files:
+                self.assertIn(relative, seen_prompts[0])
+            self.assertNotIn("private/answer.py", seen_prompts[0])
+            self.assertEqual(
+                [item.path for item in plan.coder_packet.context_slices],
+                ["src/service.py"],
+            )
+
+    def test_llm_architect_rejects_target_outside_server_allowed_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "private/answer.py"
+            target.parent.mkdir(parents=True)
+            target.write_text("HIDDEN = True\n", encoding="utf-8")
+
+            def fake_llm(_prompt: str, _alias: str) -> str:
+                return json.dumps(
+                    {
+                        "classification": {},
+                        "coder_packet": {
+                            "target_file": {"path": "private/answer.py", "exists": True},
+                            "operation": "edit",
+                            "acceptance_criteria": [],
+                            "constraints": {},
+                            "context_slices": [],
+                            "forbidden_paths": [],
+                            "style_directives": [],
+                        },
+                    }
+                )
+
+            with self.assertRaises(ArchitectLLMError) as raised:
+                plan_task_with_llm(
+                    "Fix the backend service",
+                    "task-out-of-scope",
+                    root,
+                    llm_call=fake_llm,
+                    allowed_paths=("src/",),
+                )
+
+        self.assertEqual(
+            raised.exception.reason_code,
+            "architect_target_outside_allowed_scope",
+        )
 
     def test_llm_architect_retries_after_invalid_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

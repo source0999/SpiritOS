@@ -65,6 +65,59 @@ class DiffVerificationError(ValueError):
         self.reason_code = reason_code
 
 
+def git_diff_changed_paths(unified_diff: str, *, workspace_root: Path) -> list[str]:
+    """Ask Git to enumerate every target and bind it to same-path headers."""
+
+    def invalid() -> DiffVerificationError:
+        return DiffVerificationError(
+            "The unified diff path structure is invalid or ambiguous.",
+            "diff_paths_invalid",
+        )
+
+    header_paths: list[str] = []
+    for line in unified_diff.splitlines():
+        if not line.startswith("diff --git "):
+            continue
+        parts = _diff_git_paths(line)
+        if len(parts) != 2:
+            raise invalid()
+        before = _normalize_diff_path(parts[0])
+        after = _normalize_diff_path(parts[1])
+        if not before or not after or before != after:
+            raise invalid()
+        header_paths.append(after)
+    if not header_paths or len(header_paths) != len(set(header_paths)):
+        raise invalid()
+
+    completed = subprocess.run(
+        ["git", "apply", "--numstat", "-z", "--recount", "-"],
+        input=unified_diff.encode("utf-8"),
+        cwd=workspace_root,
+        capture_output=True,
+        check=False,
+        timeout=15,
+    )
+    if completed.returncode:
+        raise invalid()
+    parsed_paths: list[str] = []
+    for record in completed.stdout.split(b"\0"):
+        if not record:
+            continue
+        fields = record.split(b"\t", 2)
+        if len(fields) != 3 or not fields[2]:
+            raise invalid()
+        try:
+            path = fields[2].decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise invalid() from error
+        if any(ord(character) < 32 for character in path):
+            raise invalid()
+        parsed_paths.append(path)
+    if sorted(parsed_paths) != sorted(header_paths):
+        raise invalid()
+    return sorted(header_paths)
+
+
 # LLM / hand-edited hunks often drop the leading SP on context lines. `git apply` then
 # dies with ``corrupt patch at line N`` — first bad line is usually bare source text.
 _HUNK_HEADER_RE = re.compile(r"^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@")
@@ -378,7 +431,7 @@ def _pick_syntax_workspace_root(roots: list[Path], files: list[dict[str, Any]]) 
         for file in files
         if str(file.get("path") or "").strip()
     ]
-    candidate_roots = [Path.cwd(), *roots]
+    candidate_roots = [*roots, Path.cwd()]
     for root in candidate_roots:
         resolved = root.resolve()
         if not resolved.is_dir():
@@ -1150,6 +1203,7 @@ def preview_diff_verification(
     architect_plan: ArchitectPlan | None = None,
     task_spec: dict[str, Any] | None = None,
     reviewer_llm_call=None,
+    workspace_root: Path | None = None,
 ) -> dict[str, Any]:
     preview_task_text = _task_text_for_diff_preview(task_text)
     unified_diff = sanitize_unified_diff_for_git_apply(unified_diff)
@@ -1161,7 +1215,11 @@ def preview_diff_verification(
 
     from source_proxy.tasks import long_running as _lr
 
-    roots = _lr._ordered_workspace_roots_for_apply()
+    roots = (
+        [workspace_root.resolve()]
+        if workspace_root is not None
+        else _lr._ordered_workspace_roots_for_apply()
+    )
     pre_files = _parse_changed_files(unified_diff)
     _, unified_diff, _ = _lr._normalize_next_app_router_diff_targets(
         roots,
@@ -1299,7 +1357,11 @@ def preview_diff_verification(
         },
     }
 
-    apply_ok, apply_err = _lr.git_apply_check_for_preview(unified_diff, files)
+    apply_ok, apply_err = _lr.git_apply_check_for_preview(
+        unified_diff,
+        files,
+        workspace_roots=roots,
+    )
     clean_workspace_apply_check = {
         "used": False,
         "ok": False,

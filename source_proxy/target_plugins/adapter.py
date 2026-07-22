@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
 import difflib
 import hashlib
@@ -33,9 +33,10 @@ TARGET_PLUGIN_SCHEMA_VERSION = "spiritos-target-plugin/v1"
 TARGET_ADAPTER_PROVENANCE_SCHEMA_VERSION = "spiritos-target-adapter-provenance/v1"
 LUMACART_PLUGIN_ID = "lumacart"
 GENERIC_WORKSPACE_PLUGIN_ID = "generic-workspace"
-GENERIC_WORKSPACE_PROMPT_ID = "generic-unified-diff"
-GENERIC_WORKSPACE_CONTEXT_ID = "server-fixture-manifest"
-GENERIC_WORKSPACE_PROFILE = "generic-unified-diff-v1"
+GENERIC_WORKSPACE_PROMPT_ID = "generic-architect-coder-packet"
+GENERIC_WORKSPACE_CONTEXT_ID = "server-scoped-architect-context"
+GENERIC_WORKSPACE_PROFILE = "generic-architect-coder-packet-v1"
+GENERIC_RICH_EXECUTION_PATH = "architect_coder_packet/v1"
 FIXTURE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
 EXECUTION_PROFILE = "coder-10"
 PROMPT_CONTEXTS = {
@@ -60,6 +61,29 @@ class TargetPluginResolutionError(ValueError):
         self.reason_code = reason_code
 
 
+def server_owned_target_plugin_workspace(
+    declared: Mapping[str, Any] | dict[str, Any],
+) -> Path:
+    """Resolve execution root from server authority, never request CWD/path input."""
+
+    if not isinstance(declared, Mapping):
+        raise TargetPluginResolutionError("target_plugin_missing")
+    plugin_id = str(declared.get("id") or "").strip()
+    if plugin_id == GENERIC_WORKSPACE_PLUGIN_ID:
+        try:
+            return load_campaign_3_5_fixture_authority().workspace_root.resolve()
+        except Campaign35FixtureAuthorityError as error:
+            raise TargetPluginResolutionError(error.reason_code) from error
+    if plugin_id == LUMACART_PLUGIN_ID:
+        try:
+            return resolve_authority_runtime_identity().root.resolve()
+        except AuthorityRuntimeIdentityError as error:
+            raise TargetPluginResolutionError(
+                f"target_plugin_runtime_identity_invalid:{error.reason_code}"
+            ) from error
+    raise TargetPluginResolutionError("target_plugin_unsupported")
+
+
 @dataclass(frozen=True)
 class ResolvedTargetPlugin:
     schema_version: str
@@ -76,6 +100,10 @@ class ResolvedTargetPlugin:
     execution_profile: str
     allowed_actions: tuple[str, ...]
     result_identity: str
+    target_source_head: str | None = None
+    target_workspace_state_sha256: str | None = None
+    target_workspace_state_paths: tuple[str, ...] = ()
+    readable_actions: tuple[str, ...] = ()
     approval_id: str | None = None
     approval_generation: int | None = None
     evidence_pointer: str | None = None
@@ -116,13 +144,13 @@ _COMMON_FORBIDDEN_FILES = [
 
 def target_plugin_command(plugin: ResolvedTargetPlugin) -> str | None:
     """Return the only Python implementation command for a resolved plugin prompt."""
-    return "generic_unified_diff" if plugin.plugin_id == GENERIC_WORKSPACE_PLUGIN_ID else lumacart_command(plugin.selected_prompt_id)
+    return "generic_architect_coder_packet" if plugin.plugin_id == GENERIC_WORKSPACE_PLUGIN_ID else lumacart_command(plugin.selected_prompt_id)
 
 
 def target_plugin_task_spec(plugin: ResolvedTargetPlugin) -> dict[str, Any] | None:
     """Target-owned task constraints, including the same evidence identity used by verification."""
     if plugin.plugin_id == GENERIC_WORKSPACE_PLUGIN_ID:
-        return {"schema_version": 1, "command": "generic_unified_diff", "task_type": "scoped_unified_diff", "target": plugin.fixture_root, "allowed_files": list(plugin.allowed_actions), "target_plugin_identity": plugin.evidence_identity()}
+        return {"schema_version": 1, "command": "generic_architect_coder_packet", "task_type": "architect_scoped_replacement", "target": plugin.fixture_root, "allowed_files": list(plugin.allowed_actions), "target_plugin_identity": plugin.evidence_identity()}
     return lumacart_task_spec(
         plugin.selected_prompt_id,
         forbidden_files=_COMMON_FORBIDDEN_FILES,
@@ -141,8 +169,13 @@ def execute_target_plugin_command(
     model_alias: str | None = None,
     model_input_observer: Callable[[dict[str, Any], str], None] | None = None,
     model_output_observer: Callable[[dict[str, Any], str], None] | None = None,
+    model_call_run_id: str | None = None,
 ) -> dict[str, Any]:
     """The generic route delegates target-specific execution; it cannot choose a target."""
+    execution_root = workspace_root.resolve()
+    plugin_root = Path(plugin.workspace_root).resolve()
+    if execution_root != plugin_root:
+        raise TargetPluginResolutionError("target_plugin_execution_workspace_mismatch")
     from source_proxy.tasks.long_running import (
         _call_dummy_product_site_llm_with_wall_timeout,
         _coder_model_alias_configuration_error,
@@ -167,15 +200,77 @@ def execute_target_plugin_command(
     )
     model_calls: list[dict[str, Any]] = []
 
-    def provenance_model_call(prompt: str, alias: str) -> str:
+    def provenance_model_call(prompt: str, alias: str, *, stage: str = "coder") -> str:
+        requested_alias = alias
+        if stage == "architect":
+            alias = os.getenv("SOURCE_PROXY_ARCHITECT_MODEL_ALIAS", "").strip() or selected_alias
+        elif stage == "reviewer":
+            alias = (
+                os.getenv("SOURCE_PROXY_REVIEWER_MODEL_ALIAS", "").strip()
+                or requested_alias
+                or selected_alias
+            )
+        elif stage == "coder" and any(
+            call.get("stage") == "coder" for call in model_calls
+        ):
+            alias = os.getenv("SOURCE_PROXY_CODER_REPAIR_MODEL_ALIAS", "").strip() or selected_alias
+        else:
+            alias = selected_alias
         call_record: dict[str, Any] = {
             "call_index": len(model_calls) + 1,
+            "stage": stage,
+            "requested_model_alias": requested_alias,
+            "model_alias": alias,
             "rendered_prompt_sha256": _sha256_utf8(prompt),
             "raw_response_sha256": None,
             "raw_response_observed": False,
             "transport_kind": configured_transport_kind,
         }
+        if configured_transport_kind == "injected_callback":
+            call_record.update(
+                {"provider": "injected_callback", "model": alias or "callback"}
+            )
+        else:
+            from source_proxy.routing.litellm_router import (
+                route_model_for_alias,
+                route_provider_for_alias,
+            )
+
+            routed = route_model_for_alias(alias) or alias or "unknown"
+            call_record.update(
+                {
+                    "provider": route_provider_for_alias(alias) or "unknown",
+                    "model": routed,
+                    "routed_model": routed,
+                }
+            )
         model_calls.append(call_record)
+        if configured_transport_kind != "injected_callback":
+            role_alias_error = _coder_model_alias_configuration_error(alias)
+            if role_alias_error is not None:
+                call_record.update(
+                    {
+                        "completed": False,
+                        "error_type": "ModelAliasConfigurationError",
+                        "model_call_authority": {
+                            "central_gate_check_passed": False,
+                            "reason_code": role_alias_error[0],
+                        },
+                    }
+                )
+                raise TargetPluginResolutionError(role_alias_error[0])
+        authority_run_id = ""
+        if configured_transport_kind != "injected_callback":
+            authority_run_id = (
+                str(model_call_run_id or "").strip()
+                or f"target-plugin:{plugin.worktree_id}"
+            )
+            authority_run_id = f"{authority_run_id}:{stage}:{call_record['call_index']}"
+        else:
+            call_record["model_call_authority"] = {
+                "central_gate_check_passed": False,
+                "reason_code": "injected_callback_not_authorized_production_transport",
+            }
         if model_input_observer is not None:
             try:
                 # The full rendered prompt is retained only by an explicitly
@@ -187,16 +282,31 @@ def execute_target_plugin_command(
                 call_record["rendered_prompt_captured"] = False
                 call_record["rendered_prompt_capture_error"] = type(error).__name__
         try:
-            raw_response = (
-                llm_call(prompt, alias)
-                if llm_call is not None
-                else _call_dummy_product_site_llm_with_wall_timeout(
+            if llm_call is not None:
+                raw_response = llm_call(prompt, alias)
+            else:
+                raw_response = _call_dummy_product_site_llm_with_wall_timeout(
                     prompt,
                     alias,
                     _dummy_product_site_model_timeout_seconds(),
+                    model_call_run_id=authority_run_id,
+                    authority_observer=lambda authority: call_record.__setitem__(
+                        "model_call_authority",
+                        dict(authority),
+                    ),
                 )
-            )
         except Exception as error:  # noqa: BLE001
+            if configured_transport_kind != "injected_callback" and not isinstance(
+                call_record.get("model_call_authority"),
+                dict,
+            ):
+                call_record["model_call_authority"] = {
+                    "central_gate_check_passed": False,
+                    "run_id": authority_run_id,
+                    "reason_code": str(
+                        getattr(error, "reason_code", "model_call_authority_denied")
+                    ),
+                }
             call_record.update(
                 {
                     "completed": False,
@@ -232,6 +342,10 @@ def execute_target_plugin_command(
         else _coder_model_alias_configuration_error(selected_alias)
     )
     effective_model_call = provenance_model_call if alias_error is None else None
+    reviewer_model_alias = os.getenv(
+        "SOURCE_PROXY_REVIEWER_MODEL_ALIAS",
+        "",
+    ).strip()
     kwargs = {
         "task": task,
         "workspace_root": workspace_root,
@@ -240,8 +354,47 @@ def execute_target_plugin_command(
         "llm_call": effective_model_call,
         "model_alias": selected_alias,
     }
-    if command == "generic_unified_diff":
-        result = _execute_generic_unified_diff(plugin, task, workspace_root, provenance_model_call, selected_alias)
+    if command == "generic_architect_coder_packet":
+        from source_proxy.target_plugins.generic_workspace import (
+            execute_generic_workspace_rich,
+        )
+
+        result = execute_generic_workspace_rich(
+            task=task,
+            workspace_root=execution_root,
+            allowed_paths=tuple(plugin.allowed_actions),
+            readable_paths=tuple(plugin.readable_actions or plugin.allowed_actions),
+            model_call=effective_model_call,
+            architect_model_call=(
+                lambda prompt, alias: provenance_model_call(
+                    prompt,
+                    alias,
+                    stage="architect",
+                )
+            )
+            if effective_model_call is not None
+            else None,
+            coder_model_call=(
+                lambda prompt, alias: provenance_model_call(
+                    prompt,
+                    alias,
+                    stage="coder",
+                )
+            )
+            if effective_model_call is not None
+            else None,
+            reviewer_model_call=(
+                lambda prompt, alias: provenance_model_call(
+                    prompt,
+                    alias,
+                    stage="reviewer",
+                )
+            )
+            if effective_model_call is not None and reviewer_model_alias
+            else None,
+            model_alias=selected_alias,
+            canonical_context=canonical_context,
+        )
     elif command == "create_storefront":
         result = propose_dummy_product_site_create_diff(**kwargs)
     elif command == "add_product_data":
@@ -261,6 +414,7 @@ def execute_target_plugin_command(
         selected_alias=selected_alias,
         configured_transport_kind=configured_transport_kind,
         model_calls=model_calls,
+        reviewer_model_configured=bool(reviewer_model_alias),
     )
 
 
@@ -469,6 +623,44 @@ def _sha256_utf8(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def target_adapter_producer_identity_valid(provenance: Mapping[str, Any]) -> bool:
+    """Validate the aggregate producer identity against the final coder call."""
+
+    calls = [item for item in provenance.get("calls", []) if isinstance(item, Mapping)]
+    successful_coder_calls = [
+        item
+        for item in calls
+        if item.get("stage") == "coder"
+        and item.get("completed") is True
+        and item.get("raw_response_observed") is True
+    ]
+    if not successful_coder_calls:
+        return False
+    producer = successful_coder_calls[-1]
+    return bool(
+        producer.get("call_index") == provenance.get("producer_call_index")
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(producer.get("rendered_prompt_sha256") or ""),
+        )
+        is not None
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(producer.get("raw_response_sha256") or ""),
+        )
+        is not None
+        and provenance.get("rendered_prompt_sha256")
+        == producer.get("rendered_prompt_sha256")
+        and provenance.get("raw_response_sha256")
+        == producer.get("raw_response_sha256")
+        and provenance.get("selected_model_alias") == producer.get("model_alias")
+        and provenance.get("provider") == producer.get("provider")
+        and provenance.get("model") == producer.get("model")
+        and provenance.get("routed_model")
+        == (producer.get("routed_model") or producer.get("model"))
+    )
+
+
 def _attach_target_adapter_provenance(
     result: dict[str, Any],
     *,
@@ -476,6 +668,7 @@ def _attach_target_adapter_provenance(
     selected_alias: str,
     configured_transport_kind: str,
     model_calls: list[dict[str, Any]],
+    reviewer_model_configured: bool = False,
 ) -> dict[str, Any]:
     from source_proxy.routing.litellm_router import (
         route_model_for_alias,
@@ -490,7 +683,62 @@ def _attach_target_adapter_provenance(
 
     provider_call_made = bool(model_calls)
     actual_transport_kind = configured_transport_kind if provider_call_made else "non_model"
-    provider_call_authorized = provider_call_made and configured_transport_kind != "injected_callback"
+    provider_call_authorized = bool(
+        provider_call_made
+        and all(
+            isinstance(call.get("model_call_authority"), dict)
+            and call["model_call_authority"].get("central_gate_check_passed") is True
+            for call in model_calls
+        )
+    )
+    reviewer_calls = [
+        call for call in model_calls if call.get("stage") == "reviewer"
+    ]
+    raw_expected_reviewer_calls = diagnostics.get(
+        "reviewer_model_call_count_expected",
+        0,
+    )
+    declared_expected_reviewer_calls = (
+        raw_expected_reviewer_calls
+        if isinstance(raw_expected_reviewer_calls, int)
+        and not isinstance(raw_expected_reviewer_calls, bool)
+        and raw_expected_reviewer_calls >= 0
+        else 0
+    )
+    configured_reviewer_required = bool(
+        plugin.plugin_id == GENERIC_WORKSPACE_PLUGIN_ID
+        and reviewer_model_configured
+    )
+    reviewer_call_required = bool(
+        diagnostics.get("reviewer_model_call_required") is True
+        or configured_reviewer_required
+    )
+    expected_reviewer_calls = max(
+        declared_expected_reviewer_calls,
+        1 if configured_reviewer_required else 0,
+    )
+    model_call_accounting_complete = bool(
+        provider_call_made
+        and len(reviewer_calls) == expected_reviewer_calls
+        and (not reviewer_call_required or expected_reviewer_calls > 0)
+        and all(
+            call.get("call_index") == index
+            and call.get("stage") in {"architect", "coder", "reviewer"}
+            and call.get("completed") is True
+            and call.get("raw_response_observed") is True
+            and re.fullmatch(
+                r"[0-9a-f]{64}",
+                str(call.get("rendered_prompt_sha256") or ""),
+            )
+            is not None
+            and re.fullmatch(
+                r"[0-9a-f]{64}",
+                str(call.get("raw_response_sha256") or ""),
+            )
+            is not None
+            for index, call in enumerate(model_calls, start=1)
+        )
+    )
     routed_provider = "unknown"
     routed_model = selected_alias or "unknown"
     if actual_transport_kind in {"direct_ollama", "canonical_litellm_router"}:
@@ -509,15 +757,57 @@ def _attach_target_adapter_provenance(
         provider = None
         model = None
 
-    last_call = model_calls[-1] if model_calls else {}
+    coder_calls = [call for call in model_calls if call.get("stage") == "coder"]
+    successful_coder_calls = [
+        call
+        for call in coder_calls
+        if call.get("completed") is True
+        and call.get("raw_response_observed") is True
+    ]
+    producer_call = (
+        successful_coder_calls[-1]
+        if successful_coder_calls
+        else (coder_calls[-1] if coder_calls else {})
+    )
     blocked = bool(result.get("coder_blocked") or result.get("coderBlocked"))
     proposed_diff = str(result.get("proposed_diff") or "")
+    execution_path = str(result.get("execution_path") or diagnostics.get("execution_path") or "")
+    rich_path_proven = bool(
+        plugin.plugin_id != GENERIC_WORKSPACE_PLUGIN_ID
+        or (
+            execution_path == GENERIC_RICH_EXECUTION_PATH
+            and successful_coder_calls
+        )
+    )
+    producer_identity_bound = bool(
+        producer_call
+        and producer_call.get("call_index")
+        and str(producer_call.get("model_alias") or "")
+        and str(producer_call.get("provider") or "")
+        and str(producer_call.get("model") or "")
+        and str(
+            producer_call.get("routed_model") or producer_call.get("model") or ""
+        )
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(producer_call.get("rendered_prompt_sha256") or ""),
+        )
+        is not None
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(producer_call.get("raw_response_sha256") or ""),
+        )
+        is not None
+    )
     terminal_proof_eligible = bool(
         actual_transport_kind == "canonical_litellm_router"
         and provider_call_authorized
-        and last_call.get("raw_response_observed") is True
+        and model_call_accounting_complete
+        and producer_identity_bound
+        and producer_call.get("raw_response_observed") is True
         and proposed_diff.strip()
         and not blocked
+        and rich_path_proven
     )
     if terminal_proof_eligible:
         trust_status = "canonical_router_model_output_validated"
@@ -530,7 +820,12 @@ def _attach_target_adapter_provenance(
         ineligibility_reason = "direct_ollama_bypasses_canonical_router"
     elif actual_transport_kind == "canonical_litellm_router":
         trust_status = "canonical_router_model_output_not_usable"
-        ineligibility_reason = "canonical_model_result_not_usable"
+        if not model_call_accounting_complete:
+            ineligibility_reason = "model_call_accounting_incomplete"
+        elif not provider_call_authorized:
+            ineligibility_reason = "model_call_authority_incomplete"
+        else:
+            ineligibility_reason = "canonical_model_result_not_usable"
     elif bool(result.get("already_satisfied") or result.get("alreadySatisfied")):
         trust_status = "verified_non_model_noop"
         ineligibility_reason = "non_model_result"
@@ -542,7 +837,7 @@ def _attach_target_adapter_provenance(
         ineligibility_reason = "non_model_result"
 
     generation_source = str(diagnostics.get("generation_source") or "").strip()
-    if provider_call_made and not generation_source:
+    if provider_call_made and generation_source in {"", "non_model"}:
         generation_source = "model"
     elif not provider_call_made and (not generation_source or generation_source == "model"):
         generation_source = "non_model"
@@ -550,22 +845,32 @@ def _attach_target_adapter_provenance(
     provenance = {
         "schema_version": TARGET_ADAPTER_PROVENANCE_SCHEMA_VERSION,
         "plugin_id": plugin.plugin_id,
+        "execution_path": execution_path or None,
+        "rich_path_proven": rich_path_proven,
         "selected_prompt_id": plugin.selected_prompt_id,
-        "rendered_prompt_sha256": last_call.get("rendered_prompt_sha256"),
-        "raw_response_sha256": last_call.get("raw_response_sha256"),
+        "rendered_prompt_sha256": producer_call.get("rendered_prompt_sha256"),
+        "raw_response_sha256": producer_call.get("raw_response_sha256"),
         "hash_algorithm": "sha256",
         "hash_encoding": "utf-8",
         "transport_kind": actual_transport_kind,
         "configured_transport_kind": configured_transport_kind,
         "provider_call_made": provider_call_made,
         "provider_call_authorized": provider_call_authorized,
+        "model_call_accounting_complete": model_call_accounting_complete,
+        "reviewer_model_call_required": reviewer_call_required,
+        "reviewer_model_configured": configured_reviewer_required,
+        "reviewer_model_call_count_expected": expected_reviewer_calls,
+        "reviewer_model_call_count_observed": len(reviewer_calls),
         "generation_source": generation_source,
         "trust_status": trust_status,
         "terminal_proof_eligible": terminal_proof_eligible,
         "terminal_proof_ineligibility_reason": ineligibility_reason,
-        "selected_model_alias": selected_alias if provider_call_made else None,
-        "provider": provider,
-        "model": model,
+        "selected_model_alias": producer_call.get("model_alias") if producer_call else None,
+        "provider": producer_call.get("provider") if producer_call else provider,
+        "model": producer_call.get("model") if producer_call else model,
+        "routed_model": producer_call.get("routed_model") if producer_call else model,
+        "producer_call_index": producer_call.get("call_index"),
+        "producer_identity_bound": producer_identity_bound,
         "call_count": len(model_calls),
         "calls": [dict(call) for call in model_calls],
     }
@@ -576,12 +881,23 @@ def _attach_target_adapter_provenance(
             "transport_kind": actual_transport_kind,
             "provider_call_made": provider_call_made,
             "provider_call_authorized": provider_call_authorized,
+            "model_call_accounting_complete": model_call_accounting_complete,
+            "reviewer_model_call_required": reviewer_call_required,
+            "reviewer_model_configured": configured_reviewer_required,
+            "reviewer_model_call_count_expected": expected_reviewer_calls,
+            "reviewer_model_call_count_observed": len(reviewer_calls),
             "generation_source": generation_source,
             "target_adapter_trust_status": trust_status,
+            "execution_path": execution_path,
+            "rich_path_proven": rich_path_proven,
             "terminal_proof_eligible": terminal_proof_eligible,
             "terminal_proof_ineligibility_reason": ineligibility_reason,
-            "provider": provider,
-            "model": model,
+            "selected_model_alias": provenance["selected_model_alias"],
+            "provider": provenance["provider"],
+            "model": provenance["model"],
+            "routed_model": provenance["routed_model"],
+            "producer_call_index": provenance["producer_call_index"],
+            "producer_identity_bound": producer_identity_bound,
         }
     )
     result["coder_diagnostics"] = diagnostics
@@ -609,7 +925,7 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
         raise TargetPluginResolutionError("target_plugin_schema_unsupported")
     plugin_id = _require(declared, "id")
     if plugin_id == GENERIC_WORKSPACE_PLUGIN_ID:
-        return _resolve_generic_workspace_plugin(packet, declared)
+        return _resolve_generic_workspace_plugin(packet, declared, root)
     if plugin_id != LUMACART_PLUGIN_ID:
         raise TargetPluginResolutionError("target_plugin_unsupported")
     try:
@@ -660,15 +976,57 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
     )
 
 
-def _resolve_generic_workspace_plugin(packet: dict[str, Any], declared: dict[str, Any]) -> ResolvedTargetPlugin:
+def _resolve_generic_workspace_plugin(
+    packet: dict[str, Any],
+    declared: dict[str, Any],
+    workspace_root: Path,
+) -> ResolvedTargetPlugin:
     try:
         authority = load_campaign_3_5_fixture_authority()
     except Campaign35FixtureAuthorityError as error:
         raise TargetPluginResolutionError(error.reason_code) from error
+    if workspace_root.resolve() != authority.workspace_root.resolve():
+        raise TargetPluginResolutionError("generic_workspace_authority_root_mismatch")
+    if authority.execution_profile != GENERIC_WORKSPACE_PROFILE:
+        raise TargetPluginResolutionError(
+            "generic_workspace_authority_execution_profile_mismatch"
+        )
     if _require(declared, "fixture_root") != "." or _require(declared, "selected_prompt_id") != GENERIC_WORKSPACE_PROMPT_ID or _require(declared, "selected_context_id") != GENERIC_WORKSPACE_CONTEXT_ID or _require(declared, "execution_profile") != GENERIC_WORKSPACE_PROFILE:
         raise TargetPluginResolutionError("generic_workspace_plugin_contract_mismatch")
     selected = str(packet.get("selected_prompt_id") or "").strip()
     if selected and selected != GENERIC_WORKSPACE_PROMPT_ID:
         raise TargetPluginResolutionError("target_plugin_selected_prompt_mismatch")
     scope = authority.adapter_scope()
-    return ResolvedTargetPlugin(schema_version=TARGET_PLUGIN_SCHEMA_VERSION, plugin_id=GENERIC_WORKSPACE_PLUGIN_ID, repository_id="campaign-3.5-fixture", worktree_id=authority.manifest_sha256[:24], workspace_root=str(authority.workspace_root), branch="fixture", state_namespace=authority.manifest_sha256[:24], fixture_root=".", source_head=authority.baseline_tree_sha256, selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID, selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID, execution_profile=authority.execution_profile, allowed_actions=tuple(scope["allowed_paths"]), result_identity=f"generic-workspace:{authority.manifest_sha256[:12]}")
+    try:
+        control_identity = resolve_authority_runtime_identity()
+    except AuthorityRuntimeIdentityError as error:
+        raise TargetPluginResolutionError(
+            f"target_plugin_runtime_identity_invalid:{error.reason_code}"
+        ) from error
+    target_source_head = str(scope.get("baseline_commit") or "").strip()
+    if not target_source_head:
+        target_source_head = subprocess.check_output(
+            ["git", "-C", str(authority.workspace_root), "rev-parse", "HEAD"],
+            text=True,
+            timeout=15,
+        ).strip()
+    return ResolvedTargetPlugin(
+        schema_version=TARGET_PLUGIN_SCHEMA_VERSION,
+        plugin_id=GENERIC_WORKSPACE_PLUGIN_ID,
+        repository_id="campaign-3.5-fixture",
+        worktree_id=authority.manifest_sha256[:24],
+        workspace_root=str(authority.workspace_root),
+        branch=control_identity.branch,
+        state_namespace=authority.manifest_sha256[:24],
+        fixture_root=".",
+        source_head=control_identity.source_head,
+        target_source_head=target_source_head,
+        target_workspace_state_sha256=str(scope["current_state_sha256"]),
+        target_workspace_state_paths=tuple(scope["current_state_paths"]),
+        selected_prompt_id=GENERIC_WORKSPACE_PROMPT_ID,
+        selected_context_id=GENERIC_WORKSPACE_CONTEXT_ID,
+        execution_profile=authority.execution_profile,
+        allowed_actions=tuple(scope["writable_paths"]),
+        readable_actions=tuple(scope["readable_paths"]),
+        result_identity=f"generic-workspace:{authority.manifest_sha256[:12]}",
+    )

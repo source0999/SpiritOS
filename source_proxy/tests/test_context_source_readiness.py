@@ -107,8 +107,10 @@ class ContextSourceReadinessTests(unittest.TestCase):
         self.assertEqual(packet.packet["notes"][0]["path"], "token-model-v0.1.md")
 
     def test_scout_search_sources_include_citations_and_no_write_authority(self) -> None:
-        async def fake_research(_query: str, max_results: int = 6):
-            return [
+        async def fake_research(*, task_id: str, query: str, max_results: int = 6):
+            assert task_id.startswith("context-")
+            assert query == "Source Proxy context readiness"
+            sources = [
                 {
                     "title": "Repo context",
                     "url": "repo://source_proxy/context/source_readiness.py",
@@ -124,8 +126,14 @@ class ContextSourceReadinessTests(unittest.TestCase):
                     },
                 }
             ][:max_results]
+            return {
+                "status": "used",
+                "reason": "research_sources_selected",
+                "claim_ceiling": "repo_evidence_only",
+                "sources": sources,
+            }
 
-        with mock.patch("source_proxy.context.source_readiness.run_local_research_preview", fake_research):
+        with mock.patch("source_proxy.context.source_readiness.run_canonical_coding_research", fake_research):
             packet = asyncio.run(build_scout_search_context_packet("Source Proxy context readiness"))
 
         self.assertEqual(packet.status, "used")

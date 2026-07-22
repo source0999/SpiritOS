@@ -46,6 +46,7 @@ from source_proxy.target_plugins.adapter import (
     TargetPluginResolutionError,
     execute_target_plugin_command,
     resolve_target_plugin,
+    server_owned_target_plugin_workspace,
     target_plugin_command,
     target_plugin_task_spec,
 )
@@ -6897,8 +6898,12 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
     )
     if plugin_requested:
         try:
+            declared_plugin = (reset_request.dummy_coder_10_packet or {}).get(
+                "target_plugin"
+            )
             target_plugin = resolve_target_plugin(
-                reset_request.dummy_coder_10_packet or {}, _workspace_root()
+                reset_request.dummy_coder_10_packet or {},
+                server_owned_target_plugin_workspace(declared_plugin),
             )
         except TargetPluginResolutionError as error:
             return {
@@ -6908,10 +6913,19 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                 "selected_prompt_id": selected_prompt,
                 "target_plugin": {"status": "blocked", "failure_reason": str(error)},
             }
+    intake_workspace = (
+        Path(target_plugin.workspace_root).resolve()
+        if target_plugin is not None
+        else _workspace_root()
+    )
     intake = build_task_spec_intake(
         reset_request.task,
-        workspace_root=_workspace_root(),
-        allowed_files=reset_request.allowed_files,
+        workspace_root=intake_workspace,
+        allowed_files=(
+            list(target_plugin.allowed_actions)
+            if target_plugin is not None
+            else reset_request.allowed_files
+        ),
         forbidden_files=reset_request.forbidden_files,
         wants_implementation=reset_request.wants_implementation,
     )
@@ -7251,7 +7265,9 @@ async def prompt_packet(request: PromptPacketRequest) -> dict[str, Any]:
                                     execute_target_plugin_command,
                                     target_plugin,
                                     task=trial_task,
-                                    workspace_root=_workspace_root(),
+                                    workspace_root=Path(
+                                        target_plugin.workspace_root
+                                    ).resolve(),
                                     canonical_context=canonical_context_broker,
                                     canonical_context_text=canonical_context_prompt,
                                 ),

@@ -85,12 +85,25 @@ def stage_private_oracle_profiles(store: Path, tasks: list[dict[str, Any]]) -> d
 
 def _changed_paths(fixture_root: Path) -> list[str]:
     result = subprocess.run(
-        ["git", "-C", str(fixture_root), "diff", "--name-only", "HEAD"],
+        [
+            "git",
+            "-C",
+            str(fixture_root),
+            "ls-files",
+            "--modified",
+            "--deleted",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ],
         check=True,
         capture_output=True,
-        text=True,
     )
-    return [line for line in result.stdout.splitlines() if line]
+    return sorted(
+        raw.decode("utf-8")
+        for raw in result.stdout.split(b"\0")
+        if raw
+    )
 
 
 def _path_scope_ok(paths: list[str], allowed_paths: list[str]) -> bool:

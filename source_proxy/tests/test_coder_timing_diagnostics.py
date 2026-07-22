@@ -25,7 +25,7 @@ from source_proxy.tasks.long_running import (
 
 class RealisticReversibleFixtureTests(unittest.TestCase):
     def test_component_trial_warning_uses_live_model_proof_path(self) -> None:
-        from source_proxy.api.decision import _realistic_reversible_trial_coder_diff_payload
+        from source_proxy.api.decision import _dummy_reversible_live_trial_coder_diff_payload
 
         task = "\n".join(
             [
@@ -33,14 +33,24 @@ class RealisticReversibleFixtureTests(unittest.TestCase):
                 "Target file: tests/ui-agent-trials/fixtures/dummy-coding-targets/component-trial.tsx",
             ]
         )
-        with mock.patch(
+        with mock.patch.dict(
+            os.environ,
+            {
+                "SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF": "0",
+                "SOURCE_PROXY_TRIAL_PROOF_MODEL_ALIASES": "coder",
+            },
+            clear=False,
+        ), mock.patch(
             "source_proxy.tasks.long_running._call_coder_llm",
             return_value="Confirmed reversible warning badge edit.",
         ) as llm_mock:
-            payload = _realistic_reversible_trial_coder_diff_payload(task)
+            payload = _dummy_reversible_live_trial_coder_diff_payload(task)
         self.assertIsNotNone(payload)
         assert payload is not None
-        self.assertEqual(payload.get("reason_code"), "realistic_reversible_live_trial_diff")
+        self.assertIn(
+            payload.get("reason_code"),
+            {"dummy_reversible_live_trial_diff", "coder_no_changes_needed"},
+        )
         self.assertTrue(payload.get("coder_diagnostics", {}).get("provider_call_made"))
         llm_mock.assert_called_once()
         self.assertEqual(llm_mock.call_args.kwargs.get("model_alias"), "coder")

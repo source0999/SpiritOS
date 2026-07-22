@@ -34,7 +34,7 @@ from source_proxy.planning.plan import (
 )
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
 from source_proxy.approval.external_gate import ExternalGateError, central_gate_check
-from source_proxy.safety.paths import normalize_repo_path_candidate
+from source_proxy.safety.paths import normalize_repo_path_candidate, unsafe_target_finding
 from source_proxy.tasks.long_running import (
     REPOMIX_BUNDLE_NAMES,
     derive_context_mode,
@@ -80,6 +80,10 @@ _STYLE_RE = re.compile(
 _EXPLAIN_RE = re.compile(r"\b(explain|summarize|describe|why)\b", re.IGNORECASE)
 _IMPORT_RE = re.compile(
     r"^\s*import(?:\s+type)?(?:[\s\S]*?\s+from\s+)?[\"']([^\"']+)[\"'];?\s*$",
+    re.MULTILINE,
+)
+_PYTHON_RELATIVE_IMPORT_RE = re.compile(
+    r"^\s*from\s+(\.+[A-Za-z_][A-Za-z0-9_.]*)\s+import\s+",
     re.MULTILINE,
 )
 _EXPORT_NAME_RE = re.compile(
@@ -196,6 +200,7 @@ def plan_bounded_proposal_create_deterministically(
     workspace_root: Path,
     *,
     proposal: BoundedProposal | None = None,
+    allowed_paths: tuple[str, ...] | None = None,
 ) -> Plan | FallthroughToLLM | Block:
     root = workspace_root.resolve()
     bounded = proposal or parse_bounded_proposal_task(task)
@@ -209,6 +214,12 @@ def plan_bounded_proposal_create_deterministically(
             return FallthroughToLLM(blocked_reason or "bounded_create_not_allowed")
 
     target_path = normalize_repo_path_candidate(bounded.target_file)
+    if allowed_paths is not None and not _resolved_path_allowed_by_scope(
+        root,
+        target_path,
+        allowed_paths,
+    ):
+        return Block("architect_target_outside_allowed_scope")
     target_abs = (root / target_path).resolve()
     target_exists = target_abs.is_file()
     planning_task = bounded.task or effective_planning_task_text(task)
@@ -222,7 +233,14 @@ def plan_bounded_proposal_create_deterministically(
         target_content = target_abs.read_text(encoding="utf-8", errors="replace")
         context_slices.append(_context_slice(target_path, "target", target_content))
     reference_page = root / BOUNDED_CREATE_REFERENCE_PAGE
-    if reference_page.is_file():
+    if reference_page.is_file() and (
+        allowed_paths is None
+        or _resolved_path_allowed_by_scope(
+            root,
+            BOUNDED_CREATE_REFERENCE_PAGE,
+            allowed_paths,
+        )
+    ):
         reference_content = reference_page.read_text(encoding="utf-8", errors="replace")
         context_slices.append(
             _context_slice(BOUNDED_CREATE_REFERENCE_PAGE, "import", reference_content)
@@ -284,11 +302,18 @@ def plan_task_deterministically(
     task: str,
     task_id: str,
     workspace_root: Path,
+    *,
+    allowed_paths: tuple[str, ...] | None = None,
 ) -> DeterministicPlanResult:
     clean_task = (task or "").strip()
     root = workspace_root.resolve()
     planning_text = effective_planning_task_text(clean_task)
-    bounded_create = plan_bounded_proposal_create_deterministically(task, task_id, root)
+    bounded_create = plan_bounded_proposal_create_deterministically(
+        task,
+        task_id,
+        root,
+        allowed_paths=allowed_paths,
+    )
     if isinstance(bounded_create, (Plan, Block)):
         return bounded_create
     if len(planning_text) > 500:
@@ -306,11 +331,18 @@ def plan_task_deterministically(
         root,
         resolved=resolved,
         proposal=parse_bounded_proposal_task(clean_task),
+        allowed_paths=allowed_paths,
     )
     if isinstance(markdown_append, (Plan, Block)):
         return markdown_append
     if not resolved.path:
         return FallthroughToLLM("no_explicit_target")
+    if allowed_paths is not None and not _resolved_path_allowed_by_scope(
+        root,
+        resolved.path,
+        allowed_paths,
+    ):
+        return Block("architect_target_outside_allowed_scope")
 
     target_abs = (root / resolved.path).resolve()
     if not _is_relative_to(target_abs, root):
@@ -324,7 +356,12 @@ def plan_task_deterministically(
     forbidden_paths = list(forbidden_paths_for_context_mode(context_mode))
     context_slices = [
         _context_slice(resolved.path, "target", target_content),
-        *_import_context_slices(root, resolved.path, target_content),
+        *_import_context_slices(
+            root,
+            resolved.path,
+            target_content,
+            allowed_paths=allowed_paths,
+        ),
     ]
 
     plan = ArchitectPlan(
@@ -365,6 +402,7 @@ def plan_markdown_append_deterministically(
     *,
     resolved: Any | None = None,
     proposal: BoundedProposal | None = None,
+    allowed_paths: tuple[str, ...] | None = None,
 ) -> DeterministicPlanResult:
     """Build the narrow no-LLM plan for tiny explicit Markdown append requests."""
     clean_task = (task or "").strip()
@@ -388,6 +426,12 @@ def plan_markdown_append_deterministically(
     if getattr(resolved_target, "source", "") != "explicit_line":
         return FallthroughToLLM("no_explicit_target")
     target_path = _normalize_repo_path(str(getattr(resolved_target, "path", "") or ""))
+    if allowed_paths is not None and not _resolved_path_allowed_by_scope(
+        root,
+        target_path,
+        allowed_paths,
+    ):
+        return Block("architect_target_outside_allowed_scope")
     if Path(target_path).suffix.lower() not in {".md", ".markdown"}:
         return FallthroughToLLM("not_markdown_append_target")
     if getattr(resolved_target, "exists", False) is not True:
@@ -492,10 +536,11 @@ def plan_task_with_llm(
     *,
     llm_call: Callable[[str, str], str] | None = None,
     rejection_feedback: list[dict[str, Any]] | None = None,
+    allowed_paths: tuple[str, ...] | None = None,
 ) -> ArchitectPlan:
     root = workspace_root.resolve()
     clean_task = (task or "").strip()
-    file_index = _workspace_file_index(root)
+    file_index = _workspace_file_index(root, allowed_paths=allowed_paths)
     alias = _architect_model_alias()
     if llm_call is None:
         _raise_if_model_alias_unavailable(alias)
@@ -521,6 +566,7 @@ def plan_task_with_llm(
                 task_id=task_id,
                 task=clean_task,
                 workspace_root=root,
+                allowed_paths=allowed_paths,
             )
         except ExternalGateError as error:
             # A closed or mismatched approval gate is an intentional policy
@@ -552,6 +598,7 @@ def _architect_plan_from_llm_payload(
     task_id: str,
     task: str,
     workspace_root: Path,
+    allowed_paths: tuple[str, ...] | None = None,
 ) -> ArchitectPlan:
     if payload.get("status") == "blocked":
         reason = str(payload.get("reason_code") or payload.get("reason") or "task_too_vague_for_plan")
@@ -564,6 +611,15 @@ def _architect_plan_from_llm_payload(
     target_path = _normalize_repo_path(raw_target)
     if not target_path:
         raise ArchitectLLMError("architect_target_missing", "LLM Architect did not choose a target file.")
+    if allowed_paths is not None and not _resolved_path_allowed_by_scope(
+        workspace_root,
+        target_path,
+        allowed_paths,
+    ):
+        raise ArchitectLLMError(
+            "architect_target_outside_allowed_scope",
+            f"LLM Architect chose path outside the authorized scope: {target_path}",
+        )
     target_abs = (workspace_root / target_path).resolve()
     if not _is_relative_to(target_abs, workspace_root):
         raise ArchitectLLMError(
@@ -598,7 +654,12 @@ def _architect_plan_from_llm_payload(
     packet_payload["context_slices"] = (
         [
             _context_slice(target_path, "target", target_content),
-            *_import_context_slices(workspace_root, target_path, target_content),
+            *_import_context_slices(
+                workspace_root,
+                target_path,
+                target_content,
+                allowed_paths=allowed_paths,
+            ),
         ]
         if target_exists
         else []
@@ -743,7 +804,11 @@ def _render_rejection_feedback(rejections: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def _workspace_file_index(root: Path) -> list[str]:
+def _workspace_file_index(
+    root: Path,
+    *,
+    allowed_paths: tuple[str, ...] | None = None,
+) -> list[str]:
     for name in REPOMIX_BUNDLE_NAMES:
         candidate = root / name
         if not candidate.is_file():
@@ -752,7 +817,13 @@ def _workspace_file_index(root: Path) -> list[str]:
             text = candidate.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        paths = _dedupe(_FILE_PATH_IN_REPOMIX_RE.findall(text))
+        paths = [
+            path
+            for path in _dedupe(_FILE_PATH_IN_REPOMIX_RE.findall(text))
+            if _file_index_path_allowed(path)
+            and unsafe_target_finding(path, workspace_root=root) is None
+            and (allowed_paths is None or _path_allowed_by_scope(path, allowed_paths))
+        ]
         if paths:
             return sorted(paths)
 
@@ -766,7 +837,12 @@ def _workspace_file_index(root: Path) -> list[str]:
             rel = child.relative_to(root).as_posix()
         except ValueError:
             continue
-        if _file_index_path_allowed(rel):
+        if _file_index_path_allowed(rel) and unsafe_target_finding(
+            rel,
+            workspace_root=root,
+        ) is None and (
+            allowed_paths is None or _path_allowed_by_scope(rel, allowed_paths)
+        ):
             paths.append(rel)
     return sorted(paths)
 
@@ -781,10 +857,57 @@ def _file_index_path_allowed(path: str) -> bool:
         ".js",
         ".jsx",
         ".py",
+        ".go",
+        ".java",
+        ".rs",
+        ".sql",
         ".css",
         ".md",
         ".json",
+        ".toml",
+        ".yaml",
+        ".yml",
     }
+
+
+def _path_allowed_by_scope(path: str, allowed_paths: tuple[str, ...]) -> bool:
+    normalized = _normalize_repo_path(path)
+    if not normalized:
+        return False
+    for raw_allowed in allowed_paths:
+        allowed = _normalize_repo_path(str(raw_allowed or ""))
+        if not allowed:
+            continue
+        if normalized == allowed or normalized.startswith(allowed.rstrip("/") + "/"):
+            return True
+    return False
+
+
+def _resolved_path_allowed_by_scope(
+    root: Path,
+    path: str,
+    allowed_paths: tuple[str, ...],
+) -> bool:
+    """Bind lexical scope to the real target and reject symlink traversal."""
+
+    normalized = _normalize_repo_path(path)
+    if not _path_allowed_by_scope(normalized, allowed_paths):
+        return False
+    if unsafe_target_finding(normalized, workspace_root=root) is not None:
+        return False
+    candidate = root.resolve()
+    for part in Path(normalized).parts:
+        candidate = candidate / part
+        if candidate.is_symlink():
+            return False
+    resolved = candidate.resolve()
+    if not _is_relative_to(resolved, root.resolve()):
+        return False
+    try:
+        resolved_relative = resolved.relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return False
+    return _path_allowed_by_scope(resolved_relative, allowed_paths)
 
 
 def _bundle_snapshot(root: Path) -> BundleSnapshot:
@@ -1054,7 +1177,13 @@ def _context_slice(
     )
 
 
-def _import_context_slices(root: Path, target_path: str, content: str) -> list[ContextSlice]:
+def _import_context_slices(
+    root: Path,
+    target_path: str,
+    content: str,
+    *,
+    allowed_paths: tuple[str, ...] | None = None,
+) -> list[ContextSlice]:
     slices: list[ContextSlice] = []
     for module_path in _import_module_names(content):
         if not module_path.startswith("."):
@@ -1063,6 +1192,10 @@ def _import_context_slices(root: Path, target_path: str, content: str) -> list[C
         if imported is None:
             continue
         rel = imported.relative_to(root).as_posix()
+        if unsafe_target_finding(rel, workspace_root=root) is not None:
+            continue
+        if allowed_paths is not None and not _path_allowed_by_scope(rel, allowed_paths):
+            continue
         imported_content = imported.read_text(encoding="utf-8", errors="replace")
         slices.append(_context_slice(rel, "import", imported_content))
         if len(slices) >= 5:
@@ -1072,12 +1205,21 @@ def _import_context_slices(root: Path, target_path: str, content: str) -> list[C
 
 def _resolve_relative_import(root: Path, target_path: str, module_path: str) -> Path | None:
     base = (root / target_path).parent
-    raw = (base / module_path).resolve()
-    candidates = [
-        raw,
-        *(Path(f"{raw}{suffix}") for suffix in (".ts", ".tsx", ".js", ".jsx", ".css")),
-        *(raw / f"index{suffix}" for suffix in (".ts", ".tsx", ".js", ".jsx")),
-    ]
+    if Path(target_path).suffix.lower() == ".py":
+        dot_count = len(module_path) - len(module_path.lstrip("."))
+        python_base = base
+        for _index in range(max(0, dot_count - 1)):
+            python_base = python_base.parent
+        module_tail = module_path.lstrip(".").replace(".", "/")
+        raw = (python_base / module_tail).resolve()
+        candidates = [Path(f"{raw}.py"), raw / "__init__.py"]
+    else:
+        raw = (base / module_path).resolve()
+        candidates = [
+            raw,
+            *(Path(f"{raw}{suffix}") for suffix in (".ts", ".tsx", ".js", ".jsx", ".css")),
+            *(raw / f"index{suffix}" for suffix in (".ts", ".tsx", ".js", ".jsx")),
+        ]
     for candidate in candidates:
         if _is_relative_to(candidate, root) and candidate.is_file():
             return candidate
@@ -1161,7 +1303,12 @@ def _route_requirements(task: str) -> list[str]:
 
 
 def _import_module_names(content: str) -> list[str]:
-    return _dedupe(match.group(1) for match in _IMPORT_RE.finditer(content))
+    return _dedupe(
+        [
+            *(match.group(1) for match in _IMPORT_RE.finditer(content)),
+            *(match.group(1) for match in _PYTHON_RELATIVE_IMPORT_RE.finditer(content)),
+        ]
+    )
 
 
 def _parse_json_object(raw_response: str) -> dict[str, Any]:

@@ -18,11 +18,13 @@ from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_PLUGIN_ID,
     GENERIC_WORKSPACE_PROFILE,
     GENERIC_WORKSPACE_PROMPT_ID,
+    GENERIC_RICH_EXECUTION_PATH,
     TARGET_PLUGIN_SCHEMA_VERSION,
     execute_target_plugin_command,
     _generic_workspace_context,
     _structured_edits_to_diff,
     resolve_target_plugin,
+    TargetPluginResolutionError,
 )
 
 
@@ -37,8 +39,36 @@ def _manifest(root: Path) -> dict[str, object]:
         "workspace_root": str(root),
         "baseline_tree_sha256": hashlib.sha256(_git(root, "write-tree").encode("ascii")).hexdigest(),
         "allowed_paths": ["src/", "tests/"],
-        "execution_profile": "generic-unified-diff-v1",
+        "execution_profile": GENERIC_WORKSPACE_PROFILE,
     }
+
+
+def _architect_response(target: str) -> str:
+    return json.dumps(
+        {
+            "classification": {
+                "task_class": "fix",
+                "visual_change": False,
+                "designer_required": False,
+                "estimated_complexity": "small",
+            },
+            "coder_packet": {
+                "target_file": {"path": target, "exists": True},
+                "operation": "edit",
+                "acceptance_criteria": [
+                    {
+                        "id": "requested-change",
+                        "description": "Complete the requested source change.",
+                        "kind": "behavioral",
+                    }
+                ],
+                "constraints": {},
+                "context_slices": [],
+                "forbidden_paths": [],
+                "style_directives": [],
+            },
+        }
+    )
 
 
 def test_loads_only_a_mode_600_git_fixture_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -68,14 +98,17 @@ def test_rejects_manifest_scope_or_baseline_tampering(tmp_path: Path, monkeypatc
 
 
 @pytest.mark.parametrize(
-    ("response", "reason"),
+    ("architect_target", "reason"),
     [
-        ("```diff\ndiff --git a/secret.txt b/secret.txt\n--- a/secret.txt\n+++ b/secret.txt\n@@ -0,0 +1 @@\n+x\n```", "generic_workspace_scope_violation"),
-        ("not a diff", "generic_workspace_model_diff_invalid"),
+        ("secret.txt", "architect_target_outside_allowed_scope"),
+        ("", "architect_llm_invalid_json"),
     ],
 )
 def test_generic_adapter_fails_closed_outside_server_manifest_scope(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, response: str, reason: str
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    architect_target: str,
+    reason: str,
 ) -> None:
     root = tmp_path / "fixture"; root.mkdir()
     _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
@@ -85,13 +118,62 @@ def test_generic_adapter_fails_closed_outside_server_manifest_scope(
     monkeypatch.setenv(ENV_MANIFEST, str(path))
     packet = {"selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "target_plugin": {"schema_version": TARGET_PLUGIN_SCHEMA_VERSION, "id": GENERIC_WORKSPACE_PLUGIN_ID, "fixture_root": ".", "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID, "execution_profile": GENERIC_WORKSPACE_PROFILE}}
     plugin = resolve_target_plugin(packet, root)
-    result = execute_target_plugin_command(plugin, task="Change only the fixture.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=lambda _prompt, _alias: response, model_alias="coder")
+
+    def model_call(prompt: str, _alias: str) -> str:
+        if "You are the SpiritOS Architect." in prompt and architect_target:
+            return _architect_response(architect_target)
+        return "not valid architect json"
+
+    result = execute_target_plugin_command(plugin, task="Change only the fixture.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=model_call, model_alias="coder")
 
     assert result["coder_blocked"] is True
     assert result["reason_code"] == reason
 
 
-def test_generic_adapter_accepts_a_pure_unfenced_unified_diff(
+def test_generic_adapter_rejects_resolution_workspace_not_manifest_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    other = tmp_path / "other"; other.mkdir()
+    for candidate in (root, other):
+        _git(candidate, "init", "-q"); _git(candidate, "config", "user.email", "fixture@example.invalid"); _git(candidate, "config", "user.name", "Fixture")
+        (candidate / "src").mkdir(); (candidate / "src" / "example.py").write_text("value = 1\n", encoding="utf-8")
+        _git(candidate, "add", "."); _git(candidate, "commit", "-qm", "baseline")
+    path = tmp_path / "manifest.json"; path.write_text(json.dumps(_manifest(root)), encoding="utf-8"); os.chmod(path, 0o600)
+    monkeypatch.setenv(ENV_MANIFEST, str(path))
+    packet = {"selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "target_plugin": {"schema_version": TARGET_PLUGIN_SCHEMA_VERSION, "id": GENERIC_WORKSPACE_PLUGIN_ID, "fixture_root": ".", "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID, "execution_profile": GENERIC_WORKSPACE_PROFILE}}
+
+    with pytest.raises(TargetPluginResolutionError, match="generic_workspace_authority_root_mismatch"):
+        resolve_target_plugin(packet, other)
+
+
+def test_generic_adapter_rejects_execution_workspace_not_manifest_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    other = tmp_path / "other"; other.mkdir()
+    for candidate in (root, other):
+        _git(candidate, "init", "-q"); _git(candidate, "config", "user.email", "fixture@example.invalid"); _git(candidate, "config", "user.name", "Fixture")
+        (candidate / "src").mkdir(); (candidate / "src" / "example.py").write_text("value = 1\n", encoding="utf-8")
+        _git(candidate, "add", "."); _git(candidate, "commit", "-qm", "baseline")
+    path = tmp_path / "manifest.json"; path.write_text(json.dumps(_manifest(root)), encoding="utf-8"); os.chmod(path, 0o600)
+    monkeypatch.setenv(ENV_MANIFEST, str(path))
+    packet = {"selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "target_plugin": {"schema_version": TARGET_PLUGIN_SCHEMA_VERSION, "id": GENERIC_WORKSPACE_PLUGIN_ID, "fixture_root": ".", "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID, "execution_profile": GENERIC_WORKSPACE_PROFILE}}
+    plugin = resolve_target_plugin(packet, root)
+
+    with pytest.raises(TargetPluginResolutionError, match="target_plugin_execution_workspace_mismatch"):
+        execute_target_plugin_command(
+            plugin,
+            task="Change the value.",
+            workspace_root=other,
+            canonical_context={},
+            canonical_context_text="",
+            llm_call=lambda _prompt, _alias: "not reached",
+            model_alias="coder",
+        )
+
+
+def test_generic_adapter_uses_architect_packet_and_backend_generated_diff(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root = tmp_path / "fixture"; root.mkdir()
@@ -100,13 +182,44 @@ def test_generic_adapter_accepts_a_pure_unfenced_unified_diff(
     _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
     path = tmp_path / "manifest.json"; path.write_text(json.dumps(_manifest(root)), encoding="utf-8"); os.chmod(path, 0o600)
     monkeypatch.setenv(ENV_MANIFEST, str(path))
+    monkeypatch.setenv("SOURCE_PROXY_ARCHITECT_MODEL_ALIAS", "local")
     packet = {"selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "target_plugin": {"schema_version": TARGET_PLUGIN_SCHEMA_VERSION, "id": GENERIC_WORKSPACE_PLUGIN_ID, "fixture_root": ".", "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID, "execution_profile": GENERIC_WORKSPACE_PROFILE}}
     plugin = resolve_target_plugin(packet, root)
-    diff = "diff --git a/src/example.py b/src/example.py\n--- a/src/example.py\n+++ b/src/example.py\n@@ -1 +1 @@\n-value = 1\n+value = 2\n"
-    result = execute_target_plugin_command(plugin, task="Change the value.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=lambda _prompt, _alias: diff, model_alias="coder")
 
-    assert result["coder_blocked"] is False
-    assert result["coder_diagnostics"]["model_response_format"] == "unfenced_unified_diff"
+    responses = iter(
+        (
+            _architect_response("src/example.py"),
+            '<file path="src/example.py">\nvalue = 2\n</file>',
+        )
+    )
+
+    aliases: list[str] = []
+
+    def model_call(_prompt: str, _alias: str) -> str:
+        aliases.append(_alias)
+        return next(responses)
+
+    result = execute_target_plugin_command(
+        plugin,
+        task="Change the value. You are the SpiritOS Architect. appears in this ordinary request.",
+        workspace_root=root,
+        canonical_context={},
+        canonical_context_text="",
+        llm_call=model_call,
+        model_alias="coder",
+    )
+
+    assert result.get("coder_blocked") is not True
+    assert result["execution_path"] == GENERIC_RICH_EXECUTION_PATH
+    assert result["coder_diagnostics"]["rich_path_proven"] is True
+    assert result["coder_diagnostics"]["architect_status"] == "completed"
+    assert result["coder_diagnostics"]["changed_files"] == ["src/example.py"]
+    assert "+value = 2" in result["proposed_diff"]
+    assert result["target_adapter_provenance"]["terminal_proof_eligible"] is False
+    assert [
+        call["stage"] for call in result["target_adapter_provenance"]["calls"]
+    ] == ["architect", "coder"]
+    assert aliases == ["local", "coder"]
 
 
 def test_structured_edits_reject_python_syntax_before_apply(tmp_path: Path) -> None:
@@ -149,7 +262,7 @@ def test_structured_edits_accepts_double_escaped_newlines_only_for_an_exact_loca
     assert category == "structured_edits_double_escaped_newlines"
 
 
-def test_generic_adapter_repair_protocol_accepts_json_with_escaped_source_quotes(
+def test_generic_adapter_retries_malformed_coder_output_on_the_rich_path(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root = tmp_path / "fixture"; root.mkdir()
@@ -160,12 +273,25 @@ def test_generic_adapter_repair_protocol_accepts_json_with_escaped_source_quotes
     monkeypatch.setenv(ENV_MANIFEST, str(path))
     packet = {"selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "target_plugin": {"schema_version": TARGET_PLUGIN_SCHEMA_VERSION, "id": GENERIC_WORKSPACE_PLUGIN_ID, "fixture_root": ".", "selected_prompt_id": GENERIC_WORKSPACE_PROMPT_ID, "selected_context_id": GENERIC_WORKSPACE_CONTEXT_ID, "execution_profile": GENERIC_WORKSPACE_PROFILE}}
     plugin = resolve_target_plugin(packet, root)
-    responses = iter(["not a diff", '{"edits":[{"path":"src/label.go","old":"return \\"draft\\"","new":"return \\"ready\\""}]}'])
 
-    result = execute_target_plugin_command(plugin, task="Return ready.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=lambda _prompt, _alias: next(responses), model_alias="coder")
+    coder_responses = iter(
+        [
+            "not a replacement file",
+            '<file path="src/label.go">\npackage label\n\nfunc Value() string { return "ready" }\n</file>',
+        ]
+    )
 
-    assert result["coder_blocked"] is False
-    assert result["coder_diagnostics"]["model_response_format"] == "structured_edits"
+    def model_call(prompt: str, _alias: str) -> str:
+        if "You are the SpiritOS Architect." in prompt:
+            return _architect_response("src/label.go")
+        return next(coder_responses)
+
+    result = execute_target_plugin_command(plugin, task="Return ready.", workspace_root=root, canonical_context={}, canonical_context_text="", llm_call=model_call, model_alias="coder")
+
+    assert result.get("coder_blocked") is not True
+    assert result["execution_path"] == GENERIC_RICH_EXECUTION_PATH
+    assert result["coder_diagnostics"]["coder_format_retry_count"] == 1
+    assert "+func Value() string { return \"ready\" }" in result["proposed_diff"]
 
 
 def test_generic_workspace_context_uses_bounded_coder_visible_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -24,11 +24,13 @@ if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from source_proxy.benchmarks.campaign_3_5_fixture_authority import ENV_MANIFEST
+from source_proxy.approval.external_gate import central_gate_check
 from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_CONTEXT_ID,
     GENERIC_WORKSPACE_PLUGIN_ID,
     GENERIC_WORKSPACE_PROFILE,
     GENERIC_WORKSPACE_PROMPT_ID,
+    GENERIC_RICH_EXECUTION_PATH,
     TARGET_PLUGIN_SCHEMA_VERSION,
     execute_target_plugin_command,
     resolve_target_plugin,
@@ -136,15 +138,54 @@ def _case_result(case: CalibrationCase, output_dir: Path, model_alias: str) -> d
     capture = _PrivateOutputCapture(output_dir, run_id)
     result: dict[str, Any] = {}
     apply_error: str | None = None
+    apply_authority: dict[str, Any] | None = None
+    diff_present = False
+    rich_proof = False
     try:
         with _authority(authority), _temporary_environment("SOURCE_PROXY_GATE_INCREMENT", "campaign-3.5"), _temporary_environment("SOURCE_PROXY_DUMMY_PRODUCT_SITE_DIRECT_OLLAMA", "0"):
             plugin = resolve_target_plugin(_packet(), root)
-            result = execute_target_plugin_command(plugin, task=case.task, workspace_root=root, canonical_context={}, canonical_context_text="", model_alias=model_alias, model_output_observer=capture)
+            result = execute_target_plugin_command(
+                plugin,
+                task=case.task,
+                workspace_root=root,
+                canonical_context={},
+                canonical_context_text="",
+                model_alias=model_alias,
+                model_output_observer=capture,
+                model_call_run_id=f"coding-run-{run_id}:calibration",
+            )
         diff = str(result.get("proposed_diff") or "")
-        if diff and result.get("target_adapter_provenance", {}).get("terminal_proof_eligible") is True:
-            applied = _run(["git", "apply", "--recount", "-"], root, input_text=diff)
-            if applied.returncode:
-                apply_error = "synthetic_apply_failed"
+        diff_present = bool(diff.strip())
+        provenance = result.get("target_adapter_provenance", {})
+        coder_calls = [
+            call
+            for call in provenance.get("calls", [])
+            if isinstance(call, dict)
+            and call.get("stage") == "coder"
+            and call.get("completed") is True
+            and call.get("raw_response_observed") is True
+        ]
+        rich_proof = bool(
+            provenance.get("terminal_proof_eligible") is True
+            and provenance.get("execution_path") == GENERIC_RICH_EXECUTION_PATH
+            and provenance.get("rich_path_proven") is True
+            and coder_calls
+        )
+        if diff and rich_proof:
+            checked = _run(["git", "apply", "--check", "--recount", "-"], root, input_text=diff)
+            if checked.returncode:
+                apply_error = "calibration_apply_check_failed"
+            else:
+                apply_authority = central_gate_check(
+                    "apply",
+                    increment_id="campaign-3.5",
+                    run_id=f"coding-run-{run_id}:calibration:1",
+                ).as_payload()
+                applied = _run(["git", "apply", "--recount", "-"], root, input_text=diff)
+                if applied.returncode:
+                    apply_error = "calibration_apply_failed"
+        elif diff:
+            apply_error = "calibration_rich_path_proof_missing"
     except Exception as error:  # Preserve type only in public calibration evidence.
         apply_error = f"execution_error:{type(error).__name__}"
     fragments_ok = all(fragment in (root / path).read_text(encoding="utf-8") for path, fragment in case.required_fragments.items())
@@ -157,10 +198,25 @@ def _case_result(case: CalibrationCase, output_dir: Path, model_alias: str) -> d
         "provider": provenance.get("provider"),
         "model": provenance.get("model"),
         "call_count": provenance.get("call_count"),
+        "call_stages": [
+            str(call.get("stage") or "")
+            for call in provenance.get("calls", [])
+            if isinstance(call, dict)
+        ],
+        "execution_path": provenance.get("execution_path"),
+        "rich_path_proven": provenance.get("rich_path_proven") is True,
         "response_format": diagnostics.get("model_response_format"),
         "reason_code": result.get("reason_code") if isinstance(result, dict) else None,
         "apply_error": apply_error,
-        "acceptance_passed": bool(apply_error is None and fragments_ok),
+        "apply_authority": apply_authority,
+        "acceptance_passed": bool(
+            apply_error is None
+            and fragments_ok
+            and diff_present
+            and rich_proof
+            and isinstance(apply_authority, dict)
+            and apply_authority.get("central_gate_check_passed") is True
+        ),
         "raw_output": {"captured_privately": bool(capture.hashes), "call_hashes": capture.hashes, "public_contains_raw_text": False},
     }
     shutil.rmtree(root, ignore_errors=True); authority.unlink(missing_ok=True)
