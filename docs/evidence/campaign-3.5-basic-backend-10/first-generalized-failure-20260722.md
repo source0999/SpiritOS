@@ -142,3 +142,41 @@ task fixtures.
 
 All five failed runs remain immutable negative evidence and are ineligible for
 resume or terminal certification.
+
+## Sixth preserved first-phase run
+
+- Source HEAD: `e3c0506d7a55cc0e690206e84a884e19ffb8cd0f`
+- Run: `basic-backend-10-20260722T114139Z-4a4ce6bc59bb`
+- Phase: `first`
+- Result: `0/10` passed; the phase gate did not pass.
+- Five tasks completed proposal, preview, approval, and execute, reaching
+  `applied_needs_verification`. Their verification requests then received a
+  non-JSON HTTP 500 before any durable verification response or truthful
+  terminal receipt was recorded.
+- One task entered the verifier-directed repair bridge and exhausted its
+  bounded Coder repair; three exhausted bounded preview repair; one received a
+  structured 422 execute failure.
+- Unauthorized mutations, fabricated completions, and hidden-answer leaks:
+  `0`.
+
+This run proved that the milestone-12 durable plugin registration repair works:
+the generic workspace path crossed approval and reached apply. Source inspection
+then diagnosed a shared participant-storage and failure-containment defect that
+explains the five verification-boundary HTTP 500s. Generic apply sealed the
+approved diff under a `server-state:` locator, but the immutable participant
+artifact omitted the corresponding storage binding and the subprocess worker
+did not receive the data-root location. Anti-cheat therefore could not
+independently read the approved diff. Its participant exception could also
+escape the orchestrator instead of becoming a durable structured lane failure.
+
+The uncommitted generalized repair binds the optional server-state storage
+metadata into the artifact hash, validates and resolves it fail-closed inside
+the independent participant, passes only the required data-root environment
+variable, and contains participant failures in the orchestrator. Related
+uncommitted work improves bounded preview feedback and convergence and tightens
+source-grounded planning and diff verification. That work has not yet passed
+all affected tests or a new formal first phase, so it is not a completed
+milestone.
+
+All six failed runs remain immutable negative evidence and are ineligible for
+resume or terminal certification.
