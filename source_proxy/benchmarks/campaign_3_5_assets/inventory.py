@@ -28,6 +28,38 @@ VALID_STATUSES = frozenset(
     }
 )
 
+OPENAI_AGENTS_CAPABILITY_REQUIREMENT = (
+    "openai_agents_sdk_adapter capability required; runtime SDK invocation is not asserted"
+)
+OPENAI_AGENTS_SEMANTIC_REQUIREMENT = (
+    "OpenAI Agents SDK-equivalent orchestration capability is required; "
+    "a runtime SDK trace is not asserted until an SDK adapter is implemented"
+)
+FORWARD_CAPABILITY_LABELS = {
+    "openai_agents_sdk_adapter": OPENAI_AGENTS_CAPABILITY_REQUIREMENT,
+}
+FORWARD_INVARIANT_LABELS = {
+    "openai_agents_sdk_adapter invocation traced and influential": (
+        OPENAI_AGENTS_SEMANTIC_REQUIREMENT
+    ),
+}
+
+
+def _inventory_capabilities(task: dict[str, Any]) -> list[str]:
+    """Render task capabilities without converting forward contracts into runtime claims."""
+    return [
+        FORWARD_CAPABILITY_LABELS.get(capability, capability)
+        for capability in task["required_capabilities"]
+    ]
+
+
+def _inventory_semantic_invariants(task: dict[str, Any]) -> list[str]:
+    """Render inventory invariants while leaving immutable v1.1 tasks untouched."""
+    return [
+        FORWARD_INVARIANT_LABELS.get(invariant, invariant)
+        for invariant in task["oracle_checks"]
+    ]
+
 
 def _technology(fixture: str) -> str:
     if fixture.startswith("py-"):
@@ -94,12 +126,24 @@ def build_inventory(
                 "base_repository_structure": "declared by private builder; fresh git repository per task",
                 "required_initial_state": {task["task_id"]: task["initial_state"] for task in grouped},
                 "visible_test_contract": {task["task_id"]: task["expected_tests"] for task in grouped},
-                "private_oracle_contract": {task["task_id"]: task["oracle_checks"] for task in grouped},
-                "required_capabilities": sorted({capability for task in grouped for capability in task["required_capabilities"]}),
+                "private_oracle_contract": {
+                    task["task_id"]: _inventory_semantic_invariants(task)
+                    for task in grouped
+                },
+                "required_capabilities": sorted(
+                    {
+                        capability
+                        for task in grouped
+                        for capability in _inventory_capabilities(task)
+                    }
+                ),
                 "forbidden_behaviors": sorted({behavior for task in grouped for behavior in task["forbidden_behavior"]}),
                 "decoys_required": _needs_decoys(grouped),
                 "randomizable_fields": sorted({field for task in grouped for field in task["randomization"]}),
-                "semantic_invariants": {task["task_id"]: task["oracle_checks"] for task in grouped},
+                "semantic_invariants": {
+                    task["task_id"]: _inventory_semantic_invariants(task)
+                    for task in grouped
+                },
                 "baseline_hash_strategy": "sha256(git write-tree) at immutable baseline commit",
                 "cleanup_strategy": "owned disposable root removed by harness after oracle completion",
                 "runtime_dependencies": _runtime_dependencies(technology),

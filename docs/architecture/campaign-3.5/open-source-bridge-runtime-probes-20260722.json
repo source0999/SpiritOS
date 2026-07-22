@@ -1,0 +1,56 @@
+{
+  "schema_version": "campaign-3.5-open-source-bridge-probes/v1",
+  "captured_at": "2026-07-22T03:08:32Z",
+  "control_plane": {
+    "branch": "codex/campaign-3-5-execution-20260719",
+    "source_head": "ece589de003a779b9f9b4c41afa41a65f51afba9",
+    "worktree": "/home/source/SpiritOS-campaign-3-5-execution-20260719",
+    "worktree_clean": false
+  },
+  "hosted_api_calls": 0,
+  "probes": {
+    "mac_search": {
+      "candidate_files_returned": 3,
+      "completed_at": "2026-07-22T03:05:14Z",
+      "host": "spirit-mac-mini.local",
+      "job_type": "repo_context_search",
+      "kernel": "Darwin",
+      "mutation_authority": false,
+      "result": "success",
+      "tracked_files_searched": 1538,
+      "transport": "configured Dell-to-Mac SSH hop"
+    },
+    "obsidian": {
+      "adapter": "source_proxy.context.obsidian.query_obsidian_context",
+      "downstream_consumption_proven": false,
+      "notes_considered": 5,
+      "notes_returned": 5,
+      "notes_selected": 5,
+      "read_only": true,
+      "status": "used",
+      "vault_configured": true
+    },
+    "scout": {
+      "adapter": "source_proxy.decision.scout_research.run_scout_research_diagnostics",
+      "allowed_decisions": [
+        "surface",
+        "promote"
+      ],
+      "authority": "evidence_only",
+      "hosted_provider_called": false,
+      "local_service": "http://127.0.0.1:8077",
+      "local_service_health": "observing",
+      "raw_packet_count": 0,
+      "reason": "scout_returned_no_allowed_packets",
+      "result_count": 0,
+      "status": "skipped"
+    }
+  },
+  "claim_limits": [
+    "Availability probes are not an authenticated coder benchmark run.",
+    "The Mac search probe is not bound to the control-plane source head or disposable target worktree.",
+    "The Scout probe returned no source and therefore proves no research influence.",
+    "The Obsidian probe proves retrieval but no canonical downstream acknowledgement.",
+    "No probe grants apply, approval, commit, push, provider, or memory-promotion authority."
+  ]
+}

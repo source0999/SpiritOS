@@ -2619,7 +2619,7 @@
           "Scope-calibration gate: confirm the compatibility guide + caller set fit the context budget before accepting COMPLETED",
           "No blind search/replace; semantic field mapping verified on a sample",
           "Generated/vendor files untouched (path canary)",
-          "openai_agents_sdk_adapter invocation traced and influential"
+          "OpenAI Agents SDK-equivalent orchestration capability is required; a runtime SDK trace is not asserted until an SDK adapter is implemented"
         ]
       },
       "randomizable_fields": [
@@ -2631,7 +2631,7 @@
       "required_capabilities": [
         "mac_search",
         "multiple_subagents",
-        "openai_agents_sdk_adapter",
+        "openai_agents_sdk_adapter capability required; runtime SDK invocation is not asserted",
         "planner_architect",
         "primary_coder",
         "reviewer",
@@ -2655,7 +2655,7 @@
           "Scope-calibration gate: confirm the compatibility guide + caller set fit the context budget before accepting COMPLETED",
           "No blind search/replace; semantic field mapping verified on a sample",
           "Generated/vendor files untouched (path canary)",
-          "openai_agents_sdk_adapter invocation traced and influential"
+          "OpenAI Agents SDK-equivalent orchestration capability is required; a runtime SDK trace is not asserted until an SDK adapter is implemented"
         ]
       },
       "task_ids": [
