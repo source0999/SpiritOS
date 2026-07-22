@@ -6,6 +6,7 @@ import stat
 from pathlib import Path
 
 from source_proxy.benchmarks.campaign_3_5_runner import (
+    _public_repair_artifacts,
     prepare_campaign_3_5_run,
     run_campaign_3_5_task,
 )
@@ -58,3 +59,25 @@ def test_raw_model_output_is_private_but_its_hash_is_receipted(tmp_path: Path) -
     assert all(path.stat().st_mode & 0o777 == stat.S_IRUSR | stat.S_IWUSR for path in private_files)
     assert raw_output not in json.dumps(stored)
     assert len(stored["raw_model_output"]["call_hashes"]) == 3
+
+
+def test_public_repair_artifacts_bind_visible_failure_to_each_lane() -> None:
+    prepared = prepare_campaign_3_5_run("S01")
+    try:
+        artifacts = _public_repair_artifacts(
+            prepared.task,
+            prepared.fixture_root,
+            {
+                "stdout_excerpt": "FAILED tests/test_items.py::test_limit - NameError: HTTPException",
+                "stderr_excerpt": "",
+            },
+        )
+    finally:
+        shutil.rmtree(prepared.fixture_root.parent.parent)
+
+    assert set(artifacts) == {"planner", "architect", "diagnostics", "reviewer", "verifier"}
+    assert "NameError" in artifacts["diagnostics"]["test_output"]
+    assert any("undefined" in finding for finding in artifacts["diagnostics"]["findings"])
+    assert any("raising" in finding for finding in artifacts["diagnostics"]["findings"])
+    assert all(len(payload["content_sha256"]) == 64 for payload in artifacts.values())
+    assert "http_range_contract_failed" not in json.dumps(artifacts)

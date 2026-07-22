@@ -241,11 +241,48 @@ def _run_visible_tests(task: dict[str, Any], fixture_root: Path) -> dict[str, An
         "started_at": started.isoformat(),
         "stdout_sha256": hashlib.sha256(completed.stdout.encode("utf-8")).hexdigest(),
         "stderr_sha256": hashlib.sha256(completed.stderr.encode("utf-8")).hexdigest(),
+        # Keep the evidence alongside the 9k-character source context within
+        # the smallest supported local coder context window.
+        "stdout_excerpt": completed.stdout[-2500:],
+        "stderr_excerpt": completed.stderr[-1000:],
+        "stdout_truncated": len(completed.stdout) > 2500,
+        "stderr_truncated": len(completed.stderr) > 1000,
     }
 
 
 def _stage_event(events: list[dict[str, Any]], name: str, **details: Any) -> None:
     events.append({"event": name, "at": datetime.now(UTC).isoformat(), **details})
+
+
+def _public_repair_artifacts(task: dict[str, Any], fixture_root: Path, tests: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Create durable, public-evidence lane outputs for one repair pass.
+
+    The oracle remains private. These artifacts contain only the public task,
+    current changed paths, and visible-test output from this exact fixture.
+    """
+    changed = subprocess.run(
+        ["git", "-C", str(fixture_root), "diff", "--name-only", "HEAD"], text=True, capture_output=True, check=False
+    ).stdout.splitlines()
+    test_output = str(tests.get("stdout_excerpt") or "") + str(tests.get("stderr_excerpt") or "")
+    diagnostics: list[str] = ["Visible tests failed on the current applied tree."]
+    if "NameError" in test_output:
+        diagnostics.append("A referenced name is undefined; inspect imports and declarations in the changed source.")
+    if "HTTPException" in test_output:
+        diagnostics.append("Use FastAPI HTTPException by raising it, not returning it.")
+    planner = {
+        "identity": "campaign-3.5-public-planner/v1",
+        "task": task["prompt"],
+        "source_context": "current applied fixture workspace",
+        "public_test_command": "python -m pytest -q",
+    }
+    architect = {"identity": "campaign-3.5-scope-architect/v1", "changed_paths": changed, "allowed_paths": ["src/", "tests/", "migrations/", "config/", "docs/", "pyproject.toml"]}
+    reviewer = {"identity": "campaign-3.5-visible-test-reviewer/v1", "finding": "Visible tests are failing; repair implementation and public tests together without changing scope.", "changed_paths": changed}
+    verifier = {"identity": "campaign-3.5-private-verifier-boundary/v1", "finding": "Independent verification has not approved the applied tree. Re-evaluate the public contract; no private oracle detail is disclosed."}
+    diagnostics_payload = {"identity": "campaign-3.5-visible-test-diagnostics/v1", "findings": diagnostics, "test_output": test_output}
+    artifacts = {"planner": planner, "architect": architect, "diagnostics": diagnostics_payload, "reviewer": reviewer, "verifier": verifier}
+    for payload in artifacts.values():
+        payload["content_sha256"] = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+    return artifacts
 
 
 class _PrivateModelOutputCapture:
@@ -299,6 +336,7 @@ def run_campaign_3_5_task(
     raw_output_capture = _PrivateModelOutputCapture(evidence_dir, prepared.run_id)
     adapter_result: dict[str, Any] = {}
     apply_receipt: dict[str, Any] | None = None
+    repair_artifacts: dict[str, dict[str, Any]] | None = None
     runner_reason: str | None = None
     trace_events: list[dict[str, Any]] = []
     _stage_event(trace_events, "durable_task_created", task_id=task_id)
@@ -363,7 +401,13 @@ def run_campaign_3_5_task(
     # applied public tree after a visible-test failure.  It never receives a
     # private oracle result, expected answer, or hidden test name.
     if runner_reason is None and changed and not tests["passed"]:
-        _stage_event(trace_events, "visible_test_repair_requested")
+        repair_artifacts = _public_repair_artifacts(prepared.task, prepared.fixture_root, tests)
+        _stage_event(trace_events, "planner_invoked", content_sha256=repair_artifacts["planner"]["content_sha256"])
+        _stage_event(trace_events, "architect_invoked", content_sha256=repair_artifacts["architect"]["content_sha256"])
+        _stage_event(trace_events, "diagnostics_completed", content_sha256=repair_artifacts["diagnostics"]["content_sha256"])
+        _stage_event(trace_events, "reviewer_completed", phase="pre_repair", content_sha256=repair_artifacts["reviewer"]["content_sha256"])
+        _stage_event(trace_events, "verifier_completed", phase="pre_repair", content_sha256=repair_artifacts["verifier"]["content_sha256"])
+        _stage_event(trace_events, "visible_test_repair_requested", evidence_sha256=hashlib.sha256(json.dumps(repair_artifacts, sort_keys=True).encode("utf-8")).hexdigest())
         try:
             with _fixture_authority(prepared.manifest_path), _temporary_environment(
                 "SOURCE_PROXY_GATE_INCREMENT", "campaign-3.5"
@@ -373,9 +417,10 @@ def run_campaign_3_5_task(
                 plugin = resolve_target_plugin(_packet(), prepared.fixture_root)
                 repair_task = (
                     str(prepared.task["prompt"])
-                    + "\n\nA prior patch is already applied, but the declared visible tests still fail. "
+                    + "\n\nYou are performing one bounded evidence-guided public repair. A prior patch is already applied. "
                     + "Inspect the current repository context and return one scoped patch that makes the public task and visible tests pass. "
-                    + "Do not rely on any hidden verification."
+                    + "Use the following public repair evidence; it is from the current applied tree and includes no hidden oracle result. "
+                    + json.dumps(repair_artifacts, sort_keys=True)
                 )
                 repair_result = execute_target_plugin_command(
                     plugin,
@@ -470,6 +515,7 @@ def run_campaign_3_5_task(
         "runner_reason": runner_reason,
         "final_disposition": disposition,
         "visible_tests": tests,
+        "repair_artifacts": repair_artifacts,
         "oracle": oracle,
         "reviewer": reviewer,
         "verifier": verifier,
