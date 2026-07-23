@@ -179,7 +179,14 @@ def _materialize_evaluation_contract_source(tmp_path: Path) -> Path:
 
 
 class FakeLifecycleClient:
-    def __init__(self, evidence_root: Path) -> None:
+    def __init__(
+        self,
+        evidence_root: Path,
+        *,
+        repair_source: str = "verifier",
+        execute_repair_lane_state: str = "pending",
+        fail_proposal_number: int | None = None,
+    ) -> None:
         self.evidence_root = evidence_root
         self.exchanges: list[HttpExchange] = []
         self.paths: list[tuple[str, str, Mapping[str, Any] | None]] = []
@@ -187,6 +194,9 @@ class FakeLifecycleClient:
         self.proposal_number = 0
         self.approval_number = 0
         self.final = False
+        self.repair_source = repair_source
+        self.execute_repair_lane_state = execute_repair_lane_state
+        self.fail_proposal_number = fail_proposal_number
 
     def request(
         self,
@@ -200,14 +210,23 @@ class FakeLifecycleClient:
     ) -> HttpExchange:
         del allow_error
         self.paths.append((method, path, payload))
+        status_code = 200
         if path == "/v1/campaigns/campaign-3.5/model-call-authority":
             response: dict[str, Any] = {"state": "approved", "authorization_id": "mca-test"}
         elif path == "/v1/tasks/long-running" and method == "POST":
             response = {"task": {"id": self.task_id}, "coding_orchestrator": self._state()}
         elif path.endswith("/target-plugin-proposal"):
             self.proposal_number += 1
-            response = self._state(with_proposal=True)
-            response["target_plugin_result"] = {"proposed_diff": self._diff()}
+            if self.proposal_number == self.fail_proposal_number:
+                status_code = 422
+                response = {
+                    "detail": {
+                        "reason_code": "test_target_plugin_proposal_failed"
+                    }
+                }
+            else:
+                response = self._state(with_proposal=True)
+                response["target_plugin_result"] = {"proposed_diff": self._diff()}
         elif path.endswith("/approval-preview"):
             response = {
                 "authority": "spiritos-approval-authority",
@@ -228,9 +247,21 @@ class FakeLifecycleClient:
                 }
             }
         elif path.endswith("/execute-approved"):
-            response = {"task": {"id": self.task_id}, "coding_orchestrator": self._state(with_proposal=True)}
+            if self.repair_source == "reviewer" and self.proposal_number == 1:
+                status_code = 422
+                response = {
+                    "detail": {
+                        "reason_code": "independent_review_failed_repair_required",
+                        "safe_block": True,
+                    }
+                }
+            else:
+                response = {
+                    "task": {"id": self.task_id},
+                    "coding_orchestrator": self._state(with_proposal=True),
+                }
         elif path.endswith("/verification"):
-            if self.proposal_number == 1:
+            if self.repair_source == "verifier" and self.proposal_number == 1:
                 response = {
                     "repair_required": True,
                     "task": {"id": self.task_id, "status": "verification_failed"},
@@ -240,10 +271,20 @@ class FakeLifecycleClient:
                 self.final = True
                 response = self._final_response()
         elif path.endswith(self.task_id) and method == "GET":
-            response = self._final_response() if self.final else {
-                "task": {"id": self.task_id, "status": "running"},
-                "coding_orchestrator": self._state(repair=self.proposal_number == 1),
-            }
+            if self.final:
+                response = self._final_response()
+            else:
+                response = {
+                    "task": {"id": self.task_id, "status": "running"},
+                    "coding_orchestrator": self._state(
+                        repair=self.proposal_number == 1,
+                        repair_lane_state=(
+                            self.execute_repair_lane_state
+                            if self.repair_source == "reviewer"
+                            else "pending"
+                        ),
+                    ),
+                }
         else:  # pragma: no cover - reveals a new production call immediately
             raise AssertionError((method, path, payload))
         raw = json.dumps(response, sort_keys=True).encode()
@@ -254,7 +295,6 @@ class FakeLifecycleClient:
         assertion_present = bool(
             str((headers or {}).get("x-spiritos-operator-assertion") or "").strip()
         )
-        status_code = 200
         server_acknowledged = (
             (
                 path == "/v1/campaigns/campaign-3.5/model-call-authority"
@@ -291,8 +331,8 @@ class FakeLifecycleClient:
         self.exchanges.append(exchange)
         return exchange
 
-    def _diff(self) -> str:
-        number = self.proposal_number
+    def _diff(self, number: int | None = None) -> str:
+        number = self.proposal_number if number is None else number
         return (
             "diff --git a/src/backend.py b/src/backend.py\n"
             "--- a/src/backend.py\n"
@@ -302,7 +342,72 @@ class FakeLifecycleClient:
             f"+# repair attempt {number}\n"
         )
 
-    def _state(self, *, with_proposal: bool = False, repair: bool = False) -> dict[str, Any]:
+    def _repair_request(self) -> dict[str, Any]:
+        failure_class = (
+            "reviewer_rejection"
+            if self.repair_source == "reviewer"
+            else "verifier_rejection"
+        )
+        source_lane = (
+            "reviewer" if self.repair_source == "reviewer" else "verifier"
+        )
+        prior_diff_sha256 = _sha256_text(self._diff(1))
+        state_manifest = {
+            "live_state_captured": True,
+            "workspace_root": str(self.evidence_root.resolve()),
+            "approval_id": "approval-1",
+            "approved_diff_sha256": prior_diff_sha256,
+        }
+        disposition_body = {
+            "authority_state": "invalidated",
+            "approval_id": "approval-1",
+            "attempt_id": "attempt-1",
+        }
+        disposition = {
+            **disposition_body,
+            "disposition_sha256": _sha256_json(disposition_body),
+        }
+        diagnostic_body = {
+            "failure_class": failure_class,
+            "source_lane": source_lane,
+            "reason_code": "test_repair_required",
+        }
+        diagnostic = {
+            **diagnostic_body,
+            "diagnostic_sha256": _sha256_json(diagnostic_body),
+        }
+        body = {
+            "schema_version": "source-proxy-evidence-guided-repair-request/v1",
+            "task_id": self.task_id,
+            "run_id": "run-test",
+            "attempt_id": "attempt-2",
+            "parent_attempt_id": "attempt-1",
+            "attempt_number": 2,
+            "max_attempts": 3,
+            "failure_class": failure_class,
+            "source_lane": source_lane,
+            "current_state_manifest": state_manifest,
+            "current_state_manifest_sha256": _sha256_json(state_manifest),
+            "repair_diagnostic": diagnostic,
+            "repair_diagnostic_sha256": diagnostic["diagnostic_sha256"],
+            "parent_attempt_seal_sha256": "sha256:" + "9" * 64,
+            "prior_approval_id": "approval-1",
+            "prior_approved_diff_sha256": prior_diff_sha256,
+            "prior_approval_disposition": disposition,
+            "prior_approval_disposition_sha256": disposition[
+                "disposition_sha256"
+            ],
+        }
+        return {**body, "repair_input_sha256": _sha256_json(body)}
+
+    def _state(
+        self,
+        *,
+        with_proposal: bool = False,
+        repair: bool = False,
+        repair_lane_state: str = "pending",
+        final: bool = False,
+    ) -> dict[str, Any]:
         events = [
             {"event_type": "run_requested", "event_id": "event-run"},
             {
@@ -312,17 +417,34 @@ class FakeLifecycleClient:
                 "status_after": "completed",
             },
         ]
+        current_attempt_number = 2 if repair else max(1, self.proposal_number)
+        retained_repair = repair or current_attempt_number > 1
+        if final:
+            repair_status = "completed"
+        elif repair:
+            repair_status = repair_lane_state
+        elif with_proposal and current_attempt_number > 1:
+            repair_status = "running"
+        else:
+            repair_status = "pending"
         state: dict[str, Any] = {
             "schema_version": "coding-orchestrator/v2",
             "authoritative": True,
             "task_id": self.task_id,
             "run_id": "run-test",
-            "attempt_id": f"attempt-{max(1, self.proposal_number)}",
+            "attempt_id": f"attempt-{current_attempt_number}",
+            "parent_attempt_id": (
+                "attempt-1" if current_attempt_number > 1 else None
+            ),
+            "attempt_number": current_attempt_number,
+            "lane_states": {"repair": repair_status},
             "causal_events": events,
             "runtime_outputs": [],
             "participant_records": [],
             "attempt_history": [],
         }
+        if retained_repair:
+            state["repair_request"] = self._repair_request()
         if with_proposal:
             diff = self._diff()
             output_id = f"output-{self.proposal_number}"
@@ -342,6 +464,18 @@ class FakeLifecycleClient:
                 "attempt_id": f"attempt-{self.proposal_number}",
                 "parent_attempt_id": None if self.proposal_number == 1 else "attempt-1",
             }
+            if self.proposal_number > 1:
+                repair_request = self._repair_request()
+                proposal.update(
+                    {
+                        "repair_context": copy.deepcopy(repair_request),
+                        "repair_input_sha256": repair_request[
+                            "repair_input_sha256"
+                        ],
+                        "repair_prompt_sha256": "sha256:" + "7" * 64,
+                        "repair_strategy_signature": "sha256:" + "8" * 64,
+                    }
+                )
             raw_response_sha256 = f"{self.proposal_number + 30:064x}"[-64:]
             proposal["target_adapter_provenance"] = {
                 "call_count": 1,
@@ -391,12 +525,10 @@ class FakeLifecycleClient:
             events.append(
                 {"event_type": "target_plugin_proposal_ready", "event_id": f"event-proposal-{self.proposal_number}"}
             )
-        if repair:
-            state["repair_request"] = {"failure_class": "verifier_rejection"}
         return state
 
     def _final_response(self) -> dict[str, Any]:
-        state = self._state(with_proposal=True)
+        state = self._state(with_proposal=True, final=True)
         state["causal_events"].extend(
             [
                 {"event_type": "post_apply_verification_requested", "event_id": "event-verify"},
@@ -414,10 +546,30 @@ class FakeLifecycleClient:
                 "status": "completed",
                 "ast_snapshot": {
                     "coding_orchestrator": state,
-                    "coding_production_proof": {"terminal_proof_eligible": True, "proof_sha256": "p" * 64},
+                    "coding_production_proof": {
+                        "terminal_proof_eligible": True,
+                        "proof_sha256": "sha256:" + "f" * 64,
+                        "attempt_count": 2,
+                        "attempt_id": "attempt-2",
+                        "approval_id": "approval-2",
+                        "failed_attempt_seal_sha256s": [
+                            "sha256:" + "9" * 64
+                        ],
+                    },
                     "post_apply_verification": {
                         "status": "verified",
                         "checks": [{"id": "generic_backend_pytest", "required": True, "status": "passed"}],
+                        "backend_verification": {
+                            "runtime": "restricted_container",
+                            "image": TEST_IMAGE_ID,
+                            "network": "none",
+                            "workspace_mount": "read_only",
+                            "host_environment_inherited": False,
+                            "host_runtime_inventory_sha256": "1" * 64,
+                            "workspace_root_sha256": "2" * 64,
+                            "command_sha256": "3" * 64,
+                            "exit_code": 0,
+                        },
                     },
                 },
             }
@@ -1270,6 +1422,213 @@ def test_authenticated_lifecycle_uses_fresh_exact_approval_for_repair(tmp_path: 
     assert paths.count(f"/v1/tasks/long-running/{client.task_id}/operator-approval") == 2
     assert paths.count(f"/v1/tasks/long-running/{client.task_id}/execute-approved") == 2
     assert not any("adapter" in path for path in paths)
+
+
+def test_active_repair_transition_requires_pending_current_successor(
+    tmp_path: Path,
+) -> None:
+    client = FakeLifecycleClient(tmp_path / "http")
+    client.proposal_number = 1
+    pending = client._state(repair=True)
+
+    request = gate_runner_module._active_current_repair_request(
+        pending,
+        failed_attempt_number=1,
+        failed_attempt_id="attempt-1",
+        explicit_repair_required=True,
+        require_explicit_repair=True,
+    )
+
+    assert request == pending["repair_request"]
+    assert request["attempt_id"] == pending["attempt_id"] == "attempt-2"
+    assert pending["lane_states"]["repair"] == "pending"
+    assert (
+        gate_runner_module._active_current_repair_request(
+            pending,
+            failed_attempt_number=1,
+            failed_attempt_id="attempt-1",
+            require_explicit_repair=True,
+        )
+        is None
+    )
+
+
+def test_active_repair_transition_rejects_completed_or_stale_lineage(
+    tmp_path: Path,
+) -> None:
+    client = FakeLifecycleClient(tmp_path / "http")
+    client.proposal_number = 1
+    pending = client._state(repair=True)
+    completed = copy.deepcopy(pending)
+    completed["lane_states"]["repair"] = "completed"
+    stale = copy.deepcopy(pending)
+    stale["repair_request"]["parent_attempt_id"] = "attempt-stale"
+    cyclic = copy.deepcopy(pending)
+    cyclic["attempt_id"] = "attempt-1"
+    cyclic["repair_request"]["attempt_id"] = "attempt-1"
+    malformed_proposals = []
+    for proposal in ("stale", [], 0, False):
+        malformed = copy.deepcopy(pending)
+        malformed["target_plugin_proposal"] = proposal
+        malformed_proposals.append(malformed)
+    malformed_identities = []
+    for state_field, request_field in (
+        ("attempt_id", "attempt_id"),
+        ("task_id", "task_id"),
+        ("run_id", "run_id"),
+    ):
+        malformed = copy.deepcopy(pending)
+        malformed[state_field] = 7
+        malformed["repair_request"][request_field] = 7
+        malformed_identities.append(malformed)
+
+    for state in (
+        completed,
+        stale,
+        cyclic,
+        *malformed_proposals,
+        *malformed_identities,
+    ):
+        assert (
+            gate_runner_module._active_current_repair_request(
+                state,
+                failed_attempt_number=1,
+                failed_attempt_id="attempt-1",
+                explicit_repair_required=True,
+                require_explicit_repair=True,
+            )
+            is None
+        )
+
+
+def test_retained_historical_repair_request_does_not_start_third_attempt(
+    tmp_path: Path,
+) -> None:
+    client = FakeLifecycleClient(tmp_path / "http")
+    service = RunningGateService(
+        client=client,
+        signer=OperatorAssertionSigner(
+            secret="test-operator-secret",
+            session_id="session-test",
+        ),
+        process_receipt={"service_process_per_task": True},
+    )
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"h" * 32),
+        run_nonce="retained-repair-lineage",
+    )
+
+    result = _runner(tmp_path)._drive_authenticated_lifecycle(service, rendered)
+    retained_state = client._final_response()["task"]["ast_snapshot"][
+        "coding_orchestrator"
+    ]
+
+    assert retained_state["repair_request"]["attempt_id"] == "attempt-2"
+    assert retained_state["lane_states"]["repair"] == "completed"
+    assert result["attempt_count"] == 2
+    assert result["attempts"][-1]["status"] == "verification_completed"
+    proposal_path = (
+        f"/v1/tasks/long-running/{client.task_id}/target-plugin-proposal"
+    )
+    assert [path for _method, path, _payload in client.paths].count(
+        proposal_path
+    ) == 2
+
+
+def test_execute_failure_continues_only_for_active_reviewer_repair(
+    tmp_path: Path,
+) -> None:
+    client = FakeLifecycleClient(
+        tmp_path / "http",
+        repair_source="reviewer",
+    )
+    service = RunningGateService(
+        client=client,
+        signer=OperatorAssertionSigner(
+            secret="test-operator-secret",
+            session_id="session-test",
+        ),
+        process_receipt={"service_process_per_task": True},
+    )
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"r" * 32),
+        run_nonce="reviewer-repair",
+    )
+
+    result = _runner(tmp_path)._drive_authenticated_lifecycle(service, rendered)
+
+    assert result["attempt_count"] == 2
+    assert result["attempts"][0]["status"] == "repair_required_after_reviewer"
+    assert result["attempts"][1]["status"] == "verification_completed"
+    assert result["repair_succeeded"] is True
+
+
+def test_execute_failure_does_not_continue_completed_repair_lane(
+    tmp_path: Path,
+) -> None:
+    client = FakeLifecycleClient(
+        tmp_path / "http",
+        repair_source="reviewer",
+        execute_repair_lane_state="completed",
+    )
+    service = RunningGateService(
+        client=client,
+        signer=OperatorAssertionSigner(
+            secret="test-operator-secret",
+            session_id="session-test",
+        ),
+        process_receipt={"service_process_per_task": True},
+    )
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"s" * 32),
+        run_nonce="stale-reviewer-repair",
+    )
+
+    result = _runner(tmp_path)._drive_authenticated_lifecycle(service, rendered)
+
+    assert result["attempt_count"] == 1
+    assert result["attempts"][0]["status"] == "execute_failed"
+    assert result["repair_succeeded"] is False
+    proposal_path = (
+        f"/v1/tasks/long-running/{client.task_id}/target-plugin-proposal"
+    )
+    assert [path for _method, path, _payload in client.paths].count(
+        proposal_path
+    ) == 1
+
+
+def test_blank_approval_id_cannot_be_fresh_or_declare_repair_success(
+    tmp_path: Path,
+) -> None:
+    client = FakeLifecycleClient(
+        tmp_path / "http",
+        fail_proposal_number=2,
+    )
+    service = RunningGateService(
+        client=client,
+        signer=OperatorAssertionSigner(
+            secret="test-operator-secret",
+            session_id="session-test",
+        ),
+        process_receipt={"service_process_per_task": True},
+    )
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"b" * 32),
+        run_nonce="blank-approval",
+    )
+
+    result = _runner(tmp_path)._drive_authenticated_lifecycle(service, rendered)
+
+    assert [str(item.get("approval_id") or "") for item in result["attempts"]] == [
+        "approval-1",
+        "",
+    ]
+    assert result["fresh_approval_per_attempt"] is False
+    assert result["repair_succeeded"] is False
 
 
 def test_default_gate_runs_only_first_phase_and_cannot_issue_terminal_pass(

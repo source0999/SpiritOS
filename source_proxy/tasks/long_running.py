@@ -69,6 +69,8 @@ from source_proxy.planning.plan import (
     ContextSlice,
     TargetFile,
     fixed_literal_callable_shape_check,
+    optional_integer_callable_contract,
+    optional_integer_callable_shape_check,
     task_spec_from_packet,
     task_spec_from_plan,
     validate_task_spec_for_packet,
@@ -3755,6 +3757,552 @@ def _task_target_plugin_identity(task: LongRunningTask) -> dict[str, Any]:
 
 
 _GENERIC_BACKEND_PUBLIC_CALLABLE_MAX_BYTES = 1_000_000
+_GENERIC_BACKEND_PUBLIC_CONTRACT_SENTINEL = (
+    "__SOURCE_PROXY_PUBLIC_NUMERIC_CONTRACT__="
+)
+_GENERIC_BACKEND_PUBLIC_CONTRACT_SCRIPT = r"""
+import json
+import os
+import secrets
+import subprocess
+import sys
+
+SENTINEL = "__SOURCE_PROXY_PUBLIC_NUMERIC_CONTRACT__="
+MAX_VIOLATIONS = 40
+CHILD_SCRIPT = r'''
+import contextlib
+import io
+import json
+import os
+import runpy
+import sys
+
+saved_exit = os._exit
+value_error_type = ValueError
+keyword_arguments = json.loads(sys.argv[3])
+stdout_sink = io.StringIO()
+stderr_sink = io.StringIO()
+try:
+    with contextlib.redirect_stdout(stdout_sink):
+        with contextlib.redirect_stderr(stderr_sink):
+            namespace = runpy.run_path(
+                "/workspace/" + sys.argv[1],
+                run_name="__source_proxy_public_contract__",
+            )
+except BaseException:
+    saved_exit(__IMPORT_FAILED_CODE__)
+callable_object = namespace.get(sys.argv[2])
+if not callable(callable_object):
+    saved_exit(__CALLABLE_UNAVAILABLE_CODE__)
+try:
+    with contextlib.redirect_stdout(stdout_sink):
+        with contextlib.redirect_stderr(stderr_sink):
+            callable_object(**keyword_arguments)
+except value_error_type:
+    saved_exit(__VALUE_ERROR_CODE__)
+except BaseException:
+    saved_exit(__WRONG_EXCEPTION_CODE__)
+saved_exit(__RETURNED_CODE__)
+'''.strip()
+
+
+def emit(payload):
+    print(SENTINEL + json.dumps(payload, separators=(",", ":"), sort_keys=True))
+
+
+def invoke(target, callable_name, keyword_arguments):
+    code_names = (
+        "RETURNED_CODE",
+        "VALUE_ERROR_CODE",
+        "WRONG_EXCEPTION_CODE",
+        "IMPORT_FAILED_CODE",
+        "CALLABLE_UNAVAILABLE_CODE",
+    )
+    code_values = secrets.SystemRandom().sample(range(160, 240), len(code_names))
+    outcome_codes = dict(zip(code_names, code_values))
+    child_script = CHILD_SCRIPT
+    for name, value in outcome_codes.items():
+        child_script = child_script.replace("__" + name + "__", str(value))
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                child_script,
+                target,
+                callable_name,
+                json.dumps(keyword_arguments, separators=(",", ":")),
+            ],
+            cwd="/workspace",
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=4,
+            env={
+                "HOME": "/tmp",
+                "LANG": "C.UTF-8",
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONPATH": os.environ.get(
+                    "PYTHONPATH",
+                    "/workspace:/host-site",
+                ),
+            },
+        )
+    except subprocess.TimeoutExpired:
+        return {"outcome": "case_timeout"}
+    outcomes = {
+        outcome_codes["RETURNED_CODE"]: "returned",
+        outcome_codes["VALUE_ERROR_CODE"]: "value_error",
+        outcome_codes["WRONG_EXCEPTION_CODE"]: "wrong_exception",
+        outcome_codes["IMPORT_FAILED_CODE"]: "target_import_failed",
+        outcome_codes["CALLABLE_UNAVAILABLE_CODE"]: "callable_unavailable",
+    }
+    return {
+        "outcome": outcomes.get(
+            completed.returncode,
+            "case_process_failed",
+        )
+    }
+
+
+def main():
+    target = sys.argv[1]
+    contract = json.loads(sys.argv[2])
+    callable_name = contract["callable"]
+    violations = []
+    violation_count = 0
+
+    def record(reason, *, parameter="", case=""):
+        nonlocal violation_count
+        if len(violations) >= MAX_VIOLATIONS:
+            return
+        violation_count += 1
+        item = {"reason": reason}
+        if parameter:
+            item["parameter"] = parameter
+        if case:
+            item["case"] = case
+        violations.append(item)
+
+    default_result = invoke(target, callable_name, {})
+    default_outcome = default_result["outcome"]
+    if default_outcome in {
+        "target_import_failed",
+        "callable_unavailable",
+        "case_timeout",
+        "case_process_failed",
+    }:
+        record(
+            default_outcome,
+            case="default",
+        )
+        return {
+            "passed": False,
+            "reason": "contract_violations",
+            "violation_count": violation_count,
+            "violations": violations,
+        }
+    if default_outcome != "returned":
+        record(
+            "default_call_failed",
+            case="default",
+        )
+
+    for parameter in contract["parameters"]:
+        name = parameter["name"]
+        minimum = parameter["minimum"]
+        valid_values = [
+            ("minimum", minimum),
+            ("minimum_plus_one", minimum + 1),
+        ]
+        invalid_values = [
+            ("below_minimum", minimum - 1),
+            ("integral_float", float(minimum)),
+            ("fractional_float", minimum + 0.5),
+            ("numeric_string", str(minimum)),
+            ("bool_true", True),
+            ("bool_false", False),
+        ]
+        for case, value in valid_values:
+            call_result = invoke(target, callable_name, {name: value})
+            if call_result["outcome"] != "returned":
+                record(
+                    "valid_value_rejected",
+                    parameter=name,
+                    case=case,
+                )
+        for case, value in invalid_values:
+            call_result = invoke(target, callable_name, {name: value})
+            if call_result["outcome"] == "returned":
+                record(
+                    "invalid_value_accepted",
+                    parameter=name,
+                    case=case,
+                )
+            elif call_result["outcome"] != "value_error":
+                record(
+                    "wrong_invalid_exception",
+                    parameter=name,
+                    case=case,
+                )
+    if len(contract["parameters"]) > 1:
+        combined_cases = [
+            (
+                "all_minimums",
+                {
+                    parameter["name"]: parameter["minimum"]
+                    for parameter in contract["parameters"]
+                },
+            ),
+            (
+                "all_minimums_plus_one",
+                {
+                    parameter["name"]: parameter["minimum"] + 1
+                    for parameter in contract["parameters"]
+                },
+            ),
+        ]
+        for case, keyword_arguments in combined_cases:
+            call_result = invoke(
+                target,
+                callable_name,
+                keyword_arguments,
+            )
+            if call_result["outcome"] != "returned":
+                record(
+                    "valid_value_rejected",
+                    case=case,
+                )
+        combined_baseline = {
+            parameter["name"]: parameter["minimum"]
+            for parameter in contract["parameters"]
+        }
+        for parameter in contract["parameters"]:
+            name = parameter["name"]
+            minimum = parameter["minimum"]
+            combined_invalid_values = [
+                ("combined_below_minimum", minimum - 1),
+                ("combined_integral_float", float(minimum)),
+                ("combined_fractional_float", minimum + 0.5),
+                ("combined_numeric_string", str(minimum)),
+                ("combined_bool_true", True),
+                ("combined_bool_false", False),
+            ]
+            for case, value in combined_invalid_values:
+                keyword_arguments = dict(combined_baseline)
+                keyword_arguments[name] = value
+                call_result = invoke(
+                    target,
+                    callable_name,
+                    keyword_arguments,
+                )
+                if call_result["outcome"] == "returned":
+                    record(
+                        "invalid_value_accepted",
+                        parameter=name,
+                        case=case,
+                    )
+                elif call_result["outcome"] != "value_error":
+                    record(
+                        "wrong_invalid_exception",
+                        parameter=name,
+                        case=case,
+                    )
+    return {
+        "passed": not violations,
+        "reason": "" if not violations else "contract_violations",
+        "violation_count": violation_count,
+        "violations": violations,
+    }
+
+
+try:
+    result = main()
+except BaseException:
+    result = {
+        "passed": False,
+        "reason": "probe_internal_failure",
+        "violation_count": 1,
+        "violations": [
+            {
+                "reason": "probe_internal_failure",
+            }
+        ],
+    }
+emit(result)
+raise SystemExit(0 if result.get("passed") is True else 1)
+""".strip()
+
+
+def _generic_backend_restricted_python_command(
+    *,
+    docker: str,
+    root: Path,
+    site_packages: Path,
+    image: str,
+    container_name: str,
+    python_arguments: list[str],
+) -> list[str]:
+    """Build the one shared restricted Python-container boundary."""
+
+    return [
+        docker,
+        "run",
+        "--rm",
+        "--name",
+        container_name,
+        "--network",
+        "none",
+        "--read-only",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges=true",
+        "--pids-limit",
+        "128",
+        "--memory",
+        "1g",
+        "--cpus",
+        "2",
+        "--user",
+        (
+            f"{getattr(os, 'getuid', lambda: 1000)()}:"
+            f"{getattr(os, 'getgid', lambda: 1000)()}"
+        ),
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,noexec,size=128m",
+        "--mount",
+        f"type=bind,src={root},dst=/workspace,readonly",
+        "--mount",
+        f"type=bind,src={site_packages},dst=/host-site,readonly",
+        "--workdir",
+        "/workspace",
+        "--env",
+        "HOME=/tmp",
+        "--env",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "--env",
+        "PYTHONPATH=/workspace:/host-site",
+        "--env",
+        "PYTEST_ADDOPTS=-p no:cacheprovider",
+        "--env",
+        "LANG=C.UTF-8",
+        "--entrypoint",
+        "python",
+        image,
+        *python_arguments,
+    ]
+
+
+def _run_generic_backend_public_numeric_contract_probe(
+    *,
+    root: Path,
+    target: str,
+    contract: Mapping[str, Any],
+    docker: str,
+    site_packages: Path,
+    image: str,
+) -> tuple[bool, str, dict[str, Any]]:
+    """Exercise only public invalid-input behavior in the restricted runtime."""
+
+    container_name = f"source-proxy-public-contract-{uuid4().hex}"
+    public_contract = {
+        "callable": str(contract.get("callable") or ""),
+        "parameters": [
+            {
+                "name": str(item.get("name") or ""),
+                "minimum": int(item.get("minimum", 0)),
+            }
+            for item in contract.get("parameters", [])
+            if isinstance(item, Mapping)
+        ],
+        "invalid_exception": "ValueError",
+    }
+    command = _generic_backend_restricted_python_command(
+        docker=docker,
+        root=root,
+        site_packages=site_packages,
+        image=image,
+        container_name=container_name,
+        python_arguments=[
+            "-c",
+            _GENERIC_BACKEND_PUBLIC_CONTRACT_SCRIPT,
+            target,
+            json.dumps(public_contract, separators=(",", ":"), sort_keys=True),
+        ],
+    )
+    started = time.perf_counter()
+    result: dict[str, Any] = {}
+    exit_code = 1
+    timed_out = False
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=75,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+        )
+        exit_code = int(completed.returncode)
+        for line in reversed((completed.stdout or "").splitlines()):
+            if not line.startswith(_GENERIC_BACKEND_PUBLIC_CONTRACT_SENTINEL):
+                continue
+            encoded = line[len(_GENERIC_BACKEND_PUBLIC_CONTRACT_SENTINEL) :]
+            try:
+                decoded = json.loads(encoded)
+            except (json.JSONDecodeError, TypeError, ValueError):
+                break
+            if isinstance(decoded, Mapping):
+                decoded_violations = decoded.get("violations")
+                violations = [
+                    {
+                        key: str(item[key])[:64]
+                        for key in (
+                            "reason",
+                            "parameter",
+                            "case",
+                            "exception_type",
+                        )
+                        if isinstance(item.get(key), str)
+                    }
+                    for item in (
+                        decoded_violations
+                        if isinstance(decoded_violations, list)
+                        else []
+                    )
+                    if isinstance(item, Mapping)
+                ]
+                decoded_passed = decoded.get("passed")
+                decoded_reason = decoded.get("reason")
+                decoded_count = decoded.get("violation_count")
+                decoded_items_valid = isinstance(
+                    decoded_violations,
+                    list,
+                ) and all(
+                    isinstance(item, Mapping)
+                    and set(item).issubset(
+                        {
+                            "reason",
+                            "parameter",
+                            "case",
+                            "exception_type",
+                        }
+                    )
+                    and item.get("reason")
+                    in {
+                        "target_import_failed",
+                        "callable_unavailable",
+                        "case_timeout",
+                        "case_process_failed",
+                        "default_call_failed",
+                        "valid_value_rejected",
+                        "invalid_value_accepted",
+                        "wrong_invalid_exception",
+                        "probe_internal_failure",
+                    }
+                    and all(
+                        isinstance(value, str) and len(value) <= 64
+                        for value in item.values()
+                    )
+                    for item in decoded_violations
+                )
+                canonical = (
+                    isinstance(decoded_passed, bool)
+                    and isinstance(decoded_reason, str)
+                    and len(decoded_reason) <= 64
+                    and isinstance(decoded_count, int)
+                    and not isinstance(decoded_count, bool)
+                    and 0 <= decoded_count <= 40
+                    and decoded_items_valid
+                    and len(decoded_violations) <= 40
+                    and len(violations) == len(decoded_violations)
+                    and decoded_count == len(violations)
+                    and (
+                        (
+                            decoded_passed is True
+                            and decoded_reason == ""
+                            and not violations
+                        )
+                        or (
+                            decoded_passed is False
+                            and decoded_reason
+                            in {
+                                "contract_violations",
+                                "probe_internal_failure",
+                            }
+                            and bool(violations)
+                        )
+                    )
+                )
+                if canonical:
+                    result = {
+                        "passed": decoded_passed,
+                        "reason": decoded_reason,
+                        "violation_count": decoded_count,
+                        "violations": violations,
+                    }
+            break
+        if result and (
+            (result.get("passed") is True and exit_code != 0)
+            or (result.get("passed") is False and exit_code == 0)
+        ):
+            result = {}
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        subprocess.run(
+            [docker, "rm", "-f", container_name],
+            capture_output=True,
+            check=False,
+            timeout=15,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+        )
+
+    passed = exit_code == 0 and result.get("passed") is True
+    reason = str(result.get("reason") or "")
+    if timed_out:
+        reason = "public numeric contract probe timed out"
+    elif not result:
+        reason = "public numeric contract probe returned no valid receipt"
+    elif not passed:
+        detail = "; ".join(
+            "/".join(
+                str(item[key])
+                for key in (
+                    "parameter",
+                    "case",
+                    "reason",
+                    "exception_type",
+                )
+                if item.get(key) not in {None, ""}
+            )
+            for item in result.get("violations", [])
+            if isinstance(item, Mapping)
+        )
+        reason = "Public optional-integer contract failed" + (
+            f": {detail}." if detail else "."
+        )
+    else:
+        reason = "Public optional-integer contract passed."
+    return (
+        passed,
+        reason,
+        {
+            "runtime": "restricted_container",
+            "network": "none",
+            "workspace_mount": "read_only",
+            "host_import": False,
+            "case_isolation": "fresh_python_process",
+            "exit_code": exit_code,
+            "duration_ms": int((time.perf_counter() - started) * 1000),
+            "command_sha256": hashlib.sha256(
+                json.dumps(command, separators=(",", ":")).encode("utf-8")
+            ).hexdigest(),
+            "result": result,
+        },
+    )
 
 
 def _generic_backend_semantic_review_binding(
@@ -3793,6 +4341,9 @@ def _generic_backend_public_callable_contract_check(
     task: LongRunningTask,
     *,
     root: Path,
+    docker: str,
+    site_packages: Path,
+    image: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Check a narrow public callable contract on the exact applied tree.
 
@@ -3803,12 +4354,18 @@ def _generic_backend_public_callable_contract_check(
 
     started = time.perf_counter()
     public_task, task_spec = _generic_backend_semantic_review_binding(task)
-    applicability = fixed_literal_callable_shape_check(public_task, "")
-    callable_names = list(
-        applicability.get("required_zero_arg_callables") or []
+    zero_arg_applicability = fixed_literal_callable_shape_check(public_task, "")
+    numeric_applicability = optional_integer_callable_shape_check(
+        public_task,
+        "",
     )
-    if applicability.get("skipped") is True:
-        summary = "No public fixed-literal callable contract was derived."
+    zero_arg_applicable = zero_arg_applicability.get("skipped") is not True
+    numeric_applicable = numeric_applicability.get("skipped") is not True
+    callable_names = list(
+        zero_arg_applicability.get("required_zero_arg_callables") or []
+    )
+    if not zero_arg_applicable and not numeric_applicable:
+        summary = "No explicit public callable contract was derived."
         return (
             {
                 "id": "generic_backend_public_callable_contract",
@@ -3837,6 +4394,8 @@ def _generic_backend_public_callable_contract_check(
     target = str(task_spec.get("target") or "").replace("\\", "/").strip()
     failure = ""
     shape_result: dict[str, Any] = {}
+    numeric_shape_result: dict[str, Any] = {}
+    numeric_probe: dict[str, Any] = {}
     pure_target = PurePosixPath(target)
     if (
         not target
@@ -3872,7 +4431,7 @@ def _generic_backend_public_callable_contract_check(
                 public_task,
                 source,
             )
-            if shape_result.get("ok") is not True:
+            if zero_arg_applicable and shape_result.get("ok") is not True:
                 missing = [
                     str(name)
                     for name in shape_result.get("missing_callables", [])
@@ -3907,34 +4466,128 @@ def _generic_backend_public_callable_contract_check(
                     + ", ".join(details or ["the applied target did not match"])
                     + "."
                 )
+            if numeric_applicable:
+                numeric_shape_result = optional_integer_callable_shape_check(
+                    public_task,
+                    source,
+                )
+                if numeric_shape_result.get("ok") is not True:
+                    details = [
+                        ":".join(
+                            str(item.get(key) or "")
+                            for key in ("parameter", "reason")
+                            if item.get(key)
+                        )
+                        for item in numeric_shape_result.get("violations", [])
+                        if isinstance(item, Mapping)
+                    ]
+                    failure = (
+                        failure
+                        or (
+                            "The public task explicitly requires optional "
+                            "named integer arguments. The exact applied "
+                            "callable signature did not match: "
+                            + ", ".join(
+                                details
+                                or ["the applied target did not match"]
+                            )
+                            + "."
+                        )
+                    )
+                elif not failure:
+                    (
+                        numeric_passed,
+                        numeric_summary,
+                        numeric_probe,
+                    ) = _run_generic_backend_public_numeric_contract_probe(
+                        root=root,
+                        target=target,
+                        contract=numeric_shape_result,
+                        docker=docker,
+                        site_packages=site_packages,
+                        image=image,
+                    )
+                    if not numeric_passed:
+                        failure = numeric_summary
 
     passed = not failure
-    summary = (
-        "Public fixed-literal callable contract passed."
-        if passed
-        else failure
+    if passed and numeric_applicable:
+        summary = "Public optional-integer callable contract passed."
+    elif passed:
+        summary = "Public fixed-literal callable contract passed."
+    else:
+        summary = failure
+    if numeric_applicable:
+        evidence = {
+            "applicable": True,
+            "target": target or None,
+            "callable": numeric_shape_result.get("callable")
+            or numeric_applicability.get("callable"),
+            "optional_integer_parameters": [
+                dict(item)
+                for item in (
+                    numeric_shape_result.get("parameters")
+                    or numeric_applicability.get("parameters")
+                    or []
+                )
+                if isinstance(item, Mapping)
+            ],
+            "invalid_exception": "ValueError",
+            "missing_parameters": list(
+                numeric_shape_result.get("missing_parameters") or []
+            ),
+            "violations": [
+                dict(item)
+                for item in numeric_shape_result.get("violations", [])
+                if isinstance(item, Mapping)
+            ],
+            "runtime_probe": numeric_probe or None,
+            "passed": passed,
+        }
+        if zero_arg_applicable:
+            evidence["fixed_literal_contract"] = {
+                "required_zero_arg_callables": callable_names,
+                "missing_callables": list(
+                    shape_result.get("missing_callables") or []
+                ),
+                "violations": [
+                    dict(item)
+                    for item in shape_result.get("violations", [])
+                    if isinstance(item, Mapping)
+                ],
+                "passed": shape_result.get("ok") is True,
+            }
+    else:
+        evidence = {
+            "applicable": True,
+            "target": target or None,
+            "required_zero_arg_callables": callable_names,
+            "missing_callables": list(
+                shape_result.get("missing_callables") or []
+            ),
+            "violations": [
+                dict(item)
+                for item in shape_result.get("violations", [])
+                if isinstance(item, Mapping)
+            ],
+            "passed": passed,
+        }
+    command_kind = (
+        "restricted-container"
+        if numeric_applicable
+        else "python-ast"
     )
-    evidence = {
-        "applicable": True,
-        "target": target or None,
-        "required_zero_arg_callables": callable_names,
-        "missing_callables": list(shape_result.get("missing_callables") or []),
-        "violations": [
-            dict(item)
-            for item in shape_result.get("violations", [])
-            if isinstance(item, Mapping)
-        ],
-        "passed": passed,
-    }
     return (
         {
             "id": "generic_backend_public_callable_contract",
             "command": [
                 "server-owned",
-                "python-ast",
+                command_kind,
                 "public-callable-contract",
             ],
-            "command_text": "server-owned python-ast public-callable-contract",
+            "command_text": (
+                f"server-owned {command_kind} public-callable-contract"
+            ),
             "duration_ms": int((time.perf_counter() - started) * 1000),
             "exit_code": 0 if passed else 1,
             "output_tail": summary,
@@ -3995,52 +4648,14 @@ def _run_generic_backend_post_apply_verification(
             "generic_backend_sandbox_image_missing",
         )
     container_name = f"source-proxy-backend-{uuid4().hex}"
-    command = [
-        docker,
-        "run",
-        "--rm",
-        "--name",
-        container_name,
-        "--network",
-        "none",
-        "--read-only",
-        "--cap-drop",
-        "ALL",
-        "--security-opt",
-        "no-new-privileges=true",
-        "--pids-limit",
-        "128",
-        "--memory",
-        "1g",
-        "--cpus",
-        "2",
-        "--user",
-        f"{getattr(os, 'getuid', lambda: 1000)()}:{getattr(os, 'getgid', lambda: 1000)()}",
-        "--tmpfs",
-        "/tmp:rw,nosuid,nodev,noexec,size=128m",
-        "--mount",
-        f"type=bind,src={root},dst=/workspace,readonly",
-        "--mount",
-        f"type=bind,src={site_packages},dst=/host-site,readonly",
-        "--workdir",
-        "/workspace",
-        "--env",
-        "HOME=/tmp",
-        "--env",
-        "PYTHONDONTWRITEBYTECODE=1",
-        "--env",
-        "PYTHONPATH=/workspace:/host-site",
-        "--env",
-        "PYTEST_ADDOPTS=-p no:cacheprovider",
-        "--env",
-        "LANG=C.UTF-8",
-        "--entrypoint",
-        "python",
-        image,
-        "-m",
-        "pytest",
-        "-q",
-    ]
+    command = _generic_backend_restricted_python_command(
+        docker=docker,
+        root=root,
+        site_packages=site_packages,
+        image=image,
+        container_name=container_name,
+        python_arguments=["-m", "pytest", "-q"],
+    )
     started = time.perf_counter()
     try:
         completed = subprocess.run(
@@ -4086,6 +4701,9 @@ def _run_generic_backend_post_apply_verification(
         _generic_backend_public_callable_contract_check(
             task,
             root=root,
+            docker=docker,
+            site_packages=site_packages,
+            image=image,
         )
     )
     evidence = {
@@ -11354,6 +11972,7 @@ def propose_coder_agent_implementation_diff(
     workspace_root: Path,
     *,
     source_task: str = "",
+    public_source_task: str | None = None,
     canonical_context_text: str = "",
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
@@ -11407,6 +12026,12 @@ def propose_coder_agent_implementation_diff(
     prompt = _render_coder_prompt_from_packet(
         packet,
         source_task=_coder_reviewer_feedback_task(source_task, reviewer_feedback),
+        # Numeric authority must come from the caller's sealed original public
+        # task.  A repair/reviewer-enriched source task is never an authority
+        # fallback when that binding was omitted.
+        public_source_task=(
+            "" if public_source_task is None else public_source_task
+        ),
         context_override=canonical_context_text.strip() or None,
     )
     selected_alias = model_alias or _coder_model_alias()
@@ -11761,6 +12386,7 @@ def propose_coder_agent_diff_payload_from_plan(
     prompt = _render_coder_prompt_from_packet(
         packet,
         source_task=coder_source_task,
+        public_source_task=task,
         context_override=canonical_context_text.strip() or None,
     )
     diagnostics["prompt_size"] = len(prompt)
@@ -11793,6 +12419,7 @@ def propose_coder_agent_diff_payload_from_plan(
             packet,
             root,
             source_task=coder_source_task,
+            public_source_task=task,
             canonical_context_text=canonical_context_text,
             llm_call=llm_call,
             model_alias=model_alias,
@@ -11876,6 +12503,7 @@ def propose_coder_agent_diff_payload_from_plan(
                 packet,
                 root,
                 source_task=coder_source_task,
+                public_source_task=task,
                 llm_call=llm_call,
                 model_alias=model_alias,
                 reviewer_feedback=[
@@ -12952,6 +13580,7 @@ def _render_coder_prompt_from_packet(
     packet: CoderPacket,
     *,
     source_task: str = "",
+    public_source_task: str | None = None,
     context_override: str | None = None,
 ) -> str:
     target_path = packet.target_file.path
@@ -12960,6 +13589,9 @@ def _render_coder_prompt_from_packet(
     styles = "\n".join(f"- {item}" for item in packet.style_directives[:6]) or "- none"
     context = context_override if context_override is not None else _render_packet_context_slices(packet)
     task = source_task.strip() or f"Target file: {target_path}"
+    public_numeric_contract = _render_public_optional_integer_contract(
+        "" if public_source_task is None else public_source_task
+    )
     task_contract = json.dumps(
         task_spec_from_packet(packet).to_dict(),
         indent=2,
@@ -12970,7 +13602,13 @@ def _render_coder_prompt_from_packet(
         file_path=target_path,
         acceptance_criteria="\n".join(
             item
-            for item in (criteria, constraints, "STYLE DIRECTIVES:", styles)
+            for item in (
+                criteria,
+                constraints,
+                public_numeric_contract,
+                "STYLE DIRECTIVES:",
+                styles,
+            )
             if item
         ),
         subjective_improvement_contract=_coder_subjective_improvement_contract(task),
@@ -12986,6 +13624,39 @@ def _render_coder_prompt_from_packet(
     else:
         prompt += "\nTARGET FILE EXISTS: no\nReturn complete new file content.\n"
     return prompt
+
+
+def _render_public_optional_integer_contract(task: str) -> str:
+    """Render one bounded semantic bullet from the persisted public task."""
+
+    contract = optional_integer_callable_contract(task)
+    if contract.get("skipped") is True or contract.get("ok") is not True:
+        return ""
+    parameters = [
+        item
+        for item in contract.get("parameters", [])
+        if isinstance(item, Mapping)
+    ][:4]
+    if not parameters:
+        return ""
+    bounds = ", ".join(
+        f"`{str(item.get('name') or '')[:128]}` minimum "
+        f"{int(item.get('minimum', 0))}"
+        for item in parameters
+    )
+    callable_name = str(contract.get("callable") or "")[:128]
+    return "\n".join(
+        [
+            "SERVER-DERIVED PUBLIC NUMERIC CONTRACT:",
+            (
+                f"- Callable `{callable_name}` has optional named arguments "
+                f"with these inclusive bounds: {bounds}. When provided, each "
+                "supplied argument value must be an exact integer; bool, "
+                "float, and string values are invalid. Every invalid value "
+                "must raise ValueError."
+            ),
+        ]
+    )
 
 
 def _render_packet_acceptance_criteria(packet: CoderPacket) -> str:

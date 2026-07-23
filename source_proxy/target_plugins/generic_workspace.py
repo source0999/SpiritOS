@@ -924,7 +924,7 @@ def _multi_file_capability_prompt_lines(plan: ArchitectPlan) -> list[str]:
         )
     if task_requests_shared_helper_artifact(task):
         lines.append(
-            "- Shared-helper capability: at most one new helper file beside the two exact task-intended source artifacts, with their same extension."
+            "- Shared-helper capability: implement the helper only within the exact authorized files listed above; do not invent an additional helper path."
         )
     return lines
 

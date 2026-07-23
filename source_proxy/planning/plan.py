@@ -585,9 +585,1413 @@ _PUBLIC_CALLABLE_REQUEST_RE = re.compile(
 _PUBLIC_NEGATED_CALLABLE_REQUEST_RE = re.compile(
     r"\b(?:do\s+not|don't|never|cannot|can't|no\s+need\s+to|"
     r"(?:must|shall|should)\s+not)\s+"
-    r"(?:add|create|define|implement|introduce|provide|write)\b",
+    r"(?:add|change|create|define|extend|implement|introduce|modify|"
+    r"provide|update|write)\b",
     re.IGNORECASE,
 )
+_PUBLIC_OPTIONAL_INTEGER_CALLABLE_PATTERNS = (
+    re.compile(
+        r"\b(?:add|implement|introduce|provide)\b"
+        r"(?P<feature>[^.!?\n]{0,160}?)\bto\s+"
+        r"(?P<callable_quote>[`'\"])"
+        r"(?P<callable>[A-Za-z_][A-Za-z0-9_]{0,127})"
+        r"(?P=callable_quote)\s+with\s+optional\s+"
+        r"(?P<parameters>[^.!?\n]{1,240}?)\s+"
+        r"(?:arguments?|parameters?)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:change|extend|modify|update)\s+"
+        r"(?P<callable_quote>[`'\"])"
+        r"(?P<callable>[A-Za-z_][A-Za-z0-9_]{0,127})"
+        r"(?P=callable_quote)\s+"
+        r"(?:with|to\s+(?:accept|receive|take))\s+optional\s+"
+        r"(?P<parameters>[^.!?\n]{1,240}?)\s+"
+        r"(?:arguments?|parameters?)\b",
+        re.IGNORECASE,
+    ),
+)
+_PUBLIC_QUOTED_IDENTIFIER_RE = re.compile(
+    r"(?P<quote>[`'\"])(?P<name>[A-Za-z_][A-Za-z0-9_]{0,127})(?P=quote)"
+)
+_PUBLIC_COLLECTIVE_INTEGER_BOUND_RE = re.compile(
+    r"\b(?P<quantifier>both|all)\s+"
+    r"(?:values|arguments|parameters)\s+"
+    r"(?:must|shall|should|need(?:s)?\s+to)\s+be\s+"
+    r"(?P<bound>non[-\s]+negative|positive)\s+integers?\b",
+    re.IGNORECASE,
+)
+_PUBLIC_COLLECTIVE_INTEGER_LANGUAGE_RE = re.compile(
+    r"\b(?:both|all)\s+(?:values|arguments|parameters)\b"
+    r"[^.!?\n]{0,80}\bintegers?\b"
+    r"|\bvalues\b[^.!?\n]{0,80}\bintegers?\b",
+    re.IGNORECASE,
+)
+_PUBLIC_VALUE_ERROR_INVALID_RE = re.compile(
+    r"\braise\s+(?:an?\s+)?[`'\"]?ValueError[`'\"]?\s+"
+    r"for\s+invalid\s+"
+    r"(?P<topic>(?:[A-Za-z_][A-Za-z0-9_]*\s+){0,3})"
+    r"(?:values?|arguments?|parameters?)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_OPTIONAL_ARGUMENT_ANCHOR_RE = re.compile(
+    r"\boptional\b[^.!?\n]{0,240}\b(?:arguments?|parameters?)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_INTEGER_LANGUAGE_RE = re.compile(
+    r"\b(?:integers?|non[-\s]+negative|positive|"
+    r"at\s+least\s+[0-9]{1,7})\b",
+    re.IGNORECASE,
+)
+_PUBLIC_UPPER_BOUND_RE = re.compile(
+    r"\b(?:at\s+most|no\s+more\s+than|not\s+greater\s+than|"
+    r"no\s+greater\s+than|must\s+not\s+exceed|cannot\s+exceed|"
+    r"can't\s+exceed|not\s+exceed|does(?:n't|\s+not)\s+exceed|"
+    r"may\s+not\s+exceed|no\s+higher\s+than|no\s+larger\s+than|"
+    r"no\s+bigger\s+than|not\s+above|not\s+over|up\s+to|"
+    r"less\s+than|fewer\s+than|below|under|at\s+or\s+(?:below|under)|"
+    r"bounded\s+above\s+by|"
+    r"upper\s+bound|ceiling|maximum|max(?:imum)?\s+of)\b"
+    r"|[0-9]+\s+or\s+(?:less|fewer)\b|<=|≤|(?<![<=>])<(?![<=>])",
+    re.IGNORECASE,
+)
+_PUBLIC_CONTEXT_BREAK_RE = re.compile(
+    r"\b(?:separately|unrelated|independently|elsewhere|"
+    r"normally|usually|typically|preferably|ideally|maybe|"
+    r"for\s+example|as\s+an?\s+example|hypothetically|"
+    r"suppose|imagine)\b|(?<!\w)e\.g\.(?!\w)",
+    re.IGNORECASE,
+)
+_PUBLIC_NEGATION_PREFIX_RE = re.compile(
+    r"\b(?:do\s+not|don't|never|cannot|can't|no\s+need\s+to|"
+    r"(?:must|shall|should)\s+not)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_COLLECTIVE_CONTINUATION_RE = re.compile(
+    r"^\s*(?:both|all|values|arguments|parameters)\b"
+    r"|^\s*(?:defaults?|by\s+default|when\s+(?:omitted|not\s+provided)|"
+    r"if\s+omitted)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_SUBJECT_SWITCH_RE = re.compile(
+    r"\b(?:and|but|while|whereas)\s+"
+    r"[A-Za-z_][A-Za-z0-9_]*\s+"
+    r"(?:must|shall|should|is|needs?)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_NULLABILITY_RE = re.compile(
+    r"\b(?:None|null)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_UNSUPPORTED_INTEGER_DOMAIN_RE = re.compile(
+    r"\b(?:odd|even|divisible|multiple\s+of|except|"
+    r"excluding\s+[0-9]+|prime|bounded\s+by|capped\s+(?:at|by)|"
+    r"unless|except\s+when|only\s+when)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_BOUNDISH_RE = re.compile(
+    r"\b(?:integers?|non[-\s]+negative|positive|at\s+least|"
+    r"greater\s+than|minimum|min(?:imum)?\s+of)\b",
+    re.IGNORECASE,
+)
+
+
+def _optional_integer_callable_contract_candidate(task: str) -> dict[str, Any]:
+    """Derive an explicit bounded numeric callable contract from public prose.
+
+    The recognizer is intentionally narrow.  It requires one named callable,
+    an explicit list of optional named arguments, an integer lower bound for
+    every argument, and an explicit ``ValueError`` requirement. Truly absent
+    anchors yield no authority; partial or ambiguous anchored prose is invalid.
+    """
+
+    planning_text = effective_planning_task_text(str(task or ""))
+    if not planning_text:
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason_code": "optional_integer_contract_not_explicit",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    numeric_anchor_present = (
+        _PUBLIC_OPTIONAL_ARGUMENT_ANCHOR_RE.search(planning_text) is not None
+        and _PUBLIC_INTEGER_LANGUAGE_RE.search(planning_text) is not None
+    )
+    if len(planning_text) > 12_000:
+        return {
+            "ok": not numeric_anchor_present,
+            "skipped": not numeric_anchor_present,
+            "reason_code": (
+                "optional_integer_contract_input_too_large"
+                if numeric_anchor_present
+                else "optional_integer_contract_not_explicit"
+            ),
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+
+    matches = [
+        match
+        for pattern in _PUBLIC_OPTIONAL_INTEGER_CALLABLE_PATTERNS
+        for match in pattern.finditer(planning_text)
+    ]
+    if not numeric_anchor_present:
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason_code": "optional_integer_contract_not_explicit",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    if not matches:
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    if len(matches) != 1:
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+
+    match = matches[0]
+    clause_start = max(
+        planning_text.rfind(separator, 0, match.start())
+        for separator in (".", "!", "?", "\n")
+    )
+    clause_end_candidates = [
+        index
+        for separator in (".", "!", "?", "\n")
+        if (index := planning_text.find(separator, match.end())) >= 0
+    ]
+    clause_end = (
+        min(clause_end_candidates) + 1
+        if clause_end_candidates
+        else len(planning_text)
+    )
+    request_clause = planning_text[clause_start + 1 : clause_end]
+    request_prefix = planning_text[
+        max(clause_start + 1, match.start() - 80) : match.start()
+    ]
+    if (
+        _PUBLIC_NEGATED_CALLABLE_REQUEST_RE.search(request_clause) is not None
+        or _PUBLIC_NEGATION_PREFIX_RE.search(request_prefix) is not None
+    ):
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason_code": "optional_integer_contract_negated",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    contract_context = planning_text[match.start() :]
+    if _PUBLIC_INTEGER_LANGUAGE_RE.search(contract_context) is None:
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason_code": "optional_integer_contract_not_explicit",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    if _PUBLIC_UPPER_BOUND_RE.search(planning_text) is not None:
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_unsupported_upper_bound",
+            "callable": match.group("callable"),
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    if _PUBLIC_NULLABILITY_RE.search(planning_text) is not None:
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_unsupported_nullability",
+            "callable": match.group("callable"),
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    if _PUBLIC_UNSUPPORTED_INTEGER_DOMAIN_RE.search(planning_text) is not None:
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_unsupported_domain",
+            "callable": match.group("callable"),
+            "parameters": [],
+            "invalid_exception": None,
+        }
+    parameter_text = match.group("parameters")
+    parameter_names = [
+        token.group("name")
+        for token in _PUBLIC_QUOTED_IDENTIFIER_RE.finditer(parameter_text)
+    ]
+    connector_text = _PUBLIC_QUOTED_IDENTIFIER_RE.sub("", parameter_text)
+    connector_ok = (
+        re.fullmatch(
+            r"(?:\s|,|\band\b)*",
+            connector_text,
+            flags=re.IGNORECASE,
+        )
+        is not None
+    )
+    if (
+        not connector_ok
+        or not 1 <= len(parameter_names) <= 4
+        or len(parameter_names) != len(set(parameter_names))
+        or match.group("callable") in parameter_names
+    ):
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+
+    collective_minimum: int | None = None
+    def context_link_is_broken(position: int) -> bool:
+        clause_start = max(
+            contract_context.rfind(separator, 0, position)
+            for separator in (".", "!", "?", "\n")
+        )
+        return (
+            _PUBLIC_CONTEXT_BREAK_RE.search(
+                contract_context[clause_start + 1 : position]
+            )
+            is not None
+        )
+
+    first_context_clause_end_candidates = [
+        index
+        for separator in (".", "!", "?", "\n")
+        if (index := contract_context.find(separator)) >= 0
+    ]
+    first_context_clause_end = (
+        min(first_context_clause_end_candidates)
+        if first_context_clause_end_candidates
+        else len(contract_context)
+    )
+
+    def collective_is_linked(
+        collective: re.Match[str],
+    ) -> bool:
+        if context_link_is_broken(collective.start()):
+            return False
+        if collective.start() <= first_context_clause_end:
+            return True
+        clause_start = max(
+            contract_context.rfind(separator, 0, collective.start())
+            for separator in (".", "!", "?", "\n")
+        )
+        clause_prefix = contract_context[
+            clause_start + 1 : collective.end()
+        ]
+        return (
+            _PUBLIC_COLLECTIVE_CONTINUATION_RE.search(clause_prefix)
+            is not None
+        )
+
+    collective_matches = [
+        collective
+        for collective in _PUBLIC_COLLECTIVE_INTEGER_BOUND_RE.finditer(
+            contract_context
+        )
+        if collective_is_linked(collective)
+    ]
+    for collective in collective_matches:
+        quantifier = collective.group("quantifier").lower()
+        if quantifier == "both" and len(parameter_names) != 2:
+            return {
+                "ok": False,
+                "skipped": False,
+                "reason_code": "optional_integer_contract_ambiguous",
+                "callable": match.group("callable"),
+                "parameters": [],
+                "invalid_exception": None,
+            }
+        inferred = (
+            0
+            if re.sub(r"[-\s]+", "", collective.group("bound").lower())
+            == "nonnegative"
+            else 1
+        )
+        if collective_minimum is not None and collective_minimum != inferred:
+            return {
+                "ok": False,
+                "skipped": False,
+                "reason_code": "optional_integer_contract_ambiguous",
+                "callable": match.group("callable"),
+                "parameters": [],
+                "invalid_exception": None,
+            }
+        collective_minimum = inferred
+
+    parameters: list[dict[str, Any]] = []
+    parameter_references: list[tuple[int, int, str]] = []
+    for parameter_name in parameter_names:
+        reference_pattern = re.compile(
+            rf"(?:[`'\"]{re.escape(parameter_name)}[`'\"]"
+            rf"|(?<![A-Za-z0-9_`'\"])"
+            rf"{re.escape(parameter_name)}"
+            r"(?![A-Za-z0-9_`'\"])"
+            r"(?=\s+(?:must|shall|should|needs?|is|at\s+least)))"
+        )
+        parameter_references.extend(
+            (reference.start(), reference.end(), parameter_name)
+            for reference in reference_pattern.finditer(contract_context)
+        )
+    parameter_references.sort(key=lambda item: (item[0], item[1], item[2]))
+
+    def identifier_fragment(index: int) -> str:
+        _start, reference_end, _name = parameter_references[index]
+        next_identifier_start = (
+            parameter_references[index + 1][0]
+            if index + 1 < len(parameter_references)
+            else len(contract_context)
+        )
+        punctuation_positions = [
+            position
+            for punctuation in (".", "!", "?", "\n")
+            if (
+                position := contract_context.find(
+                    punctuation,
+                    reference_end,
+                )
+            )
+            >= 0
+        ]
+        fragment_end = min(
+            [
+                next_identifier_start,
+                *(punctuation_positions or [len(contract_context)]),
+                reference_end + 120,
+            ]
+        )
+        fragment = contract_context[reference_end:fragment_end]
+        subject_switch = _PUBLIC_SUBJECT_SWITCH_RE.search(fragment)
+        if subject_switch is not None:
+            fragment = fragment[: subject_switch.start()]
+        semicolon = fragment.find(";")
+        return fragment if semicolon < 0 else fragment[:semicolon]
+
+    linked_integer_anchor = bool(collective_matches) or any(
+        collective_is_linked(language_match)
+        for language_match in _PUBLIC_COLLECTIVE_INTEGER_LANGUAGE_RE.finditer(
+            contract_context
+        )
+    )
+    linked_integer_anchor = linked_integer_anchor or any(
+        reference_name in parameter_names
+        and _PUBLIC_INTEGER_LANGUAGE_RE.search(identifier_fragment(index))
+        is not None
+        for index, (_start, _end, reference_name) in enumerate(
+            parameter_references
+        )
+    )
+    if not linked_integer_anchor:
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason_code": "optional_integer_contract_not_explicit",
+            "callable": None,
+            "parameters": [],
+            "invalid_exception": None,
+        }
+
+    for name in parameter_names:
+        qualitative_minima: set[int] = set()
+        at_least_minima: set[int] = set()
+        integer_explicit = collective_minimum is not None
+        for index, (_start, _end, reference_name) in enumerate(
+            parameter_references
+        ):
+            if reference_name != name:
+                continue
+            fragment = identifier_fragment(index)
+            for bound_match in re.finditer(
+                r"\b(?P<bound>non[-\s]+negative|positive)\s+integer\b",
+                fragment,
+                flags=re.IGNORECASE,
+            ):
+                integer_explicit = True
+                bound = re.sub(
+                    r"[-\s]+",
+                    "",
+                    bound_match.group("bound").lower(),
+                )
+                qualitative_minima.add(
+                    0 if bound == "nonnegative" else 1
+                )
+            for minimum_match in re.finditer(
+                r"\bat\s+least\s+(?P<minimum>[0-9]{1,7})\b",
+                fragment,
+                flags=re.IGNORECASE,
+            ):
+                at_least_minima.add(
+                    int(minimum_match.group("minimum"))
+                )
+                if re.search(r"\binteger\b", fragment, re.IGNORECASE):
+                    integer_explicit = True
+
+        if (
+            not integer_explicit
+            or len(qualitative_minima) > 1
+            or len(at_least_minima) > 1
+            or any(
+                minimum > 1_000_000
+                for minimum in [*qualitative_minima, *at_least_minima]
+            )
+        ):
+            return {
+                "ok": False,
+                "skipped": False,
+                "reason_code": (
+                    "optional_integer_contract_ambiguous"
+                    if len(qualitative_minima) > 1
+                    or len(at_least_minima) > 1
+                    else "optional_integer_contract_incomplete"
+                ),
+                "callable": match.group("callable"),
+                "parameters": [],
+                "invalid_exception": None,
+            }
+        explicit_minima = [
+            *([collective_minimum] if collective_minimum is not None else []),
+            *qualitative_minima,
+            *at_least_minima,
+        ]
+        if not explicit_minima:
+            return {
+                "ok": False,
+                "skipped": False,
+                "reason_code": "optional_integer_contract_incomplete",
+                "callable": match.group("callable"),
+                "parameters": [],
+                "invalid_exception": None,
+            }
+        parameters.append(
+            {
+                "name": name,
+                "minimum": max(explicit_minima),
+            }
+        )
+
+    request_words = {
+        word.lower()
+        for word in re.findall(
+            r"[A-Za-z_][A-Za-z0-9_]*",
+            match.group(0),
+        )
+    }
+    linked_value_error_matches = []
+    for value_error_match in _PUBLIC_VALUE_ERROR_INVALID_RE.finditer(
+        contract_context
+    ):
+        topic_words = {
+            word.lower()
+            for word in re.findall(
+                r"[A-Za-z_][A-Za-z0-9_]*",
+                value_error_match.group("topic") or "",
+            )
+        }
+        if (
+            not topic_words
+            or topic_words & request_words
+            or topic_words & {name.lower() for name in parameter_names}
+        ):
+            linked_value_error_matches.append(value_error_match)
+    if len(linked_value_error_matches) != 1:
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": (
+                "optional_integer_contract_ambiguous"
+                if len(linked_value_error_matches) > 1
+                else "optional_integer_contract_incomplete"
+            ),
+            "callable": match.group("callable"),
+            "parameters": parameters,
+            "invalid_exception": None,
+        }
+
+    return {
+        "ok": True,
+        "skipped": False,
+        "reason_code": "",
+        "callable": match.group("callable"),
+        "parameters": parameters,
+        "invalid_exception": "ValueError",
+    }
+
+
+def optional_integer_callable_contract(task: str) -> dict[str, Any]:
+    """Derive one exact lower-bounded integer contract from public prose.
+
+    The older candidate recognizer remains a defense-in-depth comparison, but
+    it never grants authority.  This boundary independently binds one
+    affirmative callable request, its exact parameter subjects, pure
+    lower-bound clauses, and one callable-owned ``ValueError`` duty.  Any
+    partial, contradictory, relational, detached, or unsupported constraint
+    fails closed.
+    """
+
+    planning_text = effective_planning_task_text(str(task or ""))
+    absent = {
+        "ok": True,
+        "skipped": True,
+        "reason_code": "optional_integer_contract_not_explicit",
+        "callable": None,
+        "parameters": [],
+        "invalid_exception": None,
+    }
+    if not planning_text:
+        return absent
+
+    numeric_anchor_present = (
+        _PUBLIC_OPTIONAL_ARGUMENT_ANCHOR_RE.search(planning_text) is not None
+        and _PUBLIC_INTEGER_LANGUAGE_RE.search(planning_text) is not None
+    )
+    if len(planning_text) > 12_000:
+        if not numeric_anchor_present:
+            return absent
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_input_too_large",
+        }
+
+    request_matches = [
+        match
+        for pattern in _PUBLIC_OPTIONAL_INTEGER_CALLABLE_PATTERNS
+        for match in pattern.finditer(planning_text)
+    ]
+    if not request_matches:
+        if not numeric_anchor_present:
+            return absent
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+        }
+    if len(request_matches) != 1:
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+        }
+
+    request = request_matches[0]
+    sentence_start = max(
+        planning_text.rfind(separator, 0, request.start())
+        for separator in (".", "!", "?", "\n")
+    )
+    sentence_end_candidates = [
+        position
+        for separator in (".", "!", "?", "\n")
+        if (position := planning_text.find(separator, request.end())) >= 0
+    ]
+    sentence_end = (
+        min(sentence_end_candidates)
+        if sentence_end_candidates
+        else len(planning_text)
+    )
+    if planning_text[: sentence_start + 1].strip():
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+            "callable": request.group("callable"),
+        }
+    request_sentence = planning_text[sentence_start + 1 : sentence_end]
+    request_prefix = planning_text[sentence_start + 1 : request.start()]
+    request_suffix = planning_text[request.end() : sentence_end]
+    request_authority_text = planning_text[
+        sentence_start + 1 : request.end()
+    ]
+    if (
+        _PUBLIC_NEGATED_CALLABLE_REQUEST_RE.search(request_sentence)
+        is not None
+        or _PUBLIC_NEGATION_PREFIX_RE.search(request_prefix) is not None
+        or re.search(
+            r"\b(?:not|never|forbidden|prohibited|avoid|decline|refuse)\b",
+            request_authority_text,
+            flags=re.IGNORECASE,
+        )
+        is not None
+    ):
+        return {
+            **absent,
+            "reason_code": "optional_integer_contract_negated",
+        }
+    if (
+        re.fullmatch(
+            r"\s*(?:"
+            r"(?:please|kindly)\s+"
+            r"|(?:(?:can|could|would)\s+you(?:\s+please)?|"
+            r"please\s+(?:can|could|would)\s+you)\s+"
+            r"|(?:task|request|requirement)\s*:\s*"
+            r")?",
+            request_prefix,
+            flags=re.IGNORECASE,
+        )
+        is None
+        or _PUBLIC_CONTEXT_BREAK_RE.search(request_prefix) is not None
+    ):
+        return absent
+    if request_suffix.strip():
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+            "callable": request.group("callable"),
+        }
+    feature_text = request.groupdict().get("feature")
+    if feature_text is not None:
+        normalized_feature = " ".join(feature_text.split())
+        if normalized_feature.lower() not in {
+            "pagination",
+            "paging",
+            "pagination support",
+            "paging support",
+        }:
+            return {
+                **absent,
+                "ok": False,
+                "skipped": False,
+                "reason_code": "optional_integer_contract_ambiguous",
+                "callable": request.group("callable"),
+            }
+
+    parameter_text = request.group("parameters")
+    parameter_tokens = list(
+        _PUBLIC_QUOTED_IDENTIFIER_RE.finditer(parameter_text)
+    )
+    parameter_names = [
+        token.group("name")
+        for token in parameter_tokens
+    ]
+    parameter_separators = [
+        parameter_text[left.end() : right.start()]
+        for left, right in zip(
+            parameter_tokens,
+            parameter_tokens[1:],
+            strict=False,
+        )
+    ]
+    parameter_structure_ok = bool(parameter_tokens) and not (
+        parameter_text[: parameter_tokens[0].start()].strip()
+        or parameter_text[parameter_tokens[-1].end() :].strip()
+    )
+    if parameter_structure_ok and parameter_separators:
+        for index, separator in enumerate(parameter_separators):
+            is_final = index == len(parameter_separators) - 1
+            allowed = (
+                r"\s*(?:,|and|,\s*and)\s*"
+                if is_final
+                else r"\s*,\s*"
+            )
+            if re.fullmatch(
+                allowed,
+                separator,
+                flags=re.IGNORECASE,
+            ) is None:
+                parameter_structure_ok = False
+                break
+    if (
+        not parameter_structure_ok
+        or not 1 <= len(parameter_names) <= 4
+        or len(parameter_names) != len(set(parameter_names))
+        or request.group("callable") in parameter_names
+    ):
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_ambiguous",
+        }
+
+    anchored_text = planning_text[request.start() :]
+    if _PUBLIC_UPPER_BOUND_RE.search(planning_text) is not None:
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_unsupported_upper_bound",
+            "callable": request.group("callable"),
+        }
+    if _PUBLIC_NULLABILITY_RE.search(planning_text) is not None:
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_unsupported_nullability",
+            "callable": request.group("callable"),
+        }
+    if _PUBLIC_UNSUPPORTED_INTEGER_DOMAIN_RE.search(planning_text) is not None:
+        return {
+            **absent,
+            "ok": False,
+            "skipped": False,
+            "reason_code": "optional_integer_contract_unsupported_domain",
+            "callable": request.group("callable"),
+        }
+
+    def invalid(
+        reason_code: str = "optional_integer_contract_incomplete",
+        *,
+        parameters: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": reason_code,
+            "callable": request.group("callable"),
+            "parameters": list(parameters or []),
+            "invalid_exception": None,
+        }
+
+    def numeric_connector_is_exact(connector: str) -> bool:
+        return (
+            re.fullmatch(
+                r"\s*(?:"
+                r"and\s+"
+                r"|,\s*(?:(?:and|with)\s+)?"
+                r"|\(\s*with\s+"
+                r")",
+                connector,
+                flags=re.IGNORECASE,
+            )
+            is not None
+        )
+
+    def sentence_prefix(position: int) -> str:
+        start = max(
+            anchored_text.rfind(separator, 0, position)
+            for separator in (".", "!", "?", "\n")
+        )
+        return anchored_text[start + 1 : position]
+
+    def context_is_detached(position: int) -> bool:
+        return (
+            _PUBLIC_CONTEXT_BREAK_RE.search(sentence_prefix(position))
+            is not None
+        )
+
+    collective_re = re.compile(
+        r"\b(?P<quantifier>both|all)\s+"
+        r"(?:values|arguments|parameters)\s+"
+        r"(?:must|shall|should|need(?:s)?\s+to)\s+be\s+"
+        r"(?:(?P<quality>non[-\s]+negative|positive)\s+)?"
+        r"integers?\b",
+        re.IGNORECASE,
+    )
+    collective_type = False
+    collective_minimum: int | None = None
+    accepted_spans: list[tuple[int, int]] = [
+        (0, request.end() - request.start())
+    ]
+    numeric_spans: list[tuple[int, int]] = []
+    detached_numeric_seen = False
+    collective_matches = list(collective_re.finditer(anchored_text))
+    linked_collectives: list[re.Match[str]] = []
+    for collective in collective_matches:
+        prefix = sentence_prefix(collective.start()).strip()
+        in_request_sentence = collective.start() <= (
+            sentence_end - request.start()
+        )
+        linked_prefix = (
+            not prefix
+            or (
+                in_request_sentence
+                and re.fullmatch(
+                    r"[\s,;:()\-]*",
+                    anchored_text[
+                        request.end() - request.start() : collective.start()
+                    ],
+                )
+                is not None
+            )
+            or re.fullmatch(
+                r"defaults?\s+should\s+still\s+return\s+all\s+records,\s*",
+                prefix,
+                flags=re.IGNORECASE,
+            )
+            is not None
+        )
+        if context_is_detached(collective.start()) or not linked_prefix:
+            detached_numeric_seen = True
+            continue
+        linked_collectives.append(collective)
+    if len(linked_collectives) > 1:
+        return invalid("optional_integer_contract_ambiguous")
+    if linked_collectives:
+        collective = linked_collectives[0]
+        if (
+            collective.group("quantifier").lower() == "both"
+            and len(parameter_names) != 2
+        ):
+            return invalid("optional_integer_contract_ambiguous")
+        collective_type = True
+        quality = collective.group("quality")
+        if quality:
+            normalized = re.sub(r"[-\s]+", "", quality.lower())
+            collective_minimum = 0 if normalized == "nonnegative" else 1
+        accepted_spans.append(collective.span())
+        numeric_spans.append(collective.span())
+
+    parameter_atoms: dict[str, list[tuple[int, bool, tuple[int, int]]]] = {
+        name: [] for name in parameter_names
+    }
+    detached_parameter_constraint = False
+    for name in parameter_names:
+        subject = (
+            rf"(?:[`'\"]{re.escape(name)}[`'\"]"
+            rf"|(?<![A-Za-z0-9_`'\"]){re.escape(name)}"
+            r"(?![A-Za-z0-9_`'\"]))"
+        )
+        atom_re = re.compile(
+            subject
+            + r"\s+(?:(?:must|shall|should|need(?:s)?\s+to|is)"
+            r"\s+(?:be\s+)?|)"
+            r"(?P<bound>"
+            r"(?:an?\s+)?(?P<quality>non[-\s]+negative|positive)"
+            r"(?P<integer>\s+integer)?"
+            r"|at\s+least\s+(?P<minimum>[0-9]{1,7})"
+            r"(?![A-Za-z0-9_]|[.,][0-9])"
+            r"|>=\s*(?P<symbolic_minimum>[0-9]{1,7})"
+            r"(?![A-Za-z0-9_]|[.,][0-9])"
+            r")"
+            r"(?:\s+when\s+(?:provided|supplied|passed))?"
+            r"(?=\s*(?:[,;.)]|\band\b|$))",
+            re.IGNORECASE,
+        )
+        for atom in atom_re.finditer(anchored_text):
+            if atom.start() < request.end() - request.start():
+                continue
+            prefix = sentence_prefix(atom.start())
+            prefix_start = atom.start() - len(prefix)
+            preceding_spans = [
+                (start, end)
+                for start, end in accepted_spans
+                if end <= atom.start() and end >= prefix_start
+            ]
+            if prefix.strip():
+                if not preceding_spans:
+                    detached_parameter_constraint = True
+                    continue
+                preceding_end = max(end for _start, end in preceding_spans)
+                connector = anchored_text[preceding_end : atom.start()]
+                if not numeric_connector_is_exact(connector):
+                    detached_parameter_constraint = True
+                    continue
+            if (
+                _PUBLIC_CONTEXT_BREAK_RE.search(prefix) is not None
+                or re.search(
+                    r"\b(?:does?\s+not|do\s+not|need\s+not|"
+                    r"never|no\s+need\s+to)\b",
+                    prefix[-80:],
+                    flags=re.IGNORECASE,
+                )
+                is not None
+            ):
+                detached_parameter_constraint = True
+                continue
+            quality = atom.group("quality")
+            if quality:
+                normalized = re.sub(r"[-\s]+", "", quality.lower())
+                minimum = 0 if normalized.endswith("nonnegative") else 1
+            else:
+                raw_minimum = (
+                    atom.group("minimum") or atom.group("symbolic_minimum")
+                )
+                minimum = int(raw_minimum)
+            if minimum > 1_000_000:
+                return invalid("optional_integer_contract_ambiguous")
+            integer_explicit = atom.group("integer") is not None
+            parameter_atoms[name].append(
+                (minimum, integer_explicit, atom.span())
+            )
+            accepted_spans.append(atom.span())
+            numeric_spans.append(atom.span())
+
+    def occurrence_is_accepted(position: int) -> bool:
+        return any(start <= position < end for start, end in accepted_spans)
+
+    residual_constraint_seen = False
+    residual_vocabulary = re.compile(
+        r"\b(?:must|shall|should|need(?:s)?|is|are|not|never|"
+        r"integers?|non[-\s]+negative|positive|at\s+least|"
+        r"greater\s+than|minimum|min(?:imum)?\s+of|"
+        r"unchanged|provided|supplied|passed)\b|>=|>",
+        re.IGNORECASE,
+    )
+    pre_request_text = planning_text[: request.start()]
+    for name in parameter_names:
+        pre_request_reference = re.compile(
+            rf"(?:[`'\"]{re.escape(name)}[`'\"]"
+            rf"|(?<![A-Za-z0-9_`'\"]){re.escape(name)}"
+            r"(?![A-Za-z0-9_`'\"]))",
+            re.IGNORECASE,
+        )
+        for reference in pre_request_reference.finditer(pre_request_text):
+            _ = reference
+            return invalid("optional_integer_contract_ambiguous")
+    for name in parameter_names:
+        reference_re = re.compile(
+            rf"(?:[`'\"]{re.escape(name)}[`'\"]"
+            rf"|(?<![A-Za-z0-9_`'\"]){re.escape(name)}"
+            r"(?![A-Za-z0-9_`'\"]))",
+            re.IGNORECASE,
+        )
+        for reference in reference_re.finditer(anchored_text):
+            if reference.start() < request.end() - request.start():
+                continue
+            if occurrence_is_accepted(reference.start()):
+                continue
+            following = anchored_text[reference.end() :]
+            following = re.split(r"[.!?\n;]", following, maxsplit=1)[0]
+            if residual_vocabulary.search(following) is None:
+                continue
+            residual_constraint_seen = True
+
+    if not linked_collectives and all(
+        not atoms for atoms in parameter_atoms.values()
+    ):
+        if detached_parameter_constraint:
+            return invalid("optional_integer_contract_ambiguous")
+        linked_unparsed_numeric = False
+        for sentence_match in re.finditer(
+            r"[^.!?\n]+(?:[.!?]+|$)",
+            anchored_text[
+                request.end() - request.start() :
+            ],
+        ):
+            sentence = sentence_match.group(0).strip()
+            if _PUBLIC_INTEGER_LANGUAGE_RE.search(sentence) is None:
+                continue
+            if _PUBLIC_CONTEXT_BREAK_RE.search(sentence) is not None:
+                continue
+            mentions_parameter = any(
+                re.search(
+                    rf"(?:[`'\"]{re.escape(name)}[`'\"]"
+                    rf"|(?<![A-Za-z0-9_`'\"]){re.escape(name)}"
+                    r"(?![A-Za-z0-9_`'\"]))",
+                    sentence,
+                    flags=re.IGNORECASE,
+                )
+                is not None
+                for name in parameter_names
+            )
+            pronoun_link = (
+                re.match(
+                    r"^\s*(?:both|all|values?|arguments?|parameters?)\b",
+                    sentence,
+                    flags=re.IGNORECASE,
+                )
+                is not None
+            )
+            if mentions_parameter or pronoun_link:
+                linked_unparsed_numeric = True
+                break
+        if not linked_unparsed_numeric:
+            return absent
+        return invalid()
+
+    if detached_parameter_constraint:
+        residual_constraint_seen = True
+    if any(len(atoms) > 1 for atoms in parameter_atoms.values()):
+        return invalid("optional_integer_contract_ambiguous")
+
+    parameters: list[dict[str, Any]] = []
+    for name in parameter_names:
+        atoms = parameter_atoms[name]
+        if not collective_type and (
+            not atoms or atoms[0][1] is not True
+        ):
+            return invalid()
+        explicit_minimum = atoms[0][0] if atoms else None
+        if (
+            collective_minimum is not None
+            and explicit_minimum is not None
+            and explicit_minimum < collective_minimum
+        ):
+            return invalid("optional_integer_contract_ambiguous")
+        minima = [
+            value
+            for value in (collective_minimum, explicit_minimum)
+            if value is not None
+        ]
+        if not minima:
+            if (
+                detached_numeric_seen
+                and not linked_collectives
+                and all(not items for items in parameter_atoms.values())
+            ):
+                return absent
+            return invalid()
+        parameters.append({"name": name, "minimum": max(minima)})
+
+    if residual_constraint_seen:
+        return invalid("optional_integer_contract_ambiguous")
+
+    callable_name = request.group("callable")
+    value_error_re = re.compile(
+        r"(?:^|[.!?;\n]\s*)"
+        r"(?P<owner>"
+        r"raise"
+        r"|(?:[`'\"]?"
+        + re.escape(callable_name)
+        + r"[`'\"]?)\s+(?:must|shall|should)\s+raise"
+        r")\s+(?:an?\s+)?[`'\"]?ValueError[`'\"]?\s+"
+        r"for\s+invalid\s+"
+        r"(?P<topic>(?:[A-Za-z_][A-Za-z0-9_]*\s+){0,3})"
+        r"(?:values?|arguments?|parameters?)\b",
+        re.IGNORECASE,
+    )
+    linked_value_errors = []
+    for value_error_match in value_error_re.finditer(anchored_text):
+        suffix_end_candidates = [
+            position
+            for separator in (".", "!", "?", "\n")
+            if (
+                position := anchored_text.find(
+                    separator,
+                    value_error_match.end(),
+                )
+            )
+            >= 0
+        ]
+        suffix_end = (
+            min(suffix_end_candidates)
+            if suffix_end_candidates
+            else len(anchored_text)
+        )
+        if not anchored_text[value_error_match.end() : suffix_end].strip():
+            linked_value_errors.append(value_error_match)
+    all_value_errors = list(
+        _PUBLIC_VALUE_ERROR_INVALID_RE.finditer(anchored_text)
+    )
+    if len(linked_value_errors) != 1 or len(all_value_errors) != 1:
+        return invalid(
+            "optional_integer_contract_ambiguous"
+            if len(all_value_errors) > 1
+            else "optional_integer_contract_incomplete",
+            parameters=parameters,
+        )
+    value_error = linked_value_errors[0]
+    topic_phrase = " ".join(
+        str(value_error.group("topic") or "").lower().split()
+    )
+    if topic_phrase not in {
+        "",
+        "argument",
+        "arguments",
+        "parameter",
+        "parameters",
+        "pagination",
+        "paging",
+    }:
+        return invalid(parameters=parameters)
+
+    ordered_numeric_spans = sorted(set(numeric_spans))
+    seen_numeric_spans: set[tuple[int, int]] = set()
+    seen_error_sentence = False
+    for sentence_match in re.finditer(
+        r"[^.!?\n]+(?:[.!?]+|$)",
+        anchored_text,
+    ):
+        raw_sentence = sentence_match.group(0)
+        leading = len(raw_sentence) - len(raw_sentence.lstrip())
+        body = raw_sentence.strip()
+        body = body.rstrip(".!?").rstrip()
+        if not body:
+            continue
+        body_start = sentence_match.start() + leading
+        body_end = body_start + len(body)
+        request_end = request.end() - request.start()
+        if body_start == 0 and body_end == request_end:
+            continue
+        if "ValueError" in body:
+            if seen_error_sentence:
+                return invalid(
+                    "optional_integer_contract_ambiguous",
+                    parameters=parameters,
+                )
+            if not (
+                value_error.start("owner") == body_start
+                and value_error.end() == body_end
+                and value_error.start() < body_end
+                and value_error.end() > body_start
+            ):
+                return invalid(parameters=parameters)
+            seen_error_sentence = True
+            continue
+        if seen_error_sentence:
+            return invalid(
+                "optional_integer_contract_ambiguous",
+                parameters=parameters,
+            )
+        sentence_spans = [
+            span
+            for span in ordered_numeric_spans
+            if body_start <= span[0] and span[1] <= body_end
+        ]
+        if not sentence_spans:
+            return invalid(
+                "optional_integer_contract_ambiguous",
+                parameters=parameters,
+            )
+        prefix = anchored_text[body_start : sentence_spans[0][0]]
+        if prefix.strip() and (
+            re.fullmatch(
+                r"defaults?\s+should\s+still\s+return\s+all\s+records,\s*",
+                prefix,
+                flags=re.IGNORECASE,
+            )
+            is None
+        ):
+            return invalid(
+                "optional_integer_contract_ambiguous",
+                parameters=parameters,
+            )
+        for previous, following in zip(
+            sentence_spans,
+            sentence_spans[1:],
+            strict=False,
+        ):
+            connector = anchored_text[previous[1] : following[0]]
+            if not numeric_connector_is_exact(connector):
+                return invalid(
+                    "optional_integer_contract_ambiguous",
+                    parameters=parameters,
+                )
+        suffix = anchored_text[sentence_spans[-1][1] : body_end]
+        suffix_is_empty = (
+            re.fullmatch(r"\s*\)*\s*", suffix) is not None
+        )
+        suffix_is_preservation = (
+            re.fullmatch(
+                r"\s*\)*\s*,?\s*and\s+the\s+function\s+"
+                r"must\s+never\s+mutate\s+"
+                r"(?:the\s+module(?:'s|’s)\s+stored\s+records|"
+                r"(?:the\s+)?stored\s+records|(?:the\s+)?records)\s*",
+                suffix,
+                flags=re.IGNORECASE,
+            )
+            is not None
+        )
+        if not suffix_is_empty and not suffix_is_preservation:
+            return invalid(
+                "optional_integer_contract_ambiguous",
+                parameters=parameters,
+            )
+        seen_numeric_spans.update(sentence_spans)
+    if (
+        seen_numeric_spans != set(ordered_numeric_spans)
+        or not seen_error_sentence
+    ):
+        return invalid(parameters=parameters)
+
+    strict_result = {
+        "ok": True,
+        "skipped": False,
+        "reason_code": "",
+        "callable": callable_name,
+        "parameters": parameters,
+        "invalid_exception": "ValueError",
+    }
+    candidate = _optional_integer_callable_contract_candidate(planning_text)
+    if (
+        candidate.get("ok") is True
+        and candidate.get("skipped") is not True
+        and {
+            "callable": candidate.get("callable"),
+            "parameter_names": [
+                item.get("name")
+                for item in candidate.get("parameters", [])
+                if isinstance(item, Mapping)
+            ],
+        }
+        != {
+            "callable": strict_result["callable"],
+            "parameter_names": [
+                item["name"] for item in strict_result["parameters"]
+            ],
+        }
+    ):
+        return invalid("optional_integer_contract_ambiguous")
+    return strict_result
+
+
+def optional_integer_callable_shape_check(
+    task: str,
+    python_source: str,
+) -> dict[str, Any]:
+    """Check the explicit optional-argument shape without executing source."""
+
+    contract = optional_integer_callable_contract(task)
+    if contract.get("skipped") is True:
+        return {
+            **contract,
+            "missing_parameters": [],
+            "violations": [],
+        }
+    if contract.get("ok") is not True:
+        return {
+            **contract,
+            "missing_parameters": [],
+            "violations": [
+                {
+                    "callable": contract.get("callable"),
+                    "reason": contract.get("reason_code")
+                    or "optional_integer_contract_invalid",
+                }
+            ],
+        }
+    try:
+        tree = ast.parse(str(python_source or ""))
+    except (SyntaxError, ValueError):
+        return {
+            **contract,
+            "ok": False,
+            "reason_code": "optional_integer_callable_source_invalid",
+            "missing_parameters": [],
+            "violations": [],
+        }
+
+    callable_name = str(contract["callable"])
+    definitions = [
+        node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == callable_name
+    ]
+    violations: list[dict[str, Any]] = []
+    if len(definitions) != 1:
+        return {
+            **contract,
+            "ok": False,
+            "reason_code": "optional_integer_callable_shape_mismatch",
+            "missing_parameters": (
+                [item["name"] for item in contract["parameters"]]
+                if not definitions
+                else []
+            ),
+            "violations": [
+                {
+                    "callable": callable_name,
+                    "reason": (
+                        "missing_module_callable"
+                        if not definitions
+                        else "ambiguous_module_callable"
+                    ),
+                }
+            ],
+        }
+
+    definition = definitions[0]
+    if isinstance(definition, ast.AsyncFunctionDef):
+        violations.append(
+            {"callable": callable_name, "reason": "async_callable_not_supported"}
+        )
+    positional_only = {
+        argument.arg for argument in definition.args.posonlyargs
+    }
+    positional = [
+        *definition.args.posonlyargs,
+        *definition.args.args,
+    ]
+    positional_default_start = len(positional) - len(definition.args.defaults)
+    optional_names = {
+        argument.arg
+        for index, argument in enumerate(positional)
+        if index >= positional_default_start
+    }
+    optional_names.update(
+        argument.arg
+        for argument, default in zip(
+            definition.args.kwonlyargs,
+            definition.args.kw_defaults,
+            strict=True,
+        )
+        if default is not None
+    )
+    declared_names = {
+        argument.arg
+        for argument in [
+            *definition.args.posonlyargs,
+            *definition.args.args,
+            *definition.args.kwonlyargs,
+        ]
+    }
+    required_names = declared_names - optional_names
+    requested_names = {
+        str(item["name"]) for item in contract["parameters"]
+    }
+    missing_parameters = sorted(requested_names - declared_names)
+    for name in sorted(requested_names & positional_only):
+        violations.append(
+            {
+                "callable": callable_name,
+                "parameter": name,
+                "reason": "named_parameter_is_positional_only",
+            }
+        )
+    for name in sorted(requested_names & required_names):
+        violations.append(
+            {
+                "callable": callable_name,
+                "parameter": name,
+                "reason": "parameter_is_not_optional",
+            }
+        )
+    for name in sorted(required_names - requested_names):
+        violations.append(
+            {
+                "callable": callable_name,
+                "parameter": name,
+                "reason": "unrequested_required_parameter",
+            }
+        )
+    for name in missing_parameters:
+        violations.append(
+            {
+                "callable": callable_name,
+                "parameter": name,
+                "reason": "missing_parameter",
+            }
+        )
+    return {
+        **contract,
+        "ok": not violations,
+        "reason_code": (
+            ""
+            if not violations
+            else "optional_integer_callable_shape_mismatch"
+        ),
+        "missing_parameters": missing_parameters,
+        "violations": violations,
+    }
 
 
 def fixed_literal_zero_arg_callable_names(task: str) -> list[str]:
@@ -914,13 +2318,98 @@ def task_requests_shared_helper_artifact(task: str) -> bool:
     normalized = str(task or "")
     if not re.search(r"\b(?:duplicat\w*|repeat\w*)\b", normalized, re.IGNORECASE):
         return False
-    for clause in re.split(r"[.!?\n]+", normalized):
-        helper_match = re.search(
-            r"(?:\b(?:shared|common)\b[^\n]{0,48}\bhelper\b|"
-            r"\bhelper\b[^\n]{0,48}\b(?:shared\s+by|used\s+by|for\s+both)\b)",
+    if re.search(
+        r"\b(?:do|does|did|should|must|shall|can|could|will|would|may)"
+        r"\s+not\b[^.!?\n]{0,512}\brefactor(?:ing)?\b"
+        r"|\b(?:cannot|can't|couldn't|didn't|doesn't|don't|mustn't|"
+        r"needn't|shan't|shouldn't|won't|wouldn't|never|no)\b"
+        r"[^.!?\n]{0,512}\brefactor(?:ing)?\b"
+        r"|\brefactor(?:ing)?\b[^.!?\n]{0,160}"
+        r"\b(?:cannot|can't|couldn't|didn't|doesn't|don't|isn't|mustn't|"
+        r"needn't|never|not|shan't|shouldn't|wasn't|weren't|won't|"
+        r"wouldn't)\b"
+        r"|\brefactor(?:ing)?\b[^.!?\n]{0,160}\bno\s+longer\b"
+        r"|\brefactor(?:ing)?\b[^.!?\n]{0,160}"
+        r"\b(?:forbidden|not\s+(?:allowed|permitted|required)|"
+        r"out\s+of\s+scope|prohibited)\b",
+        normalized,
+        re.IGNORECASE,
+    ):
+        return False
+    clauses = re.split(r"[.!?\n]+", normalized)
+    helper_any_re = re.compile(
+        r"(?:\b(?:shared|common)\b[^\n]{0,48}\bhelpers?\b|"
+        r"\bhelpers?\b[^\n]{0,48}\b"
+        r"(?:shared\s+by|used\s+by|for\s+both)\b)",
+        re.IGNORECASE,
+    )
+    helper_re = re.compile(
+        r"(?:\b(?:shared|common)\b[^\n]{0,48}\bhelper\b|"
+        r"\bhelper\b[^\n]{0,48}\b"
+        r"(?:shared\s+by|used\s+by|for\s+both)\b)",
+        re.IGNORECASE,
+    )
+    affirmative_helper_segments = 0
+    for clause in clauses:
+        for segment in re.split(
+            r"\b(?:but|however|yet)\b",
             clause,
-            re.IGNORECASE,
-        )
+            flags=re.IGNORECASE,
+        ):
+            helper_mentions = list(helper_any_re.finditer(segment))
+            if not helper_mentions:
+                continue
+            if len(helper_mentions) != 1:
+                return False
+            helper_any = helper_mentions[0]
+            helper_match = helper_re.search(segment)
+            actions = (
+                list(
+                    re.finditer(
+                        r"\b(?:extract|refactor)\b",
+                        segment[: helper_match.start()],
+                        re.IGNORECASE,
+                    )
+                )
+                if helper_match is not None
+                else []
+            )
+            if (
+                helper_match is None
+                or not actions
+                or helper_match.start() - actions[-1].end() > 160
+            ):
+                return False
+            affirmative_helper_segments += 1
+            if re.search(
+                r"\b(?:do|does|did|should|must|shall|can|could|will|"
+                r"would|may)\s+not\b"
+                r"|\b(?:cannot|can't|couldn't|didn't|doesn't|don't|isn't|"
+                r"mustn't|needn't|shan't|shouldn't|wasn't|weren't|won't|"
+                r"wouldn't|never)\b"
+                r"|\b(?:avoid(?:ing)?|refrain\s+from|refuse\s+to|without)\b"
+                r"|\b(?:anything|everything)\s+(?:but|except|other\s+than)\b"
+                r"|\b(?:except|instead\s+of|neither|no|not|other\s+than|"
+                r"rather\s+than)\b"
+                r"|\b(?:consider|discuss|document|evaluate|explain|describe)\b"
+                r"[^.!?\n]{0,512}\b(?:whether|how)\b"
+                r"|\b(?:maybe|perhaps)\b",
+                segment[: helper_any.start()],
+                re.IGNORECASE,
+            ) or re.search(
+                r"\b(?:forbidden|not\s+(?:allowed|permitted|required)|"
+                r"out\s+of\s+scope|prohibited)\b"
+                r"|\b(?:should|must|shall|can|could|may|will|would)\s+not\b"
+                r"|\b(?:cannot|can't|mustn't|never|not|shouldn't)\b",
+                segment[helper_any.end() :],
+                re.IGNORECASE,
+            ):
+                return False
+    if affirmative_helper_segments != 1:
+        return False
+    affirmative_request_seen = False
+    for clause in clauses:
+        helper_match = helper_re.search(clause)
         if helper_match is None:
             continue
         actions = list(
@@ -939,7 +2428,7 @@ def task_requests_shared_helper_artifact(task: str) -> bool:
             clause[: refactor_match.start()],
             clause[helper_match.end() :],
         ):
-            continue
+            return False
         action_span = clause[refactor_match.start() : helper_match.end()]
         if re.search(
             r"\b(?:is|are|was|were)\s+(?:strictly\s+)?"
@@ -962,9 +2451,9 @@ def task_requests_shared_helper_artifact(task: str) -> bool:
             action_span,
             re.IGNORECASE,
         ):
-            continue
-        return True
-    return False
+            return False
+        affirmative_request_seen = True
+    return affirmative_request_seen
 
 
 def _authority_action_is_nonaffirmative(prefix: str, suffix: str) -> bool:

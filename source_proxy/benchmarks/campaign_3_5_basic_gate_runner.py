@@ -2944,8 +2944,12 @@ class BasicBackendGateRunner:
                     f"/v1/tasks/long-running/{task_id}",
                 )
                 state = _orchestrator_state(state_exchange.response)
-                repair_request = state.get("repair_request")
-                if isinstance(repair_request, Mapping) and attempt_number < MAX_ATTEMPTS:
+                repair_request = _active_current_repair_request(
+                    state,
+                    failed_attempt_number=attempt_number,
+                    failed_attempt_id=attempt.get("orchestrator_attempt_id"),
+                )
+                if repair_request is not None and attempt_number < MAX_ATTEMPTS:
                     attempt["repair_request"] = dict(repair_request)
                     attempt["attempt_seal_sha256"] = repair_request.get(
                         "parent_attempt_seal_sha256"
@@ -2975,17 +2979,24 @@ class BasicBackendGateRunner:
             attempt["verifier_result_evidence_file"] = verification_exchange.evidence_file
             attempt["resource_use"]["verification_elapsed_ms"] = verification_exchange.elapsed_ms
             verification_state = _orchestrator_state(verification_exchange.response)
+            repair_request = _active_current_repair_request(
+                verification_state,
+                failed_attempt_number=attempt_number,
+                failed_attempt_id=attempt.get("orchestrator_attempt_id"),
+                explicit_repair_required=verification_exchange.response.get(
+                    "repair_required"
+                ),
+                require_explicit_repair=True,
+            )
             if (
                 verification_exchange.ok
-                and isinstance(verification_state.get("repair_request"), Mapping)
+                and repair_request is not None
                 and attempt_number < MAX_ATTEMPTS
             ):
-                attempt["repair_request"] = dict(
-                    verification_state["repair_request"]
+                attempt["repair_request"] = dict(repair_request)
+                attempt["attempt_seal_sha256"] = repair_request.get(
+                    "parent_attempt_seal_sha256"
                 )
-                attempt["attempt_seal_sha256"] = verification_state[
-                    "repair_request"
-                ].get("parent_attempt_seal_sha256")
                 attempt["status"] = "repair_required_after_verifier"
                 continue
             attempt["status"] = "verification_completed" if verification_exchange.ok else "verification_failed"
@@ -3019,8 +3030,15 @@ class BasicBackendGateRunner:
         )
         public_tests_passed = _public_tests_passed(post_apply)
         approval_ids = [str(attempt.get("approval_id") or "") for attempt in attempts]
-        fresh_approvals = bool(approval_ids and len(approval_ids) == len(set(approval_ids)))
-        repair_succeeded = completed and len(attempts) > 1 and fresh_approvals
+        fresh_approvals = bool(
+            approval_ids
+            and all(approval_ids)
+            and len(approval_ids) == len(set(approval_ids))
+            and all(
+                attempt.get("fresh_exact_approval") is True
+                for attempt in attempts
+            )
+        )
         local_model_path_verified = bool(
             attempts
             and all(_attempt_model_provenance_verified(attempt) for attempt in attempts)
@@ -3034,13 +3052,12 @@ class BasicBackendGateRunner:
                 or (completed and public_tests_passed)
             )
         )
-        return {
+        workflow = {
             "authenticated_model_call_authority": authority.public_payload(),
             "durable_task_create": created.public_payload(),
             "task_id_sha256": _sha256_text(task_id),
             "attempts": attempts,
             "attempt_count": len(attempts),
-            "repair_succeeded": repair_succeeded,
             "fresh_approval_per_attempt": fresh_approvals,
             "approved_diff_applied": bool(
                 attempts and any(attempt.get("execute_status_code") in range(200, 300) for attempt in attempts)
@@ -3091,6 +3108,8 @@ class BasicBackendGateRunner:
             "http_exchanges": [exchange.public_payload() for exchange in client.exchanges],
             "direct_adapter_scoring_used": False,
         }
+        workflow["repair_succeeded"] = _rederive_repair_succeeded(workflow)
+        return workflow
 
 
 def reconcile_basic_backend_trace(
@@ -3450,6 +3469,85 @@ def _orchestrator_state(payload: Mapping[str, Any]) -> Mapping[str, Any]:
     snapshot = task.get("ast_snapshot") if isinstance(task, Mapping) else None
     nested = snapshot.get("coding_orchestrator") if isinstance(snapshot, Mapping) else None
     return nested if isinstance(nested, Mapping) else {}
+
+
+def _active_current_repair_request(
+    state: Mapping[str, Any],
+    *,
+    failed_attempt_number: int,
+    failed_attempt_id: object,
+    explicit_repair_required: object | None = None,
+    require_explicit_repair: bool = False,
+) -> Mapping[str, Any] | None:
+    """Return only a newly queued repair bound to the just-failed attempt.
+
+    ``repair_request`` is intentionally retained after a repaired attempt
+    succeeds so the final proof can preserve its lineage.  Its mere presence
+    therefore cannot authorize another proposal.  A dispatchable transition is
+    the pending successor attempt whose durable identities point back to the
+    attempt the runner just completed.  Verification responses must also carry
+    the endpoint's explicit repair signal; GET readbacks used after reviewer
+    failures have no such top-level field and rely on the same durable binding.
+    """
+
+    if require_explicit_repair and explicit_repair_required is not True:
+        return None
+    repair_request = state.get("repair_request")
+    lane_states = state.get("lane_states")
+    if (
+        not isinstance(repair_request, Mapping)
+        or not isinstance(lane_states, Mapping)
+        or lane_states.get("repair") != "pending"
+        or state.get("target_plugin_proposal") is not None
+    ):
+        return None
+    identity_values = (
+        failed_attempt_id,
+        state.get("attempt_id"),
+        state.get("parent_attempt_id"),
+        repair_request.get("attempt_id"),
+        repair_request.get("parent_attempt_id"),
+        state.get("task_id"),
+        repair_request.get("task_id"),
+        state.get("run_id"),
+        repair_request.get("run_id"),
+    )
+    if any(
+        not isinstance(value, str) or not value.strip()
+        for value in identity_values
+    ):
+        return None
+    failed_id = failed_attempt_id
+    current_id = state["attempt_id"]
+    parent_id = state["parent_attempt_id"]
+    request_id = repair_request["attempt_id"]
+    request_parent_id = repair_request["parent_attempt_id"]
+    state_attempt_number = state.get("attempt_number")
+    request_attempt_number = repair_request.get("attempt_number")
+    if (
+        not isinstance(state_attempt_number, int)
+        or isinstance(state_attempt_number, bool)
+        or not isinstance(request_attempt_number, int)
+        or isinstance(request_attempt_number, bool)
+    ):
+        return None
+    if (
+        not failed_id
+        or not current_id
+        or current_id != request_id
+        or current_id == failed_id
+        or parent_id != failed_id
+        or request_parent_id != failed_id
+        or state_attempt_number != failed_attempt_number + 1
+        or request_attempt_number != state_attempt_number
+        or repair_request.get("task_id") != state.get("task_id")
+        or repair_request.get("run_id") != state.get("run_id")
+        or not _sha256_commitment_present(
+            repair_request.get("parent_attempt_seal_sha256")
+        )
+    ):
+        return None
+    return repair_request
 
 
 def _public_tests_passed(post_apply: Mapping[str, Any]) -> bool:

@@ -1204,17 +1204,27 @@ class CodingOrchestrator:
         if primary_participant["passed"] is not True:
             fallback_alias = os.getenv("SPIRITOS_CODING_FALLBACK_MODEL_ALIAS", "").strip()
             if not fallback_alias:
+                failure_reason = str(primary_participant["error_code"])
                 run.record_event(
                     event_type="target_plugin_model_failed",
                     lane_id="coder",
                     detail={
                         "invocation_id": primary_participant["invocation_id"],
-                        "error_code": primary_participant["error_code"],
+                        "error_code": failure_reason,
+                        "recovery_available": False,
+                    },
+                )
+                self._terminalize_model_failure(
+                    run,
+                    event_type="target_plugin_model_failure_terminalized",
+                    reason_code=failure_reason,
+                    detail={
+                        "invocation_id": primary_participant["invocation_id"],
                         "recovery_available": False,
                     },
                 )
                 self._persist(run, "target-plugin model failed without proof-eligible recovery")
-                raise CodingOrchestratorError(str(primary_participant["error_code"]))
+                raise CodingOrchestratorError(failure_reason)
 
             fallback_prevalidated_plan: ArchitectPlan | None = None
             if generic_adapter_plan_required:
@@ -1499,6 +1509,15 @@ class CodingOrchestrator:
                         "reason_code": error.reason_code,
                     },
                 )
+                self._terminalize_model_failure(
+                    run,
+                    event_type="target_plugin_recovery_integrity_failure_terminalized",
+                    reason_code=error.reason_code,
+                    detail={
+                        "invocation_id": fallback_participant["invocation_id"],
+                        "recovery_id": authorization.to_payload()["recovery_id"],
+                    },
+                )
                 self._persist(
                     run,
                     "authorized fallback outcome failed controlled-recovery integrity",
@@ -1511,8 +1530,21 @@ class CodingOrchestrator:
             selected_context_binding = fallback_context_binding
             selected_context = fallback_context
             if completed_recovery.proof_eligible is not True:
+                fallback_reason = str(
+                    fallback_participant["error_code"]
+                    or "target_plugin_fallback_not_proof_eligible"
+                )
+                self._terminalize_model_failure(
+                    run,
+                    event_type="target_plugin_fallback_failure_terminalized",
+                    reason_code=fallback_reason,
+                    detail={
+                        "invocation_id": fallback_participant["invocation_id"],
+                        "recovery_id": authorization.to_payload()["recovery_id"],
+                    },
+                )
                 self._persist(run, "target-plugin fallback failed in the same run lineage")
-                raise CodingOrchestratorError(str(fallback_participant["error_code"]))
+                raise CodingOrchestratorError(fallback_reason)
         else:
             selected_context_binding = primary_context_binding
             selected_context = context
@@ -3912,6 +3944,42 @@ class CodingOrchestrator:
         run.record_event(
             event_type=event_type,
             lane_id=failed_lane,
+            detail={"reason_code": reason_code, **dict(detail)},
+        )
+
+    @staticmethod
+    def _terminalize_model_failure(
+        run: CodingLaneStateMachine,
+        *,
+        event_type: str,
+        reason_code: str,
+        detail: Mapping[str, Any],
+    ) -> None:
+        """Seal a failed model invocation without implying downstream work ran."""
+
+        for lane_id in LANE_SEQUENCE:
+            state = run.lane_states[lane_id]
+            if state in {"running", "failed", "recovering"}:
+                run.transition(lane_id, "blocked", reason=reason_code)
+            elif state == "pending":
+                run.transition(
+                    lane_id,
+                    "blocked" if lane_id == "coder" else "skipped",
+                    reason=(
+                        reason_code
+                        if lane_id == "coder"
+                        else "model_failure_prevented_lane_dispatch"
+                    ),
+                )
+        if any(
+            event.get("event_type") == event_type
+            and event.get("detail", {}).get("reason_code") == reason_code
+            for event in run.causal_events
+        ):
+            return
+        run.record_event(
+            event_type=event_type,
+            lane_id="coder",
             detail={"reason_code": reason_code, **dict(detail)},
         )
 

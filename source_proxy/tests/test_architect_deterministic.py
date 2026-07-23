@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -18,7 +19,11 @@ from source_proxy.planning.architect import (
     plan_task_with_llm,
 )
 from source_proxy.planning.plan import ArchitectPlan
-from source_proxy.planning.plan import task_spec_from_plan, validate_task_spec_for_packet
+from source_proxy.planning.plan import (
+    task_spec_from_plan,
+    validate_task_spec_for_packet,
+    validate_task_spec_for_plan,
+)
 
 
 def _valid_llm_plan_payload(target_path: str) -> dict[str, object]:
@@ -800,6 +805,427 @@ class DeterministicArchitectTests(unittest.TestCase):
         self.assertEqual(result.reason, "multiple_inferred_writable_targets")
         self.assertIsInstance(unscoped, FallthroughToLLM)
         self.assertEqual(unscoped.reason, "multiple_inferred_writable_targets")
+
+    def test_explicit_shared_helper_refactor_gets_complete_deterministic_plan(
+        self,
+    ) -> None:
+        users_content = (
+            "def normalize_username(value):\n"
+            "    return value.strip().lower()\n"
+        )
+        contacts_content = (
+            "def normalize_email(value):\n"
+            "    return value.strip().lower()\n"
+        )
+        task = (
+            "Refactor the duplicated cleanup implemented by "
+            "`normalize_username` in `src/users.py` and `normalize_email` in "
+            "`src/contacts.py` into one shared helper while preserving public "
+            "behavior."
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "src" / "users.py").write_text(
+                users_content,
+                encoding="utf-8",
+            )
+            (root / "src" / "contacts.py").write_text(
+                contacts_content,
+                encoding="utf-8",
+            )
+
+            result = plan_task_deterministically(
+                task,
+                "task-shared-helper",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/",),
+            )
+
+        self.assertIsInstance(result, Plan)
+        plan = result.plan
+        self.assertEqual(plan.coder_packet.target_file.path, "src/users.py")
+        self.assertEqual(
+            plan.coder_packet.target_file.sha256_before,
+            hashlib.sha256(users_content.encode("utf-8")).hexdigest(),
+        )
+        self.assertEqual(
+            [item.path for item in plan.coder_packet.context_slices],
+            ["src/users.py", "src/contacts.py"],
+        )
+        self.assertEqual(
+            [item.sha256 for item in plan.coder_packet.context_slices],
+            [
+                hashlib.sha256(users_content.encode("utf-8")).hexdigest(),
+                hashlib.sha256(contacts_content.encode("utf-8")).hexdigest(),
+            ],
+        )
+        criteria = {
+            item.id: item.description
+            for item in plan.coder_packet.acceptance_criteria
+        }
+        self.assertIn("src/users.py", criteria["shared-helper-source-1"])
+        self.assertIn("src/contacts.py", criteria["shared-helper-source-2"])
+        self.assertIn("normalize_username", criteria["literal-1"])
+        self.assertIn("normalize_email", criteria["literal-2"])
+        task_spec = task_spec_from_plan(plan)
+        self.assertEqual(
+            task_spec.allowed_files,
+            ["src/users.py", "src/contacts.py"],
+        )
+        self.assertEqual(task_spec.target, "src/users.py")
+        self.assertEqual(task_spec.task_type, "create_file_bundle")
+        self.assertEqual(validate_task_spec_for_plan(task_spec, plan), [])
+
+    def test_shared_helper_deterministic_route_declines_ambiguous_or_missing_sources(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            for name in ("users.py", "contacts.py", "reference.py"):
+                (root / "src" / name).write_text(
+                    f"VALUE = {name!r}\n",
+                    encoding="utf-8",
+                )
+            (root / "src" / "binary.py").write_bytes(b"\xff")
+
+            ambiguous = plan_task_deterministically(
+                "Use src/reference.py only as reference. "
+                "`normalize_username` in src/users.py and `normalize_email` "
+                "in src/contacts.py repeat the same cleanup. Refactor that "
+                "duplicated logic into a shared helper.",
+                "task-shared-helper-ambiguous",
+                root,
+                allowed_paths=("src/",),
+            )
+            inline_reference = plan_task_deterministically(
+                "Refactor duplicated cleanup in src/users.py and "
+                "src/contacts.py into a shared helper, using "
+                "src/reference.py as an example.",
+                "task-shared-helper-inline-reference",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/",),
+            )
+            untouched_reference = plan_task_deterministically(
+                "Refactor duplicated cleanup in src/users.py and "
+                "src/contacts.py into a shared helper while leaving "
+                "src/reference.py untouched.",
+                "task-shared-helper-untouched-reference",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/",),
+            )
+            providing_example = plan_task_deterministically(
+                "Refactor duplicated cleanup in src/users.py and "
+                "src/contacts.py into a shared helper, with "
+                "src/reference.py providing the example.",
+                "task-shared-helper-providing-example",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/",),
+            )
+            after_looking = plan_task_deterministically(
+                "Refactor duplicated cleanup in src/users.py and "
+                "src/contacts.py into a shared helper after looking at "
+                "src/reference.py.",
+                "task-shared-helper-after-looking",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/",),
+            )
+            excluded_symbol_reference = plan_task_deterministically(
+                "Refactor duplicated cleanup, excluding example in "
+                "src/reference.py, in normalize_username in src/users.py and "
+                "normalize_email in src/contacts.py into a shared helper.",
+                "task-shared-helper-excluded-symbol-reference",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/",),
+            )
+            read_only_symbol_reference = plan_task_deterministically(
+                "Refactor duplicated cleanup in normalize_username in "
+                "src/users.py and normalize_email in src/contacts.py and "
+                "read-only example in src/reference.py into a shared helper.",
+                "task-shared-helper-read-only-symbol-reference",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/",),
+            )
+            missing = plan_task_deterministically(
+                "`normalize_username` in src/users.py and `normalize_email` "
+                "in src/missing.py repeat the same cleanup. Refactor that "
+                "duplicated logic into a shared helper.",
+                "task-shared-helper-missing",
+                root,
+                allowed_paths=("src/",),
+            )
+            noncanonical = plan_task_deterministically(
+                "`normalize_username` in src/./users.py and `normalize_email` "
+                "in src/contacts.py repeat the same cleanup. Refactor that "
+                "duplicated logic into a shared helper.",
+                "task-shared-helper-noncanonical",
+                root,
+                allowed_paths=("src/",),
+            )
+            non_utf8 = plan_task_deterministically(
+                "`normalize_left` in src/users.py and `normalize_right` in "
+                "src/binary.py repeat duplicated cleanup. Refactor that "
+                "duplicated logic into a shared helper.",
+                "task-shared-helper-non-utf8",
+                root,
+                allowed_paths=("src/",),
+            )
+
+        self.assertIsInstance(ambiguous, FallthroughToLLM)
+        self.assertEqual(
+            ambiguous.reason,
+            "shared_helper_source_intent_ambiguous",
+        )
+        self.assertIsInstance(inline_reference, FallthroughToLLM)
+        self.assertEqual(
+            inline_reference.reason,
+            "shared_helper_source_intent_ambiguous",
+        )
+        for result in (
+            untouched_reference,
+            providing_example,
+            after_looking,
+            excluded_symbol_reference,
+            read_only_symbol_reference,
+        ):
+            self.assertIsInstance(result, FallthroughToLLM)
+            self.assertEqual(
+                result.reason,
+                "shared_helper_source_intent_ambiguous",
+            )
+        self.assertIsInstance(missing, FallthroughToLLM)
+        self.assertEqual(missing.reason, "shared_helper_source_missing")
+        self.assertIsInstance(noncanonical, FallthroughToLLM)
+        self.assertEqual(
+            noncanonical.reason,
+            "shared_helper_source_path_noncanonical",
+        )
+        self.assertIsInstance(non_utf8, FallthroughToLLM)
+        self.assertEqual(non_utf8.reason, "shared_helper_source_not_utf8")
+
+    def test_shared_helper_deterministic_route_blocks_unsafe_write_authority(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "private").mkdir()
+            (root / "src" / "users.py").write_text(
+                "def normalize_username(value):\n    return value\n",
+                encoding="utf-8",
+            )
+            (root / "private" / "contacts.py").write_text(
+                "def normalize_email(value):\n    return value\n",
+                encoding="utf-8",
+            )
+
+            outside_write_scope = plan_task_deterministically(
+                "`normalize_username` in src/users.py and `normalize_email` "
+                "in private/contacts.py repeat the same cleanup. Refactor "
+                "that duplicated logic into a shared helper.",
+                "task-shared-helper-outside-scope",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/", "private/"),
+            )
+
+            link = root / "src" / "linked.py"
+            link.symlink_to(root / "private" / "contacts.py")
+            symlink_source = plan_task_deterministically(
+                "`normalize_username` in src/users.py and `normalize_email` "
+                "in src/linked.py repeat the same cleanup. Refactor that "
+                "duplicated logic into a shared helper.",
+                "task-shared-helper-symlink",
+                root,
+                allowed_paths=("src/",),
+            )
+
+        self.assertIsInstance(outside_write_scope, Block)
+        self.assertEqual(
+            outside_write_scope.reason,
+            "architect_target_outside_allowed_scope",
+        )
+        self.assertIsInstance(symlink_source, Block)
+
+    def test_shared_helper_deterministic_route_is_bounded_and_affirmative(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            paths = [f"src/m{index}.py" for index in range(9)]
+            for path in paths:
+                (root / path).write_text("VALUE = 1\n", encoding="utf-8")
+            path_list = ", ".join(paths)
+
+            too_many = plan_task_deterministically(
+                f"{path_list} repeat duplicated cleanup. Refactor that "
+                "duplicated logic into a shared helper.",
+                "task-shared-helper-bounded",
+                root,
+                allowed_paths=("src/",),
+            )
+            negated = plan_task_deterministically(
+                "src/m0.py and src/m1.py repeat duplicated cleanup. Do not "
+                "refactor that duplicated logic into a shared helper.",
+                "task-shared-helper-negated",
+                root,
+                allowed_paths=("src/",),
+            )
+            unreadable_context = plan_task_deterministically(
+                "`normalize_left` in src/m0.py and `normalize_right` in "
+                "src/m1.py repeat duplicated cleanup. Refactor that "
+                "duplicated logic into a shared helper.",
+                "task-shared-helper-unreadable-context",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/m0.py",),
+            )
+
+        self.assertIsInstance(too_many, FallthroughToLLM)
+        self.assertEqual(
+            too_many.reason,
+            "shared_helper_source_path_count_unsupported",
+        )
+        self.assertIsInstance(negated, FallthroughToLLM)
+        self.assertNotEqual(
+            negated.reason,
+            "shared_helper_source_path_count_unsupported",
+        )
+        self.assertIsInstance(unreadable_context, FallthroughToLLM)
+        self.assertEqual(
+            unreadable_context.reason,
+            "shared_helper_source_outside_readable_scope",
+        )
+
+    def test_shared_helper_deterministic_route_rejects_global_conflict(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "src" / "a.py").write_text(
+                "def a(value):\n    return value.strip()\n",
+                encoding="utf-8",
+            )
+            (root / "src" / "b.py").write_text(
+                "def b(value):\n    return value.strip()\n",
+                encoding="utf-8",
+            )
+            conflict_before = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Do not refactor those functions into a shared helper. "
+                "Refactor duplicated logic into a shared helper.",
+                "task-shared-helper-conflict-before",
+                root,
+                allowed_paths=("src/",),
+            )
+            conflict_after = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Refactor duplicated logic into a shared helper. Shared "
+                "helpers are prohibited.",
+                "task-shared-helper-conflict-after",
+                root,
+                allowed_paths=("src/",),
+            )
+            long_gap_conflict = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Do not "
+                + ("ever " * 38)
+                + "refactor duplicated logic into a shared helper.",
+                "task-shared-helper-long-gap-conflict",
+                root,
+                allowed_paths=("src/",),
+            )
+            modal_suffix_conflict = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Refactor duplicated logic into a shared helper. A shared "
+                "helper should not be used.",
+                "task-shared-helper-modal-suffix-conflict",
+                root,
+                allowed_paths=("src/",),
+            )
+            copular_suffix_conflict = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Refactor duplicated logic into a shared helper. The shared "
+                "helper is not desired.",
+                "task-shared-helper-copular-suffix-conflict",
+                root,
+                allowed_paths=("src/",),
+            )
+            contracted_suffix_conflict = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Refactor duplicated logic into a shared helper. The shared "
+                "helper isn't desired.",
+                "task-shared-helper-contracted-suffix-conflict",
+                root,
+                allowed_paths=("src/",),
+            )
+            no_longer_suffix_conflict = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Refactor duplicated logic into a shared helper. The shared "
+                "helper is no longer wanted.",
+                "task-shared-helper-no-longer-suffix-conflict",
+                root,
+                allowed_paths=("src/",),
+            )
+            broad_refactor_conflict = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Refactor duplicated logic into a shared helper. Do not "
+                "perform the refactor.",
+                "task-shared-helper-broad-refactor-conflict",
+                root,
+                allowed_paths=("src/",),
+            )
+            declarative_refactor_conflict = plan_task_deterministically(
+                "`a` in src/a.py and `b` in src/b.py repeat the same cleanup. "
+                "Refactor duplicated logic into a shared helper. The refactor "
+                "is prohibited.",
+                "task-shared-helper-declarative-refactor-conflict",
+                root,
+                allowed_paths=("src/",),
+            )
+            modal_refactor_conflicts = [
+                plan_task_deterministically(
+                    "`a` in src/a.py and `b` in src/b.py repeat the same "
+                    "cleanup. Refactor duplicated logic into a shared helper. "
+                    + suffix,
+                    f"task-shared-helper-modal-refactor-conflict-{index}",
+                    root,
+                    allowed_paths=("src/",),
+                )
+                for index, suffix in enumerate(
+                    (
+                        "The refactor should not be performed.",
+                        "The refactor must not proceed.",
+                    ),
+                    start=1,
+                )
+            ]
+
+        self.assertIsInstance(conflict_before, FallthroughToLLM)
+        self.assertIsInstance(conflict_after, FallthroughToLLM)
+        self.assertIsInstance(long_gap_conflict, FallthroughToLLM)
+        self.assertIsInstance(modal_suffix_conflict, FallthroughToLLM)
+        self.assertIsInstance(copular_suffix_conflict, FallthroughToLLM)
+        self.assertIsInstance(contracted_suffix_conflict, FallthroughToLLM)
+        self.assertIsInstance(no_longer_suffix_conflict, FallthroughToLLM)
+        self.assertIsInstance(broad_refactor_conflict, FallthroughToLLM)
+        self.assertIsInstance(declarative_refactor_conflict, FallthroughToLLM)
+        self.assertTrue(
+            all(
+                isinstance(result, FallthroughToLLM)
+                for result in modal_refactor_conflicts
+            )
+        )
 
     def test_read_only_path_without_writable_path_does_not_redirect_by_symbol(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

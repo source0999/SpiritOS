@@ -6,6 +6,7 @@ import json
 import math
 import os
 import re
+import stat
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -38,6 +39,7 @@ from source_proxy.planning.plan import (
     VerificationCheck,
     VerificationPlan,
     bind_requested_artifacts_to_plan,
+    task_requests_shared_helper_artifact,
 )
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
 from source_proxy.approval.external_gate import ExternalGateError, central_gate_check
@@ -236,8 +238,20 @@ _QUOTED_PATH_SUFFIXES = _PRIMARY_SOURCE_SUFFIXES | {
 }
 _MAX_TARGET_DISCOVERY_BYTES = 256_000
 _MAX_TARGET_DISCOVERY_FILES = 400
+_MAX_DETERMINISTIC_MULTI_FILE_PATHS = 8
+_MAX_DETERMINISTIC_MULTI_FILE_TOTAL_BYTES = 1_000_000
 _MAX_ARCHITECT_RESPONSE_CHARS = 256_000
 _MAX_ARCHITECT_OBJECT_CANDIDATES = 512
+_EXPLICIT_SHARED_REFACTOR_SOURCE_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_./\\-])"
+    r"(?P<path>"
+    r"(?:[A-Za-z0-9_.@()+-]+/)+"
+    r"[A-Za-z0-9_.@()+-]+\."
+    r"(?:go|java|js|jsx|py|rs|ts|tsx)"
+    r")"
+    r"(?![A-Za-z0-9_/\\-]|\.[A-Za-z0-9_-])",
+    re.IGNORECASE,
+)
 _TARGET_DISCOVERY_IGNORED_DIRS = {
     ".git",
     ".next",
@@ -398,6 +412,16 @@ def plan_task_deterministically(
     if len(planning_text) > 500:
         return FallthroughToLLM("task_too_long")
 
+    multi_file_refactor = _plan_explicit_shared_helper_refactor_deterministically(
+        clean_task,
+        task_id,
+        root,
+        allowed_paths=allowed_paths,
+        readable_paths=context_paths,
+    )
+    if multi_file_refactor is not None:
+        return multi_file_refactor
+
     resolved, inferred_target_ambiguity = _resolve_writable_task_target(
         clean_task,
         root,
@@ -500,6 +524,355 @@ def plan_task_deterministically(
             authorized_paths=allowed_paths,
         )
     )
+
+
+def _plan_explicit_shared_helper_refactor_deterministically(
+    task: str,
+    task_id: str,
+    root: Path,
+    *,
+    allowed_paths: tuple[str, ...] | None,
+    readable_paths: tuple[str, ...] | None,
+) -> Plan | FallthroughToLLM | Block | None:
+    """Plan only an explicit, bounded duplicate-to-helper source refactor.
+
+    This route chooses no implementation and grants no path inferred from a
+    model response.  It only avoids an unnecessary Architect formatting call
+    when public intent already names every existing source participant.  The
+    downstream Coder retains its established model-authored atomic multi-file
+    bundle path while exact write authority stays bound to the task paths.
+    """
+
+    planning_text = effective_planning_task_text(task)
+    occurrences = list(
+        _EXPLICIT_SHARED_REFACTOR_SOURCE_PATH_RE.finditer(planning_text)
+    )
+    intent_text = _mask_source_path_sentence_punctuation(
+        planning_text,
+        occurrences,
+    )
+    if not task_requests_shared_helper_artifact(intent_text):
+        return None
+    if _CREATION_INTENT_RE.search(planning_text):
+        return FallthroughToLLM("creation_task")
+    if not occurrences:
+        return FallthroughToLLM("shared_helper_source_paths_not_explicit")
+    if len(occurrences) > _MAX_DETERMINISTIC_MULTI_FILE_PATHS * 2:
+        return FallthroughToLLM("shared_helper_source_path_scan_exceeded")
+
+    ordered_paths: list[str] = []
+    for occurrence in occurrences:
+        raw_path = occurrence.group("path")
+        path = normalize_repo_path_candidate(raw_path)
+        finding = unsafe_target_finding(path, workspace_root=root)
+        if finding is not None:
+            return Block(finding.reason_code)
+        if not path or path != raw_path:
+            return FallthroughToLLM("shared_helper_source_path_noncanonical")
+        if path not in ordered_paths:
+            ordered_paths.append(path)
+
+    if not 2 <= len(ordered_paths) <= _MAX_DETERMINISTIC_MULTI_FILE_PATHS:
+        return FallthroughToLLM("shared_helper_source_path_count_unsupported")
+    if not _shared_refactor_occurrences_are_affirmative(
+        planning_text,
+        occurrences,
+    ):
+        return FallthroughToLLM("shared_helper_source_intent_ambiguous")
+
+    source_records: list[tuple[str, bytes, str]] = []
+    total_bytes = 0
+    context_modes: set[str] = set()
+    for path in ordered_paths:
+        if allowed_paths is not None and not _resolved_path_allowed_by_scope(
+            root,
+            path,
+            allowed_paths,
+        ):
+            return Block("architect_target_outside_allowed_scope")
+        if readable_paths is not None and not _resolved_path_allowed_by_scope(
+            root,
+            path,
+            readable_paths,
+        ):
+            return FallthroughToLLM(
+                "shared_helper_source_outside_readable_scope"
+            )
+
+        source, reason = _existing_regular_nonsymlink_source(root, path)
+        if source is None:
+            if reason == "symlink":
+                return Block("architect_target_symlink_not_allowed")
+            return FallthroughToLLM(
+                "shared_helper_source_missing"
+                if reason == "missing"
+                else "shared_helper_source_not_regular"
+            )
+        try:
+            with source.open("rb") as stream:
+                if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                    return FallthroughToLLM(
+                        "shared_helper_source_not_regular"
+                    )
+                raw_content = stream.read(_MAX_TARGET_DISCOVERY_BYTES + 1)
+        except OSError:
+            return FallthroughToLLM("shared_helper_source_unreadable")
+        if len(raw_content) > _MAX_TARGET_DISCOVERY_BYTES:
+            return FallthroughToLLM("shared_helper_source_too_large")
+        total_bytes += len(raw_content)
+        if total_bytes > _MAX_DETERMINISTIC_MULTI_FILE_TOTAL_BYTES:
+            return FallthroughToLLM("shared_helper_source_context_too_large")
+        try:
+            content = raw_content.decode("utf-8", errors="strict")
+        except UnicodeDecodeError:
+            return FallthroughToLLM("shared_helper_source_not_utf8")
+        source_records.append((path, raw_content, content))
+        context_modes.add(derive_context_mode(path))
+
+    if len(context_modes) != 1:
+        return FallthroughToLLM("shared_helper_source_context_ambiguous")
+
+    primary_path, primary_raw, primary_content = source_records[0]
+    criteria = [
+        AcceptanceCriterion(
+            id=f"shared-helper-source-{index}",
+            description=(
+                f'Modify source artifact "{path}" as part of the requested '
+                "shared-helper refactor."
+            ),
+            kind="behavioral",
+        )
+        for index, (path, _raw, _content) in enumerate(source_records, start=1)
+    ]
+    criteria.extend(_acceptance_criteria(planning_text, primary_path)[1:])
+    criteria.append(
+        AcceptanceCriterion(
+            id="shared-helper-public-behavior",
+            description=(
+                "Consolidate the repeated implementation into a shared helper "
+                "while preserving public behavior across every listed source "
+                "artifact."
+            ),
+            kind="behavioral",
+        )
+    )
+    context_slices = [
+        _context_slice(
+            path,
+            "target" if index == 0 else "import",
+            content,
+        )
+        for index, (path, _raw, content) in enumerate(source_records)
+    ]
+    context_mode = next(iter(context_modes))
+    plan = ArchitectPlan(
+        plan_id=uuid4().hex,
+        task_id=task_id,
+        schema_version=PLAN_SCHEMA_VERSION,
+        created_at=_now_iso(),
+        source_task=task,
+        bundle_snapshot=_bundle_snapshot(root),
+        classification=_classify_task(planning_text, primary_path),
+        coder_packet=CoderPacket(
+            target_file=TargetFile(
+                path=primary_path,
+                exists=True,
+                sha256_before=_sha256_bytes(primary_raw),
+            ),
+            operation="edit",
+            acceptance_criteria=criteria,
+            constraints=_content_constraints(
+                planning_text,
+                primary_content,
+                primary_path,
+            ),
+            context_slices=context_slices,
+            forbidden_paths=list(
+                forbidden_paths_for_context_mode(context_mode)
+            ),
+            style_directives=[
+                "deterministic_explicit_multi_file_shared_helper_refactor",
+                *_style_directives(primary_path),
+            ],
+        ),
+        verification_plan=_verification_plan(primary_path),
+        budget=PlanBudget(
+            max_coder_attempts=3,
+            max_total_seconds=450,
+            cloud_escalation_allowed=True,
+        ),
+    )
+    return Plan(
+        bind_requested_artifacts_to_plan(
+            plan,
+            root,
+            authorized_paths=allowed_paths,
+        )
+    )
+
+
+def _shared_refactor_occurrences_are_affirmative(
+    task: str,
+    occurrences: list[re.Match[str]],
+) -> bool:
+    """Require one exact, positively bound duplicate-source statement.
+
+    Every path must be the object of its own ``symbol in path`` binding, all
+    bindings must occur in one clause, and that coordinated subject must be
+    stated to repeat or duplicate behavior immediately after the last path.
+    Any extra source-path mention makes this narrow deterministic route
+    inapplicable, so reference/example/untouched artifacts cannot become write
+    authority merely by appearing in the same sentence.
+    """
+
+    masked_text = _mask_source_path_sentence_punctuation(task, occurrences)
+    clause_spans: set[tuple[int, int]] = set()
+    for occurrence in occurrences:
+        clause_start = max(
+            masked_text.rfind(separator, 0, occurrence.start())
+            for separator in ("\n", ".", "!", "?", ";")
+        ) + 1
+        clause_ends = [
+            position
+            for separator in ("\n", ".", "!", "?", ";")
+            if (position := masked_text.find(separator, occurrence.end())) >= 0
+        ]
+        clause_spans.add(
+            (clause_start, min(clause_ends, default=len(task)))
+        )
+    if len(clause_spans) != 1:
+        return False
+
+    clause_start, clause_end = next(iter(clause_spans))
+    clause_occurrences = [
+        occurrence
+        for occurrence in occurrences
+        if clause_start <= occurrence.start() < clause_end
+    ]
+    if len(clause_occurrences) != len(occurrences):
+        return False
+    clause = task[clause_start:clause_end]
+    if re.search(
+        r"\b(?:excluding|except(?:ing)?|read[- ]only|reference|example|"
+        r"untouched|unchanged|unmodified|do\s+not|don't|never|without)\b",
+        clause,
+        re.IGNORECASE,
+    ):
+        return False
+    symbol_path_binding_text = (
+        r"(?:[`'\"][A-Za-z_][A-Za-z0-9_]{0,127}[`'\"]|"
+        r"[A-Za-z_][A-Za-z0-9_]{0,127})"
+        r"\s+in\s+[`'\"]?\s*"
+    )
+    first_binding = re.search(
+        symbol_path_binding_text + r"$",
+        clause[: clause_occurrences[0].start() - clause_start],
+        re.IGNORECASE,
+    )
+    if first_binding is None:
+        return False
+    preamble = clause[
+        : first_binding.start()
+    ]
+    if (
+        re.fullmatch(
+            r"\s*(?:refactor\s+(?:the\s+)?"
+            r"(?:duplicated|repeated)\s+"
+            r"(?:logic|code|cleanup|implementation|behavior)"
+            r"(?:\s+implemented\s+by)?\s*)?",
+            preamble,
+            re.IGNORECASE,
+        )
+        is None
+    ):
+        return False
+
+    inter_item = re.compile(
+        r"\s*[`'\"]?\s*"
+        r"(?:,\s*(?:(?:and|&)\s+)?|(?:and|&)\s+)"
+        + symbol_path_binding_text
+        + r"$",
+        re.IGNORECASE,
+    )
+    for previous, current in zip(
+        clause_occurrences,
+        clause_occurrences[1:],
+    ):
+        between = task[previous.end() : current.start()]
+        if inter_item.fullmatch(between) is None:
+            return False
+
+    suffix = clause[
+        clause_occurrences[-1].end() - clause_start :
+    ]
+    repeated_after_sources = (
+        re.match(
+            r"\s*[`'\"]?\s*(?:both\s+)?"
+            r"(?:repeat\w*|duplicat\w*)\b",
+            suffix,
+            re.IGNORECASE,
+        )
+        is not None
+    )
+    duplicated_before_sources = (
+        bool(preamble.strip())
+        and re.match(
+            r"\s*[`'\"]?\s*(?:into|to)\s+(?:one|a)\s+"
+            r"(?:small\s+)?(?:shared|common)\s+helper\b",
+            suffix,
+            re.IGNORECASE,
+        )
+        is not None
+    )
+    return repeated_after_sources or duplicated_before_sources
+
+
+def _mask_source_path_sentence_punctuation(
+    task: str,
+    occurrences: list[re.Match[str]],
+) -> str:
+    """Prevent source-file suffixes from becoming sentence boundaries."""
+
+    masked = list(task)
+    for occurrence in occurrences:
+        for index in range(occurrence.start(), occurrence.end()):
+            if masked[index] in ".!?;":
+                masked[index] = " "
+    return "".join(masked)
+
+
+def _existing_regular_nonsymlink_source(
+    root: Path,
+    path: str,
+) -> tuple[Path | None, str]:
+    """Resolve a canonical source without following any symlink component."""
+
+    candidate = root.resolve()
+    parts = Path(path).parts
+    for index, part in enumerate(parts):
+        candidate = candidate / part
+        try:
+            metadata = candidate.lstat()
+        except FileNotFoundError:
+            return None, "missing"
+        except OSError:
+            return None, "unreadable"
+        if stat.S_ISLNK(metadata.st_mode):
+            return None, "symlink"
+        if index < len(parts) - 1 and not stat.S_ISDIR(metadata.st_mode):
+            return None, "not_regular"
+    try:
+        resolved = candidate.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return None, "unreadable"
+    if not _is_relative_to(resolved, root.resolve()):
+        return None, "symlink"
+    try:
+        if not stat.S_ISREG(candidate.lstat().st_mode):
+            return None, "not_regular"
+    except OSError:
+        return None, "unreadable"
+    return candidate, ""
 
 
 def _resolve_ordinary_workspace_target(

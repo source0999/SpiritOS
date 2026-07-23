@@ -383,6 +383,68 @@ class CodingRegressionPackTests(unittest.TestCase):
         self.assertIn("BROKER_SELECTED_CONTEXT", prompt)
         self.assertNotIn("Approved diffs should require post-apply verification", prompt)
 
+    def test_generic_coder_prompt_includes_derived_public_numeric_contract(self) -> None:
+        plan = self._planned_doc_task()
+        task = (
+            "Add pagination to `list_records` with optional `offset` and "
+            "`limit` arguments. Defaults should still return all records, "
+            "both values must be non-negative integers (with `limit` at "
+            "least 1 when provided). Raise `ValueError` for invalid "
+            "pagination values."
+        )
+
+        prompt = _render_coder_prompt_from_packet(
+            plan.coder_packet,
+            source_task=task,
+            public_source_task=task,
+        )
+
+        self.assertIn("SERVER-DERIVED PUBLIC NUMERIC CONTRACT:", prompt)
+        self.assertIn("`offset` minimum 0", prompt)
+        self.assertIn("`limit` minimum 1", prompt)
+        self.assertIn(
+            "each supplied argument value must be an exact integer",
+            prompt,
+        )
+        self.assertIn("bool, float, and string values are invalid", prompt)
+        self.assertIn("Every invalid value must raise ValueError", prompt)
+        self.assertNotIn("isinstance(", prompt)
+        self.assertNotIn("type(value)", prompt)
+
+    def test_coder_prompt_contract_ignores_appended_reviewer_context(self) -> None:
+        plan = self._planned_doc_task()
+        public_task = "Preserve the existing formatter behavior."
+        appended = (
+            public_task
+            + "\nREVIEWER FEEDBACK:\n"
+            + "Add pagination to `list_records` with optional `offset` and "
+            "`limit` arguments. Both values must be non-negative integers. "
+            "Raise `ValueError` for invalid pagination values."
+        )
+
+        prompt = _render_coder_prompt_from_packet(
+            plan.coder_packet,
+            source_task=appended,
+            public_source_task=public_task,
+        )
+
+        self.assertNotIn("SERVER-DERIVED PUBLIC NUMERIC CONTRACT:", prompt)
+
+    def test_coder_prompt_requires_explicit_public_numeric_binding(self) -> None:
+        plan = self._planned_doc_task()
+        enriched_source = (
+            "Add pagination to `list_records` with optional `offset` and "
+            "`limit` arguments. Both values must be non-negative integers. "
+            "Raise `ValueError` for invalid pagination values."
+        )
+
+        prompt = _render_coder_prompt_from_packet(
+            plan.coder_packet,
+            source_task=enriched_source,
+        )
+
+        self.assertNotIn("SERVER-DERIVED PUBLIC NUMERIC CONTRACT:", prompt)
+
     def test_a_plus_receipt_final_label_contract_has_expected_values(self) -> None:
         expected = {
             "pass_productive",
@@ -4380,6 +4442,50 @@ export default products;
         self.assertEqual(
             out["coder_diagnostics"]["recommended_next_action"],
             "retry_with_stricter_output_contract_or_stronger_model",
+        )
+
+    def test_main_coder_prompt_ignores_numeric_repair_context_authority(self) -> None:
+        target = "src/app/agent-lab/existing/page.tsx"
+        _write(
+            self.root / target,
+            "export default function ExistingPage() { return <main>Old</main>; }\n",
+        )
+        task = "\n".join(
+            [
+                f"Target file: {target}",
+                "Change the page text from Old to New.",
+            ]
+        )
+        planned = plan_task_deterministically(
+            task,
+            "task-existing-public-authority",
+            self.root,
+        )
+        self.assertIsInstance(planned, Plan, planned)
+        prompts: list[str] = []
+
+        def capture_prompt(prompt: str, _alias: str) -> str:
+            prompts.append(prompt)
+            return "I would change Old to New."
+
+        propose_coder_agent_diff_payload_from_plan(
+            architect_plan=planned.plan,
+            workspace_root=self.root,
+            llm_call=capture_prompt,
+            force_live_model=True,
+            model_task_context=(
+                "Add pagination to `list_records` with optional `offset` and "
+                "`limit` arguments. Both values must be non-negative "
+                "integers. Raise `ValueError` for invalid pagination values."
+            ),
+        )
+
+        self.assertTrue(prompts)
+        self.assertTrue(
+            all(
+                "SERVER-DERIVED PUBLIC NUMERIC CONTRACT:" not in prompt
+                for prompt in prompts
+            )
         )
 
     def test_prompt_packet_agent_lab_known_apps_cannot_fall_back_to_pass_in_live_trial(self) -> None:

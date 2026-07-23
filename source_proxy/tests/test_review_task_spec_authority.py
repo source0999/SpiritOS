@@ -21,6 +21,8 @@ from source_proxy.planning.plan import (
     bind_requested_artifacts_to_plan,
     fixed_literal_callable_shape_check,
     fixed_literal_zero_arg_callable_names,
+    optional_integer_callable_contract,
+    optional_integer_callable_shape_check,
     review_intent_paths_from_plan,
     review_task_spec_from_plan,
     task_spec_from_plan,
@@ -32,6 +34,16 @@ from source_proxy.planning.plan import (
 
 PRIMARY = "src/app.py"
 SECONDARY = "tests/test_app.py"
+
+
+def _optional_integer_task() -> str:
+    return (
+        "Add pagination to `list_records` with optional `offset` and `limit` "
+        "arguments. Defaults should still return all records, both values "
+        "must be non-negative integers (with `limit` at least 1 when "
+        "provided), and the function must never mutate the module's stored "
+        "records. Raise `ValueError` for invalid pagination values."
+    )
 
 
 def _snapshot(path: str, content: str, *, exists: bool = True) -> dict[str, object]:
@@ -1077,6 +1089,655 @@ def test_direct_positive_path_language_grants_exact_file_authority(
     )
 
     assert spec.allowed_files == [PRIMARY, secondary]
+
+
+def test_optional_integer_callable_contract_derives_only_public_bounds() -> None:
+    assert optional_integer_callable_contract(_optional_integer_task()) == {
+        "ok": True,
+        "skipped": False,
+        "reason_code": "",
+        "callable": "list_records",
+        "parameters": [
+            {"name": "offset", "minimum": 0},
+            {"name": "limit", "minimum": 1},
+        ],
+        "invalid_exception": "ValueError",
+    }
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        (
+            "Add pagination to `list_records` with optional `offset` and "
+            "`limit` arguments. Both values must be non-negative integers."
+        ),
+        (
+            "Add pagination to `list_records` with optional `offset` or "
+            "`limit` arguments. Both values must be non-negative integers. "
+            "Raise `ValueError` for invalid pagination values."
+        ),
+        (
+            "Add pagination to `list_records` with optional `offset` and "
+            "`limit` arguments. Values should be sensible integers. Raise "
+            "`ValueError` for invalid pagination values."
+        ),
+        (
+            "Add pagination to `list_records` with optional `offset`, "
+            "`offset`, and `limit` arguments. All values must be "
+            "non-negative integers. Raise `ValueError` for invalid values."
+        ),
+        (
+            "Add pagination to `list_records` with optional `offset`, "
+            "`limit`, and `window` arguments. Both values must be "
+            "non-negative integers. Raise `ValueError` for invalid values."
+        ),
+        (
+            "Add pagination to `list_records` with optional `offset` and "
+            "`limit` arguments. Both values must be non-negative integers, "
+            "with `offset` at least 1 and `offset` at least 2. Raise "
+            "`ValueError` for invalid values."
+        ),
+        (
+            "Add pagination to `list_records` with optional `offset` and "
+            "`limit` arguments. Add paging to `fetch_records` with optional "
+            "`start` and `count` arguments. All values must be non-negative "
+            "integers. Raise `ValueError` for invalid values."
+        ),
+        (
+            "Add pagination to list_records with optional `offset` and "
+            "`limit` arguments. Both values must be non-negative integers. "
+            "Raise `ValueError` for invalid pagination values."
+        ),
+    ],
+)
+def test_optional_integer_callable_contract_fails_partial_or_ambiguous_prose(
+    task: str,
+) -> None:
+    result = optional_integer_callable_contract(task)
+
+    assert result["skipped"] is False
+    assert result["ok"] is False
+    assert result["reason_code"] in {
+        "optional_integer_contract_ambiguous",
+        "optional_integer_contract_incomplete",
+    }
+
+
+def test_optional_integer_callable_contract_skips_truly_absent_anchor() -> None:
+    result = optional_integer_callable_contract(
+        "Refactor the record formatter without changing its public behavior."
+    )
+
+    assert result["ok"] is True
+    assert result["skipped"] is True
+    assert result["reason_code"] == "optional_integer_contract_not_explicit"
+
+
+def test_optional_integer_callable_contract_skips_nonnumeric_optional_args() -> None:
+    result = optional_integer_callable_contract(
+        "Add filtering to `list_records` with an optional `status` argument. "
+        "The status value is a string."
+    )
+
+    assert result["ok"] is True
+    assert result["skipped"] is True
+    assert result["reason_code"] == "optional_integer_contract_not_explicit"
+
+
+@pytest.mark.parametrize(
+    "request_text",
+    [
+        "It is unnecessary to update `list_records` with optional `offset` "
+        "and `limit` arguments.",
+        "There is no request to update `list_records` with optional `offset` "
+        "and `limit` arguments.",
+        "Should we update `list_records` with optional `offset` and `limit` "
+        "arguments?",
+        "Do we need to update `list_records` with optional `offset` and "
+        "`limit` arguments?",
+        "We discussed whether to update `list_records` with optional `offset` "
+        "and `limit` arguments.",
+        "The rejected old proposal was to update `list_records` with optional "
+        "`offset` and `limit` arguments.",
+        "Rather than update `list_records` with optional `offset` and `limit` "
+        "arguments, keep the signature unchanged.",
+    ],
+)
+def test_optional_integer_contract_skips_nonaffirmative_narratives(
+    request_text: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        request_text
+        + " Both values must be non-negative integers. "
+        "Raise `ValueError` for invalid pagination values."
+    )
+
+    assert result["ok"] is True
+    assert result["skipped"] is True
+
+
+@pytest.mark.parametrize(
+    "request_suffix",
+    [
+        ", but do not validate them",
+        ", but keep its signature unchanged",
+        ", not actually changing its signature",
+        " without enforcing any bounds",
+        "; however, do not implement that change",
+    ],
+)
+def test_optional_integer_contract_rejects_request_suffix_contradictions(
+    request_suffix: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        "Update `list_records` to accept optional `offset` and `limit` "
+        f"arguments{request_suffix}. Both values must be non-negative "
+        "integers (with `limit` at least 1 when provided). Raise `ValueError` "
+        "for invalid pagination values."
+    )
+
+    assert not (
+        result["ok"] is True and result["skipped"] is False
+    )
+
+
+@pytest.mark.parametrize(
+    "feature",
+    [
+        "pagination accepting floats",
+        "pagination without validation",
+        "pagination where negative values are allowed",
+        "pagination that coerces strings",
+        "pagination with advisory bounds",
+        "unchecked pagination",
+        "noninteger pagination",
+        "loosely typed pagination",
+        "error-tolerant pagination",
+        "lax unvalidated paging",
+    ],
+)
+def test_optional_integer_contract_rejects_conflicted_feature_phrase(
+    feature: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        f"Add {feature} to `list_records` with optional `offset` and `limit` "
+        "arguments. Both values must be non-negative integers "
+        "(with `limit` at least 1 when provided). Raise `ValueError` for "
+        "invalid pagination values."
+    )
+
+    assert result["ok"] is False
+    assert result["skipped"] is False
+
+
+@pytest.mark.parametrize(
+    "parameter_list",
+    [
+        "`offset` `limit`",
+        "`offset`,, `limit`",
+        "`offset` and and `limit`",
+    ],
+)
+def test_optional_integer_contract_rejects_malformed_parameter_separators(
+    parameter_list: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        "Add pagination to `list_records` with optional "
+        f"{parameter_list} arguments. Both values must be non-negative "
+        "integers. Raise `ValueError` for invalid pagination values."
+    )
+
+    assert result["ok"] is False
+    assert result["skipped"] is False
+
+
+@pytest.mark.parametrize(
+    "request_text",
+    [
+        "Do not add pagination to `list_records` with optional `offset` and "
+        "`limit` arguments.",
+        "Do not update `list_records` with optional `offset` and `limit` "
+        "arguments.",
+        "Never modify `list_records` with optional `offset` and `limit` "
+        "arguments.",
+        "Do not ever add pagination to `list_records` with optional `offset` "
+        "and `limit` arguments.",
+        "Do not directly update `list_records` with optional `offset` and "
+        "`limit` arguments.",
+        "Never again modify `list_records` with optional `offset` and "
+        "`limit` arguments.",
+        "Add pagination elsewhere, not to `list_records` with optional "
+        "`offset` and `limit` arguments.",
+        "It is forbidden to add pagination to `list_records` with optional "
+        "`offset` and `limit` arguments.",
+        "Avoid this exact action: add pagination to `list_records` with "
+        "optional `offset` and `limit` arguments.",
+        "Decline to add pagination to `list_records` with optional `offset` "
+        "and `limit` arguments.",
+        "Do not "
+        + ("absolutely " * 12)
+        + "add pagination to `list_records` with optional `offset` and "
+        "`limit` arguments.",
+    ],
+)
+def test_optional_integer_callable_contract_rejects_negated_authority(
+    request_text: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        request_text
+        + " Both values must be non-negative integers. "
+        "Raise `ValueError` for invalid pagination values."
+    )
+
+    assert result["ok"] is True
+    assert result["skipped"] is True
+    assert result["reason_code"] == "optional_integer_contract_negated"
+
+
+def test_optional_integer_contract_does_not_bind_unrelated_integer_clause() -> None:
+    tasks = [
+        (
+            "Update `render` with optional `theme` arguments. Separately, "
+            "`retry_count` must be a positive integer."
+        ),
+        (
+            "Update `render` with optional `theme` arguments. Separately, "
+            "all parameters must be positive integers. Raise `ValueError` "
+            "for invalid values."
+        ),
+        (
+            "Update `render` with optional `theme` arguments. The retry "
+            "scheduler requires all parameters must be positive integers. "
+            "Raise `ValueError` for invalid values."
+        ),
+    ]
+
+    for task in tasks:
+        result = optional_integer_callable_contract(task)
+        assert result["ok"] is True
+        assert result["skipped"] is True
+
+
+@pytest.mark.parametrize(
+    "topic",
+    [
+        "setting",
+        "optional configuration",
+        "unrelated offset metadata",
+        "limit display setting",
+        "with configuration",
+    ],
+)
+def test_optional_integer_contract_rejects_unrelated_exception_topic(
+    topic: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        "Add pagination to `list_records` with optional `offset` and `limit` "
+        "arguments. All values must be positive integers. Raise `ValueError` "
+        f"for invalid {topic} values."
+    )
+
+    assert result["ok"] is False
+    assert result["skipped"] is False
+    assert result["reason_code"] == "optional_integer_contract_incomplete"
+
+
+def test_optional_integer_contract_does_not_cross_parameter_names() -> None:
+    result = optional_integer_callable_contract(
+        "Add bounds to `select_items` with optional `a` and `b` arguments. "
+        "`a`, `b` must be a positive integer, with `b` at least 5. Raise "
+        "`ValueError` for invalid bounds values."
+    )
+
+    assert result["ok"] is False
+    assert result["skipped"] is False
+
+
+def test_optional_integer_contract_binds_unquoted_bound_to_its_subject() -> None:
+    result = optional_integer_callable_contract(
+        "Update `select_items` to accept optional `a` and `b` arguments. "
+        "Both values must be non-negative integers. "
+        "b must be at least 5. Raise `ValueError` for invalid argument values."
+    )
+
+    assert result["ok"] is True
+    assert result["parameters"] == [
+        {"name": "a", "minimum": 0},
+        {"name": "b", "minimum": 5},
+    ]
+
+
+def test_optional_integer_contract_accepts_exact_four_sentence_roles() -> None:
+    result = optional_integer_callable_contract(
+        "Update `list_records` to accept optional `offset` and `limit` "
+        "arguments. Both values must be integers. "
+        "`offset` must be a non-negative integer and `limit` must be a "
+        "positive integer. Raise `ValueError` for invalid argument values."
+    )
+
+    assert result == {
+        "ok": True,
+        "skipped": False,
+        "reason_code": "",
+        "callable": "list_records",
+        "parameters": [
+            {"name": "offset", "minimum": 0},
+            {"name": "limit", "minimum": 1},
+        ],
+        "invalid_exception": "ValueError",
+    }
+
+
+@pytest.mark.parametrize(
+    "error_sentence",
+    [
+        "Do not validate; raise ValueError for invalid values.",
+        "Ignore invalid input; raise `ValueError` for invalid values.",
+        "Accept floats; `list_records` must raise ValueError for invalid values.",
+    ],
+)
+def test_optional_integer_contract_requires_whole_error_sentence(
+    error_sentence: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        "Update `list_records` to accept optional `offset` and `limit` "
+        "arguments. Both values must be non-negative integers. "
+        + error_sentence
+    )
+
+    assert result["ok"] is False
+    assert result["skipped"] is False
+
+
+@pytest.mark.parametrize(
+    "constraint_text",
+    [
+        (
+            "Both values must be non-negative integers. `offset` does not "
+            "need to be a non-negative integer. Raise `ValueError` for "
+            "invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Do not raise "
+            "`ValueError` for invalid argument values."
+        ),
+        (
+            "Separately, `offset` must be a non-negative integer. "
+            "`limit` must be a positive integer. Raise `ValueError` for "
+            "invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. The parser must "
+            "raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Either argument may "
+            "be None. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Raise `ValueError` "
+            "for invalid argument values. `limit` must be at most 50."
+        ),
+        (
+            "Both values must be non-negative integers. `limit` must also "
+            "be at least `offset`. Raise `ValueError` for invalid argument "
+            "values."
+        ),
+        (
+            "`offset` must be a non-negative integer. `limit` must be an odd "
+            "positive integer except 3. Raise `ValueError` for invalid "
+            "argument values."
+        ),
+        (
+            "Both values must be non-negative integers. `offset` must instead "
+            "be positive. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. `offset` must be at "
+            "least 5 and `limit` must be at least `offset`. Raise "
+            "`ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. `limit` "
+            + ("indisputably " * 10)
+            + "must be at least `offset`. Raise `ValueError` for invalid "
+            "argument values."
+        ),
+        (
+            "Both values must be non-negative integers. For the reporting "
+            "helper, `offset` must be at least 5. Raise `ValueError` for "
+            "invalid argument values."
+        ),
+        (
+            "`offset` must be a non-negative integer, except in compatibility "
+            "mode. `limit` must be a positive integer. Raise `ValueError` for "
+            "invalid argument values."
+        ),
+        (
+            "`offset` must be a non-negative integer, but negative values are "
+            "allowed. `limit` must be a positive integer. Raise `ValueError` "
+            "for invalid argument values."
+        ),
+        (
+            "`offset` must be a non-negative integer, although -1 is allowed. "
+            "`limit` must be a positive integer. Raise `ValueError` for "
+            "invalid argument values."
+        ),
+        (
+            "`offset` must be a non-negative integer. `limit` must be a "
+            "positive integer, or zero. Raise `ValueError` for invalid "
+            "argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Negative values are "
+            "allowed. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Values may also be "
+            "floats. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Booleans are "
+            "acceptable. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Strings should be "
+            "coerced. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Do not reject invalid "
+            "values. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Invalid values should "
+            "not raise errors. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Validation is "
+            "optional. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. The bounds are "
+            "advisory. Raise `ValueError` for invalid argument values."
+        ),
+        (
+            "Both values must be non-negative integers. Raise `ValueError` "
+            "for invalid values in parse_config, not list_records."
+        ),
+        (
+            "Both values must be non-negative integers. Raise `ValueError` "
+            "for invalid values, but only in the reporting validator."
+        ),
+        (
+            "Both values must be non-negative integers. Raise `ValueError` "
+            "for invalid values elsewhere."
+        ),
+        (
+            "Both values must be non-negative integers. The function must "
+            "raise `ValueError` for invalid values in another callable."
+        ),
+        (
+            "Defaults allow floats and strings, both values must be "
+            "non-negative integers. Raise `ValueError` for invalid values."
+        ),
+        (
+            "Defaults permit negative values, both values must be "
+            "non-negative integers. Raise `ValueError` for invalid values."
+        ),
+        (
+            "Both values must be non-negative integers, and the function must "
+            "not mutate inputs but negative values are allowed. Raise "
+            "`ValueError` for invalid values."
+        ),
+        (
+            "Both values must be non-negative integers, and the function must "
+            "never modify records; floats are accepted. Raise `ValueError` "
+            "for invalid values."
+        ),
+        (
+            "`offset` must be a non-negative integer,, `limit` must be a "
+            "positive integer. Raise `ValueError` for invalid argument values."
+        ),
+    ],
+)
+def test_optional_integer_contract_fails_closed_on_residual_constraints(
+    constraint_text: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        "Update `list_records` to accept optional `offset` and `limit` "
+        f"arguments. {constraint_text}"
+    )
+
+    assert not (
+        result["ok"] is True and result["skipped"] is False
+    )
+
+
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        "The `limit` argument must be at most 1. ",
+        "The `limit` argument must be odd. ",
+        "The `limit` argument may be None. ",
+        "The `offset` argument must be positive. ",
+        "The minimum is -1 for offset. ",
+        "Zero is allowed for limit. ",
+        "limit may be zero. ",
+        "Legacy calls allow -1 for offset. ",
+        "An upper cap of 100 applies to limit. ",
+        "Floats and strings are allowed. ",
+        "Invalid values should not raise errors. ",
+        "Negative values are acceptable. ",
+        "The bounds are advisory. ",
+        "Validation is optional. ",
+    ],
+)
+def test_optional_integer_contract_rejects_pre_request_constraints(
+    prefix: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        prefix
+        + "Add pagination to `list_records` with optional `offset` and "
+        "`limit` arguments. Both values must be non-negative integers "
+        "(with `limit` at least 1 when provided). Raise `ValueError` for "
+        "invalid pagination values."
+    )
+
+    assert result["ok"] is False
+    assert result["skipped"] is False
+
+
+@pytest.mark.parametrize(
+    "upper_bound",
+    [
+        "at most 100",
+        "must not exceed 100",
+        "cannot exceed 100",
+        "no greater than 100",
+        "up to 100",
+        "less than 101",
+        "below 101",
+        "<= 100",
+        "no higher than 100",
+        "100 or less",
+        "bounded above by 100",
+        "does not exceed 100",
+        "at or below 100",
+        "no bigger than 100",
+        "< 101",
+    ],
+)
+def test_optional_integer_contract_rejects_unsupported_upper_bound(
+    upper_bound: str,
+) -> None:
+    result = optional_integer_callable_contract(
+        "Add pagination to `list_records` with optional `offset` and `limit` "
+        "arguments. Both values must be non-negative integers and "
+        f"{upper_bound}. Raise `ValueError` for invalid pagination values."
+    )
+
+    assert result["ok"] is False
+    assert result["reason_code"] == (
+        "optional_integer_contract_unsupported_upper_bound"
+    )
+
+
+def test_optional_integer_callable_contract_fails_oversized_anchored_task() -> None:
+    result = optional_integer_callable_contract(
+        "Add pagination to `list_records` with optional `offset` argument. "
+        "The value must be a non-negative integer. "
+        + ("preserve behavior " * 1_000)
+    )
+
+    assert result["ok"] is False
+    assert result["skipped"] is False
+    assert result["reason_code"] == "optional_integer_contract_input_too_large"
+
+
+def test_optional_integer_callable_shape_requires_explicit_optional_names() -> None:
+    result = optional_integer_callable_shape_check(
+        _optional_integer_task(),
+        "\n".join(
+            [
+                "def list_records(offset, limit=None, records=None):",
+                "    return []",
+                "",
+            ]
+        ),
+    )
+
+    assert result["ok"] is False
+    assert {
+        (item.get("parameter"), item.get("reason"))
+        for item in result["violations"]
+    } == {
+        ("offset", "parameter_is_not_optional"),
+    }
+
+
+def test_optional_integer_callable_shape_accepts_equivalent_helper_validation() -> None:
+    result = optional_integer_callable_shape_check(
+        _optional_integer_task(),
+        "\n".join(
+            [
+                "def _validate(name, value, minimum):",
+                "    if type(value) is not int or value < minimum:",
+                "        raise ValueError(name)",
+                "",
+                "def list_records(offset=0, limit=None):",
+                "    _validate('offset', offset, 0)",
+                "    if limit is not None:",
+                "        _validate('limit', limit, 1)",
+                "    return []",
+                "",
+            ]
+        ),
+    )
+
+    assert result["ok"] is True
+    assert result["missing_parameters"] == []
+    assert result["violations"] == []
 
 
 def test_fixed_literal_count_callable_derives_zero_arg_public_contract() -> None:

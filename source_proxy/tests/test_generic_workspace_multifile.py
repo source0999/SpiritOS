@@ -463,41 +463,38 @@ def test_explicit_shared_helper_task_reuses_canonical_spec_through_review(
         "`normalize_username` in `src/users.py` and `normalize_email` in "
         "`src/contacts.py` repeat the same whitespace-and-lowercase cleanup. "
         "Refactor that duplicated logic into one small shared helper while "
-        "preserving both public functions and their current behavior. "
-        "Create file src/normalization.py as that shared helper."
+        "preserving both public functions and their current behavior."
     )
 
     def architect_call(_prompt: str, _alias: str) -> str:
-        return _architect_response("src/users.py")
+        raise AssertionError("explicit shared-helper sources must plan locally")
 
     def coder_call(prompt: str, _alias: str) -> str:
         assert '"src/users.py"' in prompt
         assert '"src/contacts.py"' in prompt
-        assert "Shared-helper capability" in prompt
+        assert (
+            "Shared-helper capability: implement the helper only within the "
+            "exact authorized files listed above" in prompt
+        )
+        assert "at most one new helper file" not in prompt
         return json.dumps(
             {
                 "files": [
                     {
                         "path": "src/users.py",
                         "content": (
-                            "from src.normalization import normalize_identity\n\n\n"
+                            "def _normalize_identity(value: str) -> str:\n"
+                            "    return value.strip().lower()\n\n\n"
                             "def normalize_username(value: str) -> str:\n"
-                            "    return normalize_identity(value)\n"
+                            "    return _normalize_identity(value)\n"
                         ),
                     },
                     {
                         "path": "src/contacts.py",
                         "content": (
-                            "from src.normalization import normalize_identity\n\n\n"
+                            "from src.users import _normalize_identity\n\n\n"
                             "def normalize_email(value: str) -> str:\n"
-                            "    return normalize_identity(value)\n"
-                        ),
-                    },
-                    {
-                        "path": "src/normalization.py",
-                        "content": (
-                            "def normalize_identity(value: str) -> str:\n"
-                            "    return value.strip().lower()\n"
+                            "    return _normalize_identity(value)\n"
                         ),
                     },
                 ]
@@ -548,13 +545,9 @@ def test_explicit_shared_helper_task_reuses_canonical_spec_through_review(
     assert set(canonical_allowed) == {
         "src/users.py",
         "src/contacts.py",
-        "src/normalization.py",
     }
     assert diagnostics["canonical_task_spec_check"]["ok"] is True
     assert diagnostics["review_task_spec"] == diagnostics["canonical_task_spec"]
-    assert diagnostics["review_artifact_snapshots"]["src/normalization.py"][
-        "exists"
-    ] is False
     assert _git(root, "status", "--short") == ""
 
 

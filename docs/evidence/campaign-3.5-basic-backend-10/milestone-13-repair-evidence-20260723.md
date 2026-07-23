@@ -523,3 +523,132 @@ explicitly staged, committed, pushed, verified clean, and preflighted before a
 completely fresh first phase. A clean unseen-seed rerun remains forbidden
 until that new first phase passes every numerical, mandatory-task,
 repaired-success, trace, receipt, and hard-safety requirement.
+
+## Sixth formal first phase and strict lifecycle rederivation repair
+
+The sixth fresh first phase is preserved as immutable negative evidence:
+
+- Source head: `345047eed51f5c67abf5693dbca9f138e961a9b3`.
+- Run: `basic-backend-10-20260723T103032Z-e05e013bd704`.
+- Phase:
+  `/home/source/.source-proxy-basic-backend-10-evidence-20260722/basic-backend-10-20260723T103032Z-e05e013bd704/first`.
+- Phase-manifest file SHA-256:
+  `da2a9e863be995a1b1b70395df243091d4b7503f0a49caaf1e8c344824e6f583`.
+- Embedded canonical manifest commitment:
+  `3822da5500280f539df0833bcf6f425dc667df8280b4d3c1dbd3105f0e4ee34d`.
+- Aggregate SHA-256:
+  `fe843074b2ddc91d3f06def558643abb38551bab60645f25400ef63a66abee86`.
+- Gate-report file SHA-256:
+  `12f07135649a79d616974ceb431c5d6b2a5b171d3b8d7da02fcc0e47807b961e`.
+- Formal result: `6/10`; no clean rerun was authorized.
+
+BT01, BT02, BT03, BT04, BT08, and BT09 completed the authenticated
+production lifecycle in one attempt and passed. Nine tasks crossed that
+lifecycle. BT07 blocked before apply after the Architect returned invalid
+JSON for a public two-file shared-helper refactor. BT06 crossed the lifecycle
+and ended truthfully at `verification_failed` after its bounded repair path
+was exhausted.
+
+BT05 applied a replacement on its second attempt but still accepted invalid
+numeric inputs and failed the public contract. Its service record nevertheless
+ended at `completed`; aggregate rederivation therefore found one fabricated
+completion and rejected the declared score. BT10's second proposal satisfied
+the public behavior and ended at `completed_verified`, but the runner created
+a stale third-attempt request. Strict lineage rederivation correctly refused
+to count either case as a repaired success. The phase retained zero
+unauthorized mutations and zero hidden-answer leaks, but the fabricated
+completion, failed mandatory BT05, missing BT07 execution, `6/10` score, and
+zero rederived repaired successes independently fail the hard gate.
+
+Read-only diagnosis used only public human prompts, public tests, product
+receipts, and independent-verification results. It did not inspect raw model
+outputs, private oracle answers, expected patches, or reference solutions.
+The generalized repair closes four production boundaries:
+
+- The formal runner accepts a pending repair request only when its task, run,
+  current attempt, parent attempt, parent seal, and absent successor proposal
+  all bind to the exact live state. The successor identity must differ from
+  the failed identity, every identity must be a nonblank string, and the
+  proposal field must be exactly null rather than merely non-object. Blank
+  approvals are not fresh authority. Claimed repair success is rederived from
+  the authenticated lineage rather than trusted from a service field.
+- A strict public optional-integer callable contract derives authority only
+  from an exact affirmative human request. It conservatively binds callable
+  ownership, parameter names, lower bounds, defaults, preservation behavior,
+  and exact `ValueError` responsibilities; conflicting, detached, malformed,
+  duplicated, relational, nullable, upper-bound, or semicolon-prefixed prose
+  fails closed. The error responsibility must consume its entire sentence. The
+  restricted post-apply runtime uses a fresh network-disabled, read-only
+  child for every valid and invalid case, validates canonical receipts and
+  exit parity, and checks the full six-value invalid matrix individually and
+  in combination.
+- The deterministic Architect has a bounded positive grammar for an explicit
+  two-file shared-helper refactor. It admits only canonical existing files,
+  exact public scope, safe sizes, and non-symlink artifacts, producing an
+  exact multi-file TaskSpec without widening the authorized paths. Every
+  helper-bearing contrast segment must contain exactly one nearby affirmative
+  extraction/refactor action, and task-wide helper/refactor prohibitions,
+  modal negations, long-gap negations, extra declarative helper clauses, or
+  conflicting follow-up sentences force fallthrough.
+- Architect and pre-Coder model failures now terminalize the active task
+  truthfully, attribute the correct role and stage, skip only work that did
+  not occur, and remain idempotent without overwriting an existing terminal
+  or completed state.
+
+Independent read-only correctness reviews initially found and reproduced the
+semicolon-prefix authority gap, conflicting shared-helper language, a cyclic
+successor identity, malformed non-null proposal states, and broad trailing
+refactor negations. Each was closed with a generalized fail-closed rule and a
+public regression. The reviewers then returned GO on the final live tree,
+including the exact affirmative cases, restricted numeric runtime, repair
+freshness, path authority, bounded retries, receipts, and terminalization.
+They found no benchmark/task branch or nonpublic coupling in added production
+lines.
+
+The final 13-file source/test repair had binary diff SHA-256
+`4cfa7df55081a7d673b1f959babbe2e5ced4f6144f7f7b71df9cd4e370f09f1f`
+and stat `5041 insertions, 135 deletions`. Three isolated, non-overlapping
+public regression invocations used the pinned local Python and disposable
+state roots:
+
+- Direct changed modules (Architect, runner, orchestrator, coding regression,
+  backend verifier, multi-file workspace, and TaskSpec authority):
+  `714 passed, 61 subtests passed in 149.41s`.
+- Adjacent long-running and authenticated lifecycle surfaces:
+  `467 passed, 69 subtests passed in 134.77s`.
+- Fixture/approval/model authority, external gate/integration, trace,
+  repair-loop, anti-cheat/provenance, asset integrity, and fixture-builder
+  surfaces: `157 passed in 43.95s`.
+
+The combined non-overlapping total is `1,338 passed, 130 subtests passed`,
+with no skip or deselection in those full invocations. The final logs are
+`/tmp/spiritos-validation-b1-final4.log`,
+`/tmp/spiritos-validation-b2-final2.log`, and
+`/tmp/spiritos-validation-b3-final2.log`, with SHA-256 respectively
+`6cc56839728a2b24c4b4e9832dcd936345d871fd14456d49f17fe5abece0d6aa`,
+`c9cd10a8ee3d6cdb262142358c5e8e013b49e9d5d78342c774aa33cb871ad473`,
+and `bc87d034bbcd5d63eb05d35a756ced218ec29b5c727ad50659180175d6301e3b`.
+The corresponding `.status` files all contain zero and `.root` files name
+their isolated state roots. All 13 changed Python files compile with an
+external bytecode cache, `git diff --check` passes, and the added-production
+prohibited-coupling scan is empty. It finds no task label, benchmark answer,
+expected patch, private oracle material, hosted provider, or external
+fallback. The outer Core/Full runner, direct private/reference-content tests,
+live local-model formal execution, and unrelated UI/Cartographer/Agent
+Factory/visual suites remain excluded or reserved for their own gates; no
+nonpublic contents were inspected.
+
+The exact final 13-file repair is recoverable from
+`/home/source/.source-proxy-recovery-campaign-3.5-run6-repair-release-20260723T134607Z`.
+The mode-`0600` `wip.patch` is 218,460 bytes with SHA-256
+`4cfa7df55081a7d673b1f959babbe2e5ced4f6144f7f7b71df9cd4e370f09f1f`;
+the mode-`0600` `manifest.txt` has SHA-256
+`da8b0d13bba2a8ca6518021739cfadda099783f59826a25ef9e8f77e702f722f`.
+The directory is mode `0700`, the live binary diff matched the patch hash, and
+reverse applicability passed.
+
+This sixth manifest will not be resumed. The reviewed repair and this evidence
+must be explicitly staged, committed, pushed, verified clean, and preflighted
+at the new head before another completely fresh first phase. A clean
+unseen-seed rerun remains forbidden until that phase passes every numerical,
+mandatory-task, repaired-success, trace, receipt, and hard-safety criterion.

@@ -2620,6 +2620,70 @@ def test_target_plugin_recovery_integrity_error_persists_fallback_participant_an
     assert rejected_event["detail"]["recovery_id"] == receipt[
         "recovery_lineage"
     ][0]["recovery_id"]
+    assert receipt["lane_states"] == {
+        "context-broker": "completed",
+        "planner": "completed",
+        "coder": "blocked",
+        "reviewer": "skipped",
+        "verifier": "skipped",
+        "anti-cheat": "skipped",
+        "repair": "skipped",
+        "evidence-recorder": "skipped",
+    }
+    assert any(
+        event["event_type"]
+        == "target_plugin_recovery_integrity_failure_terminalized"
+        and event["detail"]["reason_code"]
+        == "recovery_replacement_output_copied"
+        for event in receipt["causal_events"]
+    )
+
+
+def test_model_failure_terminalization_seals_active_repair_lane() -> None:
+    state = CodingLaneStateMachine(
+        task_id="task-model-failure-terminal",
+        run_id="run-model-failure-terminal",
+    )
+    state.lane_states["context-broker"] = "completed"
+    state.lane_states["planner"] = "completed"
+    state.lane_states["repair"] = "running"
+
+    CodingOrchestrator._terminalize_model_failure(
+        state,
+        event_type="target_plugin_fallback_failure_terminalized",
+        reason_code="generic_workspace_preview_repair_exhausted",
+        detail={"invocation_id": "invocation-bounded"},
+    )
+    CodingOrchestrator._terminalize_model_failure(
+        state,
+        event_type="target_plugin_fallback_failure_terminalized",
+        reason_code="generic_workspace_preview_repair_exhausted",
+        detail={"invocation_id": "invocation-bounded"},
+    )
+
+    assert state.lane_states == {
+        "context-broker": "completed",
+        "planner": "completed",
+        "coder": "blocked",
+        "reviewer": "skipped",
+        "verifier": "skipped",
+        "anti-cheat": "skipped",
+        "repair": "blocked",
+        "evidence-recorder": "skipped",
+    }
+    assert state.lane_reasons["repair"] == (
+        "generic_workspace_preview_repair_exhausted"
+    )
+    event = state.causal_events[-1]
+    assert event["event_type"] == "target_plugin_fallback_failure_terminalized"
+    assert event["detail"] == {
+        "invocation_id": "invocation-bounded",
+        "reason_code": "generic_workspace_preview_repair_exhausted",
+    }
+    assert sum(
+        item["event_type"] == "target_plugin_fallback_failure_terminalized"
+        for item in state.causal_events
+    ) == 1
 
 
 def test_canonical_target_plugin_proposal_binds_adapter_model_and_runtime_output(
