@@ -444,3 +444,89 @@ The exact remaining sequence is:
    manifest.
 5. Only if that phase passes, preserve its evidence in a documentation-only
    descendant and run the required clean unseen-seed rerun.
+
+## Continuation checkpoint after the fifth formal first phase
+
+The fifth fresh run
+`basic-backend-10-20260723T083424Z-0af3906ac282` at
+`17c239704a064824945bc7a958a32193c90980e1` is immutable negative evidence.
+It scored `6/10`: BT01, BT02, BT03, BT04, BT08, and BT09 passed in one
+authenticated attempt. BT05, BT06, and BT10 applied a first proposal, failed
+verification, and reached a replacement attempt that failed before fresh
+approval. BT07 stopped before apply after two invalid Architect responses and
+was incorrectly left durable as `running`. All receipts remained truthful and
+all mutation, fabrication, hidden-answer, and wrong-artifact false-positive
+counts remained zero.
+
+Evidence identity:
+
+- Phase-manifest file SHA-256:
+  `300dd3ea586c85bb2b3c88d533c0287ee73379dca158ae1f216862d82336459b`.
+- Embedded manifest commitment:
+  `0bb2a3b56ed1642c83b1674709993968b6028c1b65b96abf650f860ef048d62d`.
+- Aggregate SHA-256:
+  `f1abba5044dc778ad106fd3c02b0c9f7227e312141ec7a38bcc87d9037fa4a6d`.
+- Gate-report file SHA-256:
+  `3a694b8fa72c92cdb62f68518673e1447dfd13d7c1ac9719ad98fbe45cfec245`.
+- Evaluation contract:
+  `9e62df06b1d2b40047c978c453212f30769e74643bdbae2cbc352cc8f8b4400a`.
+- Model inventory:
+  `c57b20807f788dde715027b7ef62e860758bf5526349329bf49694be9186ffc7`.
+- Verifier runtime:
+  `896bfd30ab855fe02a04600de0bd9bb84feac013ded08d842ad762590abdcef2`.
+- Sandbox image:
+  `sha256:cc8cbaa77023ac63a64a266154a6e122c557480eb78aa277779b8bf0266940ca`.
+
+The current ten-file production/test WIP is a generalized response to that
+run:
+
+- `source_proxy/coding/recovery.py` projects bounded, deduplicated, redacted
+  public repair evidence while retaining full durable commitments.
+- `source_proxy/decision/proposal_task.py` accepts a split planning/model view
+  only for an exact canonical server-registered version-2 envelope.
+- `source_proxy/target_plugins/generic_workspace.py` persists the original task
+  and forwards repair context transiently through every bounded Coder path.
+- `source_proxy/coding/orchestrator.py` truthfully seals pre-plan and
+  pre-Coder adapter failures.
+- `source_proxy/tasks/long_running.py` persists the correct blocked role,
+  stage, reason, and capped idempotent terminal steps.
+- Five corresponding test modules cover forgery, redaction, output bounds,
+  registry expiry, transient-only evidence, primary/fallback terminalization,
+  capped polling, and no fabricated artifact or approval.
+
+The final stable code/test diff SHA-256 is
+`4818063388c3ec3d654c286b2cac7ab7da402f1be4533f3ce29e9eccbea71522`.
+Validation reports `1,228 passed` plus `130 subtests passed` across the
+affected, gate-runner, long-running/backend, coding regression, authority,
+approval, trace, proof, reviewer/verifier, repair-loop, participant,
+anti-cheat, provenance, fixture, frozen-asset, and end-to-end surfaces. All
+ten changed Python files compile and `git diff --check` passes. Two existing
+FastAPI deprecation warnings are the only warnings reported.
+
+Independent reviews approve the exact final diff. They found no task-specific
+branch, fixture answer, oracle data, hosted fallback, authority expansion,
+bypass, synthetic completion, unbounded retry, or persisted raw repair
+context. The registry-expiry repro, forged-envelope probes, multi-file and
+fallback prompts, offline proof, and durable terminalization all pass.
+
+Campaign 4 remains `PAUSED_FOR_CAMPAIGN_3_5_BACKEND_PROOF` with
+`implementation_began=false`, `accepted_commits=false`, and
+`push_occurred=false`.
+
+Exact remaining sequence:
+
+1. Preserve the complete twelve-file code/test/evidence diff in a new
+   mode-`0600` recovery bundle and verify its hash and reverse applicability.
+2. Explicitly stage only the ten reviewed code/test files and these two
+   evidence packets; commit and push normally to the authoritative SMB remote.
+3. Prove the local and remote branch heads match, the worktree is clean, and
+   Campaign 4 remains paused.
+4. Run the clean Basic preflight at that pushed head.
+5. Start a completely fresh formal `first` phase. Do not resume this or any
+   earlier failed manifest.
+6. If the first phase fails, preserve it, make only generalized
+   public-evidence-driven repairs, and start another fresh first phase.
+7. If the first phase passes all score, mandatory-task, repaired-success,
+   trace, receipt, and safety requirements, preserve it in a documentation-only
+   descendant commit and run the required fresh `clean_rerun`.
+8. Mark the autonomous goal complete only after both required phases pass.

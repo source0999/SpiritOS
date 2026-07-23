@@ -1145,16 +1145,25 @@ class CodingOrchestrator:
             receipt["target_plugin_result"] = primary_result
             return receipt
         if primary_context_binding is None or invocation_event is None:
-            blocked_reason = str(
-                primary_result.get("reason_code")
-                or primary_result.get("reasonCode")
-                or "target_plugin_architect_plan_not_persisted_before_coder"
+            plan_persisted = run.lane_states.get("planner") == "completed"
+            blocked_reason = _safe_pre_plan_reason_code(
+                primary_result,
+                default=(
+                    "target_plugin_coder_dispatch_not_persisted_after_plan"
+                    if plan_persisted
+                    else "target_plugin_architect_plan_not_persisted_before_coder"
+                ),
             )
-            run.record_event(
-                event_type="target_plugin_pre_plan_blocked",
-                lane_id="planner",
+            self._terminalize_pre_dispatch_failure(
+                run,
+                event_type=(
+                    "target_plugin_pre_coder_blocked"
+                    if plan_persisted
+                    else "target_plugin_pre_plan_blocked"
+                ),
+                failed_lane="coder" if plan_persisted else "planner",
+                reason_code=blocked_reason,
                 detail={
-                    "reason_code": blocked_reason,
                     "plugin_id": plugin.plugin_id,
                     "selected_prompt_id": plugin.selected_prompt_id,
                     **_sanitized_target_adapter_provenance(primary_result),
@@ -1162,7 +1171,14 @@ class CodingOrchestrator:
             )
             self._persist(
                 run,
-                "target-plugin returned a structured block before authoritative plan persistence",
+                (
+                    "target-plugin returned a structured block before Coder dispatch"
+                    if plan_persisted
+                    else (
+                        "target-plugin returned a structured block before "
+                        "authoritative plan persistence"
+                    )
+                ),
             )
             raise CodingOrchestratorError(blocked_reason)
         input_sha256 = _target_plugin_model_input_sha256(
@@ -1409,16 +1425,29 @@ class CodingOrchestrator:
                 fallback_context_binding is None
                 or fallback_invocation_event is None
             ):
-                blocked_reason = str(
-                    fallback_result.get("reason_code")
-                    or fallback_result.get("reasonCode")
-                    or "target_plugin_fallback_plan_not_persisted_before_coder"
+                fallback_plan_persisted = (
+                    run.lane_states.get("planner") == "completed"
                 )
-                run.record_event(
-                    event_type="target_plugin_fallback_pre_plan_blocked",
-                    lane_id="planner",
+                blocked_reason = _safe_pre_plan_reason_code(
+                    fallback_result,
+                    default=(
+                        "target_plugin_fallback_coder_dispatch_not_persisted"
+                        if fallback_plan_persisted
+                        else "target_plugin_fallback_plan_not_persisted_before_coder"
+                    ),
+                )
+                self._terminalize_pre_dispatch_failure(
+                    run,
+                    event_type=(
+                        "target_plugin_fallback_pre_coder_blocked"
+                        if fallback_plan_persisted
+                        else "target_plugin_fallback_pre_plan_blocked"
+                    ),
+                    failed_lane=(
+                        "coder" if fallback_plan_persisted else "planner"
+                    ),
+                    reason_code=blocked_reason,
                     detail={
-                        "reason_code": blocked_reason,
                         "plugin_id": plugin.plugin_id,
                         "selected_prompt_id": plugin.selected_prompt_id,
                         "recovery_id": authorization.to_payload()["recovery_id"],
@@ -1427,7 +1456,15 @@ class CodingOrchestrator:
                 )
                 self._persist(
                     run,
-                    "authorized fallback returned a structured block before plan persistence",
+                    (
+                        "authorized fallback returned a structured block before "
+                        "replacement Coder dispatch"
+                        if fallback_plan_persisted
+                        else (
+                            "authorized fallback returned a structured block "
+                            "before plan persistence"
+                        )
+                    ),
                 )
                 raise CodingOrchestratorError(blocked_reason)
             fallback_input_sha256 = _target_plugin_model_input_sha256(
@@ -3833,6 +3870,50 @@ class CodingOrchestrator:
         receipt = run.receipt(summary=summary)
         record_coding_orchestrator_state(run.task_id, state=receipt)
         return receipt
+
+    @staticmethod
+    def _terminalize_pre_dispatch_failure(
+        run: CodingLaneStateMachine,
+        *,
+        event_type: str,
+        failed_lane: str,
+        reason_code: str,
+        detail: Mapping[str, Any],
+    ) -> None:
+        """Seal a pre-plan or pre-Coder block without inventing downstream work."""
+
+        if failed_lane not in LANE_SEQUENCE:
+            raise CodingOrchestratorError("unknown_coding_lane")
+        skipped_reason = (
+            "pre_plan_failure_prevented_lane_dispatch"
+            if failed_lane == "planner"
+            else "pre_coder_failure_prevented_lane_dispatch"
+        )
+        for lane_id in LANE_SEQUENCE:
+            state = run.lane_states[lane_id]
+            if state in {"running", "failed", "recovering"}:
+                run.transition(lane_id, "blocked", reason=reason_code)
+            elif state == "pending":
+                run.transition(
+                    lane_id,
+                    "blocked" if lane_id == failed_lane else "skipped",
+                    reason=(
+                        reason_code
+                        if lane_id == failed_lane
+                        else skipped_reason
+                    ),
+                )
+        if any(
+            event.get("event_type") == event_type
+            and event.get("detail", {}).get("reason_code") == reason_code
+            for event in run.causal_events
+        ):
+            return
+        run.record_event(
+            event_type=event_type,
+            lane_id=failed_lane,
+            detail={"reason_code": reason_code, **dict(detail)},
+        )
 
 
 _PRODUCTION_ORCHESTRATOR: CodingOrchestrator | None = None
@@ -6290,6 +6371,19 @@ def _sanitized_target_adapter_provenance(
             call.get("completed") is True for call in calls
         ),
     }
+
+
+def _safe_pre_plan_reason_code(
+    result: Mapping[str, Any],
+    *,
+    default: str,
+) -> str:
+    value = result.get("reason_code") or result.get("reasonCode")
+    if isinstance(value, str):
+        normalized = value.strip()
+        if re.fullmatch(r"[a-z][a-z0-9_]{0,95}", normalized):
+            return normalized
+    return default
 
 
 def _sha256_json(value: Any) -> str:

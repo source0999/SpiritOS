@@ -8,10 +8,12 @@ from pathlib import Path
 
 import pytest
 
+from source_proxy.coding.recovery import render_evidence_guided_repair_model_task
 from source_proxy.context.canonical_broker import (
     acknowledge_context_consumer,
     build_context_broker_report,
 )
+from source_proxy.decision import proposal_task as proposal_task_state
 from source_proxy.planning.plan import ArchitectPlan, task_spec_from_plan
 from source_proxy.target_plugins.generic_workspace import (
     GENERIC_RICH_EXECUTION_PATH,
@@ -897,6 +899,139 @@ def test_single_file_repair_switches_to_bounded_exact_edit_contract(
         "replacement_file",
         "json_exact_edits",
     ]
+    assert _git(root, "status", "--short") == ""
+
+
+def test_large_verifier_repair_packet_reaches_coder_as_bounded_evidence(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    original_task = (
+        "Target file: src/service.py\n"
+        "Fix `existing` so it returns `ready` without changing its signature."
+    )
+    repair_task, _ = render_evidence_guided_repair_model_task(
+        original_task,
+        {
+            "failure_class": "verifier_rejection",
+            "source_lane": "verifier",
+            "exact_feedback": {
+                "post_apply_verification": {
+                    "checks": [
+                        {
+                            "id": "public_pytest",
+                            "status": "failed",
+                            "output_tail": (
+                                "FAILED tests/test_service.py::test_existing\n"
+                                "E AssertionError: expected 'ready', got 'kept'"
+                            ),
+                        }
+                    ],
+                    "duplicated_server_trace": "trace-noise-" * 20_000,
+                }
+            },
+            "repair_input_sha256": "sha256:" + "1" * 64,
+            "feedback_sha256": "sha256:" + "2" * 64,
+            "repair_diagnostic_sha256": "sha256:" + "3" * 64,
+            "current_state_manifest": {
+                "target_workspace_state_paths": ["src/service.py"],
+                "changed_files": [
+                    {
+                        "path": "src/service.py",
+                        "current_exists": True,
+                        "current_sha256": "4" * 64,
+                    }
+                ],
+            },
+            "requirements": {
+                "fresh_proposal_required": True,
+                "fresh_approval_required": True,
+            },
+        },
+    )
+    prompts: list[str] = []
+    persisted_plans: list[ArchitectPlan] = []
+    coder_ready_calls = 0
+
+    def architect_call(_prompt: str, _alias: str) -> str:
+        raise AssertionError("validated repair envelope should plan deterministically")
+
+    def coder_call(prompt: str, _alias: str) -> str:
+        prompts.append(prompt)
+        assert "test_existing" in prompt
+        assert "duplicated_server_trace" not in prompt
+        assert len(prompt) < 40_000
+        if len(prompts) == 1:
+            return "not a valid replacement payload"
+        return json.dumps(
+            {
+                "edits": [
+                    {
+                        "path": "src/service.py",
+                        "old": "return 'kept'",
+                        "new": "return 'ready'",
+                    }
+                ]
+            }
+        )
+
+    def plan_ready(
+        plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        assert isinstance(plan, ArchitectPlan)
+        assert plan.source_task == original_task
+        persisted_plans.append(plan)
+        # Simulate bounded registry expiry after the trusted repair envelope
+        # has already been split into its durable planning and model views.
+        with proposal_task_state._TRUSTED_REPAIR_TASKS_LOCK:
+            proposal_task_state._TRUSTED_REPAIR_TASKS.clear()
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_bounded_repair_plan_bound",
+            reason="test_original_task_planned_with_repair_source_preserved",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        nonlocal coder_ready_calls
+        coder_ready_calls += 1
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_bounded_repair_coder_bound",
+            reason="test_coder_consumes_bounded_public_failure",
+        )
+
+    result = execute_generic_workspace_rich(
+        task=repair_task,
+        workspace_root=root,
+        allowed_paths=("src/",),
+        readable_paths=("src/", "tests/"),
+        model_call=coder_call,
+        architect_model_call=architect_call,
+        coder_model_call=coder_call,
+        model_alias="coder",
+        canonical_context={},
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["coder_blocked"] is False
+    assert "-    return 'kept'" in result["proposed_diff"]
+    assert "+    return 'ready'" in result["proposed_diff"]
+    assert len(prompts) == 2
+    assert all(
+        "SERVER-OWNED EVIDENCE-GUIDED REPAIR INPUT" in prompt
+        for prompt in prompts
+    )
+    assert coder_ready_calls == 1
+    assert len(persisted_plans) == 1
+    assert task_spec_from_plan(persisted_plans[0]).target == "src/service.py"
     assert _git(root, "status", "--short") == ""
 
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import math
 import re
 from collections.abc import Mapping
 from datetime import UTC, datetime
@@ -19,6 +20,11 @@ from uuid import uuid4
 
 from source_proxy.context.canonical_broker import (
     is_derived_architect_context_source,
+)
+from source_proxy.decision.proposal_task import (
+    EVIDENCE_GUIDED_REPAIR_TASK_INSTRUCTION,
+    EVIDENCE_GUIDED_REPAIR_TASK_MARKER,
+    register_trusted_evidence_guided_repair_task,
 )
 
 
@@ -38,28 +44,485 @@ RETRY_SUCCESS_CLAIM_CEILING = "recovered_after_retry_only"
 FALLBACK_SUCCESS_CLAIM_CEILING = "recovered_via_declared_fallback_only"
 
 _SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+_REPAIR_PROMPT_SCHEMA = "coding.evidence-guided-repair-prompt/v2"
+_REPAIR_CHECK_LIMIT = 6
+_REPAIR_CHECK_OUTPUT_LIMIT = 3_000
+_REPAIR_CHECK_OUTPUT_BUDGET = 8_000
+_REPAIR_FALLBACK_EVIDENCE_LIMIT = 8_000
+_REPAIR_PATH_LIMIT = 300
 
 
 def render_evidence_guided_repair_model_task(
     original_task: str,
     repair_request: Mapping[str, Any],
 ) -> tuple[str, str]:
-    """Render the exact repair task passed to a replacement model."""
+    """Render a bounded, evidence-preserving task for a replacement model.
 
+    The durable request contains exact verifier output, debugger traces, state
+    manifests, and several integrity-preserving copies of the same checks.  It
+    remains the authoritative audit record, but replaying it verbatim can bury
+    the actionable failure in tens of thousands of duplicate characters.  The
+    model receives a compact public-evidence projection plus commitments to the
+    complete server-owned request.
+    """
+
+    normalized_original_task = original_task.strip()
     prompt_payload = {
-        "schema_version": "coding.evidence-guided-repair-prompt/v1",
-        "original_task": original_task,
-        "repair_request": dict(repair_request),
+        "schema_version": _REPAIR_PROMPT_SCHEMA,
+        "original_task": normalized_original_task,
+        "repair_evidence": _repair_model_evidence(repair_request),
+        "repair_request_commitments": _repair_request_commitments(
+            repair_request
+        ),
     }
-    rendered = (
-        f"{original_task}\n\n"
-        "SERVER-OWNED EVIDENCE-GUIDED REPAIR INPUT\n"
-        "Treat the current applied files as the baseline. Address the exact failure "
-        "evidence below. Return a fresh proposal; do not reuse the prior patch or "
-        "approval.\n"
-        f"{json.dumps(prompt_payload, ensure_ascii=False, sort_keys=True)}"
+    rendered_payload = json.dumps(
+        prompt_payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
     )
-    return rendered, _sha256_json(prompt_payload)
+    rendered = (
+        f"{normalized_original_task}\n\n"
+        f"{EVIDENCE_GUIDED_REPAIR_TASK_MARKER}\n"
+        f"{EVIDENCE_GUIDED_REPAIR_TASK_INSTRUCTION}\n"
+        f"{rendered_payload}"
+    )
+    prompt_sha256 = _sha256_json(prompt_payload)
+    register_trusted_evidence_guided_repair_task(
+        rendered,
+        original_task=normalized_original_task,
+    )
+    return rendered, prompt_sha256
+
+
+def _repair_model_evidence(
+    repair_request: Mapping[str, Any],
+) -> dict[str, Any]:
+    redactions = _private_path_redactions(repair_request)
+    exact_feedback = _mapping(
+        _redact_model_evidence(
+            dict(_mapping(repair_request.get("exact_feedback"))),
+            redactions=redactions,
+        )
+    )
+    diagnostic = _mapping(
+        _redact_model_evidence(
+            dict(_mapping(repair_request.get("repair_diagnostic"))),
+            redactions=redactions,
+        )
+    )
+    classification = _mapping(diagnostic.get("classification"))
+    current_state = _mapping(
+        _redact_model_evidence(
+            dict(_mapping(repair_request.get("current_state_manifest"))),
+            redactions=redactions,
+        )
+    )
+
+    checks = _repair_check_projections(exact_feedback)
+    blocked_reasons = _bounded_string_list(
+        exact_feedback.get("blocked_reasons"),
+        limit=6,
+        item_limit=500,
+    )
+    findings = _bounded_string_list(
+        exact_feedback.get("findings"),
+        limit=8,
+        item_limit=500,
+    )
+    participant = _mapping(exact_feedback.get("participant_result"))
+    findings.extend(
+        item
+        for item in _bounded_string_list(
+            participant.get("findings"),
+            limit=8,
+            item_limit=500,
+        )
+        if item not in findings
+    )
+    findings = findings[:8]
+
+    public_failure: dict[str, Any] = {
+        "blocked_reasons": blocked_reasons,
+        "checks": checks,
+        "findings": findings,
+    }
+    for key in ("status", "verdict", "reason_code", "summary"):
+        value = exact_feedback.get(key)
+        if isinstance(value, (str, bool, int, float)):
+            public_failure[key] = _bounded_scalar(value, limit=500)
+    if not checks and not blocked_reasons and not findings:
+        safe_fallback = {
+            key: _bounded_scalar(exact_feedback[key], limit=1_000)
+            for key in (
+                "status",
+                "verdict",
+                "reason_code",
+                "summary",
+            )
+            if isinstance(
+                exact_feedback.get(key),
+                (str, bool, int, float),
+            )
+        }
+        public_failure["bounded_feedback_excerpt"] = (
+            _bounded_json_text(
+                safe_fallback,
+                limit=_REPAIR_FALLBACK_EVIDENCE_LIMIT,
+            )
+            if safe_fallback
+            else "No structured public failure detail was available."
+        )
+
+    raw_changed_files = current_state.get("changed_files")
+    changed_files: list[dict[str, Any]] = []
+    for raw_item in (
+        raw_changed_files if isinstance(raw_changed_files, list) else []
+    ):
+        if not isinstance(raw_item, Mapping):
+            continue
+        path = _bounded_workspace_path(raw_item.get("path"))
+        if path is None:
+            continue
+        changed_file: dict[str, Any] = {"path": path}
+        if isinstance(raw_item.get("current_exists"), bool):
+            changed_file["current_exists"] = raw_item["current_exists"]
+        for key in ("current_sha256", "expected_sha256_after"):
+            digest = _bounded_digest(raw_item.get(key))
+            if digest is not None:
+                changed_file[key] = digest
+        changed_files.append(changed_file)
+        if len(changed_files) >= 8:
+            break
+
+    classification_projection: dict[str, Any] = {}
+    for key in (
+            "diagnostic_code",
+            "failure_class",
+            "failure_kind",
+            "stage",
+            "retry_owner",
+            "retryable",
+            "strategy_change_required",
+            "genuine_stop",
+    ):
+        value = classification.get(key)
+        if isinstance(value, (str, bool, int, float)):
+            classification_projection[key] = _bounded_scalar(
+                value,
+                limit=500,
+            )
+    evidence = {
+        "failure_class": _bounded_scalar(
+            repair_request.get("failure_class"),
+            limit=500,
+        ),
+        "source_lane": _bounded_scalar(
+            repair_request.get("source_lane"),
+            limit=500,
+        ),
+        "public_failure": public_failure,
+        "deterministic_diagnosis": classification_projection,
+        "current_applied_state": {
+            "generation": _bounded_scalar(
+                current_state.get("generation"),
+                limit=100,
+            ),
+            "target_workspace_state_paths": _bounded_workspace_paths(
+                current_state.get("target_workspace_state_paths"),
+                limit=8,
+            ),
+            "changed_files": changed_files,
+        },
+        "requirements": _repair_requirements(
+            repair_request.get("requirements")
+        ),
+    }
+    return _redact_model_evidence(
+        evidence,
+        redactions=redactions,
+    )
+
+
+def _repair_request_commitments(
+    repair_request: Mapping[str, Any],
+) -> dict[str, Any]:
+    commitments: dict[str, Any] = {
+        "repair_request_sha256": _sha256_json(dict(repair_request)),
+    }
+    attempt_number = repair_request.get("attempt_number")
+    if isinstance(attempt_number, int) and not isinstance(attempt_number, bool):
+        commitments["attempt_number"] = attempt_number
+    for key in (
+        "repair_input_sha256",
+        "feedback_sha256",
+        "current_state_manifest_sha256",
+        "repair_diagnostic_sha256",
+        "parent_attempt_seal_sha256",
+        "prior_approved_diff_sha256",
+    ):
+        digest = _bounded_digest(repair_request.get(key))
+        if digest is not None:
+            commitments[key] = digest
+    return commitments
+
+
+def _repair_check_projections(
+    exact_feedback: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    post_apply = _mapping(exact_feedback.get("post_apply_verification"))
+    participant = _mapping(exact_feedback.get("participant_result"))
+    sources = (
+        post_apply.get("checks"),
+        exact_feedback.get("checks"),
+        participant.get("checks"),
+    )
+    candidates: list[tuple[bool, dict[str, Any], str]] = []
+    seen: set[str] = set()
+    for source in sources:
+        if not isinstance(source, list):
+            continue
+        for raw_check in source:
+            if not isinstance(raw_check, Mapping):
+                continue
+            projection = {
+                key: _bounded_scalar(raw_check.get(key), limit=500)
+                for key in (
+                    "id",
+                    "status",
+                    "summary",
+                    "command_text",
+                    "exit_code",
+                )
+                if raw_check.get(key) is not None
+            }
+            output = str(raw_check.get("output_tail") or "")
+            signature = _sha256_json(
+                {
+                    "projection": projection,
+                    "output_tail": output,
+                }
+            )
+            if signature in seen:
+                continue
+            seen.add(signature)
+            status = str(raw_check.get("status") or "").strip().lower()
+            candidates.append(
+                (
+                    status not in {"passed", "pass", "ok", "success"},
+                    projection,
+                    output,
+                )
+            )
+    candidates.sort(key=lambda item: not item[0])
+    projections: list[dict[str, Any]] = []
+    remaining_output = _REPAIR_CHECK_OUTPUT_BUDGET
+    for _failed_first, projection, output in candidates:
+        if output and remaining_output > 0:
+            clipped = _bounded_text(
+                output,
+                limit=min(
+                    _REPAIR_CHECK_OUTPUT_LIMIT,
+                    remaining_output,
+                ),
+            )
+            projection["output_tail"] = clipped
+            remaining_output -= len(clipped)
+        projections.append(projection)
+        if len(projections) >= _REPAIR_CHECK_LIMIT:
+            break
+    return projections
+
+
+def _repair_requirements(value: Any) -> dict[str, bool]:
+    requirements = _mapping(value)
+    return {
+        key: requirements[key]
+        for key in (
+            "fresh_proposal_required",
+            "fresh_approval_required",
+            "current_applied_state_is_baseline",
+            "new_evidence_or_changed_strategy_required",
+        )
+        if isinstance(requirements.get(key), bool)
+    }
+
+
+def _bounded_workspace_paths(value: Any, *, limit: int) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    paths: list[str] = []
+    for item in value:
+        path = _bounded_workspace_path(item)
+        if path is not None and path not in paths:
+            paths.append(path)
+        if len(paths) >= limit:
+            break
+    return paths
+
+
+def _bounded_workspace_path(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().replace("\\", "/")
+    if (
+        not normalized
+        or len(normalized) > _REPAIR_PATH_LIMIT
+        or normalized.startswith("/")
+        or re.match(r"^[A-Za-z]:/", normalized)
+        or any(part in {"", ".", ".."} for part in normalized.split("/"))
+    ):
+        return None
+    return normalized
+
+
+def _bounded_digest(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().lower()
+    if _SHA256_PATTERN.fullmatch(normalized):
+        return normalized
+    if re.fullmatch(r"[0-9a-f]{64}", normalized):
+        return normalized
+    return None
+
+
+def _private_path_redactions(value: Mapping[str, Any]) -> tuple[str, ...]:
+    roots: set[str] = set()
+    remaining_nodes = 2_000
+
+    def visit(item: Any, *, depth: int) -> None:
+        nonlocal remaining_nodes
+        if remaining_nodes <= 0 or depth > 8:
+            return
+        remaining_nodes -= 1
+        if isinstance(item, Mapping):
+            for key, nested in item.items():
+                normalized_key = str(key).strip().lower()
+                if normalized_key in {
+                    "absolute_path",
+                    "resolved_path",
+                    "workspace_root",
+                } and isinstance(nested, str):
+                    candidate = nested.strip().rstrip("/\\")
+                    if (
+                        len(candidate) >= 4
+                        and (
+                            candidate.startswith("/")
+                            or re.match(r"^[A-Za-z]:[\\/]", candidate)
+                        )
+                    ):
+                        roots.add(candidate)
+                visit(nested, depth=depth + 1)
+        elif isinstance(item, (list, tuple)):
+            for nested in item:
+                visit(nested, depth=depth + 1)
+
+    visit(value.get("current_state_manifest"), depth=0)
+    visit(value.get("repair_diagnostic"), depth=0)
+    visit(value, depth=0)
+    return tuple(sorted(roots, key=len, reverse=True))
+
+
+def _redact_model_evidence(
+    value: Any,
+    *,
+    redactions: tuple[str, ...],
+) -> Any:
+    if isinstance(value, str):
+        redacted = value
+        for private_path in redactions:
+            variants = {
+                private_path,
+                private_path.replace("\\", "/"),
+                private_path.replace("/", "\\"),
+            }
+            for variant in sorted(variants, key=len, reverse=True):
+                if len(variant) < 4:
+                    continue
+                redacted = re.sub(
+                    re.escape(variant),
+                    "<private-path>",
+                    redacted,
+                    flags=(
+                        re.IGNORECASE
+                        if re.match(r"^[A-Za-z]:[\\/]", variant)
+                        else 0
+                    ),
+                )
+        return redacted
+    if isinstance(value, list):
+        return [
+            _redact_model_evidence(item, redactions=redactions)
+            for item in value
+        ]
+    if isinstance(value, dict):
+        return {
+            key: _redact_model_evidence(item, redactions=redactions)
+            for key, item in value.items()
+        }
+    return value
+
+
+def _mapping(value: Any) -> Mapping[str, Any]:
+    return value if isinstance(value, Mapping) else {}
+
+
+def _bounded_string_list(
+    value: Any,
+    *,
+    limit: int,
+    item_limit: int,
+) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    result: list[str] = []
+    for item in value:
+        text = _bounded_text(str(item), limit=item_limit)
+        if text and text not in result:
+            result.append(text)
+        if len(result) >= limit:
+            break
+    return result
+
+
+def _bounded_scalar(value: Any, *, limit: int) -> Any:
+    if isinstance(value, str):
+        return _bounded_text(value, limit=limit)
+    if isinstance(value, float) and not math.isfinite(value):
+        return str(value)
+    if isinstance(value, (bool, int, float)) or value is None:
+        return value
+    return _bounded_text(str(value), limit=limit)
+
+
+def _bounded_json_text(value: Mapping[str, Any], *, limit: int) -> str:
+    try:
+        rendered = json.dumps(
+            dict(value),
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+            default=str,
+        )
+    except (TypeError, ValueError):
+        rendered = "{}"
+    return _bounded_text(rendered, limit=limit)
+
+
+def _bounded_text(value: str, *, limit: int) -> str:
+    if limit <= 0:
+        return ""
+    if len(value) <= limit:
+        return value
+    omitted = len(value) - limit
+    suffix = f"\n...[server-bounded; {omitted} characters omitted]"
+    if len(suffix) >= limit:
+        return value[:limit]
+    keep = max(0, limit - len(suffix))
+    return value[:keep] + suffix
 
 
 def target_plugin_model_input_sha256(

@@ -5110,8 +5110,147 @@ def record_coding_orchestrator_state(
         changed_state_fields=["ast_snapshot.coding_orchestrator"],
         notes=[str(state.get("summary") or "coding lane state recorded")],
     )
+    terminal_block = _terminal_target_plugin_block(state)
+    if terminal_block is not None:
+        reason_code, stage = terminal_block
+        architect_blocked = stage == "architect_pre_plan"
+        safe_diagnostic = json.dumps(
+            {
+                "reason_code": reason_code,
+                "stage": stage,
+                "status": "blocked",
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        if architect_blocked:
+            desired_architect_status = "blocked"
+            desired_architect_reason = reason_code
+            desired_role: SwarmAgentRole = "architect"
+            role_reason = "orchestrator_architect_pre_plan_blocked"
+            terminal_note = "architect pre-plan failure terminalized"
+            terminal_steps = [
+                "Architect proposal stopped before a usable plan was persisted.",
+                f"Resolve {reason_code} and start a fresh proposal attempt.",
+            ]
+        else:
+            desired_architect_status = "planned"
+            desired_architect_reason = ""
+            desired_role = "coder"
+            role_reason = "orchestrator_coder_pre_dispatch_blocked"
+            terminal_note = "coder pre-dispatch failure terminalized"
+            terminal_steps = [
+                "Coder dispatch stopped after a usable Architect plan was persisted.",
+                f"Resolve {reason_code} and start a fresh proposal attempt.",
+            ]
+        desired_steps = _terminal_steps_with_capacity(
+            task.steps,
+            terminal_steps,
+        )
+        terminalization_changed = (
+            task.status != "blocked"
+            or task.architect_status != desired_architect_status
+            or task.architect_reason != desired_architect_reason
+            or task.current_agent_role != desired_role
+            or task.truncated_test_results != safe_diagnostic
+            or task.steps != desired_steps
+        )
+        status_before = task.status
+        task.status = "blocked"
+        task.architect_status = desired_architect_status
+        task.architect_reason = desired_architect_reason
+        _set_task_role(
+            task,
+            desired_role,
+            reason=role_reason,
+        )
+        task.truncated_test_results = safe_diagnostic
+        task.steps = desired_steps
+        if terminalization_changed:
+            _append_causal_event(
+                task,
+                event_type="failure",
+                subsystem="coding_orchestrator",
+                run_id=str(state.get("run_id") or "coding_orchestrator"),
+                status_before=status_before,
+                status_after="blocked",
+                changed_state_fields=[
+                    "status",
+                    "architect_status",
+                    "architect_reason",
+                    "current_agent_role",
+                    "truncated_test_results",
+                    "steps",
+                ],
+                notes=[
+                    terminal_note,
+                    f"reason_code={reason_code}",
+                    f"stage={stage}",
+                ],
+            )
     task.updated_at = _now_iso()
     _save_task(task)
+
+
+def _terminal_steps_with_capacity(
+    current_steps: list[str],
+    terminal_steps: list[str],
+) -> list[str]:
+    retained = [
+        step
+        for step in current_steps
+        if step not in terminal_steps
+    ]
+    retained_limit = max(0, 12 - len(terminal_steps))
+    return [*retained[:retained_limit], *terminal_steps]
+
+
+def _terminal_target_plugin_block(
+    state: Mapping[str, Any],
+) -> tuple[str, str] | None:
+    lane_states = state.get("lane_states")
+    if not isinstance(lane_states, Mapping) or not lane_states:
+        return None
+    if any(
+        lane_state not in {"completed", "blocked", "skipped"}
+        for lane_state in lane_states.values()
+    ):
+        return None
+    events = state.get("causal_events")
+    if not isinstance(events, list):
+        return None
+    for event in reversed(events):
+        if not isinstance(event, Mapping) or event.get("event_type") not in {
+            "target_plugin_pre_plan_blocked",
+            "target_plugin_pre_coder_blocked",
+            "target_plugin_fallback_pre_plan_blocked",
+            "target_plugin_fallback_pre_coder_blocked",
+        }:
+            continue
+        event_type = str(event.get("event_type") or "")
+        pre_coder = event_type in {
+            "target_plugin_pre_coder_blocked",
+            "target_plugin_fallback_pre_coder_blocked",
+        } or (
+            event_type == "target_plugin_fallback_pre_plan_blocked"
+            and lane_states.get("planner") == "completed"
+        )
+        if pre_coder and lane_states.get("planner") != "completed":
+            return None
+        if not pre_coder and lane_states.get("planner") != "blocked":
+            return None
+        detail = event.get("detail")
+        reason_code = detail.get("reason_code") if isinstance(detail, Mapping) else None
+        if isinstance(reason_code, str) and re.fullmatch(
+            r"[a-z][a-z0-9_]{0,95}",
+            reason_code,
+        ):
+            return (
+                reason_code,
+                "coder_pre_dispatch" if pre_coder else "architect_pre_plan",
+            )
+        return None
+    return None
 
 
 def coding_orchestrator_state_for_task(task_id: str) -> dict[str, Any] | None:
@@ -11485,6 +11624,7 @@ def propose_coder_agent_diff_payload_from_plan(
     canonical_context: dict[str, Any] | None = None,
     canonical_context_text: str = "",
     caller_owns_bounded_repair: bool = False,
+    model_task_context: str = "",
     _review_attempt: int = 1,
     _previous_reviewer_signature: str = "",
 ) -> dict[str, Any]:
@@ -11602,7 +11742,22 @@ def propose_coder_agent_diff_payload_from_plan(
     diagnostics["target_exists"] = target_exists
     diagnostics["target_action"] = "replace file" if target_exists else "create file"
     _mark_coder_timing("architect_plan_done")
-    coder_source_task = task
+    bounded_model_task_context = model_task_context.strip()
+    coder_source_task = (
+        f"{task}\n\n{bounded_model_task_context}"
+        if bounded_model_task_context
+        else task
+    )
+    diagnostics["server_repair_model_context_included"] = bool(
+        bounded_model_task_context
+    )
+    diagnostics["server_repair_model_context_sha256"] = (
+        hashlib.sha256(
+            bounded_model_task_context.encode("utf-8")
+        ).hexdigest()
+        if bounded_model_task_context
+        else ""
+    )
     prompt = _render_coder_prompt_from_packet(
         packet,
         source_task=coder_source_task,
@@ -11720,7 +11875,7 @@ def propose_coder_agent_diff_payload_from_plan(
             retry_response = propose_coder_agent_implementation_diff(
                 packet,
                 root,
-                source_task=task,
+                source_task=coder_source_task,
                 llm_call=llm_call,
                 model_alias=model_alias,
                 reviewer_feedback=[
@@ -11963,6 +12118,7 @@ def propose_coder_agent_diff_payload_from_plan(
                 canonical_context=canonical_context,
                 canonical_context_text=canonical_context_text,
                 caller_owns_bounded_repair=caller_owns_bounded_repair,
+                model_task_context=model_task_context,
                 _review_attempt=_review_attempt + 1,
                 _previous_reviewer_signature=signature,
             )

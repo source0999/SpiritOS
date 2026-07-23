@@ -422,3 +422,104 @@ The fourth manifest will not be resumed. The next formal run must be a
 completely fresh first phase at the new clean pushed head. A clean unseen-seed
 rerun remains forbidden until that fresh first phase passes every numerical,
 mandatory-task, repaired-success, trace, and hard-safety criterion.
+
+## Fifth formal first phase and bounded repair-dispatch repair
+
+The fifth fresh first phase is preserved as immutable negative evidence:
+
+- Source head: `17c239704a064824945bc7a958a32193c90980e1`.
+- Run: `basic-backend-10-20260723T083424Z-0af3906ac282`.
+- Phase:
+  `/home/source/.source-proxy-basic-backend-10-evidence-20260722/basic-backend-10-20260723T083424Z-0af3906ac282/first`.
+- Phase-manifest file SHA-256:
+  `300dd3ea586c85bb2b3c88d533c0287ee73379dca158ae1f216862d82336459b`.
+- Embedded canonical manifest commitment:
+  `0bb2a3b56ed1642c83b1674709993968b6028c1b65b96abf650f860ef048d62d`.
+- Aggregate SHA-256:
+  `f1abba5044dc778ad106fd3c02b0c9f7227e312141ec7a38bcc87d9037fa4a6d`.
+- Gate-report file SHA-256:
+  `3a694b8fa72c92cdb62f68518673e1447dfd13d7c1ac9719ad98fbe45cfec245`.
+- Formal result: `6/10`; no clean rerun was authorized.
+
+BT01, BT02, BT03, BT04, BT08, and BT09 completed the real authenticated
+lifecycle in one attempt, passed public and independent verification, and
+retained valid proof and trace. BT05, BT06, and BT10 each applied a first
+model-authored change, failed public or independent verification, and entered
+the evidence-guided repair lane; their replacement proposal failed before a
+new approval. BT07 received two bounded invalid Architect responses before
+apply. Its receipt truthfully retained the observed state, but a production
+terminalization defect left the durable task as `running`.
+
+All ten receipt dispositions were truthful. The run retained exactly zero
+unauthorized mutations, fabricated completions, hidden-answer leaks, and
+wrong-artifact false-positive completions. The six passing tasks retained
+valid proof, trace, model provenance, runtime identity, and private-oracle
+evaluation. Mandatory BT05 failed, all ten tasks did not cross execution, and
+no failed first attempt was repaired successfully, so the hard gate correctly
+failed.
+
+Read-only diagnosis used only public failure evidence and sealed product
+receipts. BT05's first patch made an optional slice limit unsafe; BT06's first
+patch introduced a required callable input despite the public callable
+contract; BT10 omitted the requested retry guidance. Their durable repair
+requests repeated the same checks and traces until the Planner/Coder input
+grew to roughly 38–53 thousand characters, obscuring the actionable failure
+and exhausting the bounded replacement path. No private oracle content, raw
+model output, expected patch, or reference solution was used.
+
+The generalized repair now:
+
+- retains the complete durable repair request for audit while projecting at
+  most six unique public checks, prioritizing failures, bounding each output
+  and the shared output budget, redacting private roots before clipping, and
+  committing the omitted material by SHA-256;
+- accepts only canonical version-2 repair envelopes rendered and registered
+  by the server, with a bounded process-local TTL/cap; forged, mutated,
+  legacy, or structurally extended envelopes fail closed;
+- persists only the original human task in the Architect plan and TaskSpec,
+  while forwarding bounded repair evidence transiently to every replacement,
+  exact-edit, multi-file, fallback, and reviewer-retry Coder prompt;
+- derives preview/reviewer/proof semantics from the captured original task,
+  so registry expiry cannot turn evidence text or hashes into requirements;
+- records only repair-context presence and its digest in diagnostics, while
+  production proof reconstructs the exact model input from the durable repair
+  request; and
+- terminalizes pre-plan and post-plan/pre-Coder failures into truthful blocked
+  durable state, assigns the correct Architect or Coder role/stage, skips only
+  work that did not occur, and keeps capped terminal steps idempotent.
+
+Final stable validation at the ten-file code/test diff SHA-256
+`4818063388c3ec3d654c286b2cac7ab7da402f1be4533f3ce29e9eccbea71522`
+used the pinned local Python and reported:
+
+- affected recovery, Architect, orchestrator, long-running, and generic
+  workspace suite: `242 passed, 15 subtests passed`;
+- complete Basic gate-runner module: `99 passed`;
+- reviewer, verifier, proof, participant, authority, approval, trace,
+  repair-loop, anti-cheat, provenance, fixture, and frozen-asset surfaces:
+  `861 passed, 115 subtests passed`;
+- remaining long-running state/finalization, coding self-test, and end-to-end
+  seams: `26 passed`;
+- combined non-overlapping total: `1,228 passed, 130 subtests passed`;
+- ten changed Python files compiled, `git diff --check` passed, and the
+  prohibited-coupling scan returned no added production match.
+
+The last seam run emitted only two existing FastAPI `on_event` deprecation
+warnings. Every validation invocation retained the same head, ten-file
+inventory, diff stat (`2242 insertions, 41 deletions`), and diff SHA before
+and after.
+
+Three independent read-only reviews approve the final diff. They verified
+repair-envelope forgery resistance, registry-expiry behavior, transient-only
+repair evidence, offline proof independence, all bounded Coder strategies,
+truthful primary/fallback terminalization, authority preservation, retry caps,
+and meaningful adversarial tests. The whole-diff scan found no benchmark/task
+branch, fixture answer, private-oracle material, hosted fallback,
+reviewer/verifier bypass, synthetic completion, raw repair-context
+persistence, authority widening, or unbounded retry.
+
+This fifth manifest will not be resumed. The repair must be recovered,
+explicitly staged, committed, pushed, verified clean, and preflighted before a
+completely fresh first phase. A clean unseen-seed rerun remains forbidden
+until that new first phase passes every numerical, mandatory-task,
+repaired-success, trace, receipt, and hard-safety requirement.

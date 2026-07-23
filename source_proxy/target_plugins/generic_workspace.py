@@ -22,7 +22,11 @@ from source_proxy.context.canonical_broker import (
     is_derived_architect_context_source,
 )
 from source_proxy.diagnostics.status_codes import classify_repair_failure
-from source_proxy.decision.proposal_task import effective_planning_task_text
+from source_proxy.decision.proposal_task import (
+    EVIDENCE_GUIDED_REPAIR_TASK_MARKER,
+    effective_planning_task_text,
+    trusted_evidence_guided_repair_original_task,
+)
 from source_proxy.planning.architect import (
     ArchitectLLMError,
     Block,
@@ -90,6 +94,16 @@ def execute_generic_workspace_rich(
     """Plan, inspect, code, review, and validate one scoped model-authored diff."""
 
     root = workspace_root.resolve()
+    raw_task = str(task or "").strip()
+    repair_original_task = trusted_evidence_guided_repair_original_task(
+        raw_task
+    )
+    planning_task = repair_original_task or raw_task
+    model_task_context = (
+        raw_task[raw_task.index(EVIDENCE_GUIDED_REPAIR_TASK_MARKER) :]
+        if repair_original_task is not None
+        else ""
+    )
     architect_call = architect_model_call or model_call
     coder_call = coder_model_call or model_call
     scope = tuple(_normalize_scope_path(value) for value in allowed_paths)
@@ -113,6 +127,12 @@ def execute_generic_workspace_rich(
         "attempts": [],
         "reviewer_model_call_required": False,
         "reviewer_model_call_count_expected": 0,
+        "server_repair_model_context_included": bool(model_task_context),
+        "server_repair_model_context_sha256": (
+            hashlib.sha256(model_task_context.encode("utf-8")).hexdigest()
+            if model_task_context
+            else ""
+        ),
     }
     if coder_call is None or (prevalidated_plan is None and architect_call is None):
         return _blocked_result(
@@ -132,7 +152,7 @@ def execute_generic_workspace_rich(
     task_id = str(architect_task_id or "").strip() or (
         "generic-plan-"
         + hashlib.sha256(
-            f"{root}\n{task}".encode("utf-8", errors="replace")
+            f"{root}\n{planning_task}".encode("utf-8", errors="replace")
         ).hexdigest()[:24]
     )
     if prevalidated_plan is not None:
@@ -149,7 +169,7 @@ def execute_generic_workspace_rich(
         planning_mode = "server_persisted_plan_reuse"
     else:
         deterministic = plan_task_deterministically(
-            task,
+            planning_task,
             task_id,
             root,
             allowed_paths=scope,
@@ -176,7 +196,7 @@ def execute_generic_workspace_rich(
                 planning_mode = "deterministic"
             else:
                 plan = plan_task_with_llm(
-                    task,
+                    planning_task,
                     task_id,
                     root,
                     llm_call=architect_call,
@@ -220,7 +240,9 @@ def execute_generic_workspace_rich(
             stage="architect",
         )
 
-    multi_file_requested = _task_requests_multi_file_capability(task)
+    multi_file_requested = _task_requests_multi_file_capability(
+        planning_task
+    )
 
     try:
         workspace_context_text, workspace_context_manifest = (
@@ -450,6 +472,7 @@ def execute_generic_workspace_rich(
             output_contract = "json_file_bundle"
             result = _propose_multi_file_diff(
                 plan=plan,
+                model_task_context=model_task_context,
                 workspace_root=root,
                 allowed_paths=scope,
                 context_text=context_text,
@@ -462,6 +485,7 @@ def execute_generic_workspace_rich(
             output_contract = "json_exact_edits"
             result = _propose_single_file_exact_edit_diff(
                 plan=plan,
+                model_task_context=model_task_context,
                 workspace_root=root,
                 context_text=context_text,
                 model_call=observed_coder_call,
@@ -481,6 +505,7 @@ def execute_generic_workspace_rich(
                 canonical_context=planner_context_report,
                 canonical_context_text=context_text,
                 caller_owns_bounded_repair=True,
+                model_task_context=model_task_context,
             )
         if coder_callback_exception is not None:
             raise coder_callback_exception
@@ -734,7 +759,7 @@ def execute_generic_workspace_rich(
             base_diagnostics["review_task_spec_sha256"] = _sha256_json(task_spec)
             preview = preview_diff_verification(
                 proposed_diff,
-                task_text=task,
+                task_text=planning_task,
                 architect_plan=plan,
                 task_spec=task_spec,
                 route_type="local_route",
@@ -960,6 +985,7 @@ def _build_review_artifact_snapshots(
 def _propose_single_file_exact_edit_diff(
     *,
     plan: ArchitectPlan,
+    model_task_context: str,
     workspace_root: Path,
     context_text: str,
     model_call: Callable[[str, str], str],
@@ -997,6 +1023,8 @@ def _propose_single_file_exact_edit_diff(
             "Exact authorized target: " + target,
             "Original task:",
             plan.source_task,
+            "Server-owned repair evidence for this attempt:",
+            model_task_context or "- none",
             "Architect acceptance criteria:",
             *[
                 f"- {criterion.id} [{criterion.kind}]: {criterion.description}"
@@ -1067,6 +1095,7 @@ def _propose_single_file_exact_edit_diff(
 def _propose_multi_file_diff(
     *,
     plan: ArchitectPlan,
+    model_task_context: str,
     workspace_root: Path,
     allowed_paths: tuple[str, ...],
     context_text: str,
@@ -1106,6 +1135,8 @@ def _propose_multi_file_diff(
             ],
             "Original task:",
             plan.source_task,
+            "Server-owned repair evidence for this attempt:",
+            model_task_context or "- none",
             "Reviewer/verifier feedback from the previous rejected attempt:",
             *(feedback or ["- none"]),
             "Current server-scoped repository context:",

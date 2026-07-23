@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from source_proxy.planning import architect as architect_module
 from source_proxy.approval.external_gate import ExternalGateError
+from source_proxy.coding.recovery import render_evidence_guided_repair_model_task
 from source_proxy.planning.architect import (
     ArchitectLLMError,
     Block,
@@ -414,6 +415,57 @@ class DeterministicArchitectTests(unittest.TestCase):
             result.plan.coder_packet.target_file.path,
             "src/backend.py",
         )
+
+    def test_valid_repair_envelope_uses_original_task_for_deterministic_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "tests").mkdir()
+            (root / "src" / "backend.py").write_text(
+                "def list_values():\n    return VALUES[:1]\n",
+                encoding="utf-8",
+            )
+            (root / "tests" / "test_backend.py").write_text(
+                "from src.backend import list_values\n",
+                encoding="utf-8",
+            )
+            original_task = (
+                "Fix list_values in src/backend.py so its default call returns "
+                "all values."
+            )
+            repair_task, _ = render_evidence_guided_repair_model_task(
+                original_task,
+                {
+                    "failure_class": "verifier_rejection",
+                    "source_lane": "verifier",
+                    "exact_feedback": {
+                        "checks": [
+                            {
+                                "id": "public_pytest",
+                                "status": "failed",
+                                "output_tail": "FAILED: default call returned one value",
+                            }
+                        ],
+                        "duplicated_trace": "x" * 50_000,
+                    },
+                },
+            )
+
+            result = plan_task_deterministically(
+                repair_task,
+                "task-evidence-guided-repair-plan",
+                root,
+                allowed_paths=("src/",),
+                readable_paths=("src/", "tests/"),
+            )
+
+        self.assertIsInstance(result, Plan, result)
+        assert isinstance(result, Plan)
+        self.assertEqual(
+            result.plan.coder_packet.target_file.path,
+            "src/backend.py",
+        )
+        self.assertEqual(result.plan.source_task, repair_task)
 
     def test_route_literal_prefers_implementation_over_test_usage(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

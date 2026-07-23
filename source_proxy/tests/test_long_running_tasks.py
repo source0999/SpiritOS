@@ -62,6 +62,7 @@ from source_proxy.tasks.long_running import (
     finalize_orchestrated_coding_execution,
     prepare_orchestrated_coding_finalization,
     record_post_apply_verification,
+    record_coding_orchestrator_state,
     record_coding_execution_approval,
     record_coding_execution_preview,
     reject_long_running_task_plan,
@@ -470,6 +471,187 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertGreaterEqual(final["task"]["poll_count"], 13)
         self.assertFalse(final["task"]["would_execute"])
         self.assertFalse(final["task"]["writes_allowed"])
+
+    def test_pre_plan_orchestrator_failure_is_durable_idempotent_and_poll_terminal(
+        self,
+    ) -> None:
+        created = create_long_running_task("Implement a bounded service change")
+        task_id = created["task"]["id"]
+        update_long_running_task(
+            task_id,
+            status="running",
+            architect_status="planned",
+            current_agent_role="coder",
+            steps=[f"existing step {index}" for index in range(12)],
+        )
+        state = {
+            "schema_version": "coding-orchestrator/v2",
+            "run_id": "coding-run-pre-plan-failure",
+            "task_id": task_id,
+            "summary": (
+                "target-plugin returned a structured block before authoritative "
+                "plan persistence"
+            ),
+            "lane_states": {
+                "context-broker": "blocked",
+                "planner": "blocked",
+                "coder": "skipped",
+                "reviewer": "skipped",
+                "verifier": "skipped",
+                "anti-cheat": "skipped",
+                "repair": "skipped",
+                "evidence-recorder": "skipped",
+            },
+            "causal_events": [
+                {
+                    "event_type": "target_plugin_pre_plan_blocked",
+                    "lane_id": "planner",
+                    "detail": {"reason_code": "architect_output_invalid"},
+                }
+            ],
+            "model_invocations": [],
+            "participant_records": [],
+            "immutable_artifact": None,
+            "target_plugin_proposal": None,
+        }
+
+        record_coding_orchestrator_state(task_id, state=state)
+        record_coding_orchestrator_state(task_id, state=state)
+        long_running_module._tasks.clear()
+        polled = get_long_running_task(task_id)
+        polled_again = get_long_running_task(task_id)
+
+        task = polled_again["task"]
+        self.assertEqual(task["status"], "blocked")
+        self.assertEqual(task["architect_status"], "blocked")
+        self.assertEqual(task["architect_reason"], "architect_output_invalid")
+        self.assertEqual(task["current_agent_role"], "architect")
+        self.assertEqual(
+            json.loads(task["truncated_test_results"]),
+            {
+                "reason_code": "architect_output_invalid",
+                "stage": "architect_pre_plan",
+                "status": "blocked",
+            },
+        )
+        self.assertIn(
+            "Architect proposal stopped before a usable plan was persisted.",
+            task["steps"],
+        )
+        self.assertIn(
+            "Resolve architect_output_invalid and start a fresh proposal attempt.",
+            task["steps"],
+        )
+        self.assertEqual(len(task["steps"]), 12)
+        self.assertEqual(
+            task["steps"][-2:],
+            [
+                "Architect proposal stopped before a usable plan was persisted.",
+                (
+                    "Resolve architect_output_invalid and start a fresh "
+                    "proposal attempt."
+                ),
+            ],
+        )
+        self.assertEqual(
+            sum(
+                event["event_type"] == "failure"
+                and "architect pre-plan failure terminalized" in event["notes"]
+                for event in task["causal_events"]
+            ),
+            1,
+        )
+        self.assertEqual(polled["task"]["status"], "blocked")
+        self.assertEqual(task["poll_count"], 0)
+        self.assertEqual(task["open_diffs"], [])
+        self.assertFalse(task["would_execute"])
+        self.assertFalse(task["writes_allowed"])
+        snapshot = task["ast_snapshot"]
+        self.assertNotIn("coding_artifact", snapshot)
+        self.assertNotIn("campaign_2_approval", snapshot)
+        self.assertIsNone(snapshot["coding_orchestrator"]["immutable_artifact"])
+        self.assertIsNone(snapshot["coding_orchestrator"]["target_plugin_proposal"])
+
+    def test_pre_coder_orchestrator_failure_preserves_completed_plan_semantics(
+        self,
+    ) -> None:
+        created = create_long_running_task("Implement a bounded service change")
+        task_id = created["task"]["id"]
+        update_long_running_task(
+            task_id,
+            status="running",
+            architect_status="planned",
+            current_agent_role="architect",
+        )
+        state = {
+            "schema_version": "coding-orchestrator/v2",
+            "run_id": "coding-run-pre-coder-failure",
+            "task_id": task_id,
+            "summary": (
+                "target-plugin returned a structured block before Coder "
+                "dispatch"
+            ),
+            "lane_states": {
+                "context-broker": "completed",
+                "planner": "completed",
+                "coder": "blocked",
+                "reviewer": "skipped",
+                "verifier": "skipped",
+                "anti-cheat": "skipped",
+                "repair": "skipped",
+                "evidence-recorder": "skipped",
+            },
+            "causal_events": [
+                {
+                    "event_type": "target_plugin_pre_coder_blocked",
+                    "lane_id": "coder",
+                    "detail": {"reason_code": "coder_context_binding_invalid"},
+                }
+            ],
+            "model_invocations": [],
+            "participant_records": [],
+            "immutable_artifact": None,
+            "target_plugin_proposal": None,
+        }
+
+        record_coding_orchestrator_state(task_id, state=state)
+        record_coding_orchestrator_state(task_id, state=state)
+        long_running_module._tasks.clear()
+        task = get_long_running_task(task_id)["task"]
+
+        self.assertEqual(task["status"], "blocked")
+        self.assertEqual(task["architect_status"], "planned")
+        self.assertEqual(task["architect_reason"], "")
+        self.assertEqual(task["current_agent_role"], "coder")
+        self.assertEqual(
+            json.loads(task["truncated_test_results"]),
+            {
+                "reason_code": "coder_context_binding_invalid",
+                "stage": "coder_pre_dispatch",
+                "status": "blocked",
+            },
+        )
+        self.assertIn(
+            "Coder dispatch stopped after a usable Architect plan was persisted.",
+            task["steps"],
+        )
+        self.assertEqual(
+            sum(
+                event["event_type"] == "failure"
+                and "coder pre-dispatch failure terminalized" in event["notes"]
+                for event in task["causal_events"]
+            ),
+            1,
+        )
+        self.assertEqual(task["poll_count"], 0)
+        self.assertEqual(task["open_diffs"], [])
+        self.assertFalse(task["would_execute"])
+        self.assertFalse(task["writes_allowed"])
+        snapshot = task["ast_snapshot"]
+        self.assertNotIn("coding_artifact", snapshot)
+        self.assertNotIn("campaign_2_approval", snapshot)
+        self.assertIsNone(snapshot["coding_orchestrator"]["immutable_artifact"])
+        self.assertIsNone(snapshot["coding_orchestrator"]["target_plugin_proposal"])
 
     def test_stale_browser_dependent_task_waits_for_operator_readback(self) -> None:
         created = create_long_running_task("Target file: docs/stale.md\nAppend a stale note.")
