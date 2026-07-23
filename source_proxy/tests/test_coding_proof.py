@@ -561,7 +561,7 @@ def test_semantic_review_binding_canonically_binds_authorized_secondary_snapshot
         "review_artifact_snapshots": snapshots,
         "review_artifact_snapshots_sha256": orchestrator_module._sha256_json(
             snapshots
-        ),
+        ).removeprefix("sha256:"),
         "attempts": [
             {
                 "proposed_diff_sha256": hashlib.sha256(
@@ -589,6 +589,14 @@ def test_semantic_review_binding_canonically_binds_authorized_secondary_snapshot
     )
 
     assert binding["server_task_spec"]["allowed_files"] == [TARGET, secondary]
+    canonical_snapshot_sha256 = orchestrator_module._sha256_json(snapshots)
+    assert binding["review_artifact_snapshots_sha256"] == canonical_snapshot_sha256
+    assert binding["preview_review_receipt"][
+        "review_artifact_snapshots_sha256"
+    ] == canonical_snapshot_sha256
+    assert binding["preview_review_receipt"]["adapter_preview_evidence"][
+        "review_artifact_snapshots_sha256"
+    ] == canonical_snapshot_sha256
     evidence = binding["preview_review_receipt"]["deterministic_review_report"][
         "evidence"
     ]
@@ -1469,6 +1477,7 @@ def test_semantic_review_builder_requires_generic_adapter_plan_evidence() -> Non
         "acceptance_criteria",
         "canonical_context_report_hash",
         "producer_rendered_prompt_sha256",
+        "review_artifact_snapshots_sha256",
         "removed",
         "object_removed",
     ],

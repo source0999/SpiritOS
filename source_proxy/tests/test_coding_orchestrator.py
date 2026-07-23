@@ -64,6 +64,39 @@ def test_orchestrator_delegates_execution_to_the_existing_executor_by_default() 
     assert orchestrator._executor is execute_approved_long_running_task
 
 
+def test_snapshot_json_digest_claim_accepts_only_exact_canonical_encodings() -> None:
+    snapshots = {
+        "src/service.py": {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": "src/service.py",
+            "exists": True,
+            "content": "GREETING = 'olá'\n",
+        }
+    }
+    canonical = orchestrator_module._sha256_json(snapshots)
+    bare = canonical.removeprefix("sha256:")
+
+    assert orchestrator_module._sha256_json_claim_matches(canonical, snapshots)
+    assert orchestrator_module._sha256_json_claim_matches(bare, snapshots)
+    for invalid in (
+        "0" * 64,
+        f"sha256:{'0' * 64}",
+        "g" * 64,
+        bare.upper(),
+        f" {bare}",
+        f"{bare}\n",
+        f"SHA256:{bare}",
+        f"sha256:sha256:{bare}",
+        bare[:-1],
+        None,
+        bare.encode("ascii"),
+    ):
+        assert not orchestrator_module._sha256_json_claim_matches(
+            invalid,
+            snapshots,
+        )
+
+
 def test_execute_approved_uses_exact_lumacart_prompt_membership() -> None:
     state = CodingLaneStateMachine(task_id="task-prompt-membership", run_id="run-prompts")
     state.lane_states["context-broker"] = "completed"

@@ -5493,7 +5493,10 @@ def _build_semantic_review_binding(
         is not plan.coder_packet.target_file.exists
         or (
             claimed_snapshot_sha256 is not None
-            and claimed_snapshot_sha256 != _sha256_json(raw_snapshots)
+            and not _sha256_json_claim_matches(
+                claimed_snapshot_sha256,
+                raw_snapshots,
+            )
         )
     ):
         raise CodingOrchestratorError(
@@ -6294,6 +6297,18 @@ def _sha256_json(value: Any) -> str:
         default=str,
     ).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _sha256_json_claim_matches(claimed: Any, value: Any) -> bool:
+    """Validate a canonical JSON digest with strict legacy-prefix compatibility."""
+
+    if not isinstance(claimed, str):
+        return False
+    match = re.fullmatch(r"(?:sha256:)?([0-9a-f]{64})", claimed)
+    if match is None:
+        return False
+    expected = _sha256_json(value).removeprefix("sha256:")
+    return match.group(1) == expected
 
 
 def _sha256_text(value: str) -> str:

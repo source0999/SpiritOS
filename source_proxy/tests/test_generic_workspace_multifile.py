@@ -15,11 +15,35 @@ from source_proxy.context.canonical_broker import (
 from source_proxy.target_plugins.generic_workspace import (
     GENERIC_RICH_EXECUTION_PATH,
     _attempt_signature,
+    _canonical_review_artifact_snapshots_sha256,
     _normalize_selected_context_packet,
     _preview_feedback,
     _render_scoped_workspace_context,
     execute_generic_workspace_rich,
 )
+
+
+def test_review_snapshot_digest_uses_server_canonical_unicode_encoding() -> None:
+    snapshots = {
+        "src/greeting.py": {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": "src/greeting.py",
+            "exists": True,
+            "content": "GREETING = 'olá'\n",
+        }
+    }
+    encoded = json.dumps(
+        snapshots,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+        default=str,
+    ).encode("utf-8")
+
+    assert _canonical_review_artifact_snapshots_sha256(snapshots) == (
+        f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+    )
 
 
 def _git(root: Path, *args: str) -> str:
@@ -260,6 +284,11 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
         "src/service.py",
         "tests/test_service.py",
     }
+    assert diagnostics["review_artifact_snapshots_sha256"] == (
+        _canonical_review_artifact_snapshots_sha256(
+            diagnostics["review_artifact_snapshots"]
+        )
+    )
     assert "diff --git a/src/service.py b/src/service.py" in result["proposed_diff"]
     assert "diff --git a/tests/test_service.py b/tests/test_service.py" in result["proposed_diff"]
 

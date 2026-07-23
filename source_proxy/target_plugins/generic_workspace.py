@@ -625,8 +625,10 @@ def execute_generic_workspace_rich(
         base_diagnostics["review_artifact_snapshots"] = (
             review_artifact_snapshots
         )
-        base_diagnostics["review_artifact_snapshots_sha256"] = _sha256_json(
-            review_artifact_snapshots
+        base_diagnostics["review_artifact_snapshots_sha256"] = (
+            _canonical_review_artifact_snapshots_sha256(
+                review_artifact_snapshots
+            )
         )
         try:
             task_spec = review_task_spec_from_plan(
@@ -1794,3 +1796,15 @@ def _sha256_json(value: Any) -> str:
             "utf-8"
         )
     ).hexdigest()
+
+
+def _canonical_review_artifact_snapshots_sha256(value: Mapping[str, Any]) -> str:
+    encoded = json.dumps(
+        value,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+        default=str,
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
