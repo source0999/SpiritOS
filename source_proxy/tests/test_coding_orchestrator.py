@@ -664,6 +664,10 @@ def _canonical_target_plugin_result(
         "transport_kind": "canonical_litellm_router",
         "provider_call_made": True,
         "provider_call_authorized": True,
+        "model_call_accounting_complete": True,
+        "reviewer_model_call_required": False,
+        "reviewer_model_call_count_expected": 0,
+        "reviewer_model_call_count_observed": 0,
         "generation_source": "model",
         "trust_status": "canonical_router_model_output_validated",
         "terminal_proof_eligible": True,
@@ -673,6 +677,7 @@ def _canonical_target_plugin_result(
         "provider": "openai",
         "model": "openai/test-coder",
         "routed_model": "openai/test-coder",
+        "call_count": 1,
         "calls": [producer_call],
     }
     return {

@@ -75,6 +75,7 @@ from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_PLUGIN_ID,
     ResolvedTargetPlugin,
     execute_target_plugin_command,
+    target_adapter_model_call_accounting_valid,
     target_adapter_producer_identity_valid,
 )
 from source_proxy.target_plugins.selection import (
@@ -3774,6 +3775,9 @@ class CodingOrchestrator:
             or participant.get("model") != proposal.get("producer_model_name")
             or not isinstance(model_output_provenance, Mapping)
             or not isinstance(adapter_provenance, Mapping)
+            or not target_adapter_model_call_accounting_valid(
+                adapter_provenance
+            )
             or not target_adapter_producer_identity_valid(adapter_provenance)
             or adapter_provenance.get("plugin_id")
             != plugin_identity.get("plugin_id")
@@ -3929,6 +3933,7 @@ def _model_evidence_for_run(run: CodingLaneStateMachine) -> dict[str, Any]:
         and adapter.get("provider_call_made") is True
         and adapter.get("provider_call_authorized") is True
         and adapter.get("generation_source") == "model"
+        and target_adapter_model_call_accounting_valid(adapter)
         and target_adapter_producer_identity_valid(adapter)
     )
     output_provenance_valid = isinstance(output_provenance, Mapping) and isinstance(

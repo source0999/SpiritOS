@@ -489,8 +489,12 @@ def test_coder_provider_timeout_returns_structured_no_mutation_result(
     tmp_path: Path,
 ) -> None:
     root = _workspace(tmp_path)
+    coder_calls = 0
+    coder_ready_calls = 0
 
     def timed_out_coder(_prompt: str, _alias: str) -> str:
+        nonlocal coder_calls
+        coder_calls += 1
         raise TimeoutError("local provider timed out")
 
     def plan_ready(
@@ -509,6 +513,8 @@ def test_coder_provider_timeout_returns_structured_no_mutation_result(
         planner_context: dict[str, object],
         _rendered_prompt_sha256: str,
     ) -> dict[str, object]:
+        nonlocal coder_ready_calls
+        coder_ready_calls += 1
         return acknowledge_context_consumer(
             planner_context,
             consumer="coder",
@@ -535,18 +541,241 @@ def test_coder_provider_timeout_returns_structured_no_mutation_result(
     diagnostics = result["coder_diagnostics"]
     assert diagnostics["generation_source"] == "model"
     assert diagnostics["provider_exception_type"] == "TimeoutError"
-    assert len(diagnostics["attempts"]) == 1
-    attempt = diagnostics["attempts"][0]
-    assert attempt["attempt_index"] == 1
-    assert attempt["strategy"] == "architect_packet_initial"
-    assert attempt["changed_files"] == []
-    assert attempt["coder_reason_code"] == "coder_model_timeout"
-    assert attempt["coder_validation_status"] == "coder_model_timeout"
-    assert attempt["provider_exception_type"] == "TimeoutError"
-    assert attempt["failure_kind"] == "model_error"
-    assert attempt["failure_class"] == "RESOURCE_PRESSURE"
-    assert attempt["failure_classification"]["retry_owner"] == "coder_model_router"
+    assert coder_calls == 3
+    assert coder_ready_calls == 1
+    assert len(diagnostics["attempts"]) == 3
+    assert [attempt["attempt_index"] for attempt in diagnostics["attempts"]] == [
+        1,
+        2,
+        3,
+    ]
+    assert [attempt["strategy"] for attempt in diagnostics["attempts"]] == [
+        "architect_packet_initial",
+        "preview_feedback_repair",
+        "constrained_minimal_rewrite",
+    ]
+    assert diagnostics["attempts"][0]["feedback"] == []
+    assert all(
+        "coder_model_timeout" in " ".join(attempt["feedback"])
+        for attempt in diagnostics["attempts"][1:]
+    )
+    for attempt in diagnostics["attempts"]:
+        assert attempt["changed_files"] == []
+        assert attempt["coder_reason_code"] == "coder_model_timeout"
+        assert attempt["coder_validation_status"] == "coder_model_timeout"
+        assert attempt["provider_exception_type"] == "TimeoutError"
+        assert attempt["failure_kind"] == "model_error"
+        assert attempt["failure_class"] == "RESOURCE_PRESSURE"
+        assert (
+            attempt["failure_classification"]["retry_owner"]
+            == "coder_model_router"
+        )
     assert diagnostics["coder_context_binding"]["consumed"] is True
+    assert _git(root, "status", "--short") == ""
+
+
+def test_transient_coder_timeout_retries_once_then_returns_safe_diff(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    prompts: list[str] = []
+    coder_ready_calls = 0
+
+    def architect_call(_prompt: str, _alias: str) -> str:
+        return _architect_response("src/service.py")
+
+    def coder_call(prompt: str, _alias: str) -> str:
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            raise TimeoutError("transient local provider timeout")
+        return json.dumps(
+            {
+                "files": [
+                    {
+                        "path": "src/service.py",
+                        "content": (
+                            "def existing() -> str:\n"
+                            "    return 'kept'\n\n\n"
+                            "def normalize_name(value: str) -> str:\n"
+                            "    return value.strip().lower()\n"
+                        ),
+                    },
+                    {
+                        "path": "tests/test_service.py",
+                        "content": (
+                            "from src.service import existing, normalize_name\n\n\n"
+                            "def test_existing():\n"
+                            "    assert existing() == 'kept'\n\n\n"
+                            "def test_normalize_name():\n"
+                            "    assert normalize_name('  ALICE ') == 'alice'\n"
+                        ),
+                    },
+                ]
+            }
+        )
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_transient_timeout_plan_bound",
+            reason="test_server_persisted_transient_timeout_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        nonlocal coder_ready_calls
+        coder_ready_calls += 1
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_transient_timeout_coder_bound",
+            reason="test_retry_consumes_same_server_scoped_context",
+        )
+
+    result = execute_generic_workspace_rich(
+        task="Add a normalize_name service function and focused tests.",
+        workspace_root=root,
+        allowed_paths=("src/", "tests/"),
+        model_call=coder_call,
+        architect_model_call=architect_call,
+        coder_model_call=coder_call,
+        model_alias="coder",
+        canonical_context={},
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["coder_blocked"] is False
+    assert "diff --git a/src/service.py b/src/service.py" in result["proposed_diff"]
+    assert len(prompts) == 2
+    assert "coder_model_timeout" in prompts[1]
+    assert coder_ready_calls == 1
+    attempts = result["coder_diagnostics"]["attempts"]
+    assert len(attempts) == 2
+    assert attempts[0]["coder_reason_code"] == "coder_model_timeout"
+    assert attempts[1]["preview_status"] != "blocked"
+    assert _git(root, "status", "--short") == ""
+
+
+def test_coder_router_failure_exhausts_only_the_bounded_attempts(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    calls = 0
+
+    def router_failure(_prompt: str, _alias: str) -> str:
+        nonlocal calls
+        calls += 1
+        raise ConnectionError("local router unavailable")
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_router_failure_plan_bound",
+            reason="test_server_persisted_router_failure_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_router_failure_coder_bound",
+            reason="test_router_failure_provider_boundary",
+        )
+
+    result = execute_generic_workspace_rich(
+        task="Target file: src/service.py\nFix `existing` without changing its signature.",
+        workspace_root=root,
+        allowed_paths=("src/",),
+        readable_paths=("src/", "tests/"),
+        model_call=router_failure,
+        coder_model_call=router_failure,
+        model_alias="coder",
+        canonical_context={},
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert calls == 3
+    assert result["coder_blocked"] is True
+    assert result["reason_code"] == "coder_model_router_error"
+    assert len(result["coder_diagnostics"]["attempts"]) == 3
+    assert all(
+        attempt["failure_class"] == "ROUTING_FAILURE"
+        for attempt in result["coder_diagnostics"]["attempts"]
+    )
+    assert _git(root, "status", "--short") == ""
+
+
+def test_coder_execution_budget_exhaustion_does_not_retry(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    calls = 0
+
+    class BudgetExhausted(RuntimeError):
+        reason_code = "target_plugin_model_execution_budget_exhausted"
+
+    def budget_exhausted(_prompt: str, _alias: str) -> str:
+        nonlocal calls
+        calls += 1
+        raise BudgetExhausted("bounded route budget exhausted")
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_budget_exhaustion_plan_bound",
+            reason="test_server_persisted_budget_exhaustion_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_budget_exhaustion_coder_bound",
+            reason="test_budget_exhaustion_provider_boundary",
+        )
+
+    result = execute_generic_workspace_rich(
+        task="Target file: src/service.py\nFix `existing` without changing its signature.",
+        workspace_root=root,
+        allowed_paths=("src/",),
+        readable_paths=("src/", "tests/"),
+        model_call=budget_exhausted,
+        coder_model_call=budget_exhausted,
+        model_alias="coder",
+        canonical_context={},
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert calls == 1
+    assert result["coder_blocked"] is True
+    assert result["reason_code"] == "coder_model_execution_budget_exhausted"
+    assert len(result["coder_diagnostics"]["attempts"]) == 1
     assert _git(root, "status", "--short") == ""
 
 

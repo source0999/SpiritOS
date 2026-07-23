@@ -34,6 +34,7 @@ from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_PLUGIN_ID,
     GENERIC_WORKSPACE_PROFILE,
     GENERIC_WORKSPACE_PROMPT_ID,
+    target_adapter_model_call_accounting_valid,
     target_adapter_producer_identity_valid,
 )
 from source_proxy.target_plugins.selection import expected_target_plugin_id
@@ -387,6 +388,7 @@ def derive_production_proof(
         and adapter.get("generation_source") == "model"
         and _is_sha256(adapter.get("rendered_prompt_sha256"))
         and _is_sha256(adapter.get("raw_response_sha256"))
+        and target_adapter_model_call_accounting_valid(adapter)
         and target_adapter_producer_identity_valid(adapter)
         and isinstance(plugin_identity, Mapping)
         and adapter.get("plugin_id") == plugin_identity.get("plugin_id")
@@ -709,9 +711,20 @@ def derive_production_proof(
     if not isinstance(coder_consumption, Mapping):
         failures.append("model_runtime_output_not_consumed")
 
+    artifact_cartographer = artifact.get("cartographer_identity")
+    direct_generic_without_cartographer = (
+        _direct_generic_server_authority_without_cartographer(
+            state,
+            plugin_identity=plugin_identity,
+            artifact=artifact,
+        )
+    )
     transfer = state.get("cartographer_transfer")
     cartographer_finalization = state.get("cartographer_finalization")
-    if not isinstance(transfer, Mapping) or not isinstance(
+    if direct_generic_without_cartographer:
+        transfer = {}
+        cartographer_finalization = {}
+    elif not isinstance(transfer, Mapping) or not isinstance(
         cartographer_finalization, Mapping
     ):
         failures.append("cartographer_transfer_missing")
@@ -742,7 +755,7 @@ def derive_production_proof(
         for item in _mapping_list(state.get("participant_records"))
         if item.get("role") == "coding-executor"
     } | archived_model_invocation_ids
-    if not (
+    if not direct_generic_without_cartographer and not (
         cartographer_finalization.get("state") == "consumed"
         and isinstance(acknowledgement, Mapping)
         and acknowledgement.get("consumed") is True
@@ -768,7 +781,6 @@ def derive_production_proof(
         and transfer["provenance"].get("source_head") == expected_source_head
     ):
         failures.append("cartographer_downstream_proof_invalid")
-    artifact_cartographer = artifact.get("cartographer_identity")
     expected_cartographer = {
         "proposal_id": transfer.get("proposal_id"),
         "selection_id": transfer.get("selection_id"),
@@ -791,7 +803,10 @@ def derive_production_proof(
             else None
         ),
     }
-    if artifact_cartographer != expected_cartographer:
+    if (
+        not direct_generic_without_cartographer
+        and artifact_cartographer != expected_cartographer
+    ):
         failures.append("immutable_artifact_cartographer_identity_mismatch")
 
     participant_records = _state_mapping_list(
@@ -1066,6 +1081,7 @@ def _validated_attempt_history(
     previous_next_attempt_id: str | None = None
     inherited_cartographer_transfer: Mapping[str, Any] | None = None
     inherited_cartographer_finalization: Mapping[str, Any] | None = None
+    inherited_direct_generic_without_cartographer: bool | None = None
     dispositions_by_seal: dict[str, dict[str, Any]] = {}
     for disposition in dispositions:
         body = dict(disposition)
@@ -1104,6 +1120,11 @@ def _validated_attempt_history(
             if isinstance(attempt_state, Mapping)
             else None
         )
+        archived_identity = (
+            archived_proposal.get("target_plugin_identity")
+            if isinstance(archived_proposal, Mapping)
+            else None
+        )
         archived_cartographer_transfer = (
             attempt_state.get("cartographer_transfer")
             if isinstance(attempt_state, Mapping)
@@ -1114,6 +1135,18 @@ def _validated_attempt_history(
             if isinstance(attempt_state, Mapping)
             else None
         )
+        archived_direct_generic_without_cartographer = (
+            _direct_generic_server_authority_without_cartographer(
+                attempt_state,
+                plugin_identity=archived_identity,
+                artifact=archived_artifact,
+            )
+            if isinstance(attempt_state, Mapping)
+            else False
+        )
+        archived_cartographer_bound = isinstance(
+            archived_cartographer_transfer, Mapping
+        ) and isinstance(archived_cartographer_finalization, Mapping)
         attempt_id = str(seal.get("attempt_id") or "")
         parent_attempt_id = seal.get("parent_attempt_id")
         if (
@@ -1153,8 +1186,10 @@ def _validated_attempt_history(
             or not isinstance(attempt_state, Mapping)
             or not isinstance(archived_artifact, Mapping)
             or not isinstance(archived_proposal, Mapping)
-            or not isinstance(archived_cartographer_transfer, Mapping)
-            or not isinstance(archived_cartographer_finalization, Mapping)
+            or not (
+                archived_direct_generic_without_cartographer
+                or archived_cartographer_bound
+            )
         ):
             invalid = True
             previous_attempt_id = attempt_id or previous_attempt_id
@@ -1170,11 +1205,23 @@ def _validated_attempt_history(
             invalid = True
             disposition_invalid = True
         if index == 1:
+            inherited_direct_generic_without_cartographer = (
+                archived_direct_generic_without_cartographer
+            )
             inherited_cartographer_transfer = archived_cartographer_transfer
             inherited_cartographer_finalization = archived_cartographer_finalization
         elif (
-            archived_cartographer_transfer != inherited_cartographer_transfer
-            or archived_cartographer_finalization != inherited_cartographer_finalization
+            archived_direct_generic_without_cartographer
+            != inherited_direct_generic_without_cartographer
+            or (
+                not archived_direct_generic_without_cartographer
+                and (
+                    archived_cartographer_transfer
+                    != inherited_cartographer_transfer
+                    or archived_cartographer_finalization
+                    != inherited_cartographer_finalization
+                )
+            )
         ):
             invalid = True
         if (
@@ -1200,7 +1247,6 @@ def _validated_attempt_history(
             or not str(archived_proposal.get("original_task") or "").strip()
         ):
             invalid = True
-        archived_identity = archived_proposal.get("target_plugin_identity")
         if manifest.get("live_state_captured") is True:
             archived_changed = {
                 str(item.get("path") or ""): item
@@ -1409,8 +1455,20 @@ def _validated_attempt_history(
         strategy_reused = True
     if artifact.get("approved_diff_sha256") != proposal.get("approved_diff_sha256"):
         invalid = True
-    if (
-        state.get("cartographer_transfer") != inherited_cartographer_transfer
+    current_identity = proposal.get("target_plugin_identity")
+    current_direct_generic_without_cartographer = (
+        _direct_generic_server_authority_without_cartographer(
+            state,
+            plugin_identity=current_identity,
+            artifact=artifact,
+        )
+    )
+    if inherited_direct_generic_without_cartographer is True:
+        if not current_direct_generic_without_cartographer:
+            invalid = True
+    elif (
+        current_direct_generic_without_cartographer
+        or state.get("cartographer_transfer") != inherited_cartographer_transfer
         or state.get("cartographer_finalization")
         != inherited_cartographer_finalization
     ):
@@ -1468,6 +1526,41 @@ def _generic_target_identity_matches_server_authority(
             or identity.get("target_source_head") == scope.get("baseline_commit")
         )
     )
+
+
+def _direct_generic_server_authority_without_cartographer(
+    state: Mapping[str, Any],
+    *,
+    plugin_identity: object,
+    artifact: object,
+) -> bool:
+    """Recognize the exact direct-generic route where Cartographer is inapplicable."""
+
+    if (
+        not isinstance(plugin_identity, Mapping)
+        or plugin_identity.get("plugin_id") != GENERIC_WORKSPACE_PLUGIN_ID
+        or not _generic_target_identity_matches_server_authority(plugin_identity)
+        or not isinstance(artifact, Mapping)
+    ):
+        return False
+    cartographer_keys = (
+        "cartographer_selection_consumption",
+        "cartographer_transfer",
+        "cartographer_finalization",
+    )
+    if any(key not in state or state[key] is not None for key in cartographer_keys):
+        return False
+    causal_events = state.get("causal_events")
+    if not isinstance(causal_events, list) or any(
+        not isinstance(event, Mapping)
+        or not isinstance(event.get("event_type"), str)
+        or not event.get("event_type", "").strip()
+        or event.get("event_type", "").strip().lower().startswith("cartographer_")
+        for event in causal_events
+    ):
+        return False
+    cartographer_identity = artifact.get("cartographer_identity")
+    return isinstance(cartographer_identity, dict) and not cartographer_identity
 
 
 def _stable_target_plugin_identity(identity: object) -> dict[str, Any]:
@@ -2902,7 +2995,9 @@ def _target_adapter_model_call_authority_matches(
         and calls
         and attempt_id
         and invocation_id
-        and adapter.get("call_count", len(calls)) == len(calls)
+        and isinstance(adapter.get("call_count"), int)
+        and not isinstance(adapter.get("call_count"), bool)
+        and adapter.get("call_count") == len(calls)
     ):
         return False
     for index, call in enumerate(calls, start=1):
@@ -2915,6 +3010,8 @@ def _target_adapter_model_call_authority_matches(
         )
         if not (
             stage in {"architect", "coder", "reviewer"}
+            and isinstance(call.get("call_index"), int)
+            and not isinstance(call.get("call_index"), bool)
             and call.get("call_index") == index
             and isinstance(authority, Mapping)
             and authority.get("central_gate_check_passed") is True

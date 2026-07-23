@@ -211,6 +211,10 @@ def _adapter_provenance(
         "transport_kind": "canonical_litellm_router",
         "provider_call_made": True,
         "provider_call_authorized": True,
+        "model_call_accounting_complete": True,
+        "reviewer_model_call_required": False,
+        "reviewer_model_call_count_expected": 0,
+        "reviewer_model_call_count_observed": 0,
         "generation_source": "model",
         "terminal_proof_eligible": True,
         "producer_call_index": 1,
@@ -219,6 +223,7 @@ def _adapter_provenance(
         "provider": provider,
         "model": model,
         "routed_model": model,
+        "call_count": 1,
         "calls": [producer_call],
     }
 
@@ -909,8 +914,17 @@ def _production_state(
     fallback: bool = False,
     repaired: bool = False,
     source_head: str = SOURCE_HEAD,
+    direct_generic_without_cartographer: bool = False,
 ) -> dict[str, Any]:
-    prior_state = _production_state() if repaired else None
+    prior_state = (
+        _production_state(
+            direct_generic_without_cartographer=(
+                direct_generic_without_cartographer
+            )
+        )
+        if repaired
+        else None
+    )
     attempt_history: list[dict[str, Any]] = []
     attempt_dispositions: list[dict[str, Any]] = []
     repair_request: dict[str, Any] | None = None
@@ -1142,6 +1156,10 @@ def _production_state(
         "authority_state": "consumed",
         "source_head": source_head,
     }
+    if direct_generic_without_cartographer:
+        transfer = None
+        cart_finalization = None
+        cart_identity = {}
     if isinstance(prior_state, dict):
         transfer = copy.deepcopy(prior_state["cartographer_transfer"])
         cart_finalization = copy.deepcopy(prior_state["cartographer_finalization"])
@@ -1379,6 +1397,7 @@ def _production_state(
         "participant_records": participants,
         "immutable_artifact": artifact,
         "target_plugin_proposal": proposal,
+        "cartographer_selection_consumption": None,
         "cartographer_transfer": transfer,
         "cartographer_finalization": cart_finalization,
         "recovery_lineage": recovery_lineage,
@@ -1422,6 +1441,153 @@ def test_production_proof_accepts_sealed_evidence_guided_repair_with_fresh_appro
     assert state["immutable_artifact"]["approval_id"] != state["attempt_history"][0][
         "approval_binding"
     ]["approval_id"]
+
+
+def test_direct_generic_without_cartographer_requires_exact_absence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state = {
+        "cartographer_selection_consumption": None,
+        "cartographer_transfer": None,
+        "cartographer_finalization": None,
+        "causal_events": [],
+    }
+    identity = {"plugin_id": "generic-workspace"}
+    artifact = {"cartographer_identity": {}}
+    monkeypatch.setattr(
+        proof_module,
+        "_generic_target_identity_matches_server_authority",
+        lambda _identity: True,
+    )
+
+    assert proof_module._direct_generic_server_authority_without_cartographer(
+        state,
+        plugin_identity=identity,
+        artifact=artifact,
+    )
+
+
+@pytest.mark.parametrize(
+    "malformation",
+    [
+        "non_generic",
+        "authority_mismatch",
+        "missing_selection",
+        "missing_causal_events",
+        "cartographer_causal_event",
+        "malformed_causal_event",
+        "non_mapping_causal_event",
+        "selection_present",
+        "transfer_present",
+        "finalization_present",
+        "artifact_identity_missing",
+        "artifact_identity_present",
+    ],
+)
+def test_direct_generic_without_cartographer_rejects_partial_or_untrusted_state(
+    monkeypatch: pytest.MonkeyPatch,
+    malformation: str,
+) -> None:
+    state = {
+        "cartographer_selection_consumption": None,
+        "cartographer_transfer": None,
+        "cartographer_finalization": None,
+        "causal_events": [],
+    }
+    identity = {"plugin_id": "generic-workspace"}
+    artifact = {"cartographer_identity": {}}
+    authority_matches = True
+    if malformation == "non_generic":
+        identity["plugin_id"] = "lumacart"
+    elif malformation == "authority_mismatch":
+        authority_matches = False
+    elif malformation == "missing_selection":
+        state.pop("cartographer_selection_consumption")
+    elif malformation == "missing_causal_events":
+        state.pop("causal_events")
+    elif malformation == "cartographer_causal_event":
+        state["causal_events"] = [
+            {
+                "event_type": (
+                    "cartographer_transfer_pending_downstream_consumption"
+                )
+            }
+        ]
+    elif malformation == "malformed_causal_event":
+        state["causal_events"] = [{}]
+    elif malformation == "non_mapping_causal_event":
+        state["causal_events"] = ["not-a-mapping"]
+    elif malformation == "selection_present":
+        state["cartographer_selection_consumption"] = {}
+    elif malformation == "transfer_present":
+        state["cartographer_transfer"] = {}
+    elif malformation == "finalization_present":
+        state["cartographer_finalization"] = {}
+    elif malformation == "artifact_identity_missing":
+        artifact.pop("cartographer_identity")
+    else:
+        artifact["cartographer_identity"] = {"proposal_id": "partial"}
+    monkeypatch.setattr(
+        proof_module,
+        "_generic_target_identity_matches_server_authority",
+        lambda _identity: authority_matches,
+    )
+
+    assert not proof_module._direct_generic_server_authority_without_cartographer(
+        state,
+        plugin_identity=identity,
+        artifact=artifact,
+    )
+
+
+@pytest.mark.parametrize("repaired", [False, True])
+def test_production_proof_accepts_exact_direct_generic_cartographer_absence(
+    monkeypatch: pytest.MonkeyPatch,
+    repaired: bool,
+) -> None:
+    state = _production_state(
+        repaired=repaired,
+        direct_generic_without_cartographer=True,
+    )
+    monkeypatch.setattr(
+        proof_module,
+        "_direct_generic_server_authority_without_cartographer",
+        lambda *_args, **_kwargs: True,
+    )
+
+    proof = derive_production_proof(state, expected_source_head=SOURCE_HEAD)
+
+    assert proof["failures"] == []
+    assert proof["terminal_proof_eligible"] is True
+    assert proof["cartographer_proposal_id"] is None
+    assert proof["cartographer_selection_id"] is None
+    assert proof["cartographer_transfer_event_id"] is None
+
+
+@pytest.mark.parametrize("current_attempt_is_direct", [False, True])
+def test_production_proof_rejects_cartographer_mode_switch_during_repair(
+    monkeypatch: pytest.MonkeyPatch,
+    current_attempt_is_direct: bool,
+) -> None:
+    state = _production_state(
+        repaired=True,
+        direct_generic_without_cartographer=True,
+    )
+
+    def direct_mode(candidate: object, **_kwargs: object) -> bool:
+        return (candidate is state) is current_attempt_is_direct
+
+    monkeypatch.setattr(
+        proof_module,
+        "_direct_generic_server_authority_without_cartographer",
+        direct_mode,
+    )
+
+    proof = derive_production_proof(state, expected_source_head=SOURCE_HEAD)
+
+    assert proof["terminal_proof_eligible"] is False
+    assert "repair_attempt_history_invalid" in proof["failures"]
+    assert "repair_context_binding_invalid" in proof["failures"]
 
 
 def test_production_proof_rejects_rehashed_acceptance_criterion_drift() -> None:

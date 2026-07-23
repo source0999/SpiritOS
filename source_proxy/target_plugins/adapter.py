@@ -732,15 +732,21 @@ def target_adapter_producer_identity_valid(provenance: Mapping[str, Any]) -> boo
         return False
     producer = successful_coder_calls[-1]
     return bool(
-        producer.get("call_index") == provenance.get("producer_call_index")
+        isinstance(producer.get("call_index"), int)
+        and not isinstance(producer.get("call_index"), bool)
+        and isinstance(provenance.get("producer_call_index"), int)
+        and not isinstance(provenance.get("producer_call_index"), bool)
+        and producer.get("call_index") == provenance.get("producer_call_index")
+        and isinstance(producer.get("rendered_prompt_sha256"), str)
         and re.fullmatch(
             r"[0-9a-f]{64}",
-            str(producer.get("rendered_prompt_sha256") or ""),
+            producer.get("rendered_prompt_sha256", ""),
         )
         is not None
+        and isinstance(producer.get("raw_response_sha256"), str)
         and re.fullmatch(
             r"[0-9a-f]{64}",
-            str(producer.get("raw_response_sha256") or ""),
+            producer.get("raw_response_sha256", ""),
         )
         is not None
         and provenance.get("rendered_prompt_sha256")
@@ -752,6 +758,120 @@ def target_adapter_producer_identity_valid(provenance: Mapping[str, Any]) -> boo
         and provenance.get("model") == producer.get("model")
         and provenance.get("routed_model")
         == (producer.get("routed_model") or producer.get("model"))
+    )
+
+
+def _target_adapter_model_calls_accounted(
+    calls: list[Mapping[str, Any]],
+    *,
+    expected_reviewer_calls: int,
+    reviewer_call_required: bool,
+) -> bool:
+    """Account for every bounded model call, including explicit transport failures."""
+
+    if not calls or not isinstance(expected_reviewer_calls, int):
+        return False
+    failed_coder_indices: list[int] = []
+    for index, call in enumerate(calls, start=1):
+        stage = call.get("stage")
+        if (
+            not isinstance(call.get("call_index"), int)
+            or isinstance(call.get("call_index"), bool)
+            or call.get("call_index") != index
+            or stage not in {"architect", "coder", "reviewer"}
+            or not isinstance(call.get("rendered_prompt_sha256"), str)
+            or re.fullmatch(
+                r"[0-9a-f]{64}",
+                call.get("rendered_prompt_sha256", ""),
+            )
+            is None
+        ):
+            return False
+        if call.get("completed") is True:
+            if (
+                call.get("raw_response_observed") is not True
+                or not isinstance(call.get("raw_response_sha256"), str)
+                or re.fullmatch(
+                    r"[0-9a-f]{64}",
+                    call.get("raw_response_sha256", ""),
+                )
+                is None
+            ):
+                return False
+            continue
+        if not (
+            call.get("completed") is False
+            and stage == "coder"
+            and call.get("failure_origin") == "provider_transport"
+            and isinstance(call.get("error_type"), str)
+            and call.get("error_type", "").strip()
+            and call.get("raw_response_observed") is False
+            and call.get("raw_response_sha256") is None
+        ):
+            return False
+        failed_coder_indices.append(index)
+
+    reviewer_calls = [call for call in calls if call.get("stage") == "reviewer"]
+    coder_calls = [call for call in calls if call.get("stage") == "coder"]
+    if (
+        len(reviewer_calls) != expected_reviewer_calls
+        or (reviewer_call_required and expected_reviewer_calls <= 0)
+        or not coder_calls
+        or coder_calls[-1].get("completed") is not True
+        or len(failed_coder_indices) > 2
+    ):
+        return False
+    return all(
+        any(
+            later.get("stage") == "coder"
+            and later.get("call_index", 0) > failed_index
+            and later.get("completed") is True
+            for later in calls
+        )
+        for failed_index in failed_coder_indices
+    )
+
+
+def target_adapter_model_call_accounting_valid(
+    provenance: Mapping[str, Any],
+) -> bool:
+    """Independently recompute the adapter's complete model-call accounting."""
+
+    raw_calls = provenance.get("calls")
+    if not isinstance(raw_calls, list) or any(
+        not isinstance(call, Mapping) for call in raw_calls
+    ):
+        return False
+    expected_reviewer_calls = provenance.get("reviewer_model_call_count_expected")
+    observed_reviewer_calls = provenance.get("reviewer_model_call_count_observed")
+    call_count = provenance.get("call_count")
+    if (
+        not isinstance(expected_reviewer_calls, int)
+        or isinstance(expected_reviewer_calls, bool)
+        or expected_reviewer_calls < 0
+        or not isinstance(observed_reviewer_calls, int)
+        or isinstance(observed_reviewer_calls, bool)
+        or observed_reviewer_calls < 0
+        or not isinstance(call_count, int)
+        or isinstance(call_count, bool)
+        or call_count != len(raw_calls)
+        or not isinstance(
+            provenance.get("reviewer_model_call_required"),
+            bool,
+        )
+        or observed_reviewer_calls
+        != sum(call.get("stage") == "reviewer" for call in raw_calls)
+    ):
+        return False
+    accounted = _target_adapter_model_calls_accounted(
+        raw_calls,
+        expected_reviewer_calls=expected_reviewer_calls,
+        reviewer_call_required=(
+            provenance.get("reviewer_model_call_required") is True
+        ),
+    )
+    return bool(
+        accounted and provenance.get("model_call_accounting_complete") is True
     )
 
 
@@ -815,24 +935,10 @@ def _attach_target_adapter_provenance(
     )
     model_call_accounting_complete = bool(
         provider_call_made
-        and len(reviewer_calls) == expected_reviewer_calls
-        and (not reviewer_call_required or expected_reviewer_calls > 0)
-        and all(
-            call.get("call_index") == index
-            and call.get("stage") in {"architect", "coder", "reviewer"}
-            and call.get("completed") is True
-            and call.get("raw_response_observed") is True
-            and re.fullmatch(
-                r"[0-9a-f]{64}",
-                str(call.get("rendered_prompt_sha256") or ""),
-            )
-            is not None
-            and re.fullmatch(
-                r"[0-9a-f]{64}",
-                str(call.get("raw_response_sha256") or ""),
-            )
-            is not None
-            for index, call in enumerate(model_calls, start=1)
+        and _target_adapter_model_calls_accounted(
+            model_calls,
+            expected_reviewer_calls=expected_reviewer_calls,
+            reviewer_call_required=reviewer_call_required,
         )
     )
     routed_provider = "unknown"
@@ -884,14 +990,16 @@ def _attach_target_adapter_provenance(
         and str(
             producer_call.get("routed_model") or producer_call.get("model") or ""
         )
+        and isinstance(producer_call.get("rendered_prompt_sha256"), str)
         and re.fullmatch(
             r"[0-9a-f]{64}",
-            str(producer_call.get("rendered_prompt_sha256") or ""),
+            producer_call.get("rendered_prompt_sha256", ""),
         )
         is not None
+        and isinstance(producer_call.get("raw_response_sha256"), str)
         and re.fullmatch(
             r"[0-9a-f]{64}",
-            str(producer_call.get("raw_response_sha256") or ""),
+            producer_call.get("raw_response_sha256", ""),
         )
         is not None
     )

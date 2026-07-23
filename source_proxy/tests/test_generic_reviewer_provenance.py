@@ -22,6 +22,7 @@ from source_proxy.target_plugins.adapter import (
     _attach_target_adapter_provenance,
     execute_target_plugin_command,
     resolve_target_plugin,
+    target_adapter_model_call_accounting_valid,
     target_adapter_producer_identity_valid,
 )
 
@@ -229,6 +230,112 @@ def test_configured_reviewer_uses_adapter_authority_and_call_accounting(
     assert observed[-1]["run_id"].endswith(":reviewer:3")
 
 
+def test_transient_coder_timeout_recovers_with_terminal_adapter_provenance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, plugin = _generic_plugin(tmp_path, monkeypatch)
+    monkeypatch.setenv("SOURCE_PROXY_ARCHITECT_MODEL_ALIAS", "architect")
+    monkeypatch.setenv("SOURCE_PROXY_REVIEWER_MODEL_ALIAS", "reviewer")
+    monkeypatch.setattr(
+        long_running,
+        "_coder_model_alias_configuration_error",
+        lambda _alias: None,
+    )
+    monkeypatch.setattr(
+        long_running,
+        "_dummy_product_site_direct_ollama_enabled",
+        lambda _alias: False,
+    )
+    coder_calls = 0
+
+    def fake_transport(
+        _prompt: str,
+        alias: str,
+        _timeout: float,
+        *,
+        model_call_run_id: str | None = None,
+        authority_observer=None,
+    ) -> str:
+        nonlocal coder_calls
+        assert model_call_run_id
+        assert authority_observer is not None
+        authority_observer(
+            {
+                "central_gate_check_passed": True,
+                "gate": "model_call",
+                "model_alias": alias,
+                "run_id": model_call_run_id,
+            }
+        )
+        if alias == "architect":
+            return _architect_response()
+        if alias == "reviewer":
+            return '{"passed":true,"findings":[]}'
+        assert alias == "coder"
+        coder_calls += 1
+        if coder_calls == 1:
+            raise TimeoutError("transient local provider timeout")
+        return '<file path="src/example.py">\nvalue = 2\n</file>'
+
+    monkeypatch.setattr(
+        long_running,
+        "_call_dummy_product_site_llm_with_wall_timeout",
+        fake_transport,
+    )
+
+    def plan_ready(_plan: object, staged: dict[str, object]) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged,
+            consumer="planner",
+            evidence="test_transient_adapter_plan_bound",
+            reason="test_server_persisted_transient_adapter_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_transient_adapter_coder_bound",
+            reason="test_transient_adapter_provider_boundary",
+        )
+
+    result = execute_target_plugin_command(
+        plugin,
+        task="Change the value to 2.",
+        workspace_root=root,
+        canonical_context={},
+        canonical_context_text="",
+        llm_call=None,
+        model_alias="coder",
+        model_call_run_id="transient-adapter-provenance-test",
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result.get("coder_blocked") is not True
+    provenance = result["target_adapter_provenance"]
+    assert [call["stage"] for call in provenance["calls"]] == [
+        "architect",
+        "coder",
+        "coder",
+        "reviewer",
+    ]
+    failed_call = provenance["calls"][1]
+    assert failed_call["completed"] is False
+    assert failed_call["raw_response_observed"] is False
+    assert failed_call["failure_origin"] == "provider_transport"
+    assert provenance["producer_call_index"] == 3
+    assert provenance["model_call_accounting_complete"] is True
+    assert provenance["terminal_proof_eligible"] is True
+    assert target_adapter_model_call_accounting_valid(provenance) is True
+    assert target_adapter_producer_identity_valid(provenance) is True
+
+
 def _model_call_record(
     *,
     index: int,
@@ -251,6 +358,7 @@ def _model_call_record(
         "transport_kind": "canonical_litellm_router",
         "provider": "test-provider",
         "model": stage,
+        "routed_model": stage,
         "model_call_authority": {
             "central_gate_check_passed": authorized,
             "run_id": f"test:{stage}:{index}",
@@ -383,3 +491,166 @@ def test_final_successful_coder_retry_owns_aggregate_producer_identity(
     tampered = dict(provenance)
     tampered["raw_response_sha256"] = primary["raw_response_sha256"]
     assert target_adapter_producer_identity_valid(tampered) is False
+
+
+def test_authorized_transient_coder_failure_is_accounted_before_final_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, plugin = _generic_plugin(tmp_path, monkeypatch)
+    timed_out = _model_call_record(index=1, stage="coder", authorized=True)
+    timed_out.update(
+        {
+            "completed": False,
+            "raw_response_observed": False,
+            "raw_response_sha256": None,
+            "failure_origin": "provider_transport",
+            "error_type": "TimeoutError",
+        }
+    )
+    recovered = _model_call_record(index=2, stage="coder", authorized=True)
+    result = {
+        "proposed_diff": "diff --git a/src/example.py b/src/example.py\n",
+        "coder_blocked": False,
+        "execution_path": GENERIC_RICH_EXECUTION_PATH,
+        "coder_diagnostics": {
+            "execution_path": GENERIC_RICH_EXECUTION_PATH,
+            "generation_source": "model",
+        },
+    }
+
+    attached = _attach_target_adapter_provenance(
+        result,
+        plugin=plugin,
+        selected_alias="coder",
+        configured_transport_kind="canonical_litellm_router",
+        model_calls=[timed_out, recovered],
+    )
+    provenance = attached["target_adapter_provenance"]
+
+    assert provenance["model_call_accounting_complete"] is True
+    assert provenance["terminal_proof_eligible"] is True
+    assert provenance["producer_call_index"] == 2
+    assert target_adapter_model_call_accounting_valid(provenance) is True
+    assert target_adapter_producer_identity_valid(provenance) is True
+    missing_count = dict(provenance)
+    missing_count.pop("call_count")
+    assert target_adapter_model_call_accounting_valid(missing_count) is False
+    boolean_count = dict(provenance)
+    boolean_count["call_count"] = True
+    assert target_adapter_model_call_accounting_valid(boolean_count) is False
+    numeric_prompt_hash = json.loads(json.dumps(provenance))
+    numeric_prompt_hash["calls"][0]["rendered_prompt_sha256"] = int("1" * 64)
+    assert (
+        target_adapter_model_call_accounting_valid(numeric_prompt_hash) is False
+    )
+    numeric_response_hash = json.loads(json.dumps(provenance))
+    numeric_response_hash["calls"][1]["raw_response_sha256"] = int("2" * 64)
+    assert (
+        target_adapter_model_call_accounting_valid(numeric_response_hash) is False
+    )
+
+
+@pytest.mark.parametrize(
+    ("malformation", "value"),
+    [
+        ("failure_origin", "authority_or_routing"),
+        ("raw_response_observed", True),
+        ("raw_response_sha256", "f" * 64),
+        ("error_type", ""),
+        ("error_type", 123),
+        ("call_index", True),
+    ],
+)
+def test_transient_coder_failure_accounting_rejects_malformed_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    malformation: str,
+    value: object,
+) -> None:
+    _, plugin = _generic_plugin(tmp_path, monkeypatch)
+    failed = _model_call_record(index=1, stage="coder", authorized=True)
+    failed.update(
+        {
+            "completed": False,
+            "raw_response_observed": False,
+            "raw_response_sha256": None,
+            "failure_origin": "provider_transport",
+            "error_type": "TimeoutError",
+            malformation: value,
+        }
+    )
+    recovered = _model_call_record(index=2, stage="coder", authorized=True)
+    result = {
+        "proposed_diff": "diff --git a/src/example.py b/src/example.py\n",
+        "coder_blocked": False,
+        "execution_path": GENERIC_RICH_EXECUTION_PATH,
+        "coder_diagnostics": {
+            "execution_path": GENERIC_RICH_EXECUTION_PATH,
+            "generation_source": "model",
+        },
+    }
+
+    attached = _attach_target_adapter_provenance(
+        result,
+        plugin=plugin,
+        selected_alias="coder",
+        configured_transport_kind="canonical_litellm_router",
+        model_calls=[failed, recovered],
+    )
+    provenance = attached["target_adapter_provenance"]
+
+    assert provenance["model_call_accounting_complete"] is False
+    assert provenance["terminal_proof_eligible"] is False
+    assert target_adapter_model_call_accounting_valid(provenance) is False
+
+
+def test_transient_coder_failure_accounting_is_bounded_and_requires_later_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, plugin = _generic_plugin(tmp_path, monkeypatch)
+    failures: list[dict[str, object]] = []
+    for index in range(1, 4):
+        failed = _model_call_record(index=index, stage="coder", authorized=True)
+        failed.update(
+            {
+                "completed": False,
+                "raw_response_observed": False,
+                "raw_response_sha256": None,
+                "failure_origin": "provider_transport",
+                "error_type": "TimeoutError",
+            }
+        )
+        failures.append(failed)
+    recovered = _model_call_record(index=4, stage="coder", authorized=True)
+    result = {
+        "proposed_diff": "diff --git a/src/example.py b/src/example.py\n",
+        "coder_blocked": False,
+        "execution_path": GENERIC_RICH_EXECUTION_PATH,
+        "coder_diagnostics": {
+            "execution_path": GENERIC_RICH_EXECUTION_PATH,
+            "generation_source": "model",
+        },
+    }
+
+    attached = _attach_target_adapter_provenance(
+        result,
+        plugin=plugin,
+        selected_alias="coder",
+        configured_transport_kind="canonical_litellm_router",
+        model_calls=[*failures, recovered],
+    )
+    provenance = attached["target_adapter_provenance"]
+    assert provenance["model_call_accounting_complete"] is False
+    assert target_adapter_model_call_accounting_valid(provenance) is False
+
+    terminal_failure = _attach_target_adapter_provenance(
+        dict(result),
+        plugin=plugin,
+        selected_alias="coder",
+        configured_transport_kind="canonical_litellm_router",
+        model_calls=[failures[0]],
+    )["target_adapter_provenance"]
+    assert terminal_failure["model_call_accounting_complete"] is False
+    assert target_adapter_model_call_accounting_valid(terminal_failure) is False

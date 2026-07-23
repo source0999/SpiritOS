@@ -394,6 +394,10 @@ def execute_generic_workspace_rich(
                 coder_context_error
                 or "generic_workspace_coder_context_callback_failed"
             )
+        if coder_provider_exception is not None:
+            return _context_callback_block_response(
+                "generic_workspace_coder_provider_failed"
+            )
         if coder_ready_callback is not None and not coder_context_ready:
             try:
                 refreshed_context = coder_ready_callback(
@@ -433,6 +437,7 @@ def execute_generic_workspace_rich(
             )
 
     for attempt_index in range(1, _MAX_PREVIEW_ATTEMPTS + 1):
+        coder_provider_exception = None
         attempt_strategy = {
             1: "architect_packet_initial",
             2: "preview_feedback_repair",
@@ -497,23 +502,24 @@ def execute_generic_workspace_rich(
                 observed_coder_prompts[-1]
             )
         if coder_provider_exception is not None:
+            provider_exception = coder_provider_exception
             provider_reason = str(
-                getattr(coder_provider_exception, "reason_code", "") or ""
+                getattr(provider_exception, "reason_code", "") or ""
             )
             if provider_reason == "target_plugin_model_execution_budget_exhausted":
                 reason_code = "coder_model_execution_budget_exhausted"
-            elif _is_timeout_exception(coder_provider_exception):
+            elif _is_timeout_exception(provider_exception):
                 reason_code = "coder_model_timeout"
             else:
                 reason_code = "coder_model_router_error"
             failure = classify_repair_failure(
                 diagnostic_code=reason_code,
                 stage="coder",
-                reason=type(coder_provider_exception).__name__,
+                reason=type(provider_exception).__name__,
                 details={
                     "diagnostic_code": reason_code,
                     "stage": "coder",
-                    "exception_type": type(coder_provider_exception).__name__,
+                    "exception_type": type(provider_exception).__name__,
                 },
             ).to_dict()
             base_diagnostics["attempts"].append(
@@ -528,14 +534,22 @@ def execute_generic_workspace_rich(
                     "failure_class": failure["failure_class"],
                     "failure_kind": failure["failure_kind"],
                     "failure_classification": failure,
-                    "provider_exception_type": type(
-                        coder_provider_exception
-                    ).__name__,
+                    "provider_exception_type": type(provider_exception).__name__,
                 }
             )
             base_diagnostics["provider_exception_type"] = type(
-                coder_provider_exception
+                provider_exception
             ).__name__
+            if (
+                reason_code != "coder_model_execution_budget_exhausted"
+                and attempt_index < _MAX_PREVIEW_ATTEMPTS
+            ):
+                feedback = [
+                    f"{reason_code}: the previous authorized local Coder provider "
+                    "call failed before usable output; retry the unchanged "
+                    "server-scoped packet."
+                ]
+                continue
             return _blocked_result(
                 reason_code,
                 (
