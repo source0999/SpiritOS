@@ -15,6 +15,9 @@ from typing import Any, Mapping
 
 import pytest
 
+from source_proxy.benchmarks import (
+    campaign_3_5_basic_gate_runner as gate_runner_module,
+)
 from source_proxy.benchmarks.campaign_3_5_basic_assets.catalog import (
     EXPECTED_TASK_IDS,
     load_basic_backend_tasks,
@@ -26,6 +29,10 @@ from source_proxy.benchmarks.campaign_3_5_basic_assets.fixtures import (
 from source_proxy.benchmarks.campaign_3_5_basic_assets.references import apply_reference
 from source_proxy.benchmarks.campaign_3_5_basic_assets.seeding import (
     BasicBackendRunSeed,
+)
+from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
+    ENV_MANIFEST,
+    load_campaign_3_5_fixture_authority,
 )
 from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
     ACTION,
@@ -43,6 +50,7 @@ from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
     _completion_claim_audit,
     _evaluation_contract,
     _finalize_service_import_audit,
+    _generic_proof_requires_fixture_authority,
     _git,
     _generic_plugin_declaration,
     _hidden_answer_leak_audit,
@@ -65,6 +73,7 @@ from source_proxy.benchmarks.campaign_3_5_basic_gate_runner import (
     _rederive_persisted_proof_and_trace,
     _scan_production_evidence,
     _workspace_diff,
+    _write_private_json,
     reconcile_basic_backend_trace,
     run_private_oracle_container,
 )
@@ -321,7 +330,8 @@ class FakeLifecycleClient:
                 "runtime_output_id": output_id,
                 "approved_diff_sha256": __import__("hashlib").sha256(diff.encode()).hexdigest(),
                 "producer_model_invocation_id": f"model-{self.proposal_number}",
-                "producer_model_output_sha256": f"{self.proposal_number + 20:064x}"[-64:],
+                "producer_model_output_sha256": "sha256:"
+                + f"{self.proposal_number + 20:064x}"[-64:],
                 "target": "src/backend.py",
                 "context_hash": "c" * 64,
                 "canonical_context_report_sha256": "d" * 64,
@@ -346,6 +356,9 @@ class FakeLifecycleClient:
                 "provider_call_authorized": True,
                 "model_call_accounting_complete": True,
                 "producer_identity_bound": True,
+                "reviewer_model_call_count_expected": 0,
+                "reviewer_model_call_count_observed": 0,
+                "reviewer_model_call_required": False,
                 "calls": [
                     {
                         "call_index": 1,
@@ -367,9 +380,9 @@ class FakeLifecycleClient:
                     "invocation_id": f"model-{self.proposal_number}",
                     "provider": "ollama",
                     "model": "ollama_chat/local-coder",
-                    "input_sha256": "1" * 64,
+                    "input_sha256": "sha256:" + "1" * 64,
                     "output_sha256": proposal["producer_model_output_sha256"],
-                    "artifact_sha256": "a" * 64,
+                    "artifact_sha256": "sha256:" + "a" * 64,
                 }
             ]
             state["runtime_outputs"] = [
@@ -671,7 +684,8 @@ def _fake_authenticated_execution_workflow(
             else "ollama_chat/fake-coder"
         )
         raw_sha256 = digest(f"raw-{attempt_number}")
-        output_sha256 = digest(f"composite-{attempt_number}")
+        output_sha256 = "sha256:" + digest(f"composite-{attempt_number}")
+        prompt_sha256 = digest(f"prompt-{attempt_number}")
         call = {
             "call_index": 1,
             "stage": "coder",
@@ -682,7 +696,7 @@ def _fake_authenticated_execution_workflow(
             "routed_model": model,
             "completed": True,
             "raw_response_observed": True,
-            "rendered_prompt_sha256": digest(f"prompt-{attempt_number}"),
+            "rendered_prompt_sha256": prompt_sha256,
             "raw_response_sha256": raw_sha256,
         }
         adapter = {
@@ -697,7 +711,11 @@ def _fake_authenticated_execution_workflow(
             "provider": "ollama",
             "model": model,
             "routed_model": model,
+            "rendered_prompt_sha256": prompt_sha256,
             "raw_response_sha256": raw_sha256,
+            "reviewer_model_call_count_expected": 0,
+            "reviewer_model_call_count_observed": 0,
+            "reviewer_model_call_required": False,
         }
         attempt: dict[str, Any] = {
             "attempt_number": attempt_number,
@@ -735,9 +753,10 @@ def _fake_authenticated_execution_workflow(
                 "invocation_id": f"invocation-{attempt_number}",
                 "provider": "ollama",
                 "model": model,
-                "input_sha256": digest(f"input-{attempt_number}"),
+                "input_sha256": "sha256:" + digest(f"input-{attempt_number}"),
                 "output_sha256": output_sha256,
-                "artifact_sha256": digest(f"artifact-{attempt_number}"),
+                "artifact_sha256": "sha256:"
+                + digest(f"artifact-{attempt_number}"),
             },
             "target_adapter_provenance": adapter,
             "producer_model_alias": alias,
@@ -947,12 +966,22 @@ def _persist_passing_task_receipt(
 ) -> dict[str, Any]:
     task_root = phase_root / f"task-{rendered.task_seed_commitment}"
     fixture_parent = task_root / "fixture-parent"
+    control_root = task_root / "control"
     evidence_root = task_root / "evidence"
     state_root = task_root / "state"
     private_root = task_root / "private"
-    for root in (fixture_parent, evidence_root, state_root, private_root):
+    for root in (
+        fixture_parent,
+        control_root,
+        evidence_root,
+        state_root,
+        private_root,
+    ):
         root.mkdir(parents=True, exist_ok=True)
     fixture = materialize_basic_backend_fixture(fixture_parent, rendered)
+    authority_manifest_path = control_root / "fixture-authority.json"
+    _write_private_json(authority_manifest_path, fixture.authority_manifest)
+    authority_manifest_sha256 = _sha256_file(authority_manifest_path)
     apply_reference(fixture)
     mutation = _audit_fixture_mutations(fixture)
     applied_diff = _workspace_diff(fixture.root)
@@ -983,7 +1012,7 @@ def _persist_passing_task_receipt(
         "cwd": str(ROOT.resolve()),
         "service_process_per_task": True,
         "task_local_state_root": str(state_root.resolve()),
-        "fixture_manifest_sha256": "4" * 64,
+        "fixture_manifest_sha256": authority_manifest_sha256,
         "hosted_credentials_inherited": False,
         "direct_ollama_bypass_enabled": False,
         "sandbox_image_id": TEST_IMAGE_ID,
@@ -1057,7 +1086,7 @@ def _persist_passing_task_receipt(
         "fixture_root": str(fixture.root),
         "baseline_commit": fixture.baseline_commit,
         "baseline_tree": fixture.baseline_tree,
-        "authority_manifest_sha256": "4" * 64,
+        "authority_manifest_sha256": authority_manifest_sha256,
         "source_branch": TEST_BRANCH,
         "source_head": source_head,
         "source_root": str(ROOT.resolve()),
@@ -1118,7 +1147,37 @@ def _raw_proof_trace_revalidation(receipt: Mapping[str, Any]) -> dict[str, bool]
         receipt_proof=receipt["production_proof"],
         leak=receipt["hidden_answer_isolation"],
         expected_head=str(receipt["source_head"]),
+        receipt=receipt,
     )
+
+
+def _rewrite_final_target_plugin_as_generic(receipt: Mapping[str, Any]) -> None:
+    workflow = receipt["workflow"]
+    final_path = Path(workflow["final_readback_evidence_file"])
+    payload = json.loads(final_path.read_text(encoding="utf-8"))
+    response = payload["response"]
+    orchestrator = gate_runner_module._orchestrator_state(response)
+    orchestrator["target_plugin_proposal"]["target_plugin_identity"][
+        "plugin_id"
+    ] = "generic-workspace"
+    response_body = json.dumps(
+        response,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    response_sha256 = hashlib.sha256(response_body).hexdigest()
+    payload["response_body_base64"] = base64.b64encode(response_body).decode(
+        "ascii"
+    )
+    payload["response_sha256"] = response_sha256
+    final_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    final_public = next(
+        item
+        for item in workflow["http_exchanges"]
+        if item["evidence_file"] == str(final_path)
+    )
+    final_public["response_sha256"] = response_sha256
+    workflow["final_readback_response_sha256"] = response_sha256
 
 
 def _raw_exchange_for_kind(
@@ -1193,7 +1252,9 @@ def test_authenticated_lifecycle_uses_fresh_exact_approval_for_repair(tmp_path: 
     assert result["trace_reconciliation"]["passed"] is True
     assert result["attempts"][0]["model_identity"]["provider"] == "ollama"
     assert result["attempts"][0]["model_identity"]["model"] == "ollama_chat/local-coder"
-    assert result["attempts"][0]["producer_model_output_sha256"] == f"{21:064x}"
+    assert result["attempts"][0]["producer_model_output_sha256"] == (
+        "sha256:" + f"{21:064x}"
+    )
     assert result["attempts"][0]["producer_raw_response_sha256"] == f"{31:064x}"
     assert (
         result["attempts"][0]["producer_raw_response_sha256"]
@@ -2378,6 +2439,168 @@ def test_all_adapter_calls_and_final_producer_are_inventory_bound() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "field",
+    ("input_sha256", "output_sha256", "artifact_sha256", "producer_output"),
+)
+@pytest.mark.parametrize("malformation", ("bare", "uppercase", "non_string"))
+def test_model_provenance_requires_prefixed_lowercase_composite_commitments(
+    field: str,
+    malformation: str,
+) -> None:
+    inventory = _fake_model_inventory()
+    aliases = {item["role"]: item["alias"] for item in inventory["models"]}
+    attempt = _fake_authenticated_execution_workflow("BT01")["attempts"][0]
+    assert _attempt_model_provenance_verified(
+        attempt,
+        model_inventory=inventory,
+        service_model_aliases=aliases,
+    )
+
+    forged = copy.deepcopy(attempt)
+    source = (
+        forged["producer_model_output_sha256"]
+        if field == "producer_output"
+        else forged["model_identity"][field]
+    )
+    digest = source.removeprefix("sha256:")
+    if malformation == "bare":
+        value: object = digest
+    elif malformation == "uppercase":
+        value = "sha256:" + digest.upper()
+    else:
+        value = int(digest, 16)
+    if field in {"output_sha256", "producer_output"}:
+        forged["model_identity"]["output_sha256"] = value
+        forged["producer_model_output_sha256"] = value
+    else:
+        forged["model_identity"][field] = value
+
+    assert not _attempt_model_provenance_verified(
+        forged,
+        model_inventory=inventory,
+        service_model_aliases=aliases,
+    )
+
+
+def test_model_provenance_compares_composite_and_raw_digest_values() -> None:
+    inventory = _fake_model_inventory()
+    aliases = {item["role"]: item["alias"] for item in inventory["models"]}
+    attempt = _fake_authenticated_execution_workflow("BT01")["attempts"][0]
+    raw_sha256 = attempt["producer_raw_response_sha256"]
+    attempt["producer_model_output_sha256"] = "sha256:" + raw_sha256
+    attempt["model_identity"]["output_sha256"] = "sha256:" + raw_sha256
+
+    assert not _attempt_model_provenance_verified(
+        attempt,
+        model_inventory=inventory,
+        service_model_aliases=aliases,
+    )
+
+
+def _attempt_with_transient_coder_retry() -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, str],
+]:
+    inventory = _fake_model_inventory()
+    aliases = {item["role"]: item["alias"] for item in inventory["models"]}
+    attempt = _fake_authenticated_execution_workflow("BT01")["attempts"][0]
+    adapter = attempt["target_adapter_provenance"]
+    successful = copy.deepcopy(adapter["calls"][0])
+    failed = copy.deepcopy(successful)
+    failed.update(
+        {
+            "call_index": 1,
+            "completed": False,
+            "raw_response_observed": False,
+            "raw_response_sha256": None,
+            "error_type": "TimeoutError",
+            "failure_origin": "provider_transport",
+        }
+    )
+    successful["call_index"] = 2
+    adapter["calls"] = [failed, successful]
+    adapter["call_count"] = 2
+    adapter["producer_call_index"] = 2
+    return attempt, inventory, aliases
+
+
+def test_model_provenance_accepts_bounded_transient_coder_retry() -> None:
+    attempt, inventory, aliases = _attempt_with_transient_coder_retry()
+
+    assert _attempt_model_provenance_verified(
+        attempt,
+        model_inventory=inventory,
+        service_model_aliases=aliases,
+    )
+
+    forged = copy.deepcopy(attempt)
+    forged["target_adapter_provenance"]["calls"][0][
+        "model_alias"
+    ] = "uncommitted"
+    assert not _attempt_model_provenance_verified(
+        forged,
+        model_inventory=inventory,
+        service_model_aliases=aliases,
+    )
+
+
+@pytest.mark.parametrize(
+    "malformation",
+    (
+        "failed_architect",
+        "failed_reviewer",
+        "wrong_failure_origin",
+        "terminal_failed_coder",
+        "three_failed_coders",
+        "boolean_call_index",
+    ),
+)
+def test_model_provenance_rejects_invalid_transient_call_accounting(
+    malformation: str,
+) -> None:
+    attempt, inventory, aliases = _attempt_with_transient_coder_retry()
+    adapter = attempt["target_adapter_provenance"]
+    if malformation == "failed_architect":
+        adapter["calls"][0]["stage"] = "architect"
+    elif malformation == "failed_reviewer":
+        adapter["calls"][0]["stage"] = "reviewer"
+    elif malformation == "wrong_failure_origin":
+        adapter["calls"][0]["failure_origin"] = "authority_or_routing"
+    elif malformation == "terminal_failed_coder":
+        terminal = adapter["calls"][-1]
+        terminal.update(
+            {
+                "completed": False,
+                "raw_response_observed": False,
+                "raw_response_sha256": None,
+                "error_type": "TimeoutError",
+                "failure_origin": "provider_transport",
+            }
+        )
+    elif malformation == "three_failed_coders":
+        failed = copy.deepcopy(adapter["calls"][0])
+        successful = copy.deepcopy(adapter["calls"][-1])
+        failures = []
+        for index in range(1, 4):
+            item = copy.deepcopy(failed)
+            item["call_index"] = index
+            failures.append(item)
+        successful["call_index"] = 4
+        adapter["calls"] = [*failures, successful]
+        adapter["call_count"] = 4
+        adapter["producer_call_index"] = 4
+    else:
+        adapter["calls"][0]["call_index"] = True
+
+    assert not _attempt_model_provenance_verified(
+        attempt,
+        model_inventory=inventory,
+        service_model_aliases=aliases,
+    )
+
+
 def test_rederived_score_binds_source_service_oracle_verifier_and_model(
     tmp_path: Path,
 ) -> None:
@@ -2468,6 +2691,206 @@ def test_rederived_score_reopens_proof_trace_and_raw_final_readback(
     assert raw_score["persisted_proof_rederived"] is False
     assert raw_score["persisted_trace_rederived"] is False
     assert raw_score["passed"] is False
+
+
+def test_persisted_generic_proof_rederivation_binds_receipt_owned_authority(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"g" * 32),
+        run_nonce="persisted-generic-authority",
+    )
+    phase_root = tmp_path / "first"
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    _rewrite_final_target_plugin_as_generic(receipt)
+    final_payload = json.loads(
+        Path(receipt["workflow"]["final_readback_evidence_file"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    final_state = gate_runner_module._orchestrator_state(
+        final_payload["response"]
+    )
+    assert _generic_proof_requires_fixture_authority(final_state)
+
+    stale_manifest = str(tmp_path / "stale-ambient-authority.json")
+    monkeypatch.setenv(ENV_MANIFEST, stale_manifest)
+    observed_authorities = []
+
+    def derive_with_observed_authority(
+        _state: Mapping[str, Any],
+        *,
+        expected_source_head: str,
+    ) -> dict[str, Any]:
+        authority = load_campaign_3_5_fixture_authority()
+        observed_authorities.append(authority)
+        assert expected_source_head == receipt["source_head"]
+        assert authority.workspace_root == Path(receipt["fixture_root"])
+        assert authority.baseline_commit == receipt["baseline_commit"]
+        assert authority.baseline_tree == receipt["baseline_tree"]
+        return dict(receipt["production_proof"])
+
+    monkeypatch.setattr(
+        gate_runner_module,
+        "derive_production_proof",
+        derive_with_observed_authority,
+    )
+    monkeypatch.setattr(
+        gate_runner_module,
+        "reconcile_basic_backend_trace",
+        lambda **_kwargs: dict(receipt["workflow"]["trace_reconciliation"]),
+    )
+
+    result = _raw_proof_trace_revalidation(receipt)
+
+    assert result == {"proof_valid": True, "trace_valid": True}
+    assert len(observed_authorities) == 1
+    assert (
+        observed_authorities[0].manifest_sha256
+        == receipt["authority_manifest_sha256"]
+    )
+    assert os.environ[ENV_MANIFEST] == stale_manifest
+
+
+@pytest.mark.parametrize(
+    "malformation",
+    (
+        "missing",
+        "symlink",
+        "symlink_loop",
+        "non_0600",
+        "wrong_receipt_hash",
+        "wrong_service_hash",
+        "invalid_manifest",
+        "foreign_fixture_root",
+        "wrong_baseline",
+    ),
+)
+def test_persisted_generic_proof_authority_binding_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    malformation: str,
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"h" * 32),
+        run_nonce=f"persisted-generic-authority-{malformation}",
+    )
+    phase_root = tmp_path / "first"
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    _rewrite_final_target_plugin_as_generic(receipt)
+    manifest = (
+        Path(receipt["receipt_file"]).parent
+        / "control"
+        / "fixture-authority.json"
+    )
+    if malformation == "missing":
+        manifest.unlink()
+    elif malformation == "symlink":
+        target = manifest.with_name("retargeted-authority.json")
+        manifest.rename(target)
+        manifest.symlink_to(target)
+    elif malformation == "symlink_loop":
+        manifest.unlink()
+        manifest.symlink_to(manifest.name)
+    elif malformation == "non_0600":
+        manifest.chmod(0o644)
+    elif malformation == "wrong_receipt_hash":
+        receipt["authority_manifest_sha256"] = "0" * 64
+    elif malformation == "wrong_service_hash":
+        receipt["service_process"]["fixture_manifest_sha256"] = "0" * 64
+    elif malformation == "invalid_manifest":
+        manifest.write_text("{}", encoding="utf-8")
+        digest = _sha256_file(manifest)
+        receipt["authority_manifest_sha256"] = digest
+        receipt["service_process"]["fixture_manifest_sha256"] = digest
+    elif malformation == "foreign_fixture_root":
+        receipt["fixture_root"] = str(tmp_path / "foreign-fixture")
+    else:
+        receipt["baseline_commit"] = "f" * 40
+
+    stale_manifest = str(tmp_path / "stale-ambient-authority.json")
+    monkeypatch.setenv(ENV_MANIFEST, stale_manifest)
+    derive_called = False
+
+    def unexpected_derive(
+        _state: Mapping[str, Any],
+        *,
+        expected_source_head: str,
+    ) -> dict[str, Any]:
+        nonlocal derive_called
+        derive_called = True
+        return dict(receipt["production_proof"])
+
+    monkeypatch.setattr(
+        gate_runner_module,
+        "derive_production_proof",
+        unexpected_derive,
+    )
+
+    result = _raw_proof_trace_revalidation(receipt)
+
+    assert result == {"proof_valid": False, "trace_valid": False}
+    assert derive_called is False
+    assert os.environ[ENV_MANIFEST] == stale_manifest
+
+
+def test_persisted_generic_proof_authority_environment_restored_on_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rendered = render_basic_backend_task(
+        "BT01",
+        run_seed=BasicBackendRunSeed.from_private_bytes(b"i" * 32),
+        run_nonce="persisted-generic-authority-derive-error",
+    )
+    phase_root = tmp_path / "first"
+    phase_root.mkdir()
+    receipt = _persist_passing_task_receipt(
+        phase_root,
+        "first",
+        rendered,
+        repair_succeeded=False,
+    )
+    _rewrite_final_target_plugin_as_generic(receipt)
+    stale_manifest = str(tmp_path / "stale-ambient-authority.json")
+    monkeypatch.setenv(ENV_MANIFEST, stale_manifest)
+
+    def fail_derivation(
+        _state: Mapping[str, Any],
+        *,
+        expected_source_head: str,
+    ) -> dict[str, Any]:
+        assert load_campaign_3_5_fixture_authority().workspace_root == Path(
+            receipt["fixture_root"]
+        )
+        raise ValueError("controlled proof derivation failure")
+
+    monkeypatch.setattr(
+        gate_runner_module,
+        "derive_production_proof",
+        fail_derivation,
+    )
+
+    assert _raw_proof_trace_revalidation(receipt) == {
+        "proof_valid": False,
+        "trace_valid": False,
+    }
+    assert os.environ[ENV_MANIFEST] == stale_manifest
 
 
 @pytest.mark.parametrize(

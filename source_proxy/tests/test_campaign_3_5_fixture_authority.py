@@ -287,6 +287,87 @@ def test_structured_edits_accepts_double_escaped_newlines_only_for_an_exact_loca
     assert category == "structured_edits_double_escaped_newlines"
 
 
+def test_structured_edits_rejects_symlink_components_and_ambiguous_locators(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "example.py").write_text("value = 1\nvalue = 1\n", encoding="utf-8")
+    (root / "src" / "overlap.txt").write_text("aaa\n", encoding="utf-8")
+    (root / "src" / "invalid-utf8.txt").write_bytes(b"\xff\xfe")
+    (root / "src" / "oversized.txt").write_bytes(b"x" * 1_000_001)
+    (root / "real").mkdir(); (root / "real" / "other.py").write_text("value = 1\n", encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+    (root / "src" / "linked").symlink_to(root / "real", target_is_directory=True)
+
+    ambiguous = json.dumps(
+        {"edits": [{"path": "src/example.py", "old": "value = 1", "new": "value = 2"}]}
+    )
+    diff, files, category = _structured_edits_to_diff(root, ["src/"], ambiguous)
+    assert (diff, files, category) == (
+        "",
+        [],
+        "structured_edits_old_text_mismatch",
+    )
+
+    through_symlink = json.dumps(
+        {"edits": [{"path": "src/linked/other.py", "old": "value = 1", "new": "value = 2"}]}
+    )
+    diff, files, category = _structured_edits_to_diff(
+        root,
+        ["src/"],
+        through_symlink,
+    )
+    assert (diff, files, category) == ("", [], "invalid_structured_edits")
+
+    for path, old, expected_category in (
+        ("src/overlap.txt", "aa", "structured_edits_old_text_mismatch"),
+        ("src/invalid-utf8.txt", "anything", "invalid_structured_edits"),
+        ("src/oversized.txt", "x", "invalid_structured_edits"),
+        ("src/\x00.py", "anything", "invalid_structured_edits"),
+    ):
+        raw = json.dumps(
+            {"edits": [{"path": path, "old": old, "new": "replacement"}]}
+        )
+        diff, files, category = _structured_edits_to_diff(
+            root,
+            ["src/"],
+            raw,
+        )
+        assert diff == ""
+        assert files == []
+        assert category == expected_category
+
+
+def test_structured_edits_enforces_response_and_edit_count_bounds(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "fixture"; root.mkdir()
+    _git(root, "init", "-q"); _git(root, "config", "user.email", "fixture@example.invalid"); _git(root, "config", "user.name", "Fixture")
+    (root / "src").mkdir(); (root / "src" / "example.py").write_text("a = 1\nb = 1\n", encoding="utf-8")
+    _git(root, "add", "."); _git(root, "commit", "-qm", "baseline")
+
+    two_edits = json.dumps(
+        {
+            "edits": [
+                {"path": "src/example.py", "old": "a = 1", "new": "a = 2"},
+                {"path": "src/example.py", "old": "b = 1", "new": "b = 2"},
+            ]
+        }
+    )
+    assert _structured_edits_to_diff(
+        root,
+        ["src/"],
+        two_edits,
+        max_edits=1,
+    ) == ("", [], "invalid_structured_edits")
+    assert _structured_edits_to_diff(
+        root,
+        ["src/"],
+        "x" * 120_001,
+    ) == ("", [], "invalid_structured_edits")
+
+
 def test_generic_adapter_retries_malformed_coder_output_on_the_rich_path(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -302,7 +383,17 @@ def test_generic_adapter_retries_malformed_coder_output_on_the_rich_path(
     coder_responses = iter(
         [
             "not a replacement file",
-            '<file path="src/label.go">\npackage label\n\nfunc Value() string { return "ready" }\n</file>',
+            json.dumps(
+                {
+                    "edits": [
+                        {
+                            "path": "src/label.go",
+                            "old": 'return "draft"',
+                            "new": 'return "ready"',
+                        }
+                    ]
+                }
+            ),
         ]
     )
 
@@ -325,7 +416,11 @@ def test_generic_adapter_retries_malformed_coder_output_on_the_rich_path(
 
     assert result.get("coder_blocked") is not True
     assert result["execution_path"] == GENERIC_RICH_EXECUTION_PATH
-    assert result["coder_diagnostics"]["coder_format_retry_count"] == 1
+    assert result["coder_diagnostics"]["coder_generation_count"] == 2
+    assert [
+        attempt["output_contract"]
+        for attempt in result["coder_diagnostics"]["attempts"]
+    ] == ["replacement_file", "json_exact_edits"]
     assert "+func Value() string { return \"ready\" }" in result["proposed_diff"]
 
 

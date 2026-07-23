@@ -24,7 +24,11 @@ from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
 )
 from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.diagnostics.status_codes import classify_repair_failure
-from source_proxy.planning.plan import ArchitectPlan, review_task_spec_from_plan
+from source_proxy.planning.plan import (
+    ArchitectPlan,
+    review_task_spec_from_plan,
+    task_spec_from_plan,
+)
 from source_proxy.planning.reviewer import (
     review_diff_deterministically,
     validate_review_artifact_snapshots,
@@ -2260,7 +2264,7 @@ def _valid_semantic_review_binding(
             target_plugin_identity.get("allowed_actions")
             if adapter_architect_plan_required
             and isinstance(target_plugin_identity, Mapping)
-            else [plan.coder_packet.target_file.path]
+            else task_spec_from_plan(plan).allowed_files
         )
         if not isinstance(authority, (list, tuple)):
             return False

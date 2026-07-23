@@ -12,6 +12,7 @@ from source_proxy.context.canonical_broker import (
     acknowledge_context_consumer,
     build_context_broker_report,
 )
+from source_proxy.planning.plan import ArchitectPlan, task_spec_from_plan
 from source_proxy.target_plugins.generic_workspace import (
     GENERIC_RICH_EXECUTION_PATH,
     _attempt_signature,
@@ -149,7 +150,9 @@ def test_preview_feedback_carries_bounded_missing_requirements_and_converges() -
     assert first == second
 
 
-def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
+def test_implicit_focused_test_task_binds_existing_test_before_coder_and_reuses_spec(
+    tmp_path: Path,
+) -> None:
     root = _workspace(tmp_path)
     calls: list[str] = []
 
@@ -196,6 +199,18 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
         calls.append("plan_ready")
         assert getattr(plan, "task_id") == "production-task-123"
         assert getattr(plan, "coder_packet").target_file.path == "src/service.py"
+        assert isinstance(plan, ArchitectPlan)
+        assert task_spec_from_plan(plan).allowed_files == [
+            "src/service.py",
+            "tests/test_service.py",
+        ]
+        assert any(
+            criterion.id == "server-bound-focused-test-artifact"
+            and "tests/test_service.py" in criterion.description
+            for criterion in plan.coder_packet.acceptance_criteria
+        )
+        restored = ArchitectPlan.from_dict(plan.to_dict())
+        assert task_spec_from_plan(restored) == task_spec_from_plan(plan)
         assert expanded_context["go_eligible"] is False
         architect_source = next(
             item
@@ -238,9 +253,9 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
 
     result = execute_generic_workspace_rich(
         task=(
-            "Target file: src/service.py\n"
-            "Add a normalize_name service function and focused tests. "
-            'File "tests/test_service.py" must contain "test_normalize_name".'
+            "Please add a small normalize_name service function to "
+            "src/service.py. Keep existing behavior and add focused tests "
+            "for the new function."
         ),
         workspace_root=root,
         allowed_paths=("src/", "tests/"),
@@ -266,7 +281,7 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
         coder_ready_callback=coder_ready,
     )
 
-    assert result.get("coder_blocked") is not True
+    assert result["coder_blocked"] is False
     assert result["execution_path"] == GENERIC_RICH_EXECUTION_PATH
     assert calls == ["plan_ready", "coder_ready", "coder"]
     diagnostics = result["coder_diagnostics"]
@@ -275,25 +290,24 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
         for item in diagnostics["canonical_context_broker"]["sources_considered"]
     )
     assert diagnostics["multi_file_capability_requested"] is True
-    assert diagnostics["changed_files"] == ["src/service.py", "tests/test_service.py"]
-    assert diagnostics["review_task_spec"]["allowed_files"] == [
+    assert diagnostics["canonical_task_spec"]["allowed_files"] == [
         "src/service.py",
         "tests/test_service.py",
     ]
+    assert diagnostics["canonical_task_spec_check"]["ok"] is True
+    assert diagnostics["review_task_spec"] == diagnostics["canonical_task_spec"]
     assert set(diagnostics["review_artifact_snapshots"]) == {
         "src/service.py",
         "tests/test_service.py",
     }
-    assert diagnostics["review_artifact_snapshots_sha256"] == (
-        _canonical_review_artifact_snapshots_sha256(
-            diagnostics["review_artifact_snapshots"]
-        )
+    assert all(
+        attempt["reviewer_model_call_required"] is False
+        for attempt in diagnostics["attempts"]
     )
-    assert "diff --git a/src/service.py b/src/service.py" in result["proposed_diff"]
-    assert "diff --git a/tests/test_service.py b/tests/test_service.py" in result["proposed_diff"]
+    assert _git(root, "status", "--short") == ""
 
 
-def test_shared_refactor_capability_allows_one_new_sibling_helper(
+def test_explicit_shared_helper_task_reuses_canonical_spec_through_review(
     tmp_path: Path,
 ) -> None:
     root = _workspace(tmp_path)
@@ -312,7 +326,8 @@ def test_shared_refactor_capability_allows_one_new_sibling_helper(
         "`normalize_username` in `src/users.py` and `normalize_email` in "
         "`src/contacts.py` repeat the same whitespace-and-lowercase cleanup. "
         "Refactor that duplicated logic into one small shared helper while "
-        "preserving both public functions and their current behavior."
+        "preserving both public functions and their current behavior. "
+        "Create file src/normalization.py as that shared helper."
     )
 
     def architect_call(_prompt: str, _alias: str) -> str:
@@ -389,16 +404,21 @@ def test_shared_refactor_capability_allows_one_new_sibling_helper(
         coder_ready_callback=coder_ready,
     )
 
-    assert result.get("coder_blocked") is not True
+    assert result["coder_blocked"] is False
     diagnostics = result["coder_diagnostics"]
-    assert set(diagnostics["review_task_spec"]["allowed_files"]) == {
+    canonical_allowed = diagnostics["canonical_task_spec"]["allowed_files"]
+    assert canonical_allowed[0] == "src/users.py"
+    assert set(canonical_allowed) == {
         "src/users.py",
         "src/contacts.py",
         "src/normalization.py",
     }
+    assert diagnostics["canonical_task_spec_check"]["ok"] is True
+    assert diagnostics["review_task_spec"] == diagnostics["canonical_task_spec"]
     assert diagnostics["review_artifact_snapshots"]["src/normalization.py"][
         "exists"
     ] is False
+    assert _git(root, "status", "--short") == ""
 
 
 def test_unrequested_bundle_file_becomes_bounded_coder_repair_feedback(
@@ -412,23 +432,27 @@ def test_unrequested_bundle_file_becomes_bounded_coder_repair_feedback(
 
     def coder_call(prompt: str, _alias: str) -> str:
         prompts.append(prompt)
+        files = [
+            {
+                "path": "src/service.py",
+                "content": (
+                    "def existing() -> str:\n"
+                    "    return 'kept'\n\n\n"
+                    "def greeting() -> str:\n"
+                    "    return 'hello'\n"
+                ),
+            }
+        ]
+        if len(prompts) == 1:
+            files.append(
+                {
+                    "path": "src/model_selected_decoy.py",
+                    "content": "UNREQUESTED = True\n",
+                }
+            )
         return json.dumps(
             {
-                "files": [
-                    {
-                        "path": "src/service.py",
-                        "content": (
-                            "def existing() -> str:\n"
-                            "    return 'kept'\n\n\n"
-                            "def greeting() -> str:\n"
-                            "    return 'hello'\n"
-                        ),
-                    },
-                    {
-                        "path": "src/model_selected_decoy.py",
-                        "content": "UNREQUESTED = True\n",
-                    },
-                ]
+                "files": files
             }
         )
 
@@ -472,17 +496,21 @@ def test_unrequested_bundle_file_becomes_bounded_coder_repair_feedback(
         coder_ready_callback=coder_ready,
     )
 
-    assert result["coder_blocked"] is True
-    assert result["reason_code"] == "generic_workspace_preview_repair_exhausted"
+    assert result["coder_blocked"] is False
     assert len(prompts) == 2
-    assert "review_task_spec_unrequested_changed_file" in prompts[1]
+    assert "task_spec_allowed_file_violation" in prompts[1]
+    assert "src/model_selected_decoy.py" in prompts[1]
     attempts = result["coder_diagnostics"]["attempts"]
     assert len(attempts) == 2
     assert attempts[0]["preview_status"] == "blocked"
     assert attempts[0]["blocked_reasons"] == [
-        "review_task_spec_unrequested_changed_file: "
-        "review_task_spec_unrequested_changed_file"
+        "task_spec_allowed_file_violation: rejected changed path(s): "
+        "src/model_selected_decoy.py"
     ]
+    assert attempts[0]["reviewer_model_call_required"] is False
+    assert attempts[1]["canonical_task_spec_check"]["ok"] is True
+    assert result["coder_diagnostics"]["changed_files"] == ["src/service.py"]
+    assert _git(root, "status", "--short") == ""
 
 
 def test_coder_provider_timeout_returns_structured_no_mutation_result(
@@ -590,26 +618,12 @@ def test_transient_coder_timeout_retries_once_then_returns_safe_diff(
             raise TimeoutError("transient local provider timeout")
         return json.dumps(
             {
-                "files": [
+                "edits": [
                     {
                         "path": "src/service.py",
-                        "content": (
-                            "def existing() -> str:\n"
-                            "    return 'kept'\n\n\n"
-                            "def normalize_name(value: str) -> str:\n"
-                            "    return value.strip().lower()\n"
-                        ),
-                    },
-                    {
-                        "path": "tests/test_service.py",
-                        "content": (
-                            "from src.service import existing, normalize_name\n\n\n"
-                            "def test_existing():\n"
-                            "    assert existing() == 'kept'\n\n\n"
-                            "def test_normalize_name():\n"
-                            "    assert normalize_name('  ALICE ') == 'alice'\n"
-                        ),
-                    },
+                        "old": "return 'kept'",
+                        "new": "return 'ready'",
+                    }
                 ]
             }
         )
@@ -640,7 +654,10 @@ def test_transient_coder_timeout_retries_once_then_returns_safe_diff(
         )
 
     result = execute_generic_workspace_rich(
-        task="Add a normalize_name service function and focused tests.",
+        task=(
+            "Target file: src/service.py\n"
+            "Update the service return value without changing its signature."
+        ),
         workspace_root=root,
         allowed_paths=("src/", "tests/"),
         model_call=coder_call,
@@ -654,13 +671,173 @@ def test_transient_coder_timeout_retries_once_then_returns_safe_diff(
 
     assert result["coder_blocked"] is False
     assert "diff --git a/src/service.py b/src/service.py" in result["proposed_diff"]
+    assert "+    return 'ready'" in result["proposed_diff"]
     assert len(prompts) == 2
     assert "coder_model_timeout" in prompts[1]
     assert coder_ready_calls == 1
     attempts = result["coder_diagnostics"]["attempts"]
     assert len(attempts) == 2
     assert attempts[0]["coder_reason_code"] == "coder_model_timeout"
+    assert attempts[1]["output_contract"] == "json_exact_edits"
     assert attempts[1]["preview_status"] != "blocked"
+    assert _git(root, "status", "--short") == ""
+
+
+def test_single_file_repair_switches_to_bounded_exact_edit_contract(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    prompts: list[str] = []
+    coder_ready_calls = 0
+
+    def architect_call(_prompt: str, _alias: str) -> str:
+        return _architect_response("src/service.py")
+
+    def coder_call(prompt: str, _alias: str) -> str:
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            return "not a valid replacement payload"
+        assert '"edits"' in prompt
+        assert "exact non-empty text occurring once" in prompt
+        return json.dumps(
+            {
+                "edits": [
+                    {
+                        "path": "src/service.py",
+                        "old": "return 'kept'",
+                        "new": "return 'ready'",
+                    }
+                ]
+            }
+        )
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_exact_edit_plan_bound",
+            reason="test_server_persisted_exact_edit_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        nonlocal coder_ready_calls
+        coder_ready_calls += 1
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_exact_edit_coder_bound",
+            reason="test_exact_edit_consumes_same_context",
+        )
+
+    result = execute_generic_workspace_rich(
+        task="Target file: src/service.py\nFix `existing` without changing its signature.",
+        workspace_root=root,
+        allowed_paths=("src/",),
+        readable_paths=("src/", "tests/"),
+        model_call=coder_call,
+        architect_model_call=architect_call,
+        coder_model_call=coder_call,
+        model_alias="coder",
+        canonical_context={},
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["coder_blocked"] is False
+    assert "-    return 'kept'" in result["proposed_diff"]
+    assert "+    return 'ready'" in result["proposed_diff"]
+    assert len(prompts) == 2
+    assert coder_ready_calls == 1
+    diagnostics = result["coder_diagnostics"]
+    assert diagnostics["coder_generation_limit"] == 3
+    assert diagnostics["coder_generation_count"] == 2
+    assert [attempt["output_contract"] for attempt in diagnostics["attempts"]] == [
+        "replacement_file",
+        "json_exact_edits",
+    ]
+    assert _git(root, "status", "--short") == ""
+
+
+def test_single_file_exact_edit_repair_never_exceeds_three_generations(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    prompts: list[str] = []
+
+    def architect_call(_prompt: str, _alias: str) -> str:
+        return _architect_response("src/service.py")
+
+    def coder_call(prompt: str, _alias: str) -> str:
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            return "not a valid replacement payload"
+        return json.dumps(
+            {
+                "edits": [
+                    {
+                        "path": "src/service.py",
+                        "old": "text that is absent from the baseline",
+                        "new": "replacement",
+                    }
+                ]
+            }
+        )
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_exact_edit_exhaustion_plan_bound",
+            reason="test_exact_edit_exhaustion_plan_ready",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_exact_edit_exhaustion_coder_bound",
+            reason="test_exact_edit_exhaustion_coder_ready",
+        )
+
+    result = execute_generic_workspace_rich(
+        task="Target file: src/service.py\nFix `existing` without changing its signature.",
+        workspace_root=root,
+        allowed_paths=("src/",),
+        readable_paths=("src/", "tests/"),
+        model_call=coder_call,
+        architect_model_call=architect_call,
+        coder_model_call=coder_call,
+        model_alias="coder",
+        canonical_context={},
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["coder_blocked"] is True
+    assert result["reason_code"] == "generic_workspace_coder_repair_exhausted"
+    assert len(prompts) == 3
+    diagnostics = result["coder_diagnostics"]
+    assert diagnostics["coder_generation_limit"] == 3
+    assert diagnostics["coder_generation_count"] == 3
+    assert [attempt["output_contract"] for attempt in diagnostics["attempts"]] == [
+        "replacement_file",
+        "json_exact_edits",
+        "json_exact_edits",
+    ]
     assert _git(root, "status", "--short") == ""
 
 
@@ -796,32 +973,11 @@ def test_reused_server_plan_skips_architect_and_dispatches_coder(
     def coder_call(_prompt: str, _alias: str) -> str:
         nonlocal coder_calls
         coder_calls += 1
-        assert "Focused-test capability" in _prompt
-        assert "imports or directly references the primary target module" in _prompt
-        return json.dumps(
-            {
-                "files": [
-                    {
-                        "path": "src/service.py",
-                        "content": (
-                            "def existing() -> str:\n"
-                            "    return 'kept'\n\n\n"
-                            "def normalize_name(value: str) -> str:\n"
-                            "    return value.strip().lower()\n"
-                        ),
-                    },
-                    {
-                        "path": "tests/test_service.py",
-                        "content": (
-                            "from src.service import existing, normalize_name\n\n\n"
-                            "def test_existing():\n"
-                            "    assert existing() == 'kept'\n\n\n"
-                            "def test_normalize_name():\n"
-                            "    assert normalize_name('  ALICE ') == 'alice'\n"
-                        ),
-                    },
-                ]
-            }
+        return (
+            '<file path="src/service.py">\n'
+            "def existing() -> str:\n"
+            "    return 'ready'\n"
+            "</file>"
         )
 
     def plan_ready(
@@ -851,7 +1007,7 @@ def test_reused_server_plan_skips_architect_and_dispatches_coder(
         return acknowledged
 
     common = {
-        "task": "Add a normalize_name service function and focused tests.",
+        "task": "Change the existing service behavior.",
         "workspace_root": root,
         "allowed_paths": ("src/", "tests/"),
         "model_call": coder_call,
@@ -896,30 +1052,13 @@ def test_required_empty_task_description_packet_remains_go_eligible(
     def coder_call(prompt: str, _alias: str) -> str:
         coder_prompts.append(prompt)
         assert "selected context packet: http-task-description" not in prompt
-        return json.dumps(
-            {
-                "files": [
-                    {
-                        "path": "src/service.py",
-                        "content": (
-                            "def existing() -> str:\n"
-                            "    return 'kept'\n\n\n"
-                            "def normalize_name(value: str) -> str:\n"
-                            "    return value.strip().lower()\n"
-                        ),
-                    },
-                    {
-                        "path": "tests/test_service.py",
-                        "content": (
-                            "from src.service import existing, normalize_name\n\n\n"
-                            "def test_existing():\n"
-                            "    assert existing() == 'kept'\n\n\n"
-                            "def test_normalize_name():\n"
-                            "    assert normalize_name('  ALICE ') == 'alice'\n"
-                        ),
-                    },
-                ]
-            }
+        return (
+            '<file path="src/service.py">\n'
+            "def existing() -> str:\n"
+            "    return 'kept'\n\n\n"
+            "def normalize_name(value: str) -> str:\n"
+            "    return value.strip().lower()\n"
+            "</file>"
         )
 
     def plan_ready(
@@ -970,7 +1109,10 @@ def test_required_empty_task_description_packet_remains_go_eligible(
         task_source["packet"] = {}
 
     result = execute_generic_workspace_rich(
-        task="Add a normalize_name service function and focused tests.",
+        task=(
+            "Target file: src/service.py\n"
+            "Add a normalize_name service function."
+        ),
         workspace_root=root,
         allowed_paths=("src/", "tests/"),
         model_call=coder_call,

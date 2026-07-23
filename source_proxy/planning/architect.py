@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import math
 import os
 import re
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ from source_proxy.planning.plan import (
     TaskClassification,
     VerificationCheck,
     VerificationPlan,
+    bind_requested_artifacts_to_plan,
 )
 from source_proxy.routing.litellm_router import available_model_aliases, get_router
 from source_proxy.approval.external_gate import ExternalGateError, central_gate_check
@@ -234,6 +236,8 @@ _QUOTED_PATH_SUFFIXES = _PRIMARY_SOURCE_SUFFIXES | {
 }
 _MAX_TARGET_DISCOVERY_BYTES = 256_000
 _MAX_TARGET_DISCOVERY_FILES = 400
+_MAX_ARCHITECT_RESPONSE_CHARS = 256_000
+_MAX_ARCHITECT_OBJECT_CANDIDATES = 512
 _TARGET_DISCOVERY_IGNORED_DIRS = {
     ".git",
     ".next",
@@ -361,7 +365,13 @@ def plan_bounded_proposal_create_deterministically(
             cloud_escalation_allowed=True,
         ),
     )
-    return Plan(plan)
+    return Plan(
+        bind_requested_artifacts_to_plan(
+            plan,
+            root,
+            authorized_paths=allowed_paths,
+        )
+    )
 
 
 def plan_task_deterministically(
@@ -483,7 +493,13 @@ def plan_task_deterministically(
             cloud_escalation_allowed=True,
         ),
     )
-    return Plan(plan)
+    return Plan(
+        bind_requested_artifacts_to_plan(
+            plan,
+            root,
+            authorized_paths=allowed_paths,
+        )
+    )
 
 
 def _resolve_ordinary_workspace_target(
@@ -978,7 +994,13 @@ def plan_markdown_append_deterministically(
             cloud_escalation_allowed=False,
         ),
     )
-    return Plan(plan)
+    return Plan(
+        bind_requested_artifacts_to_plan(
+            plan,
+            root,
+            authorized_paths=allowed_paths,
+        )
+    )
 
 
 def plan_task_with_llm(
@@ -1004,7 +1026,6 @@ def plan_task_with_llm(
         rejection_feedback=rejection_feedback,
         bounded_proposal=parse_bounded_proposal_task(clean_task),
     )
-    last_error = ""
     last_reason_code = "architect_llm_invalid_json"
     for attempt in range(2):
         try:
@@ -1038,16 +1059,18 @@ def plan_task_with_llm(
                     "architect_llm_timeout",
                     f"LLM Architect timed out after {_architect_timeout_seconds()} seconds.",
                 ) from error
-            last_error = str(error)
             if isinstance(error, ArchitectLLMError):
                 last_reason_code = error.reason_code
             else:
                 last_reason_code = "architect_llm_router_error"
             prompt = (
-                f"{prompt}\n\nYour previous response was invalid: {last_error}\n"
+                f"{prompt}\n\nYour previous response failed server validation.\n"
                 "Retry with one valid JSON object only."
             )
-    raise ArchitectLLMError(last_reason_code, f"LLM Architect response did not validate after retry: {last_error}")
+    raise ArchitectLLMError(
+        last_reason_code,
+        "LLM Architect response did not validate after retry.",
+    )
 
 
 def _architect_plan_from_llm_payload(
@@ -1060,8 +1083,10 @@ def _architect_plan_from_llm_payload(
     readable_paths: tuple[str, ...] | None = None,
 ) -> ArchitectPlan:
     if payload.get("status") == "blocked":
-        reason = str(payload.get("reason_code") or payload.get("reason") or "task_too_vague_for_plan")
-        raise ArchitectLLMError(reason, reason)
+        raise ArchitectLLMError(
+            "task_too_vague_for_plan",
+            "Architect could not derive a sufficiently specific plan.",
+        )
 
     classification_payload = _require_payload_dict(payload, "classification")
     packet_payload = dict(_require_payload_dict(payload, "coder_packet"))
@@ -1156,7 +1181,7 @@ def _architect_plan_from_llm_payload(
         style_directives=packet_payload["style_directives"],
     )
 
-    return ArchitectPlan(
+    plan = ArchitectPlan(
         plan_id=uuid4().hex,
         task_id=task_id,
         schema_version=PLAN_SCHEMA_VERSION,
@@ -1171,6 +1196,11 @@ def _architect_plan_from_llm_payload(
             max_total_seconds=450,
             cloud_escalation_allowed=True,
         ),
+    )
+    return bind_requested_artifacts_to_plan(
+        plan,
+        workspace_root,
+        authorized_paths=allowed_paths,
     )
 
 
@@ -2191,22 +2221,88 @@ def _mask_js_comments_and_strings(content: str) -> str:
 
 def _parse_json_object(raw_response: str) -> dict[str, Any]:
     raw = (raw_response or "").strip()
-    if raw.startswith("```"):
-        raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
-        raw = re.sub(r"\s*```$", "", raw)
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start == -1 or end == -1 or end < start:
-        raise ArchitectLLMError("architect_llm_invalid_json", "response did not contain a JSON object")
-    try:
-        parsed = json.loads(raw[start : end + 1])
-    except json.JSONDecodeError as error:
+    if not raw:
         raise ArchitectLLMError(
             "architect_llm_invalid_json",
-            "response did not contain valid JSON",
-        ) from error
-    if not isinstance(parsed, dict):
-        raise ArchitectLLMError("architect_llm_invalid_json", "response JSON must be an object")
+            "response did not contain a JSON object",
+        )
+    if len(raw) > _MAX_ARCHITECT_RESPONSE_CHARS:
+        raise ArchitectLLMError(
+            "architect_llm_invalid_json",
+            "response exceeded the bounded Architect JSON size",
+        )
+    decoder = json.JSONDecoder(
+        object_pairs_hook=_reject_duplicate_json_keys,
+        parse_constant=_reject_nonfinite_json_constant,
+        parse_float=_parse_finite_json_float,
+    )
+    viable_by_canonical_json: dict[str, dict[str, Any]] = {}
+    candidate_count = 0
+    for start, char in enumerate(raw):
+        if char != "{":
+            continue
+        candidate_count += 1
+        if candidate_count > _MAX_ARCHITECT_OBJECT_CANDIDATES:
+            raise ArchitectLLMError(
+                "architect_llm_invalid_json",
+                "response exceeded the bounded Architect JSON candidate count",
+            )
+        try:
+            parsed, _end = decoder.raw_decode(raw, start)
+        except (json.JSONDecodeError, RecursionError, ValueError):
+            continue
+        if not isinstance(parsed, dict) or not _architect_payload_is_viable(parsed):
+            continue
+        canonical = json.dumps(
+            parsed,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        viable_by_canonical_json.setdefault(canonical, parsed)
+
+    if not viable_by_canonical_json:
+        raise ArchitectLLMError(
+            "architect_llm_invalid_json",
+            "response did not contain one structurally viable Architect JSON object",
+        )
+    if len(viable_by_canonical_json) > 1:
+        raise ArchitectLLMError(
+            "architect_llm_ambiguous_json",
+            "response contained multiple distinct structurally viable Architect JSON objects",
+        )
+    return next(iter(viable_by_canonical_json.values()))
+
+
+def _architect_payload_is_viable(payload: dict[str, Any]) -> bool:
+    if payload.get("status") == "blocked":
+        return payload.get("reason_code") == "task_too_vague_for_plan"
+    classification = payload.get("classification")
+    coder_packet = payload.get("coder_packet")
+    return bool(
+        isinstance(classification, dict)
+        and isinstance(coder_packet, dict)
+        and isinstance(coder_packet.get("target_file"), dict)
+    )
+
+
+def _reject_nonfinite_json_constant(_value: str) -> None:
+    raise ValueError("non-finite JSON constants are not allowed")
+
+
+def _parse_finite_json_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ValueError("non-finite JSON numbers are not allowed")
+    return parsed
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    parsed: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in parsed:
+            raise ValueError("duplicate JSON object keys are not allowed")
+        parsed[key] = value
     return parsed
 
 

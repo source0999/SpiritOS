@@ -8,7 +8,7 @@ import difflib
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import time
@@ -32,6 +32,9 @@ from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
 
 TARGET_PLUGIN_SCHEMA_VERSION = "spiritos-target-plugin/v1"
 TARGET_ADAPTER_PROVENANCE_SCHEMA_VERSION = "spiritos-target-adapter-provenance/v1"
+_MAX_STRUCTURED_EDIT_COUNT = 10
+_MAX_STRUCTURED_EDIT_RESPONSE_CHARS = 120_000
+_MAX_STRUCTURED_EDIT_BASELINE_BYTES = 1_000_000
 LUMACART_PLUGIN_ID = "lumacart"
 GENERIC_WORKSPACE_PLUGIN_ID = "generic-workspace"
 GENERIC_WORKSPACE_PROMPT_ID = "generic-architect-coder-packet"
@@ -561,7 +564,20 @@ def _generic_diff_files(diff: str) -> list[str]:
     return sorted({after for _before, after in pairs})
 
 
-def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) -> tuple[str, list[str], str]:
+def _substring_occurs_exactly_once(text: str, needle: str) -> bool:
+    """Reject absent and overlapping duplicate exact-edit locators."""
+
+    first = text.find(needle)
+    return first >= 0 and text.find(needle, first + 1) < 0
+
+
+def structured_edits_to_diff(
+    root: Path,
+    allowed_paths: list[str],
+    raw: str,
+    *,
+    max_edits: int = _MAX_STRUCTURED_EDIT_COUNT,
+) -> tuple[str, list[str], str]:
     """Convert exact model-proposed visible-text replacements into a Git diff.
 
     This is a bounded fallback for models that understand an edit but generate
@@ -569,6 +585,14 @@ def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) ->
     the adapter merely derives mechanically correct hunk metadata from the
     coder-visible baseline.  No private oracle data participates.
     """
+    if (
+        not isinstance(max_edits, int)
+        or isinstance(max_edits, bool)
+        or not 1 <= max_edits <= _MAX_STRUCTURED_EDIT_COUNT
+        or not isinstance(raw, str)
+        or len(raw) > _MAX_STRUCTURED_EDIT_RESPONSE_CHARS
+    ):
+        return "", [], "invalid_structured_edits"
     stripped = raw.strip()
     fenced = re.fullmatch(r"```json[ \t]*\n(?P<payload>.*?)(?:\n)?```", stripped, flags=re.DOTALL | re.IGNORECASE)
     payload_text = fenced.group("payload") if fenced else stripped
@@ -593,37 +617,82 @@ def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) ->
             return "", [], "non_structured_edits"
         response_format = "structured_edits_backtick_strings"
     edits = payload.get("edits") if isinstance(payload, dict) and set(payload) == {"edits"} else None
-    if not isinstance(edits, list) or not edits or len(edits) > 10:
+    if not isinstance(edits, list) or not edits or len(edits) > max_edits:
         return "", [], "invalid_structured_edits"
     originals: dict[str, str] = {}
     updated: dict[str, str] = {}
     root_resolved = root.resolve()
+    edit_content_chars = 0
     for edit in edits:
         if not isinstance(edit, dict) or set(edit) != {"path", "old", "new"}:
             return "", [], "invalid_structured_edits"
         path, old, new = (edit.get("path"), edit.get("old"), edit.get("new"))
-        if not isinstance(path, str) or not isinstance(old, str) or not isinstance(new, str) or not old or old == new:
+        if (
+            not isinstance(path, str)
+            or not isinstance(old, str)
+            or not isinstance(new, str)
+            or not old
+            or old == new
+            or "\x00" in path
+            or "\x00" in old
+            or "\x00" in new
+        ):
             return "", [], "invalid_structured_edits"
+        edit_content_chars += len(old) + len(new)
+        if edit_content_chars > _MAX_STRUCTURED_EDIT_RESPONSE_CHARS:
+            return "", [], "invalid_structured_edits"
+        pure_path = PurePosixPath(path)
+        if (
+            pure_path.is_absolute()
+            or pure_path.as_posix() != path
+            or not pure_path.parts
+            or any(part in {"", ".", ".."} for part in pure_path.parts)
+        ):
+            return "", [], "structured_edits_scope_violation"
         if not any(path == allowed.rstrip("/") or path.startswith(allowed.rstrip("/") + "/") for allowed in allowed_paths):
             return "", [], "structured_edits_scope_violation"
-        candidate = (root / path).resolve()
-        if root_resolved not in candidate.parents or not candidate.is_file() or candidate.is_symlink():
+        unresolved = root_resolved
+        try:
+            for part in pure_path.parts:
+                unresolved = unresolved / part
+                if unresolved.is_symlink():
+                    return "", [], "invalid_structured_edits"
+            candidate = unresolved.resolve(strict=True)
+        except (OSError, ValueError):
+            return "", [], "invalid_structured_edits"
+        if (
+            root_resolved not in candidate.parents
+            or not candidate.is_file()
+        ):
             return "", [], "invalid_structured_edits"
         tracked = subprocess.run(["git", "ls-files", "--error-unmatch", "--", path], cwd=root, capture_output=True, check=False, timeout=15)
         if tracked.returncode:
             return "", [], "invalid_structured_edits"
-        original = originals.setdefault(path, candidate.read_text(encoding="utf-8"))
+        if path not in originals:
+            try:
+                if candidate.stat().st_size > _MAX_STRUCTURED_EDIT_BASELINE_BYTES:
+                    return "", [], "invalid_structured_edits"
+                with candidate.open("rb") as stream:
+                    baseline_bytes = stream.read(
+                        _MAX_STRUCTURED_EDIT_BASELINE_BYTES + 1
+                    )
+                if len(baseline_bytes) > _MAX_STRUCTURED_EDIT_BASELINE_BYTES:
+                    return "", [], "invalid_structured_edits"
+                originals[path] = baseline_bytes.decode("utf-8")
+            except (OSError, UnicodeError):
+                return "", [], "invalid_structured_edits"
+        original = originals[path]
         current = updated.get(path, original)
-        if current.count(old) != 1 and "\\n" in old:
+        if not _substring_occurs_exactly_once(current, old) and "\\n" in old:
             # A JSON response can contain source newlines escaped twice.  This
             # is a transport spelling, not an inferred edit: accept it only
             # if the decoded locator is an exact unique match in visible text.
             decoded_old = old.replace("\\r\\n", "\r\n").replace("\\n", "\n")
-            if current.count(decoded_old) == 1:
+            if _substring_occurs_exactly_once(current, decoded_old):
                 old = decoded_old
                 new = new.replace("\\r\\n", "\r\n").replace("\\n", "\n")
                 response_format = "structured_edits_double_escaped_newlines"
-        if current.count(old) != 1:
+        if not _substring_occurs_exactly_once(current, old):
             return "", [], "structured_edits_old_text_mismatch"
         updated[path] = current.replace(old, new, 1)
     chunks: list[str] = []
@@ -639,6 +708,11 @@ def _structured_edits_to_diff(root: Path, allowed_paths: list[str], raw: str) ->
         body = "".join(difflib.unified_diff(original.splitlines(keepends=True), replacement.splitlines(keepends=True), fromfile=f"a/{path}", tofile=f"b/{path}"))
         chunks.append(f"diff --git a/{path} b/{path}\n{body}")
     return "".join(chunks), sorted(updated), response_format
+
+
+# Retain the original private name for existing callers and compatibility
+# tests while the rich generic route shares the same fail-closed materializer.
+_structured_edits_to_diff = structured_edits_to_diff
 
 
 def _extract_generic_unified_diff(raw: str) -> tuple[str, str]:
@@ -815,8 +889,10 @@ def _target_adapter_model_calls_accounted(
     coder_calls = [call for call in calls if call.get("stage") == "coder"]
     if (
         len(reviewer_calls) != expected_reviewer_calls
+        or expected_reviewer_calls > 3
         or (reviewer_call_required and expected_reviewer_calls <= 0)
         or not coder_calls
+        or len(coder_calls) > 3
         or coder_calls[-1].get("completed") is not True
         or len(failed_coder_indices) > 2
     ):

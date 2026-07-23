@@ -982,6 +982,53 @@ def _semantic_plan_payload(*, task_id: str, target: str) -> dict[str, Any]:
     }
 
 
+def test_orchestrator_does_not_promote_broad_plugin_scope_to_task_authority() -> None:
+    task_id = "task-generic-canonical-scope"
+    target = "src/service.py"
+    extra = "src/model_selected_extra.py"
+    plan = ArchitectPlan.from_dict(
+        _semantic_plan_payload(task_id=task_id, target=target)
+    )
+    snapshots = {
+        target: {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": target,
+            "exists": True,
+            "content": "old\n",
+            "content_sha256": hashlib.sha256(b"old\n").hexdigest(),
+        },
+        extra: {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": extra,
+            "exists": False,
+            "content": "",
+            "content_sha256": hashlib.sha256(b"").hexdigest(),
+        },
+    }
+
+    with pytest.raises(
+        CodingOrchestratorError,
+        match="coding_semantic_review_scope_invalid",
+    ):
+        orchestrator_module._build_semantic_review_binding(
+            task_id=task_id,
+            run_id="run-generic-canonical-scope",
+            attempt_id="attempt-generic-canonical-scope",
+            planner_output={"payload": {"task_spec": plan.to_dict()}},
+            proposed_diff=(
+                f"diff --git a/{target} b/{target}\n"
+                f"diff --git a/{extra} b/{extra}\n"
+            ),
+            changed_files=[target, extra],
+            adapter_diagnostics={
+                "review_artifact_snapshots": snapshots,
+            },
+            adapter_architect_plan_required=True,
+            authorized_paths=["src/"],
+            repair_request=None,
+        )
+
+
 def _prepare_generic_workspace(root: Path, target: str = "src/service.py") -> None:
     candidate = root / target
     candidate.parent.mkdir(parents=True, exist_ok=True)

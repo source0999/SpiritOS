@@ -215,3 +215,106 @@ passes every numerical and hard-safety criterion.
 Campaign 4 remains exactly
 `PAUSED_FOR_CAMPAIGN_3_5_BACKEND_PROOF`; implementation, accepted commits, and
 push flags remain `false`.
+
+## Continuation repair after the third formal first phase
+
+The third fresh first phase is also preserved as immutable negative evidence:
+
+- Source head: `74696a98f3fffc08e24f50e98017d12142ba04e1`.
+- Run: `basic-backend-10-20260723T040407Z-66013ac632bc`.
+- Phase:
+  `/home/source/.source-proxy-basic-backend-10-evidence-20260722/basic-backend-10-20260723T040407Z-66013ac632bc/first`.
+- Embedded canonical phase-manifest commitment:
+  `8edeb951b7f6c0aac31293135cb9b4cec19fe537b4c73c6ecd14db290c0c2ed0`.
+- Phase-manifest file SHA-256:
+  `c603fb8f4309b404a6756e8ea659954eed36e5eec5557038805bdf85c8646a7e`.
+- Aggregate SHA-256:
+  `bc939f8c1be89715e5c163113c8f77a272fb91e775d717c7326040867d72e3e6`.
+- Formal result: `0/10`; no clean rerun was authorized.
+- BT01, BT02, BT03, BT04, BT08, and BT09 nevertheless crossed the real
+  authenticated lifecycle, applied model-authored diffs, passed public tests
+  and the private oracle, and produced trace/proof evidence. The immutable
+  scorer rejected them under the old provenance/proof re-derivation rules.
+- BT05 exhausted bounded Coder repair; BT06 reached approval but canonical
+  execution rejected its focused test path; BT07 exhausted two malformed
+  Architect JSON responses before execution; BT10 exhausted preview repair.
+- Safety remained exact: zero unauthorized mutations, fabricated completions,
+  hidden-answer leaks, and wrong-artifact false-positive completions.
+
+Read-only replay of that sealed evidence isolated two generalized scorer
+defects. Composite producer commitments are canonical `sha256:<64hex>` values,
+while raw response and prompt digests remain bare lowercase SHA-256. In
+addition, direct-generic proof replay must bind the exact mode-`0600`
+fixture-authority manifest owned by each receipt. The repaired scorer now
+uses the product model-call accounting and producer validators, validates the
+canonical commitment form, re-resolves the receipt/manifest/fixture paths
+fail-closed, verifies both receipt-owned manifest commitments, temporarily
+binds only that exact authority during proof replay, and restores the prior
+environment afterward. Symlink loops, wrong modes, non-canonical paths,
+manifest tampering, and authority mismatch are rejected.
+
+The same continuation repairs the four generalized task failures:
+
+- Single-file attempts two and three use a bounded model-authored exact-edit
+  contract. The server derives only unified-diff hunk metadata after strict
+  path, tracked-file, regular-file, symlink, response-size, edit-count,
+  baseline-size, UTF-8, unique-overlap-aware locator, and Python-syntax
+  checks. Retry ownership stays in one outer loop with at most three Coder
+  generations and at most three Reviewer calls.
+- Focused-test authority is now frozen before Coder dispatch. A bounded
+  tracked-file scan may persist exactly one existing regular test artifact
+  only when the public task affirmatively requests tests and the file has an
+  active structural import/specifier binding to the primary target. The exact
+  server-owned path is serialized in the Architect plan and the same TaskSpec
+  is recomputed by Coder, Reviewer, approval, proof, and executor. Ambiguous,
+  untracked, symlinked, forbidden, out-of-scope, inert, wrong-module, and
+  model-selected paths grant no authority.
+- Architect output uses a bounded strict `JSONDecoder.raw_decode` scan.
+  Duplicate keys, non-finite constants, exponent overflow, excessive size or
+  candidate counts, multiple distinct viable roots, and non-allowlisted
+  blocked reasons fail closed. Identical roots are canonically deduplicated;
+  no syntax repair, structure completion, field synthesis, third call, or raw
+  model text replay is performed.
+- TaskSpec validation rejects framework/product labels that merely look like
+  dotted filenames, preserves target-first exact authority, excludes
+  forbidden paths, and validates every non-authority field against the
+  persisted packet and verification plan.
+
+Validation on the complete dirty continuation tree used the pinned local
+Python and reported:
+
+- Final-tree affected sweep: `587 passed, 15 subtests passed`.
+- Integrated TaskSpec/Reviewer/orchestrator/proof/long-running sweep:
+  `378 passed`.
+- Gate-runner, receipt authority, adapter, and long-running sweep:
+  `231 passed`.
+- Coding regression/participants/Repomix-diff sweep:
+  `218 passed, 46 subtests passed`.
+- Authority, trace, approval, repair-loop, and frozen Basic-asset sweep:
+  `252 passed, 43 subtests passed`.
+- Final direct TaskSpec authority suite: `166 passed`.
+- Architect and schema suite: `63 passed, 15 subtests passed`.
+- Dirty-tree Basic preflight: passed for all ten frozen tasks, the mapped
+  runtime trace contract, the pinned local-only model inventory, and the
+  expected branch/head.
+- All 16 changed Python files compiled, `git diff --check` passed, and a scan
+  of all added production lines found no task IDs, fixture answers, hidden
+  fields, oracle data, hosted providers, or task-specific branches.
+
+Black and Ruff are not installed in the pinned environment, so no formatter
+or Ruff result is claimed. The unchanged synthetic outer Core/Full asset-gate
+test remains outside the Basic gate scope; its fixture omits
+`expected_disposition`.
+
+Independent read-only audits report no blocker in the strict Architect lane
+or the canonical multi-file TaskSpec lane. Their adversarial coverage includes
+raw-text non-replay, duplicate/non-finite JSON, exact size/candidate bounds,
+inert Python and JavaScript import decoys, active relative JavaScript imports,
+ambiguity, untracked files, symlinks, forbidden paths, broad-prefix
+non-promotion, retry caps, and exact proof/executor parity.
+
+This continuation remains uncommitted at this paragraph's checkpoint. A new
+fresh first phase is allowed only after the reviewed source/test/evidence
+changes are recovered, explicitly staged, committed, pushed, verified clean,
+and revalidated at the new head. The failed third manifest will not be
+resumed.

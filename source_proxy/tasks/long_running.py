@@ -71,6 +71,7 @@ from source_proxy.planning.plan import (
     task_spec_from_packet,
     task_spec_from_plan,
     validate_task_spec_for_packet,
+    validate_task_spec_for_plan,
 )
 from source_proxy.verification.contracts import (
     SUBJECTIVE_IMPROVEMENT_REQUIRES_DIFF_REASON_CODE,
@@ -7213,7 +7214,10 @@ def _run_architect_handoff(task: LongRunningTask) -> None:
         plan_task_deterministically,
         plan_task_with_llm,
     )
-    from source_proxy.planning.plan import save_plan
+    from source_proxy.planning.plan import (
+        bind_requested_artifacts_to_plan,
+        save_plan,
+    )
 
     if task.ast_snapshot is None:
         task.ast_snapshot = {
@@ -7236,7 +7240,11 @@ def _run_architect_handoff(task: LongRunningTask) -> None:
         else plan_task_deterministically(task.description, task.id, _workspace_root())
     )
     if isinstance(result, Plan):
-        save_plan(task.id, result.plan)
+        persisted_plan = bind_requested_artifacts_to_plan(
+            result.plan,
+            _workspace_root(),
+        )
+        save_plan(task.id, persisted_plan)
         task.architect_status = "planned"
         task.architect_reason = ""
         task.status = "running"
@@ -7274,7 +7282,11 @@ def _run_architect_handoff(task: LongRunningTask) -> None:
                 _workspace_root(),
             )
             if error.reason_code == "architect_llm_timeout" and isinstance(fallback, Plan):
-                save_plan(task.id, fallback.plan)
+                persisted_plan = bind_requested_artifacts_to_plan(
+                    fallback.plan,
+                    _workspace_root(),
+                )
+                save_plan(task.id, persisted_plan)
                 task.architect_status = "planned"
                 task.architect_reason = "deterministic_markdown_append_fallback"
                 task.status = "running"
@@ -7302,7 +7314,11 @@ def _run_architect_handoff(task: LongRunningTask) -> None:
                 [f"Planning with LLM Architect: {result.reason}.", f"LLM Architect blocked: {error.reason_code}."],
             )
             return
-        save_plan(task.id, llm_plan)
+        persisted_plan = bind_requested_artifacts_to_plan(
+            llm_plan,
+            _workspace_root(),
+        )
+        save_plan(task.id, persisted_plan)
         task.architect_status = "planned"
         task.architect_reason = result.reason
         task.status = "running"
@@ -10995,6 +11011,7 @@ def propose_coder_agent_implementation_diff(
     llm_call: Callable[[str, str], str] | None = None,
     model_alias: str | None = None,
     reviewer_feedback: list[str] | None = None,
+    caller_owns_bounded_repair: bool = False,
 ) -> CoderResponse:
     """Ask Coder for replacement content using only an Architect-owned packet."""
     _ = workspace_root
@@ -11068,7 +11085,7 @@ def propose_coder_agent_implementation_diff(
     )
     last_parse_meta: dict[str, Any] = {}
     last_failure_signature = ""
-    max_json_attempts = 2
+    max_json_attempts = 1 if caller_owns_bounded_repair else 2
     for attempt_index in range(max_json_attempts):
         json_attempt_count = attempt_index + 1
         try:
@@ -11259,6 +11276,7 @@ def propose_coder_agent_diff_payload_from_plan(
     force_live_model: bool = False,
     canonical_context: dict[str, Any] | None = None,
     canonical_context_text: str = "",
+    caller_owns_bounded_repair: bool = False,
     _review_attempt: int = 1,
     _previous_reviewer_signature: str = "",
 ) -> dict[str, Any]:
@@ -11313,7 +11331,7 @@ def propose_coder_agent_diff_payload_from_plan(
         model_alias=model_alias or _coder_model_alias(),
         trial_mode=force_live_model,
     )
-    task_spec_errors = validate_task_spec_for_packet(task_spec, packet)
+    task_spec_errors = validate_task_spec_for_plan(task_spec, architect_plan)
     if task_spec_errors:
         notes.append(
             "CODER_BLOCKED reason_code: coder_task_spec_invalid; "
@@ -11416,6 +11434,7 @@ def propose_coder_agent_diff_payload_from_plan(
             llm_call=llm_call,
             model_alias=model_alias,
             reviewer_feedback=reviewer_feedback,
+            caller_owns_bounded_repair=caller_owns_bounded_repair,
         )
         _mark_model_response_provenance(diagnostics, response)
         if response.status == "blocked" and packet.operation == "create":
@@ -11482,7 +11501,12 @@ def propose_coder_agent_diff_payload_from_plan(
                     "missing": [],
                     "summary": "Bounded proposal scaffold passed structural validation.",
                 }
-        if not content_validation["ok"] and deterministic is None and not reviewer_feedback:
+        if (
+            not content_validation["ok"]
+            and deterministic is None
+            and not reviewer_feedback
+            and not caller_owns_bounded_repair
+        ):
             reason = str(content_validation.get("summary") or "Replacement content validation failed.")
             notes.append(f"Retrying Coder after replacement content validation failed: {reason}")
             retry_response = propose_coder_agent_implementation_diff(
@@ -11497,6 +11521,7 @@ def propose_coder_agent_diff_payload_from_plan(
                         f"{reason}. Return a complete valid TS/TSX file as JSON content_lines."
                     )
                 ],
+                caller_owns_bounded_repair=caller_owns_bounded_repair,
             )
             _merge_coder_response_diagnostics(diagnostics, retry_response)
             if retry_response.status != "blocked" and retry_response.replacement_content is not None:
@@ -11714,7 +11739,11 @@ def propose_coder_agent_diff_payload_from_plan(
         diagnostics["retry_reason"] = "reviewer_blocked"
         notes.append(f"Reviewer blocked attempt {_review_attempt}: " + "; ".join(feedback[:5]))
         max_attempts = _max_reviewer_retry_attempts(architect_plan)
-        if _review_attempt < max_attempts and signature != _previous_reviewer_signature:
+        if (
+            not caller_owns_bounded_repair
+            and _review_attempt < max_attempts
+            and signature != _previous_reviewer_signature
+        ):
             notes.append("Retrying Coder with reviewer feedback.")
             return propose_coder_agent_diff_payload_from_plan(
                 architect_plan=architect_plan,
@@ -11725,6 +11754,7 @@ def propose_coder_agent_diff_payload_from_plan(
                 force_live_model=force_live_model,
                 canonical_context=canonical_context,
                 canonical_context_text=canonical_context_text,
+                caller_owns_bounded_repair=caller_owns_bounded_repair,
                 _review_attempt=_review_attempt + 1,
                 _previous_reviewer_signature=signature,
             )

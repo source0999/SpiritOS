@@ -49,8 +49,16 @@ from source_proxy.benchmarks.campaign_3_5_basic_assets.fixtures import (
 from source_proxy.benchmarks.campaign_3_5_basic_assets.seeding import (
     BasicBackendRunSeed,
 )
-from source_proxy.benchmarks.campaign_3_5_fixture_authority import ENV_MANIFEST
+from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
+    ENV_MANIFEST,
+    Campaign35FixtureAuthorityError,
+    load_campaign_3_5_fixture_authority,
+)
 from source_proxy.coding.proof import derive_production_proof
+from source_proxy.target_plugins.adapter import (
+    target_adapter_model_call_accounting_valid,
+    target_adapter_producer_identity_valid,
+)
 from source_proxy.target_plugins.selection import (
     GENERIC_WORKSPACE_PLUGIN_ID,
     GENERIC_WORKSPACE_PROMPT_ID,
@@ -3328,12 +3336,14 @@ def _attempt_model_provenance_verified(
 ) -> bool:
     identity = attempt.get("model_identity")
     adapter = attempt.get("target_adapter_provenance")
-    producer_output_sha256 = str(
-        attempt.get("producer_model_output_sha256") or ""
+    producer_output_sha256 = attempt.get("producer_model_output_sha256")
+    producer_output_digest = _sha256_prefixed_commitment_digest(
+        producer_output_sha256
     )
+    raw_calls = adapter.get("calls") if isinstance(adapter, Mapping) else None
     calls = (
-        [item for item in adapter.get("calls", []) if isinstance(item, Mapping)]
-        if isinstance(adapter, Mapping)
+        [item for item in raw_calls if isinstance(item, Mapping)]
+        if isinstance(raw_calls, list)
         else []
     )
     successful_coder_calls = [
@@ -3344,21 +3354,15 @@ def _attempt_model_provenance_verified(
         and item.get("raw_response_observed") is True
     ]
     producer = successful_coder_calls[-1] if successful_coder_calls else {}
-    producer_raw_sha256 = str(attempt.get("producer_raw_response_sha256") or "")
+    producer_raw_sha256 = attempt.get("producer_raw_response_sha256")
     base_valid = bool(
         isinstance(identity, Mapping)
         and isinstance(adapter, Mapping)
+        and isinstance(raw_calls, list)
+        and len(calls) == len(raw_calls)
         and calls
-        and len(calls) == adapter.get("call_count")
-        and all(
-            call.get("call_index") == index
-            and call.get("stage") in {"architect", "coder", "reviewer"}
-            and call.get("completed") is True
-            and call.get("raw_response_observed") is True
-            and _sha256_digest_present(call.get("rendered_prompt_sha256"))
-            and _sha256_digest_present(call.get("raw_response_sha256"))
-            for index, call in enumerate(calls, start=1)
-        )
+        and target_adapter_model_call_accounting_valid(adapter)
+        and target_adapter_producer_identity_valid(adapter)
         and adapter.get("transport_kind") == "canonical_litellm_router"
         and adapter.get("provider_call_authorized") is True
         and adapter.get("model_call_accounting_complete") is True
@@ -3374,13 +3378,16 @@ def _attempt_model_provenance_verified(
         and identity.get("provider") == producer.get("provider")
         and identity.get("model") == producer.get("model")
         and str(identity.get("model") or "").startswith("ollama_chat/")
-        and _sha256_digest_present(identity.get("input_sha256"))
-        and _sha256_digest_present(identity.get("output_sha256"))
-        and _sha256_digest_present(identity.get("artifact_sha256"))
-        and _sha256_digest_present(producer_output_sha256)
+        and _sha256_prefixed_commitment_digest(identity.get("input_sha256"))
+        is not None
+        and _sha256_prefixed_commitment_digest(identity.get("output_sha256"))
+        is not None
+        and _sha256_prefixed_commitment_digest(identity.get("artifact_sha256"))
+        is not None
+        and producer_output_digest is not None
         and identity.get("output_sha256") == producer_output_sha256
         and _sha256_digest_present(producer_raw_sha256)
-        and producer_output_sha256 != producer_raw_sha256
+        and producer_output_digest != producer_raw_sha256
     )
     if not base_valid or model_inventory is None:
         return base_valid
@@ -3494,12 +3501,25 @@ def _signed_operator_authority_acknowledged(exchange: Mapping[str, Any] | HttpEx
 
 
 def _sha256_digest_present(value: Any) -> bool:
-    text = str(value or "")
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text.lower())
+    return bool(
+        isinstance(value, str)
+        and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+    )
+
+
+def _sha256_prefixed_commitment_digest(value: Any) -> str | None:
+    """Return only the digest from the canonical composite commitment form."""
+
+    if not isinstance(value, str):
+        return None
+    match = re.fullmatch(r"sha256:([0-9a-f]{64})", value)
+    return match.group(1) if match is not None else None
 
 
 def _sha256_commitment_present(value: Any) -> bool:
-    text = str(value or "")
+    if not isinstance(value, str):
+        return False
+    text = value
     if text.startswith("sha256:"):
         text = text.removeprefix("sha256:")
     return _sha256_digest_present(text)
@@ -4279,12 +4299,110 @@ def _exact_attempt_http_chain_valid(
     )
 
 
+def _generic_proof_requires_fixture_authority(
+    orchestrator: Mapping[str, Any],
+) -> bool:
+    proposal = orchestrator.get("target_plugin_proposal")
+    identity = (
+        proposal.get("target_plugin_identity")
+        if isinstance(proposal, Mapping)
+        else None
+    )
+    return bool(
+        isinstance(identity, Mapping)
+        and identity.get("plugin_id") == GENERIC_WORKSPACE_PLUGIN_ID
+    )
+
+
+@contextlib.contextmanager
+def _receipt_owned_fixture_authority_environment(
+    receipt: Mapping[str, Any],
+) -> Iterator[None]:
+    """Bind proof replay to the exact locked authority owned by this receipt."""
+
+    reason = "basic_gate_receipt_fixture_authority_invalid"
+    receipt_file = receipt.get("receipt_file")
+    if not isinstance(receipt_file, str) or not receipt_file:
+        raise BasicBackendGateError(reason)
+    receipt_path = Path(receipt_file)
+    if not receipt_path.is_absolute() or receipt_path.name != "task-receipt.json":
+        raise BasicBackendGateError(reason)
+    try:
+        if receipt_path.resolve(strict=True) != receipt_path:
+            raise BasicBackendGateError(reason)
+    except (OSError, RuntimeError, ValueError) as error:
+        raise BasicBackendGateError(reason) from error
+
+    manifest_path = receipt_path.parent / "control" / "fixture-authority.json"
+    try:
+        manifest_metadata = manifest_path.lstat()
+        manifest_canonical = manifest_path.resolve(strict=True)
+    except (OSError, RuntimeError, ValueError) as error:
+        raise BasicBackendGateError(reason) from error
+    if (
+        manifest_path.is_symlink()
+        or manifest_canonical != manifest_path
+        or not stat.S_ISREG(manifest_metadata.st_mode)
+        or stat.S_IMODE(manifest_metadata.st_mode) != 0o600
+    ):
+        raise BasicBackendGateError(reason)
+
+    receipt_manifest_sha256 = receipt.get("authority_manifest_sha256")
+    service_process = receipt.get("service_process")
+    service_process = service_process if isinstance(service_process, Mapping) else {}
+    service_manifest_sha256 = service_process.get("fixture_manifest_sha256")
+    try:
+        actual_manifest_sha256 = _sha256_file(manifest_path)
+    except OSError as error:
+        raise BasicBackendGateError(reason) from error
+    if (
+        not _sha256_digest_present(receipt_manifest_sha256)
+        or not _sha256_digest_present(service_manifest_sha256)
+        or actual_manifest_sha256 != receipt_manifest_sha256
+        or actual_manifest_sha256 != service_manifest_sha256
+    ):
+        raise BasicBackendGateError(reason)
+
+    fixture_root = receipt.get("fixture_root")
+    if not isinstance(fixture_root, str) or not fixture_root:
+        raise BasicBackendGateError(reason)
+    fixture_path = Path(fixture_root)
+    try:
+        fixture_canonical = fixture_path.resolve(strict=True)
+    except (OSError, RuntimeError, ValueError) as error:
+        raise BasicBackendGateError(reason) from error
+    if not fixture_path.is_absolute() or fixture_canonical != fixture_path:
+        raise BasicBackendGateError(reason)
+
+    prior_manifest = os.environ.get(ENV_MANIFEST)
+    os.environ[ENV_MANIFEST] = str(manifest_path)
+    try:
+        try:
+            authority = load_campaign_3_5_fixture_authority()
+        except Campaign35FixtureAuthorityError as error:
+            raise BasicBackendGateError(reason) from error
+        if (
+            authority.manifest_sha256 != actual_manifest_sha256
+            or authority.workspace_root.resolve() != fixture_canonical
+            or authority.baseline_commit != receipt.get("baseline_commit")
+            or authority.baseline_tree != receipt.get("baseline_tree")
+        ):
+            raise BasicBackendGateError(reason)
+        yield
+    finally:
+        if prior_manifest is None:
+            os.environ.pop(ENV_MANIFEST, None)
+        else:
+            os.environ[ENV_MANIFEST] = prior_manifest
+
+
 def _rederive_persisted_proof_and_trace(
     workflow: Mapping[str, Any],
     *,
     receipt_proof: Mapping[str, Any],
     leak: Mapping[str, Any],
     expected_head: str,
+    receipt: Mapping[str, Any] | None = None,
 ) -> dict[str, bool]:
     """Reopen locked HTTP evidence and independently derive proof and trace."""
 
@@ -4520,19 +4638,31 @@ def _rederive_persisted_proof_and_trace(
         )
     ):
         return {"proof_valid": False, "trace_valid": False}
+    fixture_authority_environment = (
+        _receipt_owned_fixture_authority_environment(receipt or {})
+        if _generic_proof_requires_fixture_authority(orchestrator)
+        else contextlib.nullcontext()
+    )
     try:
-        derived_proof = derive_production_proof(
-            orchestrator,
-            expected_source_head=expected_head,
-        )
-        derived_trace = reconcile_basic_backend_trace(
-            task_id=final_task_id,
-            orchestrator=orchestrator,
-            authority_exchange=authority,
-            create_exchange=created,
-            final_exchange=final,
-        )
-    except (AttributeError, KeyError, TypeError, ValueError):
+        with fixture_authority_environment:
+            derived_proof = derive_production_proof(
+                orchestrator,
+                expected_source_head=expected_head,
+            )
+            derived_trace = reconcile_basic_backend_trace(
+                task_id=final_task_id,
+                orchestrator=orchestrator,
+                authority_exchange=authority,
+                create_exchange=created,
+                final_exchange=final,
+            )
+    except (
+        AttributeError,
+        BasicBackendGateError,
+        KeyError,
+        TypeError,
+        ValueError,
+    ):
         return {"proof_valid": False, "trace_valid": False}
     workflow_proof = workflow.get("production_proof")
     workflow_trace = workflow.get("trace_reconciliation")
@@ -4783,6 +4913,7 @@ def _rederive_task_receipt_score(
         ),
         leak=leak,
         expected_head=expected_head,
+        receipt=receipt,
     )
     proof_bound = bool(
         isinstance(proof, Mapping)

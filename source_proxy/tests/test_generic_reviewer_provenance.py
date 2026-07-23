@@ -230,6 +230,100 @@ def test_configured_reviewer_uses_adapter_authority_and_call_accounting(
     assert observed[-1]["run_id"].endswith(":reviewer:3")
 
 
+def test_canonical_task_spec_scope_failure_never_invokes_reviewer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, plugin = _generic_plugin(tmp_path, monkeypatch)
+    monkeypatch.setenv("SOURCE_PROXY_ARCHITECT_MODEL_ALIAS", "architect")
+    monkeypatch.setenv("SOURCE_PROXY_REVIEWER_MODEL_ALIAS", "reviewer")
+    monkeypatch.setattr(
+        reviewer,
+        "_call_reviewer_llm",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("reviewer ran before canonical TaskSpec scope passed")
+        ),
+    )
+    aliases: list[str] = []
+
+    def model_call(_prompt: str, alias: str) -> str:
+        aliases.append(alias)
+        if alias == "architect":
+            return _architect_response()
+        if alias == "reviewer":
+            raise AssertionError(
+                "reviewer ran before canonical TaskSpec scope passed"
+            )
+        assert alias == "coder"
+        return json.dumps(
+            {
+                "files": [
+                    {
+                        "path": "src/example.py",
+                        "content": "value = 2\n",
+                    },
+                    {
+                        "path": "src/model_selected_extra.py",
+                        "content": "EXTRA = True\n",
+                    },
+                ]
+            }
+        )
+
+    def plan_ready(_plan: object, staged: dict[str, object]) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged,
+            consumer="planner",
+            evidence="test_canonical_scope_adapter_plan",
+            reason="test_server_persisted_canonical_scope_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_canonical_scope_coder_dispatch",
+            reason="test_canonical_scope_provider_boundary",
+        )
+
+    result = execute_target_plugin_command(
+        plugin,
+        task="Update all modules to change the value to 2.",
+        workspace_root=root,
+        canonical_context={},
+        canonical_context_text="",
+        llm_call=model_call,
+        model_alias="coder",
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["coder_blocked"] is True
+    assert result["reason_code"] == "generic_workspace_preview_repair_exhausted"
+    assert aliases == ["architect", "coder", "coder"]
+    diagnostics = result["coder_diagnostics"]
+    assert diagnostics["canonical_task_spec"]["allowed_files"] == [
+        "src/example.py"
+    ]
+    assert diagnostics["canonical_task_spec_check"]["violations"][
+        "outside_allowed"
+    ] == ["src/model_selected_extra.py"]
+    assert "review_artifact_snapshots" not in diagnostics
+    provenance = result["target_adapter_provenance"]
+    assert [call["stage"] for call in provenance["calls"]] == [
+        "architect",
+        "coder",
+        "coder",
+    ]
+    assert provenance["reviewer_model_call_count_observed"] == 0
+    assert provenance["terminal_proof_eligible"] is False
+    assert _git(root, "status", "--short") == ""
+
+
 def test_transient_coder_timeout_recovers_with_terminal_adapter_provenance(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -276,7 +370,17 @@ def test_transient_coder_timeout_recovers_with_terminal_adapter_provenance(
         coder_calls += 1
         if coder_calls == 1:
             raise TimeoutError("transient local provider timeout")
-        return '<file path="src/example.py">\nvalue = 2\n</file>'
+        return json.dumps(
+            {
+                "edits": [
+                    {
+                        "path": "src/example.py",
+                        "old": "value = 1",
+                        "new": "value = 2",
+                    }
+                ]
+            }
+        )
 
     monkeypatch.setattr(
         long_running,
@@ -491,6 +595,40 @@ def test_final_successful_coder_retry_owns_aggregate_producer_identity(
     tampered = dict(provenance)
     tampered["raw_response_sha256"] = primary["raw_response_sha256"]
     assert target_adapter_producer_identity_valid(tampered) is False
+
+
+@pytest.mark.parametrize(("coder_call_count", "valid"), [(3, True), (4, False)])
+def test_completed_coder_generation_accounting_is_strictly_bounded(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    coder_call_count: int,
+    valid: bool,
+) -> None:
+    _, plugin = _generic_plugin(tmp_path, monkeypatch)
+    calls = [
+        _model_call_record(index=index, stage="coder", authorized=True)
+        for index in range(1, coder_call_count + 1)
+    ]
+    attached = _attach_target_adapter_provenance(
+        {
+            "proposed_diff": "diff --git a/src/example.py b/src/example.py\n",
+            "coder_blocked": False,
+            "execution_path": GENERIC_RICH_EXECUTION_PATH,
+            "coder_diagnostics": {
+                "execution_path": GENERIC_RICH_EXECUTION_PATH,
+                "generation_source": "model",
+            },
+        },
+        plugin=plugin,
+        selected_alias="coder",
+        configured_transport_kind="canonical_litellm_router",
+        model_calls=calls,
+    )
+    provenance = attached["target_adapter_provenance"]
+
+    assert provenance["model_call_accounting_complete"] is valid
+    assert target_adapter_model_call_accounting_valid(provenance) is valid
+    assert provenance["terminal_proof_eligible"] is valid
 
 
 def test_authorized_transient_coder_failure_is_accounted_before_final_success(

@@ -20,6 +20,30 @@ from source_proxy.planning.plan import ArchitectPlan
 from source_proxy.planning.plan import task_spec_from_plan, validate_task_spec_for_packet
 
 
+def _valid_llm_plan_payload(target_path: str) -> dict[str, object]:
+    return {
+        "classification": {
+            "task_class": "fix",
+            "visual_change": False,
+            "designer_required": False,
+            "estimated_complexity": "small",
+        },
+        "coder_packet": {
+            "target_file": {
+                "path": target_path,
+                "exists": True,
+                "sha256_before": None,
+            },
+            "operation": "edit",
+            "acceptance_criteria": [],
+            "constraints": {},
+            "context_slices": [],
+            "forbidden_paths": [],
+            "style_directives": [],
+        },
+    }
+
+
 class DeterministicArchitectTests(unittest.TestCase):
     def test_literal_roles_handle_transformations_preservation_and_exact_paths(self) -> None:
         task = "\n".join(
@@ -1201,6 +1225,249 @@ class DeterministicArchitectTests(unittest.TestCase):
 
             self.assertEqual(calls, 2)
             self.assertEqual(plan.coder_packet.target_file.path, "src/app/page.tsx")
+
+    def test_llm_architect_selects_strict_json_root_without_extra_model_call(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "src/service.py"
+            target.parent.mkdir(parents=True)
+            target.write_text("def service():\n    return 'ready'\n", encoding="utf-8")
+            calls = 0
+
+            def fake_llm(_prompt: str, _alias: str) -> str:
+                nonlocal calls
+                calls += 1
+                payload = json.dumps(_valid_llm_plan_payload("src/service.py"))
+                return f"Here's a discarded non-plan object: {{}}\n```json\n{payload}\n```"
+
+            plan = plan_task_with_llm(
+                "Fix the backend service",
+                "task-json-root-selection",
+                root,
+                llm_call=fake_llm,
+            )
+
+        self.assertEqual(calls, 1)
+        self.assertEqual(plan.coder_packet.target_file.path, "src/service.py")
+
+    def test_llm_architect_deduplicates_identical_viable_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "src/service.py"
+            target.parent.mkdir(parents=True)
+            target.write_text("def service():\n    return 'ready'\n", encoding="utf-8")
+            calls = 0
+            payload_object = _valid_llm_plan_payload("src/service.py")
+            first = json.dumps(payload_object)
+            second = json.dumps(payload_object, separators=(",", ":"), sort_keys=True)
+
+            def fake_llm(_prompt: str, _alias: str) -> str:
+                nonlocal calls
+                calls += 1
+                return f"{first}\n{second}"
+
+            plan = plan_task_with_llm(
+                "Fix the backend service",
+                "task-json-deduplication",
+                root,
+                llm_call=fake_llm,
+            )
+
+        self.assertEqual(calls, 1)
+        self.assertEqual(plan.coder_packet.target_file.path, "src/service.py")
+
+    def test_llm_architect_rejects_distinct_viable_roots_as_ambiguous(
+        self,
+    ) -> None:
+        first = json.dumps(_valid_llm_plan_payload("src/service.py"))
+        second = json.dumps(_valid_llm_plan_payload("src/worker.py"))
+        calls = 0
+
+        def fake_llm(_prompt: str, _alias: str) -> str:
+            nonlocal calls
+            calls += 1
+            return f"{first}\n{second}"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for relative in ("src/service.py", "src/worker.py"):
+                target = root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("VALUE = 1\n", encoding="utf-8")
+            with self.assertRaises(ArchitectLLMError) as raised:
+                plan_task_with_llm(
+                    "Fix the backend service",
+                    "task-json-ambiguity",
+                    root,
+                    llm_call=fake_llm,
+                )
+
+        self.assertEqual(calls, 2)
+        self.assertEqual(
+            raised.exception.reason_code,
+            "architect_llm_ambiguous_json",
+        )
+        self.assertEqual(
+            str(raised.exception),
+            "LLM Architect response did not validate after retry.",
+        )
+
+    def test_llm_architect_strict_root_rejects_non_json_and_nonfinite_values(
+        self,
+    ) -> None:
+        payload = _valid_llm_plan_payload("src/service.py")
+        nonfinite_payload = _valid_llm_plan_payload("src/service.py")
+        classification = nonfinite_payload["classification"]
+        assert isinstance(classification, dict)
+        classification["confidence"] = float("nan")
+        malformed_responses = {
+            "python_literal": str(payload),
+            "trailing_comma": f"{json.dumps(payload)[:-1]},}}",
+            "nonfinite_constant": json.dumps(nonfinite_payload),
+        }
+
+        for response_kind, response in malformed_responses.items():
+            with self.subTest(response_kind=response_kind):
+                with self.assertRaises(ArchitectLLMError) as raised:
+                    architect_module._parse_json_object(response)
+                self.assertEqual(
+                    raised.exception.reason_code,
+                    "architect_llm_invalid_json",
+                )
+
+    def test_llm_architect_blocked_root_requires_allowlisted_reason_code(self) -> None:
+        valid = architect_module._parse_json_object(
+            '{"status":"blocked","reason_code":"task_too_vague_for_plan"}'
+        )
+        self.assertEqual(valid["status"], "blocked")
+
+        for response in (
+            '{"status":"blocked"}',
+            '{"status":"blocked","reason_code":""}',
+            '{"status":"blocked","reason_code":7}',
+            '{"status":"blocked","reason_code":"model_authored_reason"}',
+        ):
+            with self.subTest(response=response):
+                with self.assertRaises(ArchitectLLMError) as raised:
+                    architect_module._parse_json_object(response)
+                self.assertEqual(
+                    raised.exception.reason_code,
+                    "architect_llm_invalid_json",
+                )
+
+    def test_llm_architect_rejects_duplicate_keys_and_overflow_numbers(
+        self,
+    ) -> None:
+        responses = {
+            "duplicate_nested_key": (
+                '{"classification":{},'
+                '"coder_packet":{"target_file":{"path":"src/one.py",'
+                '"path":"src/two.py"}}}'
+            ),
+            "positive_overflow": (
+                '{"classification":{"confidence":1e9999},'
+                '"coder_packet":{"target_file":{}}}'
+            ),
+            "negative_overflow": (
+                '{"classification":{"confidence":-1e9999},'
+                '"coder_packet":{"target_file":{}}}'
+            ),
+        }
+        for response_kind, response in responses.items():
+            with self.subTest(response_kind=response_kind):
+                with self.assertRaises(ArchitectLLMError) as raised:
+                    architect_module._parse_json_object(response)
+                self.assertEqual(
+                    raised.exception.reason_code,
+                    "architect_llm_invalid_json",
+                )
+
+    def test_llm_architect_does_not_replay_model_authored_block_reason(
+        self,
+    ) -> None:
+        marker = "RAW_MODEL_MARKER_DO_NOT_REPLAY"
+        prompts: list[str] = []
+
+        def fake_llm(prompt: str, _alias: str) -> str:
+            prompts.append(prompt)
+            return json.dumps(
+                {
+                    "status": "blocked",
+                    "reason_code": marker,
+                    "reason": marker,
+                }
+            )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ArchitectLLMError) as raised:
+                plan_task_with_llm(
+                    "Fix the backend service",
+                    "task-no-raw-replay",
+                    Path(tmp),
+                    llm_call=fake_llm,
+                )
+
+        self.assertEqual(len(prompts), 2)
+        self.assertNotIn(marker, prompts[1])
+        self.assertNotIn(marker, str(raised.exception))
+        self.assertNotIn(marker, raised.exception.reason_code)
+        self.assertEqual(
+            raised.exception.reason_code,
+            "architect_llm_invalid_json",
+        )
+
+    def test_llm_architect_rejects_truncated_structure_without_synthesis(
+        self,
+    ) -> None:
+        calls = 0
+        truncated = json.dumps(_valid_llm_plan_payload("src/service.py"))[:-2]
+
+        def fake_llm(_prompt: str, _alias: str) -> str:
+            nonlocal calls
+            calls += 1
+            return truncated
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ArchitectLLMError) as raised:
+                plan_task_with_llm(
+                    "Fix the backend service",
+                    "task-json-truncated",
+                    Path(tmp),
+                    llm_call=fake_llm,
+                )
+
+        self.assertEqual(calls, 2)
+        self.assertEqual(
+            raised.exception.reason_code,
+            "architect_llm_invalid_json",
+        )
+
+    def test_llm_architect_keeps_two_call_bound_for_irreparable_response(
+        self,
+    ) -> None:
+        calls = 0
+
+        def fake_llm(_prompt: str, _alias: str) -> str:
+            nonlocal calls
+            calls += 1
+            return '{"classification":}'
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ArchitectLLMError) as raised:
+                plan_task_with_llm(
+                    "Fix the backend service",
+                    "task-json-hard-failure",
+                    Path(tmp),
+                    llm_call=fake_llm,
+                )
+
+        self.assertEqual(calls, 2)
+        self.assertEqual(
+            raised.exception.reason_code,
+            "architect_llm_invalid_json",
+        )
 
     def test_llm_architect_distinguishes_malformed_json_from_router_failure(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

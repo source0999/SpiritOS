@@ -93,8 +93,10 @@ All commands used the pinned local Python.
   `/home/source/.source-proxy-basic-backend-10-evidence-20260722/basic-backend-10-20260723T040407Z-66013ac632bc/first`
 - Phase manifest:
   `/home/source/.source-proxy-basic-backend-10-evidence-20260722/basic-backend-10-20260723T040407Z-66013ac632bc/first/phase-manifest.json`
-- Phase-manifest SHA-256:
+- Embedded canonical phase-manifest commitment:
   `8edeb951b7f6c0aac31293135cb9b4cec19fe537b4c73c6ecd14db290c0c2ed0`
+- Phase-manifest file SHA-256:
+  `c603fb8f4309b404a6756e8ea659954eed36e5eec5557038805bdf85c8646a7e`
 - Aggregate SHA-256:
   `bc939f8c1be89715e5c163113c8f77a272fb91e775d717c7326040867d72e3e6`
 - Formal score: `0/10`; first-attempt pass count `0`; repaired-success count
@@ -298,6 +300,72 @@ PY=/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python
   --phase clean_rerun \
   --resume-first <passing-first-phase-manifest>
 ```
+
+## Continuation checkpoint after this closeout
+
+Work resumed from pushed closeout head
+`e7b1677d55bb37563d636949a8cee799cf7d556b`. The complete reviewed
+continuation now consists of 16 modified Python files plus this closeout and
+the milestone evidence update. No source or test change has yet been committed
+or pushed at this checkpoint.
+
+The continuation closes the remaining generalized boundaries:
+
+- canonical composite producer commitments and exact receipt-owned
+  mode-`0600` fixture-authority proof replay;
+- one outer repair loop capped at three Coder generations, with strict
+  model-authored exact edits on later single-file attempts;
+- a pre-dispatch, persisted exact focused-test TaskSpec shared unchanged by
+  Coder, Reviewer, approval, proof, and executor;
+- strict bounded Architect JSON object selection with duplicate/non-finite,
+  ambiguity, size, candidate-count, and raw-replay defenses;
+- fail-closed path, symlink, tracked-file, UTF-8, baseline-size,
+  overlap-aware locator, syntax, and model-call-accounting checks.
+
+The persisted focused-test authority is not derived from Coder output or a
+broad plugin prefix. A bounded tracked-file scan may bind only one existing
+regular test whose active import/specifier resolves to the target. Ambiguous,
+untracked, symlinked, forbidden, out-of-scope, inert, wrong-module,
+wrong-relative, and model-selected files remain unauthorized.
+
+Exact final-tree validation:
+
+- affected production/test sweep: `587 passed, 15 subtests passed`;
+- integrated TaskSpec/Reviewer/orchestrator/proof/long-running sweep:
+  `378 passed`;
+- runner/receipt/adapter/long-running sweep: `231 passed`;
+- coding regression/participants/Repomix-diff sweep:
+  `218 passed, 46 subtests passed`;
+- authority/trace/approval/repair/frozen-asset sweep:
+  `252 passed, 43 subtests passed`;
+- final direct TaskSpec authority suite: `166 passed`;
+- Architect/schema suite: `63 passed, 15 subtests passed`;
+- all 16 changed Python files compiled and `git diff --check` passed;
+- dirty-tree Basic preflight passed with ten tasks, mapped runtime trace,
+  pinned local-only model inventory, and the expected branch/head;
+- added-production-line scan found zero BT identifiers, benchmark answers,
+  hidden fields, oracle data, hosted-provider coupling, or task-specific
+  branches.
+
+Black and Ruff are unavailable in the pinned environment, so no result is
+claimed for either. The unchanged synthetic outer Core/Full asset-gate test
+remains outside Basic scope; its fixture omits `expected_disposition`.
+
+Three independent read-only audits now report no release blocker:
+
+- strict Architect extraction and no-raw-replay audit;
+- canonical multi-file TaskSpec parity and direct-binder adversarial audit;
+- complete eight-file production correctness audit covering receipt authority,
+  exact edits, bounded retries/accounting, proof parity, and benchmark
+  decoupling.
+
+The next authorized sequence is exact: create a final recovery patch and
+manifest, explicitly stage only these reviewed files and evidence documents,
+commit and push normally, verify a clean local/remote head and Campaign 4
+pause, run clean preflight at that head, and start a completely fresh first
+phase. The immutable failed run must not be resumed. Only a passing fresh first
+phase may be followed by the documentation-only descendant and clean
+unseen-seed rerun.
 
 ## Non-negotiable reporting rule
 

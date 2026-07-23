@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest import mock
@@ -44,7 +45,9 @@ from source_proxy.planning.plan import (
     TargetFile,
     TaskClassification,
     VerificationPlan,
+    load_plan,
     save_plan,
+    task_spec_from_plan,
 )
 from source_proxy.tasks.long_running import (
     _canonical_diff_sha256,
@@ -1192,6 +1195,108 @@ class LongRunningTaskTrackerTests(unittest.TestCase):
         self.assertEqual(debugger["task"]["cycle_count"], 1)
         self.assertEqual(debugger["task"]["open_diffs"], [])
         self.assertIn("ok", debugger["task"]["truncated_test_results"])
+
+    def test_deterministic_architect_persists_unique_bound_test_before_coder(
+        self,
+    ) -> None:
+        root = Path(self._tempdir.name)
+        (root / "src").mkdir()
+        (root / "tests").mkdir()
+        (root / "src/service.py").write_text(
+            "def existing() -> str:\n    return 'kept'\n",
+            encoding="utf-8",
+        )
+        (root / "tests/test_service.py").write_text(
+            "from src.service import existing\n\n"
+            "def test_existing():\n"
+            "    assert existing() == 'kept'\n",
+            encoding="utf-8",
+        )
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "add", "src/service.py", "tests/test_service.py"],
+            cwd=root,
+            check=True,
+        )
+        created = create_long_running_task(
+            "Please add a small count_ready service function to src/service.py. "
+            "Keep existing behavior and add focused tests for the new function."
+        )
+        task_id = created["task"]["id"]
+
+        advanced = advance_long_running_task(task_id)
+        persisted = load_plan(task_id)
+
+        self.assertEqual(advanced["task"]["current_agent_role"], "coder")
+        self.assertIsNotNone(persisted)
+        assert persisted is not None
+        self.assertEqual(
+            task_spec_from_plan(persisted).allowed_files,
+            ["src/service.py", "tests/test_service.py"],
+        )
+
+    def test_llm_architect_handoff_binds_unique_test_before_plan_save(self) -> None:
+        root = Path(self._tempdir.name)
+        (root / "src").mkdir()
+        (root / "tests").mkdir()
+        (root / "src/service.py").write_text(
+            "def existing() -> str:\n    return 'kept'\n",
+            encoding="utf-8",
+        )
+        (root / "tests/test_service.py").write_text(
+            "from src.service import existing\n\n"
+            "def test_existing():\n"
+            "    assert existing() == 'kept'\n",
+            encoding="utf-8",
+        )
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "add", "src/service.py", "tests/test_service.py"],
+            cwd=root,
+            check=True,
+        )
+        description = (
+            "Please add a small count_ready service function to src/service.py. "
+            "Keep existing behavior and add focused tests for the new function."
+        )
+        created = create_long_running_task(description)
+        task_id = created["task"]["id"]
+        unbound = _manual_plan(task_id, "src/service.py")
+        unbound = replace(
+            unbound,
+            source_task=description,
+            bundle_snapshot=replace(
+                unbound.bundle_snapshot,
+                workspace_root=str(root.resolve()),
+            ),
+            coder_packet=replace(
+                unbound.coder_packet,
+                target_file=TargetFile("src/service.py", True, "a" * 64),
+                operation="edit",
+            ),
+        )
+        from source_proxy.planning.architect import FallthroughToLLM
+
+        with (
+            mock.patch(
+                "source_proxy.planning.architect.plan_task_deterministically",
+                return_value=FallthroughToLLM("forced_llm_for_test"),
+            ),
+            mock.patch(
+                "source_proxy.planning.architect.plan_task_with_llm",
+                return_value=unbound,
+            ),
+        ):
+            advanced = advance_long_running_task(task_id)
+        persisted = load_plan(task_id)
+
+        self.assertEqual(advanced["task"]["current_agent_role"], "coder")
+        self.assertIsNotNone(persisted)
+        assert persisted is not None
+        self.assertEqual(
+            task_spec_from_plan(persisted).allowed_files,
+            ["src/service.py", "tests/test_service.py"],
+        )
 
     def test_swarm_debugger_failure_returns_to_coder_with_truncated_output(self) -> None:
         created = create_long_running_task(

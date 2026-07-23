@@ -5,10 +5,12 @@ import hashlib
 import json
 import posixpath
 import re
+import subprocess
 from fnmatch import fnmatchcase
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, fields, replace
 from contextlib import closing
-from typing import Any, Literal, Mapping, TypeVar
+from pathlib import Path
+from typing import Any, Literal, Mapping, Sequence, TypeVar
 
 from source_proxy.decision.proposal_task import effective_planning_task_text
 from source_proxy.planning.migrations import PLAN_MIGRATORS
@@ -241,10 +243,246 @@ class ArchitectPlan:
 
 
 def task_spec_from_plan(plan: ArchitectPlan) -> CoderTaskSpec:
-    return task_spec_from_packet(
+    base = task_spec_from_packet(
         plan.coder_packet,
         verification_plan=plan.verification_plan,
     )
+    allowed_files = canonical_task_spec_paths_from_plan(plan)
+    if allowed_files == base.allowed_files:
+        return base
+    return CoderTaskSpec(
+        schema_version=base.schema_version,
+        task_type="create_file_bundle",
+        target=base.target,
+        allowed_files=allowed_files,
+        forbidden_files=list(base.forbidden_files),
+        literal_requirements=list(base.literal_requirements),
+        verification=list(base.verification),
+        risk_tier=base.risk_tier,
+        source=base.source,
+    )
+
+
+def canonical_task_spec_paths_from_plan(plan: ArchitectPlan) -> list[str]:
+    """Derive exact pre-dispatch write authority from persisted public intent.
+
+    A Coder-selected path is never authority.  The primary target is always
+    present; additional paths are admitted only when they are exact mutation
+    paths already encoded in the persisted task or acceptance criteria.
+    """
+
+    target = _normalize_repo_path(plan.coder_packet.target_file.path)
+    intended = review_intent_paths_from_plan(plan)
+    allowed = [target] if target else []
+    for path in intended:
+        normalized = _normalize_repo_path(path)
+        if (
+            not normalized
+            or normalized == target
+            or path_escapes_workspace(normalized)
+            or has_percent_encoded_path_syntax(normalized)
+            or _path_matches_forbidden(
+                normalized,
+                plan.coder_packet.forbidden_paths,
+            )
+        ):
+            continue
+        allowed.append(normalized)
+    return _dedupe_preserve_order(allowed)
+
+
+_MAX_TRACKED_TEST_INDEX_BYTES = 1_000_000
+_MAX_TRACKED_TEST_ARTIFACTS = 256
+_MAX_TRACKED_TEST_ARTIFACT_BYTES = 256_000
+_MAX_TRACKED_TEST_CONTENT_BYTES = 1_000_000
+
+
+def bind_requested_artifacts_to_plan(
+    plan: ArchitectPlan,
+    workspace_root: Path,
+    *,
+    authorized_paths: Sequence[str] | None = None,
+) -> ArchitectPlan:
+    """Persist one exact existing test artifact requested by public intent.
+
+    This is a pre-dispatch authority derivation.  It considers only bounded,
+    tracked, regular workspace files and adds authority only when exactly one
+    existing test artifact is structurally bound to the primary target.  A
+    Coder response, changed-file list, or post-generation snapshot is never an
+    input.
+    """
+
+    root = workspace_root.resolve()
+    try:
+        persisted_root = Path(plan.bundle_snapshot.workspace_root).resolve()
+    except (OSError, RuntimeError, ValueError):
+        return plan
+    if (
+        not root.is_dir()
+        or persisted_root != root
+        or not task_requests_test_artifact(
+            effective_planning_task_text(plan.source_task)
+        )
+    ):
+        return plan
+
+    target = _normalize_repo_path(plan.coder_packet.target_file.path)
+    if not target:
+        return plan
+    existing_intent = review_intent_paths_from_plan(plan)
+    if any(
+        path != target and _review_test_artifact_path(path)
+        for path in existing_intent
+    ):
+        return plan
+
+    scopes: list[str] | None = None
+    if authorized_paths is not None:
+        scopes = _dedupe_preserve_order(
+            [
+                _normalize_repo_path(str(path or ""))
+                for path in authorized_paths
+            ]
+        )
+        if (
+            not scopes
+            or len(scopes) != len(authorized_paths)
+            or any(
+                not path
+                or path_escapes_workspace(path)
+                or has_percent_encoded_path_syntax(path)
+                for path in scopes
+            )
+        ):
+            return plan
+
+    snapshots = _tracked_test_artifact_snapshots(
+        root,
+        target=target,
+        authorized_paths=scopes,
+        forbidden_paths=plan.coder_packet.forbidden_paths,
+    )
+    bound_paths = [
+        path
+        for path, snapshot in snapshots.items()
+        if _test_artifact_is_bound_to_target(path, snapshot, target)
+    ]
+    if len(bound_paths) != 1:
+        return plan
+
+    test_path = bound_paths[0]
+    criterion = AcceptanceCriterion(
+        id="server-bound-focused-test-artifact",
+        description=(
+            f"Update existing focused test artifact {test_path} "
+            "for the requested behavior."
+        ),
+        kind="behavioral",
+    )
+    packet = replace(
+        plan.coder_packet,
+        acceptance_criteria=[
+            *plan.coder_packet.acceptance_criteria,
+            criterion,
+        ],
+    )
+    return replace(plan, coder_packet=packet)
+
+
+def _tracked_test_artifact_snapshots(
+    root: Path,
+    *,
+    target: str,
+    authorized_paths: list[str] | None,
+    forbidden_paths: list[str],
+) -> dict[str, dict[str, Any]]:
+    try:
+        listed = subprocess.run(
+            ["git", "ls-files", "--cached", "-z", "--"],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if (
+        listed.returncode != 0
+        or len(listed.stdout) > _MAX_TRACKED_TEST_INDEX_BYTES
+    ):
+        return {}
+    try:
+        raw_paths = listed.stdout.decode("utf-8", errors="strict").split("\0")
+    except UnicodeDecodeError:
+        return {}
+
+    candidates: list[str] = []
+    seen: set[str] = set()
+    for raw_path in raw_paths:
+        if not raw_path:
+            continue
+        path = _normalize_repo_path(raw_path)
+        if (
+            not path
+            or path != raw_path.replace("\\", "/")
+            or path in seen
+            or path == target
+            or path_escapes_workspace(path)
+            or has_percent_encoded_path_syntax(path)
+            or not _review_test_artifact_path(path)
+            or (
+                authorized_paths is not None
+                and not _path_in_authorized_scope(path, authorized_paths)
+            )
+            or _path_matches_forbidden(path, forbidden_paths)
+        ):
+            continue
+        seen.add(path)
+        candidates.append(path)
+    candidates.sort()
+    if len(candidates) > _MAX_TRACKED_TEST_ARTIFACTS:
+        return {}
+
+    snapshots: dict[str, dict[str, Any]] = {}
+    total_bytes = 0
+    for path in candidates:
+        candidate = _existing_regular_workspace_file(root, path)
+        if candidate is None:
+            continue
+        try:
+            with candidate.open("rb") as stream:
+                raw = stream.read(_MAX_TRACKED_TEST_ARTIFACT_BYTES + 1)
+        except OSError:
+            return {}
+        if len(raw) > _MAX_TRACKED_TEST_ARTIFACT_BYTES:
+            return {}
+        total_bytes += len(raw)
+        if total_bytes > _MAX_TRACKED_TEST_CONTENT_BYTES:
+            return {}
+        try:
+            content = raw.decode("utf-8", errors="strict")
+        except UnicodeDecodeError:
+            return {}
+        snapshots[path] = {
+            "exists": True,
+            "content": content,
+        }
+    return snapshots
+
+
+def _existing_regular_workspace_file(root: Path, path: str) -> Path | None:
+    candidate = root
+    for part in Path(path).parts:
+        candidate = candidate / part
+        if candidate.is_symlink():
+            return None
+    try:
+        resolved = candidate.resolve()
+        resolved.relative_to(root)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return candidate if candidate.is_file() else None
 
 
 def review_task_spec_from_plan(
@@ -254,13 +492,11 @@ def review_task_spec_from_plan(
     authorized_paths: list[str] | tuple[str, ...],
     artifact_snapshots: Mapping[str, Any] | None = None,
 ) -> CoderTaskSpec:
-    """Bind reviewer authority to the exact, already scope-checked artifacts.
+    """Reuse the exact pre-dispatch TaskSpec for semantic review.
 
-    The normal coder packet has one primary target.  A rich target adapter may
-    produce an atomic multi-file diff after independently checking every path
-    against its server-owned scope.  Semantic review must use the same exact
-    artifact set rather than either collapsing back to the primary target or
-    promoting a broad prefix/glob into evidence authority.
+    ``changed_files`` and post-generation snapshots are evidence, never an
+    authority source.  They may prove that a candidate stayed inside the
+    persisted exact-file contract, but they cannot add model-selected paths.
     """
 
     base = task_spec_from_plan(plan)
@@ -288,30 +524,10 @@ def review_task_spec_from_plan(
         )
     ):
         raise ValueError("review_task_spec_missing_primary_target")
-    trusted_intent_paths = set(review_intent_paths_from_plan(plan))
-    trusted_intent_paths.update(
-        _bounded_capability_intent_paths(
-            plan,
-            exact_paths,
-            trusted_intent_paths=trusted_intent_paths,
-            artifact_snapshots=artifact_snapshots,
-        )
-    )
-    if any(path not in trusted_intent_paths for path in exact_paths):
+    if any(path not in base.allowed_files for path in exact_paths):
         raise ValueError("review_task_spec_unrequested_changed_file")
-    return CoderTaskSpec(
-        schema_version=base.schema_version,
-        task_type=(
-            "create_file_bundle" if len(exact_paths) > 1 else base.task_type
-        ),
-        target=base.target,
-        allowed_files=exact_paths,
-        forbidden_files=list(base.forbidden_files),
-        literal_requirements=list(base.literal_requirements),
-        verification=list(base.verification),
-        risk_tier=base.risk_tier,
-        source=base.source,
-    )
+    del artifact_snapshots
+    return base
 
 
 def _bounded_capability_intent_paths(
@@ -936,6 +1152,12 @@ def _path_occurrence_requests_mutation(text: str, start: int, end: int) -> bool:
     prefix = text[line_start:start]
     suffix = text[end:line_end]
 
+    # Dotted framework/product names can look like root-level files.  In
+    # descriptions such as "modify page.tsx as a Next.js app route", the
+    # name after "as a" describes the target's type and is never a second
+    # mutation artifact.
+    if re.search(r"\bas\s+(?:an?\s+)?$", prefix, flags=re.IGNORECASE):
+        return False
     if _path_occurrence_is_output_literal(prefix, suffix):
         return False
     if re.search(
@@ -1100,6 +1322,66 @@ def validate_task_spec_for_packet(
         errors.append("task_type")
     if task_spec.source != "deterministic":
         errors.append("source")
+    return errors
+
+
+def validate_task_spec_for_plan(
+    task_spec: CoderTaskSpec,
+    plan: ArchitectPlan,
+) -> list[str]:
+    """Validate the complete deterministic TaskSpec against its persisted plan."""
+
+    packet = plan.coder_packet
+    base = task_spec_from_packet(
+        packet,
+        verification_plan=plan.verification_plan,
+    )
+    expected_allowed = canonical_task_spec_paths_from_plan(plan)
+    expected_task_type: TaskSpecType = (
+        "create_file_bundle"
+        if len(expected_allowed) > 1
+        else base.task_type
+    )
+    errors: list[str] = []
+    if task_spec.schema_version != PLAN_SCHEMA_VERSION:
+        errors.append("schema_version")
+    if not task_spec.target or task_spec.target != packet.target_file.path:
+        errors.append("target")
+    if (
+        not task_spec.allowed_files
+        or task_spec.allowed_files[0] != task_spec.target
+    ):
+        errors.append("target_first")
+    if task_spec.target not in task_spec.allowed_files:
+        errors.append("target_in_allowed_files")
+    if task_spec.allowed_files != _dedupe_preserve_order(task_spec.allowed_files):
+        errors.append("allowed_files_deduplicated")
+    if any(
+        not path
+        or path != _normalize_repo_path(path)
+        or path_escapes_workspace(path)
+        or has_percent_encoded_path_syntax(path)
+        for path in task_spec.allowed_files
+    ):
+        errors.append("allowed_files_safe")
+    if task_spec.allowed_files != expected_allowed:
+        errors.append("allowed_files")
+    if any(
+        _path_matches_forbidden(path, base.forbidden_files)
+        for path in task_spec.allowed_files
+    ):
+        errors.append("allowed_files_forbidden")
+    if task_spec.task_type != expected_task_type:
+        errors.append("task_type")
+    for field_name in (
+        "forbidden_files",
+        "literal_requirements",
+        "verification",
+        "risk_tier",
+        "source",
+    ):
+        if getattr(task_spec, field_name) != getattr(base, field_name):
+            errors.append(field_name)
     return errors
 
 

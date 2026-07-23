@@ -34,6 +34,7 @@ from source_proxy.planning.plan import (
     ArchitectPlan,
     review_intent_paths_from_plan,
     review_task_spec_from_plan,
+    task_spec_from_plan,
     task_requests_shared_helper_artifact,
     task_requests_test_artifact,
 )
@@ -46,6 +47,7 @@ from source_proxy.verification.diff import (
     DiffVerificationError,
     git_diff_changed_paths,
     preview_diff_verification,
+    task_spec_diff_check,
 )
 
 
@@ -384,6 +386,7 @@ def execute_generic_workspace_rich(
     coder_callback_exception: BaseException | None = None
     coder_provider_exception: Exception | None = None
     base_diagnostics["multi_file_capability_requested"] = multi_file_requested
+    base_diagnostics["coder_generation_limit"] = _MAX_PREVIEW_ATTEMPTS
 
     def observed_coder_call(prompt: str, alias: str) -> str:
         nonlocal context_report, coder_context_ready, coder_context_error
@@ -444,6 +447,7 @@ def execute_generic_workspace_rich(
             3: "constrained_minimal_rewrite",
         }[attempt_index]
         if multi_file_requested:
+            output_contract = "json_file_bundle"
             result = _propose_multi_file_diff(
                 plan=plan,
                 workspace_root=root,
@@ -454,7 +458,19 @@ def execute_generic_workspace_rich(
                 feedback=feedback,
                 strategy=attempt_strategy,
             )
+        elif attempt_index > 1 and plan.coder_packet.target_file.exists:
+            output_contract = "json_exact_edits"
+            result = _propose_single_file_exact_edit_diff(
+                plan=plan,
+                workspace_root=root,
+                context_text=context_text,
+                model_call=observed_coder_call,
+                model_alias=model_alias,
+                feedback=feedback,
+                strategy=attempt_strategy,
+            )
         else:
+            output_contract = "replacement_file"
             result = propose_coder_agent_diff_payload_from_plan(
                 architect_plan=plan,
                 workspace_root=root,
@@ -464,6 +480,7 @@ def execute_generic_workspace_rich(
                 force_live_model=True,
                 canonical_context=planner_context_report,
                 canonical_context_text=context_text,
+                caller_owns_bounded_repair=True,
             )
         if coder_callback_exception is not None:
             raise coder_callback_exception
@@ -501,6 +518,9 @@ def execute_generic_workspace_rich(
             base_diagnostics["coder_rendered_prompt_sha256"] = (
                 observed_coder_prompts[-1]
             )
+        base_diagnostics["coder_generation_count"] = len(
+            observed_coder_prompts
+        )
         if coder_provider_exception is not None:
             provider_exception = coder_provider_exception
             provider_reason = str(
@@ -566,6 +586,7 @@ def execute_generic_workspace_rich(
         attempt: dict[str, Any] = {
             "attempt_index": attempt_index,
             "strategy": attempt_strategy,
+            "output_contract": output_contract,
             "feedback": list(feedback or []),
             "proposed_diff_sha256": hashlib.sha256(
                 proposed_diff.encode("utf-8", errors="replace")
@@ -624,6 +645,64 @@ def execute_generic_workspace_rich(
                 base_diagnostics,
                 stage="scope",
             )
+        canonical_task_spec = task_spec_from_plan(plan).to_dict()
+        canonical_task_spec_check = task_spec_diff_check(
+            canonical_task_spec,
+            [{"path": path} for path in changed_files],
+        )
+        base_diagnostics["canonical_task_spec"] = canonical_task_spec
+        base_diagnostics["canonical_task_spec_sha256"] = _sha256_json(
+            canonical_task_spec
+        )
+        base_diagnostics["canonical_task_spec_check"] = (
+            canonical_task_spec_check
+        )
+        attempt["canonical_task_spec_check"] = canonical_task_spec_check
+        if canonical_task_spec_check.get("ok") is not True:
+            feedback = _canonical_task_spec_feedback(
+                canonical_task_spec_check
+            )
+            first_reason = next(
+                (
+                    str(code)
+                    for code in canonical_task_spec_check.get(
+                        "reason_codes",
+                        [],
+                    )
+                    if isinstance(code, str) and code.strip()
+                ),
+                "canonical_task_spec_diff_blocked",
+            )
+            failure = classify_repair_failure(
+                diagnostic_code=first_reason,
+                stage="scope",
+                reason="; ".join(feedback[:8]),
+            ).to_dict()
+            attempt["reviewer_model_call_required"] = False
+            attempt["preview_status"] = "blocked"
+            attempt["blocked_reasons"] = feedback
+            attempt["failure_classification"] = failure
+            attempt["failure_class"] = failure["failure_class"]
+            attempt["failure_kind"] = failure["failure_kind"]
+            signature = _attempt_signature(
+                context_manifest=base_diagnostics["context_manifest"],
+                proposed_diff_sha256=attempt["proposed_diff_sha256"],
+                feedback=feedback,
+                strategy=attempt["strategy"],
+            )
+            attempt["evidence_strategy_signature"] = signature
+            if (
+                signature == previous_signature
+                or attempt_index >= _MAX_PREVIEW_ATTEMPTS
+            ):
+                return _blocked_result(
+                    "generic_workspace_preview_repair_exhausted",
+                    "; ".join(feedback[:8]),
+                    base_diagnostics,
+                    stage="scope",
+                )
+            previous_signature = signature
+            continue
         try:
             review_artifact_snapshots = _build_review_artifact_snapshots(
                 root,
@@ -876,6 +955,113 @@ def _build_review_artifact_snapshots(
             ).hexdigest(),
         }
     return snapshots
+
+
+def _propose_single_file_exact_edit_diff(
+    *,
+    plan: ArchitectPlan,
+    workspace_root: Path,
+    context_text: str,
+    model_call: Callable[[str, str], str],
+    model_alias: str,
+    feedback: list[str] | None,
+    strategy: str,
+) -> dict[str, Any]:
+    """Request one bounded model-authored exact edit for an existing target.
+
+    Later rich-route attempts deliberately use a materially different, smaller
+    output contract than the initial complete-file replacement.  The backend
+    derives only hunk metadata; the local model must supply both the exact
+    baseline locator and its replacement.  All normal review, apply, test, and
+    proof gates still run after this helper returns a candidate diff.
+    """
+
+    from source_proxy.target_plugins.adapter import structured_edits_to_diff
+
+    target = plan.coder_packet.target_file.path
+    max_edits = 1 if strategy == "constrained_minimal_rewrite" else 3
+    bounded_feedback = [
+        " ".join(str(item or "").split())[:500]
+        for item in (feedback or [])[:8]
+        if str(item or "").strip()
+    ]
+    prompt = "\n".join(
+        [
+            "You are the SpiritOS Coder repairing one existing file from an Architect-owned packet.",
+            "Return exactly one JSON object and no markdown, unified diff, or prose:",
+            '{"edits":[{"path":"exact/target.py","old":"exact non-empty text occurring once","new":"replacement text"}]}',
+            f"Return between 1 and {max_edits} edits, all for the exact target below.",
+            "Copy each old value exactly from the visible baseline. It must occur exactly once.",
+            "Keep each replacement narrowly bounded, preserve unrelated behavior, and do not add files or dependencies.",
+            "Attempt strategy: " + strategy,
+            "Exact authorized target: " + target,
+            "Original task:",
+            plan.source_task,
+            "Architect acceptance criteria:",
+            *[
+                f"- {criterion.id} [{criterion.kind}]: {criterion.description}"
+                for criterion in plan.coder_packet.acceptance_criteria
+            ],
+            "Reviewer/verifier feedback from the previous rejected attempt:",
+            *(bounded_feedback or ["- none"]),
+            "Current server-scoped repository context:",
+            context_text,
+        ]
+    )
+    raw = str(model_call(prompt, model_alias) or "")
+    diff, files, response_format = structured_edits_to_diff(
+        workspace_root,
+        [target],
+        raw,
+        max_edits=max_edits,
+    )
+    diagnostics: dict[str, Any] = {
+        "generation_source": "model",
+        "execution_mode": "architect_single_file_exact_edit",
+        "structured_output_mode": "json_exact_edits",
+        "model_response_format": response_format,
+        "raw_response_sha256": hashlib.sha256(raw.encode("utf-8")).hexdigest(),
+        "changed_files": files,
+        "exact_edit_max_count": max_edits,
+        "validation_status": "pending",
+    }
+    if not diff or files != [target]:
+        reason_by_status = {
+            "structured_edits_scope_violation": (
+                "generic_workspace_exact_edit_scope_violation"
+            ),
+            "structured_edits_old_text_mismatch": (
+                "generic_workspace_exact_edit_locator_invalid"
+            ),
+            "structured_edits_python_syntax_invalid": (
+                "generic_workspace_exact_edit_syntax_invalid"
+            ),
+        }
+        reason_code = reason_by_status.get(
+            response_format,
+            "generic_workspace_exact_edit_invalid",
+        )
+        return _multi_file_blocked(
+            reason_code,
+            "The model-authored exact edit did not pass deterministic validation.",
+            diagnostics,
+            target=target,
+        )
+    diagnostics["validation_status"] = (
+        "generic_workspace_exact_edit_diff_ready"
+    )
+    return {
+        "proposed_diff": diff,
+        "target": target,
+        "changed_files": files,
+        "coder_blocked": False,
+        "coderBlocked": False,
+        "reason_code": "generic_workspace_exact_edit_diff_ready",
+        "reasonCode": "generic_workspace_exact_edit_diff_ready",
+        "coder_diagnostics": diagnostics,
+        "coderDiagnostics": diagnostics,
+        "execution_path": GENERIC_RICH_EXECUTION_PATH,
+    }
 
 
 def _propose_multi_file_diff(
@@ -1739,6 +1925,57 @@ def _preview_feedback(preview: Mapping[str, Any]) -> list[str]:
         if rendered not in feedback:
             feedback.append(rendered)
     return feedback or ["verification_blocked: no structured detail was returned"]
+
+
+def _canonical_task_spec_feedback(
+    task_spec_check: Mapping[str, Any],
+) -> list[str]:
+    """Return bounded repair feedback without promoting plugin scope."""
+
+    violations = task_spec_check.get("violations")
+    violation_map = violations if isinstance(violations, Mapping) else {}
+    outside_allowed = [
+        str(path)
+        for path in violation_map.get("outside_allowed", [])
+        if isinstance(path, str) and path
+    ]
+    forbidden = [
+        str(path)
+        for path in violation_map.get("forbidden", [])
+        if isinstance(path, str) and path
+    ]
+    target = str(task_spec_check.get("target") or "")
+    feedback: list[str] = []
+    for raw_code in task_spec_check.get("reason_codes", []):
+        if not isinstance(raw_code, str) or not raw_code.strip():
+            continue
+        code = raw_code.strip()
+        paths = [
+            *(
+                outside_allowed
+                if code == "task_spec_allowed_file_violation"
+                else []
+            ),
+            *(
+                forbidden
+                if code == "task_spec_forbidden_file_violation"
+                else []
+            ),
+        ]
+        if code == "task_spec_target_mismatch" and target:
+            paths = [target]
+        detail = (
+            "rejected changed path(s): " + ", ".join(paths[:8])
+            if paths
+            else str(
+                task_spec_check.get("summary")
+                or "canonical TaskSpec rejected the candidate diff"
+            )
+        )
+        feedback.append(f"{code}: {detail}"[:500])
+    return feedback or [
+        "canonical_task_spec_diff_blocked: canonical TaskSpec rejected the candidate diff"
+    ]
 
 
 def _diff_files(diff: str, *, root: Path) -> list[str]:

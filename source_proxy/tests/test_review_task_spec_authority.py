@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import subprocess
+from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -15,10 +18,13 @@ from source_proxy.planning.plan import (
     TargetFile,
     TaskClassification,
     VerificationPlan,
+    bind_requested_artifacts_to_plan,
     review_intent_paths_from_plan,
     review_task_spec_from_plan,
+    task_spec_from_plan,
     task_requests_shared_helper_artifact,
     task_requests_test_artifact,
+    validate_task_spec_for_plan,
 )
 
 
@@ -95,6 +101,54 @@ def _plan(
     )
 
 
+def _tracked_test_candidate_plan(
+    tmp_path: Path,
+    *,
+    target: str,
+    test_path: str,
+    test_content: str,
+    forbidden_paths: tuple[str, ...] = (),
+) -> tuple[Path, ArchitectPlan]:
+    root = tmp_path / "workspace"
+    target_file = root / target
+    test_file = root / test_path
+    target_file.parent.mkdir(parents=True)
+    test_file.parent.mkdir(parents=True, exist_ok=True)
+    target_file.write_text(
+        (
+            "def existing() -> bool:\n    return True\n"
+            if target.endswith(".py")
+            else "export const value = 1;\n"
+        ),
+        encoding="utf-8",
+    )
+    test_file.write_text(test_content, encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "add", "--", target, test_path],
+        cwd=root,
+        check=True,
+    )
+    plan = _plan(
+        f"Target file: {target}\n"
+        "Add focused tests for the updated module while preserving behavior.",
+        target=target,
+    )
+    return root, replace(
+        plan,
+        bundle_snapshot=BundleSnapshot(
+            bundle_path="",
+            bundle_sha256="",
+            workspace_root=str(root.resolve()),
+            generated_at="2026-07-22T00:00:00Z",
+        ),
+        coder_packet=replace(
+            plan.coder_packet,
+            forbidden_paths=list(forbidden_paths),
+        ),
+    )
+
+
 def test_coarse_scope_does_not_authorize_unrequested_secondary_file() -> None:
     plan = _plan("Target file: src/app.py\nUpdate the greeting.")
 
@@ -104,6 +158,53 @@ def test_coarse_scope_does_not_authorize_unrequested_secondary_file() -> None:
             [PRIMARY, "src/model_selected_decoy.py"],
             authorized_paths=["src/"],
         )
+
+
+def test_forbidden_path_cannot_become_canonical_allowed_authority() -> None:
+    plan = _plan(
+        "Target file: src/app.py\n"
+        "Update file tests/test_app.py with focused tests for the new function."
+    )
+    plan = replace(
+        plan,
+        coder_packet=replace(
+            plan.coder_packet,
+            forbidden_paths=["tests/"],
+        ),
+    )
+
+    spec = task_spec_from_plan(plan)
+    tampered = replace(
+        spec,
+        allowed_files=[PRIMARY, SECONDARY],
+        task_type="create_file_bundle",
+    )
+
+    assert spec.allowed_files == [PRIMARY]
+    assert validate_task_spec_for_plan(spec, plan) == []
+    assert validate_task_spec_for_plan(tampered, plan) == [
+        "allowed_files",
+        "allowed_files_forbidden",
+        "task_type",
+    ]
+
+
+def test_plan_task_spec_validator_rejects_noncanonical_allowed_file_shape() -> None:
+    plan = _plan(
+        "Target file: src/app.py\n"
+        "Update file tests/test_app.py with focused tests for the new function."
+    )
+    spec = task_spec_from_plan(plan)
+    tampered = replace(
+        spec,
+        allowed_files=[SECONDARY, PRIMARY, SECONDARY],
+    )
+
+    errors = validate_task_spec_for_plan(tampered, plan)
+
+    assert "target_first" in errors
+    assert "allowed_files_deduplicated" in errors
+    assert "allowed_files" in errors
 
 
 def test_explicit_task_bound_secondary_file_remains_authorized() -> None:
@@ -145,6 +246,196 @@ def test_deterministic_acceptance_criterion_can_bind_unquoted_secondary_file() -
     )
 
     assert spec.allowed_files == [PRIMARY, SECONDARY]
+    assert spec == task_spec_from_plan(plan)
+    assert validate_task_spec_for_plan(spec, plan) == []
+
+
+def test_implicit_focused_test_request_does_not_fabricate_write_authority() -> None:
+    plan = _plan(
+        "Target file: src/app.py\n"
+        "Add a small greeting function and add focused tests for the new function."
+    )
+
+    assert task_spec_from_plan(plan).allowed_files == [PRIMARY]
+    with pytest.raises(ValueError, match="review_task_spec_unrequested_changed_file"):
+        review_task_spec_from_plan(
+            plan,
+            [PRIMARY, SECONDARY],
+            authorized_paths=["src/", "tests/"],
+            artifact_snapshots={
+                PRIMARY: _snapshot(PRIMARY, "def existing():\n    return True\n"),
+                SECONDARY: _snapshot(SECONDARY, "", exists=False),
+            },
+        )
+
+
+def test_unique_tracked_bound_test_is_persisted_as_exact_predispatch_authority(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "workspace"
+    (root / "src").mkdir(parents=True)
+    (root / "tests").mkdir()
+    (root / PRIMARY).write_text(
+        "def existing() -> bool:\n    return True\n",
+        encoding="utf-8",
+    )
+    (root / SECONDARY).write_text(
+        "from src.app import existing\n\n"
+        "def test_existing():\n"
+        "    assert existing()\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", PRIMARY, SECONDARY], cwd=root, check=True)
+    plan = replace(
+        _plan(
+            "Please add a small greeting function to src/app.py. "
+            "Keep existing behavior and add focused tests for the new function."
+        ),
+        bundle_snapshot=BundleSnapshot(
+            bundle_path="",
+            bundle_sha256="",
+            workspace_root=str(root.resolve()),
+            generated_at="2026-07-22T00:00:00Z",
+        ),
+    )
+
+    bound = bind_requested_artifacts_to_plan(
+        plan,
+        root,
+        authorized_paths=("src/", "tests/"),
+    )
+    restored = ArchitectPlan.from_dict(bound.to_dict())
+    spec = task_spec_from_plan(restored)
+
+    assert spec.allowed_files == [PRIMARY, SECONDARY]
+    assert spec.task_type == "create_file_bundle"
+    assert validate_task_spec_for_plan(spec, restored) == []
+    assert restored.coder_packet.acceptance_criteria[-1] == AcceptanceCriterion(
+        id="server-bound-focused-test-artifact",
+        description=(
+            "Update existing focused test artifact tests/test_app.py "
+            "for the requested behavior."
+        ),
+        kind="behavioral",
+    )
+    assert review_task_spec_from_plan(
+        restored,
+        [PRIMARY, SECONDARY],
+        authorized_paths=["src/", "tests/"],
+    ) == spec
+    with pytest.raises(
+        ValueError,
+        match="review_task_spec_unrequested_changed_file",
+    ):
+        review_task_spec_from_plan(
+            restored,
+            [PRIMARY, SECONDARY, "src/model_selected_decoy.py"],
+            authorized_paths=["src/", "tests/"],
+        )
+
+
+def test_implicit_test_binding_fails_closed_when_tracked_matches_are_ambiguous(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "workspace"
+    (root / "src").mkdir(parents=True)
+    (root / "tests").mkdir()
+    (root / PRIMARY).write_text(
+        "def existing() -> bool:\n    return True\n",
+        encoding="utf-8",
+    )
+    for path in (SECONDARY, "tests/app_test.py"):
+        (root / path).write_text(
+            "from src.app import existing\n\n"
+            "def test_existing():\n"
+            "    assert existing()\n",
+            encoding="utf-8",
+        )
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    plan = replace(
+        _plan(
+            "Please add a small greeting function to src/app.py. "
+            "Keep existing behavior and add focused tests for the new function."
+        ),
+        bundle_snapshot=BundleSnapshot(
+            bundle_path="",
+            bundle_sha256="",
+            workspace_root=str(root.resolve()),
+            generated_at="2026-07-22T00:00:00Z",
+        ),
+    )
+
+    bound = bind_requested_artifacts_to_plan(
+        plan,
+        root,
+        authorized_paths=("src/", "tests/"),
+    )
+
+    assert bound == plan
+    assert task_spec_from_plan(bound).allowed_files == [PRIMARY]
+
+
+@pytest.mark.parametrize(
+    ("candidate_mode", "authorized_paths"),
+    [
+        ("untracked", ("src/", "tests/")),
+        ("symlink", ("src/", "tests/")),
+        ("scope_excluded", ("src/",)),
+    ],
+)
+def test_implicit_test_binding_requires_tracked_regular_in_scope_artifact(
+    tmp_path: Path,
+    candidate_mode: str,
+    authorized_paths: tuple[str, ...],
+) -> None:
+    root = tmp_path / "workspace"
+    (root / "src").mkdir(parents=True)
+    (root / "tests").mkdir()
+    (root / PRIMARY).write_text(
+        "def existing() -> bool:\n    return True\n",
+        encoding="utf-8",
+    )
+    test_content = (
+        "from src.app import existing\n\n"
+        "def test_existing():\n"
+        "    assert existing()\n"
+    )
+    if candidate_mode == "symlink":
+        support = root / "support.py"
+        support.write_text(test_content, encoding="utf-8")
+        try:
+            (root / SECONDARY).symlink_to(support)
+        except OSError:
+            pytest.skip("symlink creation is unavailable")
+    else:
+        (root / SECONDARY).write_text(test_content, encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", PRIMARY], cwd=root, check=True)
+    if candidate_mode != "untracked":
+        subprocess.run(["git", "add", SECONDARY], cwd=root, check=True)
+    plan = replace(
+        _plan(
+            "Please add a small greeting function to src/app.py. "
+            "Keep existing behavior and add focused tests for the new function."
+        ),
+        bundle_snapshot=BundleSnapshot(
+            bundle_path="",
+            bundle_sha256="",
+            workspace_root=str(root.resolve()),
+            generated_at="2026-07-22T00:00:00Z",
+        ),
+    )
+
+    bound = bind_requested_artifacts_to_plan(
+        plan,
+        root,
+        authorized_paths=authorized_paths,
+    )
+
+    assert bound == plan
+    assert task_spec_from_plan(bound).allowed_files == [PRIMARY]
 
 
 def test_path_shaped_output_literal_does_not_grant_file_authority() -> None:
@@ -159,6 +450,26 @@ def test_path_shaped_output_literal_does_not_grant_file_authority() -> None:
             [PRIMARY, "src/unrelated.ts"],
             authorized_paths=["src/"],
         )
+
+
+def test_framework_label_after_as_a_does_not_grant_file_authority() -> None:
+    target = "src/app/agent-lab/page.tsx"
+    plan = _plan(
+        "Create a new isolated route page.",
+        target=target,
+        acceptance_criteria=[
+            AcceptanceCriterion(
+                id="target-file",
+                description=(
+                    f"Create only {target} as a Next.js app route page."
+                ),
+                kind="behavioral",
+            )
+        ],
+    )
+
+    assert review_intent_paths_from_plan(plan) == [target]
+    assert task_spec_from_plan(plan).allowed_files == [target]
 
 
 def test_explicit_update_file_phrase_grants_exact_secondary_authority() -> None:
@@ -245,10 +556,11 @@ def test_path_local_preservation_language_never_grants_authority(
         )
 
 
-def test_focused_test_capability_is_bound_to_primary_module_snapshot() -> None:
+def test_explicit_focused_test_path_is_authorized_before_review() -> None:
     plan = _plan(
         "Target file: src/app.py\n"
-        "Add a small greeting function and add focused tests for the new function."
+        "Add a small greeting function. "
+        "Update file tests/test_app.py with focused tests for the new function."
     )
     snapshots = {
         PRIMARY: _snapshot(PRIMARY, "def existing():\n    return True\n"),
@@ -367,39 +679,42 @@ def test_test_capability_preserves_non_authority_modifiers(
     ("test_path", "decoy_content"),
     [
         ("tests/test_app.py", '"""from src import app\n"""\n'),
+        ("tests/test_app.py", "# from src import app\n"),
         ("tests/app.test.js", '/* import app from "../src/app"; */\n'),
+        ("tests/app.test.js", '// import app from "../src/app";\n'),
         ("tests/app.test.js", 'const note = `require("../src/app")`;\n'),
     ],
 )
 def test_inert_import_text_cannot_bind_existing_test_capability(
+    tmp_path: Path,
     test_path: str,
     decoy_content: str,
 ) -> None:
-    plan = _plan(
-        "Target file: src/app.py\n"
-        "Add a small greeting function and add focused tests for the new function."
+    target = "src/app.py" if test_path.endswith(".py") else "src/app.js"
+    root, plan = _tracked_test_candidate_plan(
+        tmp_path,
+        target=target,
+        test_path=test_path,
+        test_content=decoy_content,
     )
-    snapshots = {
-        PRIMARY: _snapshot(PRIMARY, "def existing():\n    return True\n"),
-        test_path: _snapshot(test_path, decoy_content),
-    }
 
-    with pytest.raises(ValueError, match="review_task_spec_unrequested_changed_file"):
-        review_task_spec_from_plan(
-            plan,
-            [PRIMARY, test_path],
-            authorized_paths=["src/", "tests/"],
-            artifact_snapshots=snapshots,
-        )
+    bound = bind_requested_artifacts_to_plan(
+        plan,
+        root,
+        authorized_paths=("src/", "tests/"),
+    )
+
+    assert bound == plan
+    assert task_spec_from_plan(bound).allowed_files == [target]
 
 
 @pytest.mark.parametrize(
     "decoy_content",
     [
+        '/* import app from "../src/admin/app"; */\n',
+        '// import app from "../src/admin/app";\n',
+        'const note = `require("../src/admin/app")`;\n',
         'const decoy = "require(\'../src/admin/app\')";\n',
-        'import other from "../src/other/app";\n',
-        'const other = require("app");\n',
-        'import card from "../shared/app";\n',
         '/require("../src/admin/app")/.test(value);\n',
         'function f() { return /require("../src/admin/app")/; }\n',
         'const f = () => /require("../src/admin/app")/;\n',
@@ -410,36 +725,66 @@ def test_inert_import_text_cannot_bind_existing_test_capability(
         'class Child extends /require("../src/admin/app")/ {}\n',
         'export default /require("../src/admin/app")/;\n',
         'if (ready) /require("../src/admin/app")/.test(value);\n',
+        'import other from "../src/other/app";\n',
+        'const other = require("app");\n',
+        'import card from "../shared/app";\n',
+        'import app from "./src/admin/app";\n',
     ],
 )
 def test_script_test_capability_rejects_inert_or_same_basename_modules(
+    tmp_path: Path,
     decoy_content: str,
 ) -> None:
     target = "src/admin/app.js"
     test_path = "tests/app.test.js"
-    plan = _plan(
-        f"Target file: {target}\nAdd focused tests for the updated module.",
+    root, plan = _tracked_test_candidate_plan(
+        tmp_path,
         target=target,
+        test_path=test_path,
+        test_content=decoy_content,
     )
-    snapshots = {
-        target: _snapshot(target, "export const value = 1;\n"),
-        test_path: _snapshot(test_path, decoy_content),
-    }
 
-    with pytest.raises(ValueError, match="review_task_spec_unrequested_changed_file"):
-        review_task_spec_from_plan(
-            plan,
-            [target, test_path],
-            authorized_paths=["src/", "tests/"],
-            artifact_snapshots=snapshots,
-        )
+    bound = bind_requested_artifacts_to_plan(
+        plan,
+        root,
+        authorized_paths=("src/", "tests/"),
+    )
+
+    assert bound == plan
+    assert task_spec_from_plan(bound).allowed_files == [target]
 
 
-def test_script_test_capability_resolves_exact_active_relative_import() -> None:
+def test_structurally_bound_test_under_forbidden_path_is_not_bound(
+    tmp_path: Path,
+) -> None:
+    root, plan = _tracked_test_candidate_plan(
+        tmp_path,
+        target=PRIMARY,
+        test_path=SECONDARY,
+        test_content=(
+            "from src.app import existing\n\n"
+            "def test_existing():\n"
+            "    assert existing()\n"
+        ),
+        forbidden_paths=("tests/",),
+    )
+
+    bound = bind_requested_artifacts_to_plan(
+        plan,
+        root,
+        authorized_paths=("src/", "tests/"),
+    )
+
+    assert bound == plan
+    assert task_spec_from_plan(bound).allowed_files == [PRIMARY]
+
+
+def test_explicit_script_test_path_is_authorized_before_review() -> None:
     target = "src/admin/app.js"
     test_path = "tests/app.test.js"
     plan = _plan(
-        f"Target file: {target}\nAdd focused tests for the updated module.",
+        f"Target file: {target}\n"
+        f"Update file {test_path} with focused tests for the updated module.",
         target=target,
     )
     snapshots = {
@@ -460,13 +805,45 @@ def test_script_test_capability_resolves_exact_active_relative_import() -> None:
     assert spec.allowed_files == [target, test_path]
 
 
-def test_shared_helper_capability_allows_one_new_bound_sibling_only() -> None:
+def test_active_relative_script_import_is_bound_before_review(
+    tmp_path: Path,
+) -> None:
+    target = "src/admin/app.js"
+    test_path = "tests/app.test.js"
+    root, plan = _tracked_test_candidate_plan(
+        tmp_path,
+        target=target,
+        test_path=test_path,
+        test_content='import app from "../src/admin/app";\n',
+    )
+
+    bound = bind_requested_artifacts_to_plan(
+        plan,
+        root,
+        authorized_paths=("src/", "tests/"),
+    )
+    restored = ArchitectPlan.from_dict(bound.to_dict())
+
+    assert bound != plan
+    assert task_spec_from_plan(restored).allowed_files == [target, test_path]
+    assert restored.coder_packet.acceptance_criteria[-1] == AcceptanceCriterion(
+        id="server-bound-focused-test-artifact",
+        description=(
+            "Update existing focused test artifact tests/app.test.js "
+            "for the requested behavior."
+        ),
+        kind="behavioral",
+    )
+
+
+def test_explicit_shared_helper_path_is_authorized_before_review() -> None:
     contacts = "src/contacts.py"
     helper = "src/normalization.py"
     plan = _plan(
         "`normalize_username` in `src/app.py` and `normalize_email` in "
         "`src/contacts.py` repeat the same cleanup. Refactor that duplicated "
-        "logic into one small shared helper.",
+        "logic into one small shared helper. "
+        "Create file src/normalization.py as that shared helper.",
         acceptance_criteria=[
             AcceptanceCriterion(
                 id="contacts",
@@ -491,7 +868,9 @@ def test_shared_helper_capability_allows_one_new_bound_sibling_only() -> None:
         artifact_snapshots=snapshots,
     )
 
-    assert spec.allowed_files == [PRIMARY, contacts, helper]
+    assert spec.allowed_files[0] == PRIMARY
+    assert set(spec.allowed_files) == {PRIMARY, contacts, helper}
+    assert spec == task_spec_from_plan(plan)
 
 
 def test_shared_helper_capability_never_authorizes_overwriting_existing_extra() -> None:
