@@ -29,6 +29,7 @@ from source_proxy.planning.plan import (
 from source_proxy.planning.reviewer import (
     _materialize_target_content,
     _patch_for_path,
+    _requirement_change_mode,
     review_diff_deterministically,
     review_diff_with_llm,
 )
@@ -406,6 +407,163 @@ class DeterministicReviewerTests(unittest.TestCase):
         self.assertEqual(evidence.baseline_match_count, 1)
         self.assertEqual(evidence.applied_match_count, 1)
         self.assertFalse(evidence.introduced)
+
+    def test_existing_symbol_target_reference_does_not_require_reintroduction(
+        self,
+    ) -> None:
+        target_content = (
+            "def list_records(offset=0, limit=None):\n"
+            "    return list(_records)\n"
+        )
+        diff = "\n".join(
+            [
+                "diff --git a/src/backend.py b/src/backend.py",
+                "--- a/src/backend.py",
+                "+++ b/src/backend.py",
+                "@@ -1,2 +1,3 @@",
+                " def list_records(offset=0, limit=None):",
+                "-    return list(_records)",
+                "+    records = list(_records)",
+                "+    return records[offset:] if limit is None else "
+                "records[offset:offset + limit]",
+                "",
+            ]
+        )
+        tasks = (
+            "Add optional pagination arguments to `list_records` while "
+            "preserving the stored records.",
+            "Update `list_records` while preserving the stored records.",
+        )
+
+        for source_task in tasks:
+            with self.subTest(source_task=source_task):
+                plan = _plan(
+                    target_path="src/backend.py",
+                    target_content=target_content,
+                    source_task=source_task,
+                    constraints=ContentConstraints(
+                        ["list_records"], [], [], [], None, None
+                    ),
+                    criteria=[
+                        AcceptanceCriterion(
+                            "literal-list-records",
+                            'Output must contain "list_records".',
+                            "literal",
+                        )
+                    ],
+                )
+                report = review_diff_deterministically(plan, diff)
+
+                self.assertTrue(report.passed, report.findings)
+                for requirement_id in (
+                    "constraint.must_contain.0",
+                    "literal-list-records",
+                ):
+                    evidence = next(
+                        item
+                        for item in report.evidence
+                        if item.requirement_id == requirement_id
+                    )
+                    self.assertEqual(evidence.baseline_match_count, 1)
+                    self.assertEqual(evidence.applied_match_count, 1)
+                    self.assertFalse(evidence.introduced)
+                    self.assertTrue(evidence.satisfied)
+
+    def test_direct_add_identifier_still_requires_introduction(self) -> None:
+        target_content = "new_hook = None\nold_state = True\n"
+        plan = _plan(
+            target_path="src/backend.py",
+            target_content=target_content,
+            source_task="Add `new_hook` to the target module.",
+            constraints=ContentConstraints(
+                ["new_hook"], [], [], [], None, None
+            ),
+        )
+
+        report = review_diff_deterministically(
+            plan,
+            _replacement_diff(
+                "src/backend.py",
+                target_content,
+                "new_hook = None\nold_state = False\n",
+            ),
+        )
+
+        self.assertFalse(report.passed)
+        self.assertEqual(
+            report.findings[0].id,
+            "must_contain_not_introduced",
+        )
+
+    def test_rename_destination_still_requires_introduction(self) -> None:
+        target_content = (
+            "legacy_handler = object()\n"
+            "current_handler = object()\n"
+            "enabled = True\n"
+        )
+        plan = _plan(
+            target_path="src/backend.py",
+            target_content=target_content,
+            source_task="Rename `legacy_handler` to `current_handler`.",
+            constraints=ContentConstraints(
+                ["current_handler"], [], [], [], None, None
+            ),
+        )
+
+        report = review_diff_deterministically(
+            plan,
+            _replacement_diff(
+                "src/backend.py",
+                target_content,
+                (
+                    "legacy_handler = object()\n"
+                    "current_handler = object()\n"
+                    "enabled = False\n"
+                ),
+            ),
+        )
+
+        self.assertFalse(report.passed)
+        self.assertEqual(
+            report.findings[0].id,
+            "must_contain_not_introduced",
+        )
+
+    def test_compound_request_does_not_treat_later_target_as_rename_destination(
+        self,
+    ) -> None:
+        for task in (
+            "Rename `old` to `new` and add logging for `helper`.",
+            "Change `old` to `new` and add tests for `helper`.",
+            "Swap `old` for `new`; add support for `helper`.",
+            "Replace `old` with `new`; update behavior with `helper`.",
+            "Rename `old` to `new`, then add logging for `helper`.",
+        ):
+            with self.subTest(task=task):
+                self.assertIsNone(_requirement_change_mode(task, "helper"))
+
+    def test_non_destination_prepositions_keep_existing_symbol_structural(
+        self,
+    ) -> None:
+        for task, symbol in (
+            ("Change the pagination behavior for `list_records`.", "list_records"),
+            ("Convert the response handling with `fetch_profile`.", "fetch_profile"),
+        ):
+            with self.subTest(task=task):
+                self.assertIsNone(_requirement_change_mode(task, symbol))
+
+    def test_replacement_destinations_still_require_change(self) -> None:
+        for task, symbol in (
+            ("Rename `old` to `new`.", "new"),
+            ("Change `old` to `new`.", "new"),
+            ("Convert `old` to `new`.", "new"),
+            ("Transform `old` to `new`.", "new"),
+            ("Replace `old` with `new`.", "new"),
+            ("Swap `old` for `new`.", "new"),
+            ("Swap `old` with `new`.", "new"),
+        ):
+            with self.subTest(task=task):
+                self.assertEqual(_requirement_change_mode(task, symbol), "mutate")
 
     def test_requirement_fragments_cannot_be_combined_across_files(self) -> None:
         plan = _plan(

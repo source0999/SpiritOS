@@ -9,6 +9,29 @@ import pytest
 import source_proxy.tasks.long_running as long_running
 
 
+def _fixed_literal_callable_task() -> SimpleNamespace:
+    prompt = (
+        "Please add a small `count_ready_orders` service function that returns "
+        "the number of orders whose `status` exactly matches "
+        "`ready_for_pickup`. Keep existing lookup behavior and add focused tests."
+    )
+    return SimpleNamespace(
+        description=prompt,
+        ast_snapshot={
+            "coding_orchestrator": {
+                "target_plugin_proposal": {
+                    "original_task": prompt,
+                    "semantic_review_binding": {
+                        "server_task_spec": {
+                            "target": "src/service.py",
+                        }
+                    },
+                }
+            }
+        },
+    )
+
+
 def _configure_backend_verifier(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -102,6 +125,96 @@ def test_generic_backend_verifier_records_test_failure(
     assert checks[0]["exit_code"] == 1
     assert "1 failed" in checks[0]["output_tail"]
     assert evidence["exit_code"] == 1
+
+
+def test_generic_backend_verifier_rejects_invented_required_callable_input(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    workspace, _calls = _configure_backend_verifier(monkeypatch, tmp_path)
+    target = workspace / "src" / "service.py"
+    target.parent.mkdir()
+    target.write_text(
+        "\n".join(
+            [
+                "ORDERS = []",
+                "",
+                "def count_ready_orders(status: str) -> int:",
+                "    return sum(",
+                "        1 for order in ORDERS",
+                '        if order["status"] == "ready_for_pickup"',
+                "    )",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    checks, evidence = long_running._run_generic_backend_post_apply_verification(
+        _fixed_literal_callable_task(),
+        changed_files=[
+            {"path": "src/service.py"},
+            {"path": "tests/test_service.py"},
+        ],
+    )
+
+    callable_check = checks[1]
+    assert checks[0]["status"] == "passed"
+    assert callable_check["id"] == "generic_backend_public_callable_contract"
+    assert callable_check["required"] is True
+    assert callable_check["status"] == "failed"
+    assert "zero required parameters" in callable_check["output_tail"]
+    assert evidence["public_callable_contract"] == {
+        "applicable": True,
+        "target": "src/service.py",
+        "required_zero_arg_callables": ["count_ready_orders"],
+        "missing_callables": [],
+        "violations": [
+            {
+                "callable": "count_ready_orders",
+                "required_positional_parameters": 1,
+                "required_keyword_only_parameters": 0,
+                "required_parameters": 1,
+            }
+        ],
+        "passed": False,
+    }
+
+
+def test_generic_backend_verifier_accepts_repaired_zero_arg_callable(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    workspace, _calls = _configure_backend_verifier(monkeypatch, tmp_path)
+    target = workspace / "src" / "service.py"
+    target.parent.mkdir()
+    target.write_text(
+        "\n".join(
+            [
+                "ORDERS = []",
+                "",
+                "def count_ready_orders() -> int:",
+                "    return sum(",
+                "        1 for order in ORDERS",
+                '        if order["status"] == "ready_for_pickup"',
+                "    )",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    checks, evidence = long_running._run_generic_backend_post_apply_verification(
+        _fixed_literal_callable_task(),
+        changed_files=[
+            {"path": "src/service.py"},
+            {"path": "tests/test_service.py"},
+        ],
+    )
+
+    assert [check["status"] for check in checks] == ["passed", "passed"]
+    assert evidence["public_callable_contract"]["passed"] is True
+    assert evidence["public_callable_contract"]["violations"] == []
 
 
 def test_generic_backend_verifier_rejects_non_generic_task() -> None:

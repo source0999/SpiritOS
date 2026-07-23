@@ -19,6 +19,8 @@ from source_proxy.planning.plan import (
     TaskClassification,
     VerificationPlan,
     bind_requested_artifacts_to_plan,
+    fixed_literal_callable_shape_check,
+    fixed_literal_zero_arg_callable_names,
     review_intent_paths_from_plan,
     review_task_spec_from_plan,
     task_spec_from_plan,
@@ -1075,3 +1077,380 @@ def test_direct_positive_path_language_grants_exact_file_authority(
     )
 
     assert spec.allowed_files == [PRIMARY, secondary]
+
+
+def test_fixed_literal_count_callable_derives_zero_arg_public_contract() -> None:
+    task = (
+        "Please add a small `count_ready_orders` service function that returns "
+        "the number of orders whose `status` exactly matches "
+        "`ready_for_pickup`. Keep existing lookup behavior and add focused tests."
+    )
+
+    assert fixed_literal_zero_arg_callable_names(task) == [
+        "count_ready_orders"
+    ]
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        (
+            "Add a `count_ready_orders` service function that accepts a "
+            "`status` argument and returns the number of orders whose `status` "
+            "exactly matches `ready_for_pickup`."
+        ),
+        (
+            "Add a `has_ready_orders` service function that returns whether "
+            "any order has `status` equal to `ready_for_pickup`."
+        ),
+        (
+            "Do not add a `count_ready_orders` service function that returns "
+            "the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Must not add a `count_ready_orders` service function that returns "
+            "the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Should not create a `count_ready_orders` service function that "
+            "returns the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Shall not implement a `count_ready_orders` service function that "
+            "returns the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Cannot add a `count_ready_orders` service function that returns "
+            "the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Can't create a `count_ready_orders` service function that returns "
+            "the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "There is no need to add a `count_ready_orders` service function "
+            "that returns the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Add a `count_ready_orders` service function with zero required "
+            "positional arguments that returns the number of orders whose "
+            "`status` exactly matches `ready_for_pickup`."
+        ),
+        (
+            "Given a list of orders, add a `count_ready_orders` function that "
+            "returns the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Add a `count_ready_orders` function that, given orders, returns "
+            "the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Add a `count_ready_orders` function that returns the number from "
+            "the supplied collection whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Add a `count_ready_orders` function for caller-supplied input "
+            "that returns the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+    ],
+)
+def test_fixed_literal_callable_contract_does_not_invent_ambiguous_shape(
+    task: str,
+) -> None:
+    assert fixed_literal_zero_arg_callable_names(task) == []
+
+
+def test_explicit_zero_arg_language_preserves_fixed_literal_contract() -> None:
+    task = (
+        "Create function `count_archived_records` with zero required "
+        "arguments that returns the count of records whose `state` is equal to "
+        "`archived`."
+    )
+
+    assert fixed_literal_zero_arg_callable_names(task) == [
+        "count_archived_records"
+    ]
+
+
+def test_fixed_literal_callable_shape_check_rejects_required_input() -> None:
+    task = (
+        "Add a `count_ready_orders` service function that returns the number "
+        "of orders whose `status` exactly matches `ready_for_pickup`."
+    )
+    result = fixed_literal_callable_shape_check(
+        task,
+        "\n".join(
+            [
+                "def count_ready_orders(status: str) -> int:",
+                "    return sum(",
+                "        1 for order in ORDERS",
+                '        if order["status"] == "ready_for_pickup"',
+                "    )",
+            ]
+        ),
+    )
+
+    assert result == {
+        "ok": False,
+        "skipped": False,
+        "reason_code": "fixed_literal_callable_shape_mismatch",
+        "required_zero_arg_callables": ["count_ready_orders"],
+        "missing_callables": [],
+        "violations": [
+            {
+                "callable": "count_ready_orders",
+                "required_positional_parameters": 1,
+                "required_keyword_only_parameters": 0,
+                "required_parameters": 1,
+            }
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        (
+        "Add a `count_ready_orders` service function to `OrderService` that "
+        "returns the number of orders whose `status` exactly matches "
+        "`ready_for_pickup`."
+        ),
+        (
+            "Add function `count_ready_orders` to `OrderService` that returns "
+            "the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+        (
+            "Add the callable `count_ready_orders` inside class "
+            "`OrderService` that returns the number of orders whose `status` "
+            "exactly matches `ready_for_pickup`."
+        ),
+        (
+            "Add count_ready_orders service function to OrderService that "
+            "returns the number of orders whose `status` exactly matches "
+            "`ready_for_pickup`."
+        ),
+    ],
+)
+def test_fixed_literal_callable_shape_check_accepts_bound_service_method(
+    task: str,
+) -> None:
+    result = fixed_literal_callable_shape_check(
+        task,
+        "\n".join(
+            [
+                "class OrderService:",
+                "    def count_ready_orders(self) -> int:",
+                "        return sum(",
+                "            1 for order in self.orders",
+                '            if order["status"] == "ready_for_pickup"',
+                "        )",
+                "",
+            ]
+        ),
+    )
+
+    assert fixed_literal_zero_arg_callable_names(task) == [
+        "count_ready_orders"
+    ]
+    assert result["ok"] is True
+    assert result["missing_callables"] == []
+    assert result["violations"] == []
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        (
+            "Add a `count_ready_orders` service function that writes metrics "
+            "to `OrderMetrics` and returns the number of orders whose `status` "
+            "exactly matches `ready_for_pickup`."
+        ),
+        (
+            "Add a `count_ready_orders` service function that converts "
+            "results to CountResponse and returns the number of orders whose "
+            "`status` exactly matches `ready_for_pickup`."
+        ),
+        (
+            "Add a `count_ready_orders` service function that returns the "
+            "number of orders whose `status` exactly matches "
+            "`ready_for_pickup` in OrderStore."
+        ),
+    ],
+)
+def test_fixed_literal_callable_owner_ignores_nonownership_destinations(
+    task: str,
+) -> None:
+    result = fixed_literal_callable_shape_check(
+        task,
+        "\n".join(
+            [
+                "def count_ready_orders() -> int:",
+                "    return 1",
+                "",
+            ]
+        ),
+    )
+
+    assert result["ok"] is True
+    assert result["missing_callables"] == []
+
+
+def test_fixed_literal_callable_shape_check_rejects_bound_method_input() -> None:
+    task = (
+        "On OrderService, add a `count_ready_orders` service function that "
+        "returns the number of orders whose `status` exactly matches "
+        "`ready_for_pickup`."
+    )
+    result = fixed_literal_callable_shape_check(
+        task,
+        "\n".join(
+            [
+                "class OrderService:",
+                "    def count_ready_orders(self, orders) -> int:",
+                "        return len(orders)",
+                "",
+            ]
+        ),
+    )
+
+    assert result["ok"] is False
+    assert result["violations"][0]["required_parameters"] == 1
+
+
+@pytest.mark.parametrize("module_first", [True, False])
+def test_fixed_literal_callable_shape_prefers_unowned_module_definition(
+    module_first: bool,
+) -> None:
+    task = (
+        "Add a `count_ready_orders` service function that returns the number "
+        "of orders whose `status` exactly matches `ready_for_pickup`."
+    )
+    module_definition = "\n".join(
+        [
+            "def count_ready_orders() -> int:",
+            "    return 1",
+            "",
+        ]
+    )
+    unrelated_method = "\n".join(
+        [
+            "class Formatter:",
+            "    def count_ready_orders(self, status):",
+            "        return status",
+            "",
+        ]
+    )
+    source = (
+        module_definition + unrelated_method
+        if module_first
+        else unrelated_method + module_definition
+    )
+
+    result = fixed_literal_callable_shape_check(task, source)
+
+    assert result["ok"] is True
+    assert result["missing_callables"] == []
+    assert result["violations"] == []
+
+
+def test_fixed_literal_callable_shape_rejects_method_without_receiver() -> None:
+    task = (
+        "Add a `count_ready_orders` service function to `OrderService` that "
+        "returns the number of orders whose `status` exactly matches "
+        "`ready_for_pickup`."
+    )
+    result = fixed_literal_callable_shape_check(
+        task,
+        "\n".join(
+            [
+                "class OrderService:",
+                "    def count_ready_orders() -> int:",
+                "        return 1",
+                "",
+            ]
+        ),
+    )
+
+    assert result["ok"] is False
+    assert result["violations"] == [
+        {
+            "callable": "count_ready_orders",
+            "required_positional_parameters": 0,
+            "required_keyword_only_parameters": 0,
+            "required_parameters": 0,
+            "invalid_bound_receiver": True,
+        }
+    ]
+
+
+def test_fixed_literal_callable_shape_check_rejects_required_keyword_input() -> None:
+    task = (
+        "Add a `count_ready_orders` service function that returns the number "
+        "of orders whose `status` exactly matches `ready_for_pickup`."
+    )
+    result = fixed_literal_callable_shape_check(
+        task,
+        "\n".join(
+            [
+                "def count_ready_orders(*, status: str) -> int:",
+                "    return sum(",
+                "        1 for order in ORDERS",
+                '        if order["status"] == "ready_for_pickup"',
+                "    )",
+            ]
+        ),
+    )
+
+    assert result["ok"] is False
+    assert result["violations"] == [
+        {
+            "callable": "count_ready_orders",
+            "required_positional_parameters": 0,
+            "required_keyword_only_parameters": 1,
+            "required_parameters": 1,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "signature",
+    [
+        "def count_ready_orders() -> int:",
+        'def count_ready_orders(status: str = "ready_for_pickup") -> int:',
+    ],
+)
+def test_fixed_literal_callable_shape_check_accepts_no_required_input(
+    signature: str,
+) -> None:
+    task = (
+        "Add a `count_ready_orders` service function that returns the count "
+        "of orders whose `status` matches `ready_for_pickup`."
+    )
+    result = fixed_literal_callable_shape_check(
+        task,
+        "\n".join(
+            [
+                signature,
+                "    return sum(",
+                "        1 for order in ORDERS",
+                '        if order["status"] == "ready_for_pickup"',
+                "    )",
+            ]
+        ),
+    )
+
+    assert result["ok"] is True
+    assert result["skipped"] is False
+    assert result["violations"] == []

@@ -110,10 +110,14 @@ class SourceProxyEndToEndTests(unittest.TestCase):
                 with (
                     patch.dict(os.environ, {"SPIRIT_ENABLE_PROXY_RESEARCH": "true"}, clear=False),
                     patch(
-                        "source_proxy.decision.router.run_local_research_preview",
-                        new=AsyncMock(return_value=research_sources),
-                    ),
-                ):
+                    "source_proxy.decision.router.run_local_research_preview",
+                    new=AsyncMock(return_value=research_sources),
+                ),
+                patch(
+                    "source_proxy.api.decision._build_fip2_research_packet",
+                    new=AsyncMock(return_value={}),
+                ),
+            ):
                     research_packet = client.post(
                         "/v1/decisions/prompt-packet",
                         json={

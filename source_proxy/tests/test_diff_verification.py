@@ -779,6 +779,189 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertNotIn("missing exact text: /agent-lab/todo", result["missing"])
         self.assertNotIn("missing exact text: /agent-lab", result["missing"])
 
+    def test_preview_does_not_require_structural_quoted_identifiers_in_diff(
+        self,
+    ) -> None:
+        task = (
+            "If the `profile_client` client is unavailable, `fetch_profile` "
+            "should raise the existing `DependencyUnavailable` error with a "
+            "truthful message that names the dependency and tells the operator "
+            "to retry later. Preserve successful responses and keep the "
+            "original exception as the cause."
+        )
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/client.py b/src/client.py",
+                    "--- a/src/client.py",
+                    "+++ b/src/client.py",
+                    "@@ -8,2 +8,4 @@ def fetch_profile():",
+                    "     except ConnectionError as error:",
+                    "-        raise DependencyUnavailable('unavailable')",
+                    "+        raise DependencyUnavailable(",
+                    "+            'profile service unavailable; retry later'",
+                    "+        ) from error",
+                    "",
+                ]
+            ),
+            task_text=task,
+            route_type="local_route",
+        )
+
+        self.assertEqual(
+            payload["status"],
+            "preview_ready",
+            payload["requirement_coverage"],
+        )
+        required = payload["requirement_coverage"]["required"]["texts"]
+        self.assertNotIn("profile_client", required)
+        self.assertNotIn("fetch_profile", required)
+        self.assertNotIn("DependencyUnavailable", required)
+
+    def test_preview_skips_qualified_and_javascript_structural_identifiers(
+        self,
+    ) -> None:
+        diff = "\n".join(
+            [
+                "diff --git a/src/client.py b/src/client.py",
+                "--- a/src/client.py",
+                "+++ b/src/client.py",
+                "@@ -2 +2,2 @@",
+                " def fetch_profile():",
+                "+    validate_response()",
+                "",
+            ]
+        )
+        for symbol in ("client.fetch_profile", "$fetchProfile"):
+            with self.subTest(symbol=symbol):
+                payload = preview_diff_verification(
+                    diff,
+                    task_text=(
+                        f"Update `{symbol}` to validate the response while "
+                        "preserving successful behavior."
+                    ),
+                    route_type="local_route",
+                )
+                self.assertEqual(
+                    payload["status"],
+                    "preview_ready",
+                    payload["requirement_coverage"],
+                )
+                self.assertNotIn(
+                    symbol,
+                    payload["requirement_coverage"]["required"]["texts"],
+                )
+
+    def test_preview_keeps_identifier_shaped_direct_return_value_literal(
+        self,
+    ) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/state.py b/src/state.py",
+                    "--- a/src/state.py",
+                    "+++ b/src/state.py",
+                    "@@ -2 +2 @@",
+                    "-    return None",
+                    "+    return 'other_state'",
+                    "",
+                ]
+            ),
+            task_text=(
+                "Update classify_state so missing input returns "
+                "`unknown_state`."
+            ),
+            route_type="local_route",
+        )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn(
+            "missing exact text: unknown_state",
+            payload["requirement_coverage"]["missing"],
+        )
+
+    def test_preview_keeps_qualified_direct_return_value_literal(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/state.py b/src/state.py",
+                    "--- a/src/state.py",
+                    "+++ b/src/state.py",
+                    "@@ -2 +2 @@",
+                    "-    return None",
+                    "+    return 'other.state'",
+                    "",
+                ]
+            ),
+            task_text="Update classify_state so missing input returns `ready.state`.",
+            route_type="local_route",
+        )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn(
+            "missing exact text: ready.state",
+            payload["requirement_coverage"]["missing"],
+        )
+
+    def test_preview_keeps_identifier_shaped_value_requirements(
+        self,
+    ) -> None:
+        diff = "\n".join(
+            [
+                "diff --git a/src/state.py b/src/state.py",
+                "--- a/src/state.py",
+                "+++ b/src/state.py",
+                "@@ -2 +2 @@",
+                "-    return 'old_state'",
+                "+    return 'other_state'",
+                "",
+            ]
+        )
+        for task_text in (
+            "The returned status must equal `ready_state`.",
+            "The state should be `ready_state`.",
+            "Use `ready_state` as the status value.",
+            "The mode must be `ready_state`.",
+            "The enabled flag should be `ready_state`.",
+            "The response code must equal `ready_state`.",
+            "Use `ready_state` as the mode value.",
+            "The category needs to match `ready_state`.",
+        ):
+            with self.subTest(task_text=task_text):
+                payload = preview_diff_verification(
+                    diff,
+                    task_text=task_text,
+                    route_type="local_route",
+                )
+                self.assertEqual(payload["status"], "blocked")
+                self.assertIn(
+                    "missing exact text: ready_state",
+                    payload["requirement_coverage"]["missing"],
+                )
+
+    def test_preview_keeps_directly_added_identifier_shaped_literal(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/state.py b/src/state.py",
+                    "--- a/src/state.py",
+                    "+++ b/src/state.py",
+                    "@@ -1 +1 @@",
+                    "-STATE_LABEL = 'old_state'",
+                    "+STATE_LABEL = 'other_state'",
+                    "",
+                ]
+            ),
+            task_text="Add `ready_state` to the target module.",
+            route_type="local_route",
+        )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn(
+            "missing exact text: ready_state",
+            payload["requirement_coverage"]["missing"],
+        )
+
     def test_replacement_content_add_keeps_normal_final_text_requirement(self) -> None:
         import tempfile
         from pathlib import Path

@@ -373,3 +373,74 @@ The current run is immutable negative evidence. The six underlying completed
 service lifecycles, successful read-only re-derivation, unit tests, and
 security inspections do not substitute for a fresh formal first-phase pass
 and the required clean unseen-seed rerun.
+
+## Continuation checkpoint after the fourth formal first phase
+
+The fourth fresh run
+`basic-backend-10-20260723T061735Z-eef8a3ce561c` at
+`0b13bb9a1a1f3440b65228af2dd5b2f8301b1c3f` is immutable negative evidence.
+It scored `6/10`: BT01, BT02, BT03, BT04, BT08, and BT09 completed in one
+attempt; BT05, BT07, and BT10 stopped at truthful proposal validation; BT06
+completed its lifecycle and public tests but failed independent verification.
+All hard-safety counts remained zero. Its phase-manifest file SHA-256 is
+`b8ca71d0bc2ba7dcc20f7ce0cf1b76147d12f6e0f39930d7ed40291813b8d2db`
+and aggregate SHA-256 is
+`53d6a6d0ed9c6d02e493ce0478ce4de5cf6a8966fdff051e0de02cb56a5a271c`.
+It must not be resumed.
+
+The final generalized continuation repairs:
+
+- quoted structural-symbol handling in deterministic review;
+- structural versus exact-value identifier handling in diff verification;
+- zero-byte tracked-file unified diffs;
+- post-apply public callable-shape verification that routes a genuine applied
+  failure through evidence-guided repair and fresh approval;
+- bounded candidate-provenance-aware benchmark-branch parsing across Python,
+  JavaScript/TypeScript, C-like switches, and Java arrow cases;
+- the stale schema-invalid synthetic outer asset-gate test fixture;
+- the stale end-to-end test seam that mocked router research but not the later
+  FIP2 research-source replacement.
+
+The stable affected sweep reports `755 passed, 130 subtests passed`.
+Independent replay reports `414 passed, 69 subtests passed` across the
+non-anti changed surface and `38 passed` across anti-cheat plus coding
+participants. Callable/TaskSpec/backend replay reports `202 passed`. All
+changed Python files compile, `git diff --check` passes, and dirty-tree Basic
+preflight passes for the expected branch/head, all ten frozen tasks, the
+pinned local-only model inventory, and mapped runtime trace.
+
+The comprehensive final regression surfaces report `1,518 passed` plus
+`136 subtests passed`, with no deselections or skips. The total includes one
+deliberate repeat of `test_coding_proof.py`. A broad integration run first
+reported `228 passed, 1 failed, 6 subtests passed`; the sole failure was the
+stale FIP2 test isolation, and the exact corrected E2E case then passed in
+`339.76s`. No unresolved regression blocker remains.
+
+Independent blocker-driven review exercised compound reviewer grammar,
+identifier-value phrasing, caller-input and class-method ambiguity, namespace
+order, candidate-side diff reconstruction, direct label bindings,
+string-key subjects, parser scaling, selector false positives, and body
+provenance for braced, Allman, unbraced, nested, switch/case, and arrow forms.
+The final stable audit reports no remaining release blocker.
+
+Preformal recovery:
+
+`/home/source/.source-proxy-recovery-campaign-3.5-preformal-20260723T083122Z`
+
+- `wip.patch`: mode `0600`, 128,460 bytes, SHA-256
+  `f84f651ec219054cdafd80582f1d043b8c0414877d7e07c426e02d278dc36eb2`.
+- `manifest.txt`: mode `0600`, 3,410 bytes, SHA-256
+  `02185c736f47ffd8b2c7157c4486b78595bc93b3dba95783889ebbe2f1ad0f06`.
+- Live-diff hash matched and reverse-apply verification passed.
+
+The exact remaining sequence is:
+
+1. Explicitly stage only the reviewed files, commit, push normally, and prove
+   local HEAD equals the authoritative SMB remote with a clean worktree.
+2. Reconfirm Campaign 4 remains paused and all implementation/acceptance/push
+   flags remain `false`.
+3. Run clean preflight at the pushed head.
+4. Start a completely fresh formal first phase; do not resume the fourth
+   manifest.
+5. Only if that phase passes, preserve its evidence in a documentation-only
+   descendant and run the required clean unseen-seed rerun.

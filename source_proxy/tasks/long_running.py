@@ -68,6 +68,7 @@ from source_proxy.planning.plan import (
     ContentConstraints,
     ContextSlice,
     TargetFile,
+    fixed_literal_callable_shape_check,
     task_spec_from_packet,
     task_spec_from_plan,
     validate_task_spec_for_packet,
@@ -3753,6 +3754,198 @@ def _task_target_plugin_identity(task: LongRunningTask) -> dict[str, Any]:
     return {}
 
 
+_GENERIC_BACKEND_PUBLIC_CALLABLE_MAX_BYTES = 1_000_000
+
+
+def _generic_backend_semantic_review_binding(
+    task: LongRunningTask,
+) -> tuple[str, dict[str, Any]]:
+    """Read the persisted public task and its server-owned TaskSpec."""
+
+    snapshot = (
+        task.ast_snapshot
+        if isinstance(getattr(task, "ast_snapshot", None), dict)
+        else {}
+    )
+    orchestrator = snapshot.get("coding_orchestrator")
+    proposal = (
+        orchestrator.get("target_plugin_proposal")
+        if isinstance(orchestrator, Mapping)
+        else None
+    )
+    if not isinstance(proposal, Mapping):
+        return str(getattr(task, "description", "") or ""), {}
+    binding = proposal.get("semantic_review_binding")
+    task_spec = (
+        binding.get("server_task_spec")
+        if isinstance(binding, Mapping)
+        else None
+    )
+    original_task = str(
+        proposal.get("original_task")
+        or getattr(task, "description", "")
+        or ""
+    )
+    return original_task, dict(task_spec) if isinstance(task_spec, Mapping) else {}
+
+
+def _generic_backend_public_callable_contract_check(
+    task: LongRunningTask,
+    *,
+    root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Check a narrow public callable contract on the exact applied tree.
+
+    This check intentionally runs after apply. A mismatch therefore enters the
+    existing verifier-owned evidence-guided repair lane, which requires a new
+    proposal and fresh exact approval, without consulting any private oracle.
+    """
+
+    started = time.perf_counter()
+    public_task, task_spec = _generic_backend_semantic_review_binding(task)
+    applicability = fixed_literal_callable_shape_check(public_task, "")
+    callable_names = list(
+        applicability.get("required_zero_arg_callables") or []
+    )
+    if applicability.get("skipped") is True:
+        summary = "No public fixed-literal callable contract was derived."
+        return (
+            {
+                "id": "generic_backend_public_callable_contract",
+                "command": [
+                    "server-owned",
+                    "python-ast",
+                    "public-callable-contract",
+                ],
+                "command_text": (
+                    "server-owned python-ast public-callable-contract"
+                ),
+                "duration_ms": int((time.perf_counter() - started) * 1000),
+                "exit_code": 0,
+                "output_tail": summary,
+                "required": False,
+                "status": "skipped",
+                "summary": summary,
+            },
+            {
+                "applicable": False,
+                "required_zero_arg_callables": [],
+                "passed": True,
+            },
+        )
+
+    target = str(task_spec.get("target") or "").replace("\\", "/").strip()
+    failure = ""
+    shape_result: dict[str, Any] = {}
+    pure_target = PurePosixPath(target)
+    if (
+        not target
+        or not target.endswith(".py")
+        or pure_target.is_absolute()
+        or pure_target.as_posix() != target
+        or any(part in {"", ".", ".."} for part in pure_target.parts)
+    ):
+        failure = "The persisted public TaskSpec has no safe Python target."
+    else:
+        candidate = root.resolve()
+        try:
+            for part in pure_target.parts:
+                candidate = candidate / part
+                if candidate.is_symlink():
+                    raise OSError("target traverses a symlink")
+            resolved = candidate.resolve(strict=True)
+            resolved.relative_to(root.resolve())
+            if (
+                not resolved.is_file()
+                or resolved.stat().st_size
+                > _GENERIC_BACKEND_PUBLIC_CALLABLE_MAX_BYTES
+            ):
+                raise OSError("target is not a bounded regular file")
+            source = resolved.read_bytes().decode("utf-8")
+        except (OSError, RuntimeError, UnicodeError, ValueError):
+            failure = (
+                "The exact applied Python target could not be safely read for "
+                "the public callable contract."
+            )
+        else:
+            shape_result = fixed_literal_callable_shape_check(
+                public_task,
+                source,
+            )
+            if shape_result.get("ok") is not True:
+                missing = [
+                    str(name)
+                    for name in shape_result.get("missing_callables", [])
+                ]
+                violations = [
+                    item
+                    for item in shape_result.get("violations", [])
+                    if isinstance(item, Mapping)
+                ]
+                details = [
+                    *[f"{name} is missing" for name in missing],
+                    *[
+                        (
+                            (
+                                f"{item.get('callable')} has no bound "
+                                "method receiver"
+                            )
+                            if item.get("invalid_bound_receiver") is True
+                            else (
+                                f"{item.get('callable')} has "
+                                f"{item.get('required_parameters')} "
+                                "required parameter(s)"
+                            )
+                        )
+                        for item in violations
+                    ],
+                ]
+                failure = (
+                    "The public task fixes the filter literal and supplies no "
+                    "callable input. The requested callable must declare zero "
+                    "required parameters: "
+                    + ", ".join(details or ["the applied target did not match"])
+                    + "."
+                )
+
+    passed = not failure
+    summary = (
+        "Public fixed-literal callable contract passed."
+        if passed
+        else failure
+    )
+    evidence = {
+        "applicable": True,
+        "target": target or None,
+        "required_zero_arg_callables": callable_names,
+        "missing_callables": list(shape_result.get("missing_callables") or []),
+        "violations": [
+            dict(item)
+            for item in shape_result.get("violations", [])
+            if isinstance(item, Mapping)
+        ],
+        "passed": passed,
+    }
+    return (
+        {
+            "id": "generic_backend_public_callable_contract",
+            "command": [
+                "server-owned",
+                "python-ast",
+                "public-callable-contract",
+            ],
+            "command_text": "server-owned python-ast public-callable-contract",
+            "duration_ms": int((time.perf_counter() - started) * 1000),
+            "exit_code": 0 if passed else 1,
+            "output_tail": summary,
+            "required": True,
+            "status": "passed" if passed else "failed",
+            "summary": summary,
+        },
+        evidence,
+    )
+
+
 def _run_generic_backend_post_apply_verification(
     task: LongRunningTask,
     *,
@@ -3878,7 +4071,7 @@ def _run_generic_backend_post_apply_verification(
             str(error.stderr or ""),
         )
     duration_ms = int((time.perf_counter() - started) * 1000)
-    check = {
+    pytest_check = {
         "id": "generic_backend_pytest",
         "command": ["sandboxed", "python", "-m", "pytest", "-q"],
         "command_text": "sandboxed python -m pytest -q",
@@ -3889,6 +4082,12 @@ def _run_generic_backend_post_apply_verification(
         "status": "passed" if exit_code == 0 else "failed",
         "summary": "Restricted server-owned Python backend test suite.",
     }
+    callable_check, callable_evidence = (
+        _generic_backend_public_callable_contract_check(
+            task,
+            root=root,
+        )
+    )
     evidence = {
         "runtime": "restricted_container",
         "image": image,
@@ -3907,8 +4106,9 @@ def _run_generic_backend_post_apply_verification(
         ).hexdigest(),
         "exit_code": exit_code,
         "duration_ms": duration_ms,
+        "public_callable_contract": callable_evidence,
     }
-    return [check], evidence
+    return [pytest_check, callable_check], evidence
 
 
 def _managed_dummy_storefront_origin() -> str:
@@ -7713,8 +7913,16 @@ def generate_unified_diff_from_content(
     ]
     if target.is_file():
         old_content = target.read_text(encoding="utf-8", errors="replace")
-        old_content = _normalize_replacement_content(old_content)
-        old_lines = old_content.splitlines(keepends=True)
+        # Preserve a tracked zero-byte file as zero old lines. Normalizing it
+        # to "\n" invents a blank baseline line, so the resulting hunk cannot
+        # apply to Git's empty blob.
+        old_lines = (
+            []
+            if old_content == ""
+            else _normalize_replacement_content(old_content).splitlines(
+                keepends=True
+            )
+        )
         fromfile = f"a/{normalized_target}"
     else:
         old_lines = []

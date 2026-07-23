@@ -833,6 +833,16 @@ def _is_route_like_text_requirement(value: str) -> bool:
     return bool(re.match(r"^/[A-Za-z0-9_()/.-]+$", value))
 
 
+def _is_code_identifier_text_requirement(value: str) -> bool:
+    return bool(
+        re.fullmatch(
+            r"[$A-Za-z_][$A-Za-z0-9_]{0,127}"
+            r"(?:\.[$A-Za-z_][$A-Za-z0-9_]{0,127})*",
+            value,
+        )
+    )
+
+
 def _should_skip_quoted_text_requirement(task_text: str, match: re.Match[str]) -> bool:
     value = match.group("value").strip()
     prefix = task_text[max(0, match.start() - 24) : match.start()]
@@ -847,6 +857,11 @@ def _should_skip_quoted_text_requirement(task_text: str, match: re.Match[str]) -
     )
     if transformation_role == "final":
         return True
+    if transformation_role == "source" or _quoted_text_has_preservation_intent(
+        task_text,
+        match.start(),
+    ):
+        return False
     if (
         transformation_role is None
         and _quoted_text_has_forbidden_intent(task_text, match.start())
@@ -854,8 +869,24 @@ def _should_skip_quoted_text_requirement(task_text: str, match: re.Match[str]) -
         return True
     if _is_route_like_text_requirement(value) and not literal_intent:
         return True
+    if _is_code_identifier_text_requirement(value) and not literal_intent:
+        return True
     return bool(re.search(r"(?:className|class)\s*=\s*$", prefix)) or (
         _is_path_like_text_requirement(value) and not literal_intent
+    )
+
+
+def _quoted_text_has_preservation_intent(task_text: str, start: int) -> bool:
+    line_start = task_text.rfind("\n", 0, start) + 1
+    prefix = task_text[line_start:start]
+    return bool(
+        re.search(
+            r"\b(?:do\s+not|don't|must\s+not|never)\s+"
+            r"(?:change|delete|exclude|omit|remove|rename|replace)\b"
+            r"[^\n.!?]{0,96}$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
     )
 
 
@@ -890,17 +921,30 @@ def _quoted_text_has_literal_intent(
             suffix,
             flags=re.IGNORECASE,
         )
+        or re.match(
+            r"\s+as\s+(?:the\s+)?"
+            r"(?:[A-Za-z][A-Za-z0-9_-]*\s+){0,4}value\b",
+            suffix,
+            flags=re.IGNORECASE,
+        )
     )
     if suffix_literal and not artifact_noun_prefix:
         return True
     return bool(
         re.search(
             r"(?:\b(?:copy|display|displayed|emit|heading|label|message|print|render|rendered|say|show|shown|title)\b|"
+            r"\b(?:return|returns|returning|yield|yields|yielding)\s+"
+            r"(?:(?:the|an?)\s+)?(?:(?:exact|literal)\s+)?"
+            r"(?:(?:value|string|text|message|response)\s+)?$|"
+            r"\b(?:add|append|include|insert|introduce|write)\s+$|"
+            r"\b(?:[A-Za-z][A-Za-z0-9_-]*\s+){1,6}"
+            r"(?:must|should|shall|needs?\s+to)\s+"
+            r"(?:equal|match|be)\s*$|"
             r"\b(?:output|text|label|message|filename|file\s+path)\s+"
             r"(?:must|should|shall|needs?\s+to)\s+(?:equal|match)\b|"
             r"\bset\b[^\n.!?]{0,88}\bto\s*$|"
             r"\b(?:must|should|shall|needs?\s+to)\s+(?:contain|include)\b|"
-            r"\bexact\s+(?:text|filename)\b)"
+            r"\bexact\s+(?:text|filename|message|response|string|value)\b)"
             r"[^\n.!?]{0,112}$",
             prefix,
             flags=re.IGNORECASE,

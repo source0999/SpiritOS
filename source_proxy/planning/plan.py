@@ -530,6 +530,293 @@ def review_task_spec_from_plan(
     return base
 
 
+_PUBLIC_CALLABLE_NAME_PATTERNS = (
+    re.compile(
+        r"(?P<quote>[`'\"])(?P<name>[A-Za-z_][A-Za-z0-9_]{0,127})(?P=quote)"
+        r"\s+(?:(?:service|helper|utility)\s+)?(?:function|callable)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:function|callable)\s+(?:(?:named|called)\s+)?"
+        r"(?P<quote>[`'\"])(?P<name>[A-Za-z_][A-Za-z0-9_]{0,127})(?P=quote)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<name>[A-Za-z_][A-Za-z0-9_]{0,127}_[A-Za-z0-9_]+)"
+        r"\s+(?:(?:service|helper|utility)\s+)?function\b",
+        re.IGNORECASE,
+    ),
+)
+_PUBLIC_COUNT_RESULT_RE = re.compile(
+    r"\b(?:return|returns|returning|compute|computes|computing|report|reports|reporting)\b"
+    r"[^.!?\n]{0,160}\b(?:count|number|how\s+many)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_FIXED_LITERAL_FILTER_RE = re.compile(
+    r"\b(?:where|whose)\b[^.!?\n]{0,120}?"
+    r"(?:[`'\"][A-Za-z_][A-Za-z0-9_]*[`'\"]|[A-Za-z_][A-Za-z0-9_]*)"
+    r"\s+(?:must\s+)?(?:exactly\s+)?"
+    r"(?:equals?|matches?|is(?:\s+equal\s+to)?)\s+(?:exactly\s+)?"
+    r"[`'\"][^`'\"\n]{1,96}[`'\"]",
+    re.IGNORECASE,
+)
+_PUBLIC_ZERO_PARAMETER_RE = re.compile(
+    r"(?:\b(?:no|zero)\s+(?:required\s+)?"
+    r"(?:parameters?|arguments?)\b"
+    r"|\bwithout\s+(?:any\s+)?(?:required\s+)?"
+    r"(?:parameters?|arguments?)\b"
+    r"|\b(?:accepts?|takes?|receives?)\s+no\s+"
+    r"(?:parameters?|arguments?)\b)",
+    re.IGNORECASE,
+)
+_PUBLIC_EXPLICIT_PARAMETER_RE = re.compile(
+    r"(?:\b(?:parameters?|arguments?)\b"
+    r"|\b(?:accepts?|taking|takes?|receives?)\b"
+    r"|\bgiven\b"
+    r"|\b(?:provided|supplied|passed[-\s]+in|caller[-\s]+supplied)\b"
+    r"|\binputs?\b)",
+    re.IGNORECASE,
+)
+_PUBLIC_CALLABLE_REQUEST_RE = re.compile(
+    r"\b(?:add|create|define|implement|introduce|provide|write|"
+    r"must|needs?\s+to|shall|should)\b",
+    re.IGNORECASE,
+)
+_PUBLIC_NEGATED_CALLABLE_REQUEST_RE = re.compile(
+    r"\b(?:do\s+not|don't|never|cannot|can't|no\s+need\s+to|"
+    r"(?:must|shall|should)\s+not)\s+"
+    r"(?:add|create|define|implement|introduce|provide|write)\b",
+    re.IGNORECASE,
+)
+
+
+def fixed_literal_zero_arg_callable_names(task: str) -> list[str]:
+    """Derive a narrow callable-shape contract from public task prose.
+
+    A count helper that embeds a task-supplied filter literal has no reason to
+    invent a required caller input when the request supplies none.  This
+    recognizer is deliberately conservative: the callable, count result, and
+    fixed-literal predicate must all occur in the same public sentence, and
+    any explicit parameter language disables the inference.
+    """
+
+    planning_text = effective_planning_task_text(str(task or ""))
+    names: list[str] = []
+    clauses = re.split(r"(?<=[.!?])\s+|\n+", planning_text)
+    for raw_clause in clauses:
+        clause = raw_clause.strip()
+        if not clause or len(clause) > 1_200:
+            continue
+        if (
+            _PUBLIC_COUNT_RESULT_RE.search(clause) is None
+            or _PUBLIC_FIXED_LITERAL_FILTER_RE.search(clause) is None
+        ):
+            continue
+        parameter_neutral = _PUBLIC_ZERO_PARAMETER_RE.sub("", clause)
+        if _PUBLIC_EXPLICIT_PARAMETER_RE.search(parameter_neutral):
+            continue
+        for pattern in _PUBLIC_CALLABLE_NAME_PATTERNS:
+            for match in pattern.finditer(clause):
+                prefix = clause[: match.start()]
+                if (
+                    _PUBLIC_CALLABLE_REQUEST_RE.search(prefix) is None
+                    or _PUBLIC_NEGATED_CALLABLE_REQUEST_RE.search(prefix)
+                    is not None
+                ):
+                    continue
+                name = match.group("name")
+                if name not in names:
+                    names.append(name)
+    return names
+
+
+def _fixed_literal_callable_owner_name(task: str, callable_name: str) -> str | None:
+    """Return an explicitly named class owner for a derived callable."""
+
+    planning_text = effective_planning_task_text(str(task or ""))
+    escaped_name = re.escape(callable_name)
+    quoted_name = rf"[`'\"]{escaped_name}[`'\"]"
+    callable_reference = (
+        rf"(?:{quoted_name}\s+"
+        r"(?:(?:service|helper|utility)\s+)?(?:function|callable)"
+        r"|(?:function|callable)\s+(?:(?:named|called)\s+)?"
+        rf"{quoted_name}"
+        rf"|\b{escaped_name}\b\s+"
+        r"(?:(?:service|helper|utility)\s+)?function)"
+    )
+    owner = (
+        r"[`'\"]?(?P<owner>(?-i:[A-Z])[A-Za-z0-9_]*)[`'\"]?"
+    )
+    patterns = (
+        re.compile(
+            rf"{callable_reference}\s+"
+            r"(?:as\s+(?:an?\s+)?method\s+)?"
+            r"(?:to|on|in|inside|within)\s+"
+            rf"(?:the\s+)?(?:class\s+)?{owner}",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\b(?:on|in|inside|within)\s+(?:the\s+)?(?:class\s+)?"
+            rf"{owner}[^.!?\n]{{0,120}}{callable_reference}",
+            re.IGNORECASE,
+        ),
+    )
+    for pattern in patterns:
+        match = pattern.search(planning_text)
+        if match is not None:
+            return match.group("owner")
+    return None
+
+
+def fixed_literal_callable_shape_check(
+    task: str,
+    python_source: str,
+) -> dict[str, Any]:
+    """Check already-materialized Python against the derived public contract."""
+
+    names = fixed_literal_zero_arg_callable_names(task)
+    if not names:
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason_code": "",
+            "required_zero_arg_callables": [],
+            "missing_callables": [],
+            "violations": [],
+        }
+    try:
+        tree = ast.parse(str(python_source or ""))
+    except (SyntaxError, ValueError):
+        return {
+            "ok": False,
+            "skipped": False,
+            "reason_code": "fixed_literal_callable_source_invalid",
+            "required_zero_arg_callables": names,
+            "missing_callables": [],
+            "violations": [],
+        }
+
+    definitions: dict[
+        str,
+        list[
+            tuple[
+                ast.FunctionDef | ast.AsyncFunctionDef,
+                int,
+                str | None,
+                bool,
+            ]
+        ],
+    ] = {name: [] for name in names}
+
+    def collect_definitions(
+        body: list[ast.stmt],
+        *,
+        class_name: str | None,
+    ) -> None:
+        for node in body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name not in definitions:
+                    continue
+                is_static = any(
+                    (
+                        isinstance(decorator, ast.Name)
+                        and decorator.id == "staticmethod"
+                    )
+                    or (
+                        isinstance(decorator, ast.Attribute)
+                        and decorator.attr == "staticmethod"
+                    )
+                    for decorator in node.decorator_list
+                )
+                positional = [*node.args.posonlyargs, *node.args.args]
+                invalid_bound_receiver = (
+                    class_name is not None and not is_static and not positional
+                )
+                definitions[node.name].append(
+                    (
+                        node,
+                        1 if class_name is not None and not is_static else 0,
+                        class_name,
+                        invalid_bound_receiver,
+                    )
+                )
+            elif isinstance(node, ast.ClassDef):
+                collect_definitions(node.body, class_name=node.name)
+
+    collect_definitions(tree.body, class_name=None)
+
+    selected_definitions: dict[
+        str,
+        tuple[
+            ast.FunctionDef | ast.AsyncFunctionDef,
+            int,
+            str | None,
+            bool,
+        ]
+        | None,
+    ] = {}
+    for name in names:
+        owner_name = _fixed_literal_callable_owner_name(task, name)
+        candidates = [
+            definition
+            for definition in definitions[name]
+            if definition[2] == owner_name
+        ]
+        selected_definitions[name] = candidates[-1] if candidates else None
+
+    missing = [name for name in names if selected_definitions[name] is None]
+    violations: list[dict[str, Any]] = []
+    for name in names:
+        selected = selected_definitions[name]
+        if selected is None:
+            continue
+        (
+            effective_definition,
+            implicit_positional_count,
+            _owner_name,
+            invalid_bound_receiver,
+        ) = selected
+        positional = [
+            *effective_definition.args.posonlyargs,
+            *effective_definition.args.args,
+        ]
+        required_count = max(
+            0,
+            len(positional)
+            - len(effective_definition.args.defaults)
+            - implicit_positional_count,
+        )
+        required_keyword_only_count = sum(
+            default is None
+            for default in effective_definition.args.kw_defaults
+        )
+        required_total = required_count + required_keyword_only_count
+        if required_total or invalid_bound_receiver:
+            violation = {
+                "callable": name,
+                "required_positional_parameters": required_count,
+                "required_keyword_only_parameters": (
+                    required_keyword_only_count
+                ),
+                "required_parameters": required_total,
+            }
+            if invalid_bound_receiver:
+                violation["invalid_bound_receiver"] = True
+            violations.append(violation)
+    return {
+        "ok": not missing and not violations,
+        "skipped": False,
+        "reason_code": (
+            ""
+            if not missing and not violations
+            else "fixed_literal_callable_shape_mismatch"
+        ),
+        "required_zero_arg_callables": names,
+        "missing_callables": missing,
+        "violations": violations,
+    }
+
+
 def _bounded_capability_intent_paths(
     plan: ArchitectPlan,
     exact_paths: list[str],

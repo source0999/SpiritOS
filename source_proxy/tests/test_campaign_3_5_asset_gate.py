@@ -4,7 +4,16 @@ from source_proxy.benchmarks.campaign_3_5_assets.gate import asset_readiness
 
 
 def test_gate_refuses_execution_until_every_task_has_independent_profile_validation() -> None:
-    tasks = [{"task_id": "S01"}, {"task_id": "U01"}]
+    tasks = [
+        {
+            "task_id": "S01",
+            "expected_disposition": "COMPLETED_VERIFIED",
+        },
+        {
+            "task_id": "U01",
+            "expected_disposition": "BLOCKED_OR_DEGRADED_TRUTHFULLY",
+        },
+    ]
     result = asset_readiness(
         tasks,
         builder_report={"passed": True, "validated_fixture_ids": [str(index) for index in range(65)]},

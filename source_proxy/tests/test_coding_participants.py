@@ -28,10 +28,10 @@ def _artifact(
     tmp_path: Path,
     *,
     semantic_review_identity: dict | None = None,
+    approved_diff: str = "diff --git a/fixture.txt b/fixture.txt\n",
 ) -> dict:
     target = tmp_path / "fixture.txt"
     target.write_text("after\n", encoding="utf-8")
-    approved_diff = "diff --git a/fixture.txt b/fixture.txt\n"
     backup = tmp_path / ".spirit-backups" / "run"
     backup.mkdir(parents=True)
     (backup / "approved.diff").write_text(approved_diff, encoding="utf-8", newline="")
@@ -560,6 +560,26 @@ def test_manual_diff_anti_cheat_is_honest_and_keeps_lower_claim_ceiling(tmp_path
     assert record["result"]["terminal_proof_eligible"] is False
     assert record["result"]["claim_ceiling"] == MANUAL_DIFF_CLAIM_CEILING
     assert record["result"]["fallback_used"] is False
+
+
+def test_coding_anti_cheat_allows_incidental_label_substrings_in_applied_diff(
+    tmp_path: Path,
+) -> None:
+    approved_diff = """diff --git a/fixture.txt b/fixture.txt
+--- a/fixture.txt
++++ b/fixture.txt
+@@ -1 +1,3 @@
+-before
++profile_a2_suffix = "active"
++if profile_a2_suffix:
++    print(profile_a2_suffix)
+"""
+    artifact = _artifact(tmp_path, approved_diff=approved_diff)
+
+    record = run_coding_anti_cheat(artifact)
+
+    assert record["passed"] is True
+    assert record["result"]["violations"] == []
 
 
 def test_incomplete_terminal_model_claim_fails_closed(tmp_path: Path) -> None:

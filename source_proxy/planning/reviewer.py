@@ -1293,6 +1293,73 @@ def _hunk_replaces_literal(hunk: list[str], source: str, final: str) -> bool:
     return False
 
 
+def _is_structural_symbol_target_reference(
+    text: str,
+    *,
+    position: int,
+    needle: str,
+    clause_prefix: str,
+) -> bool:
+    """Distinguish an existing code target from a literal being introduced.
+
+    Backticked identifiers commonly name the object of a requested change, as
+    in ``Add pagination to `list_records``` or ``Update `load_record``` (the
+    identifier is expected to survive, not to appear on a newly added line).
+    Replacement destinations remain change requirements: ``Rename `old` to
+    `new``` must still prove that ``new`` was introduced.
+    """
+
+    if re.fullmatch(
+        r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*",
+        needle,
+    ) is None:
+        return False
+    end = position + len(needle)
+    if (
+        position <= 0
+        or end >= len(text)
+        or text[position:end].casefold() != needle.casefold()
+        or text[position - 1] != "`"
+        or text[end] != "`"
+    ):
+        return False
+
+    prefix = clause_prefix.rstrip()
+    # Replacement destinations use a narrow verb/preposition grammar.  Keep
+    # the match in the current request segment so an earlier rename cannot
+    # turn a later structural target into a required new symbol.
+    request_segment = re.split(
+        r"(?:\b(?:and|then)\s+|[;,]\s*)(?="
+        r"(?:add|append|change|convert|create|fix|insert|introduce|modify|"
+        r"refactor|rename|replace|swap|transform|update|write)\b)",
+        prefix,
+        flags=re.IGNORECASE,
+    )[-1]
+    if re.search(
+        r"(?:"
+        r"\b(?:change|convert|rename|transform)\b[^\n.!?]{0,120}\bto"
+        r"|\breplace\b[^\n.!?]{0,120}\bwith"
+        r"|\bswap\b[^\n.!?]{0,120}\b(?:for|with)"
+        r")\s+`$",
+        request_segment,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    if re.search(
+        r"\b(?:to|in|inside|within|on|for|with)\s+`$",
+        prefix,
+        flags=re.IGNORECASE,
+    ):
+        return True
+    return bool(
+        re.search(
+            r"\b(?:change|fix|modify|refactor|rename|replace|update)\s+`$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
 def _requirement_change_mode(text: str, needle: str) -> str | None:
     normalized = str(text or "")
     positions = [
@@ -1308,7 +1375,15 @@ def _requirement_change_mode(text: str, needle: str) -> str | None:
             prefix.rfind("!"),
             prefix.rfind("?"),
         )
-        prefixes.append(prefix[boundary + 1 :].strip())
+        clause_prefix = prefix[boundary + 1 :].strip()
+        if _is_structural_symbol_target_reference(
+            normalized,
+            position=position,
+            needle=needle,
+            clause_prefix=clause_prefix,
+        ):
+            continue
+        prefixes.append(clause_prefix)
     introduce_verbs = r"add|append|create|insert|introduce|newly\s+include"
     mutate_verbs = r"change|convert|modify|rename|replace|swap|transform|update|write"
     verbs = rf"{introduce_verbs}|{mutate_verbs}"

@@ -307,6 +307,141 @@ def test_implicit_focused_test_task_binds_existing_test_before_coder_and_reuses_
     assert _git(root, "status", "--short") == ""
 
 
+def test_multi_file_packet_with_empty_primary_generates_applicable_diff(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    (root / "src" / "__init__.py").write_bytes(b"")
+    _git(root, "add", "src/__init__.py")
+    _git(root, "commit", "-qm", "add empty package initializer")
+    coder_calls = 0
+
+    def architect_call(_prompt: str, _alias: str) -> str:
+        return json.dumps(
+            {
+                "classification": {
+                    "task_class": "refactor",
+                    "visual_change": False,
+                    "designer_required": False,
+                    "estimated_complexity": "small",
+                },
+                "coder_packet": {
+                    "target_file": {
+                        "path": "src/__init__.py",
+                        "exists": True,
+                    },
+                    "operation": "edit",
+                    "acceptance_criteria": [
+                        {
+                            "id": "package-export",
+                            "description": (
+                                "The package initializer exports existing "
+                                "from the service module."
+                            ),
+                            "kind": "behavioral",
+                        },
+                        {
+                            "id": "focused-export-test",
+                            "description": (
+                                "The focused service test imports the "
+                                "package export and preserves its assertion."
+                            ),
+                            "kind": "behavioral",
+                        },
+                    ],
+                    "constraints": {},
+                    "context_slices": [],
+                    "forbidden_paths": [],
+                    "style_directives": [],
+                },
+            }
+        )
+
+    def coder_call(prompt: str, _alias: str) -> str:
+        nonlocal coder_calls
+        coder_calls += 1
+        assert "Architect-owned multi-file packet" in prompt
+        assert '"src/__init__.py"' in prompt
+        assert '"tests/test_service.py"' in prompt
+        return json.dumps(
+            {
+                "files": [
+                    {
+                        "path": "src/__init__.py",
+                        "content": "from .service import existing\n",
+                    },
+                    {
+                        "path": "tests/test_service.py",
+                        "content": (
+                            "from src import existing\n\n\n"
+                            "def test_existing():\n"
+                            "    assert existing() == 'kept'\n"
+                        ),
+                    },
+                ]
+            }
+        )
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_empty_primary_plan_bound",
+            reason="test_server_persisted_empty_primary_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_empty_primary_coder_bound",
+            reason="test_coder_consumes_empty_primary_plan",
+        )
+
+    result = execute_generic_workspace_rich(
+        task=(
+            "Update both files. Update src/__init__.py to export existing "
+            "from the service module. Update tests/test_service.py to use "
+            "that package export while preserving the focused assertion."
+        ),
+        workspace_root=root,
+        allowed_paths=("src/", "tests/"),
+        model_call=coder_call,
+        architect_model_call=architect_call,
+        coder_model_call=coder_call,
+        model_alias="coder",
+        canonical_context={"sources_considered": []},
+        architect_task_id="empty-primary-multi-file",
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["coder_blocked"] is False
+    assert coder_calls == 1
+    proposed_diff = result["proposed_diff"]
+    assert "@@ -0,0 +1 @@" in proposed_diff
+    checked = subprocess.run(
+        ["git", "apply", "--check", "--recount", "-"],
+        input=proposed_diff,
+        text=True,
+        cwd=root,
+        capture_output=True,
+        check=False,
+    )
+    assert checked.returncode == 0, checked.stderr
+    assert result["coder_diagnostics"]["attempts"][0]["git_apply_check"][
+        "passed"
+    ] is True
+    assert _git(root, "status", "--short") == ""
+
+
 def test_explicit_shared_helper_task_reuses_canonical_spec_through_review(
     tmp_path: Path,
 ) -> None:

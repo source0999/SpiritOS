@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 import re
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -1614,6 +1615,33 @@ class CoderAgentRepomixDiffTests(unittest.TestCase):
             self.assertIn("-old", diff)
             self.assertIn("+new", diff)
             self.assertTrue(diff.endswith("\n"))
+
+    def test_generate_unified_diff_existing_zero_byte_file_applies(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            rel = "src/__init__.py"
+            target = root / rel
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"")
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "add", rel], cwd=root, check=True)
+
+            diff = generate_unified_diff_from_content(
+                root,
+                rel,
+                "from .service import existing\n",
+            )
+            checked = subprocess.run(
+                ["git", "apply", "--check", "--recount", "-"],
+                input=diff,
+                text=True,
+                cwd=root,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertIn("@@ -0,0 +1 @@", diff)
+            self.assertEqual(checked.returncode, 0, checked.stderr)
 
     def test_generate_unified_diff_missing_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
