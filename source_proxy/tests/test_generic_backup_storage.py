@@ -10,6 +10,10 @@ from pathlib import Path
 import pytest
 
 import source_proxy.tasks.long_running as long_running
+from source_proxy.coding.participants import (
+    build_applied_artifact,
+    run_coding_anti_cheat,
+)
 from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
     ENV_MANIFEST,
     MANIFEST_SCHEMA_V2,
@@ -209,6 +213,21 @@ def test_generic_apply_uses_strict_hash_bound_server_state_storage(
     assert loaded_sha256 == task.ast_snapshot["approved_execution_evidence"][
         "backup_manifest_sha256"
     ]
+    audit = task.ast_snapshot["approved_execution_evidence"]["audit"]
+    artifact = build_applied_artifact(
+        task_id=task.id,
+        run_id="generic-backup-run",
+        approval_id="approval-generic",
+        generation=1,
+        approved_diff=diff,
+        execution={"audit": audit},
+    )
+    assert artifact["backup_storage"] == storage
+    anti_cheat = run_coding_anti_cheat(artifact)
+    assert anti_cheat["passed"] is True
+    assert anti_cheat["producer_process"]["isolation"] == (
+        "dedicated_participant_subprocess"
+    )
 
 
 def test_generic_workspace_receipt_root_ignores_unrelated_apply_allowlist(

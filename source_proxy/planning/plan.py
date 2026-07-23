@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import ast
+import hashlib
 import json
+import posixpath
+import re
+from fnmatch import fnmatchcase
 from dataclasses import asdict, dataclass, fields
 from contextlib import closing
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, Mapping, TypeVar
 
+from source_proxy.decision.proposal_task import effective_planning_task_text
 from source_proxy.planning.migrations import PLAN_MIGRATORS
-from source_proxy.safety.paths import normalize_repo_path_candidate
+from source_proxy.safety.paths import (
+    has_percent_encoded_path_syntax,
+    normalize_repo_path_candidate,
+    path_escapes_workspace,
+)
 
 
 PLAN_SCHEMA_VERSION = 1
@@ -17,7 +27,12 @@ CoderOperation = Literal["edit", "create", "delete"]
 CriterionKind = Literal["literal", "behavioral"]
 ContextSliceKind = Literal["target", "import", "sibling", "type_definition", "doc"]
 CoderResponseStatus = Literal["ok", "blocked"]
-TaskSpecType = Literal["modify_existing_file", "create_new_file", "delete_file"]
+TaskSpecType = Literal[
+    "modify_existing_file",
+    "create_new_file",
+    "delete_file",
+    "create_file_bundle",
+]
 TaskSpecRiskTier = Literal["low", "medium", "high"]
 
 
@@ -230,6 +245,819 @@ def task_spec_from_plan(plan: ArchitectPlan) -> CoderTaskSpec:
         plan.coder_packet,
         verification_plan=plan.verification_plan,
     )
+
+
+def review_task_spec_from_plan(
+    plan: ArchitectPlan,
+    changed_files: list[str],
+    *,
+    authorized_paths: list[str] | tuple[str, ...],
+    artifact_snapshots: Mapping[str, Any] | None = None,
+) -> CoderTaskSpec:
+    """Bind reviewer authority to the exact, already scope-checked artifacts.
+
+    The normal coder packet has one primary target.  A rich target adapter may
+    produce an atomic multi-file diff after independently checking every path
+    against its server-owned scope.  Semantic review must use the same exact
+    artifact set rather than either collapsing back to the primary target or
+    promoting a broad prefix/glob into evidence authority.
+    """
+
+    base = task_spec_from_plan(plan)
+    normalized_changed = [
+        _normalize_repo_path(str(path or "")) for path in changed_files
+    ]
+    exact_paths = _dedupe_preserve_order(normalized_changed)
+    authority = _dedupe_preserve_order(
+        [_normalize_repo_path(str(path or "")) for path in authorized_paths]
+    )
+    if (
+        not exact_paths
+        or len(exact_paths) != len(normalized_changed)
+        or not authority
+        or any(
+            path_escapes_workspace(path)
+            or has_percent_encoded_path_syntax(path)
+            for path in [*exact_paths, *authority]
+        )
+        or base.target not in exact_paths
+        or any(not _path_in_authorized_scope(path, authority) for path in exact_paths)
+        or any(
+            _path_matches_forbidden(path, base.forbidden_files)
+            for path in exact_paths
+        )
+    ):
+        raise ValueError("review_task_spec_missing_primary_target")
+    trusted_intent_paths = set(review_intent_paths_from_plan(plan))
+    trusted_intent_paths.update(
+        _bounded_capability_intent_paths(
+            plan,
+            exact_paths,
+            trusted_intent_paths=trusted_intent_paths,
+            artifact_snapshots=artifact_snapshots,
+        )
+    )
+    if any(path not in trusted_intent_paths for path in exact_paths):
+        raise ValueError("review_task_spec_unrequested_changed_file")
+    return CoderTaskSpec(
+        schema_version=base.schema_version,
+        task_type=(
+            "create_file_bundle" if len(exact_paths) > 1 else base.task_type
+        ),
+        target=base.target,
+        allowed_files=exact_paths,
+        forbidden_files=list(base.forbidden_files),
+        literal_requirements=list(base.literal_requirements),
+        verification=list(base.verification),
+        risk_tier=base.risk_tier,
+        source=base.source,
+    )
+
+
+def _bounded_capability_intent_paths(
+    plan: ArchitectPlan,
+    exact_paths: list[str],
+    *,
+    trusted_intent_paths: set[str],
+    artifact_snapshots: Mapping[str, Any] | None,
+) -> set[str]:
+    """Authorize only narrow task capabilities backed by pre-apply snapshots."""
+
+    snapshots = _validated_capability_snapshots(artifact_snapshots, exact_paths)
+    if not snapshots:
+        return set()
+    task = effective_planning_task_text(plan.source_task)
+    extras = [path for path in exact_paths if path not in trusted_intent_paths]
+    authorized: set[str] = set()
+
+    test_extras = [path for path in extras if _review_test_artifact_path(path)]
+    if (
+        len(test_extras) == 1
+        and task_requests_test_artifact(task)
+        and _test_artifact_is_bound_to_target(
+            test_extras[0],
+            snapshots[test_extras[0]],
+            plan.coder_packet.target_file.path,
+        )
+    ):
+        authorized.add(test_extras[0])
+
+    remaining = [path for path in extras if path not in authorized]
+    if (
+        len(remaining) == 1
+        and task_requests_shared_helper_artifact(task)
+        and _new_shared_helper_is_structurally_bound(
+            remaining[0],
+            exact_paths=exact_paths,
+            trusted_intent_paths=trusted_intent_paths,
+            snapshots=snapshots,
+        )
+    ):
+        authorized.add(remaining[0])
+    return authorized
+
+
+def task_requests_test_artifact(task: str) -> bool:
+    """Recognize an affirmative request to create or update test code."""
+
+    for clause in re.split(r"[.!?\n]+", str(task or "")):
+        for test_match in re.finditer(r"\btests?\b", clause, re.IGNORECASE):
+            actions = list(
+                re.finditer(
+                    r"\b(?P<verb>add|create|include|modify|update|write)\b",
+                    clause[: test_match.start()],
+                    re.IGNORECASE,
+                )
+            )
+            if not actions:
+                continue
+            action = actions[-1]
+            qualifier = clause[action.end() : test_match.start()]
+            if len(qualifier) > 120:
+                continue
+            prefix = clause[: action.start()]
+            suffix = clause[test_match.end() :]
+            if _authority_action_is_nonaffirmative(prefix, suffix):
+                continue
+            if re.search(
+                r"\b(?:0|except|instead\s+of|neither|no|nor|not|"
+                r"other\s+than|rather\s+than|without|zero)\b",
+                qualifier,
+                re.IGNORECASE,
+            ):
+                continue
+            if action.group("verb").lower() == "write" and re.search(
+                r"\babout\b", qualifier, re.IGNORECASE
+            ):
+                continue
+            if action.group("verb").lower() == "include" and re.search(
+                r"\bexisting\b", qualifier, re.IGNORECASE
+            ):
+                continue
+            if re.match(
+                r"\s+(?:in|into|to)\s+(?:the\s+)?"
+                r"(?:documentation|docs?|reference|report)\b",
+                suffix,
+                re.IGNORECASE,
+            ):
+                continue
+            return True
+    return False
+
+
+def task_requests_shared_helper_artifact(task: str) -> bool:
+    """Recognize an affirmative duplicate-logic refactor into one helper."""
+
+    normalized = str(task or "")
+    if not re.search(r"\b(?:duplicat\w*|repeat\w*)\b", normalized, re.IGNORECASE):
+        return False
+    for clause in re.split(r"[.!?\n]+", normalized):
+        helper_match = re.search(
+            r"(?:\b(?:shared|common)\b[^\n]{0,48}\bhelper\b|"
+            r"\bhelper\b[^\n]{0,48}\b(?:shared\s+by|used\s+by|for\s+both)\b)",
+            clause,
+            re.IGNORECASE,
+        )
+        if helper_match is None:
+            continue
+        actions = list(
+            re.finditer(
+                r"\b(?:extract|refactor)\b",
+                clause[: helper_match.start()],
+                re.IGNORECASE,
+            )
+        )
+        if not actions:
+            continue
+        refactor_match = actions[-1]
+        if helper_match.start() - refactor_match.end() > 160:
+            continue
+        if _authority_action_is_nonaffirmative(
+            clause[: refactor_match.start()],
+            clause[helper_match.end() :],
+        ):
+            continue
+        action_span = clause[refactor_match.start() : helper_match.end()]
+        if re.search(
+            r"\b(?:is|are|was|were)\s+(?:strictly\s+)?"
+            r"(?:forbidden|prohibited)\b",
+            action_span,
+            re.IGNORECASE,
+        ) or re.search(
+            r"\b(?:not|never)\b[^,;:]{0,64}"
+            r"\b(?:into|to|using|with)\b[^,;:]{0,32}"
+            r"\b(?:shared|common)\b[^,;:]{0,24}\bhelper\b",
+            action_span,
+            re.IGNORECASE,
+        ) or re.search(
+            r"\bwithout\s+(?:a\s+|the\s+)?"
+            r"(?:(?:shared|common)\s+)?helper\b",
+            action_span,
+            re.IGNORECASE,
+        ) or re.search(
+            r"\b(?:instead\s+of|neither|nor|other\s+than|rather\s+than)\b",
+            action_span,
+            re.IGNORECASE,
+        ):
+            continue
+        return True
+    return False
+
+
+def _authority_action_is_nonaffirmative(prefix: str, suffix: str) -> bool:
+    """Reject negated, prohibited, or merely discussed authority actions."""
+
+    raw_tail = prefix[-256:].replace("’", "'")
+    if re.search(
+        r"\b(?:anything|everything)\s+but\s*$",
+        raw_tail,
+        re.IGNORECASE,
+    ):
+        return True
+    prefix_tail = re.split(
+        r"\b(?:but|however|yet)\b",
+        raw_tail,
+        flags=re.IGNORECASE,
+    )[-1]
+    if re.search(
+        r"(?:^|\b)(?:"
+        r"(?:do|does|did|should|must|shall|can|could|will|would|may)\s+not|"
+        r"cannot|can't|couldn't|didn't|doesn't|don't|isn't|mustn't|"
+        r"needn't|shan't|shouldn't|wasn't|weren't|won't|wouldn't|never|"
+        r"(?:isn't|aren't|wasn't|weren't)\s+"
+        r"(?:allowed|permitted|required)\s+to|"
+        r"not\s+(?:allowed|permitted|required)\s+to|"
+        r"under\s+no\s+circumstances|"
+        r"(?:there\s+is\s+)?no\s+(?:need|requirement)\s+to|"
+        r"(?:there\s+)?(?:must|should)\s+be\s+no|"
+        r"(?:is|are|was|were)\s+(?:strictly\s+)?"
+        r"(?:forbidden|prohibited)\s+to|"
+        r"avoid(?:ing)?(?:\s+(?:a|an|the))?|"
+        r"refrain\s+from|refuse\s+to|"
+        r"(?:anything|everything)\s+(?:except|other\s+than)|"
+        r"except|instead\s+of|other\s+than|rather\s+than|without"
+        r")\b[^,;:.!?]{0,96}$",
+        prefix_tail,
+        re.IGNORECASE,
+    ):
+        return True
+    if re.search(
+        r"\b(?:neither|no|not(?:\s+to)?)\s+$",
+        prefix_tail,
+        re.IGNORECASE,
+    ):
+        return True
+    if re.search(
+        r"\b(?:consider|discuss|document|evaluate|explain|describe)\b"
+        r"[^,;:.!?]{0,96}"
+        r"(?:whether|how)?(?:\s+to)?\s*$|"
+        r"\b(?:maybe|perhaps)\s*$",
+        prefix_tail,
+        re.IGNORECASE,
+    ):
+        return True
+    if re.search(
+        r"\b(?:can|could|may|might|should|would)\s+(?:i|we)\s*$",
+        prefix_tail,
+        re.IGNORECASE,
+    ):
+        return True
+    return bool(
+        re.match(
+            r"\s+(?:(?:(?:is|are|was|were)|"
+            r"(?:isn't|aren't|wasn't|weren't))\s+(?:"
+            r"(?:strictly\s+)?(?:forbidden|prohibited)|"
+            r"(?:not\s+)?(?:allowed|permitted|required)|"
+            r"out\s+of\s+scope"
+            r")|(?:cannot|can't|couldn't|shouldn't|mustn't)\s+"
+            r"be\s+(?:done|performed|required))\b",
+            suffix,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _validated_capability_snapshots(
+    snapshots: Mapping[str, Any] | None,
+    exact_paths: list[str],
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(snapshots, Mapping) or set(snapshots) != set(exact_paths):
+        return {}
+    validated: dict[str, dict[str, Any]] = {}
+    total_chars = 0
+    for path in exact_paths:
+        record = snapshots.get(path)
+        if not isinstance(record, Mapping):
+            return {}
+        content = record.get("content")
+        exists = record.get("exists")
+        if not (
+            record.get("schema_version") == "coding.review-artifact-snapshot/v1"
+            and record.get("path") == path
+            and isinstance(exists, bool)
+            and isinstance(content, str)
+            and (exists or content == "")
+            and record.get("content_sha256")
+            == hashlib.sha256(content.encode("utf-8")).hexdigest()
+        ):
+            return {}
+        total_chars += len(content)
+        if total_chars > 1_000_000:
+            return {}
+        validated[path] = dict(record)
+    return validated
+
+
+def _review_test_artifact_path(path: str) -> bool:
+    normalized = path.lower()
+    name = normalized.rsplit("/", 1)[-1]
+    return bool(
+        normalized.startswith(("test/", "tests/"))
+        or "/tests/" in f"/{normalized}/"
+        or "/__tests__/" in f"/{normalized}/"
+        or name.startswith("test_")
+        or ".test." in name
+        or ".spec." in name
+    )
+
+
+def _test_artifact_is_bound_to_target(
+    test_path: str,
+    snapshot: Mapping[str, Any],
+    target_path: str,
+) -> bool:
+    target_name = target_path.rsplit("/", 1)[-1]
+    target_stem = target_name.rsplit(".", 1)[0]
+    target_module = target_path.rsplit(".", 1)[0].replace("/", ".")
+    test_name = test_path.rsplit("/", 1)[-1].lower()
+    conventional_names = {
+        f"test_{target_stem}.py",
+        f"{target_stem}_test.py",
+        f"{target_stem}.test.ts",
+        f"{target_stem}.test.tsx",
+        f"{target_stem}.test.js",
+        f"{target_stem}.test.jsx",
+        f"{target_stem}.spec.ts",
+        f"{target_stem}.spec.tsx",
+        f"{target_stem}.spec.js",
+        f"{target_stem}.spec.jsx",
+    }
+    if snapshot.get("exists") is False:
+        return test_name in conventional_names
+    content = str(snapshot.get("content") or "")
+    parent_module, _, module_name = target_module.rpartition(".")
+    python_binding = False
+    if test_path.lower().endswith(".py"):
+        try:
+            tree = ast.parse(content)
+        except (SyntaxError, ValueError):
+            tree = None
+        if tree is not None:
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import) and any(
+                    alias.name == target_module for alias in node.names
+                ):
+                    python_binding = True
+                    break
+                if isinstance(node, ast.ImportFrom):
+                    if node.module == target_module or (
+                        node.module == parent_module
+                        and any(alias.name == module_name for alias in node.names)
+                    ):
+                        python_binding = True
+                        break
+    script_binding = any(
+        _script_specifier_targets_path(
+            specifier,
+            test_path=test_path,
+            target_path=target_path,
+        )
+        for specifier in _active_script_module_specifiers(content)
+    )
+    return python_binding or script_binding
+
+
+def _active_script_module_specifiers(content: str) -> list[str]:
+    """Extract module strings from active import/require syntax only."""
+
+    chars = list(content)
+    specifiers: list[str] = []
+    state = "code"
+    regex_class = False
+    index = 0
+    while index < len(chars):
+        char = chars[index]
+        next_char = chars[index + 1] if index + 1 < len(chars) else ""
+        if state == "code":
+            if char in {'"', "'"}:
+                quote = char
+                start = index
+                end = index + 1
+                while end < len(chars):
+                    if chars[end] == "\\":
+                        end += 2
+                        continue
+                    if chars[end] == quote:
+                        break
+                    if chars[end] in "\r\n":
+                        break
+                    end += 1
+                prefix = "".join(chars[max(0, start - 256) : start])
+                if end < len(chars) and chars[end] == quote and re.search(
+                    r"(?:\b(?:import|export)\b[^\n;]{0,200}\bfrom|"
+                    r"\brequire\s*\(|\bimport\s*\(|\bimport)\s*$",
+                    prefix,
+                    re.IGNORECASE,
+                ):
+                    specifiers.append(content[start + 1 : end])
+                stop = min(end + 1, len(chars))
+                for masked_index in range(start, stop):
+                    if chars[masked_index] not in "\r\n":
+                        chars[masked_index] = " "
+                index = stop
+                continue
+            elif char == "`":
+                chars[index] = " "
+                state = "template"
+            elif char == "/" and next_char == "/":
+                chars[index] = chars[index + 1] = " "
+                state = "line_comment"
+                index += 1
+            elif char == "/" and next_char == "*":
+                chars[index] = chars[index + 1] = " "
+                state = "block_comment"
+                index += 1
+            elif char == "/":
+                prior = "".join(chars[max(0, index - 80) : index]).rstrip()
+                if _script_slash_begins_regex(prior):
+                    chars[index] = " "
+                    regex_class = False
+                    state = "regex"
+        elif state == "regex":
+            if char != "\n":
+                chars[index] = " "
+            if char == "\\":
+                if index + 1 < len(chars) and chars[index + 1] != "\n":
+                    chars[index + 1] = " "
+                index += 1
+            elif char == "[":
+                regex_class = True
+            elif char == "]":
+                regex_class = False
+            elif char == "/" and not regex_class:
+                state = "code"
+        elif state == "template":
+            if char != "\n":
+                chars[index] = " "
+            if char == "\\":
+                if index + 1 < len(chars) and chars[index + 1] != "\n":
+                    chars[index + 1] = " "
+                index += 1
+            elif char == "`":
+                state = "code"
+        elif state == "line_comment":
+            if char == "\n":
+                state = "code"
+            else:
+                chars[index] = " "
+        elif state == "block_comment":
+            if char == "*" and next_char == "/":
+                chars[index] = chars[index + 1] = " "
+                state = "code"
+                index += 1
+            elif char != "\n":
+                chars[index] = " "
+        index += 1
+    return specifiers
+
+
+def _script_slash_begins_regex(prior: str) -> bool:
+    line_tail = prior.rsplit("\n", 1)[-1]
+    if not line_tail.strip():
+        return True
+    return bool(
+        re.search(
+            r"(?:^|[=(:,!\[{;?&|+*%^~<>}-]|=>|"
+            r"\b(?:await|case|default|delete|do|else|extends|in|instanceof|"
+            r"new|of|return|throw|typeof|void|yield))\s*$",
+            line_tail,
+        )
+        or re.search(
+            r"\b(?:catch|for|if|switch|while|with)\s*\([^;\n]*\)\s*$",
+            line_tail,
+        )
+    )
+
+
+def _script_specifier_targets_path(
+    specifier: str,
+    *,
+    test_path: str,
+    target_path: str,
+) -> bool:
+    script_suffixes = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
+    target_suffix = "." + target_path.rsplit(".", 1)[-1].lower()
+    if target_suffix not in script_suffixes:
+        return False
+    normalized_specifier = str(specifier or "").strip().replace("\\", "/")
+    if not normalized_specifier or any(
+        marker in normalized_specifier for marker in ("\x00", "?", "#")
+    ):
+        return False
+    if normalized_specifier.startswith("."):
+        resolved = posixpath.normpath(
+            posixpath.join(posixpath.dirname(test_path), normalized_specifier)
+        )
+    elif normalized_specifier.startswith("/"):
+        resolved = posixpath.normpath(normalized_specifier.lstrip("/"))
+    elif "/" in normalized_specifier:
+        resolved = posixpath.normpath(normalized_specifier)
+    else:
+        return False
+    if resolved == ".." or resolved.startswith("../"):
+        return False
+
+    def without_script_suffix(path: str) -> str:
+        lowered = path.lower()
+        for suffix in script_suffixes:
+            if lowered.endswith(suffix):
+                return path[: -len(suffix)]
+        return path
+
+    target_module_path = without_script_suffix(target_path)
+    resolved_module_path = without_script_suffix(resolved)
+    return bool(
+        resolved_module_path == target_module_path
+        or resolved_module_path.rstrip("/") + "/index" == target_module_path
+    )
+
+
+def _new_shared_helper_is_structurally_bound(
+    helper_path: str,
+    *,
+    exact_paths: list[str],
+    trusted_intent_paths: set[str],
+    snapshots: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    helper_record = snapshots.get(helper_path)
+    if not isinstance(helper_record, Mapping) or helper_record.get("exists") is not False:
+        return False
+    if _review_test_artifact_path(helper_path):
+        return False
+    helper_parent, _, helper_name = helper_path.rpartition("/")
+    helper_suffix = "." + helper_name.rsplit(".", 1)[-1] if "." in helper_name else ""
+    if not helper_suffix or helper_name.startswith("."):
+        return False
+    trusted_sources = [
+        path
+        for path in exact_paths
+        if path in trusted_intent_paths
+        and path != helper_path
+        and not _review_test_artifact_path(path)
+        and snapshots.get(path, {}).get("exists") is True
+        and path.rpartition("/")[0] == helper_parent
+        and path.endswith(helper_suffix)
+    ]
+    return len(trusted_sources) >= 2
+
+
+_ROOT_REVIEW_ARTIFACT_NAMES = frozenset(
+    {
+        "dockerfile",
+        "jenkinsfile",
+        "license",
+        "makefile",
+        "notice",
+        "procfile",
+    }
+)
+_UNQUOTED_REVIEW_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_./\\-])"
+    r"(?P<path>"
+    r"(?:[A-Za-z0-9_.@()+-]+[\\/])+"
+    r"(?:\.[A-Za-z0-9_@()+-]+|"
+    r"[A-Za-z0-9_@()+-]+(?:\.[A-Za-z0-9_@()+-]+)*)"
+    r"|(?:[A-Za-z0-9_.@()+-]+[\\/])*"
+    r"(?:\.[A-Za-z0-9_@()+-]+|[A-Za-z0-9_@()+-]+\.[A-Za-z0-9_-]+)"
+    r"|Dockerfile|Jenkinsfile|LICENSE|Makefile|NOTICE|Procfile"
+    r")"
+    r"(?![A-Za-z0-9_/\\-]|\.[A-Za-z0-9_-])"
+)
+_REVIEW_MUTATION_VERB_RE = re.compile(
+    r"\b(?:"
+    r"add(?:ed|ing|s)?|append(?:ed|ing|s)?|"
+    r"chang(?:e|ed|es|ing)|creat(?:e|ed|es|ing)|"
+    r"delet(?:e|ed|es|ing)|edit(?:ed|ing|s)?|"
+    r"ensur(?:e|ed|es|ing)|implement(?:ed|ing|s)?|"
+    r"insert(?:ed|ing|s)?|modif(?:y|ied|ies|ying)|"
+    r"mak(?:e|es|ing)|mov(?:e|ed|es|ing)|remov(?:e|ed|es|ing)|"
+    r"renam(?:e|ed|es|ing)|replac(?:e|ed|es|ing)|"
+    r"rewrit(?:e|es|ing|ten)|set(?:s|ting)?|updat(?:e|ed|es|ing)|"
+    r"writ(?:e|es|ing|ten)"
+    r")\b",
+    flags=re.IGNORECASE,
+)
+_REVIEW_NON_MUTATION_VERB_RE = re.compile(
+    r"\b(?:affect(?:ed|ing|s)?|exclud(?:e|ed|es|ing)|"
+    r"impact(?:ed|ing|s)?|keep|kept|leav(?:e|es|ing|t)|"
+    r"omit(?:ted|ting|s)?|"
+    r"describ(?:e|ed|es|ing)|discuss(?:ed|es|ing)?|"
+    r"document(?:ed|ing|s)?|explain(?:ed|ing|s)?|"
+    r"mention(?:ed|ing|s)?|preserv(?:e|ed|es|ing)|"
+    r"referenc(?:e|ed|es|ing)|read(?:ing)?|inspect(?:ed|ing|s)?|"
+    r"touch(?:ed|ing|es)?|us(?:e|ed|es|ing))\b",
+    flags=re.IGNORECASE,
+)
+
+
+def review_intent_paths_from_plan(plan: ArchitectPlan) -> list[str]:
+    """Return ordered exact artifacts authorized by trusted task intent."""
+
+    intended = [plan.coder_packet.target_file.path]
+    trusted_texts = [
+        effective_planning_task_text(plan.source_task),
+        *(criterion.description for criterion in plan.coder_packet.acceptance_criteria),
+    ]
+    for text in trusted_texts:
+        for raw_path, start, end in _review_path_occurrences(text):
+            path = _normalize_repo_path(raw_path)
+            if (
+                not _looks_like_exact_review_artifact(path)
+                or path_escapes_workspace(path)
+                or has_percent_encoded_path_syntax(path)
+                or not _path_occurrence_requests_mutation(text, start, end)
+            ):
+                continue
+            if path not in intended:
+                intended.append(path)
+    return intended
+
+
+def _review_path_occurrences(text: str) -> list[tuple[str, int, int]]:
+    occurrences: list[tuple[str, int, int]] = []
+    quoted_spans: list[tuple[int, int]] = []
+    for match in re.finditer(
+        r"(?P<quote>[\"'`])(?P<value>[^\"'`\r\n]+)(?P=quote)",
+        text or "",
+    ):
+        quoted_spans.append(match.span())
+        value = match.group("value")
+        if _looks_like_exact_review_artifact(_normalize_repo_path(value)):
+            occurrences.append((value, match.start(), match.end()))
+    for match in _UNQUOTED_REVIEW_PATH_RE.finditer(text or ""):
+        if any(start <= match.start() < end for start, end in quoted_spans):
+            continue
+        occurrences.append((match.group("path"), match.start(), match.end()))
+    return occurrences
+
+
+def _looks_like_exact_review_artifact(path: str) -> bool:
+    if (
+        not path
+        or path.endswith("/")
+        or any(char.isspace() for char in path)
+        or any(char in path for char in "*?[]{}")
+    ):
+        return False
+    name = path.rsplit("/", 1)[-1]
+    return bool(
+        "/" in path
+        or name.startswith(".")
+        or "." in name
+        or name.lower() in _ROOT_REVIEW_ARTIFACT_NAMES
+    )
+
+
+def _path_occurrence_requests_mutation(text: str, start: int, end: int) -> bool:
+    line_start = text.rfind("\n", 0, start) + 1
+    line_end = text.find("\n", end)
+    if line_end < 0:
+        line_end = len(text)
+    prefix = text[line_start:start]
+    suffix = text[end:line_end]
+
+    if _path_occurrence_is_output_literal(prefix, suffix):
+        return False
+    if re.search(
+        r"\b(?:not|no\s+changes?\s+to)\s+(?:the\s+)?"
+        r"(?:artifact|file|target)?(?:\s+path)?\s*$",
+        prefix,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    if re.match(
+        r"\s+(?:remains?|stays?|is|must\s+be|should\s+be|shall\s+be)"
+        r"\s+(?:preserved|unchanged|unmodified|untouched)\b",
+        suffix,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    if re.match(
+        r"\s+(?:(?:must|should|shall)\s+(?:remain|stay)\s+"
+        r"(?:preserved|unchanged|unmodified|untouched)|"
+        r"(?:must|should|shall)\s+not\s+be\s+"
+        r"(?:altered|changed|modified|removed|updated))\b",
+        suffix,
+        flags=re.IGNORECASE,
+    ):
+        return False
+
+    if re.match(
+        r"\s+(?:must|should|shall|needs?\s+to)\s+(?:not\s+)?"
+        r"(?:contain|include|have|display|emit|render|show)\b",
+        suffix,
+        flags=re.IGNORECASE,
+    ):
+        return True
+    suffix_action = re.match(r"\s*(?:[:,\-]|\u2014)\s*", suffix)
+    if suffix_action is not None:
+        suffix_match = _REVIEW_MUTATION_VERB_RE.match(
+            suffix[suffix_action.end() :].lstrip()
+        )
+        if suffix_match is not None:
+            return True
+
+    clause_prefix = re.split(r"(?:[!?]\s+|;\s*|\.\s+(?=[A-Z]))", prefix)[-1]
+    mutations = list(_REVIEW_MUTATION_VERB_RE.finditer(clause_prefix))
+    if not mutations:
+        return False
+    last_mutation = mutations[-1]
+    non_mutations = list(_REVIEW_NON_MUTATION_VERB_RE.finditer(clause_prefix))
+    if non_mutations and non_mutations[-1].start() > last_mutation.start():
+        return False
+    before_mutation = clause_prefix[: last_mutation.start()]
+    after_mutation = clause_prefix[last_mutation.end() :]
+    if re.search(
+        r"\b(?:apart\s+from|except|instead\s+of|neither|nor|"
+        r"other\s+than|rather\s+than)\b",
+        after_mutation,
+        re.IGNORECASE,
+    ):
+        return False
+    return not _authority_action_is_nonaffirmative(before_mutation, suffix)
+
+
+def _path_occurrence_is_output_literal(prefix: str, suffix: str) -> bool:
+    if re.search(
+        r"\b(?:change|replace|set|update)\b[^\n.!?]{0,80}"
+        r"\b(?:displayed|emitted|printed|rendered|shown)\b"
+        r"[^\n.!?]{0,24}\b(?:filename|file\s+name|label|path|text|value)\b"
+        r"[^\n.!?]{0,16}\b(?:as|to)\s*$",
+        prefix,
+        re.IGNORECASE,
+    ):
+        return True
+    if re.search(
+        r"\b(?:artifact|file|target)(?:\s+path)?\s*$",
+        prefix,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    if re.search(
+        r"\b(?:copy|display|filename|heading|label|mention|message|output|path|response|"
+        r"status|string|text|title|value|word)\s*$",
+        prefix,
+        flags=re.IGNORECASE,
+    ):
+        return True
+    return bool(
+        re.search(
+            r"\b(?:add|append|display|emit|include|insert|print|render|show|write)"
+            r"\b[^\n.!?]{0,80}$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+        and re.match(
+            r"\s+(?:to|in|inside|as)\s+(?:the\s+)?(?:rendered\s+)?"
+            r"(?:copy|display|label|message|output|text)\b",
+            suffix,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _path_in_authorized_scope(path: str, scopes: list[str]) -> bool:
+    return any(
+        path == scope.rstrip("/")
+        or path.startswith(scope.rstrip("/") + "/")
+        for scope in scopes
+    )
+
+
+def _path_matches_forbidden(path: str, forbidden: list[str]) -> bool:
+    for raw in forbidden:
+        pattern = str(raw or "").replace("\\", "/").strip()
+        if not pattern:
+            continue
+        if any(char in pattern for char in "*?["):
+            if fnmatchcase(path, pattern):
+                return True
+            continue
+        if path == pattern.rstrip("/") or (
+            pattern.endswith("/") and path.startswith(pattern)
+        ):
+            return True
+    return False
 
 
 def task_spec_from_packet(

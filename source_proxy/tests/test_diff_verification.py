@@ -654,7 +654,9 @@ class DiffVerificationPreviewTests(unittest.TestCase):
 
         tasks = [
             'Change "gap-2" to "gap-1.5"',
+            'Change the text "gap-2" to "gap-1.5"',
             'Replace "gap-2" with "gap-1.5"',
+            'Replace the label "gap-2" with "gap-1.5"',
             'Rename "gap-2" to "gap-1.5"',
             'Swap "gap-2" for "gap-1.5"',
             'Update the class from "gap-2" to "gap-1.5"',
@@ -670,6 +672,59 @@ class DiffVerificationPreviewTests(unittest.TestCase):
                     )
 
                     self.assertTrue(result["ok"], result)
+
+    def test_diff_transformations_reject_append_only_and_accept_short_prefix_destinations(
+        self,
+    ) -> None:
+        append_only = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/status.ts b/src/status.ts",
+                    "--- a/src/status.ts",
+                    "+++ b/src/status.ts",
+                    "@@ -1 +1,2 @@",
+                    ' const label = "Old";',
+                    '+const next = "New";',
+                    "",
+                ]
+            ),
+            task_text='Change the text "Old" to "New".',
+            route_type="local_route",
+        )
+        self.assertEqual(append_only["status"], "blocked")
+        self.assertIn(
+            "missing replaced source text: Old",
+            append_only["requirement_coverage"]["missing"],
+        )
+
+        cases = (("x", "y"), ("UI", "UX"), ("Old", "Old and New"))
+        for source, final in cases:
+            with self.subTest(source=source, final=final):
+                payload = preview_diff_verification(
+                    "\n".join(
+                        [
+                            "diff --git a/src/status.ts b/src/status.ts",
+                            "--- a/src/status.ts",
+                            "+++ b/src/status.ts",
+                            "@@ -1 +1 @@",
+                            f'-const label = "{source}";',
+                            f'+const label = "{final}";',
+                            "",
+                        ]
+                    ),
+                    task_text=f'Change the text "{source}" to "{final}".',
+                    route_type="local_route",
+                )
+
+                self.assertEqual(
+                    payload["status"],
+                    "preview_ready",
+                    payload["requirement_coverage"],
+                )
+                self.assertEqual(
+                    payload["requirement_coverage"]["required"]["transformations"],
+                    [{"source": source, "final": final}],
+                )
 
     def test_replacement_content_change_fails_when_final_text_missing(self) -> None:
         import tempfile
@@ -841,6 +896,180 @@ class DiffVerificationPreviewTests(unittest.TestCase):
         self.assertEqual(payload["status"], "preview_ready")
         self.assertTrue(payload["requirement_coverage"]["ok"])
         self.assertTrue(payload["requirement_coverage"]["skipped"])
+
+    def test_path_tokens_are_not_exact_literals_but_displayed_filename_is(self) -> None:
+        task = "\n".join(
+            [
+                "Target file: src/status.ts",
+                'Read the worker implementation from "src/jobs/worker.py".',
+                'Use shared types from "src/types.ts".',
+                'Preserve compatibility with "src/legacy.js".',
+                'Load JSON settings from "config/source.json".',
+                'Load runtime configuration from "config/runtime.yaml".',
+                'Read nested configuration from "nested/env/app.toml".',
+                'Do not edit ".env".',
+                'Load optional settings from ".env.local" and preserve ".gitignore".',
+                'Keep behavior compatible with "service.conf" and "settings.ini".',
+                'Display the exact filename "worker.py".',
+                'Output must contain "worker.py".',
+                'Include "config/settings.json" in the rendered output.',
+                "Keep the status function callable.",
+            ]
+        )
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/status.ts b/src/status.ts",
+                    "--- a/src/status.ts",
+                    "+++ b/src/status.ts",
+                    "@@ -1 +1 @@",
+                    '-export function status() { return "old"; }',
+                    '+export function status() { return "worker.py config/settings.json"; }',
+                    "",
+                ]
+            ),
+            task_text=task,
+            route_type="local_route",
+        )
+
+        self.assertEqual(
+            payload["status"],
+            "preview_ready",
+            payload["requirement_coverage"],
+        )
+        required_texts = payload["requirement_coverage"]["required"]["texts"]
+        self.assertEqual(required_texts, ["worker.py", "config/settings.json"])
+        for operational_path in (
+            "src/jobs/worker.py",
+            "src/types.ts",
+            "src/legacy.js",
+            "config/source.json",
+            "config/runtime.yaml",
+            "nested/env/app.toml",
+            ".env",
+            ".env.local",
+            ".gitignore",
+            "service.conf",
+            "settings.ini",
+        ):
+            self.assertNotIn(operational_path, required_texts)
+        self.assertTrue(payload["requirement_coverage"]["ok"])
+
+    def test_exact_filename_and_path_forms_exclude_bare_artifact_nouns(self) -> None:
+        task = "\n".join(
+            [
+                "Target file: src/status.ts",
+                'Display the exact filename "worker.py".',
+                'The filename must equal "runner.py".',
+                'Show the exact text "config/settings.json".',
+                '"nested/report.json" must be displayed.',
+                'File "ignored.py" handles background jobs.',
+                'Artifact "config/ignored.json" stores settings.',
+                'Target "src/ignored.py" imports the worker.',
+            ]
+        )
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/status.ts b/src/status.ts",
+                    "--- a/src/status.ts",
+                    "+++ b/src/status.ts",
+                    "@@ -1 +1 @@",
+                    '-export const status = "old";',
+                    '+export const status = "worker.py runner.py config/settings.json nested/report.json";',
+                    "",
+                ]
+            ),
+            task_text=task,
+            route_type="local_route",
+        )
+
+        self.assertEqual(payload["status"], "preview_ready", payload)
+        self.assertEqual(
+            payload["requirement_coverage"]["required"]["texts"],
+            [
+                "worker.py",
+                "runner.py",
+                "config/settings.json",
+                "nested/report.json",
+            ],
+        )
+
+    def test_backend_endpoint_route_is_not_mapped_to_next_app_router(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/backend.py b/src/backend.py",
+                    "--- a/src/backend.py",
+                    "+++ b/src/backend.py",
+                    "@@ -1,2 +1,2 @@",
+                    "-def list_items():",
+                    "+def list_items(limit=None):",
+                    "     return ITEMS",
+                    "",
+                ]
+            ),
+            task_text=(
+                "Target file: src/backend.py\n"
+                "Add an optional limit query parameter to the existing `/items` endpoint."
+            ),
+            route_type="local_route",
+        )
+
+        self.assertEqual(payload["status"], "preview_ready", payload)
+        required = payload["requirement_coverage"]["required"]
+        self.assertIsNone(required["route"])
+        self.assertIsNone(required["route_target"])
+
+    def test_added_source_line_encoded_with_three_pluses_remains_hunk_content(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/counter.ts b/src/counter.ts",
+                    "--- a/src/counter.ts",
+                    "+++ b/src/counter.ts",
+                    "@@ -1 +1,2 @@",
+                    " let counter = 0;",
+                    "+++ counter;",
+                    "",
+                ]
+            ),
+            route_type="local_route",
+        )
+
+        self.assertEqual(payload["status"], "preview_ready", payload)
+        self.assertEqual(
+            [item["path"] for item in payload["changed_files"]],
+            ["src/counter.ts"],
+        )
+
+    def test_negated_transformation_preserves_source_without_requiring_destination(self) -> None:
+        payload = preview_diff_verification(
+            "\n".join(
+                [
+                    "diff --git a/src/status.ts b/src/status.ts",
+                    "--- a/src/status.ts",
+                    "+++ b/src/status.ts",
+                    "@@ -1 +1,2 @@",
+                    "-export const status = 'Stable';",
+                    "+export const status = 'Stable';",
+                    "+// RequiredLiteral remains part of the public contract.",
+                    "",
+                ]
+            ),
+            task_text="\n".join(
+                [
+                    'Do not change the string "Stable" to "Unwanted".',
+                    'Do not remove "RequiredLiteral".',
+                ]
+            ),
+            route_type="local_route",
+        )
+
+        self.assertEqual(payload["status"], "preview_ready")
+        required = payload["requirement_coverage"]["required"]["texts"]
+        self.assertEqual(required, ["Stable", "RequiredLiteral"])
+        self.assertNotIn("Unwanted", required)
 
     def test_requirement_coverage_ignores_pasted_current_file_context(self) -> None:
         task = "\n".join(

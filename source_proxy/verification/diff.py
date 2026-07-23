@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import json
@@ -221,15 +222,26 @@ _CLASS_UTILITY_PREFIXES = {
 }
 _FRAGMENT_META_WORDS = {"class", "classname", "classes", "fragment", "fragments", "include", "includes", "target"}
 _CODE_FRAGMENT_PATH_SUFFIXES = {
+    ".cfg",
+    ".conf",
+    ".config",
     ".css",
+    ".env",
+    ".go",
+    ".ini",
+    ".java",
     ".js",
     ".jsx",
     ".json",
     ".md",
     ".mdx",
     ".py",
+    ".rs",
+    ".toml",
     ".ts",
     ".tsx",
+    ".yaml",
+    ".yml",
 }
 
 
@@ -614,11 +626,45 @@ def _typescript_syntax_check(
 
 
 def _added_diff_text(unified_diff: str) -> str:
+    return _changed_diff_text(unified_diff, addition=True)
+
+
+def _removed_diff_text(unified_diff: str) -> str:
+    return _changed_diff_text(unified_diff, addition=False)
+
+
+def _changed_diff_text(unified_diff: str, *, addition: bool) -> str:
     lines: list[str] = []
+    in_hunk = False
+    old_remaining = 0
+    new_remaining = 0
     for raw_line in unified_diff.splitlines():
-        if raw_line.startswith("+++") or not raw_line.startswith("+"):
+        if raw_line.startswith("diff --git "):
+            in_hunk = False
+            old_remaining = 0
+            new_remaining = 0
             continue
-        lines.append(raw_line[1:])
+        hunk_match = _HUNK_HEADER_PARSE_RE.match(raw_line)
+        if hunk_match:
+            old_remaining = int(hunk_match.group(2) or "1")
+            new_remaining = int(hunk_match.group(4) or "1")
+            in_hunk = old_remaining > 0 or new_remaining > 0
+            continue
+        if not in_hunk or raw_line == r"\ No newline at end of file":
+            continue
+        if raw_line.startswith("+"):
+            new_remaining -= 1
+            if addition:
+                lines.append(raw_line[1:])
+        elif raw_line.startswith("-"):
+            old_remaining -= 1
+            if not addition:
+                lines.append(raw_line[1:])
+        elif raw_line.startswith(" "):
+            old_remaining -= 1
+            new_remaining -= 1
+        if old_remaining <= 0 and new_remaining <= 0:
+            in_hunk = False
     return "\n".join(lines)
 
 
@@ -732,35 +778,38 @@ def _extract_route_path(task_text: str) -> str | None:
 
 
 _QUOTED_TEXT_RE = re.compile(
-    r"(?P<quote>[\"'`])(?P<value>[^\"'`\n]{3,120})(?P=quote)"
+    r"(?P<quote>[\"'`])(?P<value>[^\"'`\n]{0,120})(?P=quote)"
 )
 _TRANSFORMATION_TEXT_PATTERNS = (
     re.compile(
         r"\b(?:change|rename)\s+"
-        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{3,120})(?P=src_quote)\s+"
+        r"(?:(?:the\s+)?(?:copy|heading|label|message|response|status|string|text|title|value|word)\s+)?"
+        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{1,120})(?P=src_quote)\s+"
         r"to\s+"
-        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{3,120})(?P=final_quote)",
+        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{1,120})(?P=final_quote)",
         flags=re.IGNORECASE,
     ),
     re.compile(
         r"\breplace\s+"
-        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{3,120})(?P=src_quote)\s+"
+        r"(?:(?:the\s+)?(?:copy|heading|label|message|response|status|string|text|title|value|word)\s+)?"
+        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{1,120})(?P=src_quote)\s+"
         r"with\s+"
-        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{3,120})(?P=final_quote)",
+        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{1,120})(?P=final_quote)",
         flags=re.IGNORECASE,
     ),
     re.compile(
         r"\bswap\s+"
-        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{3,120})(?P=src_quote)\s+"
+        r"(?:(?:the\s+)?(?:copy|heading|label|message|response|status|string|text|title|value|word)\s+)?"
+        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{1,120})(?P=src_quote)\s+"
         r"for\s+"
-        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{3,120})(?P=final_quote)",
+        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{1,120})(?P=final_quote)",
         flags=re.IGNORECASE,
     ),
     re.compile(
         r"\bfrom\s+"
-        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{3,120})(?P=src_quote)\s+"
+        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]{1,120})(?P=src_quote)\s+"
         r"to\s+"
-        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{3,120})(?P=final_quote)",
+        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]{1,120})(?P=final_quote)",
         flags=re.IGNORECASE,
     ),
 )
@@ -771,7 +820,7 @@ def _dedupe_nonempty(values: list[str]) -> list[str]:
 
 
 def _is_path_like_text_requirement(value: str) -> bool:
-    return "/" in value and value.endswith((".tsx", ".ts", ".js", ".jsx", ".md"))
+    return _path_like_code_fragment(value)
 
 
 def _is_route_like_text_requirement(value: str) -> bool:
@@ -787,34 +836,184 @@ def _is_route_like_text_requirement(value: str) -> bool:
 def _should_skip_quoted_text_requirement(task_text: str, match: re.Match[str]) -> bool:
     value = match.group("value").strip()
     prefix = task_text[max(0, match.start() - 24) : match.start()]
-    display_prefix = task_text[max(0, match.start() - 64) : match.start()]
-    if _is_route_like_text_requirement(value) and not re.search(
-        r"\b(?:say|display|show|render|include|text|label|copy|heading|title|exact)\b",
-        display_prefix,
-        flags=re.IGNORECASE,
+    literal_intent = _quoted_text_has_literal_intent(
+        task_text,
+        match.start(),
+        match.end(),
+    )
+    transformation_role = _negated_quoted_transformation_role(
+        task_text,
+        match,
+    )
+    if transformation_role == "final":
+        return True
+    if (
+        transformation_role is None
+        and _quoted_text_has_forbidden_intent(task_text, match.start())
     ):
         return True
+    if _is_route_like_text_requirement(value) and not literal_intent:
+        return True
     return bool(re.search(r"(?:className|class)\s*=\s*$", prefix)) or (
-        _is_path_like_text_requirement(value)
+        _is_path_like_text_requirement(value) and not literal_intent
     )
 
 
-def _extract_transformation_text_requirements(task_text: str) -> dict[str, list[str]]:
+def _quoted_text_has_literal_intent(
+    task_text: str,
+    start: int,
+    end: int | None = None,
+) -> bool:
+    line_start = task_text.rfind("\n", 0, start) + 1
+    prefix = task_text[max(line_start, start - 120) : start]
+    line_end = task_text.find("\n", end if end is not None else start)
+    if line_end < 0:
+        line_end = len(task_text)
+    suffix = (
+        task_text[end : min(line_end, end + 96)]
+        if end is not None
+        else ""
+    )
+    artifact_noun_prefix = bool(
+        re.search(
+            r"\b(?:artifact|file|target)\s*$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+    )
+    suffix_literal = bool(
+        re.match(
+            r"\s+(?:must|should|shall|needs?\s+to)\s+"
+            r"(?:appear\b(?:\s+in\s+(?:the\s+)?(?:output|text|label|message))?"
+            r"|equal\b"
+            r"|(?:be\s+)?(?:displayed|emitted|printed|rendered|shown)\b)",
+            suffix,
+            flags=re.IGNORECASE,
+        )
+    )
+    if suffix_literal and not artifact_noun_prefix:
+        return True
+    return bool(
+        re.search(
+            r"(?:\b(?:copy|display|displayed|emit|heading|label|message|print|render|rendered|say|show|shown|title)\b|"
+            r"\b(?:output|text|label|message|filename|file\s+path)\s+"
+            r"(?:must|should|shall|needs?\s+to)\s+(?:equal|match)\b|"
+            r"\bset\b[^\n.!?]{0,88}\bto\s*$|"
+            r"\b(?:must|should|shall|needs?\s+to)\s+(?:contain|include)\b|"
+            r"\bexact\s+(?:text|filename)\b)"
+            r"[^\n.!?]{0,112}$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+        or (
+            re.search(r"\binclude\s*$", prefix, flags=re.IGNORECASE)
+            and re.match(
+                r"\s+(?:in|as)\s+(?:the\s+)?(?:rendered\s+)?"
+                r"(?:output|text|label|message)\b",
+                suffix,
+                flags=re.IGNORECASE,
+            )
+        )
+    )
+
+
+def _quoted_text_has_forbidden_intent(task_text: str, start: int) -> bool:
+    line_start = task_text.rfind("\n", 0, start) + 1
+    prefix = task_text[line_start:start]
+    if re.search(
+        r"\b(?:do\s+not|don't|must\s+not|never)\s+"
+        r"(?:change|delete|exclude|omit|remove|rename|replace)\b"
+        r"[^\n.!?]{0,80}$",
+        prefix,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    return bool(
+        re.search(
+            r"(?:\b(?:delete|exclude|omit|remove|without)\b|"
+            r"\b(?:do\s+not|don't|must\s+not|never)\s+"
+            r"(?:add|contain|display|emit|include|introduce|print|render|show|write)\b)"
+            r"[^\n.!?]{0,96}$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _negated_quoted_transformation_role(
+    task_text: str,
+    quoted_match: re.Match[str],
+) -> str | None:
+    line_start = task_text.rfind("\n", 0, quoted_match.start()) + 1
+    line_end = task_text.find("\n", quoted_match.end())
+    if line_end < 0:
+        line_end = len(task_text)
+    line = task_text[line_start:line_end]
+    value_span = (
+        quoted_match.start("value") - line_start,
+        quoted_match.end("value") - line_start,
+    )
+    for pattern in _TRANSFORMATION_TEXT_PATTERNS:
+        for transformation in pattern.finditer(line):
+            if value_span not in {
+                transformation.span("source"),
+                transformation.span("final"),
+            }:
+                continue
+            if not re.search(
+                r"\b(?:do\s+not|don't|must\s+not|never)\s*$",
+                line[: transformation.start()],
+                flags=re.IGNORECASE,
+            ):
+                return None
+            return (
+                "source"
+                if value_span == transformation.span("source")
+                else "final"
+            )
+    return None
+
+
+def _extract_transformation_text_requirements(task_text: str) -> dict[str, Any]:
     source_terms: list[str] = []
     required_final_terms: list[str] = []
+    transformations: list[dict[str, str]] = []
     for pattern in _TRANSFORMATION_TEXT_PATTERNS:
         for match in pattern.finditer(task_text):
+            line_start = task_text.rfind("\n", 0, match.start()) + 1
+            if re.search(
+                r"\b(?:do\s+not|don't|must\s+not|never)\s*$",
+                task_text[line_start : match.start()],
+                flags=re.IGNORECASE,
+            ):
+                continue
             source = match.group("source").strip()
             final = match.group("final").strip()
-            if not _is_path_like_text_requirement(source):
+            literal_intent = _quoted_text_has_literal_intent(
+                task_text,
+                match.start(),
+                match.end(),
+            )
+            if not _is_path_like_text_requirement(source) or literal_intent:
                 source_terms.append(source)
-            if not _is_path_like_text_requirement(final):
+            if not _is_path_like_text_requirement(final) or literal_intent:
                 required_final_terms.append(final)
+            if (
+                (not _is_path_like_text_requirement(source) or literal_intent)
+                and (not _is_path_like_text_requirement(final) or literal_intent)
+                and source
+                and final
+                and source != final
+            ):
+                transformation = {"source": source, "final": final}
+                if transformation not in transformations:
+                    transformations.append(transformation)
     source_terms = _dedupe_nonempty(source_terms)
     return {
         "source_terms": source_terms,
         "required_final_terms": _dedupe_nonempty(required_final_terms),
         "optional_absent_terms": source_terms,
+        "transformations": transformations,
     }
 
 
@@ -857,7 +1056,7 @@ def _extract_markdown_append_literal(task_text: str) -> str:
     return ""
 
 
-def _extract_text_requirements(task_text: str) -> dict[str, list[str]]:
+def _extract_text_requirements(task_text: str) -> dict[str, Any]:
     transformations = _extract_transformation_text_requirements(task_text)
     source_terms = set(transformations["source_terms"])
     found: list[str] = list(transformations["required_final_terms"])
@@ -889,6 +1088,7 @@ def _extract_text_requirements(task_text: str) -> dict[str, list[str]]:
         "source_terms": transformations["source_terms"],
         "required_final_terms": _dedupe_nonempty(found),
         "optional_absent_terms": transformations["optional_absent_terms"],
+        "transformations": transformations["transformations"],
     }
 
 
@@ -917,8 +1117,15 @@ def _code_identifier_like(value: str) -> bool:
 
 
 def _path_like_code_fragment(value: str) -> bool:
-    lowered = value.strip("`'\".;:").lower()
-    return any(lowered.endswith(suffix) for suffix in _CODE_FRAGMENT_PATH_SUFFIXES)
+    lowered = (
+        value.strip().strip("`'\";:").rstrip(".,").replace("\\", "/").lower()
+    )
+    name = PurePosixPath(lowered).name
+    return bool(
+        "/" in lowered
+        or name.startswith(".")
+        or any(lowered.endswith(suffix) for suffix in _CODE_FRAGMENT_PATH_SUFFIXES)
+    )
 
 
 def _extract_class_fragments(task_text: str) -> list[str]:
@@ -977,6 +1184,54 @@ def _resolve_requirement_target(
     return None
 
 
+def _transformation_occurs_in_one_hunk(
+    unified_diff: str,
+    source: str,
+    final: str,
+) -> bool:
+    old_remaining = 0
+    new_remaining = 0
+    in_hunk = False
+    removed_source = False
+    added_final = False
+    for line in unified_diff.splitlines():
+        if line.startswith("diff --git "):
+            if in_hunk and removed_source and added_final:
+                return True
+            in_hunk = False
+            old_remaining = 0
+            new_remaining = 0
+            removed_source = False
+            added_final = False
+            continue
+        hunk_match = _HUNK_HEADER_PARSE_RE.match(line)
+        if hunk_match:
+            if in_hunk and removed_source and added_final:
+                return True
+            old_remaining = int(hunk_match.group(2) or "1")
+            new_remaining = int(hunk_match.group(4) or "1")
+            in_hunk = old_remaining > 0 or new_remaining > 0
+            removed_source = False
+            added_final = False
+            continue
+        if not in_hunk or line == r"\ No newline at end of file":
+            continue
+        if line.startswith("+"):
+            new_remaining -= 1
+            added_final = added_final or final in line[1:]
+        elif line.startswith("-"):
+            old_remaining -= 1
+            removed_source = removed_source or source in line[1:]
+        elif line.startswith(" "):
+            old_remaining -= 1
+            new_remaining -= 1
+        if old_remaining <= 0 and new_remaining <= 0:
+            if removed_source and added_final:
+                return True
+            in_hunk = False
+    return bool(in_hunk and removed_source and added_final)
+
+
 def _requirement_coverage(
     unified_diff: str,
     files: list[dict[str, Any]],
@@ -990,6 +1245,7 @@ def _requirement_coverage(
         return {"ok": True, "skipped": True, "summary": "No task text supplied."}
 
     added = _added_diff_text(unified_diff)
+    removed = _removed_diff_text(unified_diff)
     diff_text = unified_diff.replace("\\", "/")
     changed_paths = {
         _normalize_task_spec_path(str(file.get("path") or ""))
@@ -1008,7 +1264,11 @@ def _requirement_coverage(
     target = explicit_target or _extract_explicit_target(task)
     if target:
         target = _normalize_task_spec_path(target)
-    route = _extract_route_path(task)
+    route = (
+        _extract_route_path(task)
+        if _is_app_router_requirement(target, changed_paths, task)
+        else None
+    )
     route_target = _route_to_app_router_page(route) if route else None
     if changed_paths and all(path.endswith(".md") for path in changed_paths if path):
         route = None
@@ -1033,6 +1293,15 @@ def _requirement_coverage(
     for text in texts:
         if text not in added and text not in diff_text:
             missing.append(f"missing exact text: {text}")
+    for transformation in text_requirements["transformations"]:
+        source = transformation["source"]
+        final = transformation["final"]
+        if source not in removed:
+            missing.append(f"missing replaced source text: {source}")
+        if final not in added:
+            missing.append(f"missing replacement final text: {final}")
+        if not _transformation_occurs_in_one_hunk(unified_diff, source, final):
+            missing.append(f"replacement not bound to one hunk: {source} -> {final}")
     for fragment in class_fragments:
         if fragment not in added and fragment not in diff_text:
             missing.append(f"missing className: {fragment}")
@@ -1057,6 +1326,7 @@ def _requirement_coverage(
         "texts": texts,
         "source_terms": text_requirements["source_terms"],
         "optional_absent_terms": text_requirements["optional_absent_terms"],
+        "transformations": text_requirements["transformations"],
         "class_fragments": class_fragments,
         "imports": imports,
     }
@@ -1074,6 +1344,27 @@ def _requirement_coverage(
         "required": required,
         "summary": "Requirement coverage passed." if not missing else "; ".join(missing[:8]),
     }
+
+
+def _is_app_router_requirement(
+    target: str | None,
+    changed_paths: set[str],
+    task: str,
+) -> bool:
+    candidates = [value for value in [target, *changed_paths] if value]
+    if any(
+        re.search(
+            r"(?:^|/)(?:src/)?app/.+/page\.(?:js|jsx|ts|tsx)$",
+            value,
+            flags=re.IGNORECASE,
+        )
+        for value in candidates
+    ):
+        return True
+    return bool(
+        re.search(r"\b(?:Next\.js|App\s+Router)\b", task, re.IGNORECASE)
+        and re.search(r"\b(?:page|route)\b", task, re.IGNORECASE)
+    )
 
 
 DUMMY_PRODUCT_SITE_ROOT = "tests/ui-agent-trials/fixtures/dummy-product-site/"
@@ -1204,6 +1495,8 @@ def preview_diff_verification(
     task_spec: dict[str, Any] | None = None,
     reviewer_llm_call=None,
     workspace_root: Path | None = None,
+    review_attempt_id: str | None = None,
+    review_artifact_snapshots: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     preview_task_text = _task_text_for_diff_preview(task_text)
     unified_diff = sanitize_unified_diff_for_git_apply(unified_diff)
@@ -1277,7 +1570,34 @@ def preview_diff_verification(
     llm_review_report = None
     llm_review_skipped_reason = "no_architect_plan"
     if architect_plan is not None:
-        review_report = review_diff_deterministically(architect_plan, unified_diff)
+        effective_review_artifact_snapshots = review_artifact_snapshots
+        snapshot_root = (
+            workspace_root.resolve()
+            if workspace_root is not None
+            else _pick_syntax_workspace_root(roots, files)
+        )
+        if effective_review_artifact_snapshots is None and snapshot_root is not None:
+            try:
+                effective_review_artifact_snapshots = (
+                    _build_workspace_review_artifact_snapshots(
+                        snapshot_root,
+                        [str(item.get("path") or "") for item in files],
+                    )
+                )
+            except RuntimeError:
+                # Preserve a fail-closed reviewer result without trusting a
+                # partial or unreadable workspace baseline.
+                effective_review_artifact_snapshots = {
+                    "__review_snapshot_unavailable__": {}
+                }
+        review_report = review_diff_deterministically(
+            architect_plan,
+            unified_diff,
+            task_spec=task_spec_payload,
+            task_id=architect_plan.task_id,
+            attempt_id=review_attempt_id,
+            artifact_snapshots=effective_review_artifact_snapshots,
+        )
         if not review_report.passed:
             llm_review_skipped_reason = "deterministic_review_failed"
             blocked_reasons = [
@@ -1464,20 +1784,107 @@ def preview_diff_verification(
     return payload
 
 
+def _build_workspace_review_artifact_snapshots(
+    workspace_root: Path,
+    changed_paths: list[str],
+) -> dict[str, dict[str, object]]:
+    """Read exact pre-apply artifacts through one bounded server-owned root."""
+
+    paths = list(dict.fromkeys(path for path in changed_paths if path))
+    if not paths or len(paths) > 8:
+        raise RuntimeError("review snapshot path set is invalid")
+    resolved_root = workspace_root.resolve()
+    snapshots: dict[str, dict[str, object]] = {}
+    total_chars = 0
+    for path in paths:
+        candidate = resolved_root
+        for part in PurePosixPath(path).parts:
+            if part in {"", ".", ".."}:
+                raise RuntimeError("review snapshot path is invalid")
+            candidate = candidate / part
+            if candidate.is_symlink():
+                raise RuntimeError("review snapshot path traverses a symlink")
+        try:
+            candidate.resolve().relative_to(resolved_root)
+            exists = candidate.is_file()
+            if candidate.exists() and not exists:
+                raise RuntimeError("review snapshot path is not a regular file")
+            remaining = 1_000_000 - total_chars
+            if exists and candidate.stat().st_size > remaining:
+                raise RuntimeError("review snapshot content exceeds bounded budget")
+            if exists:
+                with candidate.open(
+                    "r",
+                    encoding="utf-8",
+                    errors="replace",
+                    newline=None,
+                ) as stream:
+                    content = stream.read(remaining + 1)
+            else:
+                content = ""
+        except OSError as error:
+            raise RuntimeError("review snapshot path could not be read") from error
+        total_chars += len(content)
+        if total_chars > 1_000_000:
+            raise RuntimeError("review snapshot content exceeds bounded budget")
+        snapshots[path] = {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": path,
+            "exists": exists,
+            "content": content,
+            "content_sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        }
+    return snapshots
+
+
 def _parse_changed_files(unified_diff: str) -> list[dict[str, Any]]:
     records: dict[str, dict[str, Any]] = {}
     current_path: str | None = None
     old_path_was_dev_null = False
+    in_hunk = False
+    old_remaining = 0
+    new_remaining = 0
 
     for raw_line in unified_diff.splitlines():
         line = raw_line.rstrip("\n")
         if line.startswith("diff --git "):
+            in_hunk = False
+            old_remaining = 0
+            new_remaining = 0
             parts = _diff_git_paths(line)
             if len(parts) >= 2:
                 current_path = _normalize_diff_path(parts[1]) or _normalize_diff_path(parts[0])
                 old_path_was_dev_null = False
                 if current_path:
                     _ensure_record(records, current_path)
+            continue
+        hunk_match = _HUNK_HEADER_PARSE_RE.match(line)
+        if hunk_match:
+            old_remaining = int(hunk_match.group(2) or "1")
+            new_remaining = int(hunk_match.group(4) or "1")
+            in_hunk = old_remaining > 0 or new_remaining > 0
+            continue
+
+        if in_hunk:
+            if line == r"\ No newline at end of file":
+                continue
+            if line.startswith("+"):
+                new_remaining -= 1
+                if current_path:
+                    records[current_path]["added_lines"] += 1
+                    if records[current_path]["change_type"] == "unknown":
+                        records[current_path]["change_type"] = "modified"
+            elif line.startswith("-"):
+                old_remaining -= 1
+                if current_path:
+                    records[current_path]["removed_lines"] += 1
+                    if records[current_path]["change_type"] == "unknown":
+                        records[current_path]["change_type"] = "modified"
+            elif line.startswith(" "):
+                old_remaining -= 1
+                new_remaining -= 1
+            if old_remaining <= 0 and new_remaining <= 0:
+                in_hunk = False
             continue
 
         if line.startswith("+++ "):
@@ -1499,20 +1906,6 @@ def _parse_changed_files(unified_diff: str) -> list[dict[str, Any]]:
                 current_path = path
                 _ensure_record(records, current_path)
             continue
-
-        if line.startswith("@@"):
-            continue
-
-        if current_path and line.startswith("+") and not line.startswith("+++"):
-            records[current_path]["added_lines"] += 1
-            if records[current_path]["change_type"] == "unknown":
-                records[current_path]["change_type"] = "modified"
-            continue
-
-        if current_path and line.startswith("-") and not line.startswith("---"):
-            records[current_path]["removed_lines"] += 1
-            if records[current_path]["change_type"] == "unknown":
-                records[current_path]["change_type"] = "modified"
 
     for record in records.values():
         path = record["path"]

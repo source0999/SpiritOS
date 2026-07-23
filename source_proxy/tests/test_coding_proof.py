@@ -325,6 +325,7 @@ def _semantic_review_binding(
         changed_files=[TARGET],
         adapter_diagnostics={},
         adapter_architect_plan_required=False,
+        authorized_paths=[TARGET],
         repair_request=repair_request,
     )
 
@@ -377,6 +378,7 @@ def _adapter_semantic_review_binding() -> dict[str, Any]:
             ],
         },
         adapter_architect_plan_required=True,
+        authorized_paths=[TARGET],
         repair_request=None,
         canonical_context=canonical_context,
     )
@@ -491,6 +493,157 @@ def _adapter_canonical_context() -> dict[str, Any]:
         consumer="coder",
         evidence="coder_prompt_bound_to_context",
         reason="coder_consumed_selected_context",
+    )
+
+
+def test_semantic_review_binding_canonically_binds_authorized_secondary_snapshot() -> None:
+    secondary = "tests/ui-agent-trials/fixtures/dummy-product-site/tests/status.test.js"
+    secondary_before = "old secondary\n"
+    proposed_diff = (
+        APPROVED_DIFF
+        + f"diff --git a/{secondary} b/{secondary}\n"
+        + f"--- a/{secondary}\n"
+        + f"+++ b/{secondary}\n"
+        + "@@ -1 +1 @@\n-old secondary\n+SecondaryLiteral\n"
+    )
+    plan_payload = _semantic_plan_payload()
+    plan_payload["source_task"] = f'File "{secondary}" must contain "SecondaryLiteral".'
+    plan_payload["coder_packet"]["acceptance_criteria"].append(
+        {
+            "id": "secondary-literal",
+            "description": f'File "{secondary}" must contain "SecondaryLiteral".',
+            "kind": "literal",
+        }
+    )
+    acceptance = copy.deepcopy(plan_payload["coder_packet"]["acceptance_criteria"])
+    snapshots = {
+        TARGET: {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": TARGET,
+            "exists": True,
+            "content": SOURCE_SLICE_CONTENT,
+            "content_sha256": SOURCE_SLICE_SHA256,
+        },
+        secondary: {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": secondary,
+            "exists": True,
+            "content": secondary_before,
+            "content_sha256": hashlib.sha256(
+                secondary_before.encode("utf-8")
+            ).hexdigest(),
+        },
+    }
+    context = _adapter_canonical_context()
+    diagnostics = {
+        "architect_plan_id": plan_payload["plan_id"],
+        "architect_plan_sha256": hashlib.sha256(
+            json.dumps(
+                plan_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+                default=str,
+            ).encode("utf-8")
+        ).hexdigest(),
+        "acceptance_criteria": acceptance,
+        "canonical_context_broker": copy.deepcopy(context),
+        "canonical_context_report_hash": context["canonical_report_hash"],
+        "rendered_prompt_sha256": "1" * 64,
+        "coder_context_binding": {
+            "schema_version": "source-proxy-coder-context-binding/v1",
+            "call_index": 1,
+            "canonical_context_report_hash": context["canonical_report_hash"],
+            "rendered_prompt_sha256": "1" * 64,
+            "selected_sources": list(context["selected_sources"]),
+            "consumed_sources": list(context["consumed_sources"]),
+            "consumed": True,
+        },
+        "review_artifact_snapshots": snapshots,
+        "review_artifact_snapshots_sha256": orchestrator_module._sha256_json(
+            snapshots
+        ),
+        "attempts": [
+            {
+                "proposed_diff_sha256": hashlib.sha256(
+                    proposed_diff.encode("utf-8")
+                ).hexdigest(),
+                "preview_status": "ready_for_approval_preview",
+                "git_apply_check": {"passed": True},
+            }
+        ],
+    }
+    authority = ["tests/ui-agent-trials/fixtures/dummy-product-site/"]
+
+    binding = orchestrator_module._build_semantic_review_binding(
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        planner_output={"payload": {"task_spec": plan_payload}},
+        proposed_diff=proposed_diff,
+        changed_files=[TARGET, secondary],
+        adapter_diagnostics=diagnostics,
+        adapter_architect_plan_required=True,
+        authorized_paths=authority,
+        repair_request=None,
+        canonical_context=context,
+    )
+
+    assert binding["server_task_spec"]["allowed_files"] == [TARGET, secondary]
+    evidence = binding["preview_review_receipt"]["deterministic_review_report"][
+        "evidence"
+    ]
+    secondary_evidence = next(
+        item for item in evidence if item["requirement_id"] == "secondary-literal"
+    )
+    assert secondary_evidence["inspected_path"] == secondary
+    assert secondary_evidence["satisfied"] is True
+    assert orchestrator_module._valid_semantic_review_binding(
+        binding,
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        proposed_diff=proposed_diff,
+        changed_files=[TARGET, secondary],
+        adapter_architect_plan_required=True,
+        repair_request=None,
+        canonical_context=context,
+        target_plugin_identity={
+            "plugin_id": "generic-workspace",
+            "allowed_actions": authority,
+        },
+    )
+    replayed = copy.deepcopy(binding)
+    replay_receipt = replayed["preview_review_receipt"]
+    replay_report = replay_receipt["deterministic_review_report"]
+    replay_report["evidence"][0]["attempt_id"] = "attempt-replayed"
+    replay_receipt["deterministic_review_report_sha256"] = (
+        orchestrator_module._sha256_json(replay_report)
+    )
+    receipt_body = dict(replay_receipt)
+    receipt_body.pop("receipt_sha256")
+    replay_receipt["receipt_sha256"] = orchestrator_module._sha256_json(
+        receipt_body
+    )
+    replayed["preview_review_receipt_sha256"] = replay_receipt["receipt_sha256"]
+    binding_body = dict(replayed)
+    binding_body.pop("semantic_review_binding_sha256")
+    replayed["semantic_review_binding_sha256"] = orchestrator_module._sha256_json(
+        binding_body
+    )
+    assert not orchestrator_module._valid_semantic_review_binding(
+        replayed,
+        task_id=TASK_ID,
+        run_id=RUN_ID,
+        attempt_id="attempt-primary",
+        proposed_diff=proposed_diff,
+        changed_files=[TARGET, secondary],
+        adapter_architect_plan_required=True,
+        repair_request=None,
+        canonical_context=context,
+        target_plugin_identity={
+            "plugin_id": "generic-workspace",
+            "allowed_actions": authority,
+        },
     )
 
 
@@ -1303,6 +1456,7 @@ def test_semantic_review_builder_requires_generic_adapter_plan_evidence() -> Non
             changed_files=[TARGET],
             adapter_diagnostics={},
             adapter_architect_plan_required=True,
+            authorized_paths=[TARGET],
             repair_request=None,
         )
 

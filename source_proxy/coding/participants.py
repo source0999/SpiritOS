@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -41,6 +42,11 @@ _SHA256_PATTERN = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 _WORKER_MODE_ENV = "SPIRITOS_CODING_PARTICIPANT_WORKER"
 _WORKER_TIMEOUT_SECONDS = 60
 _ORCHESTRATOR_CONSUMER_SERVICE = "source-proxy.coding.orchestrator/v2"
+_BACKUP_STORAGE_SCHEMA = "source-proxy-backup-storage/v2"
+_BACKUP_STORAGE_KIND = "server_state"
+_BACKUP_STORAGE_DIRECTORY = "approved-diff-backups"
+_SERVER_STATE_LOCATOR_PREFIX = "server-state:"
+_SAFE_WORKER_REASON = re.compile(r"[a-z][a-z0-9_]*(?::[a-z0-9_-]+)?")
 
 
 class CodingParticipantError(ValueError):
@@ -145,6 +151,22 @@ def build_applied_artifact(
             or "applied_diff_only_no_production_provenance"
         ),
     }
+    raw_backup_storage = audit.get("backup_storage")
+    locator_is_server_state = body["approved_diff_path"].startswith(
+        _SERVER_STATE_LOCATOR_PREFIX
+    )
+    if isinstance(raw_backup_storage, Mapping):
+        if not locator_is_server_state:
+            raise CodingParticipantError(
+                "coding_artifact_backup_storage_unexpected"
+            )
+        body["backup_storage"] = _validate_backup_storage_binding(
+            raw_backup_storage
+        )
+    elif locator_is_server_state:
+        raise CodingParticipantError("coding_artifact_backup_storage_missing")
+    elif raw_backup_storage is not None:
+        raise CodingParticipantError("coding_artifact_backup_storage_invalid")
     body["artifact_sha256"] = _sha256_json(body)
     return body
 
@@ -535,23 +557,40 @@ def _invoke_worker_process(
         "PYTHONDONTWRITEBYTECODE": "1",
         _WORKER_MODE_ENV: "1",
     }
-    completed = subprocess.run(
-        [
-            str(executable),
-            "-B",
-            "-m",
-            "source_proxy.coding.participants",
-            "--worker",
-        ],
-        input=json.dumps(payload, sort_keys=True, separators=(",", ":")),
-        text=True,
-        capture_output=True,
-        check=False,
-        cwd=str(root),
-        env=environment,
-        timeout=_WORKER_TIMEOUT_SECONDS,
-    )
+    data_dir = os.environ.get("SOURCE_PROXY_DATA_DIR", "").strip()
+    if data_dir:
+        environment["SOURCE_PROXY_DATA_DIR"] = data_dir
+    try:
+        completed = subprocess.run(
+            [
+                str(executable),
+                "-B",
+                "-m",
+                "source_proxy.coding.participants",
+                "--worker",
+            ],
+            input=json.dumps(payload, sort_keys=True, separators=(",", ":")),
+            text=True,
+            capture_output=True,
+            check=False,
+            cwd=str(root),
+            env=environment,
+            timeout=_WORKER_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise CodingParticipantError(
+            f"coding_participant_worker_timeout:{role}"
+        ) from error
+    except OSError as error:
+        raise CodingParticipantError(
+            f"coding_participant_worker_unavailable:{role}"
+        ) from error
     if completed.returncode != 0:
+        child_reason = completed.stderr.strip()
+        if len(child_reason) <= 160 and _SAFE_WORKER_REASON.fullmatch(
+            child_reason
+        ):
+            raise CodingParticipantError(child_reason)
         raise CodingParticipantError(f"coding_participant_worker_failed:{role}")
     try:
         output = json.loads(completed.stdout)
@@ -998,8 +1037,20 @@ def _validate_artifact(artifact: Mapping[str, Any]) -> dict[str, Any]:
         "claim_ceiling",
         "artifact_sha256",
     }
-    if set(value) != required or value.get("schema_version") != ARTIFACT_SCHEMA:
+    supplied_fields = set(value)
+    if supplied_fields not in {frozenset(required), frozenset(required | {"backup_storage"})} or value.get("schema_version") != ARTIFACT_SCHEMA:
         raise CodingParticipantError("coding_participant_artifact_schema_invalid")
+    locator_is_server_state = str(value.get("approved_diff_path") or "").startswith(
+        _SERVER_STATE_LOCATOR_PREFIX
+    )
+    if locator_is_server_state:
+        if "backup_storage" not in value:
+            raise CodingParticipantError("coding_artifact_backup_storage_missing")
+        value["backup_storage"] = _validate_backup_storage_binding(
+            value["backup_storage"]
+        )
+    elif "backup_storage" in value:
+        raise CodingParticipantError("coding_artifact_backup_storage_unexpected")
     declared_hash = _require_sha256(
         value.get("artifact_sha256"),
         "coding_participant_artifact_hash_missing",
@@ -1267,11 +1318,14 @@ def _artifact_disk_findings(artifact: Mapping[str, Any]) -> list[str]:
 def _read_approved_diff(artifact: Mapping[str, Any]) -> str:
     root = Path(str(artifact.get("workspace_root") or "")).resolve()
     relative = str(artifact.get("approved_diff_path") or "").replace("\\", "/")
-    path = (root / relative).resolve()
-    try:
-        path.relative_to(root)
-    except ValueError as error:
-        raise CodingParticipantError("coding_artifact_diff_path_escape") from error
+    if relative.startswith(_SERVER_STATE_LOCATOR_PREFIX):
+        path = _resolve_server_state_diff(artifact, root=root, locator=relative)
+    else:
+        path = (root / relative).resolve()
+        try:
+            path.relative_to(root)
+        except ValueError as error:
+            raise CodingParticipantError("coding_artifact_diff_path_escape") from error
     try:
         value = path.read_text(encoding="utf-8")
     except OSError as error:
@@ -1279,6 +1333,129 @@ def _read_approved_diff(artifact: Mapping[str, Any]) -> str:
     if hashlib.sha256(value.encode("utf-8")).hexdigest() != artifact.get("approved_diff_sha256"):
         raise CodingParticipantError("coding_artifact_diff_file_hash_mismatch")
     return value
+
+
+def _validate_backup_storage_binding(value: object) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise CodingParticipantError("coding_artifact_backup_storage_invalid")
+    normalized = _canonical_mapping(
+        value,
+        "coding_artifact_backup_storage_invalid",
+    )
+    expected_fields = {
+        "schema_version",
+        "kind",
+        "namespace",
+        "manifest_rel",
+        "approved_diff_rel",
+        "storage_root_sha256",
+    }
+    if (
+        set(normalized) != expected_fields
+        or normalized.get("schema_version") != _BACKUP_STORAGE_SCHEMA
+        or normalized.get("kind") != _BACKUP_STORAGE_KIND
+        or re.fullmatch(r"[0-9a-f]{64}", str(normalized.get("namespace") or ""))
+        is None
+        or normalized.get("manifest_rel") != "manifest.json"
+        or normalized.get("approved_diff_rel") != "approved.diff"
+        or re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(normalized.get("storage_root_sha256") or ""),
+        )
+        is None
+    ):
+        raise CodingParticipantError("coding_artifact_backup_storage_invalid")
+    return normalized
+
+
+def _resolve_server_state_diff(
+    artifact: Mapping[str, Any],
+    *,
+    root: Path,
+    locator: str,
+) -> Path:
+    storage = _validate_backup_storage_binding(artifact.get("backup_storage"))
+    namespace = str(storage["namespace"])
+    expected_locator = (
+        f"{_SERVER_STATE_LOCATOR_PREFIX}{namespace}/"
+        f"{storage['approved_diff_rel']}"
+    )
+    if locator != expected_locator:
+        raise CodingParticipantError("coding_artifact_backup_locator_mismatch")
+
+    raw_data_dir = os.environ.get("SOURCE_PROXY_DATA_DIR", "").strip()
+    data_dir = Path(raw_data_dir).expanduser() if raw_data_dir else Path()
+    if (
+        not raw_data_dir
+        or not data_dir.is_absolute()
+        or Path(os.path.realpath(data_dir)) != data_dir
+    ):
+        raise CodingParticipantError("coding_artifact_backup_data_dir_invalid")
+    _require_private_directory(
+        data_dir,
+        "coding_artifact_backup_data_dir_invalid",
+    )
+    base = data_dir / _BACKUP_STORAGE_DIRECTORY
+    _require_private_directory(
+        base,
+        "coding_artifact_backup_storage_unavailable",
+    )
+    control_root = Path(__file__).resolve().parents[2]
+    if _is_relative_to(base, root) or _is_relative_to(base, control_root):
+        raise CodingParticipantError("coding_artifact_backup_storage_scope_invalid")
+    if hashlib.sha256(str(base).encode("utf-8")).hexdigest() != storage[
+        "storage_root_sha256"
+    ]:
+        raise CodingParticipantError("coding_artifact_backup_storage_root_mismatch")
+
+    namespace_root = base / namespace
+    _require_private_directory(
+        namespace_root,
+        "coding_artifact_backup_namespace_unavailable",
+    )
+    if namespace_root.parent != base or not _is_relative_to(namespace_root, base):
+        raise CodingParticipantError("coding_artifact_backup_storage_scope_invalid")
+    path = namespace_root / str(storage["approved_diff_rel"])
+    _require_private_file(path, "coding_artifact_diff_unavailable")
+    if path.parent != namespace_root or not _is_relative_to(path, namespace_root):
+        raise CodingParticipantError("coding_artifact_backup_storage_scope_invalid")
+    return path
+
+
+def _require_private_directory(path: Path, reason_code: str) -> None:
+    try:
+        metadata = path.lstat()
+    except OSError as error:
+        raise CodingParticipantError(reason_code) from error
+    if (
+        path.is_symlink()
+        or not stat.S_ISDIR(metadata.st_mode)
+        or stat.S_IMODE(metadata.st_mode) != 0o700
+        or Path(os.path.realpath(path)) != path
+    ):
+        raise CodingParticipantError(reason_code)
+
+
+def _require_private_file(path: Path, reason_code: str) -> None:
+    try:
+        metadata = path.lstat()
+    except OSError as error:
+        raise CodingParticipantError(reason_code) from error
+    if (
+        path.is_symlink()
+        or not stat.S_ISREG(metadata.st_mode)
+        or stat.S_IMODE(metadata.st_mode) != 0o600
+        or Path(os.path.realpath(path)) != path
+    ):
+        raise CodingParticipantError(reason_code)
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    return True
 
 
 def _required_text(value: Any, reason_code: str) -> str:

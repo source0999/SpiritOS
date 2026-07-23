@@ -27,6 +27,7 @@ from source_proxy.cartographer.lane_registry import (
     validate_lane_registry_record,
 )
 from source_proxy.coding.participants import (
+    CodingParticipantError,
     acknowledge_coding_participant_output,
     build_applied_artifact,
     run_coding_anti_cheat,
@@ -60,10 +61,14 @@ from source_proxy.approval.campaign_authority import (
 from source_proxy.planning.plan import (
     ArchitectPlan,
     load_plan,
+    review_task_spec_from_plan,
     save_plan,
     task_spec_from_plan,
 )
-from source_proxy.planning.reviewer import review_diff_deterministically
+from source_proxy.planning.reviewer import (
+    review_diff_deterministically,
+    validate_review_artifact_snapshots,
+)
 from source_proxy.routing.litellm_router import route_model_for_alias, route_provider_for_alias
 from source_proxy.safety.paths import normalize_repo_path_candidate, path_escapes_workspace
 from source_proxy.target_plugins.adapter import (
@@ -1546,6 +1551,7 @@ class CodingOrchestrator:
             changed_files=changed_files,
             adapter_diagnostics=diagnostics,
             adapter_architect_plan_required=generic_adapter_plan_required,
+            authorized_paths=list(plugin.allowed_actions),
             canonical_context=selected_context,
             repair_request=(
                 run.repair_request
@@ -1904,8 +1910,15 @@ class CodingOrchestrator:
         run.transition("coder", "completed", reason="canonical_executor_applied_approved_diff")
 
         run.transition("reviewer", "running", reason="independent_artifact_review_started")
-        reviewer_record = self._reviewer(run.immutable_artifact)
-        self._append_participant(run, reviewer_record)
+        try:
+            reviewer_record = self._reviewer(run.immutable_artifact)
+            self._append_participant(run, reviewer_record)
+        except (CodingParticipantError, CodingOrchestratorError) as error:
+            self._fail_required_participant(
+                run,
+                lane_id="reviewer",
+                error=error,
+            )
         reviewer_output = self._enforce_runtime_contract_output(
             run,
             lane_id="reviewer",
@@ -2019,8 +2032,15 @@ class CodingOrchestrator:
             run.transition("verifier", "failed", reason="verifier_context_acknowledgement_blocked")
             self._persist(run, "independent verifier blocked by canonical context")
             raise CodingOrchestratorError("verifier_context_acknowledgement_blocked")
-        verifier_record = self._verifier(run.immutable_artifact, verification)
-        self._append_participant(run, verifier_record)
+        try:
+            verifier_record = self._verifier(run.immutable_artifact, verification)
+            self._append_participant(run, verifier_record)
+        except (CodingParticipantError, CodingOrchestratorError) as error:
+            self._fail_required_participant(
+                run,
+                lane_id="verifier",
+                error=error,
+            )
         verifier_output = self._enforce_runtime_contract_output(
             run,
             lane_id="verifier",
@@ -2082,11 +2102,18 @@ class CodingOrchestrator:
 
         run.transition("anti-cheat", "running", reason="independent_anti_cheat_started")
         model_evidence = _model_evidence_for_run(run)
-        anti_cheat_record = self._anti_cheat(
-            run.immutable_artifact,
-            model_evidence=model_evidence,
-        )
-        self._append_participant(run, anti_cheat_record)
+        try:
+            anti_cheat_record = self._anti_cheat(
+                run.immutable_artifact,
+                model_evidence=model_evidence,
+            )
+            self._append_participant(run, anti_cheat_record)
+        except (CodingParticipantError, CodingOrchestratorError) as error:
+            self._fail_required_participant(
+                run,
+                lane_id="anti-cheat",
+                error=error,
+            )
         anti_cheat_output = self._enforce_runtime_contract_output(
             run,
             lane_id="anti-cheat",
@@ -2140,11 +2167,18 @@ class CodingOrchestrator:
             )
             self._persist(run, "evidence recorder blocked by canonical context")
             raise CodingOrchestratorError("evidence_context_acknowledgement_blocked")
-        evidence_record = self._evidence_recorder(
-            run.immutable_artifact,
-            participant_records=list(run.participant_records),
-        )
-        self._append_participant(run, evidence_record)
+        try:
+            evidence_record = self._evidence_recorder(
+                run.immutable_artifact,
+                participant_records=list(run.participant_records),
+            )
+            self._append_participant(run, evidence_record)
+        except (CodingParticipantError, CodingOrchestratorError) as error:
+            self._fail_required_participant(
+                run,
+                lane_id="evidence-recorder",
+                error=error,
+            )
         evidence_output = self._enforce_runtime_contract_output(
             run,
             lane_id="evidence-recorder",
@@ -3244,6 +3278,37 @@ class CodingOrchestrator:
         )
         return consumption_payload
 
+    def _fail_required_participant(
+        self,
+        run: CodingLaneStateMachine,
+        *,
+        lane_id: str,
+        error: Exception,
+    ) -> None:
+        raw_reason = str(
+            getattr(error, "reason_code", "coding_participant_failure")
+        )
+        reason_code = (
+            raw_reason
+            if len(raw_reason) <= 160
+            and re.fullmatch(r"[a-z][a-z0-9_]*(?::[a-z0-9_-]+)?", raw_reason)
+            else "coding_participant_failure"
+        )
+        if run.lane_states.get(lane_id) == "running":
+            run.transition(lane_id, "failed", reason=reason_code)
+        run.record_event(
+            event_type="participant_failure",
+            lane_id=lane_id,
+            detail={"role": lane_id, "reason_code": reason_code},
+        )
+        fail_orchestrated_coding_execution(
+            run.task_id,
+            reason_code=reason_code,
+            participant_records=run.participant_records,
+        )
+        self._persist(run, f"required {lane_id} participant failed")
+        raise CodingOrchestratorError(reason_code) from error
+
     @staticmethod
     def _append_participant(run: CodingLaneStateMachine, record: Mapping[str, Any]) -> None:
         normalized = json.loads(json.dumps(dict(record), sort_keys=True, default=str))
@@ -3581,6 +3646,11 @@ class CodingOrchestrator:
                         proposal.get("target_adapter_provenance"),
                         Mapping,
                     )
+                    else None
+                ),
+                target_plugin_identity=(
+                    plugin_identity
+                    if isinstance(plugin_identity, Mapping)
                     else None
                 ),
             )
@@ -5325,6 +5395,7 @@ def _build_semantic_review_binding(
     changed_files: list[str],
     adapter_diagnostics: Mapping[str, Any],
     adapter_architect_plan_required: bool,
+    authorized_paths: list[str],
     repair_request: Mapping[str, Any] | None,
     canonical_context: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -5355,13 +5426,97 @@ def _build_semantic_review_binding(
     target = str(plan.coder_packet.target_file.path or "")
     if target not in changed_files:
         raise CodingOrchestratorError("coding_semantic_plan_target_mismatch")
-    review_report = review_diff_deterministically(plan, proposed_diff).to_dict()
+    raw_snapshots = adapter_diagnostics.get("review_artifact_snapshots")
+    try:
+        review_authority = (
+            authorized_paths
+            if adapter_architect_plan_required
+            else [target]
+        )
+        task_spec = review_task_spec_from_plan(
+            plan,
+            changed_files,
+            authorized_paths=review_authority,
+            artifact_snapshots=(
+                raw_snapshots if isinstance(raw_snapshots, Mapping) else None
+            ),
+        ).to_dict()
+    except ValueError as error:
+        raise CodingOrchestratorError("coding_semantic_review_scope_invalid") from error
+    target_slice = next(
+        (
+            item
+            for item in plan.coder_packet.context_slices
+            if item.path == target and item.kind == "target"
+        ),
+        None,
+    )
+    if not isinstance(raw_snapshots, Mapping):
+        if (
+            changed_files != [target]
+            or (target_slice is None and plan.coder_packet.target_file.exists)
+        ):
+            raise CodingOrchestratorError("coding_semantic_review_snapshots_missing")
+        target_content = target_slice.content if target_slice is not None else ""
+        raw_snapshots = {
+            target: {
+                "schema_version": "coding.review-artifact-snapshot/v1",
+                "path": target,
+                "exists": plan.coder_packet.target_file.exists,
+                "content": target_content,
+                "content_sha256": hashlib.sha256(
+                    target_content.encode("utf-8")
+                ).hexdigest(),
+            }
+        }
+    try:
+        snapshot_baselines = validate_review_artifact_snapshots(
+            raw_snapshots,
+            expected_paths=changed_files,
+        )
+    except ValueError as error:
+        raise CodingOrchestratorError(
+            "coding_semantic_review_snapshots_invalid"
+        ) from error
+    claimed_snapshot_sha256 = adapter_diagnostics.get(
+        "review_artifact_snapshots_sha256"
+    )
+    if (
+        (
+            target_slice is None
+            and plan.coder_packet.target_file.exists
+        )
+        or snapshot_baselines.get(target)
+        != (target_slice.content if target_slice is not None else "")
+        or not isinstance(raw_snapshots.get(target), Mapping)
+        or raw_snapshots[target].get("exists")
+        is not plan.coder_packet.target_file.exists
+        or (
+            claimed_snapshot_sha256 is not None
+            and claimed_snapshot_sha256 != _sha256_json(raw_snapshots)
+        )
+    ):
+        raise CodingOrchestratorError(
+            "coding_semantic_review_snapshot_target_mismatch"
+        )
+    adapter_diagnostics = {
+        **dict(adapter_diagnostics),
+        "review_artifact_snapshots": raw_snapshots,
+        "review_artifact_snapshots_sha256": _sha256_json(raw_snapshots),
+    }
+    review_report = review_diff_deterministically(
+        plan,
+        proposed_diff,
+        task_spec=task_spec,
+        task_id=task_id,
+        attempt_id=attempt_id,
+        artifact_snapshots=raw_snapshots,
+    ).to_dict()
     if review_report.get("passed") is not True:
         raise CodingOrchestratorError("coding_preview_semantic_review_failed")
     plan_payload = json.loads(
         json.dumps(dict(serialized_plan), sort_keys=True, default=str)
     )
-    task_spec = task_spec_from_plan(plan).to_dict()
     diff_sha256 = hashlib.sha256(proposed_diff.encode("utf-8")).hexdigest()
     plan_sha256 = _sha256_json(plan_payload)
     acceptance_sha256 = _sha256_json(acceptance_criteria)
@@ -5388,6 +5543,16 @@ def _build_semantic_review_binding(
             canonical_context=canonical_context,
         ):
             raise CodingOrchestratorError("coding_adapter_context_mismatch")
+        if (
+            adapter_architect_plan_required
+            and adapter_preview_evidence.get(
+                "review_artifact_snapshots_sha256"
+            )
+            != _sha256_json(raw_snapshots)
+        ):
+            raise CodingOrchestratorError(
+                "coding_adapter_review_snapshots_mismatch"
+            )
     repair_feedback_binding = _semantic_repair_feedback_binding(repair_request)
     receipt_body = {
         "schema_version": "coding.preview-review-receipt/v1",
@@ -5398,6 +5563,7 @@ def _build_semantic_review_binding(
         "server_plan_id": plan.plan_id,
         "server_plan_sha256": plan_sha256,
         "server_task_spec_sha256": _sha256_json(task_spec),
+        "review_artifact_snapshots_sha256": _sha256_json(raw_snapshots),
         "acceptance_criteria_sha256": acceptance_sha256,
         "acceptance_criterion_ids": [
             str(item["id"]) for item in acceptance_criteria
@@ -5429,6 +5595,10 @@ def _build_semantic_review_binding(
         "server_plan_sha256": plan_sha256,
         "server_task_spec": task_spec,
         "server_task_spec_sha256": _sha256_json(task_spec),
+        "review_artifact_snapshots": json.loads(
+            json.dumps(dict(raw_snapshots), sort_keys=True, default=str)
+        ),
+        "review_artifact_snapshots_sha256": _sha256_json(raw_snapshots),
         "acceptance_criteria": acceptance_criteria,
         "acceptance_criteria_sha256": acceptance_sha256,
         "preview_review_receipt": receipt,
@@ -5500,6 +5670,9 @@ def _adapter_preview_evidence(
         ),
         "producer_rendered_prompt_sha256": diagnostics.get(
             "rendered_prompt_sha256"
+        ),
+        "review_artifact_snapshots_sha256": diagnostics.get(
+            "review_artifact_snapshots_sha256"
         ),
         "coder_context_binding": (
             json.loads(
@@ -5645,6 +5818,7 @@ def _valid_semantic_review_binding(
     repair_request: Mapping[str, Any] | None = None,
     canonical_context: Mapping[str, Any] | None = None,
     adapter_provenance: Mapping[str, Any] | None = None,
+    target_plugin_identity: Mapping[str, Any] | None = None,
 ) -> bool:
     if not isinstance(binding, Mapping):
         return False
@@ -5654,6 +5828,7 @@ def _valid_semantic_review_binding(
     )
     plan_payload = binding.get("server_plan")
     task_spec = binding.get("server_task_spec")
+    artifact_snapshots = binding.get("review_artifact_snapshots")
     acceptance = binding.get("acceptance_criteria")
     receipt = binding.get("preview_review_receipt")
     repair_feedback = binding.get("repair_feedback")
@@ -5666,6 +5841,7 @@ def _valid_semantic_review_binding(
     if not (
         isinstance(plan_payload, Mapping)
         and isinstance(task_spec, Mapping)
+        and isinstance(artifact_snapshots, Mapping)
         and isinstance(acceptance, list)
         and acceptance
         and isinstance(receipt, Mapping)
@@ -5679,8 +5855,56 @@ def _valid_semantic_review_binding(
         {"id": item.id, "description": item.description, "kind": item.kind}
         for item in plan.coder_packet.acceptance_criteria
     ]
-    expected_task_spec = task_spec_from_plan(plan).to_dict()
-    review_report = review_diff_deterministically(plan, proposed_diff).to_dict()
+    try:
+        authority = (
+            target_plugin_identity.get("allowed_actions")
+            if adapter_architect_plan_required
+            and isinstance(target_plugin_identity, Mapping)
+            else [plan.coder_packet.target_file.path]
+        )
+        if not isinstance(authority, (list, tuple)):
+            return False
+        expected_task_spec = review_task_spec_from_plan(
+            plan,
+            changed_files,
+            authorized_paths=[str(value) for value in authority],
+            artifact_snapshots=artifact_snapshots,
+        ).to_dict()
+        snapshot_baselines = validate_review_artifact_snapshots(
+            artifact_snapshots,
+            expected_paths=changed_files,
+        )
+    except ValueError:
+        return False
+    target_slice = next(
+        (
+            item
+            for item in plan.coder_packet.context_slices
+            if item.path == plan.coder_packet.target_file.path
+            and item.kind == "target"
+        ),
+        None,
+    )
+    if (
+        (target_slice is None and plan.coder_packet.target_file.exists)
+        or snapshot_baselines.get(plan.coder_packet.target_file.path)
+        != (target_slice.content if target_slice is not None else "")
+        or not isinstance(
+            artifact_snapshots.get(plan.coder_packet.target_file.path),
+            Mapping,
+        )
+        or artifact_snapshots[plan.coder_packet.target_file.path].get("exists")
+        is not plan.coder_packet.target_file.exists
+    ):
+        return False
+    review_report = review_diff_deterministically(
+        plan,
+        proposed_diff,
+        task_spec=expected_task_spec,
+        task_id=task_id,
+        attempt_id=attempt_id,
+        artifact_snapshots=artifact_snapshots,
+    ).to_dict()
     receipt_body = dict(receipt)
     recorded_receipt_sha256 = str(receipt_body.pop("receipt_sha256", ""))
     adapter_evidence = receipt.get("adapter_preview_evidence")
@@ -5717,6 +5941,8 @@ def _valid_semantic_review_binding(
         and dict(task_spec) == expected_task_spec
         and binding.get("server_plan_sha256") == _sha256_json(plan_payload)
         and binding.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and binding.get("review_artifact_snapshots_sha256")
+        == _sha256_json(artifact_snapshots)
         and binding.get("acceptance_criteria_sha256")
         == _sha256_json(acceptance)
         and receipt.get("schema_version")
@@ -5729,6 +5955,8 @@ def _valid_semantic_review_binding(
         and receipt.get("server_plan_id") == plan.plan_id
         and receipt.get("server_plan_sha256") == _sha256_json(plan_payload)
         and receipt.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and receipt.get("review_artifact_snapshots_sha256")
+        == _sha256_json(artifact_snapshots)
         and receipt.get("acceptance_criteria_sha256")
         == _sha256_json(acceptance)
         and receipt.get("acceptance_criterion_ids")
@@ -5761,6 +5989,16 @@ def _valid_semantic_review_binding(
         )
         and adapter_plan_matches
         and adapter_context_matches
+        and (
+            not adapter_architect_plan_required
+            or (
+                isinstance(adapter_evidence, Mapping)
+                and adapter_evidence.get(
+                    "review_artifact_snapshots_sha256"
+                )
+                == _sha256_json(artifact_snapshots)
+            )
+        )
         and (
             (
                 isinstance(adapter_evidence, Mapping)

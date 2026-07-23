@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from source_proxy.planning import architect as architect_module
 from source_proxy.approval.external_gate import ExternalGateError
 from source_proxy.planning.architect import (
     ArchitectLLMError,
@@ -20,6 +21,167 @@ from source_proxy.planning.plan import task_spec_from_plan, validate_task_spec_f
 
 
 class DeterministicArchitectTests(unittest.TestCase):
+    def test_literal_roles_handle_transformations_preservation_and_exact_paths(self) -> None:
+        task = "\n".join(
+            [
+                'Replace the label "Old" with "New".',
+                'Do not remove "RequiredLiteral".',
+                'Do not change the string "Stable" to "Unwanted".',
+                'Do not include "debug-only".',
+                'Output must contain "worker.py".',
+                'Include "config/settings.json" in the rendered output.',
+                'Load settings from ".env.local" and preserve ".gitignore".',
+            ]
+        )
+
+        self.assertEqual(
+            architect_module._literal_requirements(task),
+            [
+                "New",
+                "RequiredLiteral",
+                "Stable",
+                "worker.py",
+                "config/settings.json",
+            ],
+        )
+        self.assertEqual(
+            architect_module._negative_literal_requirements(task),
+            ["debug-only"],
+        )
+
+    def test_secondary_literal_is_criterion_bound_without_becoming_primary_constraint(self) -> None:
+        task = 'File tests/test_service.py must contain `SecondaryLiteral`.'
+
+        criteria = architect_module._acceptance_criteria(task, "src/service.py")
+        constraints = architect_module._content_constraints(
+            task,
+            "def service():\n    return True\n",
+            "src/service.py",
+        )
+
+        literal = next(item for item in criteria if item.id == "literal-1")
+        self.assertEqual(
+            literal.description,
+            'File "tests/test_service.py" must contain "SecondaryLiteral".',
+        )
+        self.assertNotIn("SecondaryLiteral", constraints.must_contain)
+
+    def test_exact_filename_and_path_intent_excludes_bare_artifact_nouns(self) -> None:
+        positive = "\n".join(
+            [
+                'Display the exact filename "worker.py".',
+                'The filename must equal "runner.py".',
+                'Show the exact text "config/settings.json".',
+                '"nested/report.json" must be displayed.',
+                'Include "assets/manifest.json" in the rendered output.',
+            ]
+        )
+        bare_artifacts = "\n".join(
+            [
+                'File "worker.py" handles background jobs.',
+                'Artifact "config/settings.json" stores settings.',
+                'Target "src/main.py" imports the worker.',
+                'Use the file path "nested/report.json" for persistence.',
+            ]
+        )
+
+        self.assertEqual(
+            architect_module._literal_requirements(positive),
+            [
+                "worker.py",
+                "runner.py",
+                "config/settings.json",
+                "nested/report.json",
+                "assets/manifest.json",
+            ],
+        )
+        self.assertEqual(architect_module._literal_requirements(bare_artifacts), [])
+
+    def test_common_secondary_literal_phrasings_and_bt07_postfix_paths_bind(
+        self,
+    ) -> None:
+        target = "src/primary.py"
+        cases = {
+            'File src/secondary.py must contain "SecondaryLiteral".': (
+                "SecondaryLiteral",
+                "src/secondary.py",
+            ),
+            'In src/secondary.py, add "SecondaryLiteral".': (
+                "SecondaryLiteral",
+                "src/secondary.py",
+            ),
+            'Add "SecondaryLiteral" to src/secondary.py.': (
+                "SecondaryLiteral",
+                "src/secondary.py",
+            ),
+            'Ensure "SecondaryLiteral" is present in the file src/secondary.py.': (
+                "SecondaryLiteral",
+                "src/secondary.py",
+            ),
+            '`normalize_username` in `src/users.py` and `normalize_email` in '
+            '`src/contacts.py` repeat the same cleanup.': (
+                "normalize_username",
+                "src/users.py",
+            ),
+        }
+        for task, expected in cases.items():
+            with self.subTest(task=task):
+                bindings = architect_module._literal_requirement_bindings(task, target)
+                self.assertIn(expected, bindings)
+
+        bt07 = (
+            '`normalize_username` in `src/users.py` and `normalize_email` in '
+            '`src/contacts.py` repeat the same whitespace-and-lowercase cleanup.'
+        )
+        self.assertEqual(
+            architect_module._literal_requirement_bindings(bt07, target),
+            [
+                ("normalize_username", "src/users.py"),
+                ("normalize_email", "src/contacts.py"),
+            ],
+        )
+
+    def test_short_and_duplicate_final_transformations_keep_occurrence_bindings(
+        self,
+    ) -> None:
+        target = "src/primary.ts"
+        task = "\n".join(
+            [
+                'Change "x" to "y" in src/secondary.ts.',
+                'Replace the label "UI" with "UX" in src/primary.ts.',
+                'Change "A" to "B" in src/secondary.ts.',
+                'Change "X" to "B" in src/primary.ts.',
+            ]
+        )
+
+        self.assertEqual(
+            architect_module._literal_requirement_bindings(task, target),
+            [
+                ("y", "src/secondary.ts"),
+                ("UX", "src/primary.ts"),
+                ("B", "src/secondary.ts"),
+                ("B", "src/primary.ts"),
+            ],
+        )
+
+    def test_active_exports_cover_alias_default_and_typescript_declarations(self) -> None:
+        content = (
+            "const localPublic = 1;\n"
+            "const localDefault = () => 1;\n"
+            "export { localPublic as Public, localDefault as default };\n"
+            "export enum Mode { One }\n"
+            "export abstract class Base {}\n"
+            "export declare function contract(): void;\n"
+            "export namespace API { export const nested = 1; }\n"
+        )
+
+        self.assertEqual(
+            architect_module._active_export_names(content),
+            ["Mode", "Base", "contract", "API", "nested", "Public", "default"],
+        )
+        self.assertNotIn("localPublic", architect_module._active_export_names(content))
+        self.assertNotIn("localDefault", architect_module._active_export_names(content))
+
     def test_bounded_create_uses_readable_reference_outside_writable_target_scope(
         self,
     ) -> None:
@@ -782,6 +944,120 @@ class DeterministicArchitectTests(unittest.TestCase):
                 ["src/components/dashboard/DashboardInternalSidebar.tsx"],
             )
             self.assertIn("source_proxy/", plan.coder_packet.forbidden_paths)
+
+    def test_llm_architect_discards_unsupported_exact_constraints_but_preserves_grounded_requirements(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "src/status.ts"
+            dependency = root / "src/format.js"
+            target.parent.mkdir(parents=True)
+            target.write_text(
+                'import { format } from "./format.js";\n'
+                "export function status() { return format('ready'); }\n",
+                encoding="utf-8",
+            )
+            dependency.write_text(
+                "export function format(value) { return value; }\n",
+                encoding="utf-8",
+            )
+            task = "\n".join(
+                [
+                    "Target file: src/status.ts",
+                    'Display the exact filename "worker.py".',
+                    'Read settings from "config/runtime.yaml".',
+                    'Do not include "debug-only".',
+                ]
+            )
+
+            def fake_llm(_prompt: str, _alias: str) -> str:
+                return json.dumps(
+                    {
+                        "classification": {
+                            "task_class": "fix",
+                            "visual_change": False,
+                            "designer_required": False,
+                            "estimated_complexity": "small",
+                        },
+                        "coder_packet": {
+                            "target_file": {
+                                "path": "src/status.ts",
+                                "exists": True,
+                            },
+                            "operation": "edit",
+                            "acceptance_criteria": [
+                                {
+                                    "id": "invented-literal",
+                                    "description": 'Output must contain "MODEL_ONLY".',
+                                    "kind": "literal",
+                                },
+                                {
+                                    "id": "grounded-behavior",
+                                    "description": (
+                                        "Make status asynchronous and emit remote telemetry."
+                                    ),
+                                    "kind": "behavioral",
+                                },
+                            ],
+                            "constraints": {
+                                "must_contain": ["MODEL_ONLY"],
+                                "must_not_contain": ["format"],
+                                "preserve_imports": ["invented-import"],
+                                "preserve_exports": ["inventedExport"],
+                                "max_added_lines": 1,
+                                "max_removed_lines": 2,
+                            },
+                            "context_slices": [],
+                            "forbidden_paths": [],
+                            "style_directives": [
+                                "Silently rewrite every neighboring module."
+                            ],
+                        },
+                    }
+                )
+
+            plan = plan_task_with_llm(
+                task,
+                "task-grounded-constraints",
+                root,
+                llm_call=fake_llm,
+                allowed_paths=("src/",),
+            )
+
+        constraints = plan.coder_packet.constraints
+        self.assertEqual(plan.source_task, task)
+        self.assertEqual(plan.coder_packet.target_file.path, "src/status.ts")
+        self.assertEqual(constraints.must_contain, ["worker.py"])
+        self.assertEqual(
+            constraints.must_not_contain,
+            ["Target file:", "debug-only"],
+        )
+        self.assertEqual(constraints.preserve_imports, ["./format.js"])
+        self.assertEqual(constraints.preserve_exports, ["status"])
+        self.assertEqual(constraints.max_added_lines, 80)
+        self.assertEqual(constraints.max_removed_lines, 60)
+        self.assertNotIn("MODEL_ONLY", constraints.must_contain)
+        self.assertNotIn("invented-import", constraints.preserve_imports)
+        self.assertNotIn("inventedExport", constraints.preserve_exports)
+        self.assertEqual(
+            [item.path for item in plan.coder_packet.context_slices],
+            ["src/status.ts", "src/format.js"],
+        )
+        criteria = {item.id: item for item in plan.coder_packet.acceptance_criteria}
+        self.assertNotIn("invented-literal", criteria)
+        self.assertEqual(criteria["literal-1"].kind, "literal")
+        self.assertIn("worker.py", criteria["literal-1"].description)
+        self.assertNotIn("grounded-behavior", criteria)
+        self.assertEqual(set(criteria), {"target-file", "literal-1"})
+        self.assertNotIn(
+            "Silently rewrite every neighboring module.",
+            plan.coder_packet.style_directives,
+        )
+        self.assertEqual(
+            task_spec_from_plan(plan).literal_requirements,
+            ["worker.py"],
+        )
 
     def test_llm_architect_scopes_file_index_and_context_to_server_allowed_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

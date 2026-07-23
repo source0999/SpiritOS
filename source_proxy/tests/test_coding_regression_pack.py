@@ -5046,11 +5046,11 @@ export default products;
         self.assertEqual([file["path"] for file in preview["changed_files"]], [wrong_path])
         self.assertFalse(preview["review_report"]["passed"])
         self.assertIn(
-            "review_missing_must_contain",
+            "review_must_contain_misplaced_wrong_production",
             {reason["reason_code"] for reason in preview["blocked_reasons"]},
         )
         self.assertIn(
-            DOC_TARGET,
+            wrong_path,
             {finding["path"] for finding in preview["review_report"]["findings"]},
         )
 

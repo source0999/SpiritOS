@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 
 import source_proxy.coding.orchestrator as orchestrator_module
+from source_proxy.coding.participants import CodingParticipantError
 from source_proxy.context.canonical_broker import (
     acknowledge_context_consumer,
     build_context_broker_report,
@@ -2770,6 +2771,122 @@ def test_verifier_failure_queues_fresh_attempt_with_blocked_reasons(
         event["event_type"] == "deterministic_debugger_executed"
         and event["detail"]["trace_sha256"] == trace["trace_sha256"]
         for event in receipt["attempt_history"][0]["attempt_state"]["causal_events"]
+    )
+
+
+def test_required_participant_worker_failure_is_durable_and_structured(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    task_id = "task-participant-worker-failure"
+    run_id = "run-participant-worker-failure"
+    state = _repair_ready_state(task_id=task_id, run_id=run_id)
+    state.lane_states["coder"] = "completed"
+    state.lane_states["reviewer"] = "completed"
+    state.immutable_artifact = _repair_test_artifact(
+        task_id=task_id,
+        run_id=run_id,
+        approval_id="approval-participant-worker-failure",
+        workspace_root=tmp_path,
+    )
+    state.participant_records = [
+        {"role": "coding-executor", "invocation_id": "executor-participant"},
+        {"role": "coding-reviewer", "invocation_id": "reviewer-participant"},
+    ]
+    persisted: list[dict[str, Any]] = []
+    failed: list[dict[str, Any]] = []
+    canonical_report = _canonical_context_report()
+    verification = {
+        "status": "verified",
+        "checks": [{"id": "public-tests", "required": True, "status": "passed"}],
+        "manual_browser_check_required": False,
+    }
+    monkeypatch.setattr(
+        orchestrator_module,
+        "acknowledge_task_context_consumer",
+        lambda *_args, **_kwargs: copy.deepcopy(canonical_report),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "record_coding_orchestrator_state",
+        lambda _task_id, *, state: persisted.append(copy.deepcopy(state)),
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "fail_orchestrated_coding_execution",
+        lambda task_id, **kwargs: failed.append(
+            {"task_id": task_id, **copy.deepcopy(kwargs)}
+        )
+        or {"task": {"id": task_id, "status": "verification_failed"}},
+    )
+
+    def anti_cheat_failure(*_args, **_kwargs):
+        raise CodingParticipantError("coding_artifact_diff_unavailable")
+
+    orchestrator = CodingOrchestrator(
+        post_apply_verifier=lambda task_id, **_kwargs: {
+            "task": {
+                "id": task_id,
+                "ast_snapshot": {
+                    "post_apply_verification": copy.deepcopy(verification)
+                },
+            }
+        },
+        verifier=lambda _artifact, _verification: {
+            "role": "coding-verifier",
+            "invocation_id": "verifier-participant",
+            "output_id": "verifier-participant-output",
+            "passed": True,
+            "result": {"passed": True, "verdict": "PASS", "checks": []},
+        },
+        anti_cheat=anti_cheat_failure,
+        state_loader=lambda _task_id: (
+            copy.deepcopy(persisted[-1])
+            if persisted
+            else state.receipt(summary="participant failure ready")
+        ),
+    )
+    monkeypatch.setattr(
+        orchestrator,
+        "_append_participant",
+        lambda run, record: run.participant_records.append(copy.deepcopy(dict(record))),
+    )
+
+    with pytest.raises(
+        CodingOrchestratorError,
+        match="coding_artifact_diff_unavailable",
+    ):
+        orchestrator.complete_post_apply(task_id)
+
+    assert failed == [
+        {
+            "task_id": task_id,
+            "reason_code": "coding_artifact_diff_unavailable",
+            "participant_records": state.participant_records
+            + [
+                {
+                    "role": "coding-verifier",
+                    "invocation_id": "verifier-participant",
+                    "output_id": "verifier-participant-output",
+                    "passed": True,
+                    "result": {
+                        "passed": True,
+                        "verdict": "PASS",
+                        "checks": [],
+                    },
+                }
+            ],
+        }
+    ]
+    assert persisted[-1]["lane_states"]["anti-cheat"] == "failed"
+    assert persisted[-1]["lane_reasons"]["anti-cheat"] == (
+        "coding_artifact_diff_unavailable"
+    )
+    assert any(
+        event["event_type"] == "participant_failure"
+        and event["lane_id"] == "anti-cheat"
+        and event["detail"]["reason_code"] == "coding_artifact_diff_unavailable"
+        for event in persisted[-1]["causal_events"]
     )
 
 

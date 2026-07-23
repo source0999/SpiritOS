@@ -22,6 +22,7 @@ from source_proxy.context.canonical_broker import (
     is_derived_architect_context_source,
 )
 from source_proxy.diagnostics.status_codes import classify_repair_failure
+from source_proxy.decision.proposal_task import effective_planning_task_text
 from source_proxy.planning.architect import (
     ArchitectLLMError,
     Block,
@@ -29,7 +30,13 @@ from source_proxy.planning.architect import (
     plan_task_deterministically,
     plan_task_with_llm,
 )
-from source_proxy.planning.plan import ArchitectPlan, task_spec_from_plan
+from source_proxy.planning.plan import (
+    ArchitectPlan,
+    review_intent_paths_from_plan,
+    review_task_spec_from_plan,
+    task_requests_shared_helper_artifact,
+    task_requests_test_artifact,
+)
 from source_proxy.safety.paths import normalize_repo_path_candidate, path_escapes_workspace
 from source_proxy.tasks.long_running import (
     generate_unified_diff_from_content,
@@ -211,6 +218,8 @@ def execute_generic_workspace_rich(
             stage="architect",
         )
 
+    multi_file_requested = _task_requests_multi_file_capability(task)
+
     try:
         workspace_context_text, workspace_context_manifest = (
             _render_scoped_workspace_context(
@@ -374,7 +383,6 @@ def execute_generic_workspace_rich(
     coder_context_error = ""
     coder_callback_exception: BaseException | None = None
     coder_provider_exception: Exception | None = None
-    multi_file_requested = _task_requests_multi_file_capability(task)
     base_diagnostics["multi_file_capability_requested"] = multi_file_requested
 
     def observed_coder_call(prompt: str, alias: str) -> str:
@@ -603,17 +611,32 @@ def execute_generic_workspace_rich(
                 stage="scope",
             )
         try:
-            task_spec = task_spec_from_plan(plan).to_dict()
-            if multi_file_requested:
-                task_spec.update(
-                    {
-                        "task_type": "create_file_bundle",
-                        "allowed_files": [
-                            value.rstrip("/") + "/**" if value.endswith("/") else value
-                            for value in scope
-                        ],
-                    }
-                )
+            review_artifact_snapshots = _build_review_artifact_snapshots(
+                root,
+                changed_files,
+            )
+        except RuntimeError as error:
+            return _blocked_result(
+                "generic_workspace_review_snapshot_unavailable",
+                str(error),
+                base_diagnostics,
+                stage="reviewer",
+            )
+        base_diagnostics["review_artifact_snapshots"] = (
+            review_artifact_snapshots
+        )
+        base_diagnostics["review_artifact_snapshots_sha256"] = _sha256_json(
+            review_artifact_snapshots
+        )
+        try:
+            task_spec = review_task_spec_from_plan(
+                plan,
+                changed_files,
+                authorized_paths=scope,
+                artifact_snapshots=review_artifact_snapshots,
+            ).to_dict()
+            base_diagnostics["review_task_spec"] = task_spec
+            base_diagnostics["review_task_spec_sha256"] = _sha256_json(task_spec)
             preview = preview_diff_verification(
                 proposed_diff,
                 task_text=task,
@@ -622,13 +645,19 @@ def execute_generic_workspace_rich(
                 route_type="local_route",
                 reviewer_llm_call=reviewer_model_call,
                 workspace_root=root,
+                review_attempt_id=f"{plan.plan_id}:preview:{attempt_index}",
+                review_artifact_snapshots=review_artifact_snapshots,
             )
-        except DiffVerificationError as error:
+        except (DiffVerificationError, ValueError) as error:
             preview = {
                 "status": "blocked",
                 "blocked_reasons": [
                     {
-                        "reason_code": "preview_diff_verification_error",
+                        "reason_code": (
+                            "preview_diff_verification_error"
+                            if isinstance(error, DiffVerificationError)
+                            else "review_task_spec_unrequested_changed_file"
+                        ),
                         "details": str(error),
                     }
                 ],
@@ -755,16 +784,82 @@ def _task_requests_multi_file_capability(task: str) -> bool:
     request selects the atomic bundle output contract.
     """
 
+    if task_requests_test_artifact(task) or task_requests_shared_helper_artifact(task):
+        return True
+
     normalized = " ".join(str(task or "").lower().split())
     patterns = (
-        r"\b(?:add|write|include|create)\b.{0,100}\btests?\b",
-        r"\btests?\b.{0,100}\b(?:add|write|include|create|implementation|function)\b",
         r"\b(?:both|all)\s+(?:callers|implementations|modules|endpoints|files)\b",
-        r"\bduplicat(?:e|ed|ion)\b.{0,120}\b(?:shared|common|helper|both|callers)\b",
-        r"\b(?:shared|common)\s+(?:service\s+)?helper\b.{0,120}\b(?:callers|both|replace|update)\b",
         r"\bmultiple\s+files?\b",
     )
     return any(re.search(pattern, normalized) for pattern in patterns)
+
+
+def _multi_file_capability_prompt_lines(plan: ArchitectPlan) -> list[str]:
+    task = effective_planning_task_text(plan.source_task)
+    lines: list[str] = []
+    if task_requests_test_artifact(task):
+        lines.append(
+            "- Focused-test capability: at most one conventional test artifact that imports or directly references the primary target module."
+        )
+    if task_requests_shared_helper_artifact(task):
+        lines.append(
+            "- Shared-helper capability: at most one new helper file beside the two exact task-intended source artifacts, with their same extension."
+        )
+    return lines
+
+
+def _build_review_artifact_snapshots(
+    root: Path,
+    changed_files: list[str],
+) -> dict[str, dict[str, object]]:
+    snapshots: dict[str, dict[str, object]] = {}
+    total_chars = 0
+    resolved_root = root.resolve()
+    for path in changed_files:
+        candidate = resolved_root
+        for part in Path(path).parts:
+            candidate = candidate / part
+            if candidate.is_symlink():
+                raise RuntimeError("review snapshot path traverses a symlink")
+        try:
+            candidate.resolve().relative_to(resolved_root)
+        except ValueError as error:
+            raise RuntimeError("review snapshot path escapes workspace") from error
+        try:
+            exists = candidate.is_file()
+            if candidate.exists() and not exists:
+                raise RuntimeError("review snapshot path is not a regular file")
+            remaining = 1_000_000 - total_chars
+            if exists and candidate.stat().st_size > remaining:
+                raise RuntimeError("review snapshot content exceeds bounded budget")
+            if exists:
+                # Recheck the budget while reading so a file that grows after
+                # stat cannot force an unbounded allocation or decode.
+                with candidate.open(
+                    "r",
+                    encoding="utf-8",
+                    errors="replace",
+                    newline=None,
+                ) as stream:
+                    content = stream.read(remaining + 1)
+            else:
+                content = ""
+        except OSError as error:
+            raise RuntimeError("review snapshot path could not be read") from error
+        total_chars += len(content)
+        if total_chars > 1_000_000:
+            raise RuntimeError("review snapshot content exceeds bounded budget")
+        snapshots[path] = {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": path,
+            "exists": exists,
+            "content": content,
+            "content_sha256": hashlib.sha256(
+                content.encode("utf-8")
+            ).hexdigest(),
+        }
+    return snapshots
 
 
 def _propose_multi_file_diff(
@@ -779,6 +874,12 @@ def _propose_multi_file_diff(
     strategy: str,
 ) -> dict[str, Any]:
     packet = plan.coder_packet
+    exact_intended_paths = [
+        path
+        for path in review_intent_paths_from_plan(plan)
+        if _path_allowed(path, allowed_paths)
+    ]
+    capability_lines = _multi_file_capability_prompt_lines(plan)
     prompt = "\n".join(
         [
             "You are the SpiritOS Coder executing an Architect-owned multi-file packet.",
@@ -790,11 +891,16 @@ def _propose_multi_file_diff(
             "Include only files that must change. Preserve unrelated behavior.",
             "Do not delete files, use absolute paths, traverse directories, or touch symlinks.",
             "Authorized paths or prefixes: " + json.dumps(list(allowed_paths)),
+            "Exact task-intended artifacts: " + json.dumps(exact_intended_paths),
+            "Every returned file must be in that exact list or satisfy one bounded capability below.",
+            *(capability_lines or ["- No additional artifact capability is authorized."]),
             "Architect primary target: " + packet.target_file.path,
             "Acceptance criteria:",
+            f"- target-file [scope]: The primary target {packet.target_file.path} must change.",
             *[
                 f"- {criterion.id} [{criterion.kind}]: {criterion.description}"
                 for criterion in packet.acceptance_criteria
+                if criterion.id != "target-file"
             ],
             "Original task:",
             plan.source_task,
@@ -1039,13 +1145,13 @@ def _attempt_signature(
     feedback: list[str],
     strategy: str,
 ) -> str:
+    del strategy
     return hashlib.sha256(
         json.dumps(
             {
                 "current_context": context_manifest,
                 "diff_sha256": proposed_diff_sha256,
                 "feedback": feedback,
-                "strategy": strategy,
             },
             sort_keys=True,
         ).encode("utf-8")
@@ -1590,6 +1696,16 @@ def _is_timeout_exception(error: BaseException) -> bool:
 
 def _preview_feedback(preview: Mapping[str, Any]) -> list[str]:
     feedback: list[str] = []
+    coverage = preview.get("requirement_coverage")
+    if isinstance(coverage, Mapping):
+        missing = coverage.get("missing")
+        if isinstance(missing, list):
+            for item in missing[:8]:
+                detail = " ".join(str(item or "").split())[:500]
+                if detail:
+                    feedback.append(
+                        f"requirement_coverage_missing: {detail}"
+                    )
     review = preview.get("review_report")
     if isinstance(review, Mapping):
         for finding in review.get("findings", []):

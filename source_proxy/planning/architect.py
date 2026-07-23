@@ -91,8 +91,11 @@ _PYTHON_RELATIVE_IMPORT_RE = re.compile(
     r"^\s*from\s+(\.+[A-Za-z_][A-Za-z0-9_.]*)\s+import\s+",
     re.MULTILINE,
 )
-_EXPORT_NAME_RE = re.compile(
-    r"\bexport\s+(?:default\s+)?(?:function|class|const|let|var|interface|type)\s+([A-Za-z_$][\w$]*)"
+_EXPORT_DECLARATION_RE = re.compile(
+    r"\bexport\s+(?:(?P<default>default)\s+)?"
+    r"(?:(?:declare|abstract|async)\s+)*"
+    r"(?:function|class|const|let|var|interface|type|enum|namespace|module)\s+"
+    r"(?P<name>[A-Za-z_$][\w$]*)"
 )
 _CLASS_FRAGMENT_RE = re.compile(
     r"\b(?:[a-z]+:)*[a-z][a-z0-9-]*(?:-\[[^\]\s]+\]|-[a-z0-9./]+)+\b",
@@ -211,6 +214,23 @@ _PRIMARY_SOURCE_SUFFIXES = {
     ".rs",
     ".ts",
     ".tsx",
+}
+_QUOTED_PATH_SUFFIXES = _PRIMARY_SOURCE_SUFFIXES | {
+    ".cfg",
+    ".conf",
+    ".config",
+    ".css",
+    ".env",
+    ".go",
+    ".ini",
+    ".java",
+    ".json",
+    ".md",
+    ".mdx",
+    ".rs",
+    ".toml",
+    ".yaml",
+    ".yml",
 }
 _MAX_TARGET_DISCOVERY_BYTES = 256_000
 _MAX_TARGET_DISCOVERY_FILES = 400
@@ -447,7 +467,11 @@ def plan_task_deterministically(
             ),
             operation="edit",
             acceptance_criteria=_acceptance_criteria(planning_text, resolved.path),
-            constraints=_content_constraints(planning_text, target_content),
+            constraints=_content_constraints(
+                planning_text,
+                target_content,
+                resolved.path,
+            ),
             context_slices=context_slices,
             forbidden_paths=forbidden_paths,
             style_directives=_style_directives(resolved.path),
@@ -1103,10 +1127,8 @@ def _architect_plan_from_llm_payload(
     )
     context_mode = derive_context_mode(target_path)
     packet_payload["forbidden_paths"] = list(forbidden_paths_for_context_mode(context_mode))
-    packet_payload["style_directives"] = _coerce_str_list(
-        packet_payload.get("style_directives"),
-        default=_style_directives(target_path),
-    )[:6]
+    # Model prose is advisory input, never normative coder authority.
+    packet_payload["style_directives"] = _style_directives(target_path)
     planning_text = effective_planning_task_text(task)
     packet_payload["acceptance_criteria"] = _coerce_acceptance_criteria(
         packet_payload.get("acceptance_criteria"),
@@ -1117,6 +1139,7 @@ def _architect_plan_from_llm_payload(
         packet_payload.get("constraints"),
         planning_text,
         target_content,
+        target_path,
         operation=operation,
     )
 
@@ -1198,9 +1221,7 @@ Required JSON shape:
   "coder_packet": {{
     "target_file": {{"path": "repo/relative/path.tsx", "exists": true | false, "sha256_before": null}},
     "operation": "edit" | "create" | "delete",
-    "acceptance_criteria": [
-      {{"id": "short-slug", "description": "specific expected outcome", "kind": "literal" | "behavioral"}}
-    ],
+    "acceptance_criteria": [],
     "constraints": {{
       "must_contain": [],
       "must_not_contain": ["Target file:"],
@@ -1211,7 +1232,7 @@ Required JSON shape:
     }},
     "context_slices": [],
     "forbidden_paths": [],
-    "style_directives": ["Keep the diff focused on the selected target file."]
+    "style_directives": []
   }}
 }}
 
@@ -1221,7 +1242,8 @@ Rules:
 - If the task is too vague to choose a real target, return {{"status":"blocked","reason_code":"task_too_vague_for_plan"}}.
 - If previous attempts were rejected, adjust the target, approach, or constraints according to that feedback.
 - Do not invent file contents. Leave context_slices empty; the Python wrapper fills them.
-- Include exact quoted strings from the Task body only in must_contain and as literal criteria.
+- Leave acceptance_criteria and style_directives empty. The Python wrapper derives
+  all normative criteria, constraints, and style guidance from the public task.
 - Never treat JSON field names (allowed_files, forbidden_files, expected_checks) as required output text.
 - Keep target_file.path repo-relative with forward slashes.
 """
@@ -1399,11 +1421,19 @@ def _acceptance_criteria(task: str, target_path: str) -> list[AcceptanceCriterio
             kind="behavioral",
         )
     ]
-    for index, literal in enumerate(_literal_requirements(task), start=1):
+    for index, (literal, intended_path) in enumerate(
+        _literal_requirement_bindings(task, target_path),
+        start=1,
+    ):
+        description = (
+            f'File "{intended_path}" must contain "{literal}".'
+            if intended_path and intended_path != target_path
+            else f'Output must contain "{literal}".'
+        )
         criteria.append(
             AcceptanceCriterion(
                 id=f"literal-{index}",
-                description=f'Output must contain "{literal}".',
+                description=description,
                 kind="literal",
             )
         )
@@ -1426,20 +1456,74 @@ def _acceptance_criteria(task: str, target_path: str) -> list[AcceptanceCriterio
     return criteria
 
 
-def _content_constraints(task: str, existing_content: str) -> ContentConstraints:
-    must_contain = _dedupe([*_literal_requirements(task), *_class_fragments(task)])
-    preserve_exports = _dedupe(_EXPORT_NAME_RE.findall(existing_content))
-    if "export default" in existing_content and "default" not in preserve_exports:
-        preserve_exports.insert(0, "default")
+def _content_constraints(
+    task: str,
+    existing_content: str,
+    target_path: str,
+) -> ContentConstraints:
+    must_contain = _dedupe(
+        [
+            *(
+                literal
+                for literal, intended_path in _literal_requirement_bindings(
+                    task,
+                    target_path,
+                )
+                if intended_path in {None, target_path}
+            ),
+            *_class_fragments(task),
+        ]
+    )
+    preserve_exports = _active_export_names(existing_content)
     preserve_imports = _dedupe(_import_module_names(existing_content))
     return ContentConstraints(
         must_contain=must_contain,
-        must_not_contain=["Target file:"],
+        must_not_contain=_dedupe(["Target file:", *_negative_literal_requirements(task)]),
         preserve_imports=preserve_imports,
         preserve_exports=preserve_exports,
         max_added_lines=80,
         max_removed_lines=60,
     )
+
+
+def _active_export_names(content: str) -> list[str]:
+    """Return public JavaScript/TypeScript export names, not local aliases."""
+
+    active_source = _mask_js_comments_and_strings(content)
+    names: list[str] = []
+    for match in _EXPORT_DECLARATION_RE.finditer(active_source):
+        names.append("default" if match.group("default") else match.group("name"))
+    if re.search(r"\bexport\s+default\b", active_source):
+        names.append("default")
+    for match in re.finditer(
+        r"\bexport\s+(?:type\s+)?\{(?P<body>[^}]*)\}",
+        active_source,
+        flags=re.DOTALL,
+    ):
+        for raw_item in match.group("body").split(","):
+            item = re.sub(r"^\s*type\s+", "", raw_item).strip()
+            specifier = re.fullmatch(
+                r"(?P<local>[A-Za-z_$][\w$]*)"
+                r"(?:\s+as\s+(?P<exported>[A-Za-z_$][\w$]*))?",
+                item,
+            )
+            if specifier:
+                names.append(specifier.group("exported") or specifier.group("local"))
+    names.extend(
+        re.findall(
+            r"\bexport\s*\*\s*as\s*([A-Za-z_$][\w$]*)\s+from\b",
+            active_source,
+        )
+    )
+    names.extend(
+        re.findall(
+            r"\b(?:module\.)?exports\.([A-Za-z_$][\w$]*)\s*=",
+            active_source,
+        )
+    )
+    if re.search(r"\bmodule\.exports\s*=", active_source):
+        names.append("module.exports")
+    return _dedupe(names)
 
 
 def _verification_plan(target_path: str) -> VerificationPlan:
@@ -1533,68 +1617,50 @@ def _coerce_acceptance_criteria(
     task: str,
     target_path: str,
 ) -> list[dict[str, str]]:
-    criteria: list[dict[str, str]] = []
-    if isinstance(value, list):
-        for index, item in enumerate(value, start=1):
-            if not isinstance(item, dict):
-                continue
-            description = str(item.get("description") or "").strip()
-            if not description:
-                continue
-            raw_kind = str(item.get("kind") or "behavioral").strip()
-            criteria.append(
-                {
-                    "id": _slug(str(item.get("id") or f"criterion-{index}")),
-                    "description": description,
-                    "kind": raw_kind if raw_kind in {"literal", "behavioral"} else "behavioral",
-                }
-            )
-    if not criteria:
-        criteria = [
-            {
-                "id": criterion.id,
-                "description": criterion.description,
-                "kind": criterion.kind,
-            }
-            for criterion in _acceptance_criteria(task, target_path)
-        ]
-    return criteria
+    # The public task is the sole normative source.  Even apparently
+    # "behavioral" model criteria reach coder/reviewer prompts and can silently
+    # tighten the contract, so no model-authored criterion is retained here.
+    del value
+    return [
+        {
+            "id": criterion.id,
+            "description": criterion.description,
+            "kind": criterion.kind,
+        }
+        for criterion in _acceptance_criteria(task, target_path)
+    ]
 
 
 def _coerce_constraints(
     value: Any,
     task: str,
     existing_content: str,
+    target_path: str,
     *,
     operation: str,
 ) -> dict[str, Any]:
-    fallback = _content_constraints(task, existing_content)
-    payload = value if isinstance(value, dict) else {}
+    """Return only repository/task-grounded exact constraints.
+
+    An LLM plan may propose useful behavioral acceptance criteria, but it is
+    not authoritative for exact source literals.  Trusting invented
+    ``must_contain`` or ``must_not_contain`` strings makes an otherwise valid
+    patch impossible to approve, and trusting omitted preserve lists can
+    silently weaken the deterministic review.  Exact constraints therefore
+    come from the public task and the inspected target source only.
+    """
+
+    del value
+    fallback = _content_constraints(task, existing_content, target_path)
     return {
-        "must_contain": _dedupe(
-            [
-                *_coerce_str_list(payload.get("must_contain")),
-                *_literal_requirements(task),
-            ]
+        "must_contain": list(fallback.must_contain),
+        "must_not_contain": list(fallback.must_not_contain),
+        "preserve_imports": list(fallback.preserve_imports),
+        "preserve_exports": list(fallback.preserve_exports),
+        "max_added_lines": (
+            200 if operation == "create" else fallback.max_added_lines
         ),
-        "must_not_contain": _dedupe(
-            [*_coerce_str_list(payload.get("must_not_contain")), "Target file:"]
-        ),
-        "preserve_imports": _coerce_str_list(
-            payload.get("preserve_imports"),
-            default=fallback.preserve_imports,
-        ),
-        "preserve_exports": _coerce_str_list(
-            payload.get("preserve_exports"),
-            default=fallback.preserve_exports,
-        ),
-        "max_added_lines": _optional_positive_int(
-            payload.get("max_added_lines"),
-            200 if operation == "create" else fallback.max_added_lines,
-        ),
-        "max_removed_lines": _optional_positive_int(
-            payload.get("max_removed_lines"),
-            0 if operation == "create" else fallback.max_removed_lines,
+        "max_removed_lines": (
+            0 if operation == "create" else fallback.max_removed_lines
         ),
     }
 
@@ -1670,10 +1736,308 @@ def _literal_requirements(task: str) -> list[str]:
         if not line.strip().lower().startswith("target file:")
     )
     return _dedupe(
-        match.group(2).strip()
+        value
         for match in re.finditer(r"([\"'`])(.+?)\1", without_target_lines)
-        if match.group(2).strip()
+        if (value := match.group(2).strip())
+        and _quoted_requirement_role(without_target_lines, match) == "required"
+        and (
+            not _quoted_value_is_path(value)
+            or _quoted_requirement_has_literal_intent(without_target_lines, match)
+        )
     )
+
+
+def _negative_literal_requirements(task: str) -> list[str]:
+    without_target_lines = "\n".join(
+        line
+        for line in task.splitlines()
+        if not line.strip().lower().startswith("target file:")
+    )
+    return _dedupe(
+        value
+        for match in re.finditer(r"([\"'`])(.+?)\1", without_target_lines)
+        if (value := match.group(2).strip())
+        and _quoted_requirement_role(without_target_lines, match) == "forbidden"
+        and (
+            not _quoted_value_is_path(value)
+            or _quoted_requirement_has_literal_intent(without_target_lines, match)
+        )
+    )
+
+
+def _literal_requirement_bindings(
+    task: str,
+    target_path: str,
+) -> list[tuple[str, str | None]]:
+    without_target_lines = "\n".join(
+        line
+        for line in task.splitlines()
+        if not line.strip().lower().startswith("target file:")
+    )
+    bindings: list[tuple[str, str | None]] = []
+    for match in re.finditer(r"([\"'`])(.+?)\1", without_target_lines):
+        value = match.group(2).strip()
+        if (
+            not value
+            or _quoted_requirement_role(without_target_lines, match) != "required"
+            or (
+                _quoted_value_is_path(value)
+                and not _quoted_requirement_has_literal_intent(
+                    without_target_lines,
+                    match,
+                )
+            )
+        ):
+            continue
+        intended_path = _quoted_literal_artifact_path(
+            without_target_lines,
+            match,
+        )
+        binding = (value, intended_path or target_path)
+        if binding not in bindings:
+            bindings.append(binding)
+    return bindings
+
+
+def _quoted_value_is_path(value: str) -> bool:
+    normalized = value.replace("\\", "/").strip()
+    name = Path(normalized).name.lower()
+    return bool(
+        "/" in normalized
+        or name.startswith(".")
+        or Path(normalized).suffix.lower() in _QUOTED_PATH_SUFFIXES
+    )
+
+
+_QUOTED_TRANSFORMATION_PATTERNS = (
+    re.compile(
+        r"\b(?:replace|change|rename)\s+"
+        r"(?:(?:the\s+)?(?:copy|heading|label|message|response|status|string|text|title|value|word)\s+)?"
+        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]+)(?P=src_quote)\s+"
+        r"(?:with|to|as)\s+"
+        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]+)(?P=final_quote)",
+        flags=re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bswap\s+"
+        r"(?:(?:the\s+)?(?:copy|heading|label|message|response|status|string|text|title|value|word)\s+)?"
+        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]+)(?P=src_quote)\s+"
+        r"for\s+"
+        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]+)(?P=final_quote)",
+        flags=re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bfrom\s+"
+        r"(?P<src_quote>[\"'`])(?P<source>[^\"'`\n]+)(?P=src_quote)\s+"
+        r"to\s+"
+        r"(?P<final_quote>[\"'`])(?P<final>[^\"'`\n]+)(?P=final_quote)",
+        flags=re.IGNORECASE,
+    ),
+)
+
+
+def _quoted_requirement_role(text: str, match: re.Match[str]) -> str:
+    line_start = text.rfind("\n", 0, match.start()) + 1
+    line_end = text.find("\n", match.end())
+    if line_end < 0:
+        line_end = len(text)
+    line = text[line_start:line_end]
+    relative_span = (match.start() - line_start, match.end() - line_start)
+    for pattern in _QUOTED_TRANSFORMATION_PATTERNS:
+        for transformation in pattern.finditer(line):
+            source_span = transformation.span("source")
+            final_span = transformation.span("final")
+            value_span = (relative_span[0] + 1, relative_span[1] - 1)
+            if value_span not in {source_span, final_span}:
+                continue
+            prefix = line[: transformation.start()]
+            negated = bool(
+                re.search(
+                    r"\b(?:do\s+not|don't|must\s+not|never)\s*$",
+                    prefix,
+                    flags=re.IGNORECASE,
+                )
+            )
+            if value_span == source_span:
+                return "required" if negated else "skip"
+            return "skip" if negated else "required"
+    return "forbidden" if _quoted_requirement_is_forbidden(text, match) else "required"
+
+
+def _quoted_requirement_is_forbidden(text: str, match: re.Match[str]) -> bool:
+    line_start = text.rfind("\n", 0, match.start()) + 1
+    prefix = text[line_start : match.start()]
+    if re.search(
+        r"\b(?:do\s+not|don't|must\s+not|never)\s+"
+        r"(?:change|delete|exclude|omit|remove|rename|replace)\b"
+        r"[^\n.!?]{0,80}$",
+        prefix,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    return bool(
+        re.search(
+            r"(?:\b(?:delete|exclude|omit|remove|without)\b|"
+            r"\b(?:do\s+not|don't|must\s+not|never)\s+"
+            r"(?:add|contain|display|emit|include|introduce|print|render|show|write)\b)"
+            r"[^\n.!?]{0,96}$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _quoted_requirement_has_literal_intent(
+    text: str,
+    match: re.Match[str],
+) -> bool:
+    line_start = text.rfind("\n", 0, match.start()) + 1
+    prefix = text[max(line_start, match.start() - 120) : match.start()]
+    line_end = text.find("\n", match.end())
+    if line_end < 0:
+        line_end = len(text)
+    suffix = text[match.end() : min(line_end, match.end() + 96)]
+    artifact_noun_prefix = bool(
+        re.search(
+            r"\b(?:artifact|file|target)\s*$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+    )
+    suffix_literal = bool(
+        re.match(
+            r"\s+(?:must|should|shall|needs?\s+to)\s+"
+            r"(?:appear\b(?:\s+in\s+(?:the\s+)?(?:output|text|label|message))?"
+            r"|equal\b"
+            r"|(?:be\s+)?(?:displayed|emitted|printed|rendered|shown)\b)",
+            suffix,
+            flags=re.IGNORECASE,
+        )
+    )
+    if suffix_literal and not artifact_noun_prefix:
+        return True
+    return bool(
+        re.search(
+            r"(?:\b(?:copy|display|displayed|emit|heading|label|message|print|render|rendered|say|show|shown|title)\b|"
+            r"\b(?:output|text|label|message|filename|file\s+path)\s+"
+            r"(?:must|should|shall|needs?\s+to)\s+(?:equal|match)\b|"
+            r"\bset\b[^\n.!?]{0,88}\bto\s*$|"
+            r"\b(?:must|should|shall|needs?\s+to)\s+(?:contain|include)\b|"
+            r"\bexact\s+(?:text|filename)\b)"
+            r"[^\n.!?]{0,112}$",
+            prefix,
+            flags=re.IGNORECASE,
+        )
+        or (
+            re.search(r"\binclude\s*$", prefix, flags=re.IGNORECASE)
+            and re.match(
+                r"\s+(?:in|as)\s+(?:the\s+)?(?:rendered\s+)?"
+                r"(?:output|text|label|message)\b",
+                suffix,
+                flags=re.IGNORECASE,
+            )
+        )
+    )
+
+
+def _quoted_literal_artifact_path(
+    text: str,
+    literal_match: re.Match[str],
+) -> str | None:
+    line_start = text.rfind("\n", 0, literal_match.start()) + 1
+    line_end = text.find("\n", literal_match.end())
+    if line_end < 0:
+        line_end = len(text)
+    line = text[line_start:line_end]
+    literal_start = literal_match.start() - line_start
+    literal_end = literal_match.end() - line_start
+    quoted_spans: list[tuple[int, int]] = []
+    for candidate in re.finditer(r"([\"'`])(.+?)\1", line):
+        quoted_spans.append(candidate.span())
+        if candidate.span() == (literal_start, literal_end):
+            continue
+        value = candidate.group(2).strip().replace("\\", "/")
+        if not value or not _quoted_value_is_path(value):
+            continue
+        if _artifact_path_binds_literal(
+            line,
+            candidate.start(),
+            candidate.end(),
+            literal_start,
+            literal_end,
+        ):
+            return value
+    for candidate in re.finditer(
+        r"(?<![A-Za-z0-9_./-])"
+        r"(?P<path>[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.[A-Za-z0-9_-]+)"
+        r"(?![A-Za-z0-9_/-])",
+        line,
+    ):
+        if any(start <= candidate.start() < end for start, end in quoted_spans):
+            continue
+        value = normalize_repo_path_candidate(candidate.group("path"))
+        if value and _artifact_path_binds_literal(
+            line,
+            candidate.start(),
+            candidate.end(),
+            literal_start,
+            literal_end,
+        ):
+            return value
+    return None
+
+
+def _artifact_path_binds_literal(
+    line: str,
+    path_start: int,
+    path_end: int,
+    literal_start: int,
+    literal_end: int,
+) -> bool:
+    if path_end <= literal_start:
+        prefix = line[max(0, path_start - 96) : path_start]
+        between = line[path_end:literal_start]
+        if re.search(r"[.!?]|\b(?:and|or)\b", between, flags=re.IGNORECASE):
+            return False
+        explicit_prefix = bool(
+            re.search(
+                r"\b(?:artifact|file|in|inside|target|within)(?:\s+path)?\s*[\"'`]?\s*$",
+                prefix,
+                flags=re.IGNORECASE,
+            )
+        )
+        linked_action = bool(
+            re.search(
+                r"^\s*(?:[,;:]\s*)?"
+                r"(?:(?:the\s+)?(?:artifact|file|target)\s+)?"
+                r"(?:(?:must|should|shall|needs?\s+to)\s+)?"
+                r"(?:to\s+)?"
+                r"(?:add|append|contain|display|have|include|render|replace|show|update)"
+                r"[^\n.!?]{0,80}$",
+                between,
+                flags=re.IGNORECASE,
+            )
+        )
+        mutation_prefix = bool(
+            re.search(
+                r"\b(?:add|append|edit|ensure|modify|update|write)\s+$",
+                prefix,
+                flags=re.IGNORECASE,
+            )
+        )
+        return explicit_prefix or linked_action or (mutation_prefix and linked_action)
+    if path_start >= literal_end:
+        between = line[literal_end:path_start]
+        return bool(
+            re.fullmatch(
+                r"\s*(?:is\s+present\s+)?"
+                r"(?:in|inside|into|to|within)\s+"
+                r"(?:(?:the\s+)?(?:artifact|file|target)\s+)?[\"'`]?\s*",
+                between,
+                flags=re.IGNORECASE,
+            )
+        )
+    return False
 
 
 def _quoted_spans(text: str) -> list[tuple[int, int]]:
@@ -1740,11 +2104,88 @@ def _route_requirements(task: str) -> list[str]:
 
 
 def _import_module_names(content: str) -> list[str]:
+    active_js = _strip_js_comments_and_templates(content)
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        python_relative: list[str] = []
+    else:
+        python_relative = [
+            f"{'.' * node.level}{node.module or ''}"
+            for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom) and node.level > 0
+        ]
     return _dedupe(
         [
-            *(match.group(1) for match in _IMPORT_RE.finditer(content)),
-            *(match.group(1) for match in _PYTHON_RELATIVE_IMPORT_RE.finditer(content)),
+            *(match.group(1) for match in _IMPORT_RE.finditer(active_js)),
+            *python_relative,
         ]
+    )
+
+
+def _strip_js_comments_and_templates(content: str) -> str:
+    chars = list(content)
+    index = 0
+    state = "code"
+    quote = ""
+    while index < len(chars):
+        char = chars[index]
+        next_char = chars[index + 1] if index + 1 < len(chars) else ""
+        if state == "code":
+            if char in {"'", '"'}:
+                state = "string"
+                quote = char
+            elif char == "`":
+                chars[index] = " "
+                state = "template"
+            elif char == "/" and next_char == "/":
+                chars[index] = chars[index + 1] = " "
+                state = "line_comment"
+                index += 1
+            elif char == "/" and next_char == "*":
+                chars[index] = chars[index + 1] = " "
+                state = "block_comment"
+                index += 1
+        elif state == "string":
+            if char == "\\":
+                index += 1
+            elif char == quote:
+                state = "code"
+        elif state == "template":
+            if char != "\n":
+                chars[index] = " "
+            if char == "\\":
+                if index + 1 < len(chars) and chars[index + 1] != "\n":
+                    chars[index + 1] = " "
+                index += 1
+            elif char == "`":
+                state = "code"
+        elif state == "line_comment":
+            if char == "\n":
+                state = "code"
+            else:
+                chars[index] = " "
+        elif state == "block_comment":
+            if char == "*" and next_char == "/":
+                chars[index] = chars[index + 1] = " "
+                state = "code"
+                index += 1
+            elif char != "\n":
+                chars[index] = " "
+        index += 1
+    return "".join(chars)
+
+
+def _mask_js_comments_and_strings(content: str) -> str:
+    pattern = re.compile(
+        r"(?:\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'|"
+        r"`(?:\\.|[^`\\])*`|//[^\n]*|/\*[\s\S]*?\*/)",
+    )
+    return pattern.sub(
+        lambda match: "".join(
+            "\n" if char == "\n" else " " for char in match.group(0)
+        ),
+        content,
     )
 
 

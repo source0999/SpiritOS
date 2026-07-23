@@ -14,7 +14,9 @@ from source_proxy.context.canonical_broker import (
 )
 from source_proxy.target_plugins.generic_workspace import (
     GENERIC_RICH_EXECUTION_PATH,
+    _attempt_signature,
     _normalize_selected_context_packet,
+    _preview_feedback,
     _render_scoped_workspace_context,
     execute_generic_workspace_rich,
 )
@@ -85,6 +87,42 @@ def test_scoped_workspace_context_includes_authorized_untracked_files(
     entry = next(item for item in manifest if item["path"] == "src/new_helper.py")
     assert entry["sha256"] == hashlib.sha256(untracked.read_bytes()).hexdigest()
     assert entry["size"] == len(untracked.read_bytes())
+
+
+def test_preview_feedback_carries_bounded_missing_requirements_and_converges() -> None:
+    preview = {
+        "status": "blocked",
+        "requirement_coverage": {
+            "ok": False,
+            "missing": [
+                "missing exact text: actionable-value",
+                "missing import: helper from src.helper",
+            ],
+        },
+        "blocked_reasons": [
+            {"reason_code": "requirement_coverage_failed"}
+        ],
+    }
+
+    feedback = _preview_feedback(preview)
+
+    assert feedback[:2] == [
+        "requirement_coverage_missing: missing exact text: actionable-value",
+        "requirement_coverage_missing: missing import: helper from src.helper",
+    ]
+    first = _attempt_signature(
+        context_manifest=[{"path": "src/service.py", "sha256": "a" * 64}],
+        proposed_diff_sha256="b" * 64,
+        feedback=feedback,
+        strategy="preview_feedback_repair",
+    )
+    second = _attempt_signature(
+        context_manifest=[{"path": "src/service.py", "sha256": "a" * 64}],
+        proposed_diff_sha256="b" * 64,
+        feedback=feedback,
+        strategy="constrained_minimal_rewrite",
+    )
+    assert first == second
 
 
 def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
@@ -175,7 +213,11 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
         )
 
     result = execute_generic_workspace_rich(
-        task="Add a normalize_name service function and focused tests.",
+        task=(
+            "Target file: src/service.py\n"
+            "Add a normalize_name service function and focused tests. "
+            'File "tests/test_service.py" must contain "test_normalize_name".'
+        ),
         workspace_root=root,
         allowed_paths=("src/", "tests/"),
         model_call=coder_call,
@@ -202,7 +244,7 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
 
     assert result.get("coder_blocked") is not True
     assert result["execution_path"] == GENERIC_RICH_EXECUTION_PATH
-    assert calls == ["architect", "plan_ready", "coder_ready", "coder"]
+    assert calls == ["plan_ready", "coder_ready", "coder"]
     diagnostics = result["coder_diagnostics"]
     assert any(
         item.get("source") == "refreshed_orchestrator_context"
@@ -210,8 +252,208 @@ def test_rich_path_builds_one_atomic_multi_file_diff(tmp_path: Path) -> None:
     )
     assert diagnostics["multi_file_capability_requested"] is True
     assert diagnostics["changed_files"] == ["src/service.py", "tests/test_service.py"]
+    assert diagnostics["review_task_spec"]["allowed_files"] == [
+        "src/service.py",
+        "tests/test_service.py",
+    ]
+    assert set(diagnostics["review_artifact_snapshots"]) == {
+        "src/service.py",
+        "tests/test_service.py",
+    }
     assert "diff --git a/src/service.py b/src/service.py" in result["proposed_diff"]
     assert "diff --git a/tests/test_service.py b/tests/test_service.py" in result["proposed_diff"]
+
+
+def test_shared_refactor_capability_allows_one_new_sibling_helper(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    (root / "src" / "users.py").write_text(
+        "def normalize_username(value: str) -> str:\n    return value.strip().lower()\n",
+        encoding="utf-8",
+    )
+    (root / "src" / "contacts.py").write_text(
+        "def normalize_email(value: str) -> str:\n    return value.strip().lower()\n",
+        encoding="utf-8",
+    )
+    _git(root, "add", "src/users.py", "src/contacts.py")
+    _git(root, "commit", "-qm", "add duplicated normalizers")
+
+    task = (
+        "`normalize_username` in `src/users.py` and `normalize_email` in "
+        "`src/contacts.py` repeat the same whitespace-and-lowercase cleanup. "
+        "Refactor that duplicated logic into one small shared helper while "
+        "preserving both public functions and their current behavior."
+    )
+
+    def architect_call(_prompt: str, _alias: str) -> str:
+        return _architect_response("src/users.py")
+
+    def coder_call(prompt: str, _alias: str) -> str:
+        assert '"src/users.py"' in prompt
+        assert '"src/contacts.py"' in prompt
+        assert "Shared-helper capability" in prompt
+        return json.dumps(
+            {
+                "files": [
+                    {
+                        "path": "src/users.py",
+                        "content": (
+                            "from src.normalization import normalize_identity\n\n\n"
+                            "def normalize_username(value: str) -> str:\n"
+                            "    return normalize_identity(value)\n"
+                        ),
+                    },
+                    {
+                        "path": "src/contacts.py",
+                        "content": (
+                            "from src.normalization import normalize_identity\n\n\n"
+                            "def normalize_email(value: str) -> str:\n"
+                            "    return normalize_identity(value)\n"
+                        ),
+                    },
+                    {
+                        "path": "src/normalization.py",
+                        "content": (
+                            "def normalize_identity(value: str) -> str:\n"
+                            "    return value.strip().lower()\n"
+                        ),
+                    },
+                ]
+            }
+        )
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_shared_refactor_plan_bound",
+            reason="test_server_persisted_shared_refactor_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_shared_refactor_coder_bound",
+            reason="test_coder_consumes_shared_refactor_plan",
+        )
+
+    result = execute_generic_workspace_rich(
+        task=task,
+        workspace_root=root,
+        allowed_paths=("src/",),
+        model_call=coder_call,
+        architect_model_call=architect_call,
+        coder_model_call=coder_call,
+        model_alias="coder",
+        canonical_context={"sources_considered": []},
+        architect_task_id="shared-refactor-task",
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result.get("coder_blocked") is not True
+    diagnostics = result["coder_diagnostics"]
+    assert set(diagnostics["review_task_spec"]["allowed_files"]) == {
+        "src/users.py",
+        "src/contacts.py",
+        "src/normalization.py",
+    }
+    assert diagnostics["review_artifact_snapshots"]["src/normalization.py"][
+        "exists"
+    ] is False
+
+
+def test_unrequested_bundle_file_becomes_bounded_coder_repair_feedback(
+    tmp_path: Path,
+) -> None:
+    root = _workspace(tmp_path)
+    prompts: list[str] = []
+
+    def architect_call(_prompt: str, _alias: str) -> str:
+        return _architect_response("src/service.py")
+
+    def coder_call(prompt: str, _alias: str) -> str:
+        prompts.append(prompt)
+        return json.dumps(
+            {
+                "files": [
+                    {
+                        "path": "src/service.py",
+                        "content": (
+                            "def existing() -> str:\n"
+                            "    return 'kept'\n\n\n"
+                            "def greeting() -> str:\n"
+                            "    return 'hello'\n"
+                        ),
+                    },
+                    {
+                        "path": "src/model_selected_decoy.py",
+                        "content": "UNREQUESTED = True\n",
+                    },
+                ]
+            }
+        )
+
+    def plan_ready(
+        _plan: object,
+        staged_context: dict[str, object],
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            staged_context,
+            consumer="planner",
+            evidence="test_unrequested_bundle_plan_bound",
+            reason="test_server_persisted_unrequested_bundle_plan",
+        )
+
+    def coder_ready(
+        _plan: object,
+        planner_context: dict[str, object],
+        _rendered_prompt_sha256: str,
+    ) -> dict[str, object]:
+        return acknowledge_context_consumer(
+            planner_context,
+            consumer="coder",
+            evidence="test_unrequested_bundle_coder_bound",
+            reason="test_coder_consumes_unrequested_bundle_plan",
+        )
+
+    result = execute_generic_workspace_rich(
+        task=(
+            "Target file: src/service.py\n"
+            "Update all modules to add a shared greeting."
+        ),
+        workspace_root=root,
+        allowed_paths=("src/",),
+        model_call=coder_call,
+        architect_model_call=architect_call,
+        coder_model_call=coder_call,
+        model_alias="coder",
+        canonical_context={"sources_considered": []},
+        architect_task_id="unrequested-bundle-task",
+        plan_ready_callback=plan_ready,
+        coder_ready_callback=coder_ready,
+    )
+
+    assert result["coder_blocked"] is True
+    assert result["reason_code"] == "generic_workspace_preview_repair_exhausted"
+    assert len(prompts) == 2
+    assert "review_task_spec_unrequested_changed_file" in prompts[1]
+    attempts = result["coder_diagnostics"]["attempts"]
+    assert len(attempts) == 2
+    assert attempts[0]["preview_status"] == "blocked"
+    assert attempts[0]["blocked_reasons"] == [
+        "review_task_spec_unrequested_changed_file: "
+        "review_task_spec_unrequested_changed_file"
+    ]
 
 
 def test_coder_provider_timeout_returns_structured_no_mutation_result(
@@ -296,6 +538,8 @@ def test_reused_server_plan_skips_architect_and_dispatches_coder(
     def coder_call(_prompt: str, _alias: str) -> str:
         nonlocal coder_calls
         coder_calls += 1
+        assert "Focused-test capability" in _prompt
+        assert "imports or directly references the primary target module" in _prompt
         return json.dumps(
             {
                 "files": [

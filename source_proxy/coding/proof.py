@@ -24,8 +24,11 @@ from source_proxy.benchmarks.campaign_3_5_fixture_authority import (
 )
 from source_proxy.context.canonical_broker import build_context_broker_report
 from source_proxy.diagnostics.status_codes import classify_repair_failure
-from source_proxy.planning.plan import ArchitectPlan, task_spec_from_plan
-from source_proxy.planning.reviewer import review_diff_deterministically
+from source_proxy.planning.plan import ArchitectPlan, review_task_spec_from_plan
+from source_proxy.planning.reviewer import (
+    review_diff_deterministically,
+    validate_review_artifact_snapshots,
+)
 from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_CONTEXT_ID,
     GENERIC_WORKSPACE_PLUGIN_ID,
@@ -2145,12 +2148,14 @@ def _valid_semantic_review_binding(
     )
     plan_payload = binding.get("server_plan")
     task_spec = binding.get("server_task_spec")
+    artifact_snapshots = binding.get("review_artifact_snapshots")
     acceptance = binding.get("acceptance_criteria")
     receipt = binding.get("preview_review_receipt")
     repair_feedback = binding.get("repair_feedback")
     if not (
         isinstance(plan_payload, Mapping)
         and isinstance(task_spec, Mapping)
+        and isinstance(artifact_snapshots, Mapping)
         and isinstance(acceptance, list)
         and acceptance
         and isinstance(receipt, Mapping)
@@ -2158,8 +2163,55 @@ def _valid_semantic_review_binding(
         return False
     try:
         plan = ArchitectPlan.from_dict(dict(plan_payload))
-        expected_task_spec = task_spec_from_plan(plan).to_dict()
-        review_report = review_diff_deterministically(plan, proposed_diff).to_dict()
+        authority = (
+            target_plugin_identity.get("allowed_actions")
+            if adapter_architect_plan_required
+            and isinstance(target_plugin_identity, Mapping)
+            else [plan.coder_packet.target_file.path]
+        )
+        if not isinstance(authority, (list, tuple)):
+            return False
+        expected_task_spec = review_task_spec_from_plan(
+            plan,
+            changed_files,
+            authorized_paths=[str(value) for value in authority],
+            artifact_snapshots=artifact_snapshots,
+        ).to_dict()
+        snapshot_baselines = validate_review_artifact_snapshots(
+            artifact_snapshots,
+            expected_paths=changed_files,
+        )
+        target_slice = next(
+            (
+                item
+                for item in plan.coder_packet.context_slices
+                if item.path == plan.coder_packet.target_file.path
+                and item.kind == "target"
+            ),
+            None,
+        )
+        if (
+            (target_slice is None and plan.coder_packet.target_file.exists)
+            or snapshot_baselines.get(plan.coder_packet.target_file.path)
+            != (target_slice.content if target_slice is not None else "")
+            or not isinstance(
+                artifact_snapshots.get(plan.coder_packet.target_file.path),
+                Mapping,
+            )
+            or artifact_snapshots[plan.coder_packet.target_file.path].get(
+                "exists"
+            )
+            is not plan.coder_packet.target_file.exists
+        ):
+            return False
+        review_report = review_diff_deterministically(
+            plan,
+            proposed_diff,
+            task_spec=expected_task_spec,
+            task_id=task_id,
+            attempt_id=attempt_id,
+            artifact_snapshots=artifact_snapshots,
+        ).to_dict()
         expected_repair_feedback = _semantic_repair_feedback_binding(
             repair_request
         )
@@ -2225,6 +2277,8 @@ def _valid_semantic_review_binding(
         and dict(task_spec) == expected_task_spec
         and binding.get("server_plan_sha256") == _sha256_json(plan_payload)
         and binding.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and binding.get("review_artifact_snapshots_sha256")
+        == _sha256_json(artifact_snapshots)
         and binding.get("acceptance_criteria_sha256")
         == _sha256_json(acceptance)
         and receipt.get("schema_version")
@@ -2237,6 +2291,8 @@ def _valid_semantic_review_binding(
         and receipt.get("server_plan_id") == plan.plan_id
         and receipt.get("server_plan_sha256") == _sha256_json(plan_payload)
         and receipt.get("server_task_spec_sha256") == _sha256_json(task_spec)
+        and receipt.get("review_artifact_snapshots_sha256")
+        == _sha256_json(artifact_snapshots)
         and receipt.get("acceptance_criteria_sha256")
         == _sha256_json(acceptance)
         and receipt.get("acceptance_criterion_ids")
@@ -2258,6 +2314,16 @@ def _valid_semantic_review_binding(
         is adapter_architect_plan_required
         and binding.get("repair_feedback_sha256") == expected_repair_sha256
         and adapter_evidence_valid
+        and (
+            not adapter_architect_plan_required
+            or (
+                isinstance(adapter_evidence, Mapping)
+                and adapter_evidence.get(
+                    "review_artifact_snapshots_sha256"
+                )
+                == _sha256_json(artifact_snapshots)
+            )
+        )
         and recorded_receipt_sha256
         and _sha256_json(receipt_body) == recorded_receipt_sha256
         and binding.get("preview_review_receipt_sha256")

@@ -63,6 +63,65 @@ def _artifact(
     )
 
 
+def _server_state_artifact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[dict, Path]:
+    workspace = (tmp_path / "fixture").resolve()
+    workspace.mkdir()
+    target = workspace / "fixture.txt"
+    target.write_text("after\n", encoding="utf-8")
+    approved_diff = "diff --git a/fixture.txt b/fixture.txt\n"
+
+    data_dir = (tmp_path / "server-state").resolve()
+    backup_base = data_dir / "approved-diff-backups"
+    namespace = "a" * 64
+    backup = backup_base / namespace
+    backup.mkdir(parents=True)
+    for directory in (data_dir, backup_base, backup):
+        directory.chmod(0o700)
+    approved_diff_file = backup / "approved.diff"
+    approved_diff_file.write_text(approved_diff, encoding="utf-8", newline="")
+    approved_diff_file.chmod(0o600)
+    monkeypatch.setenv("SOURCE_PROXY_DATA_DIR", str(data_dir))
+    storage = {
+        "schema_version": "source-proxy-backup-storage/v2",
+        "kind": "server_state",
+        "namespace": namespace,
+        "manifest_rel": "manifest.json",
+        "approved_diff_rel": "approved.diff",
+        "storage_root_sha256": hashlib.sha256(
+            str(backup_base).encode("utf-8")
+        ).hexdigest(),
+    }
+    artifact = build_applied_artifact(
+        task_id="task-server-state",
+        run_id="run-server-state",
+        approval_id="apr_server_state",
+        generation=1,
+        approved_diff=approved_diff,
+        execution={
+            "audit": {
+                "workspace_root": str(workspace),
+                "approved_diff_path": f"server-state:{namespace}/approved.diff",
+                "approved_diff_sha256": hashlib.sha256(
+                    approved_diff.encode("utf-8")
+                ).hexdigest(),
+                "backup_storage": storage,
+                "changed_file_snapshots": [
+                    {
+                        "path": "fixture.txt",
+                        "sha256_before": hashlib.sha256(b"before\n").hexdigest(),
+                        "sha256_after": hashlib.sha256(b"after\n").hexdigest(),
+                        "missing_before_apply": False,
+                    }
+                ],
+            }
+        },
+    )
+    return artifact, approved_diff_file
+
+
 def _semantic_review_binding(*, invalid_blocked_reasons: bool = False) -> dict:
     acceptance = [
         {
@@ -244,6 +303,63 @@ def test_independent_participants_consume_one_immutable_artifact(tmp_path: Path)
         for path in source_root.rglob("*.pyc")
     }
     assert bytecode_after == bytecode_before
+
+
+def test_anti_cheat_independently_reads_hash_bound_server_state_diff(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    artifact, approved_diff_file = _server_state_artifact(tmp_path, monkeypatch)
+
+    record = run_coding_anti_cheat(artifact)
+
+    assert record["passed"] is True
+    assert artifact["backup_storage"]["namespace"] == "a" * 64
+    assert record["producer_process"]["isolation"] == (
+        "dedicated_participant_subprocess"
+    )
+    assert approved_diff_file.is_file()
+
+
+@pytest.mark.parametrize(
+    ("mutation", "reason"),
+    [
+        (
+            lambda artifact, _path: artifact.pop("backup_storage"),
+            "coding_artifact_backup_storage_missing",
+        ),
+        (
+            lambda artifact, _path: artifact.update(
+                approved_diff_path=f"server-state:{'b' * 64}/approved.diff"
+            ),
+            "coding_artifact_backup_locator_mismatch",
+        ),
+        (
+            lambda artifact, _path: artifact["backup_storage"].update(
+                storage_root_sha256="0" * 64
+            ),
+            "coding_artifact_backup_storage_root_mismatch",
+        ),
+        (
+            lambda _artifact, path: path.chmod(0o644),
+            "coding_artifact_diff_unavailable",
+        ),
+    ],
+)
+def test_server_state_diff_reader_fails_closed_on_binding_or_mode_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation,
+    reason: str,
+) -> None:
+    artifact, approved_diff_file = _server_state_artifact(tmp_path, monkeypatch)
+    mutation(artifact, approved_diff_file)
+    unsigned = dict(artifact)
+    unsigned.pop("artifact_sha256", None)
+    artifact["artifact_sha256"] = participant_module._sha256_json(unsigned)
+
+    with pytest.raises(CodingParticipantError, match=reason):
+        run_coding_anti_cheat(artifact)
 
 
 def test_reviewer_consumes_bound_acceptance_and_exact_repair_blockers(
