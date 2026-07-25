@@ -85,7 +85,7 @@ Creating an optimized production build ...
 Segmentation fault (core dumped)
 ```
 
-The same `npm run build` segfault reproduces in the established Source Proxy worktree `/home/source/SpiritOS-source-proxy-20260711` at `594d66ef8280953af767a273d7c91be765d1a6eb`, so this is recorded as an inherited build/toolchain lane issue rather than a Segment 0C repair regression.
+The same `npm run build` segfault reproduces in the established Source Proxy worktree `/home/source/SpiritOS-source-proxy-20260711` at `594d66ef8280953af767a273d7c91be765d1a6eb`, so this is recorded as an inherited build/toolchain lane note rather than a Segment 0C acceptance blocker or Segment 0C repair regression.
 
 ## Segment 0C Gate Update
 
@@ -93,4 +93,4 @@ Segment 0C LumaCart repair remains as committed in:
 
 - `b727c6d23b3fcfab3af4e4691e3fb2b98b319e73`
 
-Registered Python coding regression now passes with the exact registered command after restoring ignored dependency bindings. Frontend coding regression also passes. Build remains a separately inherited toolchain blocker.
+Registered Python coding regression now passes with the exact registered command after restoring ignored dependency bindings. Frontend coding regression also passes. The inherited build segfault is documented as a separate lane note and does not block Segment 0C acceptance.
