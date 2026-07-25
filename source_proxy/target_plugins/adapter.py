@@ -20,6 +20,7 @@ from source_proxy.approval.runtime_identity import (
 )
 
 from source_proxy.target_plugins.lumacart import (
+    LUMACART_PROMPT_CONTRACTS,
     execute_lumacart_prompt,
     lumacart_command,
     lumacart_task_spec,
@@ -1245,6 +1246,7 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
     selected_prompt = str(packet.get("selected_prompt_id") or packet.get("trial_prompt_id") or "").strip()
     if selected_prompt and selected_prompt != prompt_id:
         raise TargetPluginResolutionError("target_plugin_selected_prompt_mismatch")
+    contract = LUMACART_PROMPT_CONTRACTS[prompt_id]
     result_identity = f"{LUMACART_PLUGIN_ID}:{prompt_id}:{source_head[:12]}"
     return ResolvedTargetPlugin(
         schema_version=TARGET_PLUGIN_SCHEMA_VERSION,
@@ -1259,7 +1261,7 @@ def resolve_target_plugin(packet: dict[str, Any], workspace_root: Path) -> Resol
         selected_prompt_id=prompt_id,
         selected_context_id=context_id,
         execution_profile=EXECUTION_PROFILE,
-        allowed_actions=("propose", "approve", "execute", "verify", "record-evidence"),
+        allowed_actions=contract.allowed_files,
         result_identity=result_identity,
     )
 

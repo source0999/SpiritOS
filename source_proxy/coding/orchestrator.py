@@ -5229,6 +5229,53 @@ def _normalized_adapter_scope(values: Sequence[str]) -> list[str]:
     return normalized
 
 
+def _semantic_review_authority_is_path_scope(values: Sequence[str]) -> bool:
+    scope = _normalized_adapter_scope(values)
+    return bool(scope) and all(
+        "/" in value
+        or value.endswith("/")
+        or "." in value.rsplit("/", 1)[-1]
+        for value in scope
+    )
+
+
+def _synthetic_create_bundle_review_snapshots(
+    *,
+    proposed_diff: str,
+    changed_files: Sequence[str],
+    task_spec: Mapping[str, Any],
+) -> dict[str, dict[str, Any]] | None:
+    if task_spec.get("task_type") != "create_file_bundle":
+        return None
+    allowed = task_spec.get("allowed_files")
+    if not isinstance(allowed, list) or any(
+        path not in allowed for path in changed_files
+    ):
+        return None
+    created_paths = {
+        match.group("path")
+        for match in re.finditer(
+            r"^diff --git a/(?P<path>[^\n]+) b/(?P=path)\n"
+            r"(?:[^\n]*\n)*?--- /dev/null\n\+\+\+ b/(?P=path)$",
+            proposed_diff,
+            flags=re.MULTILINE,
+        )
+    }
+    if set(created_paths) != set(changed_files):
+        return None
+    empty_sha256 = hashlib.sha256(b"").hexdigest()
+    return {
+        path: {
+            "schema_version": "coding.review-artifact-snapshot/v1",
+            "path": path,
+            "exists": False,
+            "content": "",
+            "content_sha256": empty_sha256,
+        }
+        for path in changed_files
+    }
+
+
 def _adapter_path_in_scope(path: str, scopes: Sequence[str]) -> bool:
     normalized = normalize_repo_path_candidate(path)
     if not normalized or normalized != path or path_escapes_workspace(normalized):
@@ -5582,11 +5629,12 @@ def _build_semantic_review_binding(
         raise CodingOrchestratorError("coding_semantic_plan_target_mismatch")
     raw_snapshots = adapter_diagnostics.get("review_artifact_snapshots")
     try:
-        review_authority = (
+        if adapter_architect_plan_required or _semantic_review_authority_is_path_scope(
             authorized_paths
-            if adapter_architect_plan_required
-            else task_spec_from_plan(plan).allowed_files
-        )
+        ):
+            review_authority = authorized_paths
+        else:
+            review_authority = task_spec_from_plan(plan).allowed_files
         task_spec = review_task_spec_from_plan(
             plan,
             changed_files,
@@ -5606,23 +5654,31 @@ def _build_semantic_review_binding(
         None,
     )
     if not isinstance(raw_snapshots, Mapping):
-        if (
-            changed_files != [target]
-            or (target_slice is None and plan.coder_packet.target_file.exists)
-        ):
-            raise CodingOrchestratorError("coding_semantic_review_snapshots_missing")
-        target_content = target_slice.content if target_slice is not None else ""
-        raw_snapshots = {
-            target: {
-                "schema_version": "coding.review-artifact-snapshot/v1",
-                "path": target,
-                "exists": plan.coder_packet.target_file.exists,
-                "content": target_content,
-                "content_sha256": hashlib.sha256(
-                    target_content.encode("utf-8")
-                ).hexdigest(),
+        create_bundle_snapshots = _synthetic_create_bundle_review_snapshots(
+            proposed_diff=proposed_diff,
+            changed_files=changed_files,
+            task_spec=task_spec,
+        )
+        if create_bundle_snapshots is not None:
+            raw_snapshots = create_bundle_snapshots
+        else:
+            if (
+                changed_files != [target]
+                or (target_slice is None and plan.coder_packet.target_file.exists)
+            ):
+                raise CodingOrchestratorError("coding_semantic_review_snapshots_missing")
+            target_content = target_slice.content if target_slice is not None else ""
+            raw_snapshots = {
+                target: {
+                    "schema_version": "coding.review-artifact-snapshot/v1",
+                    "path": target,
+                    "exists": plan.coder_packet.target_file.exists,
+                    "content": target_content,
+                    "content_sha256": hashlib.sha256(
+                        target_content.encode("utf-8")
+                    ).hexdigest(),
+                }
             }
-        }
     try:
         snapshot_baselines = validate_review_artifact_snapshots(
             raw_snapshots,
@@ -6013,12 +6069,14 @@ def _valid_semantic_review_binding(
         for item in plan.coder_packet.acceptance_criteria
     ]
     try:
-        authority = (
-            target_plugin_identity.get("allowed_actions")
-            if adapter_architect_plan_required
-            and isinstance(target_plugin_identity, Mapping)
-            else task_spec_from_plan(plan).allowed_files
-        )
+        authority = task_spec_from_plan(plan).allowed_files
+        if isinstance(target_plugin_identity, Mapping):
+            claimed_authority = target_plugin_identity.get("allowed_actions")
+            if isinstance(claimed_authority, (list, tuple)) and (
+                adapter_architect_plan_required
+                or _semantic_review_authority_is_path_scope(claimed_authority)
+            ):
+                authority = claimed_authority
         if not isinstance(authority, (list, tuple)):
             return False
         expected_task_spec = review_task_spec_from_plan(

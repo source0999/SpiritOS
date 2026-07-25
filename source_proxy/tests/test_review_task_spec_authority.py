@@ -174,6 +174,32 @@ def test_coarse_scope_does_not_authorize_unrequested_secondary_file() -> None:
         )
 
 
+def test_exact_server_authority_can_bind_create_bundle_before_review() -> None:
+    extra = "src/bootstrap.py"
+    plan = _plan("Target file: src/app.py\nCreate the requested starter bundle.")
+
+    spec = review_task_spec_from_plan(
+        plan,
+        [PRIMARY, extra],
+        authorized_paths=[PRIMARY, extra],
+    )
+
+    assert spec.task_type == "create_file_bundle"
+    assert spec.target == PRIMARY
+    assert spec.allowed_files == [PRIMARY, extra]
+
+
+def test_exact_server_authority_still_rejects_unlisted_artifact() -> None:
+    plan = _plan("Target file: src/app.py\nCreate the requested starter bundle.")
+
+    with pytest.raises(ValueError, match="review_task_spec_missing_primary_target"):
+        review_task_spec_from_plan(
+            plan,
+            [PRIMARY, "src/model_selected_extra.py"],
+            authorized_paths=[PRIMARY],
+        )
+
+
 def test_forbidden_path_cannot_become_canonical_allowed_authority() -> None:
     plan = _plan(
         "Target file: src/app.py\n"

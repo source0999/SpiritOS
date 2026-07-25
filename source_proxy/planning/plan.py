@@ -525,7 +525,28 @@ def review_task_spec_from_plan(
     ):
         raise ValueError("review_task_spec_missing_primary_target")
     if any(path not in base.allowed_files for path in exact_paths):
-        raise ValueError("review_task_spec_unrequested_changed_file")
+        exact_authority_paths = [
+            path
+            for path in authority
+            if (
+                path
+                and not path.endswith("/")
+                and not any(char in path for char in "*?[]{}")
+            )
+        ]
+        if any(path not in exact_authority_paths for path in exact_paths):
+            raise ValueError("review_task_spec_unrequested_changed_file")
+        return CoderTaskSpec(
+            schema_version=base.schema_version,
+            task_type="create_file_bundle",
+            target=base.target,
+            allowed_files=exact_paths,
+            forbidden_files=list(base.forbidden_files),
+            literal_requirements=list(base.literal_requirements),
+            verification=list(base.verification),
+            risk_tier=base.risk_tier,
+            source=base.source,
+        )
     del artifact_snapshots
     return base
 

@@ -100,6 +100,19 @@ def test_typescript_selection_leaves_registered_root_identity_server_owned() -> 
     assert identity == json.loads(json.dumps(identity, sort_keys=True))
 
 
+def test_lumacart_identity_binds_exact_writable_contract_paths() -> None:
+    resolved = resolve_target_plugin(packet("coder-001-init-dummy-product-site"), ROOT)
+    spec = target_plugin_task_spec(resolved)
+
+    assert spec is not None
+    assert list(resolved.allowed_actions) == spec["allowed_files"]
+    assert set(resolved.allowed_actions) == EXPECTED_ALLOWED_FILES[
+        "coder-001-init-dummy-product-site"
+    ]
+    assert "propose" not in resolved.allowed_actions
+    assert "execute" not in resolved.allowed_actions
+
+
 EXPECTED_COMMANDS = {
     "coder-001-init-dummy-product-site": "create_storefront",
     "coder-002-add-product-data": "add_product_data",
