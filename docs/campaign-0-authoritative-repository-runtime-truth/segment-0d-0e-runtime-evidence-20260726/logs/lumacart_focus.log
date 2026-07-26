@@ -1,0 +1,5 @@
+COMMAND /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m pytest -p no:cacheprovider -q source_proxy/tests/test_decision_target_plugin_orchestrator.py::test_active_lumacart_prompt_packet_uses_authoritative_orchestrator --tb=short
+.                                                                        [100%]
+1 passed in 3.83s
+
+EXIT_STATUS 0

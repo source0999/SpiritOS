@@ -1,0 +1,10 @@
+COMMAND npm run test:coding-regression
+
+> spirit-os@0.1.0 test:coding-regression
+> .venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py
+
+............................................................................................................. [ 78%]
+..............................                                [100%]
+139 passed, 46 subtests passed in 37.74s
+
+EXIT_STATUS 0

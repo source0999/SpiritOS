@@ -1,0 +1,13 @@
+COMMAND npm run build
+
+> spirit-os@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.2.4 (webpack)
+- Experiments (use with caution):
+  · cpus: 1
+
+  Creating an optimized production build ...
+Segmentation fault (core dumped)
+
+EXIT_STATUS 139
