@@ -1,0 +1,25 @@
+{
+  "dirty_negative_dir": "/tmp/campaign0-dirty-source-negative",
+  "identity_ok": true,
+  "identity_reasons": [],
+  "receipt": "/tmp/campaign0-runtime-segment0d-20260726T000347Z/evidence/segment0d-runtime-identity.json",
+  "schema": "campaign0.segment0d.identity_tests/v1",
+  "status": "GREEN_WITH_NON_BLOCKING_CAVEAT",
+  "tests": {
+    "configuration_digest_verification": true,
+    "dependency_environment_verification": true,
+    "dirty_source_rejection": true,
+    "fresh_isolated_startup": true,
+    "health_check": true,
+    "healthcheck_route_caveat": true,
+    "model_inventory_verification": true,
+    "route_surface_verification": true,
+    "runtime_identity_verification": true,
+    "stale_process_detection": true,
+    "wrong_checkout_rejection": true
+  },
+  "timestamp_utc": "2026-07-26T00:07:33Z",
+  "wrong_checkout_rejection_reasons": [
+    "head_mismatch"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "evidence_preserved": true,
+  "rollback_cwd": "/tmp/campaign0-rollback-worktree-6d58031c",
+  "rollback_observed_head": "6d58031cfcf8e9f1f8f0b156a83fbd4163ec25af",
+  "rollback_receipt": "/tmp/campaign0-runtime-segment0e-rollback-20260726T001736Z/evidence/segment0d-runtime-identity.json",
+  "rollback_success": true,
+  "rollback_target": "6d58031cfcf8e9f1f8f0b156a83fbd4163ec25af",
+  "rollback_worktree": "/tmp/campaign0-rollback-worktree-6d58031c",
+  "rollforward_cwd": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+  "rollforward_observed_head": "271c9018853ff69916bf16cf578afacebae1dd20",
+  "rollforward_receipt": "/tmp/campaign0-runtime-segment0e-rollforward-20260726T001744Z/evidence/segment0d-runtime-identity.json",
+  "rollforward_route_digest": "e9ec1931f64c22e82465478fb3a0a9052d8d2fc4a1602e74ce54fc1b0dffdec7",
+  "rollforward_success": true,
+  "rollforward_target": "271c9018853ff69916bf16cf578afacebae1dd20",
+  "route_digest_changed": false,
+  "schema": "campaign0.segment0e.rollback_rollforward/v1",
+  "timestamp_utc": "2026-07-26T00:17:50Z"
+}

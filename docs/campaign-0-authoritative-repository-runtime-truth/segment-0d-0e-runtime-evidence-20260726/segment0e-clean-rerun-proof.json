@@ -1,0 +1,33 @@
+{
+  "all_non_build_required_passed": true,
+  "base_dir": "/tmp/campaign0-runtime-segment0e-clean-rerun-20260726T001531Z",
+  "commands": {
+    "backend_regression": {
+      "exit_status": 0,
+      "log": "/tmp/campaign0-runtime-segment0e-clean-rerun-20260726T001531Z/evidence/commands/backend_regression.log",
+      "sha256": "2b02453cfadecaad534233b30b91563a449a83bfd8dade97b310aebe7d3205df",
+      "tail": "COMMAND npm run test:coding-regression\n\n> spirit-os@0.1.0 test:coding-regression\n> .venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py\n\n............................................................................................................. [ 78%]\n..............................                                [100%]\n139 passed, 46 subtests passed in 37.85s\n\nEXIT_STATUS 0"
+    },
+    "frontend_regression": {
+      "exit_status": 0,
+      "log": "/tmp/campaign0-runtime-segment0e-clean-rerun-20260726T001531Z/evidence/commands/frontend_regression.log",
+      "sha256": "a41db2ff8b2831dc97878e163203178de90e359c5f34d69e24a2edc80370d5c9",
+      "tail": "This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act\n\n \u001b[32m\u2713\u001b[39m src/app/coding/__tests__/page.test.tsx \u001b[2m(\u001b[22m\u001b[2m1 test\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n     \u001b[33m\u001b[2m\u2713\u001b[22m\u001b[39m renders the clean coding cockpit shell for /coding \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/app/v1/actions/execute-approved/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m22 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 36\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/app/v1/coding/self-tests/run/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 13\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/approval-gate-binding.test.ts \u001b[2m(\u001b[22m\u001b[2m25 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 12\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/proxy-route-payload.test.ts \u001b[2m(\u001b[22m\u001b[2m10 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 11\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/client-fallback.test.ts \u001b[2m(\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 7\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/model-provider-status.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/unified-diff-paths.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/proxy-safety-smoke.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 3\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m10 passed\u001b[39m\u001b[22m\u001b[90m (10)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m193 passed\u001b[39m\u001b[22m\u001b[90m (193)\u001b[39m\n\u001b[2m   Start at \u001b[22m 20:16:34\n\u001b[2m   Duration \u001b[22m 9.89s\u001b[2m (transform 1.36s, setup 472ms, import 2.50s, tests 2.06s, environment 3.54s)\u001b[22m\n\n\nEXIT_STATUS 0"
+    },
+    "lumacart_focus": {
+      "exit_status": 0,
+      "log": "/tmp/campaign0-runtime-segment0e-clean-rerun-20260726T001531Z/evidence/commands/lumacart_focus.log",
+      "sha256": "1e189c7ad465445acb304c651e4d98b8a449858d586cb54a77a394b7660b8546",
+      "tail": "COMMAND /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m pytest -p no:cacheprovider -q source_proxy/tests/test_decision_target_plugin_orchestrator.py::test_active_lumacart_prompt_packet_uses_authoritative_orchestrator --tb=short\n.                                                                        [100%]\n1 passed in 3.24s\n\nEXIT_STATUS 0"
+    },
+    "typecheck": {
+      "exit_status": 0,
+      "log": "/tmp/campaign0-runtime-segment0e-clean-rerun-20260726T001531Z/evidence/commands/typecheck.log",
+      "sha256": "0a2c48d662e2f8307d3a808d3d83e4e7ad3da0c1acc7fcdea8c946f8cea96c82",
+      "tail": "COMMAND npm run typecheck\n\n> spirit-os@0.1.0 typecheck\n> tsc --noEmit\n\n\nEXIT_STATUS 0"
+    }
+  },
+  "runtime_receipt": "/tmp/campaign0-runtime-segment0e-clean-rerun-20260726T001531Z/evidence/segment0d-runtime-identity.json",
+  "schema": "campaign0.segment0e.clean_rerun/v1",
+  "timestamp_utc": "2026-07-26T00:16:52Z"
+}

@@ -1,0 +1,39 @@
+{
+  "all_required_passed": false,
+  "base_dir": "/tmp/campaign0-runtime-segment0e-first-20260726T001002Z",
+  "commands": {
+    "backend_regression": {
+      "exit_status": 0,
+      "log": "/tmp/campaign0-runtime-segment0e-first-20260726T001002Z/evidence/commands/backend_regression.log",
+      "sha256": "f68dc3872ec33eacd9a8bddf2aa615975cbf547dfca5c0cbc8f18bee1aa33b4b",
+      "tail": "COMMAND npm run test:coding-regression\n\n> spirit-os@0.1.0 test:coding-regression\n> .venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py\n\n............................................................................................................. [ 78%]\n..............................                                [100%]\n139 passed, 46 subtests passed in 37.74s\n\nEXIT_STATUS 0"
+    },
+    "build": {
+      "exit_status": 139,
+      "log": "/tmp/campaign0-runtime-segment0e-first-20260726T001002Z/evidence/commands/build.log",
+      "sha256": "26556094b1f7f646152359dd76fe854f833a859b7da494cad152bc4931480396",
+      "tail": "COMMAND npm run build\n\n> spirit-os@0.1.0 build\n> next build --webpack\n\n\u25b2 Next.js 16.2.4 (webpack)\n- Experiments (use with caution):\n  \u00b7 cpus: 1\n\n  Creating an optimized production build ...\nSegmentation fault (core dumped)\n\nEXIT_STATUS 139"
+    },
+    "build_after_runtime_stop": {
+      "exit_status": 1,
+      "log": "/tmp/campaign0-runtime-segment0e-first-20260726T001002Z/evidence/commands/build_after_runtime_stop.log",
+      "sha256": "f3f289f7618e5e584d5c911d893cfaf26c0d3143fb77f6423b6b9f44ce96db63",
+      "tail": "COMMAND npm run build\n\n> spirit-os@0.1.0 build\n> next build --webpack\n\n\u25b2 Next.js 16.2.4 (webpack)\n- Experiments (use with caution):\n  \u00b7 cpus: 1\n\n  Creating an optimized production build ...\n\n> Build error occurred\nSyntaxError: Unexpected token '('\n    at ignore-listed frames\n\nEXIT_STATUS 1"
+    },
+    "frontend_regression": {
+      "exit_status": 0,
+      "log": "/tmp/campaign0-runtime-segment0e-first-20260726T001002Z/evidence/commands/frontend_regression.log",
+      "sha256": "d1b8b6e10bc0f8967327f6c0433643a61bbd9686abc59b770b7a3fcc46969603",
+      "tail": "This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act\n\n \u001b[32m\u2713\u001b[39m src/app/coding/__tests__/page.test.tsx \u001b[2m(\u001b[22m\u001b[2m1 test\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 421\u001b[2mms\u001b[22m\u001b[39m\n     \u001b[33m\u001b[2m\u2713\u001b[22m\u001b[39m renders the clean coding cockpit shell for /coding \u001b[33m 419\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/app/v1/actions/execute-approved/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m22 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 37\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/approval-gate-binding.test.ts \u001b[2m(\u001b[22m\u001b[2m25 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 12\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/app/v1/coding/self-tests/run/__tests__/route.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 13\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/proxy-route-payload.test.ts \u001b[2m(\u001b[22m\u001b[2m10 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 11\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/client-fallback.test.ts \u001b[2m(\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 8\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/model-provider-status.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/unified-diff-paths.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/proxy-safety-smoke.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 3\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m10 passed\u001b[39m\u001b[22m\u001b[90m (10)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m193 passed\u001b[39m\u001b[22m\u001b[90m (193)\u001b[39m\n\u001b[2m   Start at \u001b[22m 20:11:14\n\u001b[2m   Duration \u001b[22m 16.29s\u001b[2m (transform 1.79s, setup 1.38s, import 4.28s, tests 2.11s, environment 7.00s)\u001b[22m\n\n\nEXIT_STATUS 0"
+    },
+    "lumacart_focus": {
+      "exit_status": 0,
+      "log": "/tmp/campaign0-runtime-segment0e-first-20260726T001002Z/evidence/commands/lumacart_focus.log",
+      "sha256": "5bd1384e8828247a13953c3cb2a0dc52a4c23c9d72130b8f3e84f60a3c2c52d7",
+      "tail": "COMMAND /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m pytest -p no:cacheprovider -q source_proxy/tests/test_decision_target_plugin_orchestrator.py::test_active_lumacart_prompt_packet_uses_authoritative_orchestrator --tb=short\n.                                                                        [100%]\n1 passed in 3.83s\n\nEXIT_STATUS 0"
+    }
+  },
+  "runtime_receipt": "/tmp/campaign0-runtime-segment0e-first-20260726T001002Z/evidence/segment0d-runtime-identity.json",
+  "schema": "campaign0.segment0e.first_run/v1",
+  "timestamp_utc": "2026-07-26T00:12:55Z"
+}
