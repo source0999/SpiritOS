@@ -1,0 +1,1034 @@
+{
+  "bases": {
+    "campaign0-runtime-campaign0-green-0d-first-20260726T002852Z": {
+      "base": "/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z",
+      "commands": {},
+      "identity": {
+        "base_dir": "/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z",
+        "branch": "codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "configuration": {
+          "digest": "f2631f803d42eac232f87b5c96db05388462421e3ada8cd09b499bf43d5982f9",
+          "files": {
+            "next.config.ts": "ac56149fdc6bffba973535a3bf415fc7a4bd500040e6dfab77dfe89974bb83e6",
+            "package-lock.json": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+            "package.json": "09b609ec46e022d1f0d732dcb4dcd820edb1a69d8de11e364e623e925d942fbd",
+            "source_proxy/api/healthcheck.py": "97ddfc66fa0a75222cafd4b18fe6d8c8cb2ebe8178a539c14def203deab01296",
+            "source_proxy/main.py": "ad8dbc2a6d7372f9076ed88e253c2110cfccb6035c7b99aef0d0cfe8f6feb4c7",
+            "tsconfig.json": "529649473f4f1fc5fa0da8a02cbeb0526c686500c80bba2b64fac0f0ca70d321"
+          }
+        },
+        "daily_runtime": {
+          "cmdline": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem",
+          "cwd": "/home/source/SpiritOS",
+          "pid": 3406614
+        },
+        "dependency": {
+          "digest": "09492e174b3d70d41cf9ae147387d97c6e77c6b962952cd54be12b8a52216280",
+          "node_modules_realpath": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/node_modules",
+          "node_version": "v20.20.2",
+          "npm_version": "10.8.2",
+          "package_lock_sha256": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+          "pip_freeze_sha256": "ff7a4a970cf55afe575cdedf755e78c512dccea8888ffd2a6b6993a526dd7172",
+          "python_executable": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python",
+          "python_realpath": "/usr/bin/python3.12",
+          "python_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+          "python_version": "Python 3.12.3"
+        },
+        "environment": {
+          "digest": "a410ec9d88732e80e7a5c7c418afb13ac66b79f4a9f629fe0b87f7bcc2627410",
+          "selected": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+            "PYTHONPATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG=/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/state/audit.jsonl",
+            "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED=0",
+            "SOURCE_PROXY_GATE_ALLOWED_ACTIONS=model_call,apply",
+            "SOURCE_PROXY_GATE_INCREMENT=campaign-0-runtime-identity",
+            "SOURCE_PROXY_GATE_STATE_PATH=/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/state/gate-state.json",
+            "SOURCE_PROXY_LONG_RUNNING_TASKS_DB=/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/state/tasks.sqlite3",
+            "SOURCE_PROXY_PROJECT_ROOTS=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_RUNTIME_EVIDENCE_DIR=/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/evidence",
+            "SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF=0",
+            "SPIRIT_PROJECT_PATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725"
+          ]
+        },
+        "evidence_dir": "/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/evidence",
+        "head": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8",
+        "health_interval": [
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 31,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 1,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 27,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 15,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 1,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          }
+        ],
+        "local_remote_match": true,
+        "log_dir": "/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/logs",
+        "model_inventory": {
+          "aliases": [
+            "coder",
+            "local"
+          ],
+          "digest": "48a6077dab18fa78f5dbced797c361e942920bc67a81235f6ad9879de9986707",
+          "resolved": [
+            {
+              "alias": "coder",
+              "model": "ollama_chat/qwen2.5-coder:7b",
+              "provider": "ollama"
+            },
+            {
+              "alias": "local",
+              "model": "ollama_chat/hermes4:latest",
+              "provider": "ollama"
+            }
+          ]
+        },
+        "openapi": {
+          "ok": true,
+          "route_count": 172,
+          "route_digest": "e9ec1931f64c22e82465478fb3a0a9052d8d2fc4a1602e74ce54fc1b0dffdec7",
+          "sha256": "21f6b9e71818d097525de100f4038cb951654f63fe7764908f76ecbda6c02f74",
+          "status": 200,
+          "title": "Source Proxy"
+        },
+        "process_identity_matches": true,
+        "remote_line": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8\trefs/heads/codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "repo": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+        "runtime": {
+          "cmdline": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 127.0.0.1 --port 8897 --log-level info",
+          "cwd": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+          "exe": "/usr/bin/python3.12",
+          "pid": 580701,
+          "port": 8897,
+          "ppid": "1",
+          "ss_lines": [
+            "LISTEN 0      2048                     127.0.0.1:8897       0.0.0.0:*    users:((\"python\",pid=580701,fd=14))          "
+          ]
+        },
+        "schema": "campaign0.segment0d.runtime_identity/v1",
+        "startup_log": "/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/logs/uvicorn-startup.log",
+        "startup_log_sha256": "02b43e894910d5ea8b820ede0b23cc171d61e492745c89cb7598438ead214c2a",
+        "state_dir": "/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/state",
+        "status_count": 0,
+        "timestamp_utc": "2026-07-26T00:28:58Z",
+        "tree": "cad80959fc2e10e6ff64c1f4b297169c49b70dc3"
+      },
+      "receipt": "/tmp/campaign0-runtime-campaign0-green-0d-first-20260726T002852Z/evidence/segment0d-runtime-identity.json"
+    },
+    "campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z": {
+      "base": "/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z",
+      "commands": {},
+      "identity": {
+        "base_dir": "/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z",
+        "branch": "codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "configuration": {
+          "digest": "f2631f803d42eac232f87b5c96db05388462421e3ada8cd09b499bf43d5982f9",
+          "files": {
+            "next.config.ts": "ac56149fdc6bffba973535a3bf415fc7a4bd500040e6dfab77dfe89974bb83e6",
+            "package-lock.json": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+            "package.json": "09b609ec46e022d1f0d732dcb4dcd820edb1a69d8de11e364e623e925d942fbd",
+            "source_proxy/api/healthcheck.py": "97ddfc66fa0a75222cafd4b18fe6d8c8cb2ebe8178a539c14def203deab01296",
+            "source_proxy/main.py": "ad8dbc2a6d7372f9076ed88e253c2110cfccb6035c7b99aef0d0cfe8f6feb4c7",
+            "tsconfig.json": "529649473f4f1fc5fa0da8a02cbeb0526c686500c80bba2b64fac0f0ca70d321"
+          }
+        },
+        "daily_runtime": {
+          "cmdline": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem",
+          "cwd": "/home/source/SpiritOS",
+          "pid": 3406614
+        },
+        "dependency": {
+          "digest": "09492e174b3d70d41cf9ae147387d97c6e77c6b962952cd54be12b8a52216280",
+          "node_modules_realpath": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/node_modules",
+          "node_version": "v20.20.2",
+          "npm_version": "10.8.2",
+          "package_lock_sha256": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+          "pip_freeze_sha256": "ff7a4a970cf55afe575cdedf755e78c512dccea8888ffd2a6b6993a526dd7172",
+          "python_executable": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python",
+          "python_realpath": "/usr/bin/python3.12",
+          "python_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+          "python_version": "Python 3.12.3"
+        },
+        "environment": {
+          "digest": "3e36180386b333acdd36f00d6fb900e1ba17a2562451d4e64d46f1605b97a6c4",
+          "selected": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+            "PYTHONPATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG=/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/state/audit.jsonl",
+            "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED=0",
+            "SOURCE_PROXY_GATE_ALLOWED_ACTIONS=model_call,apply",
+            "SOURCE_PROXY_GATE_INCREMENT=campaign-0-runtime-identity",
+            "SOURCE_PROXY_GATE_STATE_PATH=/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/state/gate-state.json",
+            "SOURCE_PROXY_LONG_RUNNING_TASKS_DB=/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/state/tasks.sqlite3",
+            "SOURCE_PROXY_PROJECT_ROOTS=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_RUNTIME_EVIDENCE_DIR=/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/evidence",
+            "SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF=0",
+            "SPIRIT_PROJECT_PATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725"
+          ]
+        },
+        "evidence_dir": "/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/evidence",
+        "head": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8",
+        "health_interval": [
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 30,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 1,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 23,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 16,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 1,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          }
+        ],
+        "local_remote_match": true,
+        "log_dir": "/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/logs",
+        "model_inventory": {
+          "aliases": [
+            "coder",
+            "local"
+          ],
+          "digest": "48a6077dab18fa78f5dbced797c361e942920bc67a81235f6ad9879de9986707",
+          "resolved": [
+            {
+              "alias": "coder",
+              "model": "ollama_chat/qwen2.5-coder:7b",
+              "provider": "ollama"
+            },
+            {
+              "alias": "local",
+              "model": "ollama_chat/hermes4:latest",
+              "provider": "ollama"
+            }
+          ]
+        },
+        "openapi": {
+          "ok": true,
+          "route_count": 172,
+          "route_digest": "e9ec1931f64c22e82465478fb3a0a9052d8d2fc4a1602e74ce54fc1b0dffdec7",
+          "sha256": "21f6b9e71818d097525de100f4038cb951654f63fe7764908f76ecbda6c02f74",
+          "status": 200,
+          "title": "Source Proxy"
+        },
+        "process_identity_matches": true,
+        "remote_line": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8\trefs/heads/codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "repo": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+        "runtime": {
+          "cmdline": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 127.0.0.1 --port 8897 --log-level info",
+          "cwd": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+          "exe": "/usr/bin/python3.12",
+          "pid": 580909,
+          "port": 8897,
+          "ppid": "1",
+          "ss_lines": [
+            "LISTEN 0      2048                     127.0.0.1:8897       0.0.0.0:*    users:((\"python\",pid=580909,fd=14))          "
+          ]
+        },
+        "schema": "campaign0.segment0d.runtime_identity/v1",
+        "startup_log": "/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/logs/uvicorn-startup.log",
+        "startup_log_sha256": "21af2f6adb7eeff6cb852dc12ed5b57e871fb40d5deea74dc97fec9385872b05",
+        "state_dir": "/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/state",
+        "status_count": 0,
+        "timestamp_utc": "2026-07-26T00:29:05Z",
+        "tree": "cad80959fc2e10e6ff64c1f4b297169c49b70dc3"
+      },
+      "receipt": "/tmp/campaign0-runtime-campaign0-green-0d-restart-20260726T002859Z/evidence/segment0d-runtime-identity.json"
+    },
+    "campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z": {
+      "base": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z",
+      "commands": {
+        "clean_backend_regression": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence/commands/clean_backend_regression.log",
+          "sha256": "bf0f40a5b7f3c1e259e61d9ec6840ae33021d48617dd7b004ec841658f6a6650",
+          "tail": "COMMAND npm run test:coding-regression\n\n> spirit-os@0.1.0 test:coding-regression\n> .venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py\n\n............................................................................................................. [ 78%]\n..............................                                [100%]\n139 passed, 46 subtests passed in 36.79s\n\nEXIT_STATUS 0"
+        },
+        "clean_build": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence/commands/clean_build.log",
+          "sha256": "a8d2b6bea61dbaee20b0b34db6acadcd08d796e7c4b6c29622cb033966790bc0",
+          "tail": "\u251c \u0192 /v1/tasks/long-running/[taskId]/stream\n\u251c \u0192 /v1/tasks/long-running/[taskId]/undo\n\u251c \u0192 /v1/tasks/long-running/[taskId]/verify\n\u251c \u0192 /v1/verification/diff-preview\n\u2514 \u0192 /v1/verification/manual-result-preview\n\n\n\u25cb  (Static)   prerendered as static content\n\u0192  (Dynamic)  server-rendered on demand\n\n\nEXIT_STATUS 0"
+        },
+        "clean_frontend_regression": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence/commands/clean_frontend_regression.log",
+          "sha256": "70a35adc548dec505c361d06b5e134ed45670ac45ddda171d3db3e3b9c7494e4",
+          "tail": " \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/client-fallback.test.ts \u001b[2m(\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 7\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/model-provider-status.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/unified-diff-paths.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/proxy-safety-smoke.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 4\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m10 passed\u001b[39m\u001b[22m\u001b[90m (10)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m193 passed\u001b[39m\u001b[22m\u001b[90m (193)\u001b[39m\n\u001b[2m   Start at \u001b[22m 20:32:42\n\u001b[2m   Duration \u001b[22m 9.96s\u001b[2m (transform 1.36s, setup 463ms, import 2.50s, tests 2.04s, environment 3.62s)\u001b[22m\n\n\nEXIT_STATUS 0"
+        },
+        "clean_lumacart_focus": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence/commands/clean_lumacart_focus.log",
+          "sha256": "b8db0294026a4e3af116a6480974a3a4acc25e6b8c8846b1bee7014f98298af1",
+          "tail": "COMMAND /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m pytest -p no:cacheprovider -q source_proxy/tests/test_decision_target_plugin_orchestrator.py::test_active_lumacart_prompt_packet_uses_authoritative_orchestrator --tb=short\n.                                                                        [100%]\n1 passed in 3.00s\n\nEXIT_STATUS 0"
+        },
+        "clean_typecheck": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence/commands/clean_typecheck.log",
+          "sha256": "0a2c48d662e2f8307d3a808d3d83e4e7ad3da0c1acc7fcdea8c946f8cea96c82",
+          "tail": "COMMAND npm run typecheck\n\n> spirit-os@0.1.0 typecheck\n> tsc --noEmit\n\n\nEXIT_STATUS 0"
+        }
+      },
+      "identity": {
+        "base_dir": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z",
+        "branch": "codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "configuration": {
+          "digest": "f2631f803d42eac232f87b5c96db05388462421e3ada8cd09b499bf43d5982f9",
+          "files": {
+            "next.config.ts": "ac56149fdc6bffba973535a3bf415fc7a4bd500040e6dfab77dfe89974bb83e6",
+            "package-lock.json": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+            "package.json": "09b609ec46e022d1f0d732dcb4dcd820edb1a69d8de11e364e623e925d942fbd",
+            "source_proxy/api/healthcheck.py": "97ddfc66fa0a75222cafd4b18fe6d8c8cb2ebe8178a539c14def203deab01296",
+            "source_proxy/main.py": "ad8dbc2a6d7372f9076ed88e253c2110cfccb6035c7b99aef0d0cfe8f6feb4c7",
+            "tsconfig.json": "529649473f4f1fc5fa0da8a02cbeb0526c686500c80bba2b64fac0f0ca70d321"
+          }
+        },
+        "daily_runtime": {
+          "cmdline": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem",
+          "cwd": "/home/source/SpiritOS",
+          "pid": 3406614
+        },
+        "dependency": {
+          "digest": "09492e174b3d70d41cf9ae147387d97c6e77c6b962952cd54be12b8a52216280",
+          "node_modules_realpath": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/node_modules",
+          "node_version": "v20.20.2",
+          "npm_version": "10.8.2",
+          "package_lock_sha256": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+          "pip_freeze_sha256": "ff7a4a970cf55afe575cdedf755e78c512dccea8888ffd2a6b6993a526dd7172",
+          "python_executable": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python",
+          "python_realpath": "/usr/bin/python3.12",
+          "python_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+          "python_version": "Python 3.12.3"
+        },
+        "environment": {
+          "digest": "32d6e545b28c95662778c5a5222f3a14b5e5cdfe0a31b45c69de6bd045bb20c6",
+          "selected": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+            "PYTHONPATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG=/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/state/audit.jsonl",
+            "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED=0",
+            "SOURCE_PROXY_GATE_ALLOWED_ACTIONS=model_call,apply",
+            "SOURCE_PROXY_GATE_INCREMENT=campaign-0-runtime-identity",
+            "SOURCE_PROXY_GATE_STATE_PATH=/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/state/gate-state.json",
+            "SOURCE_PROXY_LONG_RUNNING_TASKS_DB=/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/state/tasks.sqlite3",
+            "SOURCE_PROXY_PROJECT_ROOTS=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_RUNTIME_EVIDENCE_DIR=/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence",
+            "SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF=0",
+            "SPIRIT_PROJECT_PATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725"
+          ]
+        },
+        "evidence_dir": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence",
+        "head": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8",
+        "health_interval": [
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 35,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 2,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 26,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 22,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          }
+        ],
+        "local_remote_match": true,
+        "log_dir": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/logs",
+        "model_inventory": {
+          "aliases": [
+            "coder",
+            "local"
+          ],
+          "digest": "48a6077dab18fa78f5dbced797c361e942920bc67a81235f6ad9879de9986707",
+          "resolved": [
+            {
+              "alias": "coder",
+              "model": "ollama_chat/qwen2.5-coder:7b",
+              "provider": "ollama"
+            },
+            {
+              "alias": "local",
+              "model": "ollama_chat/hermes4:latest",
+              "provider": "ollama"
+            }
+          ]
+        },
+        "openapi": {
+          "ok": true,
+          "route_count": 172,
+          "route_digest": "e9ec1931f64c22e82465478fb3a0a9052d8d2fc4a1602e74ce54fc1b0dffdec7",
+          "sha256": "21f6b9e71818d097525de100f4038cb951654f63fe7764908f76ecbda6c02f74",
+          "status": 200,
+          "title": "Source Proxy"
+        },
+        "process_identity_matches": true,
+        "remote_line": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8\trefs/heads/codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "repo": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+        "runtime": {
+          "cmdline": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 127.0.0.1 --port 8897 --log-level info",
+          "cwd": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+          "exe": "/usr/bin/python3.12",
+          "pid": 583619,
+          "port": 8897,
+          "ppid": "1",
+          "ss_lines": [
+            "LISTEN 0      2048                     127.0.0.1:8897       0.0.0.0:*    users:((\"python\",pid=583619,fd=14))          "
+          ]
+        },
+        "schema": "campaign0.segment0d.runtime_identity/v1",
+        "startup_log": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/logs/uvicorn-startup.log",
+        "startup_log_sha256": "0518418fb127fbe655547a23a2d52c7b394502c2edb02faa9c0f50b28c6ee9cf",
+        "state_dir": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/state",
+        "status_count": 0,
+        "timestamp_utc": "2026-07-26T00:32:05Z",
+        "tree": "cad80959fc2e10e6ff64c1f4b297169c49b70dc3"
+      },
+      "receipt": "/tmp/campaign0-runtime-campaign0-green-0e-clean-20260726T003158Z/evidence/segment0d-runtime-identity.json"
+    },
+    "campaign0-runtime-campaign0-green-0e-first-20260726T002906Z": {
+      "base": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z",
+      "commands": {
+        "first_backend_regression": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence/commands/first_backend_regression.log",
+          "sha256": "0adcaa1373bac7a85f8104f76f71ae1836bcb59be8fd2d471e8dcd86b55f1ea8",
+          "tail": "COMMAND npm run test:coding-regression\n\n> spirit-os@0.1.0 test:coding-regression\n> .venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py\n\n............................................................................................................. [ 78%]\n..............................                                [100%]\n139 passed, 46 subtests passed in 37.63s\n\nEXIT_STATUS 0"
+        },
+        "first_build": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence/commands/first_build.log",
+          "sha256": "d2421c2cd225c0acc03c215132b4b2e4d5892c73abb1e055a19f0026ed2842f0",
+          "tail": "\u251c \u0192 /v1/tasks/long-running/[taskId]/stream\n\u251c \u0192 /v1/tasks/long-running/[taskId]/undo\n\u251c \u0192 /v1/tasks/long-running/[taskId]/verify\n\u251c \u0192 /v1/verification/diff-preview\n\u2514 \u0192 /v1/verification/manual-result-preview\n\n\n\u25cb  (Static)   prerendered as static content\n\u0192  (Dynamic)  server-rendered on demand\n\n\nEXIT_STATUS 0"
+        },
+        "first_frontend_regression": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence/commands/first_frontend_regression.log",
+          "sha256": "112b5d2ed8c99a947c2839a77700ae362e2cd654583bb153d5c1fc4f91e1cf39",
+          "tail": " \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/client-fallback.test.ts \u001b[2m(\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 7\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/model-provider-status.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/lib/coding/__tests__/unified-diff-paths.test.ts \u001b[2m(\u001b[22m\u001b[2m6 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m\u2713\u001b[39m src/components/coding/__tests__/proxy-safety-smoke.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 5\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m10 passed\u001b[39m\u001b[22m\u001b[90m (10)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m193 passed\u001b[39m\u001b[22m\u001b[90m (193)\u001b[39m\n\u001b[2m   Start at \u001b[22m 20:29:50\n\u001b[2m   Duration \u001b[22m 10.19s\u001b[2m (transform 1.32s, setup 467ms, import 2.53s, tests 2.11s, environment 3.75s)\u001b[22m\n\n\nEXIT_STATUS 0"
+        },
+        "first_lumacart_focus": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence/commands/first_lumacart_focus.log",
+          "sha256": "1e189c7ad465445acb304c651e4d98b8a449858d586cb54a77a394b7660b8546",
+          "tail": "COMMAND /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m pytest -p no:cacheprovider -q source_proxy/tests/test_decision_target_plugin_orchestrator.py::test_active_lumacart_prompt_packet_uses_authoritative_orchestrator --tb=short\n.                                                                        [100%]\n1 passed in 3.24s\n\nEXIT_STATUS 0"
+        },
+        "first_typecheck": {
+          "exit_status": 0,
+          "path": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence/commands/first_typecheck.log",
+          "sha256": "0a2c48d662e2f8307d3a808d3d83e4e7ad3da0c1acc7fcdea8c946f8cea96c82",
+          "tail": "COMMAND npm run typecheck\n\n> spirit-os@0.1.0 typecheck\n> tsc --noEmit\n\n\nEXIT_STATUS 0"
+        }
+      },
+      "identity": {
+        "base_dir": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z",
+        "branch": "codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "configuration": {
+          "digest": "f2631f803d42eac232f87b5c96db05388462421e3ada8cd09b499bf43d5982f9",
+          "files": {
+            "next.config.ts": "ac56149fdc6bffba973535a3bf415fc7a4bd500040e6dfab77dfe89974bb83e6",
+            "package-lock.json": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+            "package.json": "09b609ec46e022d1f0d732dcb4dcd820edb1a69d8de11e364e623e925d942fbd",
+            "source_proxy/api/healthcheck.py": "97ddfc66fa0a75222cafd4b18fe6d8c8cb2ebe8178a539c14def203deab01296",
+            "source_proxy/main.py": "ad8dbc2a6d7372f9076ed88e253c2110cfccb6035c7b99aef0d0cfe8f6feb4c7",
+            "tsconfig.json": "529649473f4f1fc5fa0da8a02cbeb0526c686500c80bba2b64fac0f0ca70d321"
+          }
+        },
+        "daily_runtime": {
+          "cmdline": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem",
+          "cwd": "/home/source/SpiritOS",
+          "pid": 3406614
+        },
+        "dependency": {
+          "digest": "09492e174b3d70d41cf9ae147387d97c6e77c6b962952cd54be12b8a52216280",
+          "node_modules_realpath": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/node_modules",
+          "node_version": "v20.20.2",
+          "npm_version": "10.8.2",
+          "package_lock_sha256": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+          "pip_freeze_sha256": "ff7a4a970cf55afe575cdedf755e78c512dccea8888ffd2a6b6993a526dd7172",
+          "python_executable": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python",
+          "python_realpath": "/usr/bin/python3.12",
+          "python_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+          "python_version": "Python 3.12.3"
+        },
+        "environment": {
+          "digest": "9ca734a1b2e71e5bbdcc30672c2cb8a4ba69c0abfe860e059b756500cbc5975d",
+          "selected": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+            "PYTHONPATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG=/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/state/audit.jsonl",
+            "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED=0",
+            "SOURCE_PROXY_GATE_ALLOWED_ACTIONS=model_call,apply",
+            "SOURCE_PROXY_GATE_INCREMENT=campaign-0-runtime-identity",
+            "SOURCE_PROXY_GATE_STATE_PATH=/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/state/gate-state.json",
+            "SOURCE_PROXY_LONG_RUNNING_TASKS_DB=/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/state/tasks.sqlite3",
+            "SOURCE_PROXY_PROJECT_ROOTS=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_RUNTIME_EVIDENCE_DIR=/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence",
+            "SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF=0",
+            "SPIRIT_PROJECT_PATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725"
+          ]
+        },
+        "evidence_dir": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence",
+        "head": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8",
+        "health_interval": [
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 30,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 1,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 23,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 26,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          }
+        ],
+        "local_remote_match": true,
+        "log_dir": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/logs",
+        "model_inventory": {
+          "aliases": [
+            "coder",
+            "local"
+          ],
+          "digest": "48a6077dab18fa78f5dbced797c361e942920bc67a81235f6ad9879de9986707",
+          "resolved": [
+            {
+              "alias": "coder",
+              "model": "ollama_chat/qwen2.5-coder:7b",
+              "provider": "ollama"
+            },
+            {
+              "alias": "local",
+              "model": "ollama_chat/hermes4:latest",
+              "provider": "ollama"
+            }
+          ]
+        },
+        "openapi": {
+          "ok": true,
+          "route_count": 172,
+          "route_digest": "e9ec1931f64c22e82465478fb3a0a9052d8d2fc4a1602e74ce54fc1b0dffdec7",
+          "sha256": "21f6b9e71818d097525de100f4038cb951654f63fe7764908f76ecbda6c02f74",
+          "status": 200,
+          "title": "Source Proxy"
+        },
+        "process_identity_matches": true,
+        "remote_line": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8\trefs/heads/codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "repo": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+        "runtime": {
+          "cmdline": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 127.0.0.1 --port 8897 --log-level info",
+          "cwd": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+          "exe": "/usr/bin/python3.12",
+          "pid": 581015,
+          "port": 8897,
+          "ppid": "1",
+          "ss_lines": [
+            "LISTEN 0      2048                     127.0.0.1:8897       0.0.0.0:*    users:((\"python\",pid=581015,fd=14))          "
+          ]
+        },
+        "schema": "campaign0.segment0d.runtime_identity/v1",
+        "startup_log": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/logs/uvicorn-startup.log",
+        "startup_log_sha256": "a0aef04be0158e016153d7a7848b7112d255a585222a07c6e51352db641a9792",
+        "state_dir": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/state",
+        "status_count": 0,
+        "timestamp_utc": "2026-07-26T00:29:11Z",
+        "tree": "cad80959fc2e10e6ff64c1f4b297169c49b70dc3"
+      },
+      "receipt": "/tmp/campaign0-runtime-campaign0-green-0e-first-20260726T002906Z/evidence/segment0d-runtime-identity.json"
+    },
+    "campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z": {
+      "base": "/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z",
+      "commands": {},
+      "identity": {
+        "base_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z",
+        "branch": "codex/campaign0-rollback-proof-6d58031c-clean-20260726T003857Z",
+        "configuration": {
+          "digest": "f2631f803d42eac232f87b5c96db05388462421e3ada8cd09b499bf43d5982f9",
+          "files": {
+            "next.config.ts": "ac56149fdc6bffba973535a3bf415fc7a4bd500040e6dfab77dfe89974bb83e6",
+            "package-lock.json": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+            "package.json": "09b609ec46e022d1f0d732dcb4dcd820edb1a69d8de11e364e623e925d942fbd",
+            "source_proxy/api/healthcheck.py": "97ddfc66fa0a75222cafd4b18fe6d8c8cb2ebe8178a539c14def203deab01296",
+            "source_proxy/main.py": "ad8dbc2a6d7372f9076ed88e253c2110cfccb6035c7b99aef0d0cfe8f6feb4c7",
+            "tsconfig.json": "529649473f4f1fc5fa0da8a02cbeb0526c686500c80bba2b64fac0f0ca70d321"
+          }
+        },
+        "daily_runtime": {
+          "cmdline": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem",
+          "cwd": "/home/source/SpiritOS",
+          "pid": 3406614
+        },
+        "dependency": {
+          "digest": "20c1456cf6e721ae46a22c68c7abf529547f03b6ab9e4545eda3b732ee0a72e4",
+          "node_modules_realpath": "",
+          "node_version": "v20.20.2",
+          "npm_version": "10.8.2",
+          "package_lock_sha256": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+          "pip_freeze_sha256": "ff7a4a970cf55afe575cdedf755e78c512dccea8888ffd2a6b6993a526dd7172",
+          "python_executable": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python",
+          "python_realpath": "/usr/bin/python3.12",
+          "python_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+          "python_version": "Python 3.12.3"
+        },
+        "environment": {
+          "digest": "2b51af0a226c29221c093ad3d92d64e88e13a0079af3551c8028d72717d8ea38",
+          "selected": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+            "PYTHONPATH=/tmp/campaign0-rollback-worktree-6d58031c-branch-clean-20260726T003857Z",
+            "SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG=/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/state/audit.jsonl",
+            "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED=0",
+            "SOURCE_PROXY_GATE_ALLOWED_ACTIONS=model_call,apply",
+            "SOURCE_PROXY_GATE_INCREMENT=campaign-0-runtime-identity",
+            "SOURCE_PROXY_GATE_STATE_PATH=/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/state/gate-state.json",
+            "SOURCE_PROXY_LONG_RUNNING_TASKS_DB=/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/state/tasks.sqlite3",
+            "SOURCE_PROXY_PROJECT_ROOTS=/tmp/campaign0-rollback-worktree-6d58031c-branch-clean-20260726T003857Z",
+            "SOURCE_PROXY_RUNTIME_EVIDENCE_DIR=/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/evidence",
+            "SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF=0",
+            "SPIRIT_PROJECT_PATH=/tmp/campaign0-rollback-worktree-6d58031c-branch-clean-20260726T003857Z"
+          ]
+        },
+        "evidence_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/evidence",
+        "head": "6d58031cfcf8e9f1f8f0b156a83fbd4163ec25af",
+        "health_interval": [
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 30,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 1,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 15,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 1,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 22,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          }
+        ],
+        "local_remote_match": false,
+        "log_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/logs",
+        "model_inventory": {
+          "digest": "8448ff584b3c218abc947bd78745c630d8c1835ec94bfbff04828ea5782cfd06",
+          "error": "ModuleNotFoundError(\"No module named 'source_proxy'\")"
+        },
+        "openapi": {
+          "ok": true,
+          "route_count": 172,
+          "route_digest": "e9ec1931f64c22e82465478fb3a0a9052d8d2fc4a1602e74ce54fc1b0dffdec7",
+          "sha256": "21f6b9e71818d097525de100f4038cb951654f63fe7764908f76ecbda6c02f74",
+          "status": 200,
+          "title": "Source Proxy"
+        },
+        "process_identity_matches": true,
+        "remote_line": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8\trefs/heads/codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "repo": "/tmp/campaign0-rollback-worktree-6d58031c-branch-clean-20260726T003857Z",
+        "runtime": {
+          "cmdline": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 127.0.0.1 --port 8897 --log-level info",
+          "cwd": "/tmp/campaign0-rollback-worktree-6d58031c-branch-clean-20260726T003857Z",
+          "exe": "/usr/bin/python3.12",
+          "pid": 589681,
+          "port": 8897,
+          "ppid": "1",
+          "ss_lines": [
+            "LISTEN 0      2048                     127.0.0.1:8897       0.0.0.0:*    users:((\"python\",pid=589681,fd=14))          "
+          ]
+        },
+        "schema": "campaign0.segment0d.runtime_identity/v1",
+        "startup_log": "/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/logs/uvicorn-startup.log",
+        "startup_log_sha256": "39af7b027de32089e0f540e641965ad1fba4b674eece22f9a6b792663674a88f",
+        "state_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/state",
+        "status_count": 0,
+        "timestamp_utc": "2026-07-26T00:39:05Z",
+        "tree": "7d44766ceec121e3215620d04a19f89a04237314"
+      },
+      "receipt": "/tmp/campaign0-runtime-campaign0-green-0e-rollback-branch-clean-20260726T003859Z/evidence/segment0d-runtime-identity.json"
+    },
+    "campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z": {
+      "base": "/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z",
+      "commands": {},
+      "identity": {
+        "base_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z",
+        "branch": "codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "configuration": {
+          "digest": "f2631f803d42eac232f87b5c96db05388462421e3ada8cd09b499bf43d5982f9",
+          "files": {
+            "next.config.ts": "ac56149fdc6bffba973535a3bf415fc7a4bd500040e6dfab77dfe89974bb83e6",
+            "package-lock.json": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+            "package.json": "09b609ec46e022d1f0d732dcb4dcd820edb1a69d8de11e364e623e925d942fbd",
+            "source_proxy/api/healthcheck.py": "97ddfc66fa0a75222cafd4b18fe6d8c8cb2ebe8178a539c14def203deab01296",
+            "source_proxy/main.py": "ad8dbc2a6d7372f9076ed88e253c2110cfccb6035c7b99aef0d0cfe8f6feb4c7",
+            "tsconfig.json": "529649473f4f1fc5fa0da8a02cbeb0526c686500c80bba2b64fac0f0ca70d321"
+          }
+        },
+        "daily_runtime": {
+          "cmdline": "/home/source/SpiritOS/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 0.0.0.0 --port 8787 --ssl-certfile /home/source/SpiritOS/certificates/spirit-dev.pem --ssl-keyfile /home/source/SpiritOS/certificates/spirit-dev-key.pem",
+          "cwd": "/home/source/SpiritOS",
+          "pid": 3406614
+        },
+        "dependency": {
+          "digest": "09492e174b3d70d41cf9ae147387d97c6e77c6b962952cd54be12b8a52216280",
+          "node_modules_realpath": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/node_modules",
+          "node_version": "v20.20.2",
+          "npm_version": "10.8.2",
+          "package_lock_sha256": "be3d4e4b70cd7d39bdfe0e02622b36293a6b7ab8ae10404e02c1f7238f896051",
+          "pip_freeze_sha256": "ff7a4a970cf55afe575cdedf755e78c512dccea8888ffd2a6b6993a526dd7172",
+          "python_executable": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python",
+          "python_realpath": "/usr/bin/python3.12",
+          "python_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+          "python_version": "Python 3.12.3"
+        },
+        "environment": {
+          "digest": "cf91f5f8193d38147e8893ed13baa2c0a39e5af0f7e6e9c2edaa0edf225ead52",
+          "selected": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+            "PYTHONPATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_APPROVED_ACTION_AUDIT_LOG=/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/state/audit.jsonl",
+            "SOURCE_PROXY_FIP3_MODEL_LANES_ENABLED=0",
+            "SOURCE_PROXY_GATE_ALLOWED_ACTIONS=model_call,apply",
+            "SOURCE_PROXY_GATE_INCREMENT=campaign-0-runtime-identity",
+            "SOURCE_PROXY_GATE_STATE_PATH=/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/state/gate-state.json",
+            "SOURCE_PROXY_LONG_RUNNING_TASKS_DB=/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/state/tasks.sqlite3",
+            "SOURCE_PROXY_PROJECT_ROOTS=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+            "SOURCE_PROXY_RUNTIME_EVIDENCE_DIR=/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/evidence",
+            "SOURCE_PROXY_TRIAL_DIRECT_OLLAMA_PROOF=0",
+            "SPIRIT_PROJECT_PATH=/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725"
+          ]
+        },
+        "evidence_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/evidence",
+        "head": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8",
+        "health_interval": [
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 33,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 2,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 22,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          },
+          {
+            "healthcheck": {
+              "body": "{\"detail\":\"Unable to read NVIDIA VRAM metrics with NVML or nvidia-smi. NVML error: RM has detected an NVML/RM version mismatch.. nvidia-smi error: Command '['/usr/bin/nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']' returned non-zero exit status 18..\"}",
+              "elapsed_ms": 23,
+              "ok": false,
+              "sha256": "51873261e7ef9ce1d62086b9652f6dc6c2b235d1ec59d81d06af5b8ca5cf4486",
+              "status": 503,
+              "url": "http://127.0.0.1:8897/healthcheck"
+            },
+            "root": {
+              "body": "{\"service\":\"source-proxy\",\"status\":\"bootstrapped\",\"write_policy\":{\"apply_requires_approval\":true,\"commit_requires_separate_approval\":true,\"push_requires_separate_approval\":true}}",
+              "elapsed_ms": 3,
+              "ok": true,
+              "sha256": "845c63f24f1157427f0d1867fbf25a621e229586d0c6027a4097052e99d1aa13",
+              "status": 200,
+              "url": "http://127.0.0.1:8897/"
+            }
+          }
+        ],
+        "local_remote_match": true,
+        "log_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/logs",
+        "model_inventory": {
+          "aliases": [
+            "coder",
+            "local"
+          ],
+          "digest": "48a6077dab18fa78f5dbced797c361e942920bc67a81235f6ad9879de9986707",
+          "resolved": [
+            {
+              "alias": "coder",
+              "model": "ollama_chat/qwen2.5-coder:7b",
+              "provider": "ollama"
+            },
+            {
+              "alias": "local",
+              "model": "ollama_chat/hermes4:latest",
+              "provider": "ollama"
+            }
+          ]
+        },
+        "openapi": {
+          "ok": true,
+          "route_count": 172,
+          "route_digest": "e9ec1931f64c22e82465478fb3a0a9052d8d2fc4a1602e74ce54fc1b0dffdec7",
+          "sha256": "21f6b9e71818d097525de100f4038cb951654f63fe7764908f76ecbda6c02f74",
+          "status": 200,
+          "title": "Source Proxy"
+        },
+        "process_identity_matches": true,
+        "remote_line": "ab68745cc9e5dccf1e3d67024e7a6a1c911cb3e8\trefs/heads/codex/source-proxy-campaign-0-authoritative-base-20260725",
+        "repo": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+        "runtime": {
+          "cmdline": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python -m uvicorn source_proxy.main:app --host 127.0.0.1 --port 8897 --log-level info",
+          "cwd": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+          "exe": "/usr/bin/python3.12",
+          "pid": 586328,
+          "port": 8897,
+          "ppid": "1",
+          "ss_lines": [
+            "LISTEN 0      2048                     127.0.0.1:8897       0.0.0.0:*    users:((\"python\",pid=586328,fd=14))          "
+          ]
+        },
+        "schema": "campaign0.segment0d.runtime_identity/v1",
+        "startup_log": "/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/logs/uvicorn-startup.log",
+        "startup_log_sha256": "a3bc8ae125514fab3d389fb008a3e4094ef8f0fcf30780c24b6be9af23eb38e5",
+        "state_dir": "/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/state",
+        "status_count": 0,
+        "timestamp_utc": "2026-07-26T00:35:01Z",
+        "tree": "cad80959fc2e10e6ff64c1f4b297169c49b70dc3"
+      },
+      "receipt": "/tmp/campaign0-runtime-campaign0-green-0e-rollforward-20260726T003454Z/evidence/segment0d-runtime-identity.json"
+    }
+  },
+  "notes": [
+    "Earlier dirty rollback runtime receipt is superseded by clean named rollback branch receipt.",
+    "Healthcheck 503 is limited to Dell GPU NVML/RM version mismatch; root and OpenAPI receipts are healthy.",
+    "Build lane passed after replacing shared live node_modules symlink with physical ignored dependency copy in the Campaign 0 checkout."
+  ],
+  "schema": "campaign0.segment0d0e.green_proof/v2",
+  "status": "GREEN_WITH_NON_BLOCKING_CAVEAT",
+  "supersedes": [
+    "docs/campaign-0-authoritative-repository-runtime-truth/segment-0d-0e-runtime-evidence-20260726/segment-0e-blocked-summary.md"
+  ],
+  "timestamp_utc": "2026-07-26T00:35:02Z"
+}

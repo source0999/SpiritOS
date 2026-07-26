@@ -1,0 +1,224 @@
+COMMAND env CI=1 NEXT_TELEMETRY_DISABLED=1 npm run build
+
+> spirit-os@0.1.0 build
+> next build --webpack
+
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+▲ Next.js 16.2.4 (webpack)
+- Experiments (use with caution):
+  · cpus: 1
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 64s
+  Running TypeScript ...
+  Finished TypeScript in 24.7s ...
+  Collecting page data using 1 worker ...
+  Generating static pages using 1 worker (0/137) ...
+  Generating static pages using 1 worker (34/137) 
+  Generating static pages using 1 worker (68/137) 
+  Generating static pages using 1 worker (102/137) 
+✓ Generating static pages using 1 worker (137/137) in 616ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/client-probe
+├ ƒ /api/coding/mac-worker
+├ ƒ /api/converter/control
+├ ƒ /api/converter/diagnostics/[jobId]
+├ ƒ /api/converter/jobs
+├ ƒ /api/research/web-search
+├ ƒ /api/scout/discovery-jobs
+├ ƒ /api/scout/discovery-jobs/[jobId]/extract-candidates
+├ ƒ /api/scout/discovery-jobs/[jobId]/pause
+├ ƒ /api/scout/discovery-jobs/[jobId]/resume
+├ ƒ /api/scout/discovery-jobs/[jobId]/search-preview
+├ ƒ /api/scout/overview
+├ ƒ /api/scout/packets/[packetId]/queue-promotion
+├ ƒ /api/scout/packets/[packetId]/recheck
+├ ƒ /api/scout/promotions
+├ ƒ /api/scout/promotions/finalize
+├ ƒ /api/scout/promotions/import-dry-run
+├ ƒ /api/scout/source-candidates
+├ ƒ /api/scout/source-candidates/[candidateId]/approve
+├ ƒ /api/scout/source-candidates/[candidateId]/block
+├ ƒ /api/scout/source-candidates/[candidateId]/reject
+├ ƒ /api/scout/source-candidates/batch-approve
+├ ƒ /api/scout/sources
+├ ƒ /api/spirit
+├ ƒ /api/spirit/health
+├ ƒ /api/spiritflix/admin/actions
+├ ƒ /api/spiritflix/admin/fs
+├ ƒ /api/spiritflix/admin/image
+├ ƒ /api/spiritflix/admin/jellyfin-index
+├ ƒ /api/spiritflix/admin/library
+├ ƒ /api/spiritflix/admin/smart/analysis
+├ ƒ /api/spiritflix/admin/smart/batch
+├ ƒ /api/spiritflix/admin/thumbnail
+├ ƒ /api/spiritflix/captions/file
+├ ƒ /api/spiritflix/captions/manifest
+├ ƒ /api/spiritflix/e2e/session
+├ ƒ /api/spiritflix/face-metadata
+├ ƒ /api/spiritflix/gallery
+├ ƒ /api/spiritflix/gallery/image
+├ ƒ /api/spiritflix/hls
+├ ƒ /api/spiritflix/jellyfin
+├ ƒ /api/spiritflix/jellyfin-image
+├ ƒ /api/spiritflix/library
+├ ƒ /api/spiritflix/library-smart-rescan
+├ ƒ /api/spiritflix/mobile-optimized
+├ ƒ /api/spiritflix/model-index
+├ ƒ /api/spiritflix/session
+├ ƒ /api/spiritflix/stream
+├ ƒ /api/spiritflix/system-diagnostics
+├ ƒ /api/spiritflix/tags
+├ ƒ /api/spiritflix/videos/[itemId]/face-learning
+├ ƒ /api/spiritflix/videos/[itemId]/model
+├ ƒ /api/spiritflix/videos/[itemId]/tags
+├ ƒ /api/stt/transcribe
+├ ƒ /api/telemetry/capabilities
+├ ƒ /api/telemetry/cluster
+├ ƒ /api/telemetry/self
+├ ƒ /api/tts
+├ ƒ /api/tts/voices
+├ ƒ /api/ytmclone/stats/events
+├ ƒ /api/ytmclone/stats/summary
+├ ○ /chat
+├ ○ /coding
+├ ○ /coding/design-demo
+├ ○ /coding/design-studio
+├ ○ /converter
+├ ○ /design-demo
+├ ○ /design-demo/coding
+├ ƒ /intelligence
+├ ƒ /map
+├ ƒ /map/raw
+├ ○ /media
+├ ○ /oracle
+├ ○ /proxy-backend
+├ ○ /spiritflix
+├ ○ /spiritflix/admin
+├ ○ /spiritflix/benchmark/player
+├ ○ /spiritflix/benchmark/shell
+├ ƒ /spiritflix/watch/[itemId]
+├ ƒ /stats
+├ ƒ /v1/actions/execute-approved
+├ ƒ /v1/actions/preview
+├ ƒ /v1/cartographer/approval-token/consume-preview
+├ ƒ /v1/cartographer/approval-token/validate
+├ ƒ /v1/cartographer/audit-trail
+├ ƒ /v1/cartographer/autonomy-promotion
+├ ƒ /v1/cartographer/blueprint-scribe
+├ ƒ /v1/cartographer/blueprints
+├ ƒ /v1/cartographer/branch-recommendations
+├ ƒ /v1/cartographer/branch-recommendations/[recommendationId]/approve
+├ ƒ /v1/cartographer/change-scribe
+├ ƒ /v1/cartographer/clutter-inventory
+├ ƒ /v1/cartographer/clutter-proposals
+├ ƒ /v1/cartographer/clutter-proposals/[proposalId]/approve
+├ ƒ /v1/cartographer/clutter-review
+├ ƒ /v1/cartographer/codex-evidence
+├ ƒ /v1/cartographer/commit-proposals
+├ ƒ /v1/cartographer/commit-proposals/[commitProposalId]/approve
+├ ƒ /v1/cartographer/components
+├ ƒ /v1/cartographer/docs-autopilot/apply
+├ ƒ /v1/cartographer/docs-autopilot/dry-run
+├ ƒ /v1/cartographer/docs-autopilot/soak
+├ ƒ /v1/cartographer/drift
+├ ƒ /v1/cartographer/git
+├ ƒ /v1/cartographer/level-3-closeout-readiness
+├ ƒ /v1/cartographer/level-3-commit-proposals
+├ ƒ /v1/cartographer/live-state
+├ ƒ /v1/cartographer/project-candidates
+├ ƒ /v1/cartographer/project-health
+├ ƒ /v1/cartographer/projects
+├ ƒ /v1/cartographer/proposals
+├ ƒ /v1/cartographer/proposals/[proposalId]/apply-approved
+├ ƒ /v1/cartographer/proposals/[proposalId]/review
+├ ƒ /v1/cartographer/push-queue
+├ ƒ /v1/cartographer/push-queue/[pushId]/approve
+├ ƒ /v1/cartographer/reminders
+├ ƒ /v1/cartographer/repo-map
+├ ƒ /v1/cartographer/runbook-scribe
+├ ƒ /v1/cartographer/starter-blueprints/[proposalId]/approve
+├ ƒ /v1/cartographer/status
+├ ƒ /v1/cartographer/sub-cartographers
+├ ƒ /v1/cartographer/trust-score
+├ ƒ /v1/cartographer/v1-closeout-audit-summary
+├ ƒ /v1/cartographer/v1-closeout-checklist
+├ ƒ /v1/cartographer/v1-closeout-dashboard
+├ ƒ /v1/cartographer/v1-closeout-endpoints
+├ ƒ /v1/cartographer/v1-closeout-finalization
+├ ƒ /v1/cartographer/v1-closeout-handoff
+├ ƒ /v1/cartographer/v1-closeout-status
+├ ƒ /v1/cartographer/v1-combined-readiness-dry-run
+├ ƒ /v1/cartographer/v1-diagnostic-import-dry-run
+├ ƒ /v1/cartographer/v1-evidence
+├ ƒ /v1/cartographer/v1-evidence-gap-report
+├ ƒ /v1/cartographer/v1-freeze-marker-proposal
+├ ƒ /v1/cartographer/v1-freeze-marker-validation
+├ ƒ /v1/cartographer/v1-proof-contract
+├ ƒ /v1/cartographer/v1-proof-import-dry-run
+├ ƒ /v1/cartographer/v1-proof-recording-proposal
+├ ƒ /v1/cartographer/v1-proof-validation
+├ ƒ /v1/cartographer/v1-readiness
+├ ƒ /v1/coding/agent-lab-baseline
+├ ƒ /v1/coding/agent-lab-sweep
+├ ƒ /v1/coding/bounded-diff-preview
+├ ƒ /v1/coding/cartographer/preview
+├ ƒ /v1/coding/codex
+├ ƒ /v1/coding/design-studio/approved-writeback
+├ ƒ /v1/coding/design-studio/preview
+├ ƒ /v1/coding/design-vault/preview
+├ ƒ /v1/coding/dummy-product-site-preview
+├ ƒ /v1/coding/dummy-product-site-preview/[...path]
+├ ƒ /v1/coding/dummy-product-site-preview/reset
+├ ƒ /v1/coding/gauntlet/preview
+├ ƒ /v1/coding/helper-agents/preview
+├ ƒ /v1/coding/hermes-stress-smoke
+├ ƒ /v1/coding/mac-advisory
+├ ƒ /v1/coding/research-preview
+├ ƒ /v1/coding/runs
+├ ƒ /v1/coding/runs/[runId]
+├ ƒ /v1/coding/runs/[runId]/rows/[promptId]
+├ ƒ /v1/coding/runs/active
+├ ƒ /v1/coding/runs/recent
+├ ƒ /v1/coding/self-tests/run
+├ ƒ /v1/coding/trial-fixture-baseline
+├ ƒ /v1/coding/trial-receipt-reconcile
+├ ƒ /v1/coding/workspace-read
+├ ƒ /v1/decisions/fip0-receipts/[runId]
+├ ƒ /v1/decisions/fip0-receipts/[runId]/trace
+├ ƒ /v1/decisions/fip0-receipts/latest
+├ ƒ /v1/decisions/fip0-receipts/latest/trace
+├ ƒ /v1/decisions/prompt-packet
+├ ƒ /v1/decisions/route
+├ ƒ /v1/operator/approval
+├ ƒ /v1/operator/campaign-3-5-model-call-authority
+├ ƒ /v1/operator/cartographer-selection
+├ ƒ /v1/operator/design-approval
+├ ƒ /v1/operator/session
+├ ƒ /v1/operator/spiritflix-admin-approval
+├ ƒ /v1/self/status
+├ ƒ /v1/tasks/long-running
+├ ƒ /v1/tasks/long-running/[taskId]
+├ ƒ /v1/tasks/long-running/[taskId]/advance
+├ ƒ /v1/tasks/long-running/[taskId]/approval-preview
+├ ƒ /v1/tasks/long-running/[taskId]/cancel
+├ ƒ /v1/tasks/long-running/[taskId]/extended-lanes
+├ ƒ /v1/tasks/long-running/[taskId]/plan
+├ ƒ /v1/tasks/long-running/[taskId]/reject-plan
+├ ƒ /v1/tasks/long-running/[taskId]/stream
+├ ƒ /v1/tasks/long-running/[taskId]/undo
+├ ƒ /v1/tasks/long-running/[taskId]/verify
+├ ƒ /v1/verification/diff-preview
+└ ƒ /v1/verification/manual-result-preview
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+EXIT_STATUS 0
