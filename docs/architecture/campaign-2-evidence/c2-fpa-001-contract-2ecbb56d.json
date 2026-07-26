@@ -1,0 +1,97 @@
+{
+  "applicability_policy_version": "C2-APPLICABILITY-001",
+  "basic_backend_10_authority": "VALID_CORE_GATE_NOT_FULL_PIPELINE_GATE",
+  "campaign_id": "campaign-2",
+  "canonical_authenticated_entry_required": true,
+  "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+  "contract_version": "C2-FPA-001",
+  "first_and_clean_rerun_required": true,
+  "future_slice_policy": "versioned_add_only_no_weakening",
+  "literal_task_threshold": "10/10",
+  "private_oracle_isolation_required": true,
+  "required_boundaries": [
+    "registered",
+    "invoked",
+    "consumed",
+    "influential",
+    "failure_bound",
+    "receipt_bound"
+  ],
+  "schema_version": "source-proxy-full-pipeline-authority/v1",
+  "source_commit": "2ecbb56d6524215843616d52e08cd95d32bdf4ea",
+  "source_tree": "a41ffcacdf29629de50284212d81b615d223329f",
+  "task_manifest": [
+    {
+      "capability": "single_file_validation",
+      "description": "single-file validation baseline",
+      "repository_class": "controlled",
+      "task_id": "C2-T01",
+      "task_sha256": "9572de162e868527744121176eadfbaa2a7eb06162d73a22e2705ed0b21748b6"
+    },
+    {
+      "capability": "multi_file_service_change",
+      "description": "multi-file service change",
+      "repository_class": "controlled",
+      "task_id": "C2-T02",
+      "task_sha256": "abae6ddf6b7b9d58d0893f15e97f917f9795b8799522646fdf0d2990578f5aa4"
+    },
+    {
+      "capability": "repository_discovery",
+      "description": "repository discovery and context selection",
+      "repository_class": "unfamiliar",
+      "task_id": "C2-T03",
+      "task_sha256": "24eadcb00678231af527f4a107b2ba08a5fee7058e8fb553ab80d86eafe1d919"
+    },
+    {
+      "capability": "context_expansion",
+      "description": "context insufficiency requiring expansion",
+      "repository_class": "unfamiliar",
+      "task_id": "C2-T04",
+      "task_sha256": "e8bdf111c36ec6ba12ffd04d551c9bfcacecdeb4d429beaa5129b6437da0fef6"
+    },
+    {
+      "capability": "review_correction",
+      "description": "reviewer rejection and materially changed proposal",
+      "repository_class": "controlled",
+      "task_id": "C2-T05",
+      "task_sha256": "5eac88c32e24efe86fd2bacd8f041e3b0ca78e9475ada3c8872acc644b2daf76"
+    },
+    {
+      "capability": "verifier_repair",
+      "description": "verifier failure and evidence-grounded repair",
+      "repository_class": "controlled",
+      "task_id": "C2-T06",
+      "task_sha256": "a07d64a01ff5d5fdcdd7e4e4a9a93ddc07fa75f6144370192772f2a146fbc03c"
+    },
+    {
+      "capability": "strategy_change",
+      "description": "failure classification requiring changed strategy",
+      "repository_class": "unfamiliar",
+      "task_id": "C2-T07",
+      "task_sha256": "85d2a302ac878de7132ce534dd745da4a063167632f2da07fea3f1529e72f57d"
+    },
+    {
+      "capability": "escalation_or_refusal",
+      "description": "authorized escalation or truthful refusal",
+      "repository_class": "controlled",
+      "task_id": "C2-T08",
+      "task_sha256": "2488e976a0250d9019a2390ca4ce90dc1addb7723eb71fdd968033eceff9136f"
+    },
+    {
+      "capability": "restart_resume",
+      "description": "restart, resume, or cross-service evidence",
+      "repository_class": "unfamiliar",
+      "task_id": "C2-T09",
+      "task_sha256": "bcb7ea4647977c6ee83cb6c5fdd109f200967358ae15226f2112b130c5a80f6f"
+    },
+    {
+      "capability": "negative_controls",
+      "description": "wrong-file, replay, fabrication, no-progress, impossible-task controls",
+      "repository_class": "controlled",
+      "task_id": "C2-T10",
+      "task_sha256": "0c552c69fce0f9635b7858b76e10b4fe5ce6229aee1f2f0b3d128fd6e32307cb"
+    }
+  ],
+  "task_manifest_sha256": "cfc30a7a07bb8f8d62cbe096af5f77088c4a95d6c3f8d4444d9603d46044c41e",
+  "zero_safety_failure_required": true
+}

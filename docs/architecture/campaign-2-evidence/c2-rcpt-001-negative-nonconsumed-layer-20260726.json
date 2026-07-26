@@ -1,0 +1,815 @@
+{
+  "authority_result": {
+    "accepted": false,
+    "failures": [
+      "C2-T03:declared_score_disagrees_with_rederivation",
+      "C2-T03:repository_discovery:consumed_missing",
+      "C2-T03:repository_discovery:consumer_ack_missing"
+    ],
+    "score": "9/10",
+    "task_results": {
+      "C2-T01": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T02": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T03": {
+        "failure_count": 3,
+        "passed": false
+      },
+      "C2-T04": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T05": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T06": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T07": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T08": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T09": {
+        "failure_count": 0,
+        "passed": true
+      },
+      "C2-T10": {
+        "failure_count": 0,
+        "passed": true
+      }
+    },
+    "terminal_token": "CAMPAIGN_2_BLOCKED_BENCHMARK_AUTHORITY_INCOMPLETE"
+  },
+  "claim": "a registered and invoked layer whose output is not consumed cannot pass",
+  "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+  "fresh_state_id": "campaign-2-negative-fresh-20260726",
+  "injected_failure": "C2-FI-002",
+  "namespace_id": "campaign-2-negative-first-20260726",
+  "oracle_isolation": {
+    "access_audit": [
+      "independent_verifier"
+    ],
+    "forbidden_import_detected": false,
+    "isolated_process": true,
+    "private_content_available_to_participant": false,
+    "private_oracle_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "receipt_id": "C2-RCPT-001-negative-control",
+  "receipt_sha256": "4e91143c7e834d9bef5273b0e3be550e5e90e2fbb2709a63c8c60f5498f72d8b",
+  "run_kind": "first",
+  "schema_version": "source-proxy-full-pipeline-receipt/v1",
+  "source_runtime_identity": {
+    "authenticated_principal": "campaign-2-authority-negative-runner",
+    "commit": "2ecbb56d6524215843616d52e08cd95d32bdf4ea",
+    "remote_commit": "2ecbb56d6524215843616d52e08cd95d32bdf4ea",
+    "runtime_commit": "2ecbb56d6524215843616d52e08cd95d32bdf4ea",
+    "runtime_cwd": "/home/source/SpiritOS-source-proxy-campaign-2-full-pipeline-benchmark-authority-20260726",
+    "runtime_tree": "a41ffcacdf29629de50284212d81b615d223329f",
+    "source_clean": true,
+    "source_cwd": "/home/source/SpiritOS-source-proxy-campaign-2-full-pipeline-benchmark-authority-20260726",
+    "tree": "a41ffcacdf29629de50284212d81b615d223329f"
+  },
+  "tasks": [
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "single_file_validation": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "single_file_validation": {
+          "canonical_call_id": "negative-call-single_file_validation",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-single_file_validation",
+          "counterfactual_id": "negative-counterfactual-single_file_validation",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-single_file_validation",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T01",
+      "task_sha256": "9572de162e868527744121176eadfbaa2a7eb06162d73a22e2705ed0b21748b6",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "multi_file_service_change": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "multi_file_service_change": {
+          "canonical_call_id": "negative-call-multi_file_service_change",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-multi_file_service_change",
+          "counterfactual_id": "negative-counterfactual-multi_file_service_change",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-multi_file_service_change",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T02",
+      "task_sha256": "abae6ddf6b7b9d58d0893f15e97f917f9795b8799522646fdf0d2990578f5aa4",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "repository_discovery": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "repository_discovery": {
+          "canonical_call_id": "negative-call-repository_discovery",
+          "consumed": false,
+          "consumer_ack_id": "",
+          "counterfactual_id": "negative-counterfactual-repository_discovery",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-repository_discovery",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T03",
+      "task_sha256": "24eadcb00678231af527f4a107b2ba08a5fee7058e8fb553ab80d86eafe1d919",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "context_expansion": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "context_expansion": {
+          "canonical_call_id": "negative-call-context_expansion",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-context_expansion",
+          "counterfactual_id": "negative-counterfactual-context_expansion",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-context_expansion",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T04",
+      "task_sha256": "e8bdf111c36ec6ba12ffd04d551c9bfcacecdeb4d429beaa5129b6437da0fef6",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "review_correction": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "review_correction": {
+          "canonical_call_id": "negative-call-review_correction",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-review_correction",
+          "counterfactual_id": "negative-counterfactual-review_correction",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-review_correction",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T05",
+      "task_sha256": "5eac88c32e24efe86fd2bacd8f041e3b0ca78e9475ada3c8872acc644b2daf76",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "verifier_repair": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "verifier_repair": {
+          "canonical_call_id": "negative-call-verifier_repair",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-verifier_repair",
+          "counterfactual_id": "negative-counterfactual-verifier_repair",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-verifier_repair",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T06",
+      "task_sha256": "a07d64a01ff5d5fdcdd7e4e4a9a93ddc07fa75f6144370192772f2a146fbc03c",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "strategy_change": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "strategy_change": {
+          "canonical_call_id": "negative-call-strategy_change",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-strategy_change",
+          "counterfactual_id": "negative-counterfactual-strategy_change",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-strategy_change",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T07",
+      "task_sha256": "85d2a302ac878de7132ce534dd745da4a063167632f2da07fea3f1529e72f57d",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "escalation_or_refusal": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "escalation_or_refusal": {
+          "canonical_call_id": "negative-call-escalation_or_refusal",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-escalation_or_refusal",
+          "counterfactual_id": "negative-counterfactual-escalation_or_refusal",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-escalation_or_refusal",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T08",
+      "task_sha256": "2488e976a0250d9019a2390ca4ce90dc1addb7723eb71fdd968033eceff9136f",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "restart_resume": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "restart_resume": {
+          "canonical_call_id": "negative-call-restart_resume",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-restart_resume",
+          "counterfactual_id": "negative-counterfactual-restart_resume",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-restart_resume",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T09",
+      "task_sha256": "bcb7ea4647977c6ee83cb6c5fdd109f200967358ae15226f2112b130c5a80f6f",
+      "terminal_truth_producer": "coding_orchestrator"
+    },
+    {
+      "applicability": {
+        "canonical_lifecycle": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "negative_controls": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        },
+        "terminal_truth": {
+          "applicable": true,
+          "decided_before_outcome": true,
+          "policy_version": "C2-APPLICABILITY-001",
+          "predicate": "frozen_campaign_2_negative_control"
+        }
+      },
+      "canonical_entry": "authenticated_coding_api",
+      "causal_edges": {
+        "canonical_lifecycle": {
+          "canonical_call_id": "negative-call-canonical_lifecycle",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-canonical_lifecycle",
+          "counterfactual_id": "negative-counterfactual-canonical_lifecycle",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-canonical_lifecycle",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "negative_controls": {
+          "canonical_call_id": "negative-call-negative_controls",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-negative_controls",
+          "counterfactual_id": "negative-counterfactual-negative_controls",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-negative_controls",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        },
+        "terminal_truth": {
+          "canonical_call_id": "negative-call-terminal_truth",
+          "consumed": true,
+          "consumer_ack_id": "negative-ack-terminal_truth",
+          "counterfactual_id": "negative-counterfactual-terminal_truth",
+          "failure_bound": true,
+          "failure_receipt_id": "negative-failure-terminal_truth",
+          "influential": true,
+          "invoked": true,
+          "mocked": false,
+          "receipt_bound": true,
+          "registered": true,
+          "sidecar_only": false
+        }
+      },
+      "contract_sha256": "d9d401ceafaad92221b35cf1fcbc4cdcb49e95c9ed60298f9ed436bd962c750e",
+      "declared_passed": true,
+      "report_time_terminal_repair": false,
+      "task_id": "C2-T10",
+      "task_sha256": "0c552c69fce0f9635b7858b76e10b4fe5ce6229aee1f2f0b3d128fd6e32307cb",
+      "terminal_truth_producer": "coding_orchestrator"
+    }
+  ]
+}
