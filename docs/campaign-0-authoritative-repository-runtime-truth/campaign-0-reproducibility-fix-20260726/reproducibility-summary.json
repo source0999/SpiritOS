@@ -1,0 +1,63 @@
+{
+  "commands": {
+    "backend_registered": {
+      "command": "npm run test:coding-regression",
+      "counts": {
+        "summary_line": "139 passed, 46 subtests passed in 36.99s"
+      },
+      "exit_status": 0,
+      "finished_at_utc": "2026-07-26T02:11:40Z",
+      "label": "backend_registered",
+      "log": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/docs/campaign-0-authoritative-repository-runtime-truth/campaign-0-reproducibility-fix-20260726/commands/backend_registered.log",
+      "log_sha256": "a4423c0e0ab4c9d7600a40a88592282c0178e97e1b38880c5642afab18abfdf7",
+      "post_status_count": 1,
+      "pre_status_count": 1,
+      "schema": "campaign0.repro.command/v1",
+      "started_at_utc": "2026-07-26T02:11:02Z"
+    },
+    "build_registered": {
+      "command": "CI=1 NEXT_TELEMETRY_DISABLED=1 npm run build",
+      "counts": {},
+      "exit_status": 0,
+      "finished_at_utc": "2026-07-26T02:14:01Z",
+      "label": "build_registered",
+      "log": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/docs/campaign-0-authoritative-repository-runtime-truth/campaign-0-reproducibility-fix-20260726/commands/build_registered.log",
+      "log_sha256": "4eda1eebf077e65a2e44b113cd31531cdafa2a91c1223773c104ba653af59cda",
+      "post_status_count": 1,
+      "pre_status_count": 1,
+      "schema": "campaign0.repro.command/v1",
+      "started_at_utc": "2026-07-26T02:11:55Z"
+    },
+    "frontend_registered": {
+      "command": "npm run test:coding-frontend-regression",
+      "counts": {
+        "summary_line": "\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m193 passed\u001b[39m\u001b[22m\u001b[90m (193)\u001b[39m"
+      },
+      "exit_status": 0,
+      "finished_at_utc": "2026-07-26T02:11:51Z",
+      "label": "frontend_registered",
+      "log": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/docs/campaign-0-authoritative-repository-runtime-truth/campaign-0-reproducibility-fix-20260726/commands/frontend_registered.log",
+      "log_sha256": "7de6232c02ea7364b0419022ddaeaea12911a67f8ea245372de322c6e05d3872",
+      "post_status_count": 1,
+      "pre_status_count": 1,
+      "schema": "campaign0.repro.command/v1",
+      "started_at_utc": "2026-07-26T02:11:40Z"
+    },
+    "typecheck_registered": {
+      "command": "npm run typecheck",
+      "counts": {},
+      "exit_status": 0,
+      "finished_at_utc": "2026-07-26T02:11:55Z",
+      "label": "typecheck_registered",
+      "log": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/docs/campaign-0-authoritative-repository-runtime-truth/campaign-0-reproducibility-fix-20260726/commands/typecheck_registered.log",
+      "log_sha256": "4004305f47b5ee313e654a84ff0eaf349df9ca0681ebfb2e2e2150b463b75d13",
+      "post_status_count": 1,
+      "pre_status_count": 1,
+      "schema": "campaign0.repro.command/v1",
+      "started_at_utc": "2026-07-26T02:11:51Z"
+    }
+  },
+  "post_status_count": 1,
+  "schema": "campaign0.repro.summary/v1",
+  "status": "GREEN"
+}

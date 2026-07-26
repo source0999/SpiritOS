@@ -1,0 +1,13 @@
+{
+  "command": "CI=1 NEXT_TELEMETRY_DISABLED=1 npm run build",
+  "counts": {},
+  "exit_status": 0,
+  "finished_at_utc": "2026-07-26T02:14:01Z",
+  "label": "build_registered",
+  "log": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/docs/campaign-0-authoritative-repository-runtime-truth/campaign-0-reproducibility-fix-20260726/commands/build_registered.log",
+  "log_sha256": "4eda1eebf077e65a2e44b113cd31531cdafa2a91c1223773c104ba653af59cda",
+  "post_status_count": 1,
+  "pre_status_count": 1,
+  "schema": "campaign0.repro.command/v1",
+  "started_at_utc": "2026-07-26T02:11:55Z"
+}

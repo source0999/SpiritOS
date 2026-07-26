@@ -1,0 +1,15 @@
+COMMAND npm run test:coding-regression
+RUNNER npm/bash from /home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725
+BRANCH codex/source-proxy-campaign-0-authoritative-base-20260725
+HEAD f0994d1e865bd934189ef7ca113f9c2eed0a2395
+PRE_STATUS_COUNT 1
+
+
+> spirit-os@0.1.0 test:coding-regression
+> .venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py
+
+............................................................................................................. [ 78%]
+..............................                                [100%]
+139 passed, 46 subtests passed in 36.99s
+
+EXIT_STATUS 0

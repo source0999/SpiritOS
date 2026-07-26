@@ -1,0 +1,32 @@
+{
+  "branch": "codex/source-proxy-campaign-0-authoritative-base-20260725",
+  "head": "f0994d1e865bd934189ef7ca113f9c2eed0a2395",
+  "interpreter_path": "/usr/bin/python3.12",
+  "pip_version": "pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)",
+  "pre_test_dirty_explanation": "Only the generated reproducibility evidence directory was untracked when command logs were recorded; .venv-campaign1 is ignored.",
+  "python_version": "Python 3.12.3",
+  "registered_command": "npm run test:coding-regression",
+  "registered_script": ".venv-campaign1/bin/python -m pytest -q source_proxy/tests/test_coding_regression_pack.py",
+  "remote": "f0994d1e865bd934189ef7ca113f9c2eed0a2395",
+  "repo": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+  "reproduce_steps": [
+    "cd /home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725",
+    "ln -s /home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy .venv-campaign1",
+    "npm run test:coding-regression"
+  ],
+  "required_environment_path": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy",
+  "schema": "campaign0.repro.environment/v1",
+  "selected_test_nodes": [
+    "source_proxy/tests/test_coding_regression_pack.py"
+  ],
+  "setup_is_worktree_local": true,
+  "source_proxy_import_path": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/source_proxy/__init__.py",
+  "status_count_after_binding": 0,
+  "status_count_before_binding": 0,
+  "status_count_before_registered_backend_test": 1,
+  "tree": "dedf4ae275192b19c139ef258b11cd14eecfb0dc",
+  "worktree_binding": ".venv-campaign1",
+  "worktree_binding_ignore_rule": "/home/source/.campaign-3-5-execution-repository-20260719.git/info/exclude:8:.venv-campaign1\t.venv-campaign1",
+  "worktree_binding_realpath": "/home/source/SpiritOS/.venv-source-proxy",
+  "worktree_binding_target": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy"
+}

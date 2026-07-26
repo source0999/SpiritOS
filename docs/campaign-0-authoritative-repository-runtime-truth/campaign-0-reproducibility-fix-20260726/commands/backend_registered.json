@@ -1,0 +1,15 @@
+{
+  "command": "npm run test:coding-regression",
+  "counts": {
+    "summary_line": "139 passed, 46 subtests passed in 36.99s"
+  },
+  "exit_status": 0,
+  "finished_at_utc": "2026-07-26T02:11:40Z",
+  "label": "backend_registered",
+  "log": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/docs/campaign-0-authoritative-repository-runtime-truth/campaign-0-reproducibility-fix-20260726/commands/backend_registered.log",
+  "log_sha256": "a4423c0e0ab4c9d7600a40a88592282c0178e97e1b38880c5642afab18abfdf7",
+  "post_status_count": 1,
+  "pre_status_count": 1,
+  "schema": "campaign0.repro.command/v1",
+  "started_at_utc": "2026-07-26T02:11:02Z"
+}

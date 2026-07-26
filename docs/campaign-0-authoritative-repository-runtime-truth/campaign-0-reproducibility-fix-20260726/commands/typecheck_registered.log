@@ -1,0 +1,12 @@
+COMMAND npm run typecheck
+RUNNER npm/bash from /home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725
+BRANCH codex/source-proxy-campaign-0-authoritative-base-20260725
+HEAD f0994d1e865bd934189ef7ca113f9c2eed0a2395
+PRE_STATUS_COUNT 1
+
+
+> spirit-os@0.1.0 typecheck
+> tsc --noEmit
+
+
+EXIT_STATUS 0

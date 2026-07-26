@@ -1,0 +1,15 @@
+{
+  "command": "npm run test:coding-frontend-regression",
+  "counts": {
+    "summary_line": "\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m193 passed\u001b[39m\u001b[22m\u001b[90m (193)\u001b[39m"
+  },
+  "exit_status": 0,
+  "finished_at_utc": "2026-07-26T02:11:51Z",
+  "label": "frontend_registered",
+  "log": "/home/source/SpiritOS-source-proxy-campaign-0-authoritative-base-20260725/docs/campaign-0-authoritative-repository-runtime-truth/campaign-0-reproducibility-fix-20260726/commands/frontend_registered.log",
+  "log_sha256": "7de6232c02ea7364b0419022ddaeaea12911a67f8ea245372de322c6e05d3872",
+  "post_status_count": 1,
+  "pre_status_count": 1,
+  "schema": "campaign0.repro.command/v1",
+  "started_at_utc": "2026-07-26T02:11:40Z"
+}
