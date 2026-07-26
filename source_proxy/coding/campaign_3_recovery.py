@@ -51,5 +51,6 @@ def record_extended_lane_recovery_for_task(task_id: str, *, assessment: dict[str
         status="BLOCKED_ENV" if blocked else "INTEGRATED_LIVE",
         changed_state_fields=["ast_snapshot.campaign_3_recovery"],
         failure_reason=assessment["failure"] if blocked else None,
+        authoritative_state_mutation=False,
     )
     return {"status": "BLOCKED_ENV" if blocked else "INTEGRATED_LIVE", "assessment": assessment, "task": result["task"]}

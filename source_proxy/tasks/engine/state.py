@@ -27,6 +27,7 @@ TERMINAL_OR_WAITING_STATUSES = frozenset({
     "blocked_by_review",
     "cancelled",
     "completed",
+    "completed_verified",
     "coder_config_blocked",
     "failed_needs_human",
     "needs_context",
@@ -34,6 +35,7 @@ TERMINAL_OR_WAITING_STATUSES = frozenset({
     "applied_needs_verification",
     "applied_verification_failed",
     "verification_failed",
+    "verification_passed_pending_participants",
 })
 
 

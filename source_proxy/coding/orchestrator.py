@@ -96,6 +96,7 @@ from source_proxy.tasks.long_running import (
     record_post_apply_verification,
     LongRunningTaskError,
 )
+from source_proxy.tasks.terminal_truth import terminal_truth_is_valid, terminal_truth_payload
 
 
 ORCHESTRATOR_SCHEMA = "coding-orchestrator/v2"
@@ -244,6 +245,7 @@ class CodingLaneStateMachine:
     authority_finalization: dict[str, Any] | None = None
     recovery_lineage: list[dict[str, Any]] = dataclasses.field(default_factory=list)
     model_invocations: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    terminal_truth: dict[str, Any] | None = None
     created_at: str = dataclasses.field(default_factory=lambda: _utc_now())
     updated_at: str = dataclasses.field(default_factory=lambda: _utc_now())
 
@@ -297,6 +299,16 @@ class CodingLaneStateMachine:
         return event
 
     def receipt(self, *, summary: str) -> dict[str, Any]:
+        terminal_truth = self.terminal_truth or terminal_truth_payload(
+            status="running",
+            actor="source_proxy.coding.orchestrator",
+            source="orchestrator_receipt_projection",
+            attempt_id=self.attempt_id,
+            coder_invocation_ids=[
+                str(record.get("invocation_id") or "")
+                for record in self.model_invocations
+            ],
+        )
         return {
             "schema_version": ORCHESTRATOR_SCHEMA,
             "run_id": self.run_id,
@@ -335,6 +347,7 @@ class CodingLaneStateMachine:
             ),
             "recovery_lineage": list(self.recovery_lineage),
             "model_invocations": list(self.model_invocations),
+            "terminal_truth": dict(terminal_truth),
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "summary": summary,
@@ -2958,6 +2971,17 @@ class CodingOrchestrator:
             runtime_consumptions=run.runtime_consumptions,
             orchestrator_state_sha256=state_sha256,
         )
+        task_payload = finalized.get("task") if isinstance(finalized, Mapping) else None
+        terminal_truth = (
+            task_payload.get("terminal_truth")
+            if isinstance(task_payload, Mapping)
+            else None
+        )
+        if not isinstance(terminal_truth, Mapping) or not terminal_truth_is_valid(terminal_truth):
+            raise CodingOrchestratorError("coding_finalization_terminal_truth_missing")
+        if terminal_truth.get("canonical_state") != "completed_verified":
+            raise CodingOrchestratorError("coding_finalization_terminal_truth_not_verified")
+        run.terminal_truth = dict(terminal_truth)
         if run.lane_states["evidence-recorder"] == "running":
             run.transition(
                 "evidence-recorder",
@@ -2966,7 +2990,7 @@ class CodingOrchestrator:
             )
             run.record_event(
                 event_type="final_result",
-                status_after="completed",
+                status_after="completed_verified",
                 detail={
                     "artifact_sha256": run.immutable_artifact["artifact_sha256"]
                     if isinstance(run.immutable_artifact, Mapping)
@@ -3116,11 +3140,18 @@ class CodingOrchestrator:
             ),
             recovery_lineage=_mapping_list(state.get("recovery_lineage")),
             model_invocations=_mapping_list(state.get("model_invocations")),
+            terminal_truth=(
+                dict(state["terminal_truth"])
+                if isinstance(state.get("terminal_truth"), Mapping)
+                else None
+            ),
             created_at=str(state.get("created_at") or _utc_now()),
             updated_at=str(state.get("updated_at") or _utc_now()),
         )
         if not run.run_id:
             raise CodingOrchestratorError("coding_orchestrator_state_invalid")
+        if run.terminal_truth is not None and not terminal_truth_is_valid(run.terminal_truth):
+            raise CodingOrchestratorError("coding_orchestrator_terminal_truth_invalid")
         history_count_valid = len(run.attempt_history) == run.attempt_number - 1 or (
             len(run.attempt_history) == run.attempt_number
             and run.lane_states["repair"] in {"running", "failed", "blocked"}
@@ -3946,6 +3977,15 @@ class CodingOrchestrator:
             lane_id=failed_lane,
             detail={"reason_code": reason_code, **dict(detail)},
         )
+        run.terminal_truth = terminal_truth_payload(
+            status="not_attempted",
+            actor="source_proxy.coding.orchestrator",
+            source=event_type,
+            prior_state="running",
+            reason_code=reason_code,
+            attempt_id=run.attempt_id,
+            transition_owner="source_proxy.coding.orchestrator",
+        )
 
     @staticmethod
     def _terminalize_model_failure(
@@ -3981,6 +4021,19 @@ class CodingOrchestrator:
             event_type=event_type,
             lane_id="coder",
             detail={"reason_code": reason_code, **dict(detail)},
+        )
+        run.terminal_truth = terminal_truth_payload(
+            status="blocked_environment",
+            actor="source_proxy.coding.orchestrator",
+            source=event_type,
+            prior_state="running",
+            reason_code=reason_code,
+            attempt_id=run.attempt_id,
+            coder_invocation_ids=[
+                str(record.get("invocation_id") or "")
+                for record in run.model_invocations
+            ],
+            transition_owner="source_proxy.coding.orchestrator",
         )
 
 

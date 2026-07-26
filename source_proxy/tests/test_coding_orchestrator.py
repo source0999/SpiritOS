@@ -25,6 +25,12 @@ from source_proxy.coding.orchestrator import (
 )
 from source_proxy.planning.plan import ArchitectPlan
 from source_proxy.tasks.long_running import execute_approved_long_running_task
+from source_proxy.tasks.terminal_truth import (
+    TerminalTruthError,
+    reject_report_upgrade,
+    terminal_truth_is_valid,
+    terminal_truth_payload,
+)
 from source_proxy.target_plugins.adapter import (
     GENERIC_WORKSPACE_CONTEXT_ID,
     GENERIC_WORKSPACE_PLUGIN_ID,
@@ -56,6 +62,73 @@ def test_lane_state_machine_has_explicit_dependency_order_and_terminal_states() 
     assert state.lane_reasons["repair"] == "no_repair_needed"
     with pytest.raises(CodingOrchestratorError, match="invalid_coding_lane_transition"):
         state.transition("coder", "running")
+
+
+def test_terminal_truth_vocabulary_rejects_unverified_completion_upgrade() -> None:
+    with pytest.raises(TerminalTruthError, match="completed_must_not_carry_verified_receipt"):
+        terminal_truth_payload(
+            status="completed",
+            actor="test",
+            source="legacy-report",
+            verification_receipt_sha256="sha256:" + "a" * 64,
+        )
+
+    rejected = reject_report_upgrade(
+        producer_state="verification_failed",
+        requested_state="completed_verified",
+        source="report-generator",
+    )
+
+    assert rejected["canonical_state"] == "verification_failed"
+    assert rejected["reason_code"] == "report_upgrade_rejected"
+
+
+def test_completed_verified_requires_independent_artifact_and_verifier() -> None:
+    with pytest.raises(TerminalTruthError, match="completed_verified_artifact_missing"):
+        terminal_truth_payload(
+            status="completed_verified",
+            actor="test",
+            source="fabricated-fallback",
+            verifier_invocation_id="verifier-1",
+            verification_receipt_sha256="sha256:" + "b" * 64,
+        )
+
+    with pytest.raises(TerminalTruthError, match="completed_verified_verifier_missing"):
+        terminal_truth_payload(
+            status="completed_verified",
+            actor="test",
+            source="caller-return-code",
+            artifact_sha256="sha256:" + "c" * 64,
+        )
+
+
+def test_terminal_truth_transition_table_seals_terminal_failures() -> None:
+    failed = terminal_truth_payload(
+        status="verification_failed",
+        actor="test",
+        source="private-verifier",
+        prior_state="approval_required",
+        reason_code="private_verifier_rejected",
+    )
+
+    assert failed["canonical_state"] == "verification_failed"
+    assert terminal_truth_is_valid(failed)
+    with pytest.raises(TerminalTruthError, match="sealed_terminal_transition_rejected"):
+        terminal_truth_payload(
+            status="completed_verified",
+            actor="test",
+            source="late-success-event",
+            prior_state=failed["canonical_state"],
+            artifact_sha256="sha256:" + "d" * 64,
+            verifier_invocation_id="verifier-1",
+            verification_receipt_sha256="sha256:" + "e" * 64,
+            verifier_actor="independent-verifier",
+            terminal_proof_eligible=True,
+        )
+
+    tampered = dict(failed)
+    tampered["reason_code"] = "report_upgraded"
+    assert not terminal_truth_is_valid(tampered)
 
 
 def test_orchestrator_delegates_execution_to_the_existing_executor_by_default() -> None:
@@ -226,6 +299,26 @@ def _pending_authority_outbox_state() -> CodingLaneStateMachine:
     return state
 
 
+def _verified_task_payload(task_id: str) -> dict[str, Any]:
+    return {
+        "task": {
+            "id": task_id,
+            "status": "completed_verified",
+            "terminal_truth": terminal_truth_payload(
+                status="completed_verified",
+                actor="source_proxy.coding.orchestrator",
+                source="test_finalizer",
+                prior_state="approval_required",
+                artifact_sha256="sha256:" + "a" * 64,
+                verifier_invocation_id="verifier-test",
+                verification_receipt_sha256="sha256:" + "b" * 64,
+                verifier_actor="coding-verifier",
+                terminal_proof_eligible=True,
+            ),
+        }
+    }
+
+
 def test_authority_outbox_replays_exact_request_after_response_persist_loss(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -265,7 +358,7 @@ def test_authority_outbox_replays_exact_request_after_response_persist_loss(
     monkeypatch.setattr(
         orchestrator_module,
         "finalize_orchestrated_coding_execution",
-        lambda task_id, **_kwargs: {"task": {"id": task_id, "status": "completed"}},
+        lambda task_id, **_kwargs: _verified_task_payload(task_id),
     )
 
     with pytest.raises(OSError, match="simulated receipt persist loss"):
@@ -279,7 +372,7 @@ def test_authority_outbox_replays_exact_request_after_response_persist_loss(
     assert authority_commits == 1
     assert len(authority_requests) == 2
     assert authority_requests[0] == authority_requests[1]
-    assert result["task"]["status"] == "completed"
+    assert result["task"]["status"] == "completed_verified"
     assert result["coding_orchestrator"]["authority_finalization"]["state"] == "locally_committed"
 
 
@@ -311,7 +404,7 @@ def test_authority_outbox_does_not_reconsume_after_local_commit_failure(
         local_calls += 1
         if local_calls == 1:
             raise OSError("simulated local commit failure")
-        return {"task": {"id": task_id, "status": "completed"}}
+        return _verified_task_payload(task_id)
 
     monkeypatch.setattr(orchestrator_module, "finalize_coding_execution_approval", finalize_authority)
     monkeypatch.setattr(orchestrator_module, "record_coding_orchestrator_state", persist_state)
@@ -2006,6 +2099,8 @@ def test_generic_primary_pre_plan_block_terminalizes_lanes_without_raw_output(
     assert receipt["model_invocations"] == []
     assert receipt["target_plugin_proposal"] is None
     assert receipt["immutable_artifact"] is None
+    assert receipt["terminal_truth"]["canonical_state"] == "not_attempted"
+    assert receipt["terminal_truth"]["reason_code"] == "architect_output_invalid"
     blocked_event = next(
         event
         for event in receipt["causal_events"]
@@ -2427,6 +2522,8 @@ def test_generic_fallback_pre_coder_block_preserves_reason_and_sanitized_provena
     )
     detail = blocked_event["detail"]
     assert detail["reason_code"] == "fallback_architect_output_invalid"
+    assert receipt["terminal_truth"]["canonical_state"] == "not_attempted"
+    assert receipt["terminal_truth"]["reason_code"] == "fallback_architect_output_invalid"
     assert detail["target_adapter_provenance_sha256"] == (
         orchestrator_module._sha256_json(fallback_provenance)
     )
@@ -2684,6 +2781,8 @@ def test_model_failure_terminalization_seals_active_repair_lane() -> None:
         item["event_type"] == "target_plugin_fallback_failure_terminalized"
         for item in state.causal_events
     ) == 1
+    assert state.terminal_truth is not None
+    assert state.terminal_truth["canonical_state"] == "blocked_environment"
 
 
 def test_canonical_target_plugin_proposal_binds_adapter_model_and_runtime_output(

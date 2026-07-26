@@ -100,6 +100,12 @@ from source_proxy.tasks.engine.state import (
     task_queue_title as _task_queue_title,
     terminal_or_waiting_statuses as _terminal_or_waiting_statuses,
 )
+from source_proxy.tasks.terminal_truth import (
+    TerminalTruthError,
+    canonical_state_for_task_status,
+    terminal_truth_payload,
+    verified_completion_truth,
+)
 
 # Mid-file ``patch does not apply``: try whitespace relaxations only. Do **not** use
 # ``--3way`` here — it requires blobs in the git index; untracked or odd trees get
@@ -900,6 +906,7 @@ class LongRunningTask:
             "writes_allowed": _has_approved_execution(self.open_diffs),
             "worker_lanes": _worker_lanes_for_task(self),
             "next_action": self.next_action,
+            "terminal_truth": self.terminal_truth,
         }
 
     @property
@@ -918,14 +925,37 @@ class LongRunningTask:
             return 95
         if self.status == "applied_needs_verification":
             return 92
-        if self.status == "completed":
+        if self.status in {"completed", "completed_verified"}:
             return 100
         return min(90, self.poll_count * 25)
+
+    @property
+    def terminal_truth(self) -> dict[str, Any]:
+        snapshot = self.ast_snapshot if isinstance(self.ast_snapshot, dict) else {}
+        persisted = snapshot.get("terminal_truth")
+        if isinstance(persisted, dict):
+            return dict(persisted)
+        try:
+            return terminal_truth_payload(
+                status=self.status,
+                actor="source_proxy.tasks.long_running",
+                source="task_payload_projection",
+                reason_code=str(snapshot.get("architect_reason") or self.architect_reason or ""),
+            )
+        except TerminalTruthError as error:
+            return terminal_truth_payload(
+                status="failed",
+                actor="source_proxy.tasks.long_running",
+                source="task_payload_projection_failed_closed",
+                reason_code=error.reason_code,
+            )
 
     @property
     def next_action(self) -> str:
         if self.status == "cancelled":
             return "Task was cancelled. Start a new task with narrower scope if needed."
+        if self.status == "completed_verified":
+            return "Task completed with independent verification and sealed terminal proof."
         if self.status == "needs_context":
             return "Coder needs a valid Architect CoderPacket with target context before it can produce a diff."
         if self.status == "coder_config_blocked":
@@ -950,6 +980,8 @@ class LongRunningTask:
             return self.architect_reason or "Operator must run preview/apply from /coding."
         if self.status in {"applied_verification_failed", "verification_failed"}:
             return "Approved diff was applied, but verification failed. Generate a fix prompt from the verification error."
+        if self.status == "verification_passed_pending_participants":
+            return "Post-apply checks passed, but canonical independent-participant finalization is still required."
         if self.status == "applied_needs_verification":
             verification = _current_post_apply_verification(self)
             if isinstance(verification, dict) and verification.get("docs_only"):
@@ -1543,6 +1575,15 @@ def execute_approved_long_running_task(
             "reason_code: approved_diff_blocked"
             + (f"; blocked_reasons={'; '.join(blocked_reasons)[:1000]}" if blocked_reasons else "")
         )
+        snapshot = _ensure_ast_snapshot_dict(task)
+        snapshot["terminal_truth"] = terminal_truth_payload(
+            status=task.status,
+            actor="source_proxy.tasks.long_running",
+            source="approved_diff_safety_gate",
+            prior_state=canonical_state_for_task_status(before_blocked),
+            reason_code="approved_diff_blocked",
+        )
+        task.ast_snapshot = snapshot
         _append_causal_event(
             task,
             event_type="failure",
@@ -2612,6 +2653,7 @@ def record_post_apply_verification(
         verification.get("skip_reason")
     )
 
+    status_before_verification = task.status
     if any_failed:
         verification["status"] = "verification_failed"
         task.status = "verification_failed"
@@ -2644,6 +2686,14 @@ def record_post_apply_verification(
     task.truncated_test_results = _post_apply_results_json(task, verification)
     snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
     snapshot["post_apply_verification"] = verification
+    if task.status == "verification_failed":
+        snapshot["terminal_truth"] = terminal_truth_payload(
+            status=task.status,
+            actor="source_proxy.tasks.long_running",
+            source="post_apply_verification",
+            prior_state=canonical_state_for_task_status(status_before_verification),
+            reason_code="post_apply_verification_failed",
+        )
     approved_execution_evidence = (
         snapshot.get("approved_execution_evidence")
         if isinstance(snapshot.get("approved_execution_evidence"), dict)
@@ -3051,7 +3101,7 @@ def finalize_orchestrated_coding_execution(
     """Persist success only after the orchestrator consumed the durable approval."""
 
     existing_task = _lookup_task(task_id)
-    if existing_task.status == "completed":
+    if existing_task.status in {"completed", "completed_verified"}:
         snapshot = _ensure_ast_snapshot_dict(existing_task)
         campaign_approval = snapshot.get("campaign_2_approval")
         campaign_evidence = (
@@ -3136,20 +3186,42 @@ def finalize_orchestrated_coding_execution(
     snapshot["coding_orchestrator_state_sha256"] = context[
         "orchestrator_state_sha256"
     ]
+    terminal_proof_eligible = bool(
+        context["production_proof"].get("terminal_proof_eligible")
+    )
+    if not terminal_proof_eligible:
+        raise LongRunningTaskError(
+            "Production proof is not eligible for verified completion.",
+            "coding_production_proof_not_terminal",
+            diagnostics={
+                "production_proof_failures": list(
+                    context["production_proof"].get("failures") or []
+                ),
+            },
+        )
+    status_before = task.status
+    task.status = "completed_verified"
+    try:
+        snapshot["terminal_truth"] = verified_completion_truth(
+            task_status=task.status,
+            production_proof=context["production_proof"],
+            participant_records=records,
+            artifact=artifact,
+            prior_state=canonical_state_for_task_status(status_before),
+        )
+    except TerminalTruthError as error:
+        raise LongRunningTaskError(
+            "Verified completion terminal truth was rejected.",
+            error.reason_code,
+        ) from error
     task.ast_snapshot = snapshot
-    task.status = "completed"
     for diff in task.open_diffs:
         if str(diff.get("status") or "") == "verification_passed_pending_participants":
             diff["status"] = "verified"
             diff["verified"] = True
     approved_execution_evidence = snapshot.get("approved_execution_evidence")
     if isinstance(approved_execution_evidence, dict):
-        terminal_proof_eligible = bool(
-            context["production_proof"].get("terminal_proof_eligible")
-        )
-        approved_execution_evidence["final_truth_status"] = (
-            "GO" if terminal_proof_eligible else "VERIFIED_NONTERMINAL"
-        )
+        approved_execution_evidence["final_truth_status"] = "GO"
         approved_execution_evidence["commit_safe"] = True
         approved_execution_evidence["artifact_sha256"] = artifact_hash
         approved_execution_evidence["participant_invocation_ids"] = invocation_ids
@@ -3175,8 +3247,8 @@ def finalize_orchestrated_coding_execution(
         subsystem="coding_orchestrator",
         approval_id=str(campaign_approval["approval_id"]),
         run_id=str(artifact["run_id"]),
-        status_before="verification_passed_pending_participants",
-        status_after="completed",
+        status_before=status_before,
+        status_after="completed_verified",
         changed_state_fields=[
             "status",
             "ast_snapshot.campaign_2_approval",
@@ -3299,6 +3371,19 @@ def fail_orchestrated_coding_execution(
     task.ast_snapshot = snapshot
     before = task.status
     task.status = "verification_failed"
+    snapshot["terminal_truth"] = terminal_truth_payload(
+        status=task.status,
+        actor="source_proxy.coding.orchestrator",
+        source="participant_failure_finalization",
+        prior_state=canonical_state_for_task_status(before),
+        reason_code=reason_code,
+        coder_invocation_ids=[
+            str(record.get("invocation_id") or "")
+            for record in participant_records
+            if record.get("role") == "coding-executor"
+        ],
+    )
+    task.ast_snapshot = snapshot
     _append_causal_event(
         task,
         event_type="failure",
@@ -5188,7 +5273,16 @@ def cancel_long_running_task(task_id: str) -> dict[str, Any]:
             pending_approval["state"] = cancelled["state"]
             snapshot["campaign_2_pending_approval"] = pending_approval
             task.ast_snapshot = snapshot
+        status_before = task.status
         task.status = "cancelled"
+        snapshot["terminal_truth"] = terminal_truth_payload(
+            status=task.status,
+            actor="source_proxy.tasks.long_running",
+            source="task_cancellation",
+            prior_state=canonical_state_for_task_status(status_before),
+            reason_code="operator_cancelled",
+        )
+        task.ast_snapshot = snapshot
         task.cancelled_at = _now_iso()
         task.updated_at = task.cancelled_at
         _save_task(task)
@@ -5297,7 +5391,7 @@ def undo_last_approved_change(
             "Undo was already recorded but the restored state has drifted.",
             "undo_restored_state_drift",
         )
-    if task.status != "completed" or manifest.get("stage") != "post_apply_verified":
+    if task.status != "completed_verified" or manifest.get("stage") != "post_apply_verified":
         raise LongRunningTaskError(
             "Undo is only available after completed post-apply verification.",
             "undo_not_verified",
@@ -5897,6 +5991,7 @@ def record_subsystem_integration_result(
     status: str,
     changed_state_fields: list[str] | None = None,
     failure_reason: str | None = None,
+    authoritative_state_mutation: bool = True,
 ) -> dict[str, Any]:
     """Record a Plan 2 subsystem invocation and downstream consumption on one task.
 
@@ -5976,7 +6071,7 @@ def record_subsystem_integration_result(
     task.ast_snapshot = snapshot
 
     fields = list(dict.fromkeys([*(changed_state_fields or []), "ast_snapshot"]))
-    if failed:
+    if failed and authoritative_state_mutation:
         before_failure = task.status
         task.status = "blocked" if normalized_status.startswith("BLOCKED") else "failed_needs_human"
         task.architect_status = "blocked"
@@ -6241,7 +6336,7 @@ def _latest_task_diagnostic_envelope(task: LongRunningTask) -> dict[str, Any] | 
 
 
 def _approved_execution_diagnostic_envelope(task: LongRunningTask) -> dict[str, Any] | None:
-    if task.status not in {"applied_needs_verification", "completed"}:
+    if task.status not in {"applied_needs_verification", "completed", "completed_verified"}:
         return None
     snapshot = task.ast_snapshot if isinstance(task.ast_snapshot, dict) else {}
     evidence = snapshot.get("approved_execution_evidence")
@@ -6286,7 +6381,7 @@ def _approved_execution_diagnostic_envelope(task: LongRunningTask) -> dict[str, 
         for item in post_apply.get("commit_blockers", [])
         if str(item or "").strip()
     ]
-    commit_safe = task.status == "completed" and not commit_blockers
+    commit_safe = task.status == "completed_verified" and not commit_blockers
     production_proof = snapshot.get("coding_production_proof")
     terminal_proof_eligible = bool(
         isinstance(production_proof, dict)
@@ -7657,7 +7752,7 @@ def _finalize_post_apply_backup_manifest(
     payload.update(
         {
             "stage": "post_apply_verified"
-            if task.status == "completed"
+            if task.status == "completed_verified"
             else "post_apply_blocked",
             "post_apply_verification": verification,
             "post_apply_rediff_sha256": str(
@@ -7670,15 +7765,15 @@ def _finalize_post_apply_backup_manifest(
             ),
             "final_truth_status": (
                 "GO"
-                if task.status == "completed"
+                if task.status == "completed_verified"
                 and isinstance(snapshot.get("coding_production_proof"), dict)
                 and snapshot["coding_production_proof"].get("terminal_proof_eligible")
                 is True
                 else "VERIFIED_NONTERMINAL"
-                if task.status == "completed"
+                if task.status in {"completed", "completed_verified"}
                 else "BLOCKED_SAFE"
             ),
-            "commit_safe": task.status == "completed",
+            "commit_safe": task.status == "completed_verified",
             "terminal_proof_eligible": bool(
                 isinstance(snapshot.get("coding_production_proof"), dict)
                 and snapshot["coding_production_proof"].get("terminal_proof_eligible")
@@ -8378,7 +8473,16 @@ def _run_debugger_handoff(
         for diff in task.open_diffs:
             diff["status"] = "verified"
             diff["verified"] = True
-        task.status = "completed"
+        task.status = "verification_passed_pending_participants"
+        snapshot = _ensure_ast_snapshot_dict(task)
+        snapshot["terminal_truth"] = terminal_truth_payload(
+            status=task.status,
+            actor="source_proxy.tasks.long_running",
+            source="legacy_debugger_compatibility_handoff",
+            prior_state="running",
+            reason_code="legacy_debugger_verification_not_authoritative",
+        )
+        task.ast_snapshot = snapshot
         _set_task_role(task, "debugger", reason="debugger_verified")
         return
 
