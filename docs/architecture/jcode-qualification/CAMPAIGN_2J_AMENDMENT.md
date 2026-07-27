@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_3_NETWORK_AND_CREDENTIAL_CONTAINMENT_COMPLETE`
+status: `GATE_2_J_4_PROCESS_SUPERVISION_COMPLETE`
 
 ## Identity and dependency
 

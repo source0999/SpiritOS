@@ -1,8 +1,8 @@
 {
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
-  "gate_id": "2-J.3",
-  "status": "GATE_2_J_3_NETWORK_AND_CREDENTIAL_CONTAINMENT_GREEN",
+  "gate_id": "2-J.4",
+  "status": "GATE_2_J_4_PROCESS_SUPERVISION_GREEN",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -37,5 +37,11 @@
     "result": "53 passed in 1.42s",
     "real_provider_or_credential_used": false
   },
-  "next_gate": "2-J.4-process-supervision"
+  "process_supervision": {
+    "implementation": "source_proxy/jcode/supervision.py",
+    "result": "4 passed in 0.54s",
+    "guarantees": ["new process session", "SIGTERM", "bounded SIGKILL escalation", "group reap receipt"],
+    "sigsegv_disposition": "historical rustc default-feature embedding/AWS build crash; no-default-feature mitigation retained"
+  },
+  "next_gate": "2-J.5-binary-provider-model-truth"
 }
