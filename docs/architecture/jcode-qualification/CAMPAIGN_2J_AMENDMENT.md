@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_8_DIAGNOSTIC_FIXTURE_SEAL_COMPLETE`
+status: `GATE_2_J_9_BLOCKED_OPERATOR_AUTHORIZATION_REQUIRED`
 
 ## Identity and dependency
 

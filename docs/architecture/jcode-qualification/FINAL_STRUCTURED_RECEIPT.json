@@ -1,8 +1,8 @@
 {
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
-  "gate_id": "2-J.8",
-  "status": "GATE_2_J_8_DIAGNOSTIC_FIXTURE_SEAL_GREEN_UNEXECUTED",
+  "gate_id": "2-J.9",
+  "status": "GATE_2_J_9_BLOCKED_OPERATOR_AUTHORIZATION_REQUIRED",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -68,5 +68,10 @@
     "sha256": "149e2cdc7407f19cb4b0a431edb246affaaaeebabaa0694a22af57dcb6cadbb6",
     "executed": false
   },
-  "next_gate": "2-J.9-controlled-comparison-requires-separate-execution-authorization"
+  "controlled_comparison": {
+    "status": "blocked",
+    "reason": "separate operator authorization for model-backed fixture execution is absent",
+    "fixture_executed": false
+  },
+  "next_gate": "BLOCKED_PENDING_2_J_9_OPERATOR_AUTHORIZATION"
 }
