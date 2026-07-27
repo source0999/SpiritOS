@@ -1,0 +1,69 @@
+{
+  "schema_version": "source-proxy.jcode-final-audit/v1",
+  "combined_verdict": "FREEZE_VERIFIED__JCODE_LIMITED_GO_WITH_REMEDIATIONS",
+  "canonical_candidate": {
+    "repository": "SpiritOS/Source Proxy",
+    "worktree": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
+    "branch": "codex/source-proxy-jcode-qualification-20260726",
+    "base_head": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
+    "local_commit": null
+  },
+  "campaign": {
+    "current": "campaign_2_operator_acceptance_pending",
+    "campaign_4_paused": true,
+    "amendment": "Campaign 2-J - JCode Executor Qualification",
+    "amendment_status": "proposed_non_advancing_not_authorized",
+    "next_authorized_action": "operator explicitly accepts or rejects the existing Campaign 2 packet"
+  },
+  "jcode": {
+    "remote": "https://github.com/1jehuang/jcode.git",
+    "commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
+    "nearest_ancestor_release": "v0.58.0",
+    "source_build": "pass_no_default_features_vendored_openssl",
+    "upstream_targeted_tests": {"passed": 43, "failed": 0},
+    "default_feature_build_limitation": "rustc_sigsegv_under_large_embedding_aws_graph",
+    "architecture_layer": 4,
+    "selected_mode": "per_task_external_cli_adapter",
+    "integrated": false,
+    "live_execution_authorized": false
+  },
+  "implementation": {
+    "status": "disabled_non_executing_qualification_seam",
+    "production_call_sites": 0,
+    "files_added": 29,
+    "existing_files_modified": 0,
+    "dependencies_added": 0,
+    "services_changed": 0,
+    "benchmark_run": false,
+    "benchmark_modified": false
+  },
+  "qualification_experiment": {
+    "status": "designed_not_authorized_not_run",
+    "diagnostic_tasks": 20,
+    "frozen_benchmark_used": false,
+    "lanes_executed": []
+  },
+  "validation": {
+    "adapter_tests": {"passed": 30, "failed": 0},
+    "boundary_suite": {"passed": 165, "skipped": 2, "failed": 0, "subtests_passed": 13},
+    "coding_regression_pack": {"passed": 136, "failed": 3, "classification": "unchanged_base_head_behavior_outside_jcode_scope"},
+    "json": "pass",
+    "frozen_hashes": "pass",
+    "production_call_site_search": "pass_zero_found",
+    "overall_full_green": false
+  },
+  "commit_disposition": "not_created_registered_regression_pack_not_fully_green",
+  "blockers": [
+    "campaign_2_operator_acceptance",
+    "os_enforced_filesystem_capabilities",
+    "inference_only_network_sandbox",
+    "process_group_timeout_and_cancellation",
+    "pinned_binary_hash_and_model_parameter_budget_enforcement",
+    "complete_ndjson_result_mapping",
+    "committed_diagnostic_fixture",
+    "live_exact_model_identity",
+    "paired_a_b_results",
+    "zero_safety_regressions",
+    "second_clean_reproduction"
+  ]
+}

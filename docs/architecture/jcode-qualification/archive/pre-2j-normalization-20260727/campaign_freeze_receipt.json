@@ -1,0 +1,60 @@
+{
+  "schema_version": "source-proxy.campaign-freeze/v1",
+  "verdict": "CAMPAIGN_FREEZE_VERIFIED_WITH_RECORDED_DIVERGENCE",
+  "scope": "Source Proxy",
+  "host": {
+    "ssh_alias": "spirit",
+    "hostname": "source-server",
+    "kernel": "Linux 6.8.0-134-generic x86_64"
+  },
+  "observed_at_utc": "2026-07-27T01:35:06Z",
+  "receipt_finalized_at_utc": "2026-07-27T02:28:53Z",
+  "canonical_candidate": {
+    "worktree": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
+    "branch": "codex/source-proxy-jcode-qualification-20260726",
+    "base_head": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
+    "scoped_status_at_freeze": "clean",
+    "upstream": null,
+    "authority_claim": "pending_campaign_2_candidate_not_accepted_production"
+  },
+  "campaign_chain": [
+    {"campaign": 0, "head": "bbe195111e202afe8610cd02adf528f0e92857c7", "status": "accepted"},
+    {"campaign": 1, "head": "4e5772182cdf879ab2a05243e916f7760f22b41c", "status": "accepted"},
+    {"campaign": 2, "head": "1641ddb1c71e6b364e98aa9aeff4b4719627d926", "status": "implementation_and_negative_proof_complete_operator_acceptance_pending"},
+    {"campaign": 3, "head": null, "status": "not_started"},
+    {"campaign": 4, "head": null, "status": "not_started_and_historical_ui_campaign_remains_paused"},
+    {"campaign": 5, "head": null, "status": "not_started"},
+    {"campaign": 6, "head": null, "status": "not_started"}
+  ],
+  "historical_checkouts": [
+    {"name": "manifest_source_proxy", "path": "/home/source/SpiritOS-source-proxy-20260711", "expected_head": "918a347f", "observed_head": "594d66ef8280953af767a273d7c91be765d1a6eb", "status": "untracked_.spirit-backups"},
+    {"name": "campaign_1", "head": "8a20473c", "status": "clean_historical"},
+    {"name": "campaign_2", "head": "2b8ead66", "status": "clean_historical"},
+    {"name": "campaign_3_design", "head": "4aec5104", "status": "untracked_campaign_4_goal"},
+    {"name": "campaign_3_corrected_extended", "head": "74ac367faf9a72c652061a5482c0180bb0b0c844", "status": "clean_historical"},
+    {"name": "campaign_4_checkout", "head": "53338fce", "status": "clean_but_paused"},
+    {"name": "campaign_3_5_separate_repository", "path": "/home/source/SpiritOS-campaign-3-5-execution-20260719", "head": "6616846d7584af0318fe18fbaf7c3b1195ea03b0", "status": "separate_git_repository_not_main_worktree"}
+  ],
+  "dirty_main": {
+    "path": "/home/source/SpiritOS",
+    "branch": "master",
+    "head": "85dee8b59cce39afe1fbe7d674c066ccca1e6f13",
+    "status": "dirty_do_not_touch",
+    "runtime_health": "NO_GO"
+  },
+  "frozen_benchmark": {
+    "path": "benchmarks/coder-backend-100/v1.1",
+    "task_count": 100,
+    "run_performed": false,
+    "modified": false,
+    "hashes": {
+      "manifest.json": "0d6ae09d9ffe885c437236b9a10afad50c49d38eac1a8a8d05b8f7471c7592f4",
+      "tasks.json": "d437ccd216d56661e16afba9fe2b81b2c15d142342af0fe3868d7ac84d625b53",
+      "tasks.jsonl": "84c00187b9cc3d1932dd2e9286c558c01091d799568d8d8dcc80f7c9cc06f0c6",
+      "file-hashes.json": "45b524f74063148b3e91630b4769957ab2a888fe0c0a4c1b34262c0a6841d1d9"
+    }
+  },
+  "safe_to_write": true,
+  "safe_to_advance_campaign": false,
+  "campaign_4_paused": true
+}
