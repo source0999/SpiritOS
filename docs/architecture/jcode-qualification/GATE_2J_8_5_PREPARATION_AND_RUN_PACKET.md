@@ -54,17 +54,30 @@ bridge, strict NDJSON requirements, and Proxy-owned independent final checks.
 ## Required Gate 2-J.9 preflight
 
 The pinned audit checkout remains at
-`2444e7b6bc80d421ae3ee404081bdb41150a1830`, but currently contains no JCode
-binary and the configured SSH environment exposes no `cargo` executable. No
-substitute binary was selected. Before any task, restore the local Rust build
-toolchain or locate the approved binary, rebuild with the recorded offline
-serial profile, and prove exact SHA-256
+`2444e7b6bc80d421ae3ee404081bdb41150a1830` and currently contains no JCode
+binary. Its preserved scoped Rust toolchain is available through its recorded
+`CARGO_HOME` and `RUSTUP_HOME`, but no substitute binary was selected. Before
+any task, locate or rebuild the approved binary with the recorded offline serial
+profile and prove exact SHA-256
 `d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc`.
 
 After binary proof, run only the packet's no-model containment, supervision,
 evidence, and actual-model-binding preflight from fresh state. Registry
 presence is availability evidence, not an observed actual-model result. Gate
 2-J.9 may then begin only if every preflight check passes.
+
+## Binary recovery attempt
+
+On 2026-07-27, the authorized recovery sweep checked executable files named
+`jcode` in `/home/source`, `/tmp`, `/var/tmp`, and `/var/lib/docker/volumes`
+against the full approved SHA-256. It found zero executable candidates and zero
+matches. A fresh isolated build then used source commit `2444e7b6`, lockfile
+SHA-256 `9b48f643ae298e655db7bbe68a548feb8414a634de5cf55d2b1994426e3bac19`,
+Rust/Cargo `1.97.1`, the exact serial no-default-feature command, and image
+`rust@sha256:77fac8b98f9f46062bb680b6d25d5bcaabfc400143952ebc572e924bcbedc3fa`.
+The compiler terminated with `SIGSEGV` before producing `target/debug/jcode`.
+No binary was provisioned, no hash was replaced, and the packet remains sealed
+against the original approved binary. See `GATE_2J_8_5_BINARY_RECOVERY_ATTEMPT.md`.
 
 ## No-execution receipt
 

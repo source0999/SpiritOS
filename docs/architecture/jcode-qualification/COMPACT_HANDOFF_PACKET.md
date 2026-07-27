@@ -15,10 +15,12 @@ the frozen benchmark and daily runtime are untouched.
 Before any Gate 2-J.9 task, reconstitute the pinned JCode binary with the
 recorded offline serial profile and verify SHA-256
 `d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc`.
-The current audit checkout has no binary and its non-interactive environment
-does not expose Cargo. Then perform the packet's independent no-model runner
-preflight; no task may start until the binary, containment, evidence, and
-actual-model checks pass from fresh state.
+The authorized local recovery sweep found no candidate binary. A fresh pinned
+Docker build using Rust/Cargo 1.97.1 then ended in `rustc` `SIGSEGV` before a
+binary was produced; no replacement hash was accepted. See
+`GATE_2J_8_5_BINARY_RECOVERY_ATTEMPT.md`. Then perform the packet's independent
+no-model runner preflight; no task may start until a binary, containment,
+evidence, and actual-model checks pass from fresh state.
 
 ## Prohibited next actions
 
