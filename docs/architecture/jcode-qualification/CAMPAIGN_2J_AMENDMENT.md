@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_5_BINARY_PROVIDER_MODEL_TRUTH_COMPLETE`
+status: `GATE_2_J_6_EVIDENCE_MAPPING_COMPLETE`
 
 ## Identity and dependency
 
