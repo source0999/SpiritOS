@@ -10,8 +10,8 @@ cache completed without touching the audit checkout or daily runtime.
 | Field | Evidence |
 |---|---|
 | Pinned source | `2444e7b6bc80d421ae3ee404081bdb41150a1830`, audit checkout clean |
-| Build mode | `--locked --no-default-features --features linux-compat-vendored-openssl --bin jcode`, offline audited cache |
-| Binary SHA-256 | `6f0b9aca0017075d614481ebbc2f39baa27380a6421aa01bfc42ca4c65f5c3ab` |
+| Build mode | `CARGO_BUILD_JOBS=1`, `--locked --no-default-features --features linux-compat-vendored-openssl --bin jcode`, offline audited cache |
+| Binary SHA-256 | `d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc` |
 | Binary version | `jcode v0.58.51-dev (2444e7b6)` |
 | Identity code | `source_proxy/jcode/identity.py`, focused tests pass |
 

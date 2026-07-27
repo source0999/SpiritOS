@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_6_EVIDENCE_MAPPING_COMPLETE`
+status: `GATE_2_J_7_CLEAN_REPRODUCTION_COMPLETE`
 
 ## Identity and dependency
 
