@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_0_NORMALIZATION_IN_PROGRESS`
+status: `GATE_2_J_2_FILESYSTEM_CONTAINMENT_COMPLETE`
 
 ## Identity and dependency
 

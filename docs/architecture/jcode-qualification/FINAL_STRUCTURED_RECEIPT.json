@@ -1,8 +1,8 @@
 {
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
-  "gate_id": "2-J.0",
-  "status": "GATE_2_J_1_BASELINE_CHARACTERIZED_NOT_GREEN",
+  "gate_id": "2-J.2",
+  "status": "GATE_2_J_2_FILESYSTEM_CONTAINMENT_GREEN_NEGATIVE_ONLY",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -22,5 +22,12 @@
     "classification": "unchanged-base defect; not a JCode regression",
     "isolated_approval_test": "passed"
   },
-  "next_gate": "2-J.2-filesystem-containment"
+  "filesystem_containment": {
+    "implementation": "source_proxy/jcode/containment.py",
+    "bubblewrap": "/usr/bin/bwrap 0.9.0",
+    "command": "python -m pytest -q source_proxy/tests/test_jcode_containment.py source_proxy/tests/test_jcode_qualification_adapter.py source_proxy/tests/test_bubblewrap_sandbox.py",
+    "result": "50 passed in 0.24s",
+    "disposition": "green negative containment only; no writable JCode execution workspace claimed"
+  },
+  "next_gate": "2-J.3-network-and-credential-containment"
 }
