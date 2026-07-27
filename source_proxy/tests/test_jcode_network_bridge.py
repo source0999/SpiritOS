@@ -54,6 +54,15 @@ def _server() -> tuple[http.server.ThreadingHTTPServer, threading.Thread]:
     return server, thread
 
 
+def _recv_all(client: socket.socket) -> bytes:
+    chunks: list[bytes] = []
+    while True:
+        payload = client.recv(4096)
+        if not payload:
+            return b"".join(chunks)
+        chunks.append(payload)
+
+
 @pytest.mark.skipif(shutil.which("bwrap") is None, reason="bubblewrap unavailable")
 def test_sandbox_can_reach_only_local_relay_for_fixed_loopback_endpoint(tmp_path: Path) -> None:
     containment = _containment(tmp_path)
@@ -127,7 +136,7 @@ def test_host_bridge_dials_exact_configured_endpoint(tmp_path: Path) -> None:
             client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             client.connect(str(bridge_directory / "inference.sock"))
             client.sendall(b"GET /v1/models HTTP/1.1\r\nHost: qualified\r\n\r\n")
-            response = client.recv(4096)
+            response = _recv_all(client)
             client.close()
 
         assert b"qualified-loopback-only" in response

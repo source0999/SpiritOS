@@ -1,0 +1,79 @@
+# Gate 2-J.8.5 Preparation and Executable Run Packet
+
+status: `SEALED_PRE_EXECUTION_NO_TASKS_RUN`
+
+## Scope
+
+This bounded preparation gate creates the immutable diagnostic fixture and
+seals the exact Gate 2-J.9 inputs. It does not start JCode, make a generation
+request, execute a diagnostic task, enable the executor, or touch the frozen
+benchmark or daily runtime.
+
+## Sealed inputs
+
+| Field | Value |
+|---|---|
+| Frozen diagnostic manifest | `archive/pre-2j-normalization-20260727/jcode_qualification_manifest.json` |
+| Manifest SHA-256 | `149e2cdc7407f19cb4b0a431edb246affaaaeebabaa0694a22af57dcb6cadbb6` |
+| Fixture commit | `12706316e72494144846f59a2130e2dd2bd83086` |
+| Fixture roots | `qualification_fixture/`, `fixture_proxy/` |
+| Fixture files / tree SHA-256 | `42` / `69c138d6835b02bed4e67fc6ddd0f168015d3bf8d81cb8b46c7ab8bd63870de5` |
+| Local registry receipt | `GATE_2J_8_5_LOCAL_MODEL_REGISTRY_20260727.json` |
+| Sealed packet | `GATE_2J_8_5_EXECUTABLE_RUN_PACKET.json` |
+| Packet SHA-256 | `a8c7c35353b0512f35d4d677e1ca560f1ad285d2210d60de0db87a83abc3aa27` |
+
+The fixture source and protected tests are deliberately committed in an initial
+state suitable for the exact 20 manifest tasks. No task test command was run
+in this gate; only Python compilation and the packet-builder tests ran.
+
+## Model and route binding
+
+The read-only local Ollama registry at `http://127.0.0.1:11434/api/tags`
+attests both required models: `qwen2.5-coder:7b` digest
+`dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364` and
+`qwen2.5-coder:14b` digest
+`9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849`.
+Both report `Q4_K_M`. The packet fixes local loopback routing, no credentials,
+no fallback, JCode profile `spiritos-qualification`, and the sandbox bridge
+endpoint `http://127.0.0.1:4000/v1` forwarding only to host loopback port
+`11434`.
+
+Generation values are drawn from the existing adapter contract: temperature
+`0`, seed `7`, max tokens `4096`, turn budget `4`, aggregate token budget
+`32768`, timeout `300` seconds, and maximum raw output `2000000` bytes.
+
+## Deterministic comparison plan
+
+The packet fixes 80 prospective runs: each of the 20 tasks first in paired
+primary lanes A then B, followed by the same 20 tasks in paired challenger
+lanes C then D. Every future run requires a fresh disposable worktree and
+executor home; JCode lanes additionally require a fresh `JCODE_HOME`. The
+packet fixes the allowlist, denied tools, no-session/no-memory policy, fixed
+bridge, strict NDJSON requirements, and Proxy-owned independent final checks.
+
+## Required Gate 2-J.9 preflight
+
+The pinned audit checkout remains at
+`2444e7b6bc80d421ae3ee404081bdb41150a1830`, but currently contains no JCode
+binary and the configured SSH environment exposes no `cargo` executable. No
+substitute binary was selected. Before any task, restore the local Rust build
+toolchain or locate the approved binary, rebuild with the recorded offline
+serial profile, and prove exact SHA-256
+`d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc`.
+
+After binary proof, run only the packet's no-model containment, supervision,
+evidence, and actual-model-binding preflight from fresh state. Registry
+presence is availability evidence, not an observed actual-model result. Gate
+2-J.9 may then begin only if every preflight check passes.
+
+## No-execution receipt
+
+| Item | Result |
+|---|---|
+| JCode processes | `0` |
+| Model generation requests | `0` |
+| Diagnostic tasks attempted/completed | `0 / 0` |
+| Frozen benchmark executions | `0` |
+| Daily-runtime use | `0` |
+| Production wiring enabled | `false` |
+| Gate 2-J.10 reached | `false` |

@@ -78,7 +78,10 @@ def _copy_bidirectionally(left: socket.socket, right: socket.socket) -> None:
             payload = source.recv(64 * 1024)
             if not payload:
                 return
-            destination.sendall(payload)
+            try:
+                destination.sendall(payload)
+            except OSError:
+                return
 
 
 if __name__ == "__main__":

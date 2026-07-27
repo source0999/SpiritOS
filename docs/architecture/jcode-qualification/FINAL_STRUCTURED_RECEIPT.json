@@ -1,8 +1,8 @@
 {
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
-  "gate_id": "2-J.9",
-  "status": "GATE_2_J_9_PREFLIGHT_BLOCKED_INCOMPLETE_CANONICAL_RUN_PACKET",
+  "gate_id": "2-J.8.5",
+  "status": "GATE_2_J_8_5_PREPARATION_SEALED_NO_EXECUTION",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -68,6 +68,20 @@
     "sha256": "149e2cdc7407f19cb4b0a431edb246affaaaeebabaa0694a22af57dcb6cadbb6",
     "executed": false
   },
+  "gate_2_j_8_5_preparation": {
+    "fixture_commit": "12706316e72494144846f59a2130e2dd2bd83086",
+    "fixture_tree_sha256": "69c138d6835b02bed4e67fc6ddd0f168015d3bf8d81cb8b46c7ab8bd63870de5",
+    "fixture_file_count": 42,
+    "local_registry_receipt": "GATE_2J_8_5_LOCAL_MODEL_REGISTRY_20260727.json",
+    "primary_model": "qwen2.5-coder:7b",
+    "primary_model_digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+    "challenger_model": "qwen2.5-coder:14b",
+    "challenger_model_digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+    "packet": "GATE_2J_8_5_EXECUTABLE_RUN_PACKET.json",
+    "packet_sha256": "a8c7c35353b0512f35d4d677e1ca560f1ad285d2210d60de0db87a83abc3aa27",
+    "run_count": 80,
+    "model_or_task_invoked": false
+  },
   "operator_authorization": {
     "received": true,
     "required_start_commit": "dad81bd853c21e52a9a9c2555923117db9838094",
@@ -76,17 +90,16 @@
     "gate_2_j_10_authorized_if_2_j_9_valid": true
   },
   "controlled_comparison": {
-    "status": "preflight_blocked",
-    "reason": "canonical run packet is incomplete; execution would require inventing immutable comparison conditions",
+    "status": "prepared_not_executed",
+    "reason": "Gate 2-J.8.5 sealed the packet; Gate 2-J.9 requires a fresh binary and no-model runner preflight before task execution",
     "blockers": [
-      "manifest fixture_commit is null and no qualification_fixture snapshot is tracked",
-      "Gate 2-J.5 attests only the binary and explicitly records no provider, model, or task invocation",
-      "no canonical receipt fixes live provider route, observed actual model, quantization, or generation/token/turn/wall-clock budgets",
-      "execution contract records no runner that applies hard budgets or maps a live JCode result"
+      "current pinned audit checkout has no JCode binary and no configured Cargo executable for serial offline reconstitution",
+      "actual model identity remains a per-run Gate 2-J.9 observation and cannot be inferred from registry availability",
+      "no diagnostic task or JCode process may run during Gate 2-J.8.5"
     ],
     "fixture_executed": false,
     "provider_or_model_invoked": false,
     "gate_2_j_10_reached": false
   },
-  "next_gate": "OPERATOR_REVIEW_OF_2_J_9_PREFLIGHT_BLOCKERS"
+  "next_gate": "GATE_2_J_9_BINARY_AND_NO_MODEL_RUNNER_PREFLIGHT"
 }

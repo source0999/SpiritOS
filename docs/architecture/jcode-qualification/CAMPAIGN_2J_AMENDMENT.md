@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_9_PREFLIGHT_BLOCKED_INCOMPLETE_CANONICAL_RUN_PACKET`
+status: `GATE_2_J_8_5_PREPARATION_SEALED_NO_EXECUTION`
 
 ## Identity and dependency
 
@@ -46,6 +46,7 @@ not unblock Campaign 4, and does not make JCode a default executor.
 | 2-J.6 | Evidence mapping | Complete event mapping while Proxy retains terminal authority. |
 | 2-J.7 | Clean reproduction | A fresh environment reproduces 2-J.1 through 2-J.6. |
 | 2-J.8 | Diagnostic fixture seal | The 20-task manifest is committed and sealed, not executed. |
+| 2-J.8.5 | Executable run-packet preparation | Commit immutable fixture contents; attest the local model registry; seal hashes, budgets, routes, and deterministic lane order without task execution. |
 | 2-J.9 | Controlled comparison | Paired harness comparison after all prior gates pass. |
 | 2-J.10 | Adoption decision | Exactly one bounded JCode verdict; default executor remains unchanged. |
 
@@ -59,7 +60,10 @@ initial contents, and the canonical records do not supply a live-attested
 provider route, actual primary/challenger model identities, quantization, or
 sealed generation budgets. The execution contract also records that no runner
 applies those budgets or produces a live result mapping. See
-`GATE_2J_9_PREFLIGHT_BLOCKER.md`.
+`GATE_2J_9_PREFLIGHT_BLOCKER.md`. Gate 2-J.8.5 now supplies the missing
+fixture commit, registry attestation, fixed parameters/budgets, and sealed
+packet at `GATE_2J_8_5_EXECUTABLE_RUN_PACKET.json`; it does not execute a
+task, enable JCode, or relax the Gate 2-J.9 binary and runner checks.
 
 ## Gate 2-J.0 boundary
 

@@ -1,6 +1,13 @@
-# Gate 2-J.9 Controlled Execution Preflight Blocker
+# Gate 2-J.9 Historical Controlled Execution Preflight Blocker
 
-status: `BLOCKED_TRUTHFULLY_INCOMPLETE_CANONICAL_RUN_PACKET`
+status: `SUPERSEDED_BY_GATE_2_J_8_5_PREPARATION`
+
+This receipt accurately records the pre-preparation state at
+`f52c697c42efa104cab0631414eee968baaf5aa9`. Gate 2-J.8.5 subsequently
+committed the fixture, attested the local registry, and sealed fixed packet
+values. The current prerequisite record is
+`GATE_2J_8_5_PREPARATION_AND_RUN_PACKET.md`; its binary and no-model runner
+preflight must pass before any Gate 2-J.9 task starts.
 
 ## Authorization and observed state
 
@@ -19,7 +26,7 @@ that exact HEAD. The sealed manifest is unchanged:
 | Frozen benchmark dependency | `false` |
 | Execution performed | `false` |
 
-## Blocking invariants
+## Historical blocking invariants
 
 1. The sealed manifest declares
    `fixture_profile: jq-fixture-v1-must-be-created-and-committed-after-authorization`

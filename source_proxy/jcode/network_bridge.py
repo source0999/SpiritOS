@@ -176,4 +176,9 @@ def _copy_bidirectionally(left: socket.socket, right: socket.socket) -> None:
             payload = source.recv(64 * 1024)
             if not payload:
                 return
-            destination.sendall(payload)
+            try:
+                destination.sendall(payload)
+            except OSError:
+                # A client may close after a complete response; do not leave a
+                # bridge worker exception or continue forwarding stale bytes.
+                return

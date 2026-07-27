@@ -1,0 +1,39 @@
+{
+  "schema_version": "source-proxy.jcode-local-registry-observation/v1",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.8.5",
+  "observed_at_utc": "2026-07-27T20:16:39Z",
+  "endpoint": "http://127.0.0.1:11434/api/tags",
+  "observation_method": "read-only Ollama local model registry query; no generate endpoint and no executor invocation",
+  "models": [
+    {
+      "name": "qwen2.5-coder:7b",
+      "model": "qwen2.5-coder:7b",
+      "modified_at": "2026-05-17T21:36:01.722215506-04:00",
+      "size": 4683087561,
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "details": {
+        "format": "gguf",
+        "family": "qwen2",
+        "families": ["qwen2"],
+        "parameter_size": "7.6B",
+        "quantization_level": "Q4_K_M"
+      }
+    },
+    {
+      "name": "qwen2.5-coder:14b",
+      "model": "qwen2.5-coder:14b",
+      "modified_at": "2026-06-29T21:48:53.102601481-04:00",
+      "size": 8988124298,
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "details": {
+        "format": "gguf",
+        "family": "qwen2",
+        "families": ["qwen2"],
+        "parameter_size": "14.8B",
+        "quantization_level": "Q4_K_M"
+      }
+    }
+  ],
+  "result": "BOTH_CANONICAL_LOCAL_MODELS_PRESENT_WITH_EXACT_DIGEST_AND_QUANTIZATION"
+}
