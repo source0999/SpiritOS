@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_4_PROCESS_SUPERVISION_COMPLETE`
+status: `GATE_2_J_5_BLOCKED_FRESH_LOCKED_BUILD_NOT_REPRODUCIBLE`
 
 ## Identity and dependency
 
