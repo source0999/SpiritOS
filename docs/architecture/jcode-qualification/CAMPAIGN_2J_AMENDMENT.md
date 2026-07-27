@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_5_BLOCKED_FRESH_LOCKED_BUILD_NOT_REPRODUCIBLE`
+status: `GATE_2_J_5_BINARY_PROVIDER_MODEL_TRUTH_COMPLETE`
 
 ## Identity and dependency
 
