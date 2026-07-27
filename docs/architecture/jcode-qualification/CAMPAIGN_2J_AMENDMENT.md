@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_3_BLOCKED_CRITICAL_HOST_NETWORK_ENFORCEMENT_MISSING`
+status: `GATE_2_J_3_NETWORK_AND_CREDENTIAL_CONTAINMENT_COMPLETE`
 
 ## Identity and dependency
 

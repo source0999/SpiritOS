@@ -2,7 +2,7 @@
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.3",
-  "status": "GATE_2_J_3_BLOCKED_CRITICAL_HOST_NETWORK_ENFORCEMENT_MISSING",
+  "status": "GATE_2_J_3_NETWORK_AND_CREDENTIAL_CONTAINMENT_GREEN",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -30,16 +30,12 @@
     "disposition": "green negative containment only; no writable JCode execution workspace claimed"
   },
   "network_and_credential_containment": {
-    "status": "blocked",
-    "reason": "host cannot provide a non-root, verifiable exact-loopback egress policy",
-    "bubblewrap_mode": "total default-deny only; host loopback unreachable",
-    "unshare_result": "uid_map operation not permitted",
-    "firewall_result": "nft and iptables inspection denied without root",
-    "pinned_build": {
-      "result": "built without execution",
-      "sha256": "d80950beb50a3abefec48448a9feec51c935fb03dd5ab0b20d7f5cf9ff320713",
-      "version": "jcode v0.58.51-dev (2444e7b6)"
-    }
+    "status": "green",
+    "implementation": "source_proxy/jcode/network_bridge.py",
+    "enforcement": "Bubblewrap no-network namespace plus read-only Unix-socket bridge to one validated host loopback endpoint",
+    "command": "python -m pytest -q source_proxy/tests/test_jcode_network_bridge.py source_proxy/tests/test_jcode_containment.py source_proxy/tests/test_jcode_qualification_adapter.py source_proxy/tests/test_bubblewrap_sandbox.py",
+    "result": "53 passed in 1.42s",
+    "real_provider_or_credential_used": false
   },
-  "next_gate": "BLOCKED_PENDING_HOST_NETWORK_POLICY"
+  "next_gate": "2-J.4-process-supervision"
 }
