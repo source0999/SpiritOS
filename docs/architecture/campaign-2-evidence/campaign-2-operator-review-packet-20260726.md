@@ -51,7 +51,7 @@ assertions, or verifier diagnostics.
 | Campaign 1 proof tests | `56 passed in 9.17s` |
 | Long-running C1 tail cases | `8 passed` individually; the combined full command exceeded its cap, while the accepted C1 packet retains the original `81 passed` record |
 | Registered coding regression | `139 passed, 46 subtests passed in 49.95s` |
-| Frontend/typecheck/build combined command | Incomplete: command cap exceeded before a reliable result; no pass is asserted |
+| Frontend/typecheck/build validation | Frontend regression exit `0` (`193` tests), typecheck exit `0`, and standalone build exit `0` in `103.4s`, run serially at `c3f59492`. Next 16 does not run ESLint during `next build`; lint exit `1` (`78` errors, `109` warnings) is documented separately as pre-existing, deferred debt. |
 
 ## Review decisions required
 
@@ -59,7 +59,7 @@ assertions, or verifier diagnostics.
 - [ ] Accept the isolated private-oracle boundary and access-audit rule.
 - [ ] Confirm the negative receipt correctly rejects registration/invocation without canonical consumption.
 - [ ] Accept the required independent first-run and clean-rerun policy.
-- [ ] Review the incomplete frontend/typecheck/build validation disposition.
+- [x] Review the completed frontend/typecheck/build validation disposition; the separate pre-existing lint finding remains deferred and does not accept Campaign 2.
 - [ ] Decide whether to authorize the additional live oracle-leak, cross-run substitution, and clean-rerun failure injections.
 - [ ] Confirm no Campaign 3 work, daily-runtime replacement, deployment, or primary-branch merge is authorized by this packet.
 

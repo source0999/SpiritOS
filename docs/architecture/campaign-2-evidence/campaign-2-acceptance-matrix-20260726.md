@@ -24,7 +24,7 @@ status: `IMPLEMENTATION_AND_NEGATIVE_PROOF_COMPLETE_OPERATOR_ACCEPTANCE_PENDING`
 | C2-LP-006 Basic Backend boundary | GREEN | Unit coverage rejects Basic Backend 10 as a full-pipeline token source. |
 | C1 terminal regressions | GREEN WITH RECORDED FULL-SUITE EVIDENCE | This run: orchestrator `44 passed`, proof `56 passed`; accepted C1 packet records the `81`-test long-running suite. A combined re-run exceeded the command cap; its final eight cases passed individually. |
 | Coding regression | GREEN | `npm run test:coding-regression`: `139 passed, 46 subtests passed`. |
-| Frontend/typecheck/build | INCOMPLETE | Combined command exceeded the execution cap before a reliable result was emitted; no green claim is made. |
+| Frontend/typecheck/build | GREEN | Serially on `codex/source-proxy-campaign-2-full-pipeline-benchmark-authority-20260726` at `c3f59492`: frontend regression exit `0` (`193` tests), typecheck exit `0`, and standalone build exit `0` in `103.4s`. Executed serially per test-registry row 8. Next 16 does not run ESLint in `next build`; the separately logged pre-existing lint finding remains deferred by operator decision. |
 | Operator acceptance | PENDING | The threat model, hidden-oracle boundary, resource policy, contract, and clean-rerun policy require an explicit operator decision. |
 
 The matrix deliberately does not mark the full proxy green. It also does not
