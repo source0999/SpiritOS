@@ -2,7 +2,7 @@
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.0",
-  "status": "NORMALIZED_NOT_EXECUTED",
+  "status": "GATE_2_J_1_BASELINE_CHARACTERIZED_NOT_GREEN",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -14,5 +14,13 @@
   "benchmark_executed": false,
   "daily_runtime_used": false,
   "campaign_3_started": false,
-  "next_gate": "2-J.1-baseline-hygiene"
+  "baseline_hygiene": {
+    "python": "/home/source/SpiritOS-source-proxy-20260711/.venv-source-proxy/bin/python",
+    "python_version": "3.12.3",
+    "command": "python -m pytest -q source_proxy/tests/test_coding_regression_pack.py",
+    "result": "136 passed, 3 failed, 46 subtests passed",
+    "classification": "unchanged-base defect; not a JCode regression",
+    "isolated_approval_test": "passed"
+  },
+  "next_gate": "2-J.2-filesystem-containment"
 }
