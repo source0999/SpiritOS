@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_8_5_PREPARATION_SEALED_NO_EXECUTION`
+status: `GATE_2_J_8_6_BINARY_REBUILD_HASH_MISMATCH_REQUIRES_RESEAL`
 
 ## Identity and dependency
 
@@ -47,6 +47,7 @@ not unblock Campaign 4, and does not make JCode a default executor.
 | 2-J.7 | Clean reproduction | A fresh environment reproduces 2-J.1 through 2-J.6. |
 | 2-J.8 | Diagnostic fixture seal | The 20-task manifest is committed and sealed, not executed. |
 | 2-J.8.5 | Executable run-packet preparation | Commit immutable fixture contents; attest the local model registry; seal hashes, budgets, routes, and deterministic lane order without task execution. |
+| 2-J.8.6 | Pinned binary provisioning | Recover the approved binary or reproducibly rebuild and attest it without changing the packet on mismatch. |
 | 2-J.9 | Controlled comparison | Paired harness comparison after all prior gates pass. |
 | 2-J.10 | Adoption decision | Exactly one bounded JCode verdict; default executor remains unchanged. |
 

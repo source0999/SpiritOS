@@ -1,8 +1,8 @@
 {
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
-  "gate_id": "2-J.8.5",
-  "status": "GATE_2_J_8_5_PREPARATION_SEALED_NO_EXECUTION",
+  "gate_id": "2-J.8.6",
+  "status": "JCODE_BINARY_REBUILD_HASH_MISMATCH_REQUIRES_RESEAL",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -101,6 +101,35 @@
       "binary_produced": false
     }
   },
+  "gate_2_j_8_6_binary_provisioning": {
+    "expected_sha256": "d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc",
+    "source_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
+    "cargo_lock_sha256": "9b48f643ae298e655db7bbe68a548feb8414a634de5cf55d2b1994426e3bac19",
+    "builder_image": "rust@sha256:77fac8b98f9f46062bb680b6d25d5bcaabfc400143952ebc572e924bcbedc3fa",
+    "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo": "1.97.1 (c980f4866 2026-06-30)",
+    "target": "x86_64-unknown-linux-gnu",
+    "build_command": "CARGO_BUILD_JOBS=1 cargo build --locked --no-default-features --features linux-compat-vendored-openssl --bin jcode",
+    "build_1": {
+      "exit_code": 0,
+      "sha256": "c490cf35737564ad0a45e2b3e8f15d6cf9289feaee32e53597c29fede2316cfc",
+      "version": "jcode v0.58.51-dev (2444e7b6)",
+      "build_id": "faddc3d2298401e71305a24f321696cb57564a40",
+      "canonical_hash_match": false
+    },
+    "build_2": {
+      "exit_code": 101,
+      "binary_produced": false,
+      "result": "rust-lld SIGSEGV while linking tokio-macros"
+    },
+    "environment_difference": {
+      "recorded_success_host": "Ubuntu 24.04.4; GCC 13.3.0; GNU ld 2.42",
+      "pinned_container": "Debian 12; GCC 12.2.0; GNU ld 2.40",
+      "rust_cargo_target_match": true
+    },
+    "packet_amendment": "not proposed: two independent successful identical binaries were not produced",
+    "binary_provisioned": false
+  },
   "operator_authorization": {
     "received": true,
     "required_start_commit": "dad81bd853c21e52a9a9c2555923117db9838094",
@@ -114,6 +143,7 @@
     "blockers": [
       "current pinned audit checkout has no JCode binary; its preserved Rust toolchain requires the recorded scoped Cargo and Rustup homes",
       "authorized exact-binary recovery sweep found no candidates and the pinned Docker rebuild terminated in rustc SIGSEGV",
+      "Gate 2-J.8.6 build 1 hash differs from canonical and build 2 crashed; no reproducible replacement binary exists",
       "actual model identity remains a per-run Gate 2-J.9 observation and cannot be inferred from registry availability",
       "no diagnostic task or JCode process may run during Gate 2-J.8.5"
     ],
