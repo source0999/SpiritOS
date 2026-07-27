@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_9_BLOCKED_OPERATOR_AUTHORIZATION_REQUIRED`
+status: `GATE_2_J_9_PREFLIGHT_BLOCKED_INCOMPLETE_CANONICAL_RUN_PACKET`
 
 ## Identity and dependency
 
@@ -48,6 +48,18 @@ not unblock Campaign 4, and does not make JCode a default executor.
 | 2-J.8 | Diagnostic fixture seal | The 20-task manifest is committed and sealed, not executed. |
 | 2-J.9 | Controlled comparison | Paired harness comparison after all prior gates pass. |
 | 2-J.10 | Adoption decision | Exactly one bounded JCode verdict; default executor remains unchanged. |
+
+## Gate 2-J.9 operator authorization and preflight
+
+The operator authorized the controlled comparison from
+`dad81bd853c21e52a9a9c2555923117db9838094` on 2026-07-27. The required
+preflight then failed closed before a model-backed run: the sealed manifest has
+`fixture_commit: null`, no tracked diagnostic fixture supplies the immutable
+initial contents, and the canonical records do not supply a live-attested
+provider route, actual primary/challenger model identities, quantization, or
+sealed generation budgets. The execution contract also records that no runner
+applies those budgets or produces a live result mapping. See
+`GATE_2J_9_PREFLIGHT_BLOCKER.md`.
 
 ## Gate 2-J.0 boundary
 
