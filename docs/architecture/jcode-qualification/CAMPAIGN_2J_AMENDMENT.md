@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_7_CLEAN_REPRODUCTION_COMPLETE`
+status: `GATE_2_J_8_DIAGNOSTIC_FIXTURE_SEAL_COMPLETE`
 
 ## Identity and dependency
 
