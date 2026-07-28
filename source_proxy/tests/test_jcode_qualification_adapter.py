@@ -82,7 +82,7 @@ def test_status_requires_the_pinned_source_commit(tmp_path: Path) -> None:
         calls.append(command)
         if command[0] == "git":
             return subprocess.CompletedProcess(command, 0, JCODE_PINNED_COMMIT + "\n", "")
-        return subprocess.CompletedProcess(command, 0, "jcode 0.58.0\n", "")
+        return subprocess.CompletedProcess(command, 0, "jcode v0.58.51-dev (2444e7b6)\n", "")
 
     status = build_jcode_cli_status(
         command_resolver=lambda _: "/audit/jcode",
@@ -91,7 +91,7 @@ def test_status_requires_the_pinned_source_commit(tmp_path: Path) -> None:
     )
 
     assert status["status"] == "detected_qualification_blocked"
-    assert status["version"] == "0.58.0"
+    assert status["version"] == "0.58.51-dev"
     assert status["binary_version_match"] is True
     assert status["pinned_source_match"] is True
     assert status["binary_and_source_match"] is True

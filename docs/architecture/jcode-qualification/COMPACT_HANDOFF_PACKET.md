@@ -2,6 +2,16 @@
 
 ## Current state
 
+## Superseding binary status
+
+The historical binary-mismatch summary below is superseded for the binary
+prerequisite only. Two fresh Dell builds now match at
+2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6 and the
+packet was resealed as
+4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615. The
+remaining Gate 2-J.9 blocker is the absence of a contained runner that applies
+the sealed budgets and emits the complete required evidence.
+
 Campaign 2 benchmark authority is accepted at `17f3ce87`. Gate 2-J.8.5 is
 sealed without execution: fixture commit `12706316e72494144846f59a2130e2dd2bd83086`,
 fixture-tree SHA-256 `69c138d6835b02bed4e67fc6ddd0f168015d3bf8d81cb8b46c7ab8bd63870de5`,

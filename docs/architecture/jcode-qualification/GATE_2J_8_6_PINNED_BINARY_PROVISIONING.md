@@ -58,3 +58,11 @@ The sealed Gate 2-J.9 packet is unchanged. No binary was copied into a runner,
 no new packet hash is proposed, and Gate 2-J.9 remains blocked. A future packet
 amendment may be prepared only after two independent clean builds produce the
 same alternate binary, followed by separate explicit authorization to reseal.
+
+## Superseding Dell remediation record
+
+This historical mismatch record remains intact. The later Dell remediation
+authorization established a new canonical binary through two matching clean
+builds and authorized the packet reseal. See
+GATE_2J_8_7_DELL_BUILD_HEALTH_AND_REPRODUCIBILITY.md. The historical d759
+receipt remains historical evidence.

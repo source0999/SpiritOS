@@ -1,5 +1,9 @@
 # JCode Qualification Manifest and Acceptance Matrix
 
+Current qualification status: BINARY_RESEALED_RUNNER_PREFLIGHT_BLOCKED.
+Binary provenance is green through the Dell two-build attestation. The runner,
+complete result adapter, live comparison, and adoption remain not run.
+
 status: `MANIFEST_SEALED_NOT_EXECUTED`
 
 The sealed diagnostic manifest contains 20 tasks: five read-only investigation,

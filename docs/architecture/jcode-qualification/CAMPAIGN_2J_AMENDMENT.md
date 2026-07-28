@@ -68,6 +68,15 @@ task, enable JCode, or relax the Gate 2-J.9 binary and runner checks.
 
 ## Gate 2-J.0 boundary
 
+## Dell binary reseal status
+
+The Dell remediation authorization established replacement binary
+2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6 from
+two fresh matching offline builds and resealed the packet to
+4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615.
+The binary prerequisite is green. The separately required contained runner and
+its no-model preflight remain fail-closed; no comparison task has started.
+
 This gate classifies and preserves the pre-normalization qualification packet.
 It neither changes the adapter nor runs JCode. Its only permitted code surface
 is retention of the existing disabled adapter and its focused test.

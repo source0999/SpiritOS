@@ -33,7 +33,14 @@ EXPECTED_MODEL_DETAILS = {
         "quantization_level": "Q4_K_M",
     },
 }
-JCODE_BINARY_SHA256 = "d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc"
+JCODE_BINARY_SHA256 = "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6"
+JCODE_BUILDER_IMAGE_DIGEST = (
+    "rust@sha256:77fac8b98f9f46062bb680b6d25d5bcaabfc400143952ebc572e924bcbedc3fa"
+)
+JCODE_LINKER = "GNU ld.bfd (Debian 2.40) via /usr/bin/gcc -fuse-ld=bfd"
+JCODE_ARTIFACT_PATH = (
+    "/home/source/.codex-audits/jcode-dell-remediation-20260727/approved-binary/jcode"
+)
 FIXTURE_ROOTS = ("qualification_fixture", "fixture_proxy")
 MODEL_PARAMETERS = {"max_tokens": 4096, "seed": 7, "temperature": 0}
 RUN_BUDGETS = {
@@ -135,8 +142,12 @@ def build_run_packet(
         "binary_expectation": {
             "jcode_source_commit": JCODE_PINNED_COMMIT,
             "jcode_binary_sha256": JCODE_BINARY_SHA256,
-            "build_profile": "CARGO_BUILD_JOBS=1 cargo build --offline --locked --no-default-features --features linux-compat-vendored-openssl --bin jcode",
-            "before_first_task": "rebuild_or_locate_binary_and_verify_exact_sha256",
+            "builder_image_digest": JCODE_BUILDER_IMAGE_DIGEST,
+            "target_triple": "x86_64-unknown-linux-gnu",
+            "linker": JCODE_LINKER,
+            "provisioned_artifact_path": JCODE_ARTIFACT_PATH,
+            "build_profile": "CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 RUST_MIN_STACK=16777216 cargo build --offline --locked --no-default-features --features linux-compat-vendored-openssl --bin jcode -j 1",
+            "before_first_task": "verify_provisioned_artifact_sha256_and_complete_no_model_runner_preflight",
         },
         "providers": {
             "host_registry_endpoint": "http://127.0.0.1:11434",

@@ -81,6 +81,22 @@ against the original approved binary. See `GATE_2J_8_5_BINARY_RECOVERY_ATTEMPT.m
 
 ## No-execution receipt
 
+## Dell binary reseal addendum
+
+The original packet digest a8c7c35353b0512f35d4d677e1ca560f1ad285d2210d60de0db87a83abc3aa27
+is historical. The Dell remediation produced two matching fresh offline builds
+of pinned source 2444e7b6bc80d421ae3ee404081bdb41150a1830 with new canonical
+binary SHA-256 2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6.
+The packet was resealed at 2026-07-28T02:58:43Z with digest
+4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615.
+The provisioned controlled audit artifact is
+/home/source/.codex-audits/jcode-dell-remediation-20260727/approved-binary/jcode.
+The full provenance and Dell health receipt is
+GATE_2J_8_7_DELL_BUILD_HEALTH_AND_REPRODUCIBILITY.md.
+
+This removes only the binary-incomplete condition. It does not enable JCode,
+execute a task, or relax the contained-runner and evidence preflight.
+
 | Item | Result |
 |---|---|
 | JCode processes | `0` |

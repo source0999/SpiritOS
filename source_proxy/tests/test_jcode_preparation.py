@@ -7,6 +7,8 @@ import pytest
 
 from source_proxy.jcode.preparation import (
     CHALLENGER_MODEL,
+    JCODE_BINARY_SHA256,
+    JCODE_BUILDER_IMAGE_DIGEST,
     PRIMARY_MODEL,
     PreparationPacketError,
     build_run_packet,
@@ -71,6 +73,8 @@ def test_builds_sealed_matrix_without_executor_activity(tmp_path: Path) -> None:
     assert packet["run_order"][1]["lane"] == "B"
     assert packet["run_order"][40]["lane"] == "C"
     assert packet["execution_prohibited_by_preparation_stage"] is True
+    assert packet["binary_expectation"]["jcode_binary_sha256"] == JCODE_BINARY_SHA256
+    assert packet["binary_expectation"]["builder_image_digest"] == JCODE_BUILDER_IMAGE_DIGEST
 
     receipt = write_sealed_packet(packet, tmp_path / "packet.json")
     assert len(receipt["packet_sha256"]) == 64

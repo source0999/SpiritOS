@@ -78,7 +78,7 @@
     "challenger_model": "qwen2.5-coder:14b",
     "challenger_model_digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
     "packet": "GATE_2J_8_5_EXECUTABLE_RUN_PACKET.json",
-    "packet_sha256": "a8c7c35353b0512f35d4d677e1ca560f1ad285d2210d60de0db87a83abc3aa27",
+    "packet_sha256": "4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615",
     "run_count": 80,
     "model_or_task_invoked": false
   },
@@ -142,6 +142,20 @@
     "new_binary_attested": false,
     "packet_resealed": false
   },
+  "dell_reproducible_binary_attestation": {
+    "status": "DELL_REPRODUCIBLE_BINARY_ATTESTED_PACKET_RESEALED",
+    "historical_binary_sha256": "d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc",
+    "new_canonical_binary_sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6",
+    "source_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
+    "cargo_lock_sha256": "9b48f643ae298e655db7bbe68a548feb8414a634de5cf55d2b1994426e3bac19",
+    "builder_image": "rust@sha256:77fac8b98f9f46062bb680b6d25d5bcaabfc400143952ebc572e924bcbedc3fa",
+    "linker": "GNU ld.bfd 2.40 via /usr/bin/gcc -fuse-ld=bfd",
+    "build_a": {"exit_code": 0, "sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6"},
+    "build_b": {"exit_code": 0, "sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6"},
+    "binary_provisioned": true,
+    "packet_old_sha256": "a8c7c35353b0512f35d4d677e1ca560f1ad285d2210d60de0db87a83abc3aa27",
+    "packet_new_sha256": "4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615"
+  },
   "operator_authorization": {
     "received": true,
     "required_start_commit": "dad81bd853c21e52a9a9c2555923117db9838094",
@@ -151,12 +165,10 @@
   },
   "controlled_comparison": {
     "status": "prepared_not_executed",
-    "reason": "Gate 2-J.8.5 sealed the packet; Gate 2-J.9 requires a fresh binary and no-model runner preflight before task execution",
+    "reason": "Dell binary attestation and resealed packet are green; Gate 2-J.9 still requires a contained runner and no-model runner preflight before task execution",
     "blockers": [
-      "current pinned audit checkout has no JCode binary; its preserved Rust toolchain requires the recorded scoped Cargo and Rustup homes",
-      "authorized exact-binary recovery sweep found no candidates and the pinned Docker rebuild terminated in rustc SIGSEGV",
-      "Gate 2-J.8.6 build 1 hash differs from canonical and build 2 crashed; no reproducible replacement binary exists",
-      "authorized fresh build 3 also crashed before output; two successful identical replacement builds are absent",
+      "no contained task dispatcher applies the sealed budgets, provider bridge, and process supervision",
+      "no stable execution-result API emits the complete strict NDJSON and evidence mapping",
       "actual model identity remains a per-run Gate 2-J.9 observation and cannot be inferred from registry availability",
       "no diagnostic task or JCode process may run during Gate 2-J.8.5"
     ],
