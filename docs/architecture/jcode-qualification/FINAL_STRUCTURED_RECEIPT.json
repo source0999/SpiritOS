@@ -130,6 +130,18 @@
     "packet_amendment": "not proposed: two independent successful identical binaries were not produced",
     "binary_provisioned": false
   },
+  "authorized_reproducible_binary_attempt": {
+    "build_3": {
+      "isolation": "fresh Docker container, Cargo home, and target directory",
+      "exit_code": 101,
+      "binary_produced": false,
+      "result": "rustc SIGSEGV while compiling ring"
+    },
+    "successful_alternate_builds": 1,
+    "identical_alternate_builds": 0,
+    "new_binary_attested": false,
+    "packet_resealed": false
+  },
   "operator_authorization": {
     "received": true,
     "required_start_commit": "dad81bd853c21e52a9a9c2555923117db9838094",
@@ -144,6 +156,7 @@
       "current pinned audit checkout has no JCode binary; its preserved Rust toolchain requires the recorded scoped Cargo and Rustup homes",
       "authorized exact-binary recovery sweep found no candidates and the pinned Docker rebuild terminated in rustc SIGSEGV",
       "Gate 2-J.8.6 build 1 hash differs from canonical and build 2 crashed; no reproducible replacement binary exists",
+      "authorized fresh build 3 also crashed before output; two successful identical replacement builds are absent",
       "actual model identity remains a per-run Gate 2-J.9 observation and cannot be inferred from registry availability",
       "no diagnostic task or JCode process may run during Gate 2-J.8.5"
     ],

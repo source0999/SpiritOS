@@ -30,12 +30,18 @@ executed.
 |---|---|---|
 | 1 | Fresh `/cargo-home` and `/build-target`, source mounted read-only | exit `0`; SHA-256 `c490cf35737564ad0a45e2b3e8f15d6cf9289feaee32e53597c29fede2316cfc` |
 | 2 | Separate fresh `/cargo-home` and `/build-target`, same pinned image/source/command | exit `101`; `rust-lld` `SIGSEGV` linking `tokio-macros`; no binary |
+| 3 | Separate fresh `/cargo-home` and `/build-target`, same pinned image/source/command | exit `101`; `rustc` `SIGSEGV` compiling `ring`; no binary |
 
 Build 1 reports `jcode v0.58.51-dev (2444e7b6)`, an ELF x86-64 PIE executable,
 mode `755`, dynamic `libgcc_s`, `libm`, and `libc` dependencies, and build ID
 `faddc3d2298401e71305a24f321696cb57564a40`. It is not provisioned because
 its hash does not match the required hash. Build 2 produced no executable, so
 there is no second hash, `file`, or `ldd` result.
+
+The later authorized retry is Build 3. It confirms that the container compiler
+is unstable under otherwise identical fresh conditions: there is one successful
+alternate artifact and two independent `SIGSEGV` failures. That is not two
+successful identical builds and cannot establish a reproducible replacement.
 
 ## Environmental comparison
 
