@@ -156,6 +156,18 @@
     "packet_old_sha256": "a8c7c35353b0512f35d4d677e1ca560f1ad285d2210d60de0db87a83abc3aa27",
     "packet_new_sha256": "4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615"
   },
+  "gate_2_j_9_execution_contract_authority_gap": {
+    "status": "BLOCKED_SEALED_EXECUTION_CONSTANTS_INCOMPLETE",
+    "missing_constants": [
+      "lane_to_executor_binding_for_existing_canonical_harness",
+      "per_run_context_packet_and_hash",
+      "pinned_provider_profile_configuration",
+      "generation_request_enforcement_and_actual_model_attestation",
+      "jcode_to_proxy_strict_ndjson_result_mapping",
+      "writable_allowed_path_overlay_and_post_run_diff_contract"
+    ],
+    "live_execution_performed": false
+  },
   "operator_authorization": {
     "received": true,
     "required_start_commit": "dad81bd853c21e52a9a9c2555923117db9838094",
