@@ -1,0 +1,59 @@
+{
+  "schema_version": "source-proxy.gate-2j-9-budget-policy/v1",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.9",
+  "decision": "SEALED_DECISION_4_BUDGETS_AND_LIMITS",
+  "sealed_by": "GLM campaign authority architect",
+  "sealed_at_utc": "2026-07-29T20:10:00Z",
+  "principles": [
+    "conservative qualification budgets; not chosen to maximize success rate",
+    "one shared budget for paired lanes (A==B, C==D) unless a harness requires a documented fixed overhead",
+    "budgets never silently extend; exhaustion produces a truthful BLOCKED_OR_DEGRADED_TRUTHFULLY result",
+    "evidence limits never silently truncate required proof; if evidence cannot be fully recorded the run cannot become COMPLETED_VERIFIED",
+    "rationale recorded for every limit"
+  ],
+  "host_basis": "Dell source-server: Intel i7-6700 8 logical CPUs, ~11 GiB RAM free, 4 GiB swap; proven build profile 1-6 GiB containers, 8 CPUs",
+  "process_budgets": {
+    "total_wall_clock_seconds": {"value": 300, "rationale": "existing DEFAULT_JCODE_TIMEOUT_SECONDS; bounded single-task qualification"},
+    "startup_readiness_timeout_seconds": {"value": 15, "rationale": "wait for process.started + jcode.version_attested"},
+    "inactivity_timeout_seconds": {"value": 60, "rationale": "event-stream silence bound; aborts hung tasks well under total timeout"},
+    "graceful_cancellation_interval_seconds": {"value": 1.0, "rationale": "existing supervision termination_grace_seconds"},
+    "forced_kill_interval_seconds": {"value": 2.0, "rationale": "existing SIGKILL escalation window"},
+    "max_descendant_processes": {"value": 256, "rationale": "cgroup TasksMax; coding tasks are tool-light; prevents fork bombs"},
+    "cpu_quota_percent": {"value": 400, "rationale": "4 of 8 CPUs; leaves headroom for host + reviewer/verifier"},
+    "memory_ceiling_bytes": {"value": 6442450944, "rationale": "6 GiB cgroup MemoryMax; below host free RAM; below historical OOM threshold"},
+    "file_size_limit_bytes": {"value": 10485760, "rationale": "10 MiB per file; coding fixtures are small"},
+    "total_writable_bytes": {"value": 104857600, "rationale": "100 MiB overlay ceiling"},
+    "max_open_files": {"value": 1024, "rationale": "host open-files default; sufficient for bounded tasks"}
+  },
+  "model_budgets": {
+    "max_model_requests": {"value": 8, "rationale": "turn_budget 4 with at most 1 retry; conservative for single-task qualification"},
+    "max_aggregate_input_tokens": {"value": 32768, "rationale": "existing token_budget; context-window-conservative"},
+    "max_aggregate_output_tokens": {"value": 32768, "rationale": "matches token_budget ceiling"},
+    "max_output_tokens_per_request": {"value": 4096, "rationale": "sealed generation max_tokens"},
+    "max_retries_per_request": {"value": 1, "rationale": "bounded retries; one format/verify retry"},
+    "max_consecutive_malformed_responses": {"value": 2, "rationale": "fail closed after repeated malformed model output"},
+    "max_streaming_inactivity_seconds": {"value": 45, "rationale": "below inactivity timeout; aborts stalled streams"}
+  },
+  "tool_budgets": {
+    "max_tool_calls": {"value": 48, "rationale": "bounded agent loop; generous for read/edit cycles, tight against runaway"},
+    "max_shell_commands": {"value": 0, "rationale": "command_policy no_shell; bash denied; shell commands forbidden"},
+    "max_file_writes": {"value": 32, "rationale": "bounded edit surface for small tasks"},
+    "max_created_files": {"value": 16, "rationale": "bounded creation surface"},
+    "max_deleted_files": {"value": 0, "rationale": "deletion denied in qualification; diff contract records zero deletes by policy"},
+    "max_bytes_written": {"value": 1048576, "rationale": "1 MiB total authored bytes"},
+    "max_command_output_bytes": {"value": 0, "rationale": "no shell -> no command output"},
+    "max_single_command_duration_seconds": {"value": 0, "rationale": "no shell"}
+  },
+  "evidence_budgets": {
+    "max_ndjson_line_length_bytes": {"value": 262144, "rationale": "256 KiB; comfortably above any single event, rejects oversized"},
+    "max_event_count": {"value": 50000, "rationale": "well above bounded-task event volume; bounds parser/memory"},
+    "max_total_event_bytes": {"value": 104857600, "rationale": "100 MiB event ceiling"},
+    "max_stdout_bytes": {"value": 2000000, "rationale": "existing DEFAULT_JCODE_MAX_OUTPUT_BYTES"},
+    "max_stderr_bytes": {"value": 2000000, "rationale": "symmetric with stdout"},
+    "max_transcript_bytes": {"value": 5242880, "rationale": "5 MiB raw transcript"},
+    "max_raw_response_bytes": {"value": 10485760, "rationale": "10 MiB aggregate raw model response"}
+  },
+  "controlled_tests_required": ["each limit has a test that triggers exhaustion and asserts BLOCKED_OR_DEGRADED_TRUTHFULLY (never COMPLETED_VERIFIED)"],
+  "no_silent_extension": true
+}

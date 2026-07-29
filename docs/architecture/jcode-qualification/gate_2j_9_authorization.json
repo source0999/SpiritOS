@@ -1,0 +1,85 @@
+{
+  "schema_version": "source-proxy.terra-high-authorization/v1",
+  "authorization_id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9A",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.9A",
+  "role_note": "Terra High is a workflow execution role, not a second durable system authority. Subordinate to CodingOrchestrator. Consumer of campaign authority artifacts.",
+  "issued_by": "GLM campaign authority architect",
+  "issued_at_utc": "2026-07-29T20:30:00Z",
+  "authorized_branch": "codex/source-proxy-jcode-qualification-20260726",
+  "authorized_base_commit": "TO_BE_BOUND_AFTER_SEAL_COMMIT",
+  "authorized_worktree": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
+  "content_sha256": "TO_BE_COMPUTED_OVER_CANONICAL_CONTENT_EXCLUDING_THIS_FIELD",
+  "no_model_restriction": "Gates 2-J.9A through 2-J.9G are explicitly NO-MODEL. No JCode process spawn, no model request, no /api/generate, no /api/tags beyond read-only registry observation already performed. First real model request only at Gate 2-J.9H under separate authorization.",
+  "approved_objectives": [
+    "implement canonical schemas (envelope, request, result, event, context)",
+    "implement authority constants module (sealed values from gate_2j_9_authority_constants.json)",
+    "implement deterministic canonical JSON serialization (sort_keys, separators, ensure_ascii, trailing newline)",
+    "implement SHA-256 hashing helpers for sections and root envelope",
+    "implement envelope validation (fail-closed; reuse source_proxy/jcode/adapter.validate_jcode_envelope invariants)",
+    "implement lane-binding configuration loader (gate_2j_9_lane_bindings.json)",
+    "implement context-policy configuration loader (gate_2j_9_context_policy.json)",
+    "implement provider-profile configuration loader (gate_2j_9_provider_profile.json)",
+    "implement budget-policy configuration loader (gate_2j_9_budget_policy.json)",
+    "implement static and unit tests for all of the above",
+    "generate Gate 2-J.9A receipt"
+  ],
+  "approved_files_and_directories": [
+    "source_proxy/jcode/constants.py (new)",
+    "source_proxy/jcode/canonical_io.py (new: canonical JSON + hashing)",
+    "source_proxy/jcode/sealed_envelope.py (new: envelope schemas + validation)",
+    "source_proxy/jcode/config_loaders.py (new: lane/context/provider/budget loaders)",
+    "source_proxy/tests/test_jcode_2j9a_*.py (new tests)",
+    "docs/architecture/jcode-qualification/GATE_2J_9A_RECEIPT.md (new receipt)"
+  ],
+  "forbidden_files_and_directories": [
+    "benchmarks/**",
+    "/home/source/SpiritOS (daily runtime) and its SMB view Z:\\",
+    "source_proxy/coding/orchestrator.py (do not change orchestrator authority)",
+    "frozen diagnostic fixture contents under qualification_fixture/ and fixture_proxy/ (read-only)",
+    "any production route, service, database, or credential path"
+  ],
+  "approved_tests": [
+    "authority-schema unit tests",
+    "canonical JSON determinism tests",
+    "envelope-hash tests (root hash over section hashes)",
+    "tampered-envelope rejection",
+    "unknown-field policy tests",
+    "missing-required-field tests",
+    "lane-binding validation",
+    "provider-profile validation",
+    "context-policy validation",
+    "budget-policy validation",
+    "existing focused no-model suites (47 must remain green)"
+  ],
+  "approved_controlled_failures": [
+    "tampered envelope -> rejection",
+    "missing required field -> rejection",
+    "non-deterministic serialization -> failure",
+    "invalid lane/provider/context/budget config -> rejection"
+  ],
+  "approved_containment_mechanism": "none exercised at 2-J.9A (constants/schemas only; no process launch)",
+  "approved_provider_profile_design": "spiritos-qualification -> http://127.0.0.1:11434/api/generate via sealed-loopback-inference-bridge/v1 (SPECIFICATION ONLY at 2-J.9A; no live call)",
+  "approved_budgets": "see gate_2j_9_budget_policy.json (encoded, not enforced at 2-J.9A)",
+  "approved_evidence_requirements": "Gate 2-J.9A receipt + green tests + canonical-serialization proof",
+  "explicit_prohibitions": {
+    "frozen_benchmark_access": true,
+    "daily_runtime_mutation": true,
+    "push_merge_deploy": "push to origin/codex/source-proxy-jcode-qualification-20260726 only when push conditions hold; NO merge; NO deploy; NO force-push; NO other branch",
+    "jcode_execution": true,
+    "model_request": true,
+    "production_credentials": true,
+    "orchestrator_authority_change": true,
+    "advance_to_model_gate": "no advance to 2-J.9H or begin 80-run comparison"
+  },
+  "stop_conditions": [
+    "a sealed decision is impossible or unsafe to implement",
+    "any identity/scope/authority mismatch",
+    "failed mandatory test",
+    "benchmark or daily-runtime path would be touched",
+    "a missing acceptance decision"
+  ],
+  "expiration_or_supersession": "superseded by the next authorization (TERRA_HIGH_AUTHORIZED__GATE_2J_9B) after Gate 2-J.9A receipt is accepted; void if branch/base diverge from authorized_base_commit",
+  "next_gate_rule": "after 2-J.9A receipt accepted and tests green, STOP. Do not auto-advance to 2-J.9B unless a subsequent explicit authorization is issued.",
+  "automatic_advancement_permitted": false
+}

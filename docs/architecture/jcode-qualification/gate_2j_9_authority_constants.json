@@ -1,0 +1,73 @@
+{
+  "schema_version": "source-proxy.gate-2j-9-authority-constants/v1",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.9",
+  "decision": "SEALED_ALL_RESOLVABLE_AUTHORITY_CONSTANTS",
+  "sealed_by": "GLM campaign authority architect",
+  "sealed_at_utc": "2026-07-29T20:10:00Z",
+  "sealed_against_local_head": "b78e85ca9ea7258554ff5385b1dd7baea40d90ae",
+  "sealed_against_upstream_head": "cbba33aa6f617bbb6c83438079541035155a9207",
+  "canonical_serialization": {"rule": "json.dumps(value, sort_keys=True, separators=(',',':'), ensure_ascii=True) + trailing newline", "hash": "sha256 over UTF-8 bytes of canonical encoding"},
+  "identity": {
+    "harness_id": "SpiritOS-Source-Proxy/CodingOrchestrator",
+    "harness_version": "coding-orchestrator/v2",
+    "adapter_version": "jcode-qualification-adapter/v1",
+    "executor_id": "candidate.jcode-executor",
+    "qualification_schema_version": "coding.jcode-qualification/v1",
+    "request_envelope_schema": "coding.jcode-execution-request/v1",
+    "result_envelope_schema": "coding.jcode-execution-result/v1",
+    "event_schema_version": "source-proxy.jcode-event/v1",
+    "context_schema_version": "source-proxy.jcode-qualification-context-packet/v1",
+    "jcode_source_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
+    "jcode_binary_sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6",
+    "jcode_version": "0.58.51-dev",
+    "proxy_source_commit_local": "b78e85ca9ea7258554ff5385b1dd7baea40d90ae",
+    "proxy_source_commit_upstream": "cbba33aa6f617bbb6c83438079541035155a9207",
+    "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
+    "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e"
+  },
+  "context_binding": {"resolved_by": "gate_2j_9_context_policy.json", "status": "SEALED"},
+  "model_provider_binding": {
+    "provider_profile_id": "spiritos-qualification",
+    "inference_bridge_id": "sealed-loopback-inference-bridge/v1",
+    "permitted_endpoint": "http://127.0.0.1:11434/api/generate",
+    "primary_model": {"registry_id": "qwen2.5-coder:7b", "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364", "quantization": "Q4_K_M"},
+    "challenger_model": {"registry_id": "qwen2.5-coder:14b", "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849", "quantization": "Q4_K_M"},
+    "generation_parameters": {"max_tokens": 4096, "seed": 7, "temperature": 0},
+    "fallback_policy": "none",
+    "resolved_by": "gate_2j_9_provider_profile.json",
+    "status": "SEALED"
+  },
+  "capability_binding": {
+    "allowed_tools": ["read", "glob", "grep", "ls", "write", "edit", "multiedit", "patch", "apply_patch"],
+    "denied_tools": ["bash", "batch", "browser", "communicate", "launch", "memory", "open", "selfdev", "swarm", "webfetch", "websearch"],
+    "command_policy": "no_shell",
+    "network_policy": "inference_only_via_sealed_loopback_bridge",
+    "environment_allowlist": ["LANG", "LC_ALL", "PATH", "TZ"],
+    "commit_push_deploy_prohibition": true,
+    "status": "SEALED"
+  },
+  "budget_binding": {"resolved_by": "gate_2j_9_budget_policy.json", "status": "SEALED"},
+  "containment_binding": {
+    "mechanism": "bubblewrap_0.9.0_namespaces + systemd_255_transient_scope + cgroup_v2",
+    "writable_overlay": "read_only_base_plus_isolated_writable_overlay",
+    "status": "SEALED (specification); implementation in Gate 2-J.9B"
+  },
+  "event_evidence_binding": {
+    "protocol": "strict_ndjson",
+    "permitted_event_types_count": 26,
+    "independent_checks": ["git_diff", "protected_path_policy", "tests", "reviewer", "verifier", "anti_cheat", "terminal_truth"],
+    "status": "SEALED (specification); implementation in Gate 2-J.9D"
+  },
+  "result_terminal_binding": {
+    "permitted_terminal_classes": ["COMPLETED_VERIFIED", "ESCALATION_CONTEXT_PACK_READY", "BLOCKED_OR_DEGRADED_TRUTHFULLY"],
+    "jcode_authority_over_terminal": "none",
+    "status": "SEALED (specification); implementation in Gate 2-J.9 result mapping"
+  },
+  "lane_binding": {"resolved_by": "gate_2j_9_lane_bindings.json", "status": "SEALED"},
+  "real_model_probe": {"decision": "DEFERRED_TO_GATE_2J_9H", "rationale": "safest; no real model request during 2-J.9F; first real local-model request at 2-J.9H under separate gate authorization", "status": "SEALED"},
+  "remaining_blockers_for_implementation": [
+    "dispatcher, sealed bridge, writable overlay, strict NDJSON attester, terminal mapper are SEALED in specification but NOT YET IMPLEMENTED (Gate 2-J.9A onward)",
+    "no execution authority is granted by sealing these constants; JCode remains disabled"
+  ]
+}

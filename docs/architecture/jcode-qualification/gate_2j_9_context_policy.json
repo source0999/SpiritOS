@@ -1,0 +1,57 @@
+{
+  "schema_version": "source-proxy.gate-2j-9-context-policy/v1",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.9",
+  "decision": "SEALED_DECISION_2_CONTEXT_PACKET_CONSTRUCTION",
+  "sealed_by": "GLM campaign authority architect",
+  "sealed_at_utc": "2026-07-29T20:10:00Z",
+  "design": "Canonical task -> deterministic context builder -> immutable context packet -> identical packet supplied to paired harnesses (A/B share one packet; C/D share one packet)",
+  "context_builder_implementation": "source_proxy/context/canonical_broker.py::build_context_broker_report (schema_version 2, ordered manifest, canonical_report_hash). Adapted with a deterministic file-manifest extension for qualification tasks.",
+  "context_builder_id": "spiritos-qualification-context-builder/v1",
+  "context_schema_version": "source-proxy.jcode-qualification-context-packet/v1",
+  "determinism_rules": [
+    "packet generated before executor selection",
+    "paired lanes receive byte-identical packet (A==B, C==D)",
+    "file manifest sorted by POSIX-relative path ascending",
+    "per-file SHA-256 over raw bytes",
+    "complete packet hashed via canonical JSON (sort_keys, separators(',',':'), ensure_ascii=True) + trailing newline",
+    "no JCode memory, no previous sessions, no JCode semantic memory may alter the baseline context"
+  ],
+  "exclusions_enforced": [
+    "raw campaign-history dumping",
+    "hidden tests",
+    "benchmark expectations (benchmarks/coder-backend-100/**, benchmarks/source-proxy-basic-backend-10/**)",
+    "verifier internals",
+    "prior solutions",
+    "daily runtime (/home/source/SpiritOS)"
+  ],
+  "required_packet_fields": [
+    "context_schema_version",
+    "context_builder_implementation_id",
+    "task_id",
+    "prompt_sha256",
+    "base_commit",
+    "ordered_file_manifest",
+    "file_paths",
+    "file_hashes",
+    "file_excerpts_or_contents_per_policy",
+    "symbol_or_dependency_metadata_where_available",
+    "excluded_paths",
+    "truncation_receipt",
+    "total_bytes",
+    "packet_sha256"
+  ],
+  "context_budget": {
+    "max_total_context_bytes": 262144,
+    "max_files": 48,
+    "max_single_file_bytes": 32768,
+    "truncation_policy": "tail-truncate file bodies when exceeding max_single_file_bytes; record offset and original size in truncation_receipt; never silently drop required files"
+  },
+  "fail_closed_conditions": [
+    "packet cannot be reproduced deterministically across paired harnesses",
+    "a required task file is missing or unreadable",
+    "context budget exceeded in a way that drops a required file",
+    "an excluded path would be included"
+  ],
+  "task_relevant_file_selection": "only files in the task's allowed_paths plus explicitly declared shared interface files (e.g., the target module's public contract); selection recorded and hashed"
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "source-proxy.gate-2j-9-provider-profile/v1",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.9",
+  "decision": "SEALED_DECISION_3_PROVIDER_PROFILE_AND_MODEL_BRIDGE",
+  "sealed_by": "GLM campaign authority architect",
+  "sealed_at_utc": "2026-07-29T20:10:00Z",
+  "correction_of_prior_artifact": "The Gate 2-J.8.5 packet referenced http://127.0.0.1:4000/v1 as 'jcode_sandbox_endpoint'. LIVE_PROBE_20260729 shows NOTHING listens on port 4000. The only live local inference service is Ollama at 127.0.0.1:11434. The sealed provider profile therefore binds to 127.0.0.1:11434 (the proven endpoint), and the 4000 slot is retracted as an aspirational/non-live reference. This removes ambiguity without weakening containment.",
+  "provider_profile_id": "spiritos-qualification",
+  "bridge_implementation_id": "sealed-loopback-inference-bridge/v1 (attesting layer over the existing fixed-loopback Unix byte bridge in source_proxy/jcode/network_bridge.py)",
+  "permitted_flow": "JCode (sandbox, net namespace unshared) -> contained loopback Unix socket bridge -> proxy-controlled attesting inference endpoint -> http://127.0.0.1:11434/api/generate -> exact authorized local model",
+  "permitted_socket_address": "AF_UNIX /run/jcode-bridge/inference.sock (read-only bind into sandbox)",
+  "permitted_endpoint": "http://127.0.0.1:11434/api/generate",
+  "permitted_registry_endpoint": "http://127.0.0.1:11434/api/tags (read-only identity observation only)",
+  "transport": "OpenAI-compatible / Ollama generate; request contract from human_messy_homepage._ollama_generate (model, prompt, stream:false, keep_alive, options{temperature:0})",
+  "required_request_headers": "X-SpiritOS-Task-Id, X-SpiritOS-Run-Id, X-SpiritOS-Correlation-Id (injected/verified by attesting bridge)",
+  "task_binding_fields": [
+    "task_id",
+    "run_id",
+    "correlation_id",
+    "lane_id"
+  ],
+  "expected_model_identity_fields": [
+    "provider_reported_model",
+    "model_digest_sha256",
+    "quantization"
+  ],
+  "provider_client_authority": "source_proxy/routing/ollama_route.py::OllamaRouteResolution (litellm ollama_chat/<model>); direct_ollama bypass is forbidden (flagged direct_ollama_bypasses_canonical_router)",
+  "timeout_seconds": 300,
+  "retry_policy": {
+    "max_retries_per_request": 1,
+    "retry_on": [
+      "transient_connection_reset"
+    ],
+    "no_retry_on": [
+      "model_mismatch",
+      "provider_mismatch",
+      "identity_unproven",
+      "budget_exceeded"
+    ]
+  },
+  "fallback_policy": "none",
+  "credential_policy": "none",
+  "environment_variables_allowed": [
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TZ"
+  ],
+  "environment_variables_forced_safe": {
+    "JCODE_ALLOW_COMMIT": "0",
+    "JCODE_ALLOW_DEPLOY": "0",
+    "JCODE_ALLOW_PUSH": "0",
+    "JCODE_AUTO_UPDATE_ENABLED": "0",
+    "JCODE_NETWORK_ENABLED": "0",
+    "JCODE_MEMORY_ENABLED": "0",
+    "JCODE_SESSION_RESUME_ENABLED": "0",
+    "JCODE_NO_TELEMETRY": "1"
+  },
+  "environment_variables_denied": [
+    "any cloud credential var",
+    "SOURCE_PROXY_*",
+    "OLLAMA_* except via bridge",
+    "API_KEY",
+    "OPENAI_API_KEY",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY"
+  ],
+  "forbidden_flows_rejected_by_bridge": [
+    "JCode -> /coding orchestration route",
+    "JCode -> direct Ollama/provider endpoint without attestation",
+    "JCode -> cloud provider",
+    "JCode -> arbitrary base URL / redirect",
+    "JCode -> fallback model",
+    "recursion (bridge target resolving back to the bridge)"
+  ],
+  "evidence_output": [
+    "model-request-ledger.ndjson",
+    "model-response-metadata.json"
+  ],
+  "live_availability_proof": "LIVE_PROBE_20260729: http://127.0.0.1:11434/api/tags reachable, 12 models, both canonical coders present with exact sealed digests; port 4000 unreachable (corrected above)",
+  "fallback_policy_rationale": "NONE. Silent model substitution is forbidden. Unknown/unregistered model ids are rejected. The bridge fails closed when identity cannot be proven.",
+  "credential_policy_rationale": "none / no-auth. No reusable provider credentials inside the JCode environment. requires_api_key=false."
+}

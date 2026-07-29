@@ -2,7 +2,7 @@
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.8.6",
-  "status": "GATE_2_J_9_SEALED_EXECUTION_AMENDMENT_WRITTEN_AWAITING_OPERATOR_DECISIONS",
+  "status": "AUTHORITY_DECISIONS_SEALED_TERRA_HIGH_GATE_2J_9A_AUTHORIZED",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -205,7 +205,7 @@
     "provider_or_model_invoked": false,
     "gate_2_j_10_reached": false
   },
-  "next_gate": "GATE_2_J_9A_AUTHORITY_CONSTANTS_AND_CANONICAL_SCHEMAS (blocked on operator decisions 1-5)",
+  "next_gate": "GATE_2J_9A_AUTHORITY_CONSTANTS_AND_CANONICAL_SCHEMAS (authorized; decisions sealed)",
   "gate_2_j_9_sealed_execution_amendment": {
     "status": "AMENDMENT_WRITTEN_AWAITING_OPERATOR_DECISIONS",
     "audit_performed_utc": "2026-07-29T19:30:00Z",
@@ -243,5 +243,24 @@
     "selected_process_supervision": "process_group_plus_cgroup_scope",
     "selected_writable_overlay": "read_only_base_plus_isolated_writable_overlay_plus_independent_diff",
     "live_execution_performed": false
+  },
+  "local_head": "b78e85ca9ea7258554ff5385b1dd7baea40d90ae",
+  "upstream_head": "cbba33aa6f617bbb6c83438079541035155a9207",
+  "ahead_behind_origin": "1/0 (local ahead by 1; b78e85ca9 not yet pushed)",
+  "pushed": false,
+  "gate_2_j_9_sealed_authority_decisions": {
+    "status": "ALL_FIVE_DECISIONS_SEALED_FROM_EVIDENCE",
+    "sealed_at_utc": "2026-07-29T20:10:00Z",
+    "decisions": [
+      "1_lane_and_executor_binding (SEALED) -> gate_2j_9_lane_bindings.json",
+      "2_context_packet_construction (SEALED) -> gate_2j_9_context_policy.json",
+      "3_provider_profile_and_model_bridge (SEALED, corrects dead port 4000) -> gate_2j_9_provider_profile.json",
+      "4_budgets_and_limits (SEALED) -> gate_2j_9_budget_policy.json",
+      "5_real_model_probe (SEALED, deferred to 2-J.9H)"
+    ],
+    "consolidated": "gate_2j_9_authority_constants.json",
+    "live_evidence": "Ollama 11434 reachable, both coders exact-digest present; port 4000 down (corrected)",
+    "terra_high_authorization": "gate_2j_9_authorization.json (TERRA_HIGH_AUTHORIZED__GATE_2J_9A)",
+    "next_gate": "GATE_2J_9A_AUTHORITY_CONSTANTS_AND_CANONICAL_SCHEMAS (authorized to start)"
   }
 }
