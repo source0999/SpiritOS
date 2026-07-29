@@ -2,7 +2,7 @@
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.8.6",
-  "status": "AUTHORITY_DECISIONS_SEALED_TERRA_HIGH_GATE_2J_9A_AUTHORIZED",
+  "status": "AUTHORITY_DECISIONS_SEALED__TERRA_HIGH_GATE_2J_9A_COMPLETED_PUSHED",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -244,10 +244,10 @@
     "selected_writable_overlay": "read_only_base_plus_isolated_writable_overlay_plus_independent_diff",
     "live_execution_performed": false
   },
-  "local_head": "b78e85ca9ea7258554ff5385b1dd7baea40d90ae",
-  "upstream_head": "cbba33aa6f617bbb6c83438079541035155a9207",
-  "ahead_behind_origin": "1/0 (local ahead by 1; b78e85ca9 not yet pushed)",
-  "pushed": false,
+  "local_head": "ab71e57971360f7601e58398eab9038a5d283300",
+  "upstream_head": "ab71e57971360f7601e58398eab9038a5d283300",
+  "ahead_behind_origin": "0/0 (pushed)",
+  "pushed": true,
   "gate_2_j_9_sealed_authority_decisions": {
     "status": "ALL_FIVE_DECISIONS_SEALED_FROM_EVIDENCE",
     "sealed_at_utc": "2026-07-29T20:10:00Z",
@@ -262,5 +262,13 @@
     "live_evidence": "Ollama 11434 reachable, both coders exact-digest present; port 4000 down (corrected)",
     "terra_high_authorization": "gate_2j_9_authorization.json (TERRA_HIGH_AUTHORIZED__GATE_2J_9A)",
     "next_gate": "GATE_2J_9A_AUTHORITY_CONSTANTS_AND_CANONICAL_SCHEMAS (authorized to start)"
+  },
+  "gate_2_j_9a": {
+    "status": "COMPLETED_NO_MODEL_PUSHED",
+    "authorization_id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9A",
+    "authorization_content_sha256": "defad82047ade26d2a5d2ad3cb66a14d04ef798ac5abacb5082c8e1821a668b0",
+    "authorized_base_commit": "e8bebd9fc7a9889d1b67875765c7a302e0bd002d",
+    "tests": "28 new + 47 existing = 75 passed, 0 failed",
+    "next_authorized_gate": "GATE_2J_9B (requires separate authorization TERRA_HIGH_AUTHORIZED__GATE_2J_9B; auto-advance NOT permitted)"
   }
 }
