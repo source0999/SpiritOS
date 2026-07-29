@@ -2,7 +2,7 @@
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.8.6",
-  "status": "JCODE_BINARY_REBUILD_HASH_MISMATCH_REQUIRES_RESEAL",
+  "status": "GATE_2_J_9_SEALED_EXECUTION_AMENDMENT_WRITTEN_AWAITING_OPERATOR_DECISIONS",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -40,15 +40,21 @@
   "process_supervision": {
     "implementation": "source_proxy/jcode/supervision.py",
     "result": "4 passed in 0.54s",
-    "guarantees": ["new process session", "SIGTERM", "bounded SIGKILL escalation", "group reap receipt"],
+    "guarantees": [
+      "new process session",
+      "SIGTERM",
+      "bounded SIGKILL escalation",
+      "group reap receipt"
+    ],
     "sigsegv_disposition": "historical rustc default-feature embedding/AWS build crash; no-default-feature mitigation retained"
   },
   "binary_provider_model_truth": {
-    "status": "green binary attestation; live model observation remains fail-closed",
+    "status": "green binary attestation (Dell two-build); live model observation remains fail-closed",
     "source_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
-    "binary_sha256": "d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc",
+    "binary_sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6",
     "version": "jcode v0.58.51-dev (2444e7b6)",
-    "provider_or_model_invoked": false
+    "provider_or_model_invoked": false,
+    "historical_binary_sha256": "d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc"
   },
   "evidence_mapping": {
     "implementation": "source_proxy/jcode/evidence.py",
@@ -86,7 +92,12 @@
     "attempted_at_utc": "2026-07-27T20:42:14Z",
     "expected_sha256": "d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc",
     "recovery_search": {
-      "locations": ["/home/source", "/tmp", "/var/tmp", "/var/lib/docker/volumes"],
+      "locations": [
+        "/home/source",
+        "/tmp",
+        "/var/tmp",
+        "/var/lib/docker/volumes"
+      ],
       "executable_candidates": 0,
       "exact_matches": 0
     },
@@ -150,8 +161,14 @@
     "cargo_lock_sha256": "9b48f643ae298e655db7bbe68a548feb8414a634de5cf55d2b1994426e3bac19",
     "builder_image": "rust@sha256:77fac8b98f9f46062bb680b6d25d5bcaabfc400143952ebc572e924bcbedc3fa",
     "linker": "GNU ld.bfd 2.40 via /usr/bin/gcc -fuse-ld=bfd",
-    "build_a": {"exit_code": 0, "sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6"},
-    "build_b": {"exit_code": 0, "sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6"},
+    "build_a": {
+      "exit_code": 0,
+      "sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6"
+    },
+    "build_b": {
+      "exit_code": 0,
+      "sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6"
+    },
     "binary_provisioned": true,
     "packet_old_sha256": "a8c7c35353b0512f35d4d677e1ca560f1ad285d2210d60de0db87a83abc3aa27",
     "packet_new_sha256": "4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615"
@@ -188,5 +205,43 @@
     "provider_or_model_invoked": false,
     "gate_2_j_10_reached": false
   },
-  "next_gate": "GATE_2_J_9_BINARY_AND_NO_MODEL_RUNNER_PREFLIGHT"
+  "next_gate": "GATE_2_J_9A_AUTHORITY_CONSTANTS_AND_CANONICAL_SCHEMAS (blocked on operator decisions 1-5)",
+  "gate_2_j_9_sealed_execution_amendment": {
+    "status": "AMENDMENT_WRITTEN_AWAITING_OPERATOR_DECISIONS",
+    "audit_performed_utc": "2026-07-29T19:30:00Z",
+    "auditor": "GLM independent read-only audit",
+    "canonical_head": "cbba33aa6f617bbb6c83438079541035155a9207",
+    "branch_clean": true,
+    "pushed": "0/0 ahead/behind origin",
+    "benchmark_changed_during_2j": false,
+    "daily_runtime_touched": false,
+    "binary_prerequisite_green": true,
+    "dispatcher_present": false,
+    "corroborates_authority_gap_audit": true,
+    "missing_constants_count": 6,
+    "operator_decisions_required": 5,
+    "deliverables": [
+      "GATE_2J_9_CURRENT_POSITION_AUDIT.md",
+      "GATE_2J_9_AUTHORITY_CONSTANTS_MATRIX.md",
+      "GATE_2J_9_SEALED_EXECUTION_ARCHITECTURE.md",
+      "GATE_2J_9_CONTAINMENT_SPECIFICATION.md",
+      "GATE_2J_9_INFERENCE_BRIDGE_SPECIFICATION.md",
+      "GATE_2J_9_NDJSON_EVENT_CONTRACT.md",
+      "GATE_2J_9_PROCESS_SUPERVISION_SPECIFICATION.md",
+      "GATE_2J_9_WRITABLE_OVERLAY_AND_DIFF_CONTRACT.md",
+      "GATE_2J_9_RESULT_MAPPING.md",
+      "GATE_2J_9_ACCEPTANCE_MATRIX.md",
+      "GATE_2J_9_RISK_REGISTER.md",
+      "TERRA_HIGH_GATE_2J_9_WORKFLOW_HANDOFF.md",
+      "CAMPAIGN_2J_AMENDMENT.md (updated)",
+      "COMPACT_HANDOFF_PACKET.md (updated)",
+      "FINAL_STRUCTURED_RECEIPT.json (updated)"
+    ],
+    "selected_containment": "bubblewrap_0.9.0_plus_systemd_255_scope_cgroup_v2",
+    "selected_inference_bridge": "attesting_loopback_bridge_on_existing_transport",
+    "selected_event_protocol": "strict_ndjson_source-proxy.jcode-event/v1",
+    "selected_process_supervision": "process_group_plus_cgroup_scope",
+    "selected_writable_overlay": "read_only_base_plus_isolated_writable_overlay_plus_independent_diff",
+    "live_execution_performed": false
+  }
 }

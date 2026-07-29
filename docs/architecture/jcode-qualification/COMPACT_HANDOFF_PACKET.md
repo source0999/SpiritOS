@@ -22,18 +22,17 @@ the frozen benchmark and daily runtime are untouched.
 
 ## Next gate
 
-Before any Gate 2-J.9 task, reconstitute the pinned JCode binary with the
-recorded offline serial profile and verify SHA-256
-`d7598ca48bb4fc8ff9c37d122fde5dd47314cd36fc2516ce6156795b71a545cc`.
-The authorized local recovery sweep found no candidate binary. Gate 2-J.8.6
-then ran two fresh pinned Docker builds. Build 1 produced
-`c490cf35737564ad0a45e2b3e8f15d6cf9289feaee32e53597c29fede2316cfc`, which
-does not equal the approved hash; build 2 failed in `rust-lld` with `SIGSEGV`.
-No replacement hash or packet change was accepted. See
-`GATE_2J_8_6_PINNED_BINARY_PROVISIONING.md`. No task may start until an
-approved binary, containment, evidence, and actual-model checks pass from fresh
-state.
+The Gate 2-J.9 sealed-execution amendment is written and awaits operator review
+(`GATE_2J_9_SEALED_EXECUTION_ARCHITECTURE.md` and its companion specs). The first authorized
+workflow gate is **Gate 2-J.9A - Authority Constants and Canonical Schemas**, blocked until
+the five operator decisions in the architecture spec are sealed (or explicitly blocked).
 
+Current verified position: branch clean, pushed 0/0, HEAD
+`cbba33aa6f617bbb6c83438079541035155a9207`; binary prerequisite green
+(`2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6`); resealed packet
+`4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615`; benchmark unchanged;
+daily runtime untouched; JCode disabled and non-executing; no model request occurred.
+See `GATE_2J_9_CURRENT_POSITION_AUDIT.md` for the independent audit.
 ## Prohibited next actions
 
 Do not execute JCode or a diagnostic task during this preparation stage, change

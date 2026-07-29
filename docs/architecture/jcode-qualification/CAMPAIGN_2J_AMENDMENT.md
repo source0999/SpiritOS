@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `GATE_2_J_8_6_BINARY_REBUILD_HASH_MISMATCH_REQUIRES_RESEAL`
+status: `GATE_2_J_9_SEALED_EXECUTION_AMENDMENT_WRITTEN_AWAITING_OPERATOR_DECISIONS`
 
 ## Identity and dependency
 
@@ -80,3 +80,63 @@ its no-model preflight remain fail-closed; no comparison task has started.
 This gate classifies and preserves the pre-normalization qualification packet.
 It neither changes the adapter nor runs JCode. Its only permitted code surface
 is retention of the existing disabled adapter and its focused test.
+
+
+## Gate 2-J.9 - Sealed JCode Transmission, Containment, and Evidence Dispatcher (amendment)
+
+This amendment adds the canonical sealed-execution dispatcher required before JCode may
+execute any model-backed task. It is the binding specification Terra High implements
+gate-by-gate. It does not execute JCode, call a model, begin the 80-run comparison, touch
+the frozen benchmark, modify the daily runtime, or advance another campaign.
+
+Independent audit (`GATE_2J_9_CURRENT_POSITION_AUDIT.md`) corroborates the prior authority-gap
+finding: the repository contains fail-closed policy builders but no contained dispatcher. The
+binary prerequisite is green; the dispatcher, sealed inference bridge, writable overlay,
+independent diff, strict NDJSON attestation, and terminal mapping are MISSING and are specified
+here.
+
+### Sealed dispatcher architecture
+
+See `GATE_2J_9_SEALED_EXECUTION_ARCHITECTURE.md` for the full control path and envelope. In
+summary: a Proxy-built sealed execution envelope is hash-bound before launch; JCode runs as
+exactly one fresh external CLI process per task inside a Bubblewrap namespace sandbox wrapped
+in a systemd transient cgroup-v2 scope, with a read-only base and an isolated writable overlay,
+no network except a sealed attesting loopback inference bridge to the exact authorized local
+model, strict NDJSON event capture, independent Proxy-owned diff, and Proxy-only terminal
+authority. Mechanism selections are based on audited host capability
+(`GATE_2J_9_CONTAINMENT_SPECIFICATION.md`).
+
+### Companion specifications
+
+- `GATE_2J_9_AUTHORITY_CONSTANTS_MATRIX.md` - every required constant, SEALED or MISSING.
+- `GATE_2J_9_CONTAINMENT_SPECIFICATION.md` - bwrap + systemd scope + cgroup v2 boundary.
+- `GATE_2J_9_INFERENCE_BRIDGE_SPECIFICATION.md` - attesting loopback bridge; forbidden flows.
+- `GATE_2J_9_NDJSON_EVENT_CONTRACT.md` - strict event protocol and permitted types.
+- `GATE_2J_9_PROCESS_SUPERVISION_SPECIFICATION.md` - cgroup-owned process-tree lifecycle.
+- `GATE_2J_9_WRITABLE_OVERLAY_AND_DIFF_CONTRACT.md` - overlay + independent diff.
+- `GATE_2J_9_RESULT_MAPPING.md` - outcome -> terminal class (Proxy-only).
+- `GATE_2J_9_ACCEPTANCE_MATRIX.md` - per-gate acceptance criteria.
+- `GATE_2J_9_RISK_REGISTER.md` - risks bound to gates.
+- `TERRA_HIGH_GATE_2J_9_WORKFLOW_HANDOFF.md` - dependency-ordered workflow for Terra High.
+
+### Gate 2-J.9 sub-gate expansion (dependency-ordered)
+
+Gate 2-J.9 is implemented as atomic sub-gates: 2-J.9A (authority constants and canonical
+schemas), 2-J.9B (containment primitive proof), 2-J.9C (process supervisor), 2-J.9D (strict
+event bridge), 2-J.9E (writable overlay and independent diff), 2-J.9F (sealed inference
+bridge), 2-J.9G (JCode no-model dispatcher integration), 2-J.9H (single contained model smoke
+test, separate operator authorization), 2-J.9I (single contained write test, separate operator
+authorization), 2-J.9J (controlled failure matrix), 2-J.9K (qualification readiness review).
+Gate 2-J.10 remains locked until 2-J.9K receives operator acceptance. Full criteria in the
+acceptance matrix and the Terra High handoff.
+
+### Operator decisions still requiring sealing
+
+1. Lane-to-executor binding for lanes A (primary) and C (challenger).
+2. Per-run context packet construction rule and context schema version.
+3. Pinned provider-profile configuration artifact binding `spiritos-qualification`.
+4. Per-request/inactivity/pids/tool-call/retry/event-count budgets and NDJSON max line length.
+5. Whether a no-op real-model identity probe is allowed at 2-J.9F (default: deferred to 2-J.9H).
+
+Until these are sealed, Gate 2-J.9A is blocked and no model task may run. The amendment itself
+is ready for operator review.
