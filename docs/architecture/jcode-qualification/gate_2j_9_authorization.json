@@ -7,9 +7,9 @@
   "issued_by": "GLM campaign authority architect",
   "issued_at_utc": "2026-07-29T20:30:00Z",
   "authorized_branch": "codex/source-proxy-jcode-qualification-20260726",
-  "authorized_base_commit": "TO_BE_BOUND_AFTER_SEAL_COMMIT",
+  "authorized_base_commit": "e8bebd9fc7a9889d1b67875765c7a302e0bd002d",
   "authorized_worktree": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
-  "content_sha256": "TO_BE_COMPUTED_OVER_CANONICAL_CONTENT_EXCLUDING_THIS_FIELD",
+  "content_sha256": "defad82047ade26d2a5d2ad3cb66a14d04ef798ac5abacb5082c8e1821a668b0",
   "no_model_restriction": "Gates 2-J.9A through 2-J.9G are explicitly NO-MODEL. No JCode process spawn, no model request, no /api/generate, no /api/tags beyond read-only registry observation already performed. First real model request only at Gate 2-J.9H under separate authorization.",
   "approved_objectives": [
     "implement canonical schemas (envelope, request, result, event, context)",
