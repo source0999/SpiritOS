@@ -1,20 +1,20 @@
 {
-  "schema_version": "source-proxy.gate-2j-9-context-policy/v1",
+  "schema_version": "source-proxy.gate-2j-9-context-policy/v2",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.9",
   "decision": "SEALED_DECISION_2_CONTEXT_PACKET_CONSTRUCTION",
   "sealed_by": "GLM campaign authority architect",
   "sealed_at_utc": "2026-07-29T20:10:00Z",
-  "design": "Canonical task -> deterministic context builder -> immutable context packet -> identical packet supplied to paired harnesses (A/B share one packet; C/D share one packet)",
+  "design": "Canonical task -> deterministic context builder -> ONE immutable context packet -> identical packet supplied to ALL four lanes (A==B==C==D)",
   "context_builder_implementation": "source_proxy/context/canonical_broker.py::build_context_broker_report (schema_version 2, ordered manifest, canonical_report_hash). Adapted with a deterministic file-manifest extension for qualification tasks.",
   "context_builder_id": "spiritos-qualification-context-builder/v1",
   "context_schema_version": "source-proxy.jcode-qualification-context-packet/v1",
   "determinism_rules": [
-    "packet generated before executor selection",
-    "paired lanes receive byte-identical packet (A==B, C==D)",
+    "packet generated once before executor/lane selection",
+    "ALL FOUR lanes (A, B, C, D) receive byte-identical packet (A==B==C==D)",
     "file manifest sorted by POSIX-relative path ascending",
     "per-file SHA-256 over raw bytes",
-    "complete packet hashed via canonical JSON (sort_keys, separators(',',':'), ensure_ascii=True) + trailing newline",
+    "complete packet hashed via canonical JSON (sort_keys, separators(,,:), ensure_ascii=True) + trailing newline",
     "no JCode memory, no previous sessions, no JCode semantic memory may alter the baseline context"
   ],
   "exclusions_enforced": [
@@ -53,5 +53,23 @@
     "context budget exceeded in a way that drops a required file",
     "an excluded path would be included"
   ],
-  "task_relevant_file_selection": "only files in the task's allowed_paths plus explicitly declared shared interface files (e.g., the target module's public contract); selection recorded and hashed"
+  "task_relevant_file_selection": "only files in the task's allowed_paths plus explicitly declared shared interface files (e.g., the target module's public contract); selection recorded and hashed",
+  "canonical_invariant": "ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES",
+  "per_task_binding": [
+    "generate the canonical context packet once",
+    "bind it to task ID, prompt hash, base commit, and context-builder version",
+    "provide the exact same serialized bytes and packet hash to all four lanes",
+    "record packet hash in every run receipt"
+  ],
+  "model_specific_variation_exception": {
+    "permitted_only_when": [
+      "a proven model context-window limitation makes the canonical packet impossible",
+      "the difference is declared before execution",
+      "the smaller derived packet has its own hash",
+      "all affected lanes are identified",
+      "results are not presented as a clean two-by-two comparison without noting the confound",
+      "operator authorization explicitly accepts the experimental deviation"
+    ],
+    "default": "no variation; one canonical packet for all four lanes"
+  }
 }

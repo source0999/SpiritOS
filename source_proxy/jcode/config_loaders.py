@@ -63,8 +63,12 @@ def load_lane_bindings(path: Path) -> dict[str, Any]:
 
 def load_context_policy(path: Path) -> dict[str, Any]:
     data = _load_json(path)
-    _require(data, "schema_version",
-             expected="source-proxy.gate-2j-9-context-policy/v1")
+    schema = data.get("schema_version")
+    if schema not in ("source-proxy.gate-2j-9-context-policy/v1",
+                      "source-proxy.gate-2j-9-context-policy/v2"):
+        raise ConfigLoadError(
+            f"context_schema_unsupported:{schema}"
+        )
     _require(data, "decision",
              expected="SEALED_DECISION_2_CONTEXT_PACKET_CONSTRUCTION")
     budget = _require(data, "context_budget")
@@ -72,10 +76,16 @@ def load_context_policy(path: Path) -> dict[str, Any]:
         raise ConfigLoadError("context_budget_invalid")
     # Exclusions must include the frozen benchmark and daily runtime.
     exclusions = _require(data, "exclusions_enforced")
-    required = {"benchmark expectations", "daily runtime (/home/source/SpiritOS)"}
     joined = " ".join(exclusions)
     if "benchmark" not in joined or "daily runtime" not in joined:
         raise ConfigLoadError("context_exclusions_incomplete")
+    # v2 correction: one canonical context for all four lanes (no per-model split default).
+    if schema.endswith("/v2"):
+        if data.get("canonical_invariant") != "ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES":
+            raise ConfigLoadError("context_v2_requires_all_lanes_invariant")
+        rule = " ".join(data.get("determinism_rules", []))
+        if "A==B==C==D" not in rule:
+            raise ConfigLoadError("context_v2_requires_all_lanes_equality_rule")
     return data
 
 
@@ -94,24 +104,71 @@ def load_provider_profile(path: Path) -> dict[str, Any]:
     return data
 
 
+def _validate_budget_bucket(bucket: dict[str, Any], label: str) -> None:
+    if not isinstance(bucket, dict) or not bucket:
+        raise ConfigLoadError(f"budget_group_empty:{label}")
+    for name, spec in bucket.items():
+        if not isinstance(spec, dict) or "value" not in spec or "rationale" not in spec:
+            raise ConfigLoadError(f"budget_spec_invalid:{label}.{name}")
+
+
 def load_budget_policy(path: Path) -> dict[str, Any]:
+    """Load a sealed budget policy (v1 flat or v2 shared_base + gate_profiles).
+
+    v1 is the original single-profile conservative budget. v2 splits the universal
+    budget into gate-specific profiles so later coding qualification is not
+    artificially prevented from running legitimate tools and tests; the schema-only
+    gate (9a) must still keep shell commands and deletions at zero.
+    """
     data = _load_json(path)
-    _require(data, "schema_version",
-             expected="source-proxy.gate-2j-9-budget-policy/v1")
-    _require(data, "decision",
-             expected="SEALED_DECISION_4_BUDGETS_AND_LIMITS")
-    for group in ("process_budgets", "model_budgets", "tool_budgets", "evidence_budgets"):
-        bucket = _require(data, group)
-        if not isinstance(bucket, dict) or not bucket:
-            raise ConfigLoadError(f"budget_group_empty:{group}")
-        for name, spec in bucket.items():
-            if not isinstance(spec, dict) or "value" not in spec or "rationale" not in spec:
-                raise ConfigLoadError(f"budget_spec_invalid:{group}.{name}")
-    # Safety invariants: shell commands and deletes are zero; no silent extension.
-    if data["tool_budgets"]["max_shell_commands"]["value"] != 0:
-        raise ConfigLoadError("shell_commands_must_be_zero")
-    if data["tool_budgets"]["max_deleted_files"]["value"] != 0:
-        raise ConfigLoadError("deleted_files_must_be_zero")
+    schema = data.get("schema_version")
+    if schema not in ("source-proxy.gate-2j-9-budget-policy/v1",
+                      "source-proxy.gate-2j-9-budget-policy/v2"):
+        raise ConfigLoadError(f"budget_schema_unsupported:{schema}")
     if data.get("no_silent_extension") is not True:
         raise ConfigLoadError("no_silent_extension_required")
+
+    if schema.endswith("/v1"):
+        _require(data, "decision", expected="SEALED_DECISION_4_BUDGETS_AND_LIMITS")
+        for group in ("process_budgets", "model_budgets", "tool_budgets", "evidence_budgets"):
+            _validate_budget_bucket(_require(data, group), group)
+        if data["tool_budgets"]["max_shell_commands"]["value"] != 0:
+            raise ConfigLoadError("shell_commands_must_be_zero")
+        if data["tool_budgets"]["max_deleted_files"]["value"] != 0:
+            raise ConfigLoadError("deleted_files_must_be_zero")
+        return data
+
+    # v2: shared_base + gate_profiles.
+    _require(data, "decision",
+             expected="SEALED_DECISION_4_BUDGETS_AND_LIMITS_GATE_SPECIFIC_PROFILES")
+    base = _require(data, "shared_base")
+    if not isinstance(base, dict):
+        raise ConfigLoadError("shared_base_required")
+    for group in ("process_budgets", "model_budgets", "tool_budgets", "evidence_budgets"):
+        _validate_budget_bucket(_require(base, group), f"shared_base.{group}")
+    profiles = _require(data, "gate_profiles")
+    if not isinstance(profiles, dict) or not profiles:
+        raise ConfigLoadError("gate_profiles_required")
+    for pid, prof in profiles.items():
+        if not isinstance(prof, dict) or prof.get("inherits") != "shared_base":
+            raise ConfigLoadError(f"profile_must_inherit_shared_base:{pid}")
+        for key in ("allowed_command_classes", "denied_command_classes", "failure_mapping"):
+            if key not in prof:
+                raise ConfigLoadError(f"profile_field_missing:{pid}.{key}")
+        for dotted, spec in (prof.get("overrides") or {}).items():
+            if not isinstance(spec, dict) or "value" not in spec or "rationale" not in spec:
+                raise ConfigLoadError(f"profile_override_invalid:{pid}.{dotted}")
+    # The schema-only gate must keep shell and deletes at zero (no execution yet).
+    schema_only = profiles.get("gate_2j_9a_schema_only", {})
+    so_overrides = schema_only.get("overrides", {})
+    if so_overrides.get("tool_budgets.max_shell_commands", {}).get("value", 0) != 0:
+        raise ConfigLoadError("schema_only_shell_must_be_zero")
+    if so_overrides.get("tool_budgets.max_deleted_files", {}).get("value", 0) != 0:
+        raise ConfigLoadError("schema_only_deletes_must_be_zero")
+    # No raw unrestricted shell anywhere: command policy uses structured classes.
+    for pid, prof in profiles.items():
+        denied = set(prof.get("denied_command_classes", []))
+        if "shell_unrestricted" not in denied and "shell" not in denied:
+            if "dangerous_command" not in denied:
+                raise ConfigLoadError(f"profile_must_deny_unrestricted_shell:{pid}")
     return data

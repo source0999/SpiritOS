@@ -1,0 +1,39 @@
+{
+  "schema_version": "source-proxy.gate-2j-9a-revalidation-receipt/v1",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.9A",
+  "verdict": "GATE_2J_9A_REVALIDATION_PASS",
+  "authorization_id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9A_REVALIDATION_V1",
+  "authorization_content_sha256": "c299a8fcc30aadfd05031f4cd0730fd766c274d14368230c2acaf24447a09db1",
+  "authorization_base_commit": "e77e3e62146fcb9b8f4cd499b48dccc6be05c95c",
+  "authorization_artifact_commit": "591d18e34a7416999f391209c7f88f5f1b088f82",
+  "authorization_pushed_before_revalidation_commit": "be93b23f3b4b9eff193f03db33438d5c55920f93",
+  "revalidation_worktree": "/home/source/SpiritOS-jcode-2j9a-revalidation-20260729",
+  "revalidation_branch": "codex/source-proxy-jcode-2j9a-revalidation-20260729",
+  "prospective_order_proven": true,
+  "implementation_identity_verified_against_manifest": true,
+  "implementation_changed": false,
+  "tests": {
+    "gate_2j9a_suite": {"discovered": 32, "passed": 32, "failed": 0},
+    "existing_no_model": {"discovered": 47, "passed": 47, "failed": 0},
+    "total": {"passed": 79, "failed": 0}
+  },
+  "policy_corrections": {
+    "context_policy": "v2 ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES (A==B==C==D default)",
+    "budget_policy": "v2 shared_base + 10 gate-specific profiles (9a..2j_10)",
+    "lane_bindings": "all four lanes reference one shared context policy/packet identity"
+  },
+  "integrity": {
+    "benchmark_changes": 0,
+    "daily_runtime_changes": 0,
+    "jcode_task_runs": 0,
+    "model_requests": 0,
+    "diagnostic_tasks": "0/20",
+    "comparison_runs": "0/80",
+    "campaign_4_paused": true,
+    "secrets_in_changed_files": false,
+    "all_json_valid": true
+  },
+  "next_permitted_action": "Operator review of this revalidation receipt; then creation of a separate prospective Gate 2-J.9B authorization. Gate 2-J.9B is NOT started by this correction.",
+  "supersedes_receipt_claim": "TERRA_HIGH_GATE_2J_9A_COMPLETED (corrected: original sequence was retroactive, not prospective)"
+}

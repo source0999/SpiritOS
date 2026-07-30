@@ -22,17 +22,17 @@ the frozen benchmark and daily runtime are untouched.
 
 ## Next gate
 
-The Gate 2-J.9 sealed-execution amendment is written and awaits operator review
-(`GATE_2J_9_SEALED_EXECUTION_ARCHITECTURE.md` and its companion specs). The first authorized
-workflow gate is **Gate 2-J.9A - Authority Constants and Canonical Schemas**, blocked until
-the five operator decisions in the architecture spec are sealed (or explicitly blocked).
+Gate 2-J.9A was revalidated under a PROSPECTIVE authorization
+(TERRA_HIGH_AUTHORIZED__GATE_2J_9A_REVALIDATION_V1) after the original sequence was
+found to be RETROACTIVE_AUTHORIZATION_BINDING (see GATE_2J_9A_AUTHORIZATION_SEQUENCE_AUDIT.md).
+Revalidation PASS: 79 tests pass; context policy corrected to one canonical context for all
+four lanes; budget policy split into gate-specific profiles. Implementation unchanged.
 
-Current verified position: branch clean, pushed 0/0, HEAD
-`cbba33aa6f617bbb6c83438079541035155a9207`; binary prerequisite green
-(`2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6`); resealed packet
-`4fee8fc9d0ffa8711cd300cab473adb5606ebacfdfd444ce9bcfb33b02f3f615`; benchmark unchanged;
-daily runtime untouched; JCode disabled and non-executing; no model request occurred.
-See `GATE_2J_9_CURRENT_POSITION_AUDIT.md` for the independent audit.
+Campaign status: AUTHORITY_SEQUENCE_REPAIRED__GATE_2J_9A_REVALIDATED__READY_FOR_SEPARATE_GATE_2J_9B_AUTHORIZATION.
+
+Next permitted action: operator review of the revalidation receipt, then creation of a
+SEPARATE prospective Gate 2-J.9B authorization. Gate 2-J.9B is NOT started. JCode remains
+disabled; no model request; benchmark and daily runtime untouched.
 ## Prohibited next actions
 
 Do not execute JCode or a diagnostic task during this preparation stage, change

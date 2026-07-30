@@ -2,7 +2,7 @@
   "schema_version": "source-proxy.campaign-2-j-normalization-receipt/v1",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.8.6",
-  "status": "AUTHORITY_DECISIONS_SEALED__TERRA_HIGH_GATE_2J_9A_COMPLETED_PUSHED",
+  "status": "AUTHORITY_SEQUENCE_REPAIRED__GATE_2J_9A_REVALIDATED__READY_FOR_SEPARATE_GATE_2J_9B_AUTHORIZATION",
   "campaign_2_acceptance_commit": "17f3ce8739192e5c91534dc7ddde1086e83d5e0e",
   "qualification_base_commit": "1641ddb1c71e6b364e98aa9aeff4b4719627d926",
   "jcode_commit": "2444e7b6bc80d421ae3ee404081bdb41150a1830",
@@ -270,5 +270,27 @@
     "authorized_base_commit": "e8bebd9fc7a9889d1b67875765c7a302e0bd002d",
     "tests": "28 new + 47 existing = 75 passed, 0 failed",
     "next_authorized_gate": "GATE_2J_9B (requires separate authorization TERRA_HIGH_AUTHORIZED__GATE_2J_9B; auto-advance NOT permitted)"
+  },
+  "authorization_sequence_defect": {
+    "classification": "RETROACTIVE_AUTHORIZATION_BINDING",
+    "confirmed": true,
+    "original_authz_finalized_after_impl": true,
+    "audit": "GATE_2J_9A_AUTHORIZATION_SEQUENCE_AUDIT.md",
+    "original_impl_commit": "e8bebd9fc7a9889d1b67875765c7a302e0bd002d",
+    "original_binding_commit": "ab71e57971360f7601e58398eab9038a5d283300"
+  },
+  "gate_2_j_9a_revalidation": {
+    "verdict": "GATE_2J_9A_REVALIDATION_PASS",
+    "authorization_id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9A_REVALIDATION_V1",
+    "authorization_content_sha256": "c299a8fcc30aadfd05031f4cd0730fd766c274d14368230c2acaf24447a09db1",
+    "authorization_base_commit": "e77e3e62146fcb9b8f4cd499b48dccc6be05c95c",
+    "prospective_order_proven": true,
+    "tests": "79 passed (47 existing + 32 gate 2j9a incl policy corrections)",
+    "receipt": "GATE_2J_9A_REVALIDATION_RECEIPT.md"
+  },
+  "policy_corrections": {
+    "context_policy": "v2 ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES",
+    "budget_policy": "v2 shared_base + 10 gate-specific profiles",
+    "next_permitted_action": "operator review then separate prospective Gate 2-J.9B authorization; 2-J.9B NOT started"
   }
 }

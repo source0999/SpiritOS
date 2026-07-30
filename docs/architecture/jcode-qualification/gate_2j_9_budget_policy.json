@@ -1,59 +1,433 @@
 {
-  "schema_version": "source-proxy.gate-2j-9-budget-policy/v1",
+  "schema_version": "source-proxy.gate-2j-9-budget-policy/v2",
   "campaign_id": "campaign-2-j",
   "gate_id": "2-J.9",
-  "decision": "SEALED_DECISION_4_BUDGETS_AND_LIMITS",
+  "decision": "SEALED_DECISION_4_BUDGETS_AND_LIMITS_GATE_SPECIFIC_PROFILES",
   "sealed_by": "GLM campaign authority architect",
   "sealed_at_utc": "2026-07-29T20:10:00Z",
+  "corrected_at_utc": "2026-07-29T21:10:00Z",
+  "correction": "Split the single universal budget into gate-specific profiles so later coding qualification is not artificially prevented from running legitimate tools and tests. The original conservative values are preserved as shared_base; each gate profile references shared_base with explicit overrides.",
   "principles": [
     "conservative qualification budgets; not chosen to maximize success rate",
-    "one shared budget for paired lanes (A==B, C==D) unless a harness requires a documented fixed overhead",
+    "shared_base holds the conservative defaults; gate_profiles override only what a gate needs",
     "budgets never silently extend; exhaustion produces a truthful BLOCKED_OR_DEGRADED_TRUTHFULLY result",
     "evidence limits never silently truncate required proof; if evidence cannot be fully recorded the run cannot become COMPLETED_VERIFIED",
-    "rationale recorded for every limit"
+    "rationale recorded for every limit",
+    "command policy uses structured allowlists/command classes, never a raw unrestricted shell"
   ],
   "host_basis": "Dell source-server: Intel i7-6700 8 logical CPUs, ~11 GiB RAM free, 4 GiB swap; proven build profile 1-6 GiB containers, 8 CPUs",
-  "process_budgets": {
-    "total_wall_clock_seconds": {"value": 300, "rationale": "existing DEFAULT_JCODE_TIMEOUT_SECONDS; bounded single-task qualification"},
-    "startup_readiness_timeout_seconds": {"value": 15, "rationale": "wait for process.started + jcode.version_attested"},
-    "inactivity_timeout_seconds": {"value": 60, "rationale": "event-stream silence bound; aborts hung tasks well under total timeout"},
-    "graceful_cancellation_interval_seconds": {"value": 1.0, "rationale": "existing supervision termination_grace_seconds"},
-    "forced_kill_interval_seconds": {"value": 2.0, "rationale": "existing SIGKILL escalation window"},
-    "max_descendant_processes": {"value": 256, "rationale": "cgroup TasksMax; coding tasks are tool-light; prevents fork bombs"},
-    "cpu_quota_percent": {"value": 400, "rationale": "4 of 8 CPUs; leaves headroom for host + reviewer/verifier"},
-    "memory_ceiling_bytes": {"value": 6442450944, "rationale": "6 GiB cgroup MemoryMax; below host free RAM; below historical OOM threshold"},
-    "file_size_limit_bytes": {"value": 10485760, "rationale": "10 MiB per file; coding fixtures are small"},
-    "total_writable_bytes": {"value": 104857600, "rationale": "100 MiB overlay ceiling"},
-    "max_open_files": {"value": 1024, "rationale": "host open-files default; sufficient for bounded tasks"}
+  "shared_base": {
+    "process_budgets": {
+      "total_wall_clock_seconds": {
+        "value": 300,
+        "rationale": "bounded single-task qualification"
+      },
+      "startup_readiness_timeout_seconds": {
+        "value": 15,
+        "rationale": "wait for process.started + jcode.version_attested"
+      },
+      "inactivity_timeout_seconds": {
+        "value": 60,
+        "rationale": "event-stream silence bound"
+      },
+      "graceful_cancellation_interval_seconds": {
+        "value": 1.0,
+        "rationale": "existing supervision termination_grace_seconds"
+      },
+      "forced_kill_interval_seconds": {
+        "value": 2.0,
+        "rationale": "existing SIGKILL escalation window"
+      },
+      "max_descendant_processes": {
+        "value": 256,
+        "rationale": "cgroup TasksMax; prevents fork bombs"
+      },
+      "cpu_quota_percent": {
+        "value": 400,
+        "rationale": "4 of 8 CPUs; leaves host headroom"
+      },
+      "memory_ceiling_bytes": {
+        "value": 6442450944,
+        "rationale": "6 GiB MemoryMax; below historical OOM threshold"
+      },
+      "file_size_limit_bytes": {
+        "value": 10485760,
+        "rationale": "10 MiB per file"
+      },
+      "total_writable_bytes": {
+        "value": 104857600,
+        "rationale": "100 MiB overlay ceiling"
+      },
+      "max_open_files": {
+        "value": 1024,
+        "rationale": "host open-files default"
+      }
+    },
+    "model_budgets": {
+      "max_model_requests": {
+        "value": 8,
+        "rationale": "turn_budget 4 with at most 1 retry"
+      },
+      "max_aggregate_input_tokens": {
+        "value": 32768,
+        "rationale": "context-window-conservative"
+      },
+      "max_aggregate_output_tokens": {
+        "value": 32768,
+        "rationale": "token_budget ceiling"
+      },
+      "max_output_tokens_per_request": {
+        "value": 4096,
+        "rationale": "sealed generation max_tokens"
+      },
+      "max_retries_per_request": {
+        "value": 1,
+        "rationale": "bounded retries"
+      },
+      "max_consecutive_malformed_responses": {
+        "value": 2,
+        "rationale": "fail closed after repeated malformed output"
+      },
+      "max_streaming_inactivity_seconds": {
+        "value": 45,
+        "rationale": "below inactivity timeout"
+      }
+    },
+    "tool_budgets": {
+      "max_tool_calls": {
+        "value": 48,
+        "rationale": "bounded read/edit cycles"
+      },
+      "max_shell_commands": {
+        "value": 0,
+        "rationale": "default no_shell; overridden per gate where structured commands are needed"
+      },
+      "max_file_writes": {
+        "value": 32,
+        "rationale": "bounded edit surface"
+      },
+      "max_created_files": {
+        "value": 16,
+        "rationale": "bounded creation surface"
+      },
+      "max_deleted_files": {
+        "value": 0,
+        "rationale": "default deny; overridden per gate where authorized"
+      },
+      "max_bytes_written": {
+        "value": 1048576,
+        "rationale": "1 MiB authored bytes"
+      },
+      "max_command_output_bytes": {
+        "value": 0,
+        "rationale": "no shell by default"
+      },
+      "max_single_command_duration_seconds": {
+        "value": 0,
+        "rationale": "no shell by default"
+      }
+    },
+    "evidence_budgets": {
+      "max_ndjson_line_length_bytes": {
+        "value": 262144,
+        "rationale": "256 KiB per line"
+      },
+      "max_event_count": {
+        "value": 50000,
+        "rationale": "bounds parser/memory"
+      },
+      "max_total_event_bytes": {
+        "value": 104857600,
+        "rationale": "100 MiB event ceiling"
+      },
+      "max_stdout_bytes": {
+        "value": 2000000,
+        "rationale": "DEFAULT_JCODE_MAX_OUTPUT_BYTES"
+      },
+      "max_stderr_bytes": {
+        "value": 2000000,
+        "rationale": "symmetric with stdout"
+      },
+      "max_transcript_bytes": {
+        "value": 5242880,
+        "rationale": "5 MiB transcript"
+      },
+      "max_raw_response_bytes": {
+        "value": 10485760,
+        "rationale": "10 MiB raw response"
+      }
+    }
   },
-  "model_budgets": {
-    "max_model_requests": {"value": 8, "rationale": "turn_budget 4 with at most 1 retry; conservative for single-task qualification"},
-    "max_aggregate_input_tokens": {"value": 32768, "rationale": "existing token_budget; context-window-conservative"},
-    "max_aggregate_output_tokens": {"value": 32768, "rationale": "matches token_budget ceiling"},
-    "max_output_tokens_per_request": {"value": 4096, "rationale": "sealed generation max_tokens"},
-    "max_retries_per_request": {"value": 1, "rationale": "bounded retries; one format/verify retry"},
-    "max_consecutive_malformed_responses": {"value": 2, "rationale": "fail closed after repeated malformed model output"},
-    "max_streaming_inactivity_seconds": {"value": 45, "rationale": "below inactivity timeout; aborts stalled streams"}
+  "gate_profiles": {
+    "gate_2j_9a_schema_only": {
+      "description": "Authority constants and canonical schemas. No model, no JCode process.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 0,
+          "rationale": "no model requests"
+        },
+        "tool_budgets.max_shell_commands": {
+          "value": 0,
+          "rationale": "no shell"
+        },
+        "tool_budgets.max_deleted_files": {
+          "value": 0,
+          "rationale": "no deletions"
+        }
+      },
+      "allowed_command_classes": [],
+      "denied_command_classes": [
+        "shell",
+        "network",
+        "vcs_write"
+      ],
+      "failure_mapping": "validation failure -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9b_containment_fixture": {
+      "description": "Containment primitive proof. Inert fixture commands only, network disabled.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 0,
+          "rationale": "no model"
+        },
+        "process_budgets.total_wall_clock_seconds": {
+          "value": 60,
+          "rationale": "short containment probes"
+        },
+        "process_budgets.max_descendant_processes": {
+          "value": 32,
+          "rationale": "low process count"
+        },
+        "process_budgets.memory_ceiling_bytes": {
+          "value": 536870912,
+          "rationale": "512 MiB for inert fixtures"
+        }
+      },
+      "allowed_command_classes": [
+        "inert_fixture"
+      ],
+      "denied_command_classes": [
+        "shell_unrestricted",
+        "network",
+        "model",
+        "vcs_write"
+      ],
+      "failure_mapping": "containment breach -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9c_supervisor_fixture": {
+      "description": "Process supervisor. Fake executor only; process-tree and timeout testing allowed.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 0,
+          "rationale": "no model"
+        }
+      },
+      "allowed_command_classes": [
+        "controlled_fixture_binary",
+        "controlled_fixture_script"
+      ],
+      "denied_command_classes": [
+        "shell_unrestricted",
+        "network",
+        "model",
+        "vcs_write"
+      ],
+      "failure_mapping": "supervision failure -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9d_event_fixture": {
+      "description": "Strict event bridge. Deterministic fixture generation where necessary; no model.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 0,
+          "rationale": "no model"
+        },
+        "tool_budgets.max_shell_commands": {
+          "value": 8,
+          "rationale": "deterministic fixture generation only"
+        }
+      },
+      "allowed_command_classes": [
+        "deterministic_fixture_generation"
+      ],
+      "denied_command_classes": [
+        "shell_unrestricted",
+        "network",
+        "model",
+        "vcs_write"
+      ],
+      "failure_mapping": "event loss/malformed -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9e_overlay_fixture": {
+      "description": "Writable overlay and independent diff. Controlled file create/modify/delete inside disposable fixture only.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 0,
+          "rationale": "no model"
+        },
+        "tool_budgets.max_deleted_files": {
+          "value": 8,
+          "rationale": "deletion allowed inside disposable fixture only"
+        }
+      },
+      "allowed_command_classes": [
+        "disposable_overlay_file_ops"
+      ],
+      "denied_command_classes": [
+        "shell_unrestricted",
+        "production_path",
+        "benchmark_path",
+        "network",
+        "model",
+        "vcs_write"
+      ],
+      "failure_mapping": "overlay escape / incomplete diff -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9f_fake_bridge": {
+      "description": "Sealed inference bridge against fake deterministic endpoint. No real model, no external network.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 0,
+          "rationale": "no REAL model; fake endpoint only"
+        }
+      },
+      "allowed_command_classes": [
+        "fake_inference_endpoint"
+      ],
+      "denied_command_classes": [
+        "real_model",
+        "external_network",
+        "vcs_write",
+        "dangerous_command",
+        "shell_unrestricted"
+      ],
+      "failure_mapping": "forbidden flow / identity unproven -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9g_jcode_no_model": {
+      "description": "JCode binary may launch; real model requests zero; strict process/evidence limits.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 0,
+          "rationale": "no real model requests"
+        }
+      },
+      "allowed_command_classes": [
+        "jcode_no_model"
+      ],
+      "denied_command_classes": [
+        "real_model",
+        "shell_unrestricted",
+        "production_mutation",
+        "vcs_write"
+      ],
+      "failure_mapping": "identity/containment failure -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9h_read_only_model_smoke": {
+      "description": "One authorized local model request; read-only repository scope; no writes/deletions/commit.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 1,
+          "rationale": "one read-only model request"
+        },
+        "tool_budgets.max_file_writes": {
+          "value": 0,
+          "rationale": "read-only"
+        },
+        "tool_budgets.max_deleted_files": {
+          "value": 0,
+          "rationale": "no deletions"
+        }
+      },
+      "allowed_command_classes": [
+        "read_only_repo_inspection"
+      ],
+      "denied_command_classes": [
+        "write",
+        "delete",
+        "vcs_write",
+        "commit",
+        "push",
+        "deploy",
+        "network_unrestricted",
+        "dangerous_command",
+        "shell_unrestricted"
+      ],
+      "failure_mapping": "any write/mutation -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_9i_contained_write_smoke": {
+      "description": "Tiny writable scope; bounded edits; protected paths denied; deletion only if task-authorized inside overlay; no VCS writes.",
+      "inherits": "shared_base",
+      "overrides": {
+        "model_budgets.max_model_requests": {
+          "value": 4,
+          "rationale": "bounded write task"
+        },
+        "tool_budgets.max_file_writes": {
+          "value": 4,
+          "rationale": "tiny writable scope"
+        },
+        "tool_budgets.max_deleted_files": {
+          "value": 2,
+          "rationale": "deletion only when task-authorizes inside disposable overlay"
+        }
+      },
+      "allowed_command_classes": [
+        "bounded_test_command_allowlist",
+        "disposable_overlay_write"
+      ],
+      "denied_command_classes": [
+        "protected_path",
+        "vcs_write",
+        "commit",
+        "push",
+        "deploy",
+        "dangerous_command",
+        "shell_unrestricted"
+      ],
+      "failure_mapping": "protected-path attempt / unauthorized deletion -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    },
+    "gate_2j_10_qualification": {
+      "description": "Paired harness qualification. Bounded coding-tool usage; repo-specific test/read commands; writes only to disposable worktree/overlay.",
+      "inherits": "shared_base",
+      "overrides": {
+        "tool_budgets.max_shell_commands": {
+          "value": 0,
+          "rationale": "no raw unrestricted shell; structured command classes only"
+        },
+        "tool_budgets.max_deleted_files": {
+          "value": 8,
+          "rationale": "deletion/rename only when task-authorized and recorded independently"
+        }
+      },
+      "allowed_command_classes": [
+        "repo_specific_test_command",
+        "safe_read_command",
+        "disposable_overlay_write"
+      ],
+      "denied_command_classes": [
+        "commit",
+        "push",
+        "merge",
+        "network_fetch",
+        "package_publication",
+        "deployment",
+        "host_mutation",
+        "dangerous_command"
+      ],
+      "failure_mapping": "dangerous command / unauthorized mutation -> BLOCKED_OR_DEGRADED_TRUTHFULLY"
+    }
   },
-  "tool_budgets": {
-    "max_tool_calls": {"value": 48, "rationale": "bounded agent loop; generous for read/edit cycles, tight against runaway"},
-    "max_shell_commands": {"value": 0, "rationale": "command_policy no_shell; bash denied; shell commands forbidden"},
-    "max_file_writes": {"value": 32, "rationale": "bounded edit surface for small tasks"},
-    "max_created_files": {"value": 16, "rationale": "bounded creation surface"},
-    "max_deleted_files": {"value": 0, "rationale": "deletion denied in qualification; diff contract records zero deletes by policy"},
-    "max_bytes_written": {"value": 1048576, "rationale": "1 MiB total authored bytes"},
-    "max_command_output_bytes": {"value": 0, "rationale": "no shell -> no command output"},
-    "max_single_command_duration_seconds": {"value": 0, "rationale": "no shell"}
-  },
-  "evidence_budgets": {
-    "max_ndjson_line_length_bytes": {"value": 262144, "rationale": "256 KiB; comfortably above any single event, rejects oversized"},
-    "max_event_count": {"value": 50000, "rationale": "well above bounded-task event volume; bounds parser/memory"},
-    "max_total_event_bytes": {"value": 104857600, "rationale": "100 MiB event ceiling"},
-    "max_stdout_bytes": {"value": 2000000, "rationale": "existing DEFAULT_JCODE_MAX_OUTPUT_BYTES"},
-    "max_stderr_bytes": {"value": 2000000, "rationale": "symmetric with stdout"},
-    "max_transcript_bytes": {"value": 5242880, "rationale": "5 MiB raw transcript"},
-    "max_raw_response_bytes": {"value": 10485760, "rationale": "10 MiB aggregate raw model response"}
-  },
-  "controlled_tests_required": ["each limit has a test that triggers exhaustion and asserts BLOCKED_OR_DEGRADED_TRUTHFULLY (never COMPLETED_VERIFIED)"],
-  "no_silent_extension": true
+  "profile_resolution_rule": "effective budget = deep-merge(shared_base, gate_profiles[active_gate].overrides); overrides must specify value + rationale",
+  "controlled_tests_required": [
+    "each gate profile limit has a test that triggers exhaustion and asserts BLOCKED_OR_DEGRADED_TRUTHFULLY (never COMPLETED_VERIFIED)"
+  ],
+  "no_silent_extension": true,
+  "execution_authorization_note": "No profile in this file authorizes execution of any later gate during this correction. Profiles 9g onward require their own gate-level authorization."
 }

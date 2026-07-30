@@ -24,10 +24,16 @@
       "provider_endpoint": "http://127.0.0.1:11434",
       "expected_provider_reported_model": "qwen2.5-coder:7b",
       "provider_client": "source_proxy/routing/ollama_route.py::OllamaRouteResolution (litellm ollama_chat/<model>); request contract from human_messy_homepage._ollama_generate (/api/generate)",
-      "generation_parameters": {"max_tokens": 4096, "seed": 7, "temperature": 0},
+      "generation_parameters": {
+        "max_tokens": 4096,
+        "seed": 7,
+        "temperature": 0
+      },
       "context_limit_tokens": 32768,
       "evidence_source": "BoundedAgentLoopReceipt (raw_model_transcripts, model_calls, executions, final_state)",
-      "availability_proof": "LIVE_REGISTRY_20260729: qwen2.5-coder:7b present at http://127.0.0.1:11434/api/tags with exact digest match; base case for proven local-model executor path"
+      "availability_proof": "LIVE_REGISTRY_20260729: qwen2.5-coder:7b present at http://127.0.0.1:11434/api/tags with exact digest match; base case for proven local-model executor path",
+      "context_policy_ref": "gate_2j_9_context_policy.json#ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES",
+      "context_packet_identity": "per-task canonical packet shared by A,B,C,D"
     },
     "B": {
       "lane_id": "B",
@@ -43,10 +49,16 @@
       "provider_profile": "spiritos-qualification",
       "provider_endpoint": "http://127.0.0.1:11434",
       "expected_provider_reported_model": "qwen2.5-coder:7b",
-      "generation_parameters": {"max_tokens": 4096, "seed": 7, "temperature": 0},
+      "generation_parameters": {
+        "max_tokens": 4096,
+        "seed": 7,
+        "temperature": 0
+      },
       "context_limit_tokens": 32768,
       "evidence_source": "strict NDJSON run.completed + sealed envelope + independent diff",
-      "availability_proof": "identical primary model as Lane A; JCode binary attested on disk; dispatcher pending Gate 2-J.9"
+      "availability_proof": "identical primary model as Lane A; JCode binary attested on disk; dispatcher pending Gate 2-J.9",
+      "context_policy_ref": "gate_2j_9_context_policy.json#ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES",
+      "context_packet_identity": "per-task canonical packet shared by A,B,C,D"
     },
     "C": {
       "lane_id": "C",
@@ -62,11 +74,17 @@
       "provider_endpoint": "http://127.0.0.1:11434",
       "expected_provider_reported_model": "qwen2.5-coder:14b",
       "provider_client": "source_proxy/routing/ollama_route.py::OllamaRouteResolution (litellm ollama_chat/<model>); request contract from human_messy_homepage._ollama_generate (/api/generate)",
-      "generation_parameters": {"max_tokens": 4096, "seed": 7, "temperature": 0},
+      "generation_parameters": {
+        "max_tokens": 4096,
+        "seed": 7,
+        "temperature": 0
+      },
       "context_limit_tokens": 32768,
       "evidence_source": "BoundedAgentLoopReceipt",
       "availability_proof": "LIVE_REGISTRY_20260729: qwen2.5-coder:14b present with exact digest match; strongest suitable local coding challenger present and available",
-      "challenger_selection_rationale": "Strongest suitable local challenger: present, available, exact coding-family (qwen2 coder), larger parameter size than primary for a fair capability comparison, exact digest verified, compatible with the proven /api/generate coding endpoint."
+      "challenger_selection_rationale": "Strongest suitable local challenger: present, available, exact coding-family (qwen2 coder), larger parameter size than primary for a fair capability comparison, exact digest verified, compatible with the proven /api/generate coding endpoint.",
+      "context_policy_ref": "gate_2j_9_context_policy.json#ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES",
+      "context_packet_identity": "per-task canonical packet shared by A,B,C,D"
     },
     "D": {
       "lane_id": "D",
@@ -82,19 +100,43 @@
       "provider_profile": "spiritos-qualification",
       "provider_endpoint": "http://127.0.0.1:11434",
       "expected_provider_reported_model": "qwen2.5-coder:14b",
-      "generation_parameters": {"max_tokens": 4096, "seed": 7, "temperature": 0},
+      "generation_parameters": {
+        "max_tokens": 4096,
+        "seed": 7,
+        "temperature": 0
+      },
       "context_limit_tokens": 32768,
       "evidence_source": "strict NDJSON run.completed + sealed envelope + independent diff",
-      "availability_proof": "identical challenger model as Lane C; JCode binary attested on disk; dispatcher pending Gate 2-J.9"
+      "availability_proof": "identical challenger model as Lane C; JCode binary attested on disk; dispatcher pending Gate 2-J.9",
+      "context_policy_ref": "gate_2j_9_context_policy.json#ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES",
+      "context_packet_identity": "per-task canonical packet shared by A,B,C,D"
     }
   },
   "rejected_candidates": [
-    {"model": "hermes4:latest", "reason": "general/chat family, not a coding-specialist model; not a fair coding-qualification challenger"},
-    {"model": "llama3.1:8b", "reason": "general family; not coding-specialist; weaker than qwen2.5-coder:14b for the coding lane"},
-    {"model": "llama3:latest", "reason": "general family; not coding-specialist"},
-    {"model": "gemma3n:e4b", "reason": "multimodal/general; not a coding specialist"},
-    {"model": "hf.co/* GLM-4-9B / gemma-4-12B-coder / Ornith / Hermes GGUF pulls", "reason": "not the sealed canonical comparison models; introducing them changes comparison conditions post-authorization; advisory-only pulls excluded from a sealed fair comparison"},
-    {"model": "cloud providers", "reason": "explicitly forbidden (no cloud models, no paid dependency)"}
+    {
+      "model": "hermes4:latest",
+      "reason": "general/chat family, not a coding-specialist model; not a fair coding-qualification challenger"
+    },
+    {
+      "model": "llama3.1:8b",
+      "reason": "general family; not coding-specialist; weaker than qwen2.5-coder:14b for the coding lane"
+    },
+    {
+      "model": "llama3:latest",
+      "reason": "general family; not coding-specialist"
+    },
+    {
+      "model": "gemma3n:e4b",
+      "reason": "multimodal/general; not a coding specialist"
+    },
+    {
+      "model": "hf.co/* GLM-4-9B / gemma-4-12B-coder / Ornith / Hermes GGUF pulls",
+      "reason": "not the sealed canonical comparison models; introducing them changes comparison conditions post-authorization; advisory-only pulls excluded from a sealed fair comparison"
+    },
+    {
+      "model": "cloud providers",
+      "reason": "explicitly forbidden (no cloud models, no paid dependency)"
+    }
   ],
   "decision_rules_applied": [
     "prefer currently active runtime-proven implementations: run_bounded_agent_loop is the only real local-model executor path",

@@ -267,17 +267,60 @@ def test_load_context_policy_sealed():
     assert data["context_schema_version"] == C.CONTEXT_SCHEMA_VERSION
 
 
+def test_context_policy_one_canonical_packet_all_four_lanes():
+    """Decision-2 correction: all four lanes receive ONE canonical context."""
+    data = load_context_policy(DOCS / "gate_2j_9_context_policy.json")
+    assert data["canonical_invariant"] == "ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES"
+    rule = " ".join(data["determinism_rules"])
+    assert "A==B==C==D" in rule
+    # model-specific variation is an exception, not the default
+    exc = data["model_specific_variation_exception"]
+    assert exc["default"].startswith("no variation")
+    assert "operator authorization explicitly accepts" in " ".join(exc["permitted_only_when"])
+
+
 def test_load_provider_profile_sealed():
     data = load_provider_profile(DOCS / "gate_2j_9_provider_profile.json")
     assert data["permitted_endpoint"] == C.PERMITTED_INFERENCE_ENDPOINT
     assert "127.0.0.1:4000" not in data["permitted_endpoint"]
 
 
-def test_load_budget_policy_sealed():
+def test_lane_bindings_all_four_lanes_reference_same_context_policy():
+    """All four lanes must reference one shared context policy/packet identity."""
+    lanes = load_lane_bindings(DOCS / "gate_2j_9_lane_bindings.json")["lanes"]
+    context_refs = {lanes[l].get("context_policy_ref", "shared") for l in lanes}
+    assert len(context_refs) == 1, "lanes must share one context policy reference"
+    packet_identity = {lanes[l].get("context_packet_identity", "per-task-shared") for l in lanes}
+    assert len(packet_identity) == 1, "lanes must share one per-task packet identity"
+
+
+def test_load_budget_policy_sealed_v2_gate_profiles():
+    """Decision-4 correction: budget split into gate-specific profiles."""
     data = load_budget_policy(DOCS / "gate_2j_9_budget_policy.json")
     assert data["no_silent_extension"] is True
-    assert data["tool_budgets"]["max_shell_commands"]["value"] == 0
-    assert data["tool_budgets"]["max_deleted_files"]["value"] == 0
+    assert "shared_base" in data
+    profiles = data["gate_profiles"]
+    expected = {
+        "gate_2j_9a_schema_only", "gate_2j_9b_containment_fixture",
+        "gate_2j_9c_supervisor_fixture", "gate_2j_9d_event_fixture",
+        "gate_2j_9e_overlay_fixture", "gate_2j_9f_fake_bridge",
+        "gate_2j_9g_jcode_no_model", "gate_2j_9h_read_only_model_smoke",
+        "gate_2j_9i_contained_write_smoke", "gate_2j_10_qualification",
+    }
+    assert expected.issubset(set(profiles))
+    # schema-only gate keeps shell and deletes at zero
+    so = profiles["gate_2j_9a_schema_only"]["overrides"]
+    assert so["tool_budgets.max_shell_commands"]["value"] == 0
+    assert so["tool_budgets.max_deleted_files"]["value"] == 0
+    # later coding gates are NOT artificially prevented from legitimate tools
+    g10 = profiles["gate_2j_10_qualification"]
+    assert "repo_specific_test_command" in g10["allowed_command_classes"]
+    assert "commit" in g10["denied_command_classes"]
+    # every profile denies unrestricted shell
+    for pid, prof in profiles.items():
+        denied = set(prof["denied_command_classes"])
+        assert ("shell_unrestricted" in denied or "shell" in denied
+                or "dangerous_command" in denied), pid
 
 
 def test_load_lane_bindings_rejects_drifted_digest(tmp_path):
@@ -289,9 +332,31 @@ def test_load_lane_bindings_rejects_drifted_digest(tmp_path):
         load_lane_bindings(path)
 
 
-def test_load_budget_policy_rejects_unsafe_shell(tmp_path):
+def test_load_budget_policy_rejects_unsafe_schema_only_shell(tmp_path):
+    """A v2 schema_only profile that allows shell is rejected."""
     src = json.loads((DOCS / "gate_2j_9_budget_policy.json").read_text())
-    src["tool_budgets"]["max_shell_commands"]["value"] = 5
+    src["gate_profiles"]["gate_2j_9a_schema_only"]["overrides"][
+        "tool_budgets.max_shell_commands"] = {"value": 5, "rationale": "bad"}
+    path = tmp_path / "budget.json"
+    path.write_text(json.dumps(src), encoding="utf-8")
+    with pytest.raises(ConfigLoadError):
+        load_budget_policy(path)
+
+
+def test_load_budget_policy_rejects_profile_missing_shell_denial(tmp_path):
+    """A profile that does not deny unrestricted shell is rejected."""
+    src = json.loads((DOCS / "gate_2j_9_budget_policy.json").read_text())
+    src["gate_profiles"]["gate_2j_9a_schema_only"]["denied_command_classes"] = ["network"]
+    path = tmp_path / "budget.json"
+    path.write_text(json.dumps(src), encoding="utf-8")
+    with pytest.raises(ConfigLoadError):
+        load_budget_policy(path)
+
+
+def test_load_budget_policy_rejects_missing_profile_field(tmp_path):
+    """A profile missing a required field is rejected."""
+    src = json.loads((DOCS / "gate_2j_9_budget_policy.json").read_text())
+    del src["gate_profiles"]["gate_2j_9a_schema_only"]["failure_mapping"]
     path = tmp_path / "budget.json"
     path.write_text(json.dumps(src), encoding="utf-8")
     with pytest.raises(ConfigLoadError):
