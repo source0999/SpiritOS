@@ -9,7 +9,7 @@
   "branch": "codex/source-proxy-jcode-qualification-20260726",
   "repository": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
   "authorized_base_commit": "e77e3e62146fcb9b8f4cd499b48dccc6be05c95c",
-  "authorization_artifact_commit": "TO_BE_FILLED_AFTER_COMMIT_EXCLUDED_FROM_HASH",
+  "authorization_artifact_commit": "591d18e34a7416999f391209c7f88f5f1b088f82",
   "content_sha256": "c299a8fcc30aadfd05031f4cd0730fd766c274d14368230c2acaf24447a09db1",
   "superseded_authorization_id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9A",
   "superseded_authorization_hash": "defad82047ade26d2a5d2ad3cb66a14d04ef798ac5abacb5082c8e1821a668b0",
