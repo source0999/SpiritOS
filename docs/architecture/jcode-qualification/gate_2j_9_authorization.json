@@ -81,5 +81,9 @@
   ],
   "expiration_or_supersession": "superseded by the next authorization (TERRA_HIGH_AUTHORIZED__GATE_2J_9B) after Gate 2-J.9A receipt is accepted; void if branch/base diverge from authorized_base_commit",
   "next_gate_rule": "after 2-J.9A receipt accepted and tests green, STOP. Do not auto-advance to 2-J.9B unless a subsequent explicit authorization is issued.",
-  "automatic_advancement_permitted": false
+  "automatic_advancement_permitted": false,
+  "status": "SUPERSEDED_BY_REVALIDATION_AUTHORIZATION",
+  "superseded_by_authorization_id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9A_REVALIDATION_V1",
+  "superseded_by_content_sha256": "c299a8fcc30aadfd05031f4cd0730fd766c274d14368230c2acaf24447a09db1",
+  "superseded_reason": "RETROACTIVE_AUTHORIZATION_BINDING; original was finalized after implementation (see GATE_2J_9A_AUTHORIZATION_SEQUENCE_AUDIT.md)"
 }

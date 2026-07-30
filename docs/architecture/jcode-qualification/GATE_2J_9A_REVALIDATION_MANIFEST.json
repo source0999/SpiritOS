@@ -1,0 +1,48 @@
+{
+  "schema_version": "source-proxy.gate-2j-9a-revalidation-manifest/v1",
+  "campaign_id": "campaign-2-j",
+  "gate_id": "2-J.9A",
+  "manifest_type": "expected_implementation_identity",
+  "captured_at_local_head": "e77e3e62146fcb9b8f4cd499b48dccc6be05c95c",
+  "captured_at_utc": "2026-07-29T20:40:00Z",
+  "expected_source_files": {
+    "source_proxy/jcode/constants.py": {"git_blob_sha1": "2c085bdc99eb1e4764f21a6b881a3fbe1ded44f7"},
+    "source_proxy/jcode/canonical_io.py": {"git_blob_sha1": "e6b496891463b0cbcefc9dd13a97b0edcd837eb0"},
+    "source_proxy/jcode/sealed_envelope.py": {"git_blob_sha1": "ee288966f03257c921b65ac94cce08a0fe974d8c"},
+    "source_proxy/jcode/config_loaders.py": {"git_blob_sha1": "1ebffff696a575057795e3bf66b1149c5dac5f9d"}
+  },
+  "expected_test_files": {
+    "source_proxy/tests/test_jcode_2j9a_sealed_authority.py": {"git_blob_sha1": "27811e9effe9e3c22d92eec923b1c7854f0271c3", "expected_test_count": 28}
+  },
+  "expected_config_files": {
+    "docs/architecture/jcode-qualification/gate_2j_9_authority_constants.json": {"git_blob_sha1": "c59a6e1519b55c2494483dd8d7d0d990b9ae5b85"},
+    "docs/architecture/jcode-qualification/gate_2j_9_lane_bindings.json": {"git_blob_sha1": "f39063853add0b0a818d5cd56aa4a2b3c6f5694b"},
+    "docs/architecture/jcode-qualification/gate_2j_9_context_policy.json": {"git_blob_sha1": "82b602d5b865dad6c6859d669f525d4fd6fc24a3"},
+    "docs/architecture/jcode-qualification/gate_2j_9_provider_profile.json": {"git_blob_sha1": "611de6d3ac2a8a7099ccc9c27c1896583054f374"},
+    "docs/architecture/jcode-qualification/gate_2j_9_budget_policy.json": {"git_blob_sha1": "cfb73c963e8f5d974cc1f9c8c7a66c7b33f1b88f"}
+  },
+  "expected_schema_versions": {
+    "qualification_schema": "coding.jcode-qualification/v1",
+    "request_envelope_schema": "coding.jcode-execution-request/v1",
+    "result_envelope_schema": "coding.jcode-execution-result/v1",
+    "event_schema": "source-proxy.jcode-event/v1",
+    "context_schema": "source-proxy.jcode-qualification-context-packet/v1"
+  },
+  "expected_focused_no_model_total": 75,
+  "expected_existing_no_model_count": 47,
+  "expected_gate_2j9a_test_count": 28,
+  "integrity_targets": {
+    "jcode_task_runs": 0,
+    "model_requests": 0,
+    "diagnostic_tasks": "0/20",
+    "comparison_runs": "0/80",
+    "benchmark_changes": 0,
+    "daily_runtime_changes": 0
+  },
+  "prohibited_behaviors_during_revalidation": [
+    "execute JCode", "spawn the JCode binary", "call a real model", "call a fake model out-of-process",
+    "modify the frozen benchmark", "modify the daily runtime", "implement Gate 2-J.9B",
+    "create containment processes", "alter model routing", "commit/push/merge/deploy from JCode",
+    "authorize automatic gate advancement"
+  ]
+}
