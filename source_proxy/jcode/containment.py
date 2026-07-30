@@ -27,6 +27,16 @@ class JCodeContainmentError(ValueError):
 
 
 @dataclass(frozen=True)
+class PreassembledRootConfig:
+    """Immutable, per-run root used when AppArmor rejects introduced binds."""
+
+    root: Path
+    executable: Path
+    executable_name: str = "jcode"
+    runtime_files: tuple[Path, ...] = ()
+
+
+@dataclass(frozen=True)
 class ContainmentFixtureConfig:
     """No-model fixture boundary for Gate 2-J.9B proof only."""
 
@@ -93,6 +103,50 @@ def build_jcode_containment_args(
         "/workspace",
         *args[command_index:],
     ]
+
+
+def assemble_preassembled_root(config: PreassembledRootConfig) -> Path:
+    """Copy only an executable and declared runtime files into a fresh root."""
+    root = config.root.resolve()
+    if root.exists() or root.is_symlink() or not config.executable.is_file() or config.executable.is_symlink():
+        raise JCodeContainmentError("jcode_preassembled_root_invalid")
+    if not config.executable_name or "/" in config.executable_name:
+        raise JCodeContainmentError("jcode_preassembled_executable_name_invalid")
+    root.mkdir(mode=0o700)
+    for directory in ("usr/bin", "workspace", "jcode-home", "tmp", "proc", "dev"):
+        (root / directory).mkdir(parents=True, exist_ok=True)
+    _copy_root_file(config.executable, root / "usr/bin" / config.executable_name)
+    for runtime in config.runtime_files:
+        source = runtime.absolute()
+        if not source.is_absolute() or not source.is_file():
+            raise JCodeContainmentError("jcode_preassembled_runtime_invalid")
+        _copy_root_file(source, root / source.relative_to("/"))
+    return root
+
+
+def build_preassembled_root_args(command: Sequence[str], root: Path) -> list[str]:
+    """Run only a preassembled root, never an introduced host mount."""
+    if not command or not root.is_dir() or root.is_symlink():
+        raise JCodeContainmentError("jcode_preassembled_command_or_root_invalid")
+    return [
+        "bwrap", "--clearenv", "--unshare-user", "--unshare-pid", "--unshare-ipc",
+        "--unshare-uts", "--unshare-cgroup", "--unshare-net", "--new-session",
+        "--die-with-parent", "--cap-drop", "ALL", "--uid", "0", "--gid", "0",
+        "--ro-bind", str(root.resolve()), "/", "--proc", "/proc", "--dev", "/dev",
+        "--chdir", "/workspace", "--setenv", "PATH", "/usr/bin:/bin",
+        "--setenv", "HOME", "/jcode-home", "--setenv", "TMPDIR", "/tmp",
+        "--setenv", "JCODE_ALLOW_COMMIT", "0", "--setenv", "JCODE_ALLOW_DEPLOY", "0",
+        "--setenv", "JCODE_ALLOW_PUSH", "0", "--setenv", "JCODE_AUTO_UPDATE_ENABLED", "0",
+        "--setenv", "JCODE_MEMORY_ENABLED", "0", "--setenv", "JCODE_NETWORK_ENABLED", "0",
+        "--setenv", "JCODE_NO_TELEMETRY", "1", "--setenv", "JCODE_SESSION_RESUME_ENABLED", "0",
+        "--", *command,
+    ]
+
+
+def _copy_root_file(source: Path, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination, follow_symlinks=True)
+    destination.chmod(0o755 if os.access(source, os.X_OK) else 0o444)
 
 
 def run_jcode_containment_probe(

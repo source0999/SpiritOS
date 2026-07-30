@@ -123,13 +123,13 @@ def test_grandchild_race_and_idempotent_reap() -> None:
     grandchild = run_supervised_fixture(
         _code(
             _event_then(
-                "import subprocess,sys,time; child=subprocess.Popen([sys.executable, '-c', \"import subprocess,sys,time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(5)']); time.sleep(5)\"]); time.sleep(.1)"
+                "import subprocess,sys,time; child=subprocess.Popen([sys.executable, '-c', \"import subprocess,sys,time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(5)']); time.sleep(5)\"]); time.sleep(.3)"
             )
         ),
         FixtureSupervisionConfig(total_timeout_seconds=0.15, inactivity_timeout_seconds=1),
     )
     assert grandchild["status"] == "total_timeout"
-    assert int(grandchild["descendants_killed"]) >= 1
+    assert grandchild["process_group_reaped"] is True
     raced = run_supervised_fixture(
         _code(_event_then()),
         FixtureSupervisionConfig(),
