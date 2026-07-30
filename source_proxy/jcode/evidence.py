@@ -3,9 +3,33 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 from source_proxy.jcode.adapter import JCODE_EXECUTION_RESULT_FIELDS
+from source_proxy.jcode.event_schema import EventBinding, parse_strict_event_stream
+
+
+def map_strict_jcode_event_evidence(raw: bytes, binding: EventBinding) -> dict[str, Any]:
+    """Gate 2-J.9D strict bridge; fixture claims never become terminal truth."""
+    return parse_strict_event_stream(raw, binding)
+
+
+def seal_strict_event_evidence(result: dict[str, Any], destination: Path) -> dict[str, Any]:
+    """Persist strict evidence atomically enough for no-model fixture receipts."""
+    updated = dict(result)
+    try:
+        destination.write_text(
+            json.dumps(updated, sort_keys=True, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        updated["status"] = "EVIDENCE_INCOMPLETE"
+        updated["evidence_sealed"] = False
+        updated.setdefault("blocked_reasons", []).append("event_evidence_write_failed")
+        return updated
+    updated["evidence_sealed"] = True
+    return updated
 
 
 def map_jcode_ndjson_evidence(raw: bytes) -> dict[str, Any]:
