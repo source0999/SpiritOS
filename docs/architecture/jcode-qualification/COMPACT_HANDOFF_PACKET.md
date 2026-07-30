@@ -2,6 +2,12 @@
 
 ## Current state
 
+Batch 1 is accepted. Gates 2-J.9B through 2-J.9E are pushed at `afb3124a1` with
+126 selected no-model tests passing. The only permitted next action is creation
+of a prospective Batch 2 authorization for 2-J.9F through 2-J.9I. The known
+systemd `MemoryMax` limitation is accepted for no-model fixtures only; live
+JCode requires memory admission and runtime monitoring.
+
 ## Superseding binary status
 
 The historical binary-mismatch summary below is superseded for the binary

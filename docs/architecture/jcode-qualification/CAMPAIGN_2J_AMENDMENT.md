@@ -1,6 +1,6 @@
 # Campaign 2-J Amendment
 
-status: `AUTHORITY_SEQUENCE_REPAIRED__GATE_2J_9A_REVALIDATED__READY_FOR_SEPARATE_GATE_2J_9B_AUTHORIZATION`
+status: `GATE_2J_9B_TO_9E_BATCH_1_ACCEPTED__READY_FOR_PROSPECTIVE_BATCH_2_AUTHORIZATION`
 
 ## Identity and dependency
 
@@ -17,6 +17,14 @@ status: `AUTHORITY_SEQUENCE_REPAIRED__GATE_2J_9A_REVALIDATED__READY_FOR_SEPARATE
 Campaign 2-J starts only because Campaign 2 benchmark authority has been
 explicitly accepted. It is a side branch: it does not replace Campaign 3, does
 not unblock Campaign 4, and does not make JCode a default executor.
+
+## Batch 1 acceptance
+
+Batch 1 (Gates 2-J.9B through 2-J.9E) is accepted under
+`GATE_2J_9B_TO_9E_BATCH_1_ACCEPTED__SEPARATE_2J_9F_AUTHORIZATION_REQUIRED`.
+See `GATE_2J_9B_TO_9E_OPERATOR_ACCEPTANCE.md`. The accepted `prlimit --as`
+compensation does not establish hard cgroup memory enforcement; live JCode is
+subject to the separate Batch 2 memory-admission checkpoint.
 
 ## Non-negotiable invariants
 
