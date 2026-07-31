@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from source_proxy.jcode.write_smoke import WriteSmokePolicy, WriteSmokeSafetyError
+from source_proxy.jcode.write_smoke import RequestBudgetBinding, WriteSmokePolicy, WriteSmokeSafetyError
 
 
 @pytest.mark.parametrize(
@@ -71,3 +71,20 @@ def test_model_policy_denies_substitution_and_direct_access(kwargs: dict[str, ob
 def test_terminal_integrity_fails_closed(kwargs: dict[str, bool], reason: str) -> None:
     with pytest.raises(WriteSmokeSafetyError, match=reason):
         WriteSmokePolicy().verify_terminal_integrity(**kwargs)
+
+
+def test_request_budget_binding_rejects_overflow_count_and_hash_mismatch() -> None:
+    request = {"messages": [{"role": "user", "content": "sealed"}], "model": "qwen2.5-coder:14b"}
+    import hashlib
+    import json
+    binding = RequestBudgetBinding(hashlib.sha256(json.dumps(request, sort_keys=True, separators=(",", ":")).encode()).hexdigest(), 4096)
+    binding.verify(request, input_tokens=4096, output_tokens=1024, request_number=2)
+    for values, reason in [
+        ({"input_tokens": 4097, "output_tokens": 0, "request_number": 1}, "input_budget"),
+        ({"input_tokens": 0, "output_tokens": 1025, "request_number": 1}, "output_budget"),
+        ({"input_tokens": 0, "output_tokens": 0, "request_number": 3}, "request_count"),
+        ({"input_tokens": 0, "output_tokens": 0, "request_number": 1}, "request_hash"),
+    ]:
+        candidate = {"other": True} if reason == "request_hash" else request
+        with pytest.raises(WriteSmokeSafetyError, match=reason):
+            binding.verify(candidate, **values)

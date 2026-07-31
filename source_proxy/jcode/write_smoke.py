@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 
 
 class WriteSmokeSafetyError(ValueError):
@@ -56,3 +58,22 @@ class WriteSmokePolicy:
         for reason, failed in failures.items():
             if failed:
                 raise WriteSmokeSafetyError(f"write_smoke_{reason}")
+
+
+@dataclass(frozen=True)
+class RequestBudgetBinding:
+    request_sha256: str
+    input_limit: int
+    output_limit: int = 1024
+    request_limit: int = 2
+
+    def verify(self, request: dict[str, object], *, input_tokens: int, output_tokens: int, request_number: int) -> None:
+        encoded = json.dumps(request, sort_keys=True, separators=(",", ":")).encode()
+        if hashlib.sha256(encoded).hexdigest() != self.request_sha256:
+            raise WriteSmokeSafetyError("write_smoke_request_hash_mismatch")
+        if input_tokens > self.input_limit:
+            raise WriteSmokeSafetyError("write_smoke_input_budget_exhausted")
+        if output_tokens > self.output_limit:
+            raise WriteSmokeSafetyError("write_smoke_output_budget_exhausted")
+        if request_number > self.request_limit:
+            raise WriteSmokeSafetyError("write_smoke_request_count_exhausted")
