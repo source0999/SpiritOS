@@ -44,18 +44,23 @@ static void close_nonstandard_fds(void) {
 
 static void forward_pair(int left, int right) {
   char buffer[65536];
-  for (;;) {
+  int left_open = 1, right_open = 1;
+  while (left_open || right_open) {
     fd_set readable;
     int high = left > right ? left : right;
-    FD_ZERO(&readable); FD_SET(left, &readable); FD_SET(right, &readable);
+    FD_ZERO(&readable);
+    if (left_open) FD_SET(left, &readable);
+    if (right_open) FD_SET(right, &readable);
     if (select(high + 1, &readable, NULL, NULL, NULL) <= 0) return;
     for (int source_index = 0; source_index < 2; ++source_index) {
       int source = source_index ? right : left;
       int dest = source_index ? left : right;
       ssize_t read_count;
+      int *source_open = source_index ? &right_open : &left_open;
       if (!FD_ISSET(source, &readable)) continue;
       read_count = read(source, buffer, sizeof(buffer));
-      if (read_count <= 0) return;
+      if (read_count == 0) { shutdown(dest, SHUT_WR); *source_open = 0; continue; }
+      if (read_count < 0) return;
       for (ssize_t offset = 0; offset < read_count;) {
         ssize_t written = write(dest, buffer + offset, (size_t)(read_count - offset));
         if (written <= 0) return;
@@ -65,12 +70,13 @@ static void forward_pair(int left, int right) {
   }
 }
 
-static void serve(int listener, const char *socket_path) {
+static void serve(int listener, const char *socket_path, int relay_fd) {
   for (;;) {
     int client = accept(listener, NULL, NULL);
     struct sockaddr_un address;
     int upstream;
     if (client < 0) { if (errno == EINTR) continue; return; }
+    if (relay_fd >= 0) { forward_pair(client, relay_fd); close(client); return; }
     upstream = socket(AF_UNIX, SOCK_STREAM, 0);
     if (upstream < 0) { close(client); continue; }
     memset(&address, 0, sizeof(address)); address.sun_family = AF_UNIX;
@@ -83,24 +89,25 @@ static void serve(int listener, const char *socket_path) {
 
 int main(int argc, char **argv) {
   const char *socket_path = NULL, *config_path = NULL, *base_url = NULL;
-  int port = 0, command = -1, listener = -1;
+  int port = 0, command = -1, listener = -1, relay_fd = -1;
   for (int index = 1; index < argc; ++index) {
     if (!strcmp(argv[index], "--")) { command = index + 1; break; }
     if (!strcmp(argv[index], "--socket") && index + 1 < argc) socket_path = argv[++index];
     else if (!strcmp(argv[index], "--config-path") && index + 1 < argc) config_path = argv[++index];
     else if (!strcmp(argv[index], "--base-url") && index + 1 < argc) base_url = argv[++index];
+    else if (!strcmp(argv[index], "--relay-fd") && index + 1 < argc) relay_fd = atoi(argv[++index]);
     else if (!strcmp(argv[index], "--listen-port") && index + 1 < argc) port = atoi(argv[++index]);
     else return 64;
   }
   if (!config_path || !base_url || command < 0 || command >= argc || write_config(config_path, base_url) != 0) return 65;
-  if (socket_path) {
+  if (socket_path || relay_fd >= 0) {
     struct sockaddr_in address;
     int one = 1;
     if (port < 1 || port > 65535 || (listener = socket(AF_INET, SOCK_STREAM, 0)) < 0) return 66;
     setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     memset(&address, 0, sizeof(address)); address.sin_family = AF_INET; address.sin_port = htons((unsigned short)port); address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     if (bind(listener, (struct sockaddr *)&address, sizeof(address)) || listen(listener, 8)) return 66;
-    if (fork() == 0) { if (prctl(PR_SET_PDEATHSIG, SIGTERM) || getppid() == 1) return 67; serve(listener, socket_path); return 0; }
+    if (fork() == 0) { if (prctl(PR_SET_PDEATHSIG, SIGTERM) || getppid() == 1) return 67; serve(listener, socket_path, relay_fd); return 0; }
     close(listener);
   }
   close_nonstandard_fds();
