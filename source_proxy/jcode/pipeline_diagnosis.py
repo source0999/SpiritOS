@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import shutil
 import socket
 import subprocess
@@ -36,7 +37,7 @@ from source_proxy.decision.tool_action_executor import ToolActionWorkspaceContra
 from source_proxy.decision.tool_action_loop import BoundedAgentLoopRequest, run_bounded_agent_loop
 from source_proxy.jcode.adapter import REQUIRED_DENIED_TOOLS
 from source_proxy.jcode.containment import PreassembledRootConfig, assemble_preassembled_root
-from source_proxy.jcode.supervision import JCodeSupervisionConfig, run_supervised_jcode_command
+from source_proxy.jcode.supervision import JCodeSupervisionConfig
 
 
 AUTHORIZATION_ID = "OPERATOR_AUTHORIZATION__C2J_PIPELINE_DIAGNOSIS_20260731_V1"
@@ -996,6 +997,8 @@ class DiagnosticBridgeServer:
     errors: list[str] = field(default_factory=list, init=False)
     _listener: socket.socket | None = field(default=None, init=False)
     _thread: threading.Thread | None = field(default=None, init=False)
+    _connection_threads: list[threading.Thread] = field(default_factory=list, init=False)
+    _connected_sockets: list[socket.socket] = field(default_factory=list, init=False)
     _stop: threading.Event = field(default_factory=threading.Event, init=False)
 
     def __post_init__(self) -> None:
@@ -1017,13 +1020,37 @@ class DiagnosticBridgeServer:
         self._thread = threading.Thread(target=self._serve, name="c2j-diagnostic-bridge", daemon=True)
         self._thread.start()
 
+    def start_connected(self, connections: Sequence[socket.socket]) -> None:
+        if self._listener is not None or self._thread is not None or self._connection_threads:
+            raise PipelineDiagnosisError("diagnostic_bridge_already_started")
+        self._connected_sockets = list(connections)
+        for index, connection in enumerate(self._connected_sockets):
+            thread = threading.Thread(
+                target=self._serve_connection,
+                args=(connection,),
+                name=f"c2j-diagnostic-channel-{index + 1}",
+                daemon=True,
+            )
+            self._connection_threads.append(thread)
+            thread.start()
+
     def close(self) -> None:
         self._stop.set()
         if self._listener is not None:
             self._listener.close()
+        for connection in self._connected_sockets:
+            try:
+                connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            connection.close()
         if self._thread is not None:
             self._thread.join(timeout=2)
+        for thread in self._connection_threads:
+            thread.join(timeout=2)
         self._listener = None
+        self._connected_sockets = []
+        self._connection_threads = []
         if self.socket_path.exists() or self.socket_path.is_symlink():
             self.socket_path.unlink()
 
@@ -1036,6 +1063,9 @@ class DiagnosticBridgeServer:
                 continue
             except OSError:
                 break
+            self._serve_connection(connection)
+
+    def _serve_connection(self, connection: socket.socket) -> None:
             try:
                 request = read_http_request(connection)
                 body = request["body"]
@@ -1072,7 +1102,7 @@ class DiagnosticBridgeServer:
                         + b"\r\n\r\n"
                         + rejection
                     )
-                    continue
+                    return
                 if self.capture_only:
                     transformed = {"capture_only": True, "model": self.model}
                     response = {
@@ -1119,16 +1149,19 @@ class DiagnosticBridgeServer:
                         "body_utf8": sse.decode("utf-8"),
                     }
                 )
-                chunked = f"{len(sse):X}\r\n".encode("ascii") + sse + b"\r\n0\r\n\r\n"
                 connection.sendall(
                     b"HTTP/1.1 200 OK\r\n"
                     b"Content-Type: text/event-stream\r\n"
                     b"Cache-Control: no-cache\r\n"
                     b"Connection: close\r\n"
-                    b"Transfer-Encoding: chunked\r\n\r\n"
-                    + chunked
+                    b"Content-Length: "
+                    + str(len(sse)).encode("ascii")
+                    + b"\r\n\r\n"
+                    + sse
                 )
             except Exception as error:  # preserved as diagnostic evidence
+                if str(error) == "http_headers_incomplete":
+                    return
                 self.errors.append(f"{type(error).__name__}:{error}")
                 body = canonical_json({"error": {"message": str(error), "type": "invalid_request_error"}}).encode("utf-8")
                 try:
@@ -1146,9 +1179,28 @@ class DiagnosticBridgeServer:
 
 def compile_relay_launcher(root: Path, output: Path) -> None:
     source = root / "source_proxy/jcode/preassembled_relay_runner.c"
+    source_text = source.read_text(encoding="utf-8")
+    replacements = {
+        "static void serve(int listener, const char *socket_path, int relay_fd) {\n  for (;;) {":
+            "static void serve(int listener, const char *socket_path, int *relay_fds, int relay_count) {\n  int relay_index = 0;\n  for (;;) {",
+        "    if (relay_fd >= 0) { forward_pair(client, relay_fd); close(client); return; }":
+            "    if (relay_count > 0) {\n      if (relay_index >= relay_count) { close(client); return; }\n      forward_pair(client, relay_fds[relay_index]);\n      close(relay_fds[relay_index]);\n      ++relay_index;\n      close(client);\n      if (relay_index >= relay_count) return;\n      continue;\n    }",
+        "  int port = 0, command = -1, listener = -1, relay_fd = -1;":
+            "  int port = 0, command = -1, listener = -1, relay_count = 0;\n  int relay_fds[3] = {-1, -1, -1};",
+        "    else if (!strcmp(argv[index], \"--relay-fd\") && index + 1 < argc) relay_fd = atoi(argv[++index]);":
+            "    else if (!strcmp(argv[index], \"--relay-fd\") && index + 1 < argc) {\n      if (relay_count >= 3) return 64;\n      relay_fds[relay_count++] = atoi(argv[++index]);\n    }",
+        "  if (socket_path || relay_fd >= 0) {": "  if (socket_path || relay_count > 0) {",
+        "if (prctl(PR_SET_PDEATHSIG, SIGTERM) || getppid() == 1) return 67; serve(listener, socket_path, relay_fd); return 0;":
+            "if (prctl(PR_SET_PDEATHSIG, SIGTERM) || getppid() == 1) return 67; serve(listener, socket_path, relay_fds, relay_count); return 0;",
+    }
+    for old, new in replacements.items():
+        if source_text.count(old) != 1:
+            raise PipelineDiagnosisError("relay_launcher_source_shape_drift")
+        source_text = source_text.replace(old, new)
     completed = subprocess.run(
-        ["gcc", "-static", "-O2", "-Wall", "-Werror", str(source), "-o", str(output)],
+        ["gcc", "-x", "c", "-static", "-O2", "-Wall", "-Werror", "-", "-o", str(output)],
         cwd=root,
+        input=source_text,
         capture_output=True,
         text=True,
         timeout=60,
@@ -1156,6 +1208,61 @@ def compile_relay_launcher(root: Path, output: Path) -> None:
     )
     if completed.returncode != 0:
         raise PipelineDiagnosisError(f"relay_launcher_compile_failed:{completed.stderr}")
+
+
+def run_supervised_with_socketpairs(
+    command: Sequence[str],
+    child_sockets: Sequence[socket.socket],
+    config: JCodeSupervisionConfig,
+) -> dict[str, object]:
+    started = time.monotonic()
+    process: subprocess.Popen[str] | None = None
+    try:
+        process = subprocess.Popen(
+            list(command),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            start_new_session=True,
+            pass_fds=tuple(item.fileno() for item in child_sockets),
+        )
+    finally:
+        for item in child_sockets:
+            item.close()
+    assert process is not None
+    disposition = "completed"
+    termination_signal: str | None = None
+    try:
+        stdout, stderr = process.communicate(timeout=config.timeout_seconds)
+    except subprocess.TimeoutExpired:
+        disposition = "timed_out"
+        os.killpg(process.pid, signal.SIGTERM)
+        termination_signal = "SIGTERM"
+        try:
+            stdout, stderr = process.communicate(timeout=config.termination_grace_seconds)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            termination_signal = "SIGKILL"
+            stdout, stderr = process.communicate()
+    deadline = time.monotonic() + 1
+    process_group_reaped = False
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(process.pid, 0)
+        except ProcessLookupError:
+            process_group_reaped = True
+            break
+        time.sleep(0.02)
+    return {
+        "status": disposition,
+        "process_exit_code": process.returncode,
+        "termination_signal": termination_signal,
+        "process_group_reaped": process_group_reaped,
+        "elapsed_seconds": round(time.monotonic() - started, 3),
+        "stdout": stdout,
+        "stderr": stderr,
+        "supervisor": "pipeline-diagnosis-socketpair-supervisor/v1",
+    }
 
 
 def jcode_runtime_files() -> tuple[Path, ...]:
@@ -1243,17 +1350,18 @@ def run_jcode_harness(
             additional_executables=((launcher, "relay-runner"),),
         )
     )
-    bridge_dir = runtime_root / "bridge"
-    bridge_dir.mkdir(mode=0o700)
     bridge = DiagnosticBridgeServer(
-        bridge_dir / "inference.sock",
+        runtime_root / "unused-mounted-socket",
         model,
         bridge_mode,
         run_id,
         evidence_root,
         capture_only=capture_only,
     )
-    bridge.start()
+    socketpairs = [socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM) for _ in range(MAX_TURNS_PER_RUN)]
+    host_sockets = [pair[0] for pair in socketpairs]
+    child_sockets = [pair[1] for pair in socketpairs]
+    bridge.start_connected(host_sockets)
     port = 18080
     allowed_tools = "read" if task_key == "R" else "read,write,apply_patch"
     message = jcode_prompt_message(prompt_sha, context_sha)
@@ -1301,9 +1409,6 @@ def run_jcode_harness(
         "--bind",
         str(overlay),
         "/workspace",
-        "--ro-bind",
-        str(bridge_dir),
-        "/run/jcode-bridge",
         "--ro-bind",
         str(prompt_path),
         "/workspace/DIAGNOSTIC_TASK.txt",
@@ -1401,9 +1506,17 @@ def run_jcode_harness(
             *jcode_command,
         ]
     )
+    socket_argument_index = command.index("--socket")
+    relay_fd_arguments = [
+        value
+        for child_socket in child_sockets
+        for value in ("--relay-fd", str(child_socket.fileno()))
+    ]
+    command[socket_argument_index : socket_argument_index + 2] = relay_fd_arguments
     try:
-        process = run_supervised_jcode_command(
+        process = run_supervised_with_socketpairs(
             command,
+            child_sockets,
             JCodeSupervisionConfig(timeout_seconds=300, termination_grace_seconds=2),
         )
     finally:
@@ -1447,6 +1560,7 @@ def run_jcode_harness(
         "registry_receipt": bridge.client.registry_receipt,
         "bridge_mode": bridge_mode,
         "capture_only": capture_only,
+        "relay_transport": "supervisor-owned-one-use-socketpairs/v1",
         "prompt_sha256": prompt_sha,
         "context_sha256": context_sha,
     }
@@ -2061,7 +2175,18 @@ def seal_jcode_capture_preflight(root: Path | None = None) -> dict[str, Any]:
                 )
                 requests = list(result["jcode_provider_requests"])
                 if len(requests) != 1 or result["backend_model_calls"]:
-                    raise PipelineDiagnosisError("capture_preflight_request_count_invalid")
+                    raise PipelineDiagnosisError(
+                        "capture_preflight_request_count_invalid:"
+                        + canonical_json(
+                            {
+                                "run_id": run_id,
+                                "provider_request_count": len(requests),
+                                "backend_model_call_count": len(result["backend_model_calls"]),
+                                "process": result["jcode_process"],
+                                "bridge_errors": result["tool_parse"]["bridge_errors"],
+                            }
+                        ).strip()
+                    )
                 body = requests[0]["body"]
                 observed_tools = [
                     str((item.get("function") or {}).get("name") or "")
