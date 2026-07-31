@@ -2,6 +2,11 @@
 
 ## Current state
 
+Gate 2-J.9I remediation v2 is complete as a truthful model-quality finding:
+exact Qwen 14B binding and the evidence-derived budget passed, but the model
+made no authorized edit. See `GLM_REVIEW_PACKET_GATE_2J_9I_REMEDIATION_V2.md`.
+No Gate 2-J.9J, diagnostics, or comparison execution is authorized.
+
 Runtime Gates 2-J.9G-D through 2-J.9H are now technically accepted by the
 operator, with their original GLM conditional verdict and the governance
 decision preserved in `GATE_2J_9G_D_TO_9H_OPERATOR_ACCEPTANCE.md`. The five
