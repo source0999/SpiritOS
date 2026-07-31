@@ -31,10 +31,11 @@ LSM. No containment policy was weakened.
 
 ## Counters
 
-- Exact JCode launches in this batch: 10 (2 topology, 1 successful fake path,
-  4 no-model-loop evidence, 3 real-model task attempts).
-- Fake requests: 5 (one successful integration, one successful no-model loop,
-  three controlled slow-fake probes).
+- Exact JCode launches in this batch: 16, including bounded topology and
+  framing diagnostics, the accepted fake path, three no-model supervision
+  probes, and three real-model task attempts.
+- Fake requests: 14 across bounded framing diagnostics, the accepted
+  integration, and the three controlled slow-fake supervision probes.
 - Real model requests: 3, all through the Proxy bridge; one accepted task and
   two independently rejected answer-quality attempts.
 - Direct JCode-to-Ollama requests: 0.
