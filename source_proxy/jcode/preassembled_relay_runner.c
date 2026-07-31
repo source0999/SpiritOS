@@ -70,6 +70,37 @@ static void forward_pair(int left, int right) {
   }
 }
 
+static int copy_template(const char *source, const char *destination, mode_t mode) {
+  char buffer[8192];
+  int input = open(source, O_RDONLY | O_NOFOLLOW);
+  int output;
+  ssize_t count;
+  if (input < 0) return -1;
+  output = open(destination, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, mode);
+  if (output < 0) { close(input); return -1; }
+  while ((count = read(input, buffer, sizeof(buffer))) > 0) {
+    ssize_t offset = 0;
+    while (offset < count) {
+      ssize_t written = write(output, buffer + offset, (size_t)(count - offset));
+      if (written <= 0) { close(input); close(output); return -1; }
+      offset += written;
+    }
+  }
+  if (count < 0 || close(input) || close(output)) return -1;
+  return chmod(destination, mode);
+}
+
+static int prepare_writable_fixture(const char *source_template, const char *test_template) {
+  if (!source_template && !test_template) return 0;
+  if (!source_template || !test_template) return -1;
+  if (mkdir("/tmp/workspace", 0700) && errno != EEXIST) return -1;
+  if (mkdir("/tmp/workspace/qualification_write_fixture", 0755) && errno != EEXIST) return -1;
+  if (copy_template(source_template, "/tmp/workspace/qualification_write_fixture/source_file.py", 0644)) return -1;
+  if (copy_template(test_template, "/tmp/workspace/qualification_write_fixture/test_source_file.py", 0444)) return -1;
+  if (chmod("/tmp/workspace/qualification_write_fixture", 0555)) return -1;
+  return chdir("/tmp/workspace");
+}
+
 static void serve(int listener, const char *socket_path, int relay_fd) {
   for (;;) {
     int client = accept(listener, NULL, NULL);
@@ -89,17 +120,21 @@ static void serve(int listener, const char *socket_path, int relay_fd) {
 
 int main(int argc, char **argv) {
   const char *socket_path = NULL, *config_path = NULL, *base_url = NULL;
+  const char *source_template = NULL, *test_template = NULL;
   int port = 0, command = -1, listener = -1, relay_fd = -1;
   for (int index = 1; index < argc; ++index) {
     if (!strcmp(argv[index], "--")) { command = index + 1; break; }
     if (!strcmp(argv[index], "--socket") && index + 1 < argc) socket_path = argv[++index];
     else if (!strcmp(argv[index], "--config-path") && index + 1 < argc) config_path = argv[++index];
     else if (!strcmp(argv[index], "--base-url") && index + 1 < argc) base_url = argv[++index];
+    else if (!strcmp(argv[index], "--model") && index + 1 < argc) model = argv[++index];
+    else if (!strcmp(argv[index], "--fixture-source-template") && index + 1 < argc) source_template = argv[++index];
+    else if (!strcmp(argv[index], "--fixture-test-template") && index + 1 < argc) test_template = argv[++index];
     else if (!strcmp(argv[index], "--relay-fd") && index + 1 < argc) relay_fd = atoi(argv[++index]);
     else if (!strcmp(argv[index], "--listen-port") && index + 1 < argc) port = atoi(argv[++index]);
     else return 64;
   }
-  if (!config_path || !base_url || command < 0 || command >= argc || write_config(config_path, base_url) != 0) return 65;
+  if (!config_path || !base_url || command < 0 || command >= argc || write_config(config_path, base_url) != 0 || prepare_writable_fixture(source_template, test_template) != 0) return 65;
   if (socket_path || relay_fd >= 0) {
     struct sockaddr_in address;
     int one = 1;

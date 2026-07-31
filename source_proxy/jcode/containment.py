@@ -35,6 +35,7 @@ class PreassembledRootConfig:
     executable_name: str = "jcode"
     runtime_files: tuple[Path, ...] = ()
     additional_executables: tuple[tuple[Path, str], ...] = ()
+    additional_files: tuple[tuple[Path, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,10 @@ def assemble_preassembled_root(config: PreassembledRootConfig) -> Path:
         if not name or "/" in name or not source.is_file() or source.is_symlink():
             raise JCodeContainmentError("jcode_preassembled_extra_executable_invalid")
         _copy_root_file(source, root / "usr/bin" / name)
+    for source, destination in config.additional_files:
+        if not destination or destination.startswith("/") or ".." in Path(destination).parts or not source.is_file() or source.is_symlink():
+            raise JCodeContainmentError("jcode_preassembled_extra_file_invalid")
+        _copy_root_file(source, root / destination)
     for runtime in config.runtime_files:
         source = runtime.absolute()
         if not source.is_absolute() or not source.is_file():
@@ -129,7 +134,9 @@ def assemble_preassembled_root(config: PreassembledRootConfig) -> Path:
     return root
 
 
-def build_preassembled_root_args(command: Sequence[str], root: Path) -> list[str]:
+def build_preassembled_root_args(
+    command: Sequence[str], root: Path, *, writable_workspace: bool = False
+) -> list[str]:
     """Run only a preassembled root, never an introduced host mount."""
     if not command or not root.is_dir() or root.is_symlink():
         raise JCodeContainmentError("jcode_preassembled_command_or_root_invalid")
@@ -139,7 +146,7 @@ def build_preassembled_root_args(command: Sequence[str], root: Path) -> list[str
         "--die-with-parent", "--cap-drop", "ALL", "--uid", "0", "--gid", "0",
         "--ro-bind", str(root.resolve()), "/", "--proc", "/proc", "--dev", "/dev",
         "--tmpfs", "/tmp", "--dir", "/tmp/jcode-home",
-        "--chdir", "/workspace", "--setenv", "PATH", "/usr/bin:/bin",
+        "--chdir", "/tmp" if writable_workspace else "/workspace", "--setenv", "PATH", "/usr/bin:/bin",
         "--setenv", "HOME", "/tmp/jcode-home", "--setenv", "JCODE_HOME", "/tmp/jcode-home",
         "--setenv", "TMPDIR", "/tmp",
         "--setenv", "JCODE_ALLOW_COMMIT", "0", "--setenv", "JCODE_ALLOW_DEPLOY", "0",

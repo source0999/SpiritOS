@@ -44,3 +44,27 @@ def test_preassembled_root_copies_explicit_proxy_owned_launcher(tmp_path: Path) 
     launcher = root / "usr/bin/proxy-launcher"
     assert launcher.is_file()
     assert launcher.stat().st_mode & 0o111
+
+
+def test_preassembled_root_copies_only_declared_fixture_files(tmp_path: Path) -> None:
+    fixture = tmp_path / "source_file.py"
+    fixture.write_text("value = 'fixture'\n")
+    root = assemble_preassembled_root(
+        PreassembledRootConfig(
+            tmp_path / "root",
+            Path("/usr/bin/true"),
+            runtime_files=(Path("/lib/x86_64-linux-gnu/libc.so.6"), Path("/lib64/ld-linux-x86-64.so.2")),
+            additional_files=((fixture, "fixture-template/source_file.py"),),
+        )
+    )
+    copied = root / "fixture-template/source_file.py"
+    assert copied.read_text() == fixture.read_text()
+    assert copied.stat().st_mode & 0o222 == 0
+
+
+def test_writable_workspace_is_opt_in(tmp_path: Path) -> None:
+    root = _root(tmp_path, Path("/usr/bin/busybox"), "writable")
+    readonly_args = build_preassembled_root_args(["/usr/bin/busybox", "true"], root)
+    writable_args = build_preassembled_root_args(["/usr/bin/busybox", "true"], root, writable_workspace=True)
+    assert readonly_args[readonly_args.index("--chdir") + 1] == "/workspace"
+    assert writable_args[writable_args.index("--chdir") + 1] == "/tmp"
