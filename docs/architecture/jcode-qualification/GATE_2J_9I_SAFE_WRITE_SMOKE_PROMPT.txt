@@ -1,0 +1,1 @@
+Within qualification_write_fixture, make the focused test pass by changing only source_file.py. Do not modify tests, configuration, documentation, or Git state. Use only the exposed read and file-edit tools. Do not use shell, network, package, process, or Git tools. Stop after the one permitted source-file change.

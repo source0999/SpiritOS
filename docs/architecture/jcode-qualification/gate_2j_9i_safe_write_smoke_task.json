@@ -1,0 +1,31 @@
+{
+  "acceptance_criteria": {
+    "allowed_change": "qualification_write_fixture/source_file.py only",
+    "focused_validation": "python -m pytest -q qualification_write_fixture/test_source_file.py",
+    "no_other_mutation": true
+  },
+  "authorization": {
+    "id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9I_SAFE_WRITE_SMOKE_V1",
+    "sha256": "836ac0f78c9597639e831729bc29c0388b2dd2a45e0a72d2178cf38a768eb997"
+  },
+  "base_commit": "221aeff27b71961e935eee6d9789466c527a40ef",
+  "campaign_id": "campaign-2-j",
+  "context_file": "GATE_2J_9I_SAFE_WRITE_SMOKE_CONTEXT.json",
+  "context_sha256": "6db422774b350a5c995f107e1445c158c0b15920b52ca0634575d1287440551e",
+  "initial_file_sha256": {
+    "qualification_write_fixture/source_file.py": "d1df88c3f43715058227459677839c12a64eb74ac88395911b7f3ef3915fb4c8",
+    "qualification_write_fixture/test_source_file.py": "46779f269d86438ad6f6327601f32db93abe7c68cb14e87d3c0ec8b5c3273c50"
+  },
+  "model": {
+    "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+    "model": "qwen2.5-coder:14b",
+    "provider_profile_id": "spiritos-qualification"
+  },
+  "prompt_file": "GATE_2J_9I_SAFE_WRITE_SMOKE_PROMPT.txt",
+  "prompt_sha256": "d27f3c4de77998a9c54434e441ddf6de0e7e1ebf2c25f51a2b542c3c3a6167c8",
+  "schema_version": "gate-2j-9i-contained-write-smoke/v1",
+  "task_id": "gate_2j_9i_contained_write_smoke",
+  "task_manifest_sha256": "99d71256a044f1d2fbcc6f4f66b73147071a2fd9a732367b3d006eacebfc0bbe",
+  "tool_allowlist": ["read", "write", "apply_patch"],
+  "writable_path": "qualification_write_fixture/source_file.py"
+}

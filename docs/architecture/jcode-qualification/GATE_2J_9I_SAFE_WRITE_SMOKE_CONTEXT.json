@@ -1,0 +1,1 @@
+{"allowed_path":"qualification_write_fixture/source_file.py","fixture_files":["qualification_write_fixture/source_file.py","qualification_write_fixture/test_source_file.py"],"forbidden_context":["frozen benchmark","daily runtime","other repository paths","hidden solution"],"schema_version":"gate-2j-9i-context/v1"}
