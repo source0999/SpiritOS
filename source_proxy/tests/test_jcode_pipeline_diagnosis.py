@@ -216,6 +216,8 @@ def test_snapshot_ignores_test_caches_and_evaluator_accepts_only_source_change(t
     pytest_cache = overlay / ".pytest_cache"
     pytest_cache.mkdir()
     (pytest_cache / "README.md").write_text("runtime", encoding="utf-8")
+    (overlay / "DIAGNOSTIC_CONTEXT.json").write_text("", encoding="utf-8")
+    (overlay / "DIAGNOSTIC_TASK.txt").write_text("", encoding="utf-8")
     after = snapshot_overlay(overlay)
     diff = diff_snapshots(before, after)
     evaluation = evaluate_run(

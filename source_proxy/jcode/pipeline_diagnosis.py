@@ -1572,6 +1572,7 @@ def is_runtime_artifact(path: Path, overlay: Path) -> bool:
         path.suffix == ".pyc"
         or "__pycache__" in relative.parts
         or ".pytest_cache" in relative.parts
+        or relative.as_posix() in {"DIAGNOSTIC_CONTEXT.json", "DIAGNOSTIC_TASK.txt"}
     )
 
 
