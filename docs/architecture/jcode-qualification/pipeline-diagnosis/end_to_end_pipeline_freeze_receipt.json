@@ -1,0 +1,71 @@
+{
+  "schema_version": "source-proxy.campaign-2j-pipeline-freeze/v1",
+  "verdict": "PIPELINE_DIAGNOSIS_FROZEN_READY_FOR_INSTRUMENTATION",
+  "frozen_at_utc": "2026-07-31T22:14:20Z",
+  "authorization_id": "OPERATOR_AUTHORIZATION__C2J_PIPELINE_DIAGNOSIS_20260731_V1",
+  "operator_prompt_sha256": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb",
+  "campaign_repository": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
+  "campaign_branch": "codex/source-proxy-jcode-qualification-20260726",
+  "starting_head": "07151b44cb886ac4d8c3668e947e81825d01bd50",
+  "upstream_head": "07151b44cb886ac4d8c3668e947e81825d01bd50",
+  "ahead_behind": "0/0",
+  "campaign_worktree_clean": true,
+  "audit_worktree": "/home/source/SpiritOS-source-proxy-jcode-pipeline-diagnosis-20260731",
+  "audit_branch": "codex/source-proxy-jcode-pipeline-diagnosis-20260731",
+  "terminal_receipts": [
+    "docs/architecture/jcode-qualification/GATE_2J_9I_REMEDIATION_V2_EXECUTION_RECEIPT.md",
+    "docs/architecture/jcode-qualification/GLM_REVIEW_PACKET_GATE_2J_9I_REMEDIATION_V2.md"
+  ],
+  "current_campaign_status": "GATE_2J_9I_MODEL_FAILED_SAFETY_PATH_HELD__LATER_GATES_BLOCKED",
+  "accepted_state_retained": [
+    "Gates 2-J.9B through 2-J.9E Batch 1",
+    "Runtime Gates 2-J.9G-D through 2-J.9H technical acceptance",
+    "Gate 2-J.9I safety-path and model-quality finding"
+  ],
+  "blocked_unstarted": [
+    "Gate 2-J.9J",
+    "Gate 2-J.9K",
+    "sealed 20-task diagnostics",
+    "80-run comparison",
+    "Campaign 4 advancement"
+  ],
+  "jcode": {
+    "binary": "/home/source/.codex-audits/jcode-dell-remediation-20260727/approved-binary/jcode",
+    "sha256": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6",
+    "version": "jcode v0.58.51-dev (2444e7b6)",
+    "active_process_at_freeze": false
+  },
+  "provider": {
+    "service": "ollama",
+    "process": "/usr/local/bin/ollama serve",
+    "endpoint": "http://127.0.0.1:11434",
+    "active": true,
+    "jcode_direct_access_permitted": false,
+    "compatibility_bridge_active_at_freeze": false
+  },
+  "models": [
+    {
+      "model": "qwen2.5-coder:7b",
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "family": "qwen2",
+      "parameter_size": "7.6B",
+      "quantization": "Q4_K_M",
+      "live_registry_verified": true
+    },
+    {
+      "model": "qwen2.5-coder:14b",
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "family": "qwen2",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M",
+      "live_registry_verified": true
+    }
+  ],
+  "integrity_counters": {
+    "frozen_benchmark_runs": 0,
+    "frozen_benchmark_mutations": 0,
+    "diagnostic_model_requests": 0,
+    "production_repository_mutations": 0,
+    "daily_runtime_mutations": 0
+  }
+}

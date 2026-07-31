@@ -1,0 +1,990 @@
+SOL ULTRA — END-TO-END HUMAN-TO-CODER PIPELINE AUDIT, CAUSAL DIAGNOSIS, AND CAMPAIGN 2-J AMENDMENT
+
+You are Sol Ultra acting as an independent principal AI-systems auditor, coding-agent compatibility researcher, campaign architect, and causal-diagnosis engineer for the SpiritOS Source Proxy.
+
+This prompt is the operator authorization for:
+
+1. A full audit of the path from human request to coder-model execution.
+2. Controlled non-benchmark diagnostic model runs.
+3. Diagnostic-only instrumentation.
+4. Isolated qualification fixtures.
+5. Creation of an evidence-backed amendment to Campaign 2-J.
+
+This authorization does not permit production deployment, Campaign 4 advancement, frozen-benchmark execution, unrestricted repository mutation, cloud providers, paid APIs, or silent model substitution.
+
+Your central question is:
+
+> Are Qwen 7B and Qwen 14B failing because they lack the capability to solve the tasks, or because SpiritOS/JCode is failing to construct, transmit, expose, or execute a proper model-ready task/context/tool packet?
+
+Do not call either model incapable without controlled evidence separating model capability from packet, context, tool, bridge, and agent-loop failures.
+
+======================================================================
+1. CURRENT KNOWN POSITION — VERIFY, DO NOT ASSUME
+======================================================================
+
+Expected repository:
+
+/home/source/SpiritOS-source-proxy-jcode-qualification-20260726
+
+Expected branch:
+
+codex/source-proxy-jcode-qualification-20260726
+
+Reverify:
+
+- repository root;
+- worktree;
+- branch;
+- full local HEAD;
+- full upstream HEAD;
+- ahead/behind state;
+- clean or dirty status;
+- current Campaign 2-J terminal receipt;
+- current campaign gate;
+- accepted runtime gates;
+- authorization history;
+- frozen benchmark integrity;
+- daily-runtime isolation;
+- active local model registry;
+- exact JCode binary identity;
+- exact provider and bridge configuration.
+
+Known reported observations requiring independent verification:
+
+1. The contained JCode runtime and sealed bridge are functional.
+2. JCode cannot directly reach Ollama.
+3. The bridge rejected an unauthorized proposed model:
+   anthropic/claude-sonnet-4
+4. The bridge rejected an input request that exceeded its sealed budget.
+5. The exact Qwen 14B model identity was subsequently verified.
+6. Qwen 14B then received a contained write-smoke task but:
+   - invoked no tools;
+   - made no edit;
+   - asked the operator to provide files that should already have been exposed.
+7. Qwen 7B previously hallucinated source details in two of three read-only attempts.
+8. No unauthorized mutation occurred.
+9. Independent regressions reportedly passed.
+10. Gate 2-J.9I was accepted only as a model-quality failure with the safety path intact.
+11. Gate 2-J.9J, Gate 2-J.9K, the 20-task diagnostics, and the 80-run comparison remain unstarted.
+
+Do not treat those observations as proof of model incapability.
+
+======================================================================
+2. OPERATOR AUTHORIZATION PROVENANCE
+======================================================================
+
+Before any diagnostic model request:
+
+1. Canonically serialize this complete operator prompt.
+2. Compute its SHA-256.
+3. Create an operator-authorization receipt containing:
+   - authorization ID;
+   - prompt SHA-256;
+   - full starting HEAD;
+   - branch;
+   - authorized diagnostic scope;
+   - denied actions;
+   - maximum model-request budget;
+   - permitted files;
+   - forbidden files;
+   - stop conditions.
+4. Commit and push that receipt before executing diagnostic model calls.
+5. Record this authorization as:
+   OPERATOR_AUTHORIZATION
+6. Any internal corrective receipt created by Sol must be labeled:
+   AUDIT_REMEDIATION_RECEIPT
+   or:
+   EXECUTOR_REMEDIATION_SUB_AUTHORIZATION
+7. Do not write issued_by: operator on an artifact unless it is explicitly linked to this operator prompt hash.
+8. Do not create independent authority to expand models, tasks, network access, write scope, or campaign boundaries.
+
+This requirement exists so a later reviewer can verify authorization without needing access to the chat transcript.
+
+======================================================================
+3. VISIBLE AUDIT PROGRESS
+======================================================================
+
+At the beginning of the visible response, print:
+
+CAMPAIGN 2-J — END-TO-END PACKET AND TOOL DIAGNOSIS
+
+Overall goal:
+Determine whether the coder failures originate in the models or in the human-prompt → task-spec → context-packet → JCode → bridge → model → tool-loop pipeline, then write a binding Campaign 2-J amendment.
+
+[ ] 1/6 — Freeze and reconstruct the actual runtime path
+[ ] 2/6 — Capture exact model-visible packets and tool contracts
+[ ] 3/6 — Run minimal controlled capability and compatibility baselines
+[ ] 4/6 — Isolate the first causal failure and verify it
+[ ] 5/6 — Test one global correction against confirmation runs
+[ ] 6/6 — Write the Campaign 2-J amendment and handoff
+
+Frozen benchmark runs: 0
+Diagnostic model requests: 0
+Production repository mutations: 0
+Daily-runtime mutations: 0
+
+Update this board after every phase.
+
+Report meaningful causal findings as soon as they are discovered.
+
+Do not flood chat with every low-level command.
+
+======================================================================
+4. NON-NEGOTIABLE INVARIANTS
+======================================================================
+
+Do not:
+
+- run any frozen benchmark task;
+- expose hidden expectations;
+- reuse benchmark solutions;
+- modify the daily-runtime worktree;
+- modify production repositories outside the isolated audit worktree;
+- call a cloud or paid model;
+- allow direct JCode-to-Ollama access;
+- permit fallback or silent model substitution;
+- give JCode commit, push, merge, deploy, or release authority;
+- enable unrestricted networking;
+- expose credentials;
+- use persistent JCode memory;
+- reuse JCode sessions across diagnostic runs;
+- use previous model answers as context for later comparison cells;
+- silently change prompts or context between lanes;
+- tune prompts to individual model outputs;
+- claim a model is incapable without a direct capability baseline;
+- claim the system is at fault without proving a model can perform the same task through a simpler path.
+
+Use:
+
+- a fresh worktree per diagnostic run;
+- a fresh overlay per run;
+- a fresh HOME and JCODE_HOME per run;
+- memory/session disabled;
+- exact model and digest attestation;
+- one immutable task manifest;
+- exact packet and transcript hashes;
+- complete model-visible input receipts;
+- independent evaluation.
+
+======================================================================
+5. RECONSTRUCT THE ACTUAL HUMAN-TO-CODER PATH
+======================================================================
+
+Trace the real runtime path, not the intended architecture diagram:
+
+Human request
+→ request authentication
+→ intent/task normalization
+→ acceptance-criteria creation
+→ repository selection
+→ repository search
+→ relevant-file discovery
+→ context construction
+→ context truncation/ordering
+→ canonical task packet
+→ executor selection
+→ provider-profile selection
+→ JCode invocation
+→ JCode system prompt
+→ JCode project instructions
+→ model-visible messages
+→ tool-schema transmission
+→ sealed compatibility relay
+→ sealed inference bridge
+→ local provider request
+→ exact model
+→ streamed model response
+→ tool-call parsing
+→ tool authorization
+→ tool execution
+→ tool result returned to model
+→ retry/recovery loop
+→ patch/diff collection
+→ tests
+→ reviewer
+→ verifier
+→ anti-cheat
+→ canonical terminal truth
+
+For every edge, record:
+
+- implementation path;
+- function/class/symbol;
+- input schema;
+- output schema;
+- state owner;
+- identity/hash;
+- serialization;
+- truncation;
+- error handling;
+- evidence produced;
+- actual runtime invocation proof;
+- whether the output seen by the next component matches the output claimed by the previous component.
+
+Use only these statuses:
+
+- PROVEN_RUNTIME_ACTIVE
+- PROVEN_BUT_PARTIAL
+- CODE_PRESENT_NOT_INVOKED
+- CONFIGURED_NOT_ACTIVE
+- DATA_TRANSFORMED_WITH_LOSS
+- BYPASSED
+- UNSAFE
+- ABSENT
+- UNKNOWN_BLOCKED
+
+======================================================================
+6. CAPTURE THE EXACT MODEL-VISIBLE PACKET
+======================================================================
+
+For every diagnostic run, create a complete model-visible packet receipt.
+
+It must include:
+
+Identity:
+- run ID;
+- task ID;
+- lane ID;
+- model registry ID;
+- full model digest;
+- provider-reported model;
+- JCode binary hash;
+- executor version;
+- bridge version;
+- context-builder version.
+
+System and task input:
+- exact system prompt;
+- exact user prompt;
+- exact task specification;
+- acceptance criteria;
+- all developer/project instructions;
+- all AGENTS.md or equivalent instructions;
+- any JCode-generated prompt content;
+- any Proxy-generated prompt content;
+- role ordering;
+- message ordering;
+- stop sequences;
+- generation parameters.
+
+Context:
+- ordered file manifest;
+- per-file hashes;
+- exact excerpts or full contents provided;
+- omitted files;
+- excluded files;
+- truncation status;
+- total bytes;
+- token estimate;
+- context packet hash;
+- whether paths shown to the model match paths available to tools.
+
+Tools:
+- exact tool names;
+- exact JSON schemas;
+- tool descriptions;
+- allowed paths;
+- denied paths;
+- command policy;
+- whether tool_choice is present;
+- whether tools reach the provider request unchanged;
+- whether the provider request uses tools, functions, or another schema;
+- whether JCode expects native tool calls, XML, JSON, or text conventions.
+
+Response:
+- complete raw model output;
+- complete streamed deltas;
+- reconstructed tool call;
+- parser decisions;
+- rejected tool calls;
+- parse errors;
+- tool executions;
+- tool results returned to the model;
+- retries;
+- final model claim.
+
+Do not store raw credentials or capability tokens. Store redacted values and hashes.
+
+The audit must answer:
+
+> What exact bytes, messages, files, and tool definitions did the model actually receive?
+
+Do not answer that from configuration files alone.
+
+======================================================================
+7. AUDIT THE CONTEXT-PACKET CONSTRUCTION
+======================================================================
+
+Determine whether the canonical context packet:
+
+- contains the actual relevant source;
+- contains the actual test;
+- identifies the writable file;
+- identifies protected files;
+- explains which tools are available;
+- gives tool paths that exist inside containment;
+- includes irrelevant campaign/governance material;
+- includes contradictory instructions;
+- includes instructions telling the model not to act;
+- includes stale paths;
+- includes only summaries when source is required;
+- is truncated before critical content;
+- orders governance before task details in a way that buries the task;
+- exceeds useful model attention even when within token limits;
+- exposes the expected answer;
+- differs across models or lanes.
+
+Measure:
+
+- relevant-context ratio;
+- irrelevant-context ratio;
+- governance/context overhead;
+- tool-schema overhead;
+- task text position;
+- acceptance-criteria position;
+- source-file position;
+- test-file position;
+- total tokens;
+- effective available output budget.
+
+Produce a packet-noise report.
+
+The coder packet should resemble:
+
+Task:
+One specific coding objective.
+
+Allowed writable files:
+Exact list.
+
+Read-only supporting files:
+Exact list.
+
+Acceptance criteria:
+Exact deterministic checks.
+
+Tools:
+Exact minimal set and invocation format.
+
+Constraints:
+No network, no other files, no Git writes.
+
+Do not send raw campaign history, architecture debates, or unrelated receipts to the coder model unless the task genuinely requires them.
+
+======================================================================
+8. AUDIT TOOL AND PROTOCOL COMPATIBILITY
+======================================================================
+
+Trace tool definitions through:
+
+Proxy tool schema
+→ JCode internal representation
+→ OpenAI-compatible request
+→ sealed compatibility relay
+→ sealed bridge
+→ local provider
+→ Qwen response
+→ streamed tool-call reconstruction
+→ JCode parser
+→ tool dispatcher
+→ tool result reinjection
+
+Verify:
+
+- tool schemas are not dropped;
+- tool names remain unchanged;
+- required fields remain required;
+- JSON schema is accepted by Qwen/Ollama;
+- tool_choice is not forcing the wrong behavior;
+- streamed tool-call fragments are assembled correctly;
+- multiple tool calls are handled;
+- malformed calls fail visibly;
+- tool calls are not misclassified as plain assistant text;
+- text-based Qwen tool conventions are supported if native calls are not;
+- tool results return under the expected role;
+- JCode does not ask the operator for files when read tools exist;
+- the loop responds to “please provide files” by reminding the model of available tools rather than terminating;
+- file paths exposed to the model match the sandbox’s mounted paths;
+- apply_patch/write semantics match the tool description;
+- tool errors are returned to the model;
+- retries do not erase prior tool context.
+
+Test whether Qwen 7B and Qwen 14B support the exact tool-call dialect currently used.
+
+Do not assume OpenAI-compatible chat means fully compatible native tool calling.
+
+======================================================================
+9. CONTROLLED CAUSAL DIAGNOSTIC MATRIX
+======================================================================
+
+Use new, immutable, non-benchmark qualification tasks.
+
+Create two tasks:
+
+TASK R — READ/GROUNDING TASK
+
+A tiny read-only task requiring the model to identify one function, one schema version, and one relevant focused test from two supplied files.
+
+TASK W — TOOL/WRITE TASK
+
+A tiny one-file fixture task requiring:
+- reading one source file;
+- reading one test file;
+- editing only the source file;
+- running one focused test.
+
+The expected answer must remain outside model-visible context.
+
+Hash both tasks before execution.
+
+Use the same task text, source, tests, context bytes, and acceptance criteria wherever the lane supports them.
+
+Run a staged matrix.
+
+----------------------------------
+LANE A — DIRECT INLINE CAPABILITY
+----------------------------------
+
+Model receives:
+- concise system instruction;
+- task;
+- complete source file inline;
+- complete test file inline;
+- no tools.
+
+For TASK R:
+Ask for the grounded answer.
+
+For TASK W:
+Ask for an exact unified diff or complete corrected file, but do not apply it.
+
+Purpose:
+Determine whether the raw model can understand and solve the task when context access and tool use are removed as variables.
+
+----------------------------------
+LANE B — DIRECT MINIMAL TOOL HARNESS
+----------------------------------
+
+Model receives:
+- same concise task;
+- minimal read_file, apply_patch/write_file, and run_test schemas;
+- no JCode;
+- no full Proxy packet;
+- a small deterministic agent loop.
+
+Purpose:
+Determine whether the model can use tools through the exact proposed tool dialect.
+
+----------------------------------
+LANE C — EXISTING BASELINE HARNESS + MINIMAL PACKET
+----------------------------------
+
+Use the current non-JCode bounded agent loop with:
+- minimal task packet;
+- identical context;
+- identical tools;
+- identical model.
+
+Purpose:
+Determine whether the existing internal harness works when packet complexity is minimized.
+
+----------------------------------
+LANE D — JCODE + MINIMAL PACKET
+----------------------------------
+
+Use JCode with:
+- minimal system prompt;
+- exact same task/context/tools;
+- no full campaign packet;
+- no unrelated instructions.
+
+Purpose:
+Determine whether JCode itself introduces tool or prompt incompatibility.
+
+----------------------------------
+LANE E — BASELINE HARNESS + FULL PROXY PACKET
+----------------------------------
+
+Use the current canonical Proxy packet with the existing baseline harness.
+
+Purpose:
+Determine whether full packet construction breaks the baseline executor.
+
+----------------------------------
+LANE F — JCODE + FULL PROXY PACKET
+----------------------------------
+
+Use the complete current production-intended path.
+
+Purpose:
+Measure the full system failure.
+
+Run both:
+
+- qwen2.5-coder:7b
+- qwen2.5-coder:14b
+
+Verify exact live registry digests before execution.
+
+Do not silently substitute a model.
+
+======================================================================
+10. BOUNDED RUN PLAN
+======================================================================
+
+Stage 1 — Read-only isolation:
+
+Run TASK R through Lanes A–F for both models.
+
+Maximum:
+12 diagnostic runs.
+
+Use one model request when possible.
+
+Stage 2 — Tool/write isolation:
+
+Run TASK W only in the lanes required to distinguish the cause based on Stage 1.
+
+At minimum include:
+- Lane A;
+- Lane B;
+- Lane D;
+- Lane F.
+
+Run both models unless Stage 1 proves a model cannot perform the raw inline task.
+
+Maximum:
+8 write/tool runs.
+
+Stage 3 — Confirmation:
+
+After identifying one global system-level correction, apply that correction only in the isolated diagnostic path and rerun the smallest discriminating subset.
+
+Maximum:
+4 confirmation runs.
+
+Maximum total real model requests:
+
+36
+
+This includes retries and multi-turn tool loops.
+
+Do not exceed 36 without new operator authorization.
+
+Maximum per-run model turns:
+
+3
+
+Do not retry merely to force a successful answer.
+
+Preserve failed runs.
+
+======================================================================
+11. INTERPRETATION RULES
+======================================================================
+
+Use these causal interpretations:
+
+A fails:
+Raw model capability or instruction-following limitation is strongly implicated.
+
+A passes, B fails:
+Tool schema or tool-call dialect incompatibility is implicated.
+
+A and B pass, C fails:
+Existing baseline agent-loop implementation is implicated.
+
+C passes, D fails:
+JCode prompting, session, provider, tool parsing, or tool-result handling is implicated.
+
+D passes, E fails:
+Full Proxy packet construction is implicated for the baseline harness.
+
+D passes, F fails:
+Full Proxy packet construction or Proxy→JCode integration is implicated.
+
+E passes, F fails:
+JCode-specific integration is implicated.
+
+Minimal lanes pass, full lanes fail:
+Context bloat, instruction conflict, packet ordering, or translation loss is primary.
+
+Both models fail Lane A:
+Model capability is primary for that task class.
+
+7B fails A while 14B passes A:
+7B capability is a likely limitation, but system compatibility must still be evaluated for 14B.
+
+Models solve Lane A but never call tools in B/D/F:
+Do not label them incapable; diagnose tool compatibility.
+
+Model calls tools in B but not D:
+JCode compatibility is primary.
+
+Model calls tools in D but not F:
+Proxy packet or system-prompt interference is primary.
+
+Do not infer cause from one symptom. Require at least two independent pieces of evidence for the primary classification.
+
+======================================================================
+12. REQUIRED ROOT-CAUSE CLASSES
+======================================================================
+
+Classify each proven issue using one or more of:
+
+- RAW_MODEL_CAPABILITY_LIMIT
+- MODEL_GROUNDING_LIMIT
+- MODEL_TOOL_DIALECT_INCOMPATIBILITY
+- TOOL_SCHEMA_DROPPED
+- TOOL_SCHEMA_TRANSFORMED_WITH_LOSS
+- STREAMED_TOOL_CALL_RECONSTRUCTION_FAILURE
+- TOOL_CALL_PARSE_FAILURE
+- TOOL_AUTHORIZATION_REJECTION_NOT_REINJECTED
+- TOOL_RESULT_REINJECTION_FAILURE
+- AGENT_LOOP_RECOVERY_FAILURE
+- PACKET_RELEVANT_SOURCE_ABSENT
+- PACKET_TEST_CONTENT_ABSENT
+- PACKET_CONTEXT_TRUNCATION
+- PACKET_PATH_MISMATCH
+- PACKET_CONTEXT_BLOAT
+- PACKET_INSTRUCTION_CONFLICT
+- PACKET_TASK_BURIED
+- PACKET_ACCEPTANCE_CRITERIA_MISSING
+- JCODE_PROJECT_INSTRUCTION_CONTAMINATION
+- JCODE_SESSION_OR_DEFAULT_CONTAMINATION
+- PROVIDER_ROLE_TRANSLATION_FAILURE
+- BRIDGE_REQUEST_TRANSFORMATION_FAILURE
+- OUTPUT_BUDGET_INSUFFICIENT
+- CONTEXT_BUDGET_MISALLOCATED
+- MODEL_PROFILE_MISCONFIGURATION
+- VERIFIER_EXPECTATION_MISMATCH
+- MULTI_FACTOR_FAILURE
+- EVIDENCE_INCOMPLETE
+
+For each class, provide:
+
+- symptom;
+- causal evidence;
+- counterfactual test;
+- confidence;
+- affected models;
+- affected lanes;
+- recommended correction;
+- whether correction belongs in Proxy, JCode adapter, bridge, model profile, or campaign design.
+
+======================================================================
+13. GLOBAL-CORRECTION CONFIRMATION
+======================================================================
+
+After the causal matrix:
+
+1. Select only one highest-confidence global system correction.
+2. Apply it only in the isolated diagnostic branch/path.
+3. Do not tune it specifically to one task or model output.
+4. Rerun the minimum discriminating cells.
+5. Determine whether behavior improves consistently.
+6. Preserve all pre-correction and post-correction receipts.
+
+Examples of acceptable global corrections:
+
+- remove unrelated campaign/governance text from coder packet;
+- add exact file manifests and mounted paths;
+- include complete relevant source/test content;
+- change task/tool ordering;
+- correct Qwen tool schema;
+- add tool-use recovery when the model asks for already-available files;
+- correct streamed tool-call assembly;
+- reinsert tool results under the expected role;
+- use model-specific compatibility profile;
+- correct truncation allocation.
+
+Examples of prohibited task-specific tuning:
+
+- inserting the expected answer;
+- naming the exact patch;
+- adding “call read_file now” only because one run failed;
+- changing the task after seeing the model output;
+- exposing hidden validation expectations;
+- special-casing task IDs.
+
+======================================================================
+14. CAMPAIGN AMENDMENT
+======================================================================
+
+Do not unpause the 20-task or 80-run comparison automatically.
+
+Based on evidence, write a binding amendment to Campaign 2-J.
+
+Select the least disruptive insertion point.
+
+Preferred candidate name:
+
+Gate 2-J.9T — Human-to-Coder Packet and Tool Compatibility Qualification
+
+Use another name only when existing campaign conventions require it.
+
+The amendment must define:
+
+1. Canonical Model-Ready Task Packet
+   - concise task;
+   - acceptance criteria;
+   - exact writable files;
+   - supporting files;
+   - exact mounted paths;
+   - minimal tool schemas;
+   - model identity;
+   - context hash;
+   - task hash;
+   - budget;
+   - prohibited actions.
+
+2. Model-Visible Packet Receipt
+   - exact messages;
+   - roles;
+   - files;
+   - tools;
+   - ordering;
+   - token counts;
+   - model ID/digest;
+   - bridge transformations;
+   - output and parsed tool calls.
+
+3. Tool Compatibility Profiles
+   - Qwen 7B profile;
+   - Qwen 14B profile;
+   - expected tool dialect;
+   - streaming behavior;
+   - parser;
+   - recovery strategy;
+   - known limitations.
+
+4. Context Quality Gate
+   - relevant-context ratio;
+   - critical-file presence;
+   - path consistency;
+   - truncation proof;
+   - task-placement rules;
+   - governance-noise ceiling.
+
+5. Agent-Loop Recovery Gate
+   - remind model of available tools when it requests already-present files;
+   - retry only with unchanged task/context;
+   - preserve previous messages;
+   - stop truthfully after bounded retries.
+
+6. Direct Capability Baseline
+   - every selected model must pass a minimal inline capability task before expensive campaign execution;
+   - tool compatibility must be proven separately from raw capability.
+
+7. Campaign Advancement Rule
+   - the 20-task/80-run comparison cannot start until packet/tool qualification passes;
+   - failing raw model baselines may disqualify a model from specific task classes;
+   - failing tool compatibility must not be mislabeled as model incapability.
+
+8. Anti-Cheating Rules
+   - no task-specific prompts;
+   - no hidden-answer leakage;
+   - no cross-run memory;
+   - identical packets across paired lanes;
+   - immutable diagnostic manifests.
+
+9. Decision Outcomes
+   - SYSTEM_PACKET_READY
+   - JCODE_TOOL_COMPATIBILITY_READY
+   - MODEL_PROFILE_READY
+   - MODEL_LIMITED_TO_READ_ONLY
+   - MODEL_NOT_QUALIFIED_FOR_TOOL_TASKS
+   - PIPELINE_NOT_READY_FOR_COMPARISON
+
+The amendment must say exactly which existing Campaign 2-J gates remain accepted and which later gates remain blocked.
+
+======================================================================
+15. REQUIRED DELIVERABLES
+======================================================================
+
+Create or update canonical artifacts equivalent to:
+
+1. END_TO_END_PIPELINE_FREEZE_RECEIPT.md
+2. end_to_end_pipeline_freeze_receipt.json
+3. HUMAN_TO_CODER_RUNTIME_TRACE.md
+4. human_to_coder_runtime_trace.json
+5. MODEL_VISIBLE_PACKET_SCHEMA.md
+6. model_visible_packet_schema.json
+7. CONTEXT_PACKET_QUALITY_AUDIT.md
+8. TOOL_PROTOCOL_COMPATIBILITY_AUDIT.md
+9. JCODE_PROMPT_AND_SESSION_AUDIT.md
+10. BRIDGE_TRANSFORMATION_AUDIT.md
+11. DIAGNOSTIC_MATRIX_MANIFEST.json
+12. DIAGNOSTIC_MATRIX_RESULTS.md
+13. diagnostic_matrix_results.json
+14. MODEL_CAPABILITY_VS_SYSTEM_FAILURE_MATRIX.md
+15. ROOT_CAUSE_TREE.md
+16. root_cause_tree.json
+17. GLOBAL_CORRECTION_CONFIRMATION.md
+18. CAMPAIGN_2J_PACKET_TOOL_COMPATIBILITY_AMENDMENT.md
+19. campaign_2j_packet_tool_compatibility_amendment.json
+20. SOL_ULTRA_FINAL_PIPELINE_DIAGNOSIS.md
+21. sol_ultra_final_pipeline_diagnosis.json
+22. COMPACT_HANDOFF_PACKET.md
+
+Store per-run evidence in a dedicated directory such as:
+
+docs/architecture/jcode-qualification/pipeline-diagnosis/runs/<run_id>/
+
+Each run directory should contain:
+
+- authorization receipt;
+- task manifest;
+- context manifest;
+- exact model-visible packet;
+- tool schema;
+- raw model response;
+- tool parse receipt;
+- tool ledger;
+- diff receipt;
+- evaluation receipt;
+- hashes.
+
+Do not store secrets.
+
+======================================================================
+16. SAFE WRITE AND BRANCH POLICY
+======================================================================
+
+Create a new isolated audit branch/worktree from the verified Campaign 2-J HEAD.
+
+Suggested branch:
+
+codex/source-proxy-jcode-pipeline-diagnosis-20260731
+
+Do not modify the canonical Campaign 2-J branch directly during diagnosis.
+
+Permitted repository changes:
+
+- diagnostic-only instrumentation;
+- immutable diagnostic fixtures;
+- tests;
+- evidence schemas;
+- audit documents;
+- proposed campaign amendment.
+
+Production behavior changes must remain:
+
+- behind a disabled diagnostic flag;
+- isolated;
+- not merged;
+- not deployed.
+
+Commit in logical stages:
+
+1. Operator authorization and freeze
+2. Diagnostic instrumentation and manifests
+3. Matrix evidence
+4. Root-cause report
+5. Proposed campaign amendment and handoff
+
+Push the audit branch only when:
+
+- changed paths are scoped;
+- no benchmark file changed;
+- no daily-runtime file changed;
+- no secret exists;
+- JSON validates;
+- tests pass;
+- evidence hashes verify.
+
+Do not merge.
+
+Do not force-push.
+
+======================================================================
+17. STOP CONDITIONS
+======================================================================
+
+Do not stop for ordinary diagnostic bugs.
+
+Use engineering judgment to fix:
+
+- evidence capture defects;
+- packet-dump bugs;
+- fixture issues;
+- parser instrumentation;
+- missing test hooks;
+- deterministic diagnostic harness errors.
+
+Stop only when:
+
+- exact model-visible input cannot be captured;
+- a diagnostic requires frozen benchmark exposure;
+- model identity cannot be proven;
+- direct provider access cannot be prevented;
+- evidence is incomplete after bounded repair;
+- the audit would require production mutation;
+- the maximum model-request budget would be exceeded;
+- a required model is unavailable;
+- safety or authorization boundaries would need to be weakened.
+
+If blocked, return the strongest partial causal diagnosis available.
+
+======================================================================
+18. FINAL VERDICT
+======================================================================
+
+Begin the final response with exactly one verdict:
+
+- PIPELINE_DIAGNOSIS_COMPLETE__SYSTEM_PACKET_FAILURE_PRIMARY__AMENDMENT_READY
+- PIPELINE_DIAGNOSIS_COMPLETE__JCODE_TOOL_PROTOCOL_FAILURE_PRIMARY__AMENDMENT_READY
+- PIPELINE_DIAGNOSIS_COMPLETE__MODEL_CAPABILITY_FAILURE_PRIMARY__AMENDMENT_READY
+- PIPELINE_DIAGNOSIS_COMPLETE__MULTI_FACTOR_FAILURE__AMENDMENT_READY
+- PIPELINE_DIAGNOSIS_COMPLETE__MODELS_DIFFER_BY_TASK_CLASS__AMENDMENT_READY
+- PIPELINE_DIAGNOSIS_BLOCKED__MODEL_VISIBLE_EVIDENCE_INCOMPLETE
+- PIPELINE_DIAGNOSIS_BLOCKED__SAFETY_OR_AUTHORITY_BOUNDARY
+
+Then report:
+
+1. Repository and audit branch.
+2. Starting and final HEAD.
+3. Operator prompt hash and authorization commit.
+4. Current Campaign 2-J status.
+5. Exact models and digests tested.
+6. Exact number of diagnostic runs and model requests.
+7. TASK R results by lane and model.
+8. TASK W results by lane and model.
+9. Whether each model passed the direct inline capability baseline.
+10. Whether each model passed minimal tool calling.
+11. Whether the baseline harness passed.
+12. Whether JCode minimal mode passed.
+13. Whether the full Proxy packet passed.
+14. First proven causal failure.
+15. Secondary contributing failures.
+16. What the 7B failure actually means.
+17. What the 14B failure actually means.
+18. Whether the current packet is model-ready.
+19. Whether the current tool dialect is Qwen-compatible.
+20. Whether JCode is suitable for the selected models.
+21. Global correction tested.
+22. Confirmation-run result.
+23. Campaign amendment created.
+24. Existing gates retained.
+25. Gates remaining blocked.
+26. Tests and evidence checks.
+27. Benchmark integrity.
+28. Daily-runtime integrity.
+29. Files changed.
+30. Push status.
+31. Remaining uncertainty.
+32. Exact next authorized action.
+
+Do not conclude:
+
+“The models are incapable”
+
+unless the same model fails the direct inline capability baseline with complete relevant source and acceptance criteria.
+
+Do not conclude:
+
+“The system is broken”
+
+unless the model passes a simpler lane and fails a more integrated lane under equivalent task/context conditions.
+
+The final diagnosis must be causal, evidence-backed, and sufficient to amend Campaign 2-J before any 20-task or 80-run comparison begins.

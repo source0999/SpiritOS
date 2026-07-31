@@ -1,0 +1,103 @@
+{
+  "schema_version": "source-proxy.campaign-2j-pipeline-diagnosis-authorization/v1",
+  "receipt_type": "OPERATOR_AUTHORIZATION",
+  "authorization_id": "OPERATOR_AUTHORIZATION__C2J_PIPELINE_DIAGNOSIS_20260731_V1",
+  "issued_at_utc": "2026-07-31T22:14:20Z",
+  "issued_by": {
+    "type": "operator",
+    "prompt_sha256": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb"
+  },
+  "operator_prompt": {
+    "artifact": "OPERATOR_AUTHORIZATION_PROMPT.txt",
+    "source_raw_sha256": "115b05f56cb3f7dbc697598363f598042414e2473c539deeef4d9cee6b887106",
+    "source_raw_bytes": 30387,
+    "canonical_sha256": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb",
+    "canonical_bytes": 30388,
+    "canonicalization": "Strict UTF-8 decode; Unicode NFC; CRLF and CR normalized to LF; terminal LF added only when absent; UTF-8 encoded without BOM"
+  },
+  "starting_state": {
+    "repository": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
+    "branch": "codex/source-proxy-jcode-qualification-20260726",
+    "head": "07151b44cb886ac4d8c3668e947e81825d01bd50",
+    "upstream_head": "07151b44cb886ac4d8c3668e947e81825d01bd50",
+    "ahead_behind": "0/0",
+    "worktree_clean": true,
+    "audit_worktree": "/home/source/SpiritOS-source-proxy-jcode-pipeline-diagnosis-20260731",
+    "audit_branch": "codex/source-proxy-jcode-pipeline-diagnosis-20260731"
+  },
+  "authorized_diagnostic_scope": [
+    "Reconstruct and audit the human-request to task-spec to context-packet to JCode to bridge to model to tool-loop path",
+    "Add diagnostic-only packet, request, response, streaming, tool-schema, parser, tool-ledger, and evaluation capture",
+    "Create immutable non-benchmark Task R and Task W qualification fixtures",
+    "Run the staged Lanes A through F causal matrix for exact local Qwen 7B and Qwen 14B models",
+    "Apply one global correction only in the isolated diagnostic path and run bounded confirmation cells",
+    "Create evidence-backed root-cause artifacts and a proposed binding Campaign 2-J amendment",
+    "Commit and push logical stages on the isolated audit branch without merging"
+  ],
+  "permitted_repository_paths": [
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/**",
+    "source_proxy/jcode/pipeline_diagnosis.py",
+    "source_proxy/jcode/pipeline_diagnosis_cli.py",
+    "source_proxy/tests/test_jcode_pipeline_diagnosis.py",
+    "source_proxy/tests/fixtures/jcode_pipeline_diagnosis/**",
+    "scripts/coding/run-jcode-pipeline-diagnosis.py"
+  ],
+  "forbidden_files_and_roots": [
+    "benchmarks/**",
+    "qualification_fixture/**",
+    "fixture_proxy/**",
+    "qualification_write_fixture/**",
+    "/home/source/SpiritOS/**",
+    "production coding and daily-runtime worktrees",
+    "credentials, capability tokens, provider secrets, and unredacted environment dumps"
+  ],
+  "denied_actions": [
+    "Frozen benchmark execution or mutation",
+    "Campaign 4 advancement or automatic advancement beyond Campaign 2-J qualification",
+    "Production deployment, merge, force-push, release, or daily-runtime mutation",
+    "Cloud or paid model requests",
+    "Direct JCode-to-Ollama access",
+    "Fallback or silent model substitution",
+    "Unrestricted networking, credentials exposure, package installation, or persistent JCode memory",
+    "JCode commit, push, merge, deploy, or release authority",
+    "Task-specific prompt tuning, hidden-answer leakage, benchmark-solution reuse, or cross-run session reuse"
+  ],
+  "model_request_budget": {
+    "maximum_total_real_model_requests": 36,
+    "maximum_model_turns_per_run": 3,
+    "retries_count_toward_total": true,
+    "initial_real_model_requests": 0,
+    "frozen_benchmark_runs": 0
+  },
+  "authorized_models": [
+    {
+      "registry_id": "qwen2.5-coder:7b",
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "family": "qwen2",
+      "parameter_size": "7.6B",
+      "quantization": "Q4_K_M"
+    },
+    {
+      "registry_id": "qwen2.5-coder:14b",
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "family": "qwen2",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M"
+    }
+  ],
+  "stop_conditions": [
+    "Exact model-visible input cannot be captured",
+    "A diagnostic requires frozen benchmark exposure",
+    "Exact model identity cannot be proven",
+    "Direct provider access from JCode cannot be prevented",
+    "Evidence remains incomplete after bounded repair",
+    "The audit would require production or daily-runtime mutation",
+    "The 36-request budget would be exceeded",
+    "A required model is unavailable",
+    "Safety or authorization boundaries would need to be weakened"
+  ],
+  "prospective_order": {
+    "receipt_must_be_committed_and_pushed_before_model_requests": true,
+    "model_requests_at_receipt_creation": 0
+  }
+}
