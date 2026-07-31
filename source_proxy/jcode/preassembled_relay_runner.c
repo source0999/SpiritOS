@@ -70,35 +70,21 @@ static void forward_pair(int left, int right) {
   }
 }
 
-static int copy_template(const char *source, const char *destination, mode_t mode) {
-  char buffer[8192];
-  int input = open(source, O_RDONLY);
-  int output;
-  ssize_t count;
-  if (input < 0) return -1;
-  output = open(destination, O_WRONLY | O_CREAT | O_EXCL, mode);
-  if (output < 0) { close(input); return -1; }
-  while ((count = read(input, buffer, sizeof(buffer))) > 0) {
-    ssize_t offset = 0;
-    while (offset < count) {
-      ssize_t written = write(output, buffer + offset, (size_t)(count - offset));
-      if (written <= 0) { close(input); close(output); return -1; }
-      offset += written;
-    }
-  }
-  if (count < 0 || close(input) || close(output)) return -1;
-  return chmod(destination, mode);
+static int write_fixture_content(const char *content, const char *destination, mode_t mode) {
+  int output = open(destination, O_WRONLY | O_CREAT | O_EXCL, mode);
+  size_t length = strlen(content);
+  if (output < 0) return -1;
+  if (write(output, content, length) != (ssize_t)length || close(output) || chmod(destination, mode)) return -1;
+  return 0;
 }
 
-static int prepare_writable_fixture(const char *source_template, const char *test_template) {
-  if (!source_template && !test_template) return 0;
-  if (!source_template || !test_template) return 1;
-  if (access(source_template, R_OK)) return 4;
-  if (access(test_template, R_OK)) return 5;
+static int prepare_writable_fixture(const char *source_content, const char *test_content) {
+  if (!source_content && !test_content) return 0;
+  if (!source_content || !test_content) return 1;
   if (mkdir("/tmp/jcode-home/workspace", 0700) && errno != EEXIST) return 2;
   if (mkdir("/tmp/jcode-home/workspace/qualification_write_fixture", 0755) && errno != EEXIST) return 3;
-  if (copy_template(source_template, "/tmp/jcode-home/workspace/qualification_write_fixture/source_file.py", 0644)) return 6;
-  if (copy_template(test_template, "/tmp/jcode-home/workspace/qualification_write_fixture/test_source_file.py", 0444)) return 7;
+  if (write_fixture_content(source_content, "/tmp/jcode-home/workspace/qualification_write_fixture/source_file.py", 0644)) return 6;
+  if (write_fixture_content(test_content, "/tmp/jcode-home/workspace/qualification_write_fixture/test_source_file.py", 0444)) return 7;
   if (chmod("/tmp/jcode-home/workspace/qualification_write_fixture", 0555)) return 8;
   return chdir("/tmp/jcode-home/workspace") ? 9 : 0;
 }
@@ -130,8 +116,8 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[index], "--config-path") && index + 1 < argc) config_path = argv[++index];
     else if (!strcmp(argv[index], "--base-url") && index + 1 < argc) base_url = argv[++index];
     else if (!strcmp(argv[index], "--model") && index + 1 < argc) model = argv[++index];
-    else if (!strcmp(argv[index], "--fixture-source-template") && index + 1 < argc) source_template = argv[++index];
-    else if (!strcmp(argv[index], "--fixture-test-template") && index + 1 < argc) test_template = argv[++index];
+    else if (!strcmp(argv[index], "--fixture-source-content") && index + 1 < argc) source_template = argv[++index];
+    else if (!strcmp(argv[index], "--fixture-test-content") && index + 1 < argc) test_template = argv[++index];
     else if (!strcmp(argv[index], "--relay-fd") && index + 1 < argc) relay_fd = atoi(argv[++index]);
     else if (!strcmp(argv[index], "--listen-port") && index + 1 < argc) port = atoi(argv[++index]);
     else return 64;

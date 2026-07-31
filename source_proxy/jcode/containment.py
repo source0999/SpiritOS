@@ -125,7 +125,9 @@ def assemble_preassembled_root(config: PreassembledRootConfig) -> Path:
     for source, destination in config.additional_files:
         if not destination or destination.startswith("/") or ".." in Path(destination).parts or not source.is_file() or source.is_symlink():
             raise JCodeContainmentError("jcode_preassembled_extra_file_invalid")
-        _copy_root_file(source, root / destination)
+        target = root / destination
+        _copy_root_file(source, target)
+        target.chmod(0o444)
     for runtime in config.runtime_files:
         source = runtime.absolute()
         if not source.is_absolute() or not source.is_file():
@@ -159,6 +161,7 @@ def build_preassembled_root_args(
 
 def _copy_root_file(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.parent.chmod(0o755)
     shutil.copyfile(source, destination, follow_symlinks=True)
     destination.chmod(0o755 if os.access(source, os.X_OK) else 0o444)
 
