@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import os
+import resource
 import select
 import socket
-import subprocess
 import threading
 from typing import Sequence
 
@@ -25,23 +27,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     listener.bind(("127.0.0.1", args.listen_port))
     listener.listen(8)
     listener.settimeout(0.2)
-    stopped = threading.Event()
-    worker = threading.Thread(
-        target=_serve,
-        args=(listener, args.socket, stopped),
-        daemon=True,
-    )
-    worker.start()
-    try:
-        return subprocess.run(command, check=False).returncode
-    finally:
-        stopped.set()
-        listener.close()
-        worker.join(timeout=2)
+    listener_pid = os.fork()
+    if listener_pid == 0:
+        _set_parent_death_signal()
+        if os.getppid() == 1:
+            return 70
+        _serve(listener, args.socket)
+        return 0
+
+    # Do not make JCode a child of the relay. Replacing the original sandbox
+    # process preserves the direct-launch PID, namespace, session, stdio, and
+    # environment while leaving the listener as a supervised sibling.
+    listener.close()
+    _close_nonstandard_fds()
+    os.execvpe(command[0], command, os.environ)
+    return 70
 
 
-def _serve(listener: socket.socket, socket_path: str, stopped: threading.Event) -> None:
-    while not stopped.is_set():
+def _serve(listener: socket.socket, socket_path: str) -> None:
+    while True:
         try:
             client, _ = listener.accept()
         except TimeoutError:
@@ -53,6 +57,21 @@ def _serve(listener: socket.socket, socket_path: str, stopped: threading.Event) 
             args=(client, socket_path),
             daemon=True,
         ).start()
+
+
+def _set_parent_death_signal() -> None:
+    # Linux PR_SET_PDEATHSIG keeps the sidecar from surviving the exec'd JCode
+    # process. Failure is fatal because a detached listener would break cleanup
+    # evidence and leave a stale authority boundary behind.
+    if ctypes.CDLL(None, use_errno=True).prctl(1, 15, 0, 0, 0) != 0:
+        raise OSError(ctypes.get_errno(), "prctl(PR_SET_PDEATHSIG) failed")
+
+
+def _close_nonstandard_fds() -> None:
+    soft_limit, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
+    upper = 65_536 if soft_limit == resource.RLIM_INFINITY else int(soft_limit)
+    if upper > 3:
+        os.closerange(3, upper)
 
 
 def _forward_client(client: socket.socket, socket_path: str) -> None:

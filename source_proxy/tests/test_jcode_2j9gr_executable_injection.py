@@ -30,3 +30,17 @@ def test_root_exposes_no_host_home_or_network(tmp_path: Path) -> None:
     command = ['/usr/bin/busybox', 'sh', '-c', 'test ! -e /home/source && ! /usr/bin/busybox wget -q -T 1 http://1.1.1.1']
     result = subprocess.run(build_preassembled_root_args(command, root), capture_output=True, text=True)
     assert result.returncode == 0
+
+
+def test_preassembled_root_copies_explicit_proxy_owned_launcher(tmp_path: Path) -> None:
+    root = assemble_preassembled_root(
+        PreassembledRootConfig(
+            tmp_path / "root",
+            Path("/usr/bin/true"),
+            runtime_files=(Path("/lib/x86_64-linux-gnu/libc.so.6"), Path("/lib64/ld-linux-x86-64.so.2")),
+            additional_executables=((Path("/usr/bin/false"), "proxy-launcher"),),
+        )
+    )
+    launcher = root / "usr/bin/proxy-launcher"
+    assert launcher.is_file()
+    assert launcher.stat().st_mode & 0o111

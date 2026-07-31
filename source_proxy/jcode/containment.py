@@ -34,6 +34,7 @@ class PreassembledRootConfig:
     executable: Path
     executable_name: str = "jcode"
     runtime_files: tuple[Path, ...] = ()
+    additional_executables: tuple[tuple[Path, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -113,9 +114,13 @@ def assemble_preassembled_root(config: PreassembledRootConfig) -> Path:
     if not config.executable_name or "/" in config.executable_name:
         raise JCodeContainmentError("jcode_preassembled_executable_name_invalid")
     root.mkdir(mode=0o700)
-    for directory in ("usr/bin", "workspace", "jcode-home", "tmp", "proc", "dev"):
+    for directory in ("usr/bin", "workspace", "jcode-home", "tmp", "proc", "dev", "run/jcode-bridge"):
         (root / directory).mkdir(parents=True, exist_ok=True)
     _copy_root_file(config.executable, root / "usr/bin" / config.executable_name)
+    for source, name in config.additional_executables:
+        if not name or "/" in name or not source.is_file() or source.is_symlink():
+            raise JCodeContainmentError("jcode_preassembled_extra_executable_invalid")
+        _copy_root_file(source, root / "usr/bin" / name)
     for runtime in config.runtime_files:
         source = runtime.absolute()
         if not source.is_absolute() or not source.is_file():

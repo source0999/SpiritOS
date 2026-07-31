@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import http.server
+import json
 import shutil
 import socket
 import subprocess
@@ -9,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from source_proxy.jcode.containment import JCodeContainmentConfig
+from source_proxy.jcode.containment import JCodeContainmentConfig, build_jcode_containment_args
 from source_proxy.jcode.network_bridge import (
     FixedLoopbackUnixBridge,
     JCodeInferenceEndpoint,
@@ -101,6 +102,63 @@ def test_sandbox_can_reach_only_local_relay_for_fixed_loopback_endpoint(tmp_path
         assert "--unshare-net" in args
         assert str(bridge_directory.resolve()) in args
         assert str(server.server_port) not in args
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
+
+
+@pytest.mark.skipif(shutil.which("bwrap") is None, reason="bubblewrap unavailable")
+def test_relay_exec_normalization_matches_direct_sandbox_topology(tmp_path: Path) -> None:
+    containment = _containment(tmp_path)
+    bridge_directory = tmp_path / "bridge"
+    bridge_directory.mkdir()
+    server, thread = _server()
+    try:
+        direct = subprocess.run(
+            build_jcode_containment_args(
+                [
+                    "/usr/bin/python3",
+                    "-c",
+                    "import json, os; print(json.dumps([os.getpid(), os.getppid(), os.getsid(0), os.getpgrp()]))",
+                ],
+                containment,
+            ),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert direct.returncode == 0, direct.stderr
+        with FixedLoopbackUnixBridge(
+            socket_path=bridge_directory / "inference.sock",
+            endpoint=JCodeInferenceEndpoint("127.0.0.1", server.server_port),
+        ):
+            command = [
+                "/usr/bin/python3",
+                "-c",
+                (
+                    "import json, os; from urllib.request import urlopen; "
+                    "print(json.dumps([os.getpid(), os.getppid(), os.getsid(0), os.getpgrp()])); "
+                    "print(urlopen('http://127.0.0.1:43123/v1/models', timeout=3).read().decode())"
+                ),
+            ]
+            result = subprocess.run(
+                build_jcode_loopback_bridge_args(
+                    command,
+                    containment,
+                    bridge_directory=bridge_directory,
+                    sandbox_listen_port=43123,
+                ),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        assert result.returncode == 0, result.stderr
+        output = result.stdout.splitlines()
+        assert json.loads(output[0]) == json.loads(direct.stdout)
+        assert output[1] == "qualified-loopback-only"
+        assert _QualifiedHandler.requests == 1
     finally:
         server.shutdown()
         thread.join(timeout=2)
