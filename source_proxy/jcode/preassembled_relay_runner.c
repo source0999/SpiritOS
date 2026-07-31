@@ -72,11 +72,11 @@ static void forward_pair(int left, int right) {
 
 static int copy_template(const char *source, const char *destination, mode_t mode) {
   char buffer[8192];
-  int input = open(source, O_RDONLY | O_NOFOLLOW);
+  int input = open(source, O_RDONLY);
   int output;
   ssize_t count;
   if (input < 0) return -1;
-  output = open(destination, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, mode);
+  output = open(destination, O_WRONLY | O_CREAT | O_EXCL, mode);
   if (output < 0) { close(input); return -1; }
   while ((count = read(input, buffer, sizeof(buffer))) > 0) {
     ssize_t offset = 0;
@@ -92,13 +92,15 @@ static int copy_template(const char *source, const char *destination, mode_t mod
 
 static int prepare_writable_fixture(const char *source_template, const char *test_template) {
   if (!source_template && !test_template) return 0;
-  if (!source_template || !test_template) return -1;
-  if (mkdir("/tmp/workspace", 0700) && errno != EEXIST) return -1;
-  if (mkdir("/tmp/workspace/qualification_write_fixture", 0755) && errno != EEXIST) return -1;
-  if (copy_template(source_template, "/tmp/workspace/qualification_write_fixture/source_file.py", 0644)) return -1;
-  if (copy_template(test_template, "/tmp/workspace/qualification_write_fixture/test_source_file.py", 0444)) return -1;
-  if (chmod("/tmp/workspace/qualification_write_fixture", 0555)) return -1;
-  return chdir("/tmp/workspace");
+  if (!source_template || !test_template) return 1;
+  if (access(source_template, R_OK)) return 4;
+  if (access(test_template, R_OK)) return 5;
+  if (mkdir("/tmp/jcode-home/workspace", 0700) && errno != EEXIST) return 2;
+  if (mkdir("/tmp/jcode-home/workspace/qualification_write_fixture", 0755) && errno != EEXIST) return 3;
+  if (copy_template(source_template, "/tmp/jcode-home/workspace/qualification_write_fixture/source_file.py", 0644)) return 6;
+  if (copy_template(test_template, "/tmp/jcode-home/workspace/qualification_write_fixture/test_source_file.py", 0444)) return 7;
+  if (chmod("/tmp/jcode-home/workspace/qualification_write_fixture", 0555)) return 8;
+  return chdir("/tmp/jcode-home/workspace") ? 9 : 0;
 }
 
 static void serve(int listener, const char *socket_path, int relay_fd) {
@@ -134,7 +136,8 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[index], "--listen-port") && index + 1 < argc) port = atoi(argv[++index]);
     else return 64;
   }
-  if (!config_path || !base_url || command < 0 || command >= argc || write_config(config_path, base_url) != 0 || prepare_writable_fixture(source_template, test_template) != 0) return 65;
+  if (!config_path || !base_url || command < 0 || command >= argc || write_config(config_path, base_url) != 0) return 65;
+  { int prepared = prepare_writable_fixture(source_template, test_template); if (prepared) return 69 + prepared; }
   if (socket_path || relay_fd >= 0) {
     struct sockaddr_in address;
     int one = 1;
