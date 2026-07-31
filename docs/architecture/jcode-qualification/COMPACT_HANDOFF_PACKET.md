@@ -2,6 +2,14 @@
 
 ## Current state
 
+Runtime Gates 2-J.9G-D through 2-J.9H are now technically accepted by the
+operator, with their original GLM conditional verdict and the governance
+decision preserved in `GATE_2J_9G_D_TO_9H_OPERATOR_ACCEPTANCE.md`. The five
+ambiguous Batch 2 executor remediation records are prospectively classified in
+`gate_2j_historical_remediation_authorization_classification.json`; they were
+not rewritten and are not claimed as original operator grants. The only next
+permitted action is the separate, prospective Gate 2-J.9I safe write smoke.
+
 Batch 1 is accepted. Gates 2-J.9B through 2-J.9E are pushed at `afb3124a1` with
 126 selected no-model tests passing. The only permitted next action is creation
 of a prospective Batch 2 authorization for 2-J.9F through 2-J.9I. The known

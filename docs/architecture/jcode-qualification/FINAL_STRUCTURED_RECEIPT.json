@@ -302,6 +302,22 @@
     "historical_receipts_rewritten": false,
     "next_authorized_batch": "TERRA_HIGH_AUTHORIZED__GATE_2J_9F_TO_2J_9I_BATCH_2"
   },
+  "runtime_gate_9g_d_to_9h_operator_acceptance": {
+    "status": "TECHNICAL_WORK_ACCEPTED__GATE_2J_9I_REQUIRES_SEPARATE_PROSPECTIVE_AUTHORIZATION",
+    "acceptance_artifact": "gate_2j_9g_d_to_9h_operator_acceptance.json",
+    "acceptance_sha256": "9417de8a506c18bd53ea1b7c24fb6a989807c28b91533529add702172eaa5592",
+    "glm_verdict": "GATE_2J_9G_TO_9H_CONDITIONALLY_ACCEPTED__GOVERNANCE_DEVIATION_REQUIRES_OPERATOR_DECISION",
+    "operator_decision": "TECHNICAL_WORK_ACCEPTED",
+    "accepted_runtime_regression": "155 passed, 0 failed",
+    "jcode_launch_total": 16,
+    "model_requests": {"fake": 14, "real": 3, "direct_jcode_to_ollama": 0},
+    "qwen_7b_quality_evidence": "2 source-reading hallucinations rejected; 1 minimal smoke accepted",
+    "frozen_benchmark_changes": 0,
+    "daily_runtime_changes": 0,
+    "historical_remediation_authorizations": "RETROACTIVELY_CLASSIFIED_EXECUTOR_REMEDIATION_SUB_AUTHORIZATION",
+    "prospective_policy": "gate_2j_remediation_autonomy_policy.json",
+    "next_authorized_gate": "TERRA_HIGH_AUTHORIZED__GATE_2J_9I_SAFE_WRITE_SMOKE_V1"
+  },
   "policy_corrections": {
     "context_policy": "v2 ONE_TASK_ONE_CANONICAL_CONTEXT_PACKET_ALL_LANES",
     "budget_policy": "v2 shared_base + 10 gate-specific profiles",

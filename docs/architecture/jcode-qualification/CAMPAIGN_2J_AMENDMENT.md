@@ -2,6 +2,19 @@
 
 status: `GATE_2J_9B_TO_9E_BATCH_1_ACCEPTED__READY_FOR_PROSPECTIVE_BATCH_2_AUTHORIZATION`
 
+## Runtime-Gate Acceptance and Safe Write Boundary
+
+The operator has accepted the technical result of Gates 2-J.9G-D through
+2-J.9H after the conditional GLM verdict. Their four receipts and counter
+correction are linked by `GATE_2J_9G_D_TO_9H_OPERATOR_ACCEPTANCE.md`.
+
+The five remediation records created in `9f84fe55e` are historically classified
+as executor remediation sub-authorizations, not independent operator grants.
+`GATE_2J_REMEDIATION_AUTONOMY_POLICY.md` governs only prospective, bounded
+remediation and does not widen any authority. The sole next gate is the
+separately sealed 2-J.9I safe write smoke; Gate 2-J.9J and all diagnostics
+remain prohibited pending independent review.
+
 ## Identity and dependency
 
 | Field | Value |
