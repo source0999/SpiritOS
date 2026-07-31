@@ -486,7 +486,8 @@ class ExactOllamaClient:
             run_id=self.run_id,
             model=self.model,
             endpoint=f"{self.api_base}{route}",
-            request_sha256=sha256_bytes(body),
+            request_body=payload,
+            request_bytes=body,
         )
         started = time.monotonic()
         raw = b""
@@ -1796,19 +1797,116 @@ def append_request_ledger_event(evidence_root: Path, event: Mapping[str, Any]) -
         os.fsync(handle.fileno())
 
 
+def request_ledger_events(evidence_root: Path, run_id: str) -> list[dict[str, Any]]:
+    ledger = evidence_root / "MODEL_REQUEST_LEDGER.ndjson"
+    if not ledger.is_file():
+        return []
+    events: list[dict[str, Any]] = []
+    for line_number, line in enumerate(ledger.read_text(encoding="utf-8").splitlines(), start=1):
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise PipelineDiagnosisError(f"request_ledger_unreadable:{line_number}") from error
+        if event.get("run_id") == run_id:
+            events.append(event)
+            continue
+        ledger_id = event.get("ledger_id")
+        if event.get("event") == "request_finished" and any(
+            prior.get("ledger_id") == ledger_id for prior in events
+        ):
+            events.append(event)
+    return events
+
+
+def request_journal_entries(evidence_root: Path, run_id: str) -> list[dict[str, Any]]:
+    journal_dir = evidence_root / "request-journal"
+    if not journal_dir.is_dir():
+        return []
+    entries: list[dict[str, Any]] = []
+    for path in sorted(journal_dir.glob("model-request-*.json")):
+        try:
+            entry = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            raise PipelineDiagnosisError(f"request_journal_unreadable:{path.name}") from error
+        if entry.get("run_id") != run_id:
+            continue
+        raw = base64.b64decode(str(entry.get("request_bytes_base64") or ""), validate=True)
+        if sha256_bytes(raw) != entry.get("request_sha256"):
+            raise PipelineDiagnosisError(f"request_journal_hash_mismatch:{path.name}")
+        if raw != canonical_json(entry.get("request_body")).encode("utf-8"):
+            raise PipelineDiagnosisError(f"request_journal_body_mismatch:{path.name}")
+        entries.append({**entry, "journal_file": path.name})
+    return entries
+
+
+def write_request_journal_entry(
+    evidence_root: Path,
+    *,
+    ledger_id: str,
+    run_id: str,
+    model: str,
+    endpoint: str,
+    request_body: Mapping[str, Any],
+    request_bytes: bytes,
+) -> tuple[Path, str]:
+    expected_bytes = canonical_json(dict(request_body)).encode("utf-8")
+    if request_bytes != expected_bytes:
+        raise PipelineDiagnosisError("request_journal_noncanonical_body")
+    journal_dir = evidence_root / "request-journal"
+    journal_dir.mkdir(parents=True, exist_ok=True)
+    path = journal_dir / f"{ledger_id}.json"
+    entry = {
+        "schema_version": "source-proxy.model-request-journal/v1",
+        "ledger_id": ledger_id,
+        "run_id": run_id,
+        "model": model,
+        "model_digest": MODEL_SPECS[model]["digest"],
+        "endpoint": endpoint,
+        "request_body": dict(request_body),
+        "request_bytes_base64": base64.b64encode(request_bytes).decode("ascii"),
+        "request_sha256": sha256_bytes(request_bytes),
+        "recorded_at": datetime.now(timezone.utc).isoformat(),
+        "write_order": "durably_written_before_request_started_ledger_event_and_network_send",
+    }
+    encoded = canonical_json(entry)
+    try:
+        with path.open("x", encoding="utf-8", newline="\n") as handle:
+            handle.write(encoded)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as error:
+        raise PipelineDiagnosisError(f"immutable_request_journal_exists:{ledger_id}") from error
+    directory_fd = os.open(journal_dir, os.O_RDONLY)
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
+    return path, sha256_text(encoded)
+
+
 def record_model_request_start(
     evidence_root: Path,
     *,
     run_id: str,
     model: str,
     endpoint: str,
-    request_sha256: str,
+    request_body: Mapping[str, Any],
+    request_bytes: bytes,
 ) -> str:
     with _REQUEST_LEDGER_LOCK:
         count = existing_request_count(evidence_root)
         if count >= MODEL_REQUEST_LIMIT:
             raise PipelineDiagnosisError("model_request_budget_exhausted")
         ledger_id = f"model-request-{count + 1:02d}"
+        journal_path, journal_sha256 = write_request_journal_entry(
+            evidence_root,
+            ledger_id=ledger_id,
+            run_id=run_id,
+            model=model,
+            endpoint=endpoint,
+            request_body=request_body,
+            request_bytes=request_bytes,
+        )
         append_request_ledger_event(
             evidence_root,
             {
@@ -1819,7 +1917,9 @@ def record_model_request_start(
                 "model": model,
                 "model_digest": MODEL_SPECS[model]["digest"],
                 "endpoint": endpoint,
-                "request_sha256": request_sha256,
+                "request_sha256": sha256_bytes(request_bytes),
+                "request_journal": str(journal_path.relative_to(evidence_root)),
+                "request_journal_sha256": journal_sha256,
                 "recorded_at": datetime.now(timezone.utc).isoformat(),
             },
         )
@@ -1847,6 +1947,30 @@ def record_model_request_finish(
         )
 
 
+def model_request_capture_receipt(evidence_root: Path, run_id: str) -> dict[str, Any]:
+    events = request_ledger_events(evidence_root, run_id)
+    starts = [event for event in events if event.get("event") == "request_started"]
+    entries = request_journal_entries(evidence_root, run_id)
+    journal_ids = {entry.get("ledger_id") for entry in entries}
+    missing = [event.get("ledger_id") for event in starts if event.get("ledger_id") not in journal_ids]
+    if not starts and not entries:
+        status = "NO_MODEL_REQUEST"
+    elif len(entries) == len(starts) and not missing:
+        status = "COMPLETE"
+    else:
+        status = "EVIDENCE_INCOMPLETE"
+    return {
+        "schema_version": "source-proxy.model-request-capture/v1",
+        "run_id": run_id,
+        "status": status,
+        "request_started_count": len(starts),
+        "journal_entry_count": len(entries),
+        "missing_request_body_ledger_ids": missing,
+        "ledger_events": events,
+        "journal_entries": entries,
+    }
+
+
 def seal_run_evidence(evidence_dir: Path, files: Mapping[str, Any]) -> None:
     if evidence_dir.exists():
         raise PipelineDiagnosisError(f"immutable_run_evidence_exists:{evidence_dir.name}")
@@ -1863,6 +1987,132 @@ def seal_run_evidence(evidence_dir: Path, files: Mapping[str, Any]) -> None:
         if path.is_file()
     }
     write_json(evidence_dir / "hashes.json", {"schema_version": DIAGNOSIS_SCHEMA, "files": hashes})
+
+
+def seal_interrupted_run_from_ledger(
+    *,
+    run_id: str,
+    task_key: str,
+    lane: str,
+    model: str,
+    root: Path | None = None,
+) -> dict[str, Any]:
+    """Seal a fail-closed receipt for a run interrupted before normal evidence sealing."""
+    repo = (root or repository_root()).resolve()
+    evidence_root = diagnosis_root(repo)
+    if lane not in set("ABCDEF") or model not in MODEL_SPECS:
+        raise PipelineDiagnosisError("interrupted_run_identity_invalid")
+    capture = model_request_capture_receipt(evidence_root, run_id)
+    starts = [event for event in capture["ledger_events"] if event.get("event") == "request_started"]
+    finishes = [event for event in capture["ledger_events"] if event.get("event") == "request_finished"]
+    if not starts or any(event.get("run_id") != run_id for event in starts):
+        raise PipelineDiagnosisError("interrupted_run_start_event_missing")
+    if any(event.get("model") != model for event in starts):
+        raise PipelineDiagnosisError("interrupted_run_model_mismatch")
+    if not finishes or not any(event.get("error") for event in finishes):
+        raise PipelineDiagnosisError("interrupted_run_failure_event_missing")
+    fixture = repo / "source_proxy/tests/fixtures/jcode_pipeline_diagnosis" / task_definition(task_key)["fixture"]
+    context = build_context_manifest(task_key, fixture)
+    task_manifest = build_task_manifest(task_key, context)
+    registry = ExactOllamaClient(
+        model,
+        run_id=f"{run_id}-receipt-only",
+        evidence_root=evidence_root,
+    ).registry_receipt
+    base_head = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
+    failure = next(str(event.get("error")) for event in reversed(finishes) if event.get("error"))
+    evidence_dir = evidence_root / "runs" / run_id
+    evidence = {
+        "authorization_receipt.json": {
+            "authorization_id": AUTHORIZATION_ID,
+            "operator_prompt_sha256": AUTHORIZATION_PROMPT_SHA256,
+            "authorization_receipt": AUTHORIZATION_RECEIPT,
+            "starting_head": base_head,
+            "starting_head_status": "reconstructed_at_receipt_seal; run began on this unchanged audit head",
+        },
+        "task_manifest.json": task_manifest,
+        "context_manifest.json": context,
+        "model_registry_receipt.json": registry,
+        "model_request_capture_receipt.json": capture,
+        "exact_model_visible_packet.json": {
+            "schema_version": "source-proxy.model-visible-packet/v1",
+            "run_id": run_id,
+            "task_id": task_manifest["task_id"],
+            "lane": lane,
+            "model": model,
+            "model_digest": MODEL_SPECS[model]["digest"],
+            "capture_status": capture["status"],
+            "backend_request_sha256": [event.get("request_sha256") for event in starts],
+            "backend_requests": [entry.get("request_body") for entry in capture["journal_entries"]],
+            "backend_request_bytes_base64": [
+                entry.get("request_bytes_base64") for entry in capture["journal_entries"]
+            ],
+            "evidence_limit": (
+                "Exact request body and bytes were not persisted before the timeout; only the "
+                "durable request hash and ledger timing survive. No packet was reconstructed."
+                if capture["status"] == "EVIDENCE_INCOMPLETE"
+                else None
+            ),
+        },
+        "tool_schema.json": {"proposed_minimal_tools": tool_schemas(task_key), "actual": []},
+        "raw_model_response.json": {
+            "responses": [],
+            "backend_calls": [],
+            "capture_status": "NO_RESPONSE_BYTES_CAPTURED",
+        },
+        "tool_parse_receipt.json": {
+            "status": "NOT_REACHED_OR_NOT_CAPTURED",
+            "reason": failure,
+        },
+        "tool_ledger.json": {"executions": []},
+        "diff_receipt.json": {
+            "capture_status": "EVIDENCE_INCOMPLETE",
+            "changed_files": None,
+            "unified_diff": None,
+            "reason": "The fresh overlay was cleaned by the pre-repair finally block before a snapshot was sealed.",
+        },
+        "evaluation_receipt.json": {
+            "schema_version": DIAGNOSIS_SCHEMA,
+            "run_id": run_id,
+            "task_key": task_key,
+            "task_id": task_manifest["task_id"],
+            "lane": lane,
+            "model": model,
+            "model_digest": MODEL_SPECS[model]["digest"],
+            "bridge_mode": None,
+            "model_request_count": len(starts),
+            "evaluation": {
+                "passed": False,
+                "classification": "diagnostic_run_timeout_evidence_incomplete",
+            },
+            "failure": failure,
+            "evidence_completeness": capture["status"],
+            "reconstructed_packet": False,
+            "retry_performed": False,
+        },
+        "packet_noise_receipt.json": {
+            "capture_status": "EVIDENCE_INCOMPLETE",
+            "reason": "Exact model-visible packet unavailable; metrics intentionally not reconstructed.",
+        },
+        "instrumentation_erratum.json": {
+            "classification": "EVIDENCE_INCOMPLETE",
+            "discovered_after_run": True,
+            "repair": "Exact request bodies are now journaled durably before network transmission.",
+            "scope": "This receipt documents the gap and does not alter or retry the failed run.",
+        },
+    }
+    seal_run_evidence(evidence_dir, evidence)
+    return {
+        "run_id": run_id,
+        "task_key": task_key,
+        "lane": lane,
+        "model": model,
+        "model_request_count": len(starts),
+        "passed": False,
+        "classification": "diagnostic_run_timeout_evidence_incomplete",
+        "evidence_completeness": capture["status"],
+        "evidence_dir": str(evidence_dir.relative_to(repo)),
+    }
 
 
 def run_diagnostic(
@@ -1884,6 +2134,14 @@ def run_diagnostic(
     state = create_fresh_run_state(repo, run_id, task_key)
     cleanup: dict[str, Any] = {"runtime_root_removed": False}
     started = time.monotonic()
+    context: dict[str, Any] = {}
+    task_manifest: dict[str, Any] = {}
+    before: dict[str, Any] = {}
+    full_proxy: dict[str, Any] | None = None
+    client: ExactOllamaClient | None = None
+    result: dict[str, Any] = {}
+    backend_calls: list[dict[str, Any]] = []
+    registry: dict[str, Any] = {}
     try:
         context = build_context_manifest(task_key, state.overlay)
         task_manifest = build_task_manifest(task_key, context)
@@ -1935,7 +2193,12 @@ def run_diagnostic(
         diff = diff_snapshots(before, after)
         test = focused_test_result(task_key, state.overlay)
         evaluation = evaluate_run(task_key, lane, result, diff, test)
-        model_request_count = len(backend_calls)
+        request_capture = model_request_capture_receipt(evidence_root, run_id)
+        model_request_count = int(request_capture["request_started_count"])
+        if request_capture["status"] != "COMPLETE":
+            raise PipelineDiagnosisError("model_request_capture_incomplete")
+        if model_request_count != len(backend_calls):
+            raise PipelineDiagnosisError("model_request_record_count_mismatch")
         if model_request_count > MAX_TURNS_PER_RUN:
             raise PipelineDiagnosisError("per_run_model_turn_budget_exceeded")
         backend_request_bodies = [item.get("request_body") for item in backend_calls]
@@ -2091,6 +2354,7 @@ def run_diagnostic(
             "task_manifest.json": task_manifest,
             "context_manifest.json": context,
             "model_registry_receipt.json": registry,
+            "model_request_capture_receipt.json": request_capture,
             "exact_model_visible_packet.json": model_visible,
             "tool_schema.json": {"proposed_minimal_tools": tool_schemas(task_key), "actual": result.get("tools") or []},
             "raw_model_response.json": {"responses": result.get("raw_response") or [], "backend_calls": backend_calls},
@@ -2139,6 +2403,149 @@ def run_diagnostic(
             "model_request_count": model_request_count,
             "passed": evaluation["passed"],
             "classification": evaluation["classification"],
+            "evidence_dir": str(evidence_dir.relative_to(repo)),
+        }
+    except Exception as error:
+        failure = f"{type(error).__name__}:{error}"
+        if client is not None:
+            backend_calls = [record.to_dict() for record in client.records]
+            registry = client.registry_receipt
+        request_capture = model_request_capture_receipt(evidence_root, run_id)
+        model_request_count = int(request_capture["request_started_count"])
+        if model_request_count > MAX_TURNS_PER_RUN:
+            raise PipelineDiagnosisError("failed_run_turn_budget_exceeded") from error
+        if not context:
+            context = build_context_manifest(task_key, state.overlay)
+        if not task_manifest:
+            task_manifest = build_task_manifest(task_key, context)
+        if before:
+            after = snapshot_overlay(state.overlay)
+            diff: dict[str, Any] = diff_snapshots(before, after)
+            diff["capture_status"] = "COMPLETE"
+        else:
+            diff = {
+                "capture_status": "EVIDENCE_INCOMPLETE",
+                "changed_files": None,
+                "unified_diff": None,
+                "reason": "Failure occurred before the baseline overlay snapshot completed.",
+            }
+        test = focused_test_result(task_key, state.overlay)
+        capture_status = (
+            "COMPLETE"
+            if request_capture["status"] in {"COMPLETE", "NO_MODEL_REQUEST"}
+            and diff["capture_status"] == "COMPLETE"
+            else "EVIDENCE_INCOMPLETE"
+        )
+        classification = (
+            "diagnostic_run_error"
+            if capture_status == "COMPLETE"
+            else "diagnostic_run_error_evidence_incomplete"
+        )
+        journal_entries = list(request_capture["journal_entries"])
+        backend_request_bodies = [entry.get("request_body") for entry in journal_entries]
+        packet_text = canonical_json(full_proxy) if full_proxy is not None else concise_task_text(task_manifest)
+        evidence = {
+            "authorization_receipt.json": {
+                "authorization_id": AUTHORIZATION_ID,
+                "operator_prompt_sha256": AUTHORIZATION_PROMPT_SHA256,
+                "authorization_receipt": AUTHORIZATION_RECEIPT,
+                "starting_head": state.base_head,
+            },
+            "task_manifest.json": task_manifest,
+            "context_manifest.json": context,
+            "model_registry_receipt.json": registry,
+            "model_request_capture_receipt.json": request_capture,
+            "exact_model_visible_packet.json": {
+                "schema_version": "source-proxy.model-visible-packet/v1",
+                "run_id": run_id,
+                "task_id": task_manifest["task_id"],
+                "lane": lane,
+                "model": model,
+                "model_registry_id": model,
+                "model_digest": MODEL_SPECS[model]["digest"],
+                "jcode_binary_sha256": JCODE_BINARY_SHA256 if lane in {"D", "F"} else None,
+                "executor_version": "failed_before_normal_receipt",
+                "context_builder_version": CONTEXT_BUILDER_VERSION,
+                "bridge_version": DIAGNOSTIC_BRIDGE_VERSION if lane in {"D", "F"} else None,
+                "registry_attestation": registry,
+                "capture_status": capture_status,
+                "backend_requests": backend_request_bodies,
+                "backend_request_bytes_base64": [
+                    entry.get("request_bytes_base64") for entry in journal_entries
+                ],
+                "backend_request_sha256": [entry.get("request_sha256") for entry in journal_entries],
+                "task_specification": task_manifest,
+                "acceptance_criteria": task_manifest["acceptance_criteria"],
+                "context": context,
+                "failure": failure,
+            },
+            "tool_schema.json": {
+                "proposed_minimal_tools": tool_schemas(task_key),
+                "actual": result.get("tools") or [],
+            },
+            "raw_model_response.json": {
+                "responses": result.get("raw_response") or [],
+                "backend_calls": backend_calls,
+                "capture_status": "COMPLETE" if backend_calls else "NO_RESPONSE_CAPTURED",
+            },
+            "tool_parse_receipt.json": result.get("tool_parse")
+            or {"status": "NOT_REACHED", "reason": failure},
+            "tool_ledger.json": {"executions": result.get("tool_ledger") or []},
+            "diff_receipt.json": {**diff, "focused_test": test},
+            "evaluation_receipt.json": {
+                "schema_version": DIAGNOSIS_SCHEMA,
+                "run_id": run_id,
+                "task_key": task_key,
+                "task_id": task_manifest["task_id"],
+                "lane": lane,
+                "model": model,
+                "model_digest": MODEL_SPECS[model]["digest"],
+                "bridge_mode": bridge_mode if lane in {"D", "F"} else None,
+                "model_request_count": model_request_count,
+                "elapsed_seconds": round(time.monotonic() - started, 3),
+                "evaluation": {"passed": False, "classification": classification},
+                "failure": failure,
+                "evidence_completeness": capture_status,
+                "retry_performed": False,
+            },
+            "packet_noise_receipt.json": packet_noise_metrics(packet_text, task_manifest),
+            "failure_receipt.json": {
+                "failure": failure,
+                "exception_type": type(error).__name__,
+                "capture_status": capture_status,
+                "cleanup_pending_at_seal": True,
+            },
+        }
+        if lane in {"D", "F"}:
+            evidence["jcode_provider_request.json"] = {
+                "requests": result.get("jcode_provider_requests") or []
+            }
+            evidence["jcode_provider_response.json"] = {
+                "responses": result.get("jcode_provider_responses") or []
+            }
+            evidence["bridge_transformation_receipt.json"] = {
+                "bridge_mode": bridge_mode,
+                "transformations": result.get("bridge_transformations") or [],
+                "capture_status": capture_status,
+            }
+            evidence["jcode_stdout.ndjson"] = str(
+                (result.get("jcode_process") or {}).get("stdout") or ""
+            )
+            evidence["jcode_stderr.txt"] = str(
+                (result.get("jcode_process") or {}).get("stderr") or ""
+            )
+        evidence_dir = evidence_root / "runs" / run_id
+        seal_run_evidence(evidence_dir, evidence)
+        summary = {
+            "run_id": run_id,
+            "task_key": task_key,
+            "lane": lane,
+            "model": model,
+            "model_request_count": model_request_count,
+            "passed": False,
+            "classification": classification,
+            "evidence_completeness": capture_status,
+            "failure": failure,
             "evidence_dir": str(evidence_dir.relative_to(repo)),
         }
     finally:

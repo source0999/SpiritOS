@@ -9,6 +9,7 @@ from source_proxy.jcode.pipeline_diagnosis import (
     MODEL_SPECS,
     canonical_json,
     run_diagnostic,
+    seal_interrupted_run_from_ledger,
     seal_jcode_capture_preflight,
     seal_matrix_manifest,
 )
@@ -31,6 +32,15 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("legacy_text_only", "tool_preserving"),
         default="legacy_text_only",
     )
+
+    interrupted = subparsers.add_parser(
+        "seal-interrupted",
+        help="Seal an explicit incomplete receipt for a pre-repair interrupted run.",
+    )
+    interrupted.add_argument("--run-id", required=True)
+    interrupted.add_argument("--task", required=True, choices=("R", "W"))
+    interrupted.add_argument("--lane", required=True, choices=tuple("ABCDEF"))
+    interrupted.add_argument("--model", required=True, choices=tuple(MODEL_SPECS))
     return parser
 
 
@@ -40,6 +50,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = seal_matrix_manifest()
     elif args.command == "preflight":
         result = seal_jcode_capture_preflight()
+    elif args.command == "seal-interrupted":
+        result = seal_interrupted_run_from_ledger(
+            run_id=args.run_id,
+            task_key=args.task,
+            lane=args.lane,
+            model=args.model,
+        )
     else:
         result = run_diagnostic(
             run_id=args.run_id,

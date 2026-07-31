@@ -6,15 +6,20 @@ from pathlib import Path
 import pytest
 
 from source_proxy.jcode.pipeline_diagnosis import (
+    ExactOllamaClient,
+    FreshRunState,
     PipelineDiagnosisError,
     build_context_manifest,
     build_task_manifest,
+    canonical_json,
     diff_snapshots,
     evaluate_run,
     execute_diagnostic_tool,
     legacy_bridge_transform,
+    model_request_capture_receipt,
     openai_sse_response,
     parse_jcode_ndjson,
+    run_diagnostic,
     safe_inline_candidate_passes,
     safe_relative_path,
     snapshot_overlay,
@@ -242,6 +247,135 @@ def test_inline_candidate_evaluation_is_bounded():
         'def normalize_label(value: str) -> str:\n    return "-".join(value.strip().lower().split())\n'
     )
     assert not safe_inline_candidate_passes("import os\ndef normalize_label(value):\n    return value")
+
+
+def test_exact_request_is_durably_journaled_before_failed_network_send(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    evidence_root = tmp_path / "evidence"
+    monkeypatch.setattr(
+        ExactOllamaClient,
+        "verify_registry",
+        lambda self: {"verified": True, "model": self.model},
+    )
+    network_observation: dict[str, object] = {}
+
+    def fail_after_observing_journal(request, timeout):
+        journals = list((evidence_root / "request-journal").glob("*.json"))
+        network_observation["journal_count"] = len(journals)
+        network_observation["ledger_exists"] = (evidence_root / "MODEL_REQUEST_LEDGER.ndjson").is_file()
+        network_observation["request_bytes"] = request.data
+        raise TimeoutError("bounded-test-timeout")
+
+    monkeypatch.setattr(
+        "source_proxy.jcode.pipeline_diagnosis.urllib.request.urlopen",
+        fail_after_observing_journal,
+    )
+    client = ExactOllamaClient(
+        "qwen2.5-coder:7b",
+        run_id="failed-journal-test",
+        evidence_root=evidence_root,
+    )
+    payload = {
+        "model": "qwen2.5-coder:7b",
+        "messages": [{"role": "user", "content": "hello"}],
+        "stream": False,
+    }
+
+    with pytest.raises(TimeoutError, match="bounded-test-timeout"):
+        client.post("/api/chat", payload)
+
+    capture = model_request_capture_receipt(evidence_root, "failed-journal-test")
+    entry = capture["journal_entries"][0]
+    assert network_observation == {
+        "journal_count": 1,
+        "ledger_exists": True,
+        "request_bytes": canonical_json(payload).encode("utf-8"),
+    }
+    assert capture["status"] == "COMPLETE"
+    assert entry["request_body"] == payload
+    assert entry["write_order"].startswith("durably_written_before")
+    assert client.records[0].error == "TimeoutError:bounded-test-timeout"
+
+
+def test_pre_repair_hash_only_request_is_explicitly_incomplete(tmp_path: Path):
+    evidence_root = tmp_path / "evidence"
+    evidence_root.mkdir()
+    events = [
+        {
+            "event": "request_started",
+            "ledger_id": "model-request-01",
+            "run_id": "old-timeout",
+            "model": "qwen2.5-coder:7b",
+            "request_sha256": "abc",
+        },
+        {
+            "event": "request_finished",
+            "ledger_id": "model-request-01",
+            "error": "TimeoutError:timed out",
+        },
+    ]
+    (evidence_root / "MODEL_REQUEST_LEDGER.ndjson").write_text(
+        "".join(canonical_json(event) for event in events),
+        encoding="utf-8",
+    )
+
+    capture = model_request_capture_receipt(evidence_root, "old-timeout")
+
+    assert capture["status"] == "EVIDENCE_INCOMPLETE"
+    assert capture["missing_request_body_ledger_ids"] == ["model-request-01"]
+    assert capture["journal_entries"] == []
+
+
+def test_run_timeout_seals_complete_failure_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    overlay = _copy_fixture(tmp_path, "R")
+    runtime_root = tmp_path / "runtime"
+    runtime_root.mkdir()
+    source_worktree = runtime_root / "source-worktree"
+    source_worktree.mkdir()
+    monkeypatch.setattr(
+        "source_proxy.jcode.pipeline_diagnosis.create_fresh_run_state",
+        lambda root, run_id, task_key: FreshRunState(
+            source_worktree=source_worktree,
+            overlay=overlay,
+            runtime_root=runtime_root,
+            base_head="test-head",
+        ),
+    )
+    monkeypatch.setattr(
+        "source_proxy.jcode.pipeline_diagnosis.cleanup_fresh_run_state",
+        lambda root, state: {"runtime_root_removed": True},
+    )
+    monkeypatch.setattr(
+        ExactOllamaClient,
+        "verify_registry",
+        lambda self: {"verified": True, "model": self.model},
+    )
+    monkeypatch.setattr(
+        "source_proxy.jcode.pipeline_diagnosis.urllib.request.urlopen",
+        lambda request, timeout: (_ for _ in ()).throw(TimeoutError("sealed-timeout")),
+    )
+
+    summary = run_diagnostic(
+        run_id="sealed-timeout-run",
+        task_key="R",
+        lane="A",
+        model="qwen2.5-coder:7b",
+        root=tmp_path,
+    )
+
+    run_dir = tmp_path / "docs/architecture/jcode-qualification/pipeline-diagnosis/runs/sealed-timeout-run"
+    evaluation = json.loads((run_dir / "evaluation_receipt.json").read_text(encoding="utf-8"))
+    capture = json.loads((run_dir / "model_request_capture_receipt.json").read_text(encoding="utf-8"))
+    packet = json.loads((run_dir / "exact_model_visible_packet.json").read_text(encoding="utf-8"))
+    assert summary["classification"] == "diagnostic_run_error"
+    assert summary["evidence_completeness"] == "COMPLETE"
+    assert evaluation["failure"] == "TimeoutError:sealed-timeout"
+    assert capture["status"] == "COMPLETE"
+    assert packet["backend_requests"][0]["model"] == "qwen2.5-coder:7b"
+    assert (run_dir / "hashes.json").is_file()
 
 
 @pytest.mark.parametrize("value", ["", ".", "../x", "/tmp/x", "a/../b"])
