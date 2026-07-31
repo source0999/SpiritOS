@@ -21,6 +21,7 @@ class SealedCompatibilityBridge:
     _listener: socket.socket | None = field(default=None, init=False)
     request_count: int = field(default=0, init=False)
     request_bytes: int = field(default=0, init=False)
+    request_bodies: list[dict[str, object]] = field(default_factory=list, init=False)
 
     def start(self) -> None:
         if self.socket_path.exists() or self.socket_path.is_symlink() or not self.socket_path.parent.is_dir():
@@ -50,6 +51,7 @@ class SealedCompatibilityBridge:
             request = _read_request(client)
             self.request_count += 1
             self.request_bytes += int(request["byte_count"])
+            self.request_bodies.append(dict(request["body"]))
             response = self._request_fake_backend(request)
             _send_sse(client, response)
         except (OSError, ValueError, json.JSONDecodeError, SealedInferenceBridgeError) as error:

@@ -32,6 +32,7 @@ def test_compatibility_bridge_maps_one_openai_request_to_the_sealed_fake_backend
     worker.join(timeout=2); bridge.close()
     assert b"HTTP/1.1 200 OK" in response and b"Transfer-Encoding: chunked" in response and b"deterministic answer" in response and b"[DONE]" in response
     assert bridge.request_count == 1 and bridge.request_bytes > 0
+    assert bridge.request_bodies[0]["model"] == "qwen2.5-coder:7b"
 
 
 def test_compatibility_bridge_rejects_an_unregistered_model_without_fake_backend_use(tmp_path: Path) -> None:
