@@ -1,0 +1,17 @@
+{
+  "authorization_id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9I_MODEL_BINDING_AND_BUDGET_REMEDIATION_V2",
+  "authorization_type": "OPERATOR_AUTHORIZATION",
+  "authorized_base_commit": "11044d0b711f86466cfaa1b62e73822d2ec39a68",
+  "campaign_id": "campaign-2-j",
+  "content_sha256": "be9dac70629f9788b775a952dc311a71dad1bf3f103906d0db5dc66aab56504a",
+  "denied": ["different model", "different task or fixture", "broader writable path", "direct Ollama from JCode", "cloud provider", "additional real-model request beyond two", "broader network", "weaker containment", "package installation", "JCode Git mutation", "Gate 2-J.9J and later gates"],
+  "gate_id": "2-J.9I",
+  "issued_at_utc": "2026-07-31T03:18:40Z",
+  "issued_by": "operator",
+  "model": {"digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849", "model": "qwen2.5-coder:14b", "quantization": "Q4_K_M", "registry_id": "ollama-local-tags-20260731T024353Z"},
+  "original_authorization": {"id": "TERRA_HIGH_AUTHORIZED__GATE_2J_9I_SAFE_WRITE_SMOKE_V1", "sha256": "836ac0f78c9597639e831729bc29c0388b2dd2a45e0a72d2178cf38a768eb997"},
+  "permissions": {"budget_amendment": "same byte-for-byte task only; tier at most 8192 input and 1024 output", "deterministic_fake_request_capture": true, "effective_jcode_model_configuration_correction": true, "evidence_updates": true, "ordinary_bounded_gate_2j_9i_fixes": true, "real_model_requests": {"corrective_integration_retry": 1, "primary": 1, "total_max": 2}},
+  "schema_version": "source-proxy.terra-high-gate-2j-9i-remediation-authorization/v2",
+  "superseding_remediation_not_historical_rewrite": true,
+  "task_manifest_sha256": "99d71256a044f1d2fbcc6f4f66b73147071a2fd9a732367b3d006eacebfc0bbe"
+}
