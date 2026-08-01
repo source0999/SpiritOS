@@ -1,0 +1,3 @@
+{"model":"qwen2.5-coder:14b","provider":"openrouter","session_id":"session_rooster_1785542061398_16fd4788cfffc03c","type":"start"}
+{"connection":"https/sse","type":"connection_type"}
+{"phase":"sending request","type":"connection_phase"}

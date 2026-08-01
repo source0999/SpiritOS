@@ -1,0 +1,1 @@
+{"classification":"EVIDENCE_INCOMPLETE","discovered_after_run":true,"repair":"Exact request bodies are now journaled durably before network transmission.","scope":"This receipt documents the gap and does not alter or retry the failed run."}
