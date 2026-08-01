@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-proxy.model-ready-packet/v1",
+  "title": "Canonical Model-Ready Task Packet",
+  "description": "Schema for the concise coder packet defined by Gate 2-J.9T section E. Task-first content precedes context and constraints.",
+  "type": "object",
+  "required": ["schema_version", "identity", "task", "tools", "constraints", "ordering", "quality_metrics"],
+  "properties": {
+    "schema_version": {"const": "source-proxy.model-ready-packet/v1"},
+    "identity": {
+      "type": "object",
+      "required": ["task_id", "run_id", "campaign_id", "prompt_hash", "acceptance_hash", "context_hash", "base_commit", "executor_id", "model_profile_id", "tool_profile_id", "evaluator_profile_id"],
+      "properties": {
+        "task_id": {"type": "string", "description": "immutable task id, e.g. PIPE-R-001"},
+        "run_id": {"type": "string"},
+        "campaign_id": {"type": "string"},
+        "prompt_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "acceptance_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "context_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "base_commit": {"type": "string"},
+        "executor_id": {"type": "string"},
+        "model_profile_id": {"type": "string"},
+        "tool_profile_id": {"type": "string"},
+        "evaluator_profile_id": {"type": "string"}
+      }
+    },
+    "task": {
+      "type": "object",
+      "description": "FIRST model-visible section",
+      "required": ["objective", "desired_observable_behavior", "acceptance_criteria", "writable_files", "read_only_files", "mounted_tool_paths", "focused_validation_command", "stop_condition"],
+      "properties": {
+        "objective": {"type": "string", "description": "one concise coding objective"},
+        "desired_observable_behavior": {"type": "string"},
+        "acceptance_criteria": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "deterministic focused checks"},
+        "writable_files": {"type": "array", "items": {"type": "string"}},
+        "read_only_files": {"type": "array", "items": {"type": "string"}},
+        "mounted_tool_paths": {"type": "array", "items": {"type": "string"}},
+        "focused_validation_command": {"type": "string", "description": "exact sealed command"},
+        "stop_condition": {"type": "string"}
+      }
+    },
+    "context": {
+      "type": "object",
+      "required": ["file_manifest", "excluded_path_manifest", "truncation_receipt", "no_hidden_expectations", "no_unrelated_campaign_history"],
+      "properties": {
+        "file_manifest": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "sha256", "byte_count"],
+            "properties": {
+              "path": {"type": "string"},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "byte_count": {"type": "integer", "minimum": 0},
+              "content_or_excerpt": {"type": "string"},
+              "excerpt_range": {"type": "string"},
+              "omitted_noncritical_proof": {"type": "string"}
+            }
+          }
+        },
+        "excluded_path_manifest": {"type": "array", "items": {"type": "string"}},
+        "truncation_receipt": {"type": "string"},
+        "no_hidden_expectations": {"const": true},
+        "no_unrelated_campaign_history": {"const": true}
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "only the tools needed for the task; minimum set read_file, apply_patch/write_file, focused_test",
+      "items": {
+        "type": "object",
+        "required": ["canonical_name", "json_schema", "description", "allowed_paths", "error_contract", "result_contract", "timeout_seconds", "evidence_output"],
+        "properties": {
+          "canonical_name": {"type": "string"},
+          "json_schema": {"type": "object"},
+          "description": {"type": "string"},
+          "allowed_paths": {"type": "array", "items": {"type": "string"}},
+          "error_contract": {"type": "string"},
+          "result_contract": {"type": "string"},
+          "timeout_seconds": {"type": "integer", "minimum": 1},
+          "evidence_output": {"type": "string"}
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "required": ["network_policy", "write_policy", "prohibited_paths", "no_git_writes", "no_commit_push_deploy", "bounded_tool_turns", "bounded_retries", "no_cross_run_memory"],
+      "properties": {
+        "network_policy": {"const": "none"},
+        "write_policy": {"type": "string"},
+        "prohibited_paths": {"type": "array", "items": {"type": "string"}},
+        "no_git_writes": {"const": true},
+        "no_commit_push_deploy": {"const": true},
+        "bounded_tool_turns": {"type": "integer", "maximum": 3},
+        "bounded_retries": {"type": "string", "description": "parser/recovery only"},
+        "no_cross_run_memory": {"const": true}
+      }
+    },
+    "ordering": {
+      "type": "array",
+      "description": "canonical ordering; task + acceptance criteria before background constraints and context",
+      "items": {"type": "string"},
+      "contains": {"const": "identity"},
+      "minItems": 4
+    },
+    "quality_metrics": {
+      "type": "object",
+      "required": ["task_content_byte_position", "relevant_context_ratio", "governance_noise_count", "critical_file_presence", "path_consistency", "duplicate_content_ratio", "truncation_status", "total_model_visible_tokens", "tool_schema_tokens", "available_output_budget_tokens"]
+    }
+  }
+}

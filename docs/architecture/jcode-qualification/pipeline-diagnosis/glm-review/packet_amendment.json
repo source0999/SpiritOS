@@ -1,0 +1,113 @@
+{
+  "schema_version": "source-proxy.campaign-2j-packet-amendment/v1",
+  "amendment_id": "CAMPAIGN_2J_PACKET_TOOL_LOOP_COMPATIBILITY_AMENDMENT_V1",
+  "precursor_amendment_id": "CAMPAIGN_2J_GATE_9T_PACKET_TOOL_COMPATIBILITY_V1",
+  "campaign": "campaign-2j-jcode-qualification",
+  "gate": "Gate 2-J.9T - Model-Ready Packet, Tool Protocol, and Agent-Loop Qualification",
+  "parent_authorization_id": "OPERATOR_AUTHORIZATION__C2J_PIPELINE_DIAGNOSIS_20260731_V1",
+  "parent_operator_prompt_sha256": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb",
+  "audit_branch": "codex/source-proxy-jcode-pipeline-diagnosis-20260731",
+  "audit_head": "115f4f3343f1aede103e642d6853f2677d2d4a48",
+  "starting_head": "07151b44cb886ac4d8c3668e947e81825d01bd50",
+  "authorization_commit": "c42d62f189542e69112e600c5e0bdef05e2705ac",
+  "glm_review_authorization_sha256": null,
+  "glm_review_authority_basis": "Same operator authorization as the audit, exercised independently as GLM review per the operator review instructions",
+  "effective_status": "PROPOSED_FOR_OPERATOR_ADOPTION",
+  "binding_scope": "audit branch only; not merged into canonical Campaign 2-J branch",
+  "implementation_owner": "Terra High",
+  "review_owner": "GLM",
+  "verdict": "SOL_AUDIT_ACCEPTED_WITH_CORRECTIONS__PACKET_AMENDMENT_READY",
+  "primary_root_cause": "MULTI_FACTOR_FAILURE",
+  "secondary_causes": [
+    "BRIDGE_ROLE_AND_TOOL_LOSS",
+    "BASELINE_OBSERVATION_REINJECTION_FAILURE",
+    "PACKET_BLOAT_TASK_BURIAL_CONTEXT_MISALLOCATION",
+    "UNRECEIPTED_TRUNCATION_RISK",
+    "MISSING_INTAKE_ACCEPTANCE_CRITERIA_AND_TEST_COMPLETENESS",
+    "JCODE_PROMPT_INSTRUCTION_CONFLICT",
+    "ABSENT_FOCUSED_TEST_TOOL",
+    "EVALUATOR_AST_OVERCONSTRAINT",
+    "EVIDENCE_GAPS_E7_BODY_AND_9I_RAW_BYTES"
+  ],
+  "packet_readiness_thresholds": {
+    "relevant_context_ratio_min": 0.40,
+    "first_critical_content_max_bytes": 1024,
+    "unrelated_governance_markers_max": 0,
+    "critical_source_test_presence": 1.0,
+    "path_consistency_packet_mount_dispatcher": 1.0,
+    "critical_truncation_bytes": 0,
+    "output_token_reserve": 1024,
+    "safety_token_reserve": 256,
+    "deterministic_reproduction": true,
+    "paired_lane_byte_identity": true,
+    "threshold_rationale": {
+      "relevant_context_ratio_min": "minimal packets measured 0.455; full packets measured 0.019/0.0164; 0.40 is the observed achievable clean-packet floor",
+      "first_critical_content_max_bytes": "minimal packets place task at byte 26; full packets bury it at ~5807/~6663",
+      "unrelated_governance_markers_max": "minimal packets have 0; full packets have 12; governance text is always noise for a sealed coder task"
+    }
+  },
+  "bridge_contract": {
+    "required_qualification_transport": "ollama /api/chat",
+    "forbidden_qualification_transport": "ollama /api/generate (flattens messages, drops roles/tools/tool_choice)",
+    "production_default_change_before_qualification": false,
+    "evidence": "legacy D/F tools_reached_provider_unchanged=false; corrected s3 true in 4/4 cells"
+  },
+  "agent_loop_contract": {
+    "max_turns": 3,
+    "observation_reinjection_required": true,
+    "no_exit_after_first_tool_unless_complete": true,
+    "recovery_for_available_files": "standardized tool-availability reminder, one bounded recovery turn, no answer reveal"
+  },
+  "tool_dialect": {
+    "canonical_schema": "ONE internal tool-request schema",
+    "accepted_dialects": ["native_openai_tool_calls", "strict_textual_json_envelope"],
+    "textual_envelope_example": {"tool": "read_file", "arguments": {"path": "qualification_fixture/source.py"}},
+    "reject_ambiguous_pseudo_tool_text": true
+  },
+  "focused_test_tool": {
+    "required": true,
+    "sealed_command_only": true,
+    "no_arbitrary_shell": true,
+    "model_may_request_but_not_alter": true
+  },
+  "sub_gates": [
+    {"id": "2-J.9T-A", "objective": "Canonical packet schema + packet-quality validator", "real_requests": false},
+    {"id": "2-J.9T-B", "objective": "Chat-preserving bridge contract", "real_requests": false, "fixture": "fake backend only"},
+    {"id": "2-J.9T-C", "objective": "Native/textual tool normalizer", "real_requests": false, "fixture": "deterministic fixtures only"},
+    {"id": "2-J.9T-D", "objective": "Observation reinjection + bounded agent loop", "real_requests": false, "fixture": "fake model/tool fixtures first"},
+    {"id": "2-J.9T-E", "objective": "Focused-test tool + evaluator alignment", "real_requests": false, "fixture": "qualification fixture only"},
+    {"id": "2-J.9T-F", "objective": "Qwen model compatibility profiles", "real_requests": true, "scope": "small real-model diagnostics"},
+    {"id": "2-J.9T-G", "objective": "Baseline harness qualification", "real_requests": true, "packets": "minimal + corrected"},
+    {"id": "2-J.9T-H", "objective": "JCode compatibility qualification", "real_requests": true, "packets": "minimal + corrected"},
+    {"id": "2-J.9T-I", "objective": "Independent readiness review", "real_requests": false, "automatic_comparison_start": false}
+  ],
+  "readiness_outcomes": [
+    "PACKET_READY", "BRIDGE_READY", "TOOL_DIALECT_READY", "AGENT_LOOP_READY",
+    "FOCUSED_TEST_TOOL_READY", "EVALUATOR_READY", "QWEN_7B_PROFILE_READY",
+    "QWEN_14B_PROFILE_READY", "BASELINE_HARNESS_READY", "JCODE_HARNESS_READY",
+    "MODEL_LIMITED_TO_READ_ONLY", "MODEL_NOT_QUALIFIED_FOR_TOOL_TASKS",
+    "PIPELINE_NOT_READY", "READY_FOR_BOUNDED_COMPARISON_REVIEW"
+  ],
+  "retained_gates": [
+    "Gates 2-J.9B through 2-J.9E Batch 1",
+    "Runtime Gates 2-J.9G-D through 2-J.9H technical acceptance",
+    "Gate 2-J.9I containment/safety-path finding (model-quality attribution refined to EVIDENCE_INCOMPLETE)"
+  ],
+  "blocked_gates": [
+    "Gate 2-J.9T execution", "Gate 2-J.9J", "Gate 2-J.9K",
+    "20-task sealed diagnostics", "80-run comparison", "Campaign 4",
+    "production JCode promotion", "production-default bridge change"
+  ],
+  "anti_cheat": [
+    "immutable tasks", "no expected-answer exposure", "no model-specific rewriting",
+    "no cross-run memory", "no prior-output injection", "no retry with changed prompt",
+    "identical packet bytes across paired lanes", "independent evaluation",
+    "preserved failures", "exact request and packet receipts"
+  ],
+  "glm_review_batches": {
+    "batch_1": ["2-J.9T-A", "2-J.9T-B", "2-J.9T-C", "2-J.9T-D"],
+    "batch_2": ["2-J.9T-E", "2-J.9T-F", "2-J.9T-G", "2-J.9T-H"],
+    "final": "2-J.9T-I readiness decision"
+  },
+  "next_authorized_action": "Operator review and adoption of PACKET_AMENDMENT.md, followed by a prospective Terra High authorization for Gate 2-J.9T-A through Gate 2-J.9T-D only."
+}

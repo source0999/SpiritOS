@@ -1,0 +1,101 @@
+{
+  "schema_version": "source-proxy.campaign-2j-independent-review/v1",
+  "review_verdict": "SOL_AUDIT_ACCEPTED_WITH_CORRECTIONS__PACKET_AMENDMENT_READY",
+  "review_authority_basis": "Independent GLM review authorized by the operator review prompt; reuses the audit operator authorization identity, exercised independently",
+  "review_type": "READ_ONLY_EVIDENCE_REVIEW_PLUS_AMENDMENT_AUTHORING",
+  "audit_repository": "/home/source/SpiritOS-source-proxy-jcode-pipeline-diagnosis-20260731",
+  "audit_branch": "codex/source-proxy-jcode-pipeline-diagnosis-20260731",
+  "audit_head_verified": "115f4f3343f1aede103e642d6853f2677d2d4a48",
+  "audit_head_ahead_behind_upstream": "0/0",
+  "audit_worktree_clean": true,
+  "canonical_campaign_repository": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
+  "canonical_campaign_branch": "codex/source-proxy-jcode-qualification-20260726",
+  "starting_head_verified": "07151b44cb886ac4d8c3668e947e81825d01bd50",
+  "authorization_commit_verified": "c42d62f189542e69112e600c5e0bdef05e2705ac",
+  "operator_prompt_sha256_independently_rehashed": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb",
+  "operator_prompt_hash_matches_reported": true,
+  "runs_independently_verified": 24,
+  "runs_evidence_complete": 23,
+  "runs_evidence_incomplete": 1,
+  "evidence_incomplete_runs": ["s1-r-e-7b"],
+  "evidence_incomplete_reason": "exact request body not captured (E7); honestly declared, no reconstruction performed",
+  "model_request_count_verified": 24,
+  "model_request_budget": 36,
+  "timeouts_verified": 6,
+  "timeout_ledger_ids": ["model-request-08", "model-request-09", "model-request-10", "model-request-12", "model-request-18", "model-request-20"],
+  "retries_verified": 0,
+  "frozen_benchmark_runs_verified": 0,
+  "production_mutations_verified": 0,
+  "daily_runtime_mutations_verified": 0,
+  "models": [
+    {"registry_id": "qwen2.5-coder:7b", "reported_digest": "dae161e2...f4364", "live_ollama_list": "dae161e27b0e...f4364", "matches": true},
+    {"registry_id": "qwen2.5-coder:14b", "reported_digest": "9ec8897f...16849", "live_ollama_list": "9ec8897f747e...16849", "matches": true}
+  ],
+  "jcode_binary": {
+    "path": "/home/source/.codex-audits/jcode-dell-remediation-20260727/approved-binary/jcode",
+    "reported_sha256": "2c59d30e...b3f8ef6",
+    "independently_rehashed": "2c59d30eeebc6d21e0a8a9a3b90af0022e4b92a7f3e6075db082cd256b3f8ef6",
+    "matches": true,
+    "version": "jcode v0.58.51-dev (2444e7b6)"
+  },
+  "claim_verification": {
+    "direct_capability_proven": {"status": "VERIFIED", "basis": "Lane A eval receipts R7B PASS, R14B PASS, W7B PASS"},
+    "textual_tool_attempts_proven": {"status": "VERIFIED", "basis": "s1-r-b-7b message.tool_calls=None, content is JSON text, tool_call_count=0"},
+    "native_tool_incompatibility_proven": {"status": "VERIFIED", "basis": "request carried tools at /api/chat; no native tool_calls returned"},
+    "baseline_loop_reinjection_defect_proven": {"status": "VERIFIED", "basis": "s1-r-c-7b read executed, final_text empty, grounded_answer_fail, loop exited on empty recommended_checks"},
+    "jcode_specific_incompatibility_proven": {"status": "VERIFIED", "basis": "legacy D/F tools_reached_provider_unchanged=false; corrected s3 true 4/4 but 0/4 end-to-end; absent focused-test tool"},
+    "packet_dilution_proven": {"status": "VERIFIED", "basis": "R full 12579B @ 0.019 task@5807; W full 14016B @ 0.0164 task@6663; minimal ~0.455 @ byte 26"},
+    "evaluator_mismatch_proven": {"status": "VERIFIED", "basis": "ran 14B re.sub code against actual focused_check.py: both assertions PASS; AST evaluator rejected import/assignment"}
+  },
+  "claims_accepted_unchanged": [
+    "MULTI_FACTOR_FAILURE verdict",
+    "root-cause tree priorities 1-10",
+    "ruled-out list (raw-model-capability-limit, grounding-limit, path-mismatch, session/default contamination, output-budget-insufficient, model substitution)",
+    "diagnostic matrix",
+    "packet-quality measurements",
+    "bridge/tool-protocol audits",
+    "global-correction counterfactual 4/4 structural 0/4 end-to-end",
+    "retained/blocked gate assignments"
+  ],
+  "claims_accepted_with_correction": [
+    {
+      "claim": "Amendment/gate naming",
+      "sol_value": "CAMPAIGN_2J_GATE_9T_PACKET_TOOL_COMPATIBILITY_V1",
+      "corrected_value": "CAMPAIGN_2J_PACKET_TOOL_LOOP_COMPATIBILITY_AMENDMENT_V1 / Gate 2-J.9T - Model-Ready Packet, Tool Protocol, and Agent-Loop Qualification",
+      "reason": "operator-specified canonical naming; agent-loop dimension was in Sol body but not title"
+    },
+    {
+      "claim": "Gate 2-J.9I model-quality attribution",
+      "status": "Sol already refined correctly; this review ratifies and carries into canonical amendment",
+      "corrected_value": "EVIDENCE_INCOMPLETE, not model incapability; safety-path acceptance unchanged"
+    }
+  ],
+  "claims_rejected": [],
+  "contract_breaks_count": 10,
+  "earliest_global_breaks": ["bridge tool-drop (Lane D/F)", "textual-tool parse failure (Lane B)"],
+  "primary_root_cause_confirmed": "MULTI_FACTOR_FAILURE",
+  "current_readiness": {
+    "packet": "PIPELINE_NOT_READY",
+    "baseline_harness": "PIPELINE_NOT_READY",
+    "jcode": "JCODE_TOOL_COMPATIBILITY_READY=false"
+  },
+  "files_changed_by_review": [
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/PACKET_AMENDMENT.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/packet_amendment.json",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/SOL_AUDIT_INDEPENDENT_REVIEW.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/sol_audit_independent_review.json",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/PACKET_READINESS_ACCEPTANCE_MATRIX.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/packet_readiness_acceptance_matrix.json",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/MODEL_READY_PACKET_SCHEMA.json",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/TOOL_DIALECT_NORMALIZATION_SCHEMA.json",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/AGENT_LOOP_CONTRACT.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/JCODE_COMPATIBILITY_PROFILE.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/QWEN_7B_COMPATIBILITY_PROFILE.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/QWEN_14B_COMPATIBILITY_PROFILE.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/EVALUATOR_ALIGNMENT_CONTRACT.md",
+    "docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/TERRA_HIGH_GATE_2J_9T_HANDOFF.md"
+  ],
+  "source_or_test_or_fixture_or_benchmark_touched": false,
+  "evidence_verifier_reproduced_at_head": true,
+  "next_authorized_action": "Operator review and adoption of PACKET_AMENDMENT.md, followed by a prospective Terra High authorization for Gate 2-J.9T-A through Gate 2-J.9T-D only."
+}

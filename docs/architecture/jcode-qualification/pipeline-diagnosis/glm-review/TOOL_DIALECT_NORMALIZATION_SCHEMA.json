@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-proxy.tool-dialect-normalization/v1",
+  "title": "Canonical Internal Tool-Request Schema",
+  "description": "ONE canonical internal tool-request schema for Gate 2-J.9T section G. Two input dialects normalize into this form.",
+  "type": "object",
+  "required": ["tool", "arguments"],
+  "additionalProperties": false,
+  "properties": {
+    "tool": {
+      "type": "string",
+      "description": "exactly one allowed tool name from the packet tool set",
+      "enum": ["read_file", "write_file", "apply_patch", "focused_test", "list", "find"]
+    },
+    "arguments": {
+      "type": "object",
+      "description": "valid argument schema for the named tool",
+      "additionalProperties": true
+    }
+  },
+  "$comment": "Normalization rules: native_openai_tool_calls normalize unchanged; strict textual JSON normalizes ONLY when it deterministically matches this envelope. Reject ambiguous pseudo-tool text.",
+  "x-accepted-textual-example": {
+    "tool": "read_file",
+    "arguments": {"path": "qualification_fixture/source.py"}
+  },
+  "x-parser-precedence": ["native_openai_tool_calls", "strict_textual_json_envelope"],
+  "x-textual-acceptance-requirements": [
+    "strict JSON (no surrounding executable prose unless explicitly allowed)",
+    "exactly one allowed tool name",
+    "valid argument schema",
+    "no dynamic evaluation",
+    "no arbitrary command extraction"
+  ],
+  "x-handling-policies": {
+    "duplicate_call_handling": "one call per normalization pass, ordered",
+    "malformed_call_handling": "reject plus bounded recovery feedback; never silent acceptance",
+    "multi_call_policy": "execute one, reinject observation, next model turn",
+    "evidence": "every parse decision recorded with parser name and status",
+    "model_feedback": "truthful rejection under the expected role/tool name"
+  }
+}

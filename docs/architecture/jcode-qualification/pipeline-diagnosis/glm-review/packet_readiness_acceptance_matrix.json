@@ -1,0 +1,38 @@
+{
+  "schema_version": "source-proxy.campaign-2j-packet-readiness-matrix/v1",
+  "amendment_id": "CAMPAIGN_2J_PACKET_TOOL_LOOP_COMPATIBILITY_AMENDMENT_V1",
+  "gate": "Gate 2-J.9T",
+  "packet_readiness_rules": [
+    {"rule": "relevant_context_ratio", "threshold": ">=0.40", "current": "FAIL", "measured": 0.019},
+    {"rule": "first_critical_content_position", "threshold": "<=1024 bytes", "current": "FAIL", "measured": 5807},
+    {"rule": "unrelated_governance_markers", "threshold": "0", "current": "FAIL", "measured": 12},
+    {"rule": "critical_source_test_presence", "threshold": "1.0", "current": "PASS", "measured": 1.0},
+    {"rule": "path_consistency_packet_mount_dispatcher", "threshold": "1.0", "current": "PASS", "measured": 1.0},
+    {"rule": "critical_truncation_bytes", "threshold": "0 or proven-noncritical receipt", "current": "UNKNOWN", "measured": "6000-char silent slice"},
+    {"rule": "contradictory_instructions", "threshold": "0", "current": "FAIL", "measured": "JCode 2004-char prompt conflict"},
+    {"rule": "hidden_answer_leakage", "threshold": "0", "current": "PASS", "measured": 0},
+    {"rule": "deterministic_packet_reproduction", "threshold": "byte-identical", "current": "PENDING", "measured": null},
+    {"rule": "paired_lane_packet_identity", "threshold": "identical bytes", "current": "PENDING", "measured": null},
+    {"rule": "context_output_budget_sufficiency", "threshold": "input+1024+256<=context limit", "current": "UNKNOWN", "measured": "E7 4147->4096 token pressure"}
+  ],
+  "component_readiness": {
+    "PACKET_READY": {"proven_by": "2-J.9T-A", "current": "NOT_READY"},
+    "BRIDGE_READY": {"proven_by": "2-J.9T-B", "current": "NOT_READY"},
+    "TOOL_DIALECT_READY": {"proven_by": "2-J.9T-C", "current": "NOT_READY"},
+    "AGENT_LOOP_READY": {"proven_by": "2-J.9T-D", "current": "NOT_READY"},
+    "FOCUSED_TEST_TOOL_READY": {"proven_by": "2-J.9T-E", "current": "NOT_READY"},
+    "EVALUATOR_READY": {"proven_by": "2-J.9T-E", "current": "NOT_READY"},
+    "QWEN_7B_PROFILE_READY": {"proven_by": "2-J.9T-F", "current": "NOT_READY"},
+    "QWEN_14B_PROFILE_READY": {"proven_by": "2-J.9T-F", "current": "NOT_READY"},
+    "BASELINE_HARNESS_READY": {"proven_by": "2-J.9T-G", "current": "NOT_READY"},
+    "JCODE_HARNESS_READY": {"proven_by": "2-J.9T-H", "current": "NOT_READY"},
+    "READY_FOR_BOUNDED_COMPARISON_REVIEW": {"proven_by": "2-J.9T-I", "current": "NOT_READY"}
+  },
+  "advancement_gates": {
+    "20_task_sealed_diagnostics": {"requires": "all readiness outcomes pass + operator authorization", "current": "BLOCKED"},
+    "80_run_comparison": {"requires": "independent reviewer accepts 2-J.9T + READY_FOR_BOUNDED_COMPARISON_REVIEW", "current": "BLOCKED"},
+    "campaign_4": {"requires": "2-J.9T accepted + 2-J.9J/9K closed", "current": "BLOCKED"},
+    "production_jcode_promotion": {"requires": "full 2-J.9T pass + explicit production authorization", "current": "BLOCKED"},
+    "production_default_bridge_change": {"requires": "2-J.9T qualification pass", "current": "BLOCKED"}
+  }
+}

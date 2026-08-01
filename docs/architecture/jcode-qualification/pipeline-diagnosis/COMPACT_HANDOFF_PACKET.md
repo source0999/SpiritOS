@@ -103,3 +103,55 @@ implement a concise packet, native-plus-Qwen-text tool parser, productive-read
 observation reinjection, one sealed focused-test tool, and behaviorally aligned
 evaluator. Rerun only the minimal qualification cells. Do not merge this branch
 or start 2-J.9J/9K, 20-task, 80-run, production, deployment, or Campaign 4 work.
+
+---
+
+## GLM Independent Review (2026-08-01)
+
+Verdict: `SOL_AUDIT_ACCEPTED_WITH_CORRECTIONS__PACKET_AMENDMENT_READY`.
+
+The independent GLM review re-verified operator prompt hash, starting/final
+HEAD, both model digests (live `ollama list`), the JCode binary hash+version
+(live), reproduced the executable evidence verifier at HEAD (`passed: true`,
+24 runs/24 requests/6 timeouts/1 declared gap), and re-inspected raw evidence
+for all load-bearing lanes. The 14B `re.sub` solution was run against the actual
+`focused_check.py` — both assertions PASS — confirming `VERIFIER_EXPECTATION_MISMATCH`.
+
+One correction: adopt canonical amendment ID
+`CAMPAIGN_2J_PACKET_TOOL_LOOP_COMPATIBILITY_AMENDMENT_V1` and gate
+`Gate 2-J.9T — Model-Ready Packet, Tool Protocol, and Agent-Loop Qualification`
+(operator-specified naming; agent-loop dimension made explicit in the title).
+All Sol thresholds retained with explicit justification.
+
+Canonical controlling spec + supporting artifacts:
+`docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/PACKET_AMENDMENT.md`
+and 13 supporting files in the same `glm-review/` directory. Sols precursor
+
+---
+
+## GLM Independent Review (2026-08-01)
+
+Verdict: SOL_AUDIT_ACCEPTED_WITH_CORRECTIONS__PACKET_AMENDMENT_READY.
+
+The independent GLM review re-verified operator prompt hash, starting/final
+HEAD, both model digests (live ollama list), the JCode binary hash+version
+(live), reproduced the executable evidence verifier at HEAD (passed: true,
+24 runs/24 requests/6 timeouts/1 declared gap), and re-inspected raw evidence
+for all load-bearing lanes. The 14B re.sub solution was run against the actual
+focused_check.py — both assertions PASS — confirming VERIFIER_EXPECTATION_MISMATCH.
+
+One correction: adopt canonical amendment ID
+CAMPAIGN_2J_PACKET_TOOL_LOOP_COMPATIBILITY_AMENDMENT_V1 and gate
+Gate 2-J.9T — Model-Ready Packet, Tool Protocol, and Agent-Loop Qualification
+(operator-specified naming; agent-loop dimension made explicit in the title).
+All Sol thresholds retained with explicit justification.
+
+Canonical controlling spec + supporting artifacts:
+docs/architecture/jcode-qualification/pipeline-diagnosis/glm-review/PACKET_AMENDMENT.md
+and 13 supporting files in the same glm-review/ directory. Sol's precursor
+draft (CAMPAIGN_2J_PACKET_TOOL_COMPATIBILITY_AMENDMENT.md) is retained as
+audit evidence.
+
+Next authorized action unchanged:
+Operator review and adoption of PACKET_AMENDMENT.md, followed by a prospective
+Terra High authorization for Gate 2-J.9T-A through Gate 2-J.9T-D only.
