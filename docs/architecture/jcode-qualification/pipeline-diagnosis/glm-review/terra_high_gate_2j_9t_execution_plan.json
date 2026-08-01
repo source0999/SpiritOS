@@ -1,0 +1,137 @@
+{
+  "schema_version": "source-proxy.campaign-2j-terra-high-execution-plan/v1",
+  "amendment_id": "CAMPAIGN_2J_PACKET_TOOL_LOOP_COMPATIBILITY_AMENDMENT_V1",
+  "gate": "Gate 2-J.9T",
+  "current_state": "PACKET_AMENDMENT_ACCEPTED",
+  "implementation_state": "IMPLEMENTATION_NOT_STARTED",
+  "real_model_requests_batch_1": 0,
+  "stop_boundary": "INDEPENDENT_GLM_REVIEW_AFTER_2J_9T_D",
+  "batches": [
+    {
+      "batch_id": "batch-1",
+      "name": "Core packet and loop foundation",
+      "gate_coverage": ["2-J.9T-A", "2-J.9T-B", "2-J.9T-C", "2-J.9T-D"],
+      "real_model_requests": 0,
+      "glm_review_after": true,
+      "global_acceptance_outcomes": ["PACKET_READY", "BRIDGE_READY", "TOOL_DIALECT_READY", "AGENT_LOOP_READY"],
+      "goals": [
+        {
+          "goal_id": "2-J.9T-A",
+          "position": "1/4",
+          "objective": "Canonical Model-Ready Packet Schema and Quality Validator",
+          "user_visible_outcome": "Packet builder emits one canonical serialized packet + validator reports PASS/FAIL on all quality metrics",
+          "dependencies": [],
+          "source_files_to_inspect": ["source_proxy/context/canonical_broker.py", "source_proxy/context/source_readiness.py", "source_proxy/decision/prompt_packet.py", "source_proxy/tests/test_prompt_packet_context_metadata.py"],
+          "permitted_paths": ["source_proxy/context/model_ready_packet.py", "source_proxy/context/packet_quality_validator.py", "source_proxy/tests/test_model_ready_packet.py", "source_proxy/tests/fixtures/model_ready_packet/**"],
+          "forbidden_paths": ["benchmarks/**", "qualification_fixture/**", "fixture_proxy/**", "production prompt-packet path", "daily-runtime worktrees"],
+          "schema_ref": "glm-review/MODEL_READY_PACKET_SCHEMA.json",
+          "real_model_requests_allowed": false,
+          "acceptance": {
+            "relevant_context_ratio_min": 0.40,
+            "first_critical_content_max_bytes": 1024,
+            "unrelated_governance_markers_max": 0,
+            "all_required_files_present": true,
+            "paths_equal_sandbox": true,
+            "deterministic_packet_bytes": true,
+            "deterministic_packet_hash": true,
+            "no_hidden_answer_leakage": true,
+            "paired_lane_identical_bytes": true
+          },
+          "controlled_failures": ["missing task", "missing acceptance criteria", "missing source", "missing test", "path mismatch", "relevance below threshold", "governance contamination", "contradictory instruction", "truncated critical content", "duplicate packet sections", "nondeterministic ordering", "hidden-answer marker"],
+          "commit_message": "feat(c2j-9ta): model-ready packet schema and validator",
+          "next_authorized_goal": "2-J.9T-B"
+        },
+        {
+          "goal_id": "2-J.9T-B",
+          "position": "2/4",
+          "objective": "Chat-Preserving Bridge Contract",
+          "user_visible_outcome": "Qualification bridge byte-for-byte equivalent (modulo documented provider normalization) between pre-bridge and model-visible structures, behind a disabled qualification flag",
+          "dependencies": ["2-J.9T-A"],
+          "source_files_to_inspect": ["source_proxy/jcode/inference_bridge.py", "source_proxy/jcode/real_inference_bridge.py", "source_proxy/jcode/sealed_compatibility_bridge.py", "source_proxy/jcode/pipeline_diagnosis.py", "source_proxy/jcode/network_bridge.py"],
+          "permitted_paths": ["source_proxy/jcode/qualification_bridge.py", "source_proxy/tests/test_qualification_bridge.py", "source_proxy/tests/fixtures/qualification_bridge/**"],
+          "forbidden_paths": ["production bridge", "benchmarks/**", "qualification_fixture/**", "fixture_proxy/**", "daily-runtime worktrees"],
+          "real_model_requests_allowed": false,
+          "fake_backend_only": true,
+          "preserved_fields": ["message roles", "message order", "tool schemas", "tool choice", "model identity", "generation parameters", "tool-result role and name", "streaming tool fragments", "finish reason", "usage"],
+          "required_transport": "ollama /api/chat (chat-preserving)",
+          "production_default_change": false,
+          "controlled_failures": ["dropped system role", "reordered messages", "missing tools", "changed tool name", "removed required field", "changed model", "fallback", "malformed streaming fragment", "incomplete tool call", "wrong tool-result role", "wrong result name", "missing finish reason", "truncated stream"],
+          "acceptance": "pre-bridge and model-visible structures semantically AND structurally equivalent except explicitly documented provider normalization; legacy/production default untouched",
+          "commit_message": "feat(c2j-9tb): chat-preserving qualification bridge",
+          "next_authorized_goal": "2-J.9T-C"
+        },
+        {
+          "goal_id": "2-J.9T-C",
+          "position": "3/4",
+          "objective": "Native and Textual Tool-Dialect Normalization",
+          "user_visible_outcome": "Normalizer with parser precedence (native first, then strict textual) emitting canonical schema and rejecting ambiguous text",
+          "dependencies": ["2-J.9T-B"],
+          "source_files_to_inspect": ["source_proxy/jcode/adapter.py", "source_proxy/jcode/canonical_io.py", "source_proxy/jcode/event_schema.py", "glm-review/TOOL_DIALECT_NORMALIZATION_SCHEMA.json"],
+          "permitted_paths": ["source_proxy/jcode/tool_dialect_normalizer.py", "source_proxy/tests/test_tool_dialect_normalizer.py", "source_proxy/tests/fixtures/tool_dialect/**"],
+          "forbidden_paths": ["benchmarks/**", "qualification_fixture/**", "fixture_proxy/**", "production routing", "daily-runtime worktrees"],
+          "real_model_requests_allowed": false,
+          "deterministic_fixtures_only": true,
+          "canonical_schema_ref": "glm-review/TOOL_DIALECT_NORMALIZATION_SCHEMA.json",
+          "accepted_textual_envelopes": [{"tool":"read_file","arguments":{"path":"qualification_fixture/source.py"}}, {"name":"read_file","arguments":{"path":"qualification_fixture/source.py"}}],
+          "reject": ["prose with embedded JSON", "ambiguous multiple objects", "unknown tool", "invalid arguments", "executable code extraction", "shell strings", "markdown examples", "malformed JSON", "unapproved paths"],
+          "evidence_required": ["raw model output hash", "parser selected", "normalized tool request", "validation result", "rejection reason", "authorization result"],
+          "commit_message": "feat(c2j-9tc): tool-dialect normalizer",
+          "next_authorized_goal": "2-J.9T-D"
+        },
+        {
+          "goal_id": "2-J.9T-D",
+          "position": "4/4",
+          "objective": "Observation Reinjection and Bounded Agent Loop",
+          "user_visible_outcome": "Bounded loop that after a productive tool call returns the observation to the model and continues until final answer / verified completion / cancellation / timeout / budget stop",
+          "dependencies": ["2-J.9T-C"],
+          "source_files_to_inspect": ["glm-review/AGENT_LOOP_CONTRACT.md", "source_proxy/jcode/supervision.py", "source_proxy/jcode/pipeline_diagnosis.py"],
+          "permitted_paths": ["source_proxy/jcode/bounded_agent_loop.py", "source_proxy/tests/test_bounded_agent_loop.py", "source_proxy/tests/fixtures/agent_loop/**"],
+          "forbidden_paths": ["benchmarks/**", "qualification_fixture/**", "fixture_proxy/**", "production routing", "daily-runtime worktrees"],
+          "real_model_requests_allowed": false,
+          "fake_model_fixtures_first": true,
+          "loop_contract_ref": "glm-review/AGENT_LOOP_CONTRACT.md",
+          "max_turns": 3,
+          "recovery_rule": "do NOT terminate when model asks for available files; return standardized reminder with exact tool names and files; preserve task/context; permit ONE recovery turn; fail truthfully if still refused; do NOT reveal answer",
+          "controlled_failures": ["first tool succeeds then loop exits early", "observation not reinjected", "wrong role", "wrong tool name", "duplicate call", "tool error", "malformed tool output", "recovery reminder ignored", "turn budget exhausted", "tool budget exhausted", "timeout", "cancellation", "missing final response", "incomplete evidence"],
+          "acceptance": "after productive read the observation is reinjected and the model gets another turn; <=3 turns; every turn/tool recorded; all controlled failures fail truthfully; recovery rule implemented",
+          "commit_message": "feat(c2j-9td): bounded agent loop with observation reinjection",
+          "next_authorized_action": "STOP. Produce GLM_REVIEW_PACKET_GATE_2J_9T_A_TO_D. Do NOT begin Batch 2."
+        }
+      ]
+    },
+    {
+      "batch_id": "batch-2",
+      "name": "Validation, profiles, and harness readiness",
+      "gate_coverage": ["2-J.9T-E", "2-J.9T-F", "2-J.9T-G", "2-J.9T-H"],
+      "real_model_requests": "bounded per goal under separate operator authorization",
+      "glm_review_after": true,
+      "not_authorized_until": "Batch-1 GLM review accepts AND operator authorizes Batch 2",
+      "goals": [
+        {"goal_id": "2-J.9T-E", "position": "1/4", "objective": "Focused-Test Tool and Evaluator Alignment", "real_model_requests_allowed": false, "fixture_scope": "qualification fixture only"},
+        {"goal_id": "2-J.9T-F", "position": "2/4", "objective": "Qwen 7B and Qwen 14B Compatibility Profiles", "real_model_requests_allowed": true, "scope": "small real-model diagnostics"},
+        {"goal_id": "2-J.9T-G", "position": "3/4", "objective": "Baseline Harness Qualification", "real_model_requests_allowed": true, "packets": "minimal + corrected"},
+        {"goal_id": "2-J.9T-H", "position": "4/4", "objective": "JCode Harness Qualification", "real_model_requests_allowed": true, "packets": "minimal + corrected"}
+      ]
+    },
+    {
+      "batch_id": "final-review",
+      "name": "Independent Readiness Decision",
+      "gate_coverage": ["2-J.9T-I"],
+      "real_model_requests": 0,
+      "automatic_comparison_start": false,
+      "decision": "READY_FOR_BOUNDED_COMPARISON_REVIEW only if every readiness outcome passes"
+    }
+  ],
+  "required_batch1_glm_review_packet": ["GLM_REVIEW_PACKET_GATE_2J_9T_A_TO_D.md", "glm_review_packet_gate_2j_9t_a_to_d.json"],
+  "hard_boundaries": [
+    "no real model requests in Batch 1",
+    "no benchmark access",
+    "no daily-runtime mutation",
+    "no production-default change",
+    "no Campaign 4 advancement",
+    "no 2-J.9J/9K, 20-task, or 80-run start",
+    "explicit-path staging only; git add -A prohibited",
+    "no merge, no force-push"
+  ],
+  "terra_high_stop_for": ["model/provider expansion", "new write scope", "network expansion", "containment weakening", "benchmark access", "campaign advancement", "missing evidence", "scope ambiguity"]
+}
