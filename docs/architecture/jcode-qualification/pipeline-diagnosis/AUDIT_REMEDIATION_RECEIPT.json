@@ -1,0 +1,85 @@
+{
+  "schema_version": "source-proxy.audit-remediation-receipt/v1",
+  "receipt_type": "AUDIT_REMEDIATION_RECEIPT",
+  "remediation_id": "C2J-GLOBAL-CORRECTION-01",
+  "recorded_at": "2026-08-01T00:29:14Z",
+  "authorization": {
+    "authorization_id": "OPERATOR_AUTHORIZATION__C2J_PIPELINE_DIAGNOSIS_20260731_V1",
+    "operator_prompt_sha256": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb",
+    "receipt": "docs/architecture/jcode-qualification/pipeline-diagnosis/OPERATOR_AUTHORIZATION_RECEIPT.json"
+  },
+  "selection_head": "a28365a5bbe9cf3b7d8d13eed23ec6b571ee3e0a",
+  "correction": {
+    "name": "lossless_openai_chat_to_ollama_chat_bridge_profile",
+    "scope": "isolated diagnostic bridge only",
+    "activation": "--bridge-mode tool_preserving",
+    "default_behavior_changed": false,
+    "production_behavior_changed": false,
+    "implementation": {
+      "path": "source_proxy/jcode/pipeline_diagnosis.py",
+      "sha256": "218b2433d1400fa2ec9f0f5e3fb8429caefbaf0e74c0c67f5d589feec47fa0f6",
+      "symbols": [
+        "tool_preserving_bridge_transform",
+        "openai_sse_response",
+        "DiagnosticBridgeServer"
+      ]
+    },
+    "semantic_change": [
+      "Preserve ordered OpenAI messages and their roles.",
+      "Preserve declared tool names, descriptions, JSON schemas, and required fields.",
+      "Translate the request to Ollama /api/chat instead of flattening it into /api/generate.",
+      "Map tool result messages to the originating tool name.",
+      "Reconstruct Ollama assistant content or native tool calls as OpenAI-compatible SSE."
+    ]
+  },
+  "causal_basis": [
+    {
+      "root_cause_class": "TOOL_SCHEMA_DROPPED",
+      "evidence": "All legacy JCode D/F receipts show tools before the bridge and an empty backend tool list after it."
+    },
+    {
+      "root_cause_class": "PROVIDER_ROLE_TRANSLATION_FAILURE",
+      "evidence": "All legacy JCode D/F receipts show ordered OpenAI roles before the bridge and no roles at the Ollama generate boundary."
+    },
+    {
+      "root_cause_class": "BRIDGE_REQUEST_TRANSFORMATION_FAILURE",
+      "evidence": "Both models pass read grounding in Lane A and formulate write solutions, while every legacy JCode cell fails before a tool action."
+    }
+  ],
+  "held_constant": [
+    "task text",
+    "acceptance criteria",
+    "fixture bytes",
+    "context bytes",
+    "model registry IDs and digests",
+    "generation parameters",
+    "JCode binary and hash",
+    "fresh worktree, overlay, HOME, JCODE_HOME, and session policy",
+    "network and mutation containment",
+    "three-turn per-run limit",
+    "no fallback policy"
+  ],
+  "confirmation_plan": {
+    "maximum_runs": 4,
+    "maximum_additional_model_requests": 12,
+    "request_budget_before_confirmation": 20,
+    "request_budget_total_limit": 36,
+    "runs": [
+      {"run_id": "s3-r-dtp-7b", "task": "R", "lane": "D", "model": "qwen2.5-coder:7b"},
+      {"run_id": "s3-r-dtp-14b", "task": "R", "lane": "D", "model": "qwen2.5-coder:14b"},
+      {"run_id": "s3-w-dtp-7b", "task": "W", "lane": "D", "model": "qwen2.5-coder:7b"},
+      {"run_id": "s3-w-dtp-14b", "task": "W", "lane": "D", "model": "qwen2.5-coder:14b"}
+    ]
+  },
+  "success_interpretation": "Consistent provider-visible role/tool preservation plus new tool execution or grounded behavior supports the bridge correction. Full write-task qualification still requires a focused-test capability.",
+  "failure_interpretation": "No improvement despite lossless transmission would move primary causality downstream to Qwen tool dialect, JCode response recovery, or the agent loop.",
+  "prohibited": [
+    "task-specific prompt tuning",
+    "expected-answer insertion",
+    "production activation",
+    "frozen benchmark execution",
+    "cloud model use",
+    "model substitution",
+    "direct JCode-to-Ollama access"
+  ]
+}
