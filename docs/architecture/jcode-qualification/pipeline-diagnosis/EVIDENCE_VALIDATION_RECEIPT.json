@@ -1,0 +1,31 @@
+{
+  "schema_version": "source-proxy.pipeline-diagnosis-evidence-validation/v1",
+  "generated_at_utc": "2026-08-01T01:01:17Z",
+  "repository_head_verified": "0f11057216fd6465061780d4ea9e866ebbea33aa",
+  "passed": true,
+  "errors": [],
+  "run_count": 24,
+  "model_request_count": 24,
+  "request_finish_count": 24,
+  "request_budget_limit": 36,
+  "maximum_observed_turns_per_run": 1,
+  "request_journal_entry_count": 15,
+  "timeout_ledger_ids": [
+    "model-request-08",
+    "model-request-09",
+    "model-request-10",
+    "model-request-12",
+    "model-request-18",
+    "model-request-20"
+  ],
+  "accepted_capture_gaps": [
+    {
+      "run_id": "s1-r-e-7b",
+      "ledger_id": "model-request-09",
+      "request_sha256": "012dca829c142c73c10e7143cae6b072164df829fc3e3890f5798b0778717102",
+      "classification": "EVIDENCE_INCOMPLETE"
+    }
+  ],
+  "frozen_benchmark_runs": 0,
+  "verification_command": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726/.venv-source-proxy/bin/python scripts/coding/run-jcode-pipeline-diagnosis.py verify-evidence"
+}

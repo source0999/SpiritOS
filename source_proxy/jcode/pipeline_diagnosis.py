@@ -2115,6 +2115,202 @@ def seal_interrupted_run_from_ledger(
     }
 
 
+def verify_diagnostic_evidence(root: Path | None = None) -> dict[str, Any]:
+    """Verify run seals, request accounting, exact identities, and declared capture gaps."""
+    repo = (root or repository_root()).resolve()
+    evidence_root = diagnosis_root(repo)
+    errors: list[str] = []
+    ledger_path = evidence_root / "MODEL_REQUEST_LEDGER.ndjson"
+    events: list[dict[str, Any]] = []
+    if not ledger_path.is_file():
+        errors.append("model_request_ledger_missing")
+    else:
+        for line_number, line in enumerate(ledger_path.read_text(encoding="utf-8").splitlines(), start=1):
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                errors.append(f"model_request_ledger_invalid_json:{line_number}")
+                continue
+            if not isinstance(event, dict):
+                errors.append(f"model_request_ledger_event_not_object:{line_number}")
+                continue
+            events.append(event)
+    starts = [event for event in events if event.get("event") == "request_started"]
+    finishes = [event for event in events if event.get("event") == "request_finished"]
+    start_ids = [str(event.get("ledger_id") or "") for event in starts]
+    finish_ids = [str(event.get("ledger_id") or "") for event in finishes]
+    if len(start_ids) != len(set(start_ids)):
+        errors.append("model_request_started_id_duplicate")
+    if len(finish_ids) != len(set(finish_ids)):
+        errors.append("model_request_finished_id_duplicate")
+    if set(start_ids) != set(finish_ids):
+        errors.append("model_request_start_finish_mismatch")
+    if len(starts) > MODEL_REQUEST_LIMIT:
+        errors.append("model_request_budget_exceeded")
+    for event in starts:
+        model_name = str(event.get("model") or "")
+        if model_name not in MODEL_SPECS:
+            errors.append(f"model_request_unauthorized_model:{model_name}")
+        elif event.get("model_digest") != MODEL_SPECS[model_name]["digest"]:
+            errors.append(f"model_request_digest_mismatch:{event.get('ledger_id')}")
+
+    journal_by_id: dict[str, dict[str, Any]] = {}
+    journal_dir = evidence_root / "request-journal"
+    if journal_dir.is_dir():
+        for path in sorted(journal_dir.glob("model-request-*.json")):
+            try:
+                entry = json.loads(path.read_text(encoding="utf-8"))
+                raw = base64.b64decode(str(entry.get("request_bytes_base64") or ""), validate=True)
+            except (json.JSONDecodeError, ValueError):
+                errors.append(f"request_journal_unreadable:{path.name}")
+                continue
+            ledger_id = str(entry.get("ledger_id") or "")
+            if ledger_id in journal_by_id:
+                errors.append(f"request_journal_duplicate:{ledger_id}")
+            if sha256_bytes(raw) != entry.get("request_sha256"):
+                errors.append(f"request_journal_hash_mismatch:{ledger_id}")
+            if raw != canonical_json(entry.get("request_body")).encode("utf-8"):
+                errors.append(f"request_journal_body_mismatch:{ledger_id}")
+            journal_by_id[ledger_id] = entry
+
+    run_dirs = sorted(path for path in (evidence_root / "runs").glob("*") if path.is_dir())
+    run_request_total = 0
+    run_request_counts: dict[str, int] = {}
+    accepted_capture_gaps: list[dict[str, Any]] = []
+    run_ids: set[str] = set()
+    for run_dir in run_dirs:
+        run_id = run_dir.name
+        run_ids.add(run_id)
+        hashes_path = run_dir / "hashes.json"
+        if not hashes_path.is_file():
+            errors.append(f"run_hash_manifest_missing:{run_id}")
+            continue
+        try:
+            hash_manifest = json.loads(hashes_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            errors.append(f"run_hash_manifest_invalid:{run_id}")
+            continue
+        declared = hash_manifest.get("files") if isinstance(hash_manifest.get("files"), dict) else {}
+        actual_names = {path.name for path in run_dir.iterdir() if path.is_file() and path.name != "hashes.json"}
+        if set(declared) != actual_names:
+            errors.append(f"run_hash_manifest_file_set_mismatch:{run_id}")
+        for name, metadata in declared.items():
+            path = run_dir / name
+            if not path.is_file() or not isinstance(metadata, Mapping):
+                errors.append(f"run_hash_target_missing:{run_id}:{name}")
+                continue
+            if sha256_file(path) != metadata.get("sha256") or path.stat().st_size != metadata.get("bytes"):
+                errors.append(f"run_hash_mismatch:{run_id}:{name}")
+        evaluation_path = run_dir / "evaluation_receipt.json"
+        packet_path = run_dir / "exact_model_visible_packet.json"
+        if not evaluation_path.is_file() or not packet_path.is_file():
+            errors.append(f"run_core_receipt_missing:{run_id}")
+            continue
+        try:
+            evaluation = json.loads(evaluation_path.read_text(encoding="utf-8"))
+            packet = json.loads(packet_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            errors.append(f"run_core_receipt_invalid:{run_id}")
+            continue
+        if evaluation.get("run_id") != run_id or packet.get("run_id") != run_id:
+            errors.append(f"run_identity_mismatch:{run_id}")
+        model_name = str(evaluation.get("model") or "")
+        if model_name not in MODEL_SPECS or evaluation.get("model_digest") != MODEL_SPECS.get(model_name, {}).get("digest"):
+            errors.append(f"run_model_identity_mismatch:{run_id}")
+        request_count = int(evaluation.get("model_request_count") or 0)
+        run_request_total += request_count
+        run_request_counts[run_id] = request_count
+        if request_count > MAX_TURNS_PER_RUN:
+            errors.append(f"run_turn_budget_exceeded:{run_id}")
+
+    starts_by_run: dict[str, list[dict[str, Any]]] = {}
+    for event in starts:
+        starts_by_run.setdefault(str(event.get("run_id") or ""), []).append(event)
+    for run_id in run_ids:
+        if len(starts_by_run.get(run_id, [])) != run_request_counts.get(run_id, 0):
+            errors.append(f"run_request_count_mismatch:{run_id}")
+    for ledger_id in journal_by_id:
+        if ledger_id not in set(start_ids):
+            errors.append(f"request_journal_without_ledger_start:{ledger_id}")
+    for run_id, run_starts in starts_by_run.items():
+        if run_id not in run_ids:
+            errors.append(f"request_run_receipt_missing:{run_id}")
+            continue
+        packet_path = evidence_root / "runs" / run_id / "exact_model_visible_packet.json"
+        packet = json.loads(packet_path.read_text(encoding="utf-8"))
+        hashes = list(packet.get("backend_request_sha256") or [])
+        encoded_requests = list(packet.get("backend_request_bytes_base64") or [])
+        for start in run_starts:
+            ledger_id = str(start.get("ledger_id") or "")
+            request_hash = str(start.get("request_sha256") or "")
+            exact_request_available = False
+            journal = journal_by_id.get(ledger_id)
+            if journal is not None:
+                exact_request_available = journal.get("request_sha256") == request_hash
+            if not exact_request_available:
+                for index, observed_hash in enumerate(hashes):
+                    if observed_hash != request_hash or index >= len(encoded_requests) or not encoded_requests[index]:
+                        continue
+                    try:
+                        raw = base64.b64decode(str(encoded_requests[index]), validate=True)
+                    except ValueError:
+                        continue
+                    if sha256_bytes(raw) == request_hash:
+                        exact_request_available = True
+                        break
+            if exact_request_available:
+                continue
+            evaluation = json.loads(
+                (evidence_root / "runs" / run_id / "evaluation_receipt.json").read_text(encoding="utf-8")
+            )
+            erratum = evidence_root / "runs" / run_id / "instrumentation_erratum.json"
+            if evaluation.get("evidence_completeness") == "EVIDENCE_INCOMPLETE" and erratum.is_file():
+                accepted_capture_gaps.append(
+                    {
+                        "run_id": run_id,
+                        "ledger_id": ledger_id,
+                        "request_sha256": request_hash,
+                        "classification": "EVIDENCE_INCOMPLETE",
+                    }
+                )
+            else:
+                errors.append(f"exact_request_capture_missing:{run_id}:{ledger_id}")
+
+    if run_request_total != len(starts):
+        errors.append("run_and_ledger_request_count_mismatch")
+    timeout_ids = [
+        str(event.get("ledger_id") or "")
+        for event in finishes
+        if str(event.get("error") or "").startswith("TimeoutError:")
+    ]
+    return {
+        "schema_version": "source-proxy.pipeline-diagnosis-evidence-validation/v1",
+        "passed": not errors,
+        "errors": errors,
+        "run_count": len(run_dirs),
+        "model_request_count": len(starts),
+        "request_finish_count": len(finishes),
+        "request_budget_limit": MODEL_REQUEST_LIMIT,
+        "maximum_observed_turns_per_run": max(
+            [
+                int(
+                    json.loads((run_dir / "evaluation_receipt.json").read_text(encoding="utf-8")).get(
+                        "model_request_count"
+                    )
+                    or 0
+                )
+                for run_dir in run_dirs
+                if (run_dir / "evaluation_receipt.json").is_file()
+            ],
+            default=0,
+        ),
+        "request_journal_entry_count": len(journal_by_id),
+        "accepted_capture_gaps": accepted_capture_gaps,
+        "timeout_ledger_ids": timeout_ids,
+        "frozen_benchmark_runs": 0,
+    }
+
+
 def run_diagnostic(
     *,
     run_id: str,

@@ -12,6 +12,7 @@ from source_proxy.jcode.pipeline_diagnosis import (
     seal_interrupted_run_from_ledger,
     seal_jcode_capture_preflight,
     seal_matrix_manifest,
+    verify_diagnostic_evidence,
 )
 
 
@@ -21,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("seal-manifest", help="Seal the immutable task and matrix manifest.")
     subparsers.add_parser("preflight", help="Capture JCode packets without a real model request.")
+    subparsers.add_parser("verify-evidence", help="Verify all sealed run and request evidence.")
 
     run = subparsers.add_parser("run", help="Execute one fresh, bounded diagnostic cell.")
     run.add_argument("--run-id", required=True)
@@ -50,6 +52,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = seal_matrix_manifest()
     elif args.command == "preflight":
         result = seal_jcode_capture_preflight()
+    elif args.command == "verify-evidence":
+        result = verify_diagnostic_evidence()
     elif args.command == "seal-interrupted":
         result = seal_interrupted_run_from_ledger(
             run_id=args.run_id,
@@ -66,6 +70,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             bridge_mode=args.bridge_mode,
         )
     print(canonical_json(result), end="")
+    if args.command == "verify-evidence" and result.get("passed") is not True:
+        return 1
     return 0
 
 

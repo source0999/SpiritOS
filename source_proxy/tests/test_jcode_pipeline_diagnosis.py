@@ -26,6 +26,7 @@ from source_proxy.jcode.pipeline_diagnosis import (
     task_definition,
     tool_preserving_bridge_transform,
     tool_schemas,
+    verify_diagnostic_evidence,
 )
 
 
@@ -376,6 +377,15 @@ def test_run_timeout_seals_complete_failure_evidence(
     assert capture["status"] == "COMPLETE"
     assert packet["backend_requests"][0]["model"] == "qwen2.5-coder:7b"
     assert (run_dir / "hashes.json").is_file()
+    verification = verify_diagnostic_evidence(tmp_path)
+    assert verification["passed"] is True
+    assert verification["run_count"] == 1
+    assert verification["model_request_count"] == 1
+
+    (run_dir / "raw_model_response.json").write_text("{}", encoding="utf-8")
+    tampered = verify_diagnostic_evidence(tmp_path)
+    assert tampered["passed"] is False
+    assert any(error.startswith("run_hash_mismatch:") for error in tampered["errors"])
 
 
 @pytest.mark.parametrize("value", ["", ".", "../x", "/tmp/x", "a/../b"])

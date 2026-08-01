@@ -1,0 +1,219 @@
+{
+  "schema_version": "source-proxy.pipeline-root-cause-tree/v1",
+  "verdict": "MULTI_FACTOR_FAILURE",
+  "first_controlled_failure": "MODEL_TOOL_DIALECT_INCOMPATIBILITY",
+  "first_jcode_specific_failure": "TOOL_SCHEMA_DROPPED",
+  "issues": [
+    {
+      "id": "RC-01",
+      "classes": [
+        "TOOL_SCHEMA_DROPPED",
+        "PROVIDER_ROLE_TRANSLATION_FAILURE",
+        "BRIDGE_REQUEST_TRANSFORMATION_FAILURE"
+      ],
+      "symptom": "JCode proposes roles, tool_choice, and tools, but every legacy D/F Ollama request contains one prompt and no tools.",
+      "causal_evidence": [
+        "JCODE_PACKET_CAPTURE_PREFLIGHT.json captures system,user,user plus exact native schemas before the bridge.",
+        "All eight pre-correction D/F run packets show empty backend tools and flattened /api/generate prompts."
+      ],
+      "counterfactual_test": "C2J-GLOBAL-CORRECTION-01 preserves messages/tools through /api/chat in all four confirmation cells.",
+      "confidence": 1.0,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b"],
+      "affected_lanes": ["D", "F"],
+      "recommended_correction": "Use a sealed role/tool-preserving chat translation and retain exact request/response receipts.",
+      "correction_owner": ["bridge", "JCode adapter"]
+    },
+    {
+      "id": "RC-02",
+      "classes": [
+        "MODEL_TOOL_DIALECT_INCOMPATIBILITY",
+        "TOOL_CALL_PARSE_FAILURE",
+        "MODEL_PROFILE_MISCONFIGURATION"
+      ],
+      "symptom": "Both Qwen models express valid read intent as bare or fenced assistant-text JSON; native-only parsers record zero calls.",
+      "causal_evidence": [
+        "All four Lane B cells receive unchanged native schemas and return text JSON read_file requests.",
+        "Three of four corrected JCode cells return fenced text JSON read requests while Ollama and JCode report zero native calls."
+      ],
+      "counterfactual_test": "Direct inline Lane A removes tools and both models ground Task R; 7B solves W and 14B supplies semantically correct W code.",
+      "confidence": 0.99,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b"],
+      "affected_lanes": ["B", "D corrected"],
+      "recommended_correction": "Add a model-bound bare/fenced text-call parser with exact schema/path authorization and unchanged observation reinjection; retain native-call support.",
+      "correction_owner": ["model profile", "JCode adapter", "Proxy tool harness"]
+    },
+    {
+      "id": "RC-03",
+      "classes": [
+        "AGENT_LOOP_RECOVERY_FAILURE",
+        "TOOL_RESULT_REINJECTION_FAILURE"
+      ],
+      "symptom": "The baseline loop executes one successful read and exits without a grounded final answer.",
+      "causal_evidence": [
+        "Both C tool ledgers contain a completed ReadFile execution.",
+        "run_bounded_agent_loop breaks when _run_or_skip_checks returns completed for an empty recommended_checks list."
+      ],
+      "counterfactual_test": "Lane A with identical source/test inline returns the complete grounded answer for both models.",
+      "confidence": 1.0,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b"],
+      "affected_lanes": ["C"],
+      "recommended_correction": "After every productive read, append the observation and make another bounded model call unless a valid ReturnFinal was already parsed.",
+      "correction_owner": ["Proxy agent loop"]
+    },
+    {
+      "id": "RC-04",
+      "classes": [
+        "PACKET_CONTEXT_BLOAT",
+        "PACKET_TASK_BURIED",
+        "CONTEXT_BUDGET_MISALLOCATED"
+      ],
+      "symptom": "Full baseline packets time out while concise inline packets complete.",
+      "causal_evidence": [
+        "R grows from 524 to 12579 bytes and relevant ratio falls from 0.456107 to 0.019.",
+        "W grows from 505 to 14016 bytes and relevant ratio falls from 0.455446 to 0.01641.",
+        "Both Task R Lane E requests time out; E14 exact request is complete."
+      ],
+      "counterfactual_test": "Both Task R Lane A minimal packets pass; direct W minimal packet produces valid behavior for both models.",
+      "confidence": 0.98,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b"],
+      "affected_lanes": ["E", "F after successful packet read"],
+      "recommended_correction": "Use a concise model-ready task packet and exclude campaign history, generic governance, paste-back text, and unneeded broker metadata.",
+      "correction_owner": ["Proxy packet builder", "campaign design"]
+    },
+    {
+      "id": "RC-05",
+      "classes": ["PACKET_CONTEXT_TRUNCATION"],
+      "symptom": "Critical context can be sliced or provider-truncated without a critical-byte receipt.",
+      "causal_evidence": [
+        "_build_canonical_context_packet slices target text to 6000 characters.",
+        "E7 service telemetry reports input 4147 reduced to n_ctx 4096; its exact request body is the declared evidence gap."
+      ],
+      "counterfactual_test": "Minimal inline packets contain all critical source/test bytes with no truncation and complete successfully.",
+      "confidence": 0.9,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b"],
+      "affected_lanes": ["E", "production generic path"],
+      "recommended_correction": "Reserve context by priority and hard-fail if any declared critical byte is omitted; receipt the exact allocation.",
+      "correction_owner": ["Proxy context builder", "model profile"]
+    },
+    {
+      "id": "RC-06",
+      "classes": [
+        "PACKET_ACCEPTANCE_CRITERIA_MISSING",
+        "PACKET_TEST_CONTENT_ABSENT"
+      ],
+      "symptom": "Production task intake does not create explicit criteria and context construction does not require the focused test.",
+      "causal_evidence": [
+        "TaskSpecIntake has no acceptance_criteria field.",
+        "intake_as_legacy_task_spec emits literal_requirements as an empty list.",
+        "Canonical context requires neither supporting test content nor a complete critical-file manifest."
+      ],
+      "counterfactual_test": "Diagnostic minimal packets provide exact criteria plus source/test bytes and establish direct capability.",
+      "confidence": 0.95,
+      "affected_models": ["all coder models"],
+      "affected_lanes": ["production generic path", "E", "F"],
+      "recommended_correction": "Make deterministic acceptance criteria and critical source/test manifests mandatory before executor selection.",
+      "correction_owner": ["Proxy task intake", "Proxy context builder"]
+    },
+    {
+      "id": "RC-07",
+      "classes": [
+        "JCODE_PROJECT_INSTRUCTION_CONTAMINATION",
+        "PACKET_INSTRUCTION_CONFLICT"
+      ],
+      "symptom": "JCode tells the contained model to self-modify, use unavailable tools, and commit by default while the sealed task forbids those actions.",
+      "causal_evidence": [
+        "Exact captured JCode system prompt is 2004 characters and contains all conflicting instructions.",
+        "Sealed CLI message explicitly forbids commit, push, memory, session reuse, MCP, and out-of-scope actions."
+      ],
+      "counterfactual_test": "Direct minimal Lane A/B prompts omit JCode defaults and produce task-grounded answers or read intent.",
+      "confidence": 1.0,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b"],
+      "affected_lanes": ["D", "F"],
+      "recommended_correction": "Use a sealed qualification system prompt containing only task-relevant tool and safety rules.",
+      "correction_owner": ["JCode adapter", "campaign design"]
+    },
+    {
+      "id": "RC-08",
+      "classes": ["TOOL_SCHEMA_TRANSFORMED_WITH_LOSS"],
+      "symptom": "JCode cannot satisfy Task W's run-test requirement because no bounded test/command tool is exposed.",
+      "causal_evidence": [
+        "Task W manifest requires python -m pytest -q focused_check.py.",
+        "Exact JCode Task W tool set is apply_patch, read, write and command_policy is no command tool."
+      ],
+      "counterfactual_test": "The proposed minimal Task W contract includes run_test, demonstrating the required capability boundary.",
+      "confidence": 1.0,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b"],
+      "affected_lanes": ["D", "F"],
+      "recommended_correction": "Expose one sealed focused-test tool bound to the immutable command and return its result to the model.",
+      "correction_owner": ["JCode adapter", "tool authorization policy"]
+    },
+    {
+      "id": "RC-09",
+      "classes": ["VERIFIER_EXPECTATION_MISMATCH"],
+      "symptom": "14B Task W Lane A is recorded as a capability fail despite behaviorally correct code.",
+      "causal_evidence": [
+        "Model output strips whitespace, replaces repeated whitespace with one hyphen, and lowercases.",
+        "safe_inline_candidate_passes rejects ast.Import, ast.Assign, ast.Store and related nodes before executing behavior."
+      ],
+      "counterfactual_test": "Independent behavioral execution of the returned implementation against the two sealed assertions would pass.",
+      "confidence": 1.0,
+      "affected_models": ["qwen2.5-coder:14b"],
+      "affected_lanes": ["A Task W"],
+      "recommended_correction": "Evaluate candidate behavior in a sealed disposable interpreter or broaden the AST allowlist without relaxing file/network authority.",
+      "correction_owner": ["diagnostic evaluator", "campaign design"]
+    },
+    {
+      "id": "RC-10",
+      "classes": ["EVIDENCE_INCOMPLETE"],
+      "symptom": "Two historical/diagnostic claims lack one byte-level artifact each.",
+      "causal_evidence": [
+        "Gate 2-J.9I stores the model response hash but not raw response bytes.",
+        "s1-r-e-7b stores request hash but not exact request body due the pre-repair timeout capture defect."
+      ],
+      "counterfactual_test": "Requests 10 through 24 are durably journaled before network send and pass the evidence verifier.",
+      "confidence": 1.0,
+      "affected_models": ["qwen2.5-coder:7b", "qwen2.5-coder:14b prior 9I"],
+      "affected_lanes": ["E7", "prior Gate 2-J.9I"],
+      "recommended_correction": "Journal exact canonical request bytes before send and raw response bytes before interpretation; never reconstruct missing artifacts.",
+      "correction_owner": ["evidence design"]
+    }
+  ],
+  "ruled_out_or_unproven": [
+    {
+      "class": "RAW_MODEL_CAPABILITY_LIMIT",
+      "status": "NOT_SUPPORTED",
+      "reason": "Both models pass Task R inline; 7B passes W and 14B returns semantically correct W code."
+    },
+    {
+      "class": "MODEL_GROUNDING_LIMIT",
+      "status": "RULED_OUT_FOR_TASK_R",
+      "reason": "Both Task R Lane A cells pass exactly."
+    },
+    {
+      "class": "PACKET_PATH_MISMATCH",
+      "status": "RULED_OUT_IN_DIAGNOSTICS",
+      "reason": "Shown, declared, and mounted paths match in every run."
+    },
+    {
+      "class": "JCODE_SESSION_OR_DEFAULT_CONTAMINATION",
+      "status": "CROSS_RUN_CONTAMINATION_RULED_OUT",
+      "reason": "Every run used fresh HOME, JCODE_HOME, overlay, and session; built-in prompt conflict remains RC-07."
+    },
+    {
+      "class": "STREAMED_TOOL_CALL_RECONSTRUCTION_FAILURE",
+      "status": "NOT_REACHED",
+      "reason": "No provider-native tool-call fragments were returned."
+    },
+    {
+      "class": "TOOL_AUTHORIZATION_REJECTION_NOT_REINJECTED",
+      "status": "NOT_OBSERVED",
+      "reason": "No Qwen tool call reached authorization."
+    },
+    {
+      "class": "OUTPUT_BUDGET_INSUFFICIENT",
+      "status": "NOT_SUPPORTED",
+      "reason": "Failures occur before the 1024-token output budget is consumed."
+    }
+  ],
+  "campaign_decision": "PIPELINE_NOT_READY_FOR_COMPARISON"
+}
