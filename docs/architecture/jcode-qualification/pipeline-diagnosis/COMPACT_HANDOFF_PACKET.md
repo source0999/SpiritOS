@@ -155,3 +155,38 @@ audit evidence.
 Next authorized action unchanged:
 Operator review and adoption of PACKET_AMENDMENT.md, followed by a prospective
 Terra High authorization for Gate 2-J.9T-A through Gate 2-J.9T-D only.
+
+---
+
+## Terra High Gate 2-J.9T Plan Status (2026-08-01)
+
+```text
+CURRENT STATE:
+PACKET_AMENDMENT_ACCEPTED
+IMPLEMENTATION_NOT_STARTED
+NEXT BOUNDED WORK:
+2-J.9T-A THROUGH 2-J.9T-D
+REAL MODEL REQUESTS:
+PROHIBITED (Batch 1 = 0)
+STOP BOUNDARY:
+INDEPENDENT GLM REVIEW AFTER 2-J.9T-D
+```
+
+New artifacts (document-only):
+- `glm-review/TERRA_HIGH_GATE_2J_9T_EXECUTION_PLAN.md` (+ `.json`) — atomic
+  dependency-ordered goals for Batch 1 (A-D), with Batch 2 (E-H) and final
+  review (I) planned but NOT authorized.
+- `glm-review/TERRA_HIGH_AUTHORIZATION_GATE_2J_9T_A_TO_D_DRAFT.json` —
+  prospective authorization, status `DRAFT_REQUIRES_OPERATOR_ADOPTION`, grants
+  NO execution authority until the operator adopts it.
+- `glm-review/TERRA_HIGH_GATE_2J_9T_A_TO_D_PROMPT.md` — paste-ready Terra High
+  prompt (use only after the draft authorization is adopted).
+- `glm-review/TERRA_HIGH_GATE_2J_9T_HANDOFF.md` — updated with the current
+  state block and how-to-start steps.
+
+No implementation code, no production/default change, no model requests, no
+benchmark or daily-runtime change.
+
+Next action:
+`Operator reviews and adopts the draft Gate 2-J.9T-A-through-D authorization,
+then pastes TERRA_HIGH_GATE_2J_9T_A_TO_D_PROMPT.md into Terra High.`

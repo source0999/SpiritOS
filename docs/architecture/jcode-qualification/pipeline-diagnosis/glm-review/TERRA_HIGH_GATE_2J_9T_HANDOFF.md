@@ -1,8 +1,34 @@
 # TERRA_HIGH_GATE_2J_9T_HANDOFF.md
 
 Gate-by-gate implementation handoff for Terra High under Gate 2-J.9T. The
-controlling spec is `PACKET_AMENDMENT.md`. Terra High works ONLY under a new
-prospective operator authorization for a bounded sub-gate batch.
+controlling spec is `PACKET_AMENDMENT.md`. Terra High works ONLY under an
+operator-adopted authorization for a bounded sub-gate batch.
+
+## CURRENT STATE
+
+```text
+CURRENT STATE:
+PACKET_AMENDMENT_ACCEPTED
+IMPLEMENTATION_NOT_STARTED
+NEXT BOUNDED WORK:
+2-J.9T-A THROUGH 2-J.9T-D
+REAL MODEL REQUESTS:
+PROHIBITED (Batch 1 = 0)
+STOP BOUNDARY:
+INDEPENDENT GLM REVIEW AFTER 2-J.9T-D
+```
+
+## How to start Terra High (two operator steps)
+
+1. Operator reviews and adopts `TERRA_HIGH_AUTHORIZATION_GATE_2J_9T_A_TO_D_DRAFT.json`
+   (change `status` to ACTIVE; fill `issued_by` and `issued_at_utc`). Until
+   adopted it grants NO execution authority.
+2. Operator pastes `TERRA_HIGH_GATE_2J_9T_A_TO_D_PROMPT.md` into Terra High.
+
+The atomic, implementation-ready goals live in
+`TERRA_HIGH_GATE_2J_9T_EXECUTION_PLAN.md` (+ `.json`). This handoff summarizes
+the sequence; the execution plan is authoritative for paths, acceptance,
+controlled failures, and evidence.
 
 ## Bounded autonomy
 
@@ -46,5 +72,5 @@ evidence; acceptance; stop condition; commit policy; next authorized action.
 
 ## First authorized batch
 
-`Operator review and adoption of PACKET_AMENDMENT.md, followed by a prospective
-Terra High authorization for Gate 2-J.9T-A through Gate 2-J.9T-D only.`
+`Operator reviews and adopts the draft Gate 2-J.9T-A-through-D authorization,
+then pastes TERRA_HIGH_GATE_2J_9T_A_TO_D_PROMPT.md into Terra High.`
