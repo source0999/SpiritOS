@@ -1,0 +1,132 @@
+{
+  "schema_version": "source-proxy.sol-ultra-final-pipeline-diagnosis/v1",
+  "verdict": "PIPELINE_DIAGNOSIS_COMPLETE__MULTI_FACTOR_FAILURE__AMENDMENT_READY",
+  "repository": "/home/source/SpiritOS-source-proxy-jcode-qualification-20260726",
+  "campaign_branch": "codex/source-proxy-jcode-qualification-20260726",
+  "audit_worktree": "/home/source/SpiritOS-source-proxy-jcode-pipeline-diagnosis-20260731",
+  "audit_branch": "codex/source-proxy-jcode-pipeline-diagnosis-20260731",
+  "starting_head": "07151b44cb886ac4d8c3668e947e81825d01bd50",
+  "root_cause_report_head": "abf6b61c4576ab423d11aa0ff9c62f8ca74f0c61",
+  "final_head_resolution": "Resolve with git rev-parse HEAD after committing this artifact; report externally because a commit cannot contain its own hash.",
+  "authorization": {
+    "id": "OPERATOR_AUTHORIZATION__C2J_PIPELINE_DIAGNOSIS_20260731_V1",
+    "prompt_sha256": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb",
+    "commit": "c42d62f189542e69112e600c5e0bdef05e2705ac"
+  },
+  "campaign_status": "GATE_2J_9I_MODEL_FAILED_SAFETY_PATH_HELD__LATER_GATES_BLOCKED",
+  "models": [
+    {
+      "model": "qwen2.5-coder:7b",
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "direct_read": "PASS",
+      "direct_write": "PASS",
+      "minimal_tool": "FAIL_TEXT_CALL_DIALECT",
+      "current_outcome": "MODEL_NOT_QUALIFIED_FOR_TOOL_TASKS"
+    },
+    {
+      "model": "qwen2.5-coder:14b",
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "direct_read": "PASS",
+      "direct_write": "SEMANTIC_PASS_PENDING_EVALUATOR_ALIGNMENT",
+      "minimal_tool": "FAIL_TEXT_CALL_DIALECT",
+      "current_outcome": "MODEL_NOT_QUALIFIED_FOR_TOOL_TASKS"
+    }
+  ],
+  "execution_counts": {
+    "diagnostic_runs": 24,
+    "model_requests": 24,
+    "maximum_authorized_requests": 36,
+    "maximum_observed_turns_per_run": 1,
+    "maximum_authorized_turns_per_run": 3,
+    "timeouts": 6,
+    "retries": 0,
+    "frozen_benchmark_runs": 0,
+    "production_mutations": 0,
+    "daily_runtime_mutations": 0
+  },
+  "task_r": {
+    "A": {"7b": "PASS", "14b": "PASS"},
+    "B": {"7b": "FAIL_TEXT_JSON_READ", "14b": "FAIL_TEXT_JSON_READ"},
+    "C": {"7b": "FAIL_READ_NOT_REINJECTED", "14b": "FAIL_READ_NOT_REINJECTED"},
+    "D": {"7b": "FAIL_BRIDGE_LOSS", "14b": "TIMEOUT_BRIDGE_LOSS"},
+    "E": {"7b": "TIMEOUT_EVIDENCE_INCOMPLETE", "14b": "TIMEOUT_COMPLETE_EVIDENCE"},
+    "F": {"7b": "FAIL_BRIDGE_LOSS", "14b": "TIMEOUT_BRIDGE_LOSS"}
+  },
+  "task_w": {
+    "A": {"7b": "PASS", "14b": "SEMANTIC_PASS_EVALUATOR_REJECTED"},
+    "B": {"7b": "FAIL_TEXT_JSON_READ", "14b": "FAIL_TEXT_JSON_READ"},
+    "D": {"7b": "FAIL_BRIDGE_LOSS", "14b": "TIMEOUT_BRIDGE_LOSS"},
+    "F": {"7b": "FAIL_BRIDGE_LOSS", "14b": "TIMEOUT_BRIDGE_LOSS"}
+  },
+  "baseline_harness": "FAILS_MINIMAL_OBSERVATION_REINJECTION_AND_FULL_PACKET_TIMEOUT",
+  "jcode_minimal": "FAILS_LEGACY_BRIDGE_AND_CORRECTED_TEXT_CALL_PARSE",
+  "full_proxy_packet": "NOT_MODEL_READY",
+  "tool_dialect": "NOT_QWEN_COMPATIBLE",
+  "jcode_suitability": "CONTAINMENT_READY_BUT_TOOL_PROFILE_AND_PRODUCTION_DISPATCH_NOT_READY",
+  "first_proven_causal_failure": "MODEL_TOOL_DIALECT_INCOMPATIBILITY plus TOOL_CALL_PARSE_FAILURE in Lane B",
+  "first_jcode_specific_failure": "TOOL_SCHEMA_DROPPED at legacy bridge",
+  "secondary_failures": [
+    "PROVIDER_ROLE_TRANSLATION_FAILURE",
+    "BRIDGE_REQUEST_TRANSFORMATION_FAILURE",
+    "AGENT_LOOP_RECOVERY_FAILURE",
+    "TOOL_RESULT_REINJECTION_FAILURE",
+    "PACKET_CONTEXT_BLOAT",
+    "PACKET_TASK_BURIED",
+    "PACKET_CONTEXT_TRUNCATION",
+    "CONTEXT_BUDGET_MISALLOCATED",
+    "PACKET_ACCEPTANCE_CRITERIA_MISSING",
+    "PACKET_TEST_CONTENT_ABSENT",
+    "JCODE_PROJECT_INSTRUCTION_CONTAMINATION",
+    "PACKET_INSTRUCTION_CONFLICT",
+    "TOOL_SCHEMA_TRANSFORMED_WITH_LOSS",
+    "VERIFIER_EXPECTATION_MISMATCH",
+    "EVIDENCE_INCOMPLETE"
+  ],
+  "global_correction": {
+    "id": "C2J-GLOBAL-CORRECTION-01",
+    "change": "Preserve ordered roles and native tools through Ollama /api/chat and reconstruct OpenAI SSE.",
+    "bridge_counterfactual": "PASS_4_OF_4",
+    "end_to_end_tasks": "PASS_0_OF_4",
+    "production_enabled": false
+  },
+  "amendment": {
+    "id": "CAMPAIGN_2J_GATE_9T_PACKET_TOOL_COMPATIBILITY_V1",
+    "gate": "2-J.9T",
+    "created": true,
+    "current_decision": "PIPELINE_NOT_READY_FOR_COMPARISON"
+  },
+  "retained_gates": [
+    "Gates 2-J.9B through 2-J.9E Batch 1",
+    "Runtime Gates 2-J.9G-D through 2-J.9H technical acceptance",
+    "Gate 2-J.9I containment and safety-path finding"
+  ],
+  "blocked_gates": [
+    "Gate 2-J.9T qualification",
+    "Gate 2-J.9J",
+    "Gate 2-J.9K",
+    "sealed 20-task diagnostics",
+    "80-run comparison",
+    "Campaign 4 advancement"
+  ],
+  "validation": {
+    "jcode_focused_tests": "203 passed",
+    "json": "PASS",
+    "evidence_verifier": "PASS_24_RUNS_24_REQUESTS",
+    "accepted_capture_gaps": ["s1-r-e-7b model-request-09 exact request body"],
+    "git_diff_check": "PASS"
+  },
+  "integrity": {
+    "benchmark": "UNCHANGED_ZERO_RUNS",
+    "daily_runtime": "UNCHANGED_ZERO_MUTATIONS",
+    "production": "UNCHANGED_ZERO_MUTATIONS",
+    "merge": "NOT_PERFORMED"
+  },
+  "remaining_uncertainty": [
+    "E7 exact request body unavailable",
+    "prior Gate 2-J.9I raw response bytes unavailable",
+    "provider-native fragmented tool-call reconstruction not exercised",
+    "production request not executed",
+    "14B evaluator alignment and latency budget not qualified"
+  ],
+  "exact_next_authorized_action": "Review and adopt Gate 2-J.9T, then issue a new bounded diagnostic authorization for a concise packet, native-plus-Qwen-text parser with observation reinjection, sealed focused-test tool, and behaviorally aligned evaluator; rerun only minimal qualification cells."
+}

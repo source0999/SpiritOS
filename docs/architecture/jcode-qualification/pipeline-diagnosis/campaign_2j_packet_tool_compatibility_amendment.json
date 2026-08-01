@@ -1,0 +1,157 @@
+{
+  "schema_version": "source-proxy.campaign-2j-amendment/v1",
+  "amendment_id": "CAMPAIGN_2J_GATE_9T_PACKET_TOOL_COMPATIBILITY_V1",
+  "gate": "2-J.9T",
+  "name": "Human-to-Coder Packet and Tool Compatibility Qualification",
+  "insertion": "after 2-J.9I and before 2-J.9J",
+  "authority": {
+    "authorization_id": "OPERATOR_AUTHORIZATION__C2J_PIPELINE_DIAGNOSIS_20260731_V1",
+    "operator_prompt_sha256": "f45bde0f3fd1c4c225f4a896577a0778408d449ebee41b3dc4f57c0171ab7afb"
+  },
+  "branch_binding": "binding for audit-branch advancement decisions; not merged or deployed",
+  "current_decision": "PIPELINE_NOT_READY_FOR_COMPARISON",
+  "canonical_model_ready_task_packet": {
+    "required_fields": [
+      "schema_version",
+      "task_id",
+      "task_sha256",
+      "single_objective",
+      "acceptance_criteria",
+      "writable_files",
+      "read_only_supporting_files",
+      "protected_and_denied_files",
+      "mounted_paths",
+      "critical_file_hashes_and_bytes",
+      "critical_file_contents_or_proven_excerpts",
+      "minimal_tool_schemas_and_dialect",
+      "model_registry_id_and_full_digest",
+      "executor_and_jcode_identity",
+      "context_sha256",
+      "input_output_timeout_request_turn_budgets",
+      "prohibited_actions"
+    ],
+    "excluded_unless_task_required": [
+      "campaign history",
+      "architecture debates",
+      "paste-back instructions",
+      "phase inheritance",
+      "optional memory metadata",
+      "generic governance text"
+    ]
+  },
+  "model_visible_receipt": {
+    "write_order": "exact canonical request bytes durably sealed before provider send",
+    "pre_send": [
+      "messages and roles",
+      "system and project instructions",
+      "ordered files, contents, excerpts, omissions, paths, hashes, bytes",
+      "tools, tool_choice, allowed and denied paths, command policy",
+      "token allocation and critical positions",
+      "exact model and component identities",
+      "before and after bridge transformation hashes"
+    ],
+    "post_response": [
+      "raw response bytes and streamed deltas",
+      "native and text tool-call reconstruction",
+      "parser and authorization decisions",
+      "tool executions and reinjected results",
+      "retries and final claim",
+      "independent evaluation"
+    ],
+    "missing_bytes_rule": "EVIDENCE_INCOMPLETE and non-qualifying; no reconstruction"
+  },
+  "profiles": {
+    "qwen2.5-coder:7b": {
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "direct_read": "PASS",
+      "direct_write": "PASS",
+      "observed_tool_dialect": "bare or fenced assistant-text JSON",
+      "native_tool_calls": "NOT_OBSERVED",
+      "required_parser": "native plus exact schema-authorized bare/fenced JSON text calls",
+      "recovery": "preserve messages and reinject exact result within three turns",
+      "current_outcome": "MODEL_NOT_QUALIFIED_FOR_TOOL_TASKS"
+    },
+    "qwen2.5-coder:14b": {
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "direct_read": "PASS",
+      "direct_write": "SEMANTIC_PASS_PENDING_EVALUATOR_ALIGNMENT",
+      "observed_tool_dialect": "bare or fenced assistant-text JSON",
+      "native_tool_calls": "NOT_OBSERVED",
+      "required_parser": "native plus exact schema-authorized bare/fenced JSON text calls",
+      "recovery": "preserve messages and reinject exact result within three turns; qualify latency",
+      "current_outcome": "MODEL_NOT_QUALIFIED_FOR_TOOL_TASKS"
+    }
+  },
+  "context_quality_gate": {
+    "critical_source_presence": 1.0,
+    "critical_test_support_presence": 1.0,
+    "path_consistency": 1.0,
+    "critical_truncation_bytes": 0,
+    "minimum_relevant_context_ratio": 0.4,
+    "maximum_task_and_acceptance_start_byte": 1024,
+    "unrelated_governance_marker_ceiling": 0,
+    "minimum_output_reserve_tokens": 1024,
+    "minimum_context_safety_margin_tokens": 256,
+    "exact_allocation_receipt_required": true
+  },
+  "agent_loop_recovery_gate": {
+    "accepted_calls": ["provider-native declared call", "profile-authorized exact text call"],
+    "authorize_before_execute": true,
+    "reinjection_after_productive_read": true,
+    "already_present_file_recovery": true,
+    "task_context_changes_on_retry": false,
+    "preserve_previous_messages": true,
+    "maximum_total_model_turns": 3,
+    "truthful_bounded_stop": true,
+    "write_completion": "scoped diff plus passing sealed focused test"
+  },
+  "direct_capability_baseline": {
+    "required_per_exact_model_digest_and_task_class": true,
+    "new_non_benchmark_immutable_task": true,
+    "complete_inline_source_test_and_criteria": true,
+    "no_tools": true,
+    "no_apply": true,
+    "separate_from_tool_qualification": true,
+    "behaviorally_valid_evaluator_required": true
+  },
+  "advancement_requirements": [
+    "SYSTEM_PACKET_READY",
+    "JCODE_TOOL_COMPATIBILITY_READY",
+    "MODEL_PROFILE_READY for every selected exact model/digest and task class"
+  ],
+  "decision_outcomes": [
+    "SYSTEM_PACKET_READY",
+    "JCODE_TOOL_COMPATIBILITY_READY",
+    "MODEL_PROFILE_READY",
+    "MODEL_LIMITED_TO_READ_ONLY",
+    "MODEL_NOT_QUALIFIED_FOR_TOOL_TASKS",
+    "PIPELINE_NOT_READY_FOR_COMPARISON"
+  ],
+  "anti_cheating": [
+    "no frozen benchmark or hidden expectation",
+    "no task-specific prompt, parser branch, retry, or expected patch",
+    "no answer leakage",
+    "no cross-run memory, session, output, or response reuse",
+    "identical immutable paired packets",
+    "fresh worktree, overlay, HOME, JCODE_HOME, and session",
+    "exact model digest and no fallback",
+    "manifests sealed before requests",
+    "independent behaviorally valid evaluator",
+    "retain failed and incomplete runs"
+  ],
+  "retained_accepted_state": [
+    "Gates 2-J.9B through 2-J.9E Batch 1",
+    "Runtime Gates 2-J.9G-D through 2-J.9H technical acceptance",
+    "Gate 2-J.9I containment and safety-path finding with no unauthorized mutation"
+  ],
+  "gate_2j_9i_attribution_refinement": "No-tool behavior is not proof of model incapability because raw response bytes were absent and this audit proves legacy bridge tool loss. Safety-path acceptance remains.",
+  "blocked_or_unstarted": [
+    "Gate 2-J.9T qualification",
+    "Gate 2-J.9J",
+    "Gate 2-J.9K",
+    "sealed 20-task diagnostics",
+    "80-run comparison",
+    "Campaign 4 advancement"
+  ],
+  "automatic_unpause": false
+}

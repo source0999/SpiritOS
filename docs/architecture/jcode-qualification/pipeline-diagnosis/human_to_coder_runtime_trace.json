@@ -359,7 +359,7 @@
       "order": 21,
       "edge": "exact_model",
       "status": "PROVEN_BUT_PARTIAL",
-      "implementation_path": "source_proxy/tasks/long_running.py; source_proxy/model_router.py",
+      "implementation_path": "source_proxy/tasks/long_running.py; source_proxy/routing/litellm_router.py",
       "symbol": "route_model_for_alias",
       "input_schema": "model alias",
       "output_schema": "provider model name",
