@@ -1391,7 +1391,13 @@ def run_jcode_harness(
     bridge.start_connected(host_sockets)
     port = 18080
     allowed_tools = "read" if task_key == "R" else "read,write,apply_patch"
-    message = jcode_prompt_message(prompt_sha, context_sha)
+    declared_inputs = ", ".join(str(item) for item in task_manifest["read_only_files"])
+    message = (
+        jcode_prompt_message(prompt_sha, context_sha)
+        + " The sealed task is: " + str(task_manifest["task"])
+        + " Use the read tool only for these declared workspace files: " + declared_inputs + "."
+        + " Do not attempt to read DIAGNOSTIC_TASK.txt or DIAGNOSTIC_CONTEXT.json as tools; their hashes are already bound above."
+    )
     jcode_command = [
         "/usr/bin/jcode",
         "--cwd",
