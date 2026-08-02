@@ -53,3 +53,14 @@ def test_compatibility_bridge_accepts_a_supervisor_owned_socketpair(tmp_path: Pa
     client.sendall(b"POST /v1/chat/completions HTTP/1.1\r\nHost: local\r\nContent-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body)
     response = client.recv(4096); client.close(); worker.join(timeout=2)
     assert b"HTTP/1.1 200 OK" in response
+
+
+def test_pipeline_bridge_converts_only_declared_fenced_textual_tool_calls() -> None:
+    from source_proxy.jcode.pipeline_diagnosis import openai_sse_response
+    fence = chr(96) * 3
+    response = {"message": {"content": fence + "json\n{\n  \"name\": \"read\", \"arguments\": {\"file_path\": \"/workspace/DIAGNOSTIC_TASK.txt\", \"intent\": \"verify\"}\n}" + fence}, "_bridge_tools": [{"function": {"name": "read"}}]}
+    rendered = openai_sse_response(response, "qwen2.5-coder:14b")
+    assert b'"finish_reason":"tool_calls"' in rendered
+    assert b'"name":"read"' in rendered
+    rejected = openai_sse_response({"message": {"content": fence + "json\n{\"name\":\"bash\",\"arguments\":{}}" + fence}, "_bridge_tools": [{"function": {"name": "read"}}]}, "qwen2.5-coder:14b")
+    assert b'"finish_reason":"stop"' in rejected

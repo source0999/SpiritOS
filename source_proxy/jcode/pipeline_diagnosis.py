@@ -895,9 +895,33 @@ def tool_preserving_bridge_transform(request_body: Mapping[str, Any], model: str
     return payload
 
 
+def _strict_fenced_tool_call(content: str, allowed_tools: set[str]) -> dict[str, Any] | None:
+    """Convert one unambiguous fenced textual call into the native bridge shape."""
+    fence = chr(96) * 3
+    match = re.fullmatch(fence + r"json\s*(\{.*\})\s*" + fence, content.strip(), flags=re.DOTALL)
+    if match is None:
+        return None
+    try:
+        value = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(value, Mapping) or set(value) != {"name", "arguments"}:
+        return None
+    name, arguments = value.get("name"), value.get("arguments")
+    if not isinstance(name, str) or name not in allowed_tools or not isinstance(arguments, Mapping):
+        return None
+    return {"id": "textual_tool_0", "type": "function", "function": {"name": name, "arguments": dict(arguments)}}
+
+
 def openai_sse_response(ollama_response: Mapping[str, Any], model: str) -> bytes:
     message = ollama_response.get("message") if isinstance(ollama_response.get("message"), Mapping) else {}
     tool_calls = list(message.get("tool_calls") or [])
+    if not tool_calls:
+        content = str(message.get("content") or ollama_response.get("response") or "")
+        allowed = {str((item.get("function") or {}).get("name") or "") for item in ollama_response.get("_bridge_tools", []) if isinstance(item, Mapping)}
+        textual = _strict_fenced_tool_call(content, allowed)
+        if textual is not None:
+            tool_calls = [textual]
     events: list[dict[str, Any]] = []
     if tool_calls:
         converted_calls: list[dict[str, Any]] = []
@@ -1141,6 +1165,8 @@ class DiagnosticBridgeServer:
                         "output_body": transformed,
                     }
                 )
+                response = dict(response)
+                response["_bridge_tools"] = list(body.get("tools") or [])
                 sse = openai_sse_response(response, self.model)
                 self.provider_responses.append(
                     {
