@@ -1369,12 +1369,17 @@ def run_jcode_harness(
     launcher = runtime_root / "relay-runner"
     compile_relay_launcher(repository_root(), launcher)
     preassembled = runtime_root / "preassembled-root"
+    read_only_root_files = tuple(
+        (overlay / str(relative), f"workspace/{relative}")
+        for relative in task_manifest["read_only_files"]
+    ) if task_key == "R" else ()
     assemble_preassembled_root(
         PreassembledRootConfig(
             root=preassembled,
             executable=JCODE_BINARY,
             runtime_files=jcode_runtime_files(),
             additional_executables=((launcher, "relay-runner"),),
+            additional_files=read_only_root_files,
         )
     )
     bridge = DiagnosticBridgeServer(
@@ -1439,18 +1444,15 @@ def run_jcode_harness(
         "--ro-bind",
         str(preassembled),
         "/",
-        "--bind",
-        str(overlay),
-        "/workspace",
-        "--ro-bind",
-        str(prompt_path),
-        "/workspace/DIAGNOSTIC_TASK.txt",
-        "--ro-bind",
-        str(context_path),
-        "/workspace/DIAGNOSTIC_CONTEXT.json",
     ]
-    for read_only in task_manifest["read_only_files"]:
-        command.extend(["--ro-bind", str(overlay / read_only), f"/workspace/{read_only}"])
+    if task_key != "R":
+        command.extend([
+            "--bind", str(overlay), "/workspace",
+            "--ro-bind", str(prompt_path), "/workspace/DIAGNOSTIC_TASK.txt",
+            "--ro-bind", str(context_path), "/workspace/DIAGNOSTIC_CONTEXT.json",
+        ])
+        for read_only in task_manifest["read_only_files"]:
+            command.extend(["--ro-bind", str(overlay / read_only), f"/workspace/{read_only}"])
     command.extend(
         [
             "--proc",
