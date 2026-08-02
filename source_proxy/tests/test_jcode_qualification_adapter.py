@@ -67,6 +67,7 @@ def test_missing_binary_is_truthfully_config_blocked() -> None:
     status = build_jcode_cli_status(
         command_resolver=lambda _: None,
         environ={JCODE_EXECUTOR_ENABLED_ENV: "1"},
+        authorized_binary_path="/definitely/missing/jcode",
     )
 
     assert status["status"] == "config_blocked"
@@ -96,7 +97,8 @@ def test_status_requires_the_pinned_source_commit(tmp_path: Path) -> None:
     assert status["pinned_source_match"] is True
     assert status["binary_and_source_match"] is True
     assert status["can_run_live_task"] is False
-    assert calls[0] == ["/audit/jcode", "--version"]
+    assert calls[0][1] == "--version"
+    assert calls[0][0].endswith("/approved-binary/jcode")
 
 
 def test_safe_envelope_builds_bounded_ndjson_command(tmp_path: Path) -> None:

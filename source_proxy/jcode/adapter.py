@@ -12,11 +12,14 @@ import os
 import re
 import shutil
 import subprocess
+import stat
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+
+from source_proxy.jcode.constants import JCODE_BINARY_PATH, JCODE_BINARY_SHA256, JCODE_VERSION
 
 from source_proxy.safety.paths import (
     has_percent_encoded_path_syntax,
@@ -190,20 +193,37 @@ def build_jcode_cli_status(
     command_runner: CommandRunner | None = None,
     environ: Mapping[str, str] | None = None,
     timeout_seconds: float = 5.0,
+    authorized_binary_path: str | Path | None = None,
 ) -> dict[str, Any]:
     resolver = command_resolver or shutil.which
     runner = command_runner or subprocess.run
-    binary_path = resolver(binary_name)
+    configured = Path(authorized_binary_path or JCODE_BINARY_PATH)
+    binary_path: str | None = None
+    binary_attestation_error: str | None = None
+    try:
+        mode = configured.lstat().st_mode
+        if stat.S_ISLNK(mode): binary_attestation_error = 'jcode_binary_symlink_denied'
+        elif not stat.S_ISREG(mode): binary_attestation_error = 'jcode_binary_not_regular'
+        elif not (mode & stat.S_IXUSR): binary_attestation_error = 'jcode_binary_not_executable'
+        elif hashlib.sha256(configured.read_bytes()).hexdigest() != JCODE_BINARY_SHA256: binary_attestation_error = 'jcode_binary_hash_mismatch'
+        else: binary_path = str(configured)
+    except OSError:
+        binary_attestation_error = 'jcode_binary_not_found'
+    diagnostic_path = resolver(binary_name)
     enabled = jcode_executor_enabled(environ)
     status: dict[str, Any] = {
         "schema_version": JCODE_QUALIFICATION_SCHEMA_VERSION,
         "tool": "jcode_cli",
         "executor_id": JCODE_EXECUTOR_ID,
         "status": "config_blocked",
-        "reason": "jcode_binary_not_found" if not binary_path else "jcode_source_not_verified",
+        "reason": binary_attestation_error or ("jcode_source_not_verified" if binary_path else "jcode_binary_not_found"),
         "installed": bool(binary_path),
         "binary": binary_name,
         "binary_path": binary_path,
+        "configured_binary_path": str(configured),
+        "path_fallback_diagnostic": diagnostic_path,
+        "binary_sha256_expected": JCODE_BINARY_SHA256,
+        "binary_sha256_match": binary_attestation_error is None,
         "version": None,
         "raw_version": None,
         "expected_version": JCODE_PINNED_RELEASE.removeprefix("v"),
@@ -260,7 +280,7 @@ def build_jcode_cli_status(
     status["raw_version"] = raw_version or None
     status["version"] = _parse_version(raw_version)
     status["binary_version_match"] = (
-        status["version"] == JCODE_PINNED_RELEASE.removeprefix("v")
+        status["version"] == JCODE_VERSION
     )
     status["version_returncode"] = completed.returncode
     if completed.returncode != 0 or not raw_version:
