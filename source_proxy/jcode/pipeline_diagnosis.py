@@ -1772,6 +1772,8 @@ def create_fresh_run_state(root: Path, run_id: str, task_key: str) -> FreshRunSt
     fixture = source_worktree / "source_proxy/tests/fixtures/jcode_pipeline_diagnosis" / task_definition(task_key)["fixture"]
     overlay = runtime_root / "overlay"
     shutil.copytree(fixture, overlay)
+    # Bubblewrap maps fixture ownership to an overflow UID; traversal must not depend on host ownership.
+    overlay.chmod(0o755)
     (runtime_root / "home").mkdir(mode=0o700)
     (runtime_root / "jcode-home").mkdir(mode=0o700)
     return FreshRunState(source_worktree, overlay, runtime_root, base_head)
