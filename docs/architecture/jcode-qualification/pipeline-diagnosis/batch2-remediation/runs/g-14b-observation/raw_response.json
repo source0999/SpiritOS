@@ -1,0 +1,1 @@
+{"created_at":"2026-08-02T02:24:00.041432684Z","done":true,"done_reason":"stop","eval_count":8,"eval_duration":2419101021,"load_duration":60209977752,"message":{"content":"The value is 41.","role":"assistant"},"model":"qwen2.5-coder:14b","prompt_eval_count":209,"prompt_eval_duration":28059968841,"total_duration":90730290790}

@@ -1,0 +1,1 @@
+{"initial_textual_call":"{\n  \"name\": \"read_file\",\n  \"arguments\": {\n    \"path\": \"fixture/source.py\"\n  }\n}","normalized":"read_file fixture/source.py"}

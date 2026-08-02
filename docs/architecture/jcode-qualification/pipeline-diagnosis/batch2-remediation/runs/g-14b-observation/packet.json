@@ -1,0 +1,1 @@
+{"allowed_paths":["fixture/source.py"],"fixture_tree_sha256":"39e564fd16fbb08ce5b0dddf4b8432378147b2107a0f84bb04b3a377052a656e","model_visible_task":"Read fixture/source.py and report VALUE.","task_id":"PIPE-R-001","task_sha256":"fc4a496431c8bf0d06c44a1c855eb6191590c3ee6c2dc81711202e7359597305"}

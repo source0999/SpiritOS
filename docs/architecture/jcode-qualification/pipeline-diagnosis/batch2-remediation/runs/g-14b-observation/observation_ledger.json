@@ -1,0 +1,1 @@
+{"observations":["fixture/source.py contents:\nVALUE = 41\n\nReturn a grounded final answer stating the value."],"reinjected":true}
